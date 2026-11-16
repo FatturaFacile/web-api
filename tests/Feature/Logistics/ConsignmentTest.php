@@ -18,15 +18,15 @@ use Modules\Procurement\Models\PurchaseOrder;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    ['tenant' => $this->tenant, 'user' => $this->user] = logisticsTenant('Consignment');
+    ['tenant' => $this->tenant, 'user' => $this->user] = wmsTenant('Consignment');
     app(TenantContext::class)->setTenant($this->tenant);
     $this->stock = app(WarehouseStockService::class);
     $this->transfers = app(StockTransferService::class);
     $this->consignment = app(ConsignmentService::class);
-    $this->product = logisticsProduct($this->tenant->id, 'CD-1', 10, 30);
-    $this->main = logisticsWarehouse($this->tenant->id, 'MAIN');
-    $this->customer = logisticsCustomer($this->tenant->id, 'Cliente Deposito');
-    $this->deposit = logisticsWarehouse($this->tenant->id, 'CLI-DEP', [
+    $this->product = wmsProduct($this->tenant->id, 'CD-1', 10, 30);
+    $this->main = wmsWarehouse($this->tenant->id, 'MAIN');
+    $this->customer = wmsCustomer($this->tenant->id, 'Cliente Deposito');
+    $this->deposit = wmsWarehouse($this->tenant->id, 'CLI-DEP', [
         'warehouse_type' => 'customer_consignment', 'linked_partner_id' => $this->customer->id,
     ]);
     $this->stock->receiveOpeningStock($this->main->id, $this->product->id, 100);
@@ -107,7 +107,7 @@ test('the register of goods at third parties reports sent, consumed, residual qu
 
 test('vendor consignment stock is excluded from the balance sheet valuation while goods at customers are included', function (): void {
     $supplierId = (string) Str::uuid7();
-    $vendorWh = logisticsWarehouse($this->tenant->id, 'VEND-DEP', [
+    $vendorWh = wmsWarehouse($this->tenant->id, 'VEND-DEP', [
         'warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => $supplierId,
     ]);
     $this->stock->receiveOpeningStock($vendorWh->id, $this->product->id, 50); // 50 x 10 = 500 owned by the vendor
@@ -129,7 +129,7 @@ test('vendor consignment stock is excluded from the balance sheet valuation whil
 test('vendor consignment withdrawal discharges the vendor stock and drafts a purchase order', function (): void {
     // purchase_orders.supplier_id references contacts in the current schema
     $supplier = Contact::create(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'company_name' => 'Fornitore Deposito Srl', 'type' => 'supplier', 'country' => 'IT']);
-    $vendorWh = logisticsWarehouse($this->tenant->id, 'VEND-DEP', [
+    $vendorWh = wmsWarehouse($this->tenant->id, 'VEND-DEP', [
         'warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => $supplier->id,
     ]);
     $this->stock->receiveOpeningStock($vendorWh->id, $this->product->id, 50);

@@ -26,11 +26,11 @@ use Modules\Logistics\Support\ShipmentResult;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    ['tenant' => $this->tenant, 'user' => $this->user] = logisticsTenant('Lifecycle');
+    ['tenant' => $this->tenant, 'user' => $this->user] = wmsTenant('Lifecycle');
     app(TenantContext::class)->setTenant($this->tenant);
-    $this->customer = logisticsCustomer($this->tenant->id);
-    $this->product = logisticsProduct($this->tenant->id, 'LC-1', 10, 50);
-    $this->warehouse = logisticsWarehouse($this->tenant->id, 'MAIN');
+    $this->customer = wmsCustomer($this->tenant->id);
+    $this->product = wmsProduct($this->tenant->id, 'LC-1', 10, 50);
+    $this->warehouse = wmsWarehouse($this->tenant->id, 'MAIN');
     $this->stock = app(WarehouseStockService::class);
     $this->stock->receiveOpeningStock($this->warehouse->id, $this->product->id, 100);
     $this->ddt = app(DeliveryNoteService::class);
@@ -112,7 +112,7 @@ test('issuing a sale DDT releases stock and cancelling it emits INBOUND_REVERSAL
 });
 
 test('cancelling an order-fulfilling DDT rolls back the order line quantities and stock', function (): void {
-    $order = logisticsOrder($this->tenant->id, $this->customer->id, $this->product->id, 10, 'SO-LC');
+    $order = wmsOrder($this->tenant->id, $this->customer->id, $this->product->id, 10, 'SO-LC');
     $note = $this->ddt->createFromOrders([['sales_order_id' => $order->id]], ['origin_warehouse_id' => $this->warehouse->id]);
     $note = $this->ddt->issue($note);
 
@@ -161,7 +161,7 @@ test('numbering restarts every fiscal year', function (): void {
 
 test('deferred invoicing run groups unbilled DDTs per customer and references each DDT number and date', function (): void {
     $this->travelTo('2026-05-10 09:00:00');
-    $other = logisticsCustomer($this->tenant->id, 'Secondo Cliente');
+    $other = wmsCustomer($this->tenant->id, 'Secondo Cliente');
     $a1 = $this->ddt->issue(lifecycleDraft($this));
     $a2 = $this->ddt->issue(lifecycleDraft($this));
     $b1 = $this->ddt->markDelivered($this->ddt->startTransit($this->ddt->issue(lifecycleDraft($this, ['contact_id' => $other->id]))));
@@ -208,7 +208,7 @@ test('RBAC: endpoints enforce permissions per tenant role, including the legacy 
         ['member', 'GET', '/api/v1/sales/delivery-notes', 403],
         ['member', 'GET', '/api/v1/invoicing/delivery-notes', 403],
     ] as [$role, $method, $url, $expected]) {
-        $actor = logisticsUserWithRole($this->tenant->id, $role);
+        $actor = wmsUserWithRole($this->tenant->id, $role);
         Sanctum::actingAs($actor);
         $response = $this->json($method, $url, [], $headers($this->tenant->id));
         expect($response->status())->toBe($expected, "{$role} {$method} {$url} returned {$response->status()}");
@@ -216,7 +216,7 @@ test('RBAC: endpoints enforce permissions per tenant role, including the legacy 
 });
 
 test('the profile exposes the effective permissions so the frontend can hide actions', function (): void {
-    $viewer = logisticsUserWithRole($this->tenant->id, 'viewer');
+    $viewer = wmsUserWithRole($this->tenant->id, 'viewer');
     Sanctum::actingAs($viewer);
 
     $permissions = $this->getJson('/api/v1/auth/profile', ['X-Tenant-Id' => $this->tenant->id])->assertOk()->json('data.permissions');
@@ -228,7 +228,7 @@ test('the profile exposes the effective permissions so the frontend can hide act
 
 test('cross-tenant access is rejected on every DDT action', function (): void {
     $note = lifecycleDraft($this);
-    ['tenant' => $otherTenant, 'user' => $otherUser] = logisticsTenant('Intruder');
+    ['tenant' => $otherTenant, 'user' => $otherUser] = wmsTenant('Intruder');
     Sanctum::actingAs($otherUser);
     $h = ['X-Tenant-Id' => $otherTenant->id];
 
@@ -344,12 +344,12 @@ test('the logistics:run-deferred-invoicing command bills every tenant', function
 });
 
 test('lookups feed the wizard with tenant-scoped data and an envelope the frontend can paginate', function (): void {
-    $order = logisticsOrder($this->tenant->id, $this->customer->id, $this->product->id, 10, 'SO-LK');
+    $order = wmsOrder($this->tenant->id, $this->customer->id, $this->product->id, 10, 'SO-LK');
     $this->ddt->createFromOrders([['sales_order_id' => $order->id, 'items' => [['sales_order_item_id' => $order->items->first()->id, 'quantity' => 4]]]]);
     lifecycleDraft($this);
-    ['tenant' => $other] = logisticsTenant('Other LK');
+    ['tenant' => $other] = wmsTenant('Other LK');
     // BelongsToTenant forces the active tenant on create, so build the foreign product inside its own tenant context
-    app(TenantContext::class)->runWithTenant($other, fn () => logisticsProduct($other->id, 'OTHER-SKU'));
+    app(TenantContext::class)->runWithTenant($other, fn () => wmsProduct($other->id, 'OTHER-SKU'));
 
     Sanctum::actingAs($this->user);
     $h = ['X-Tenant-Id' => $this->tenant->id];

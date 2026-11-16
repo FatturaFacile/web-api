@@ -15,16 +15,16 @@ use Modules\Logistics\Services\DeliveryNoteService;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    ['tenant' => $this->tenant, 'user' => $this->user] = logisticsTenant('Fulfillment');
+    ['tenant' => $this->tenant, 'user' => $this->user] = wmsTenant('Fulfillment');
     app(TenantContext::class)->setTenant($this->tenant);
-    $this->customer = logisticsCustomer($this->tenant->id);
-    $this->product = logisticsProduct($this->tenant->id, 'FF-1', 10, 50);
+    $this->customer = wmsCustomer($this->tenant->id);
+    $this->product = wmsProduct($this->tenant->id, 'FF-1', 10, 50);
     $this->ddt = app(DeliveryNoteService::class);
     $this->orders = app(SalesOrderServiceInterface::class);
 });
 
 test('a DDT fulfils an order partially then totally, updating delivered quantities', function (): void {
-    $order = logisticsOrder($this->tenant->id, $this->customer->id, $this->product->id, 10, 'SO-A');
+    $order = wmsOrder($this->tenant->id, $this->customer->id, $this->product->id, 10, 'SO-A');
     $line = $order->items->first();
 
     $first = $this->ddt->createFromOrders([['sales_order_id' => $order->id, 'items' => [['sales_order_item_id' => $line->id, 'quantity' => 4]]]]);
@@ -45,20 +45,20 @@ test('a DDT fulfils an order partially then totally, updating delivered quantiti
 });
 
 test('one DDT can fulfil several orders of the same customer but never of different customers', function (): void {
-    $o1 = logisticsOrder($this->tenant->id, $this->customer->id, $this->product->id, 2, 'SO-B1');
-    $o2 = logisticsOrder($this->tenant->id, $this->customer->id, $this->product->id, 3, 'SO-B2');
-    $other = logisticsCustomer($this->tenant->id, 'Altro Cliente');
-    $o3 = logisticsOrder($this->tenant->id, $other->id, $this->product->id, 1, 'SO-B3');
+    $o1 = wmsOrder($this->tenant->id, $this->customer->id, $this->product->id, 2, 'SO-B1');
+    $o2 = wmsOrder($this->tenant->id, $this->customer->id, $this->product->id, 3, 'SO-B2');
+    $other = wmsCustomer($this->tenant->id, 'Altro Cliente');
+    $o3 = wmsOrder($this->tenant->id, $other->id, $this->product->id, 1, 'SO-B3');
 
     $note = $this->ddt->createFromOrders([['sales_order_id' => $o1->id], ['sales_order_id' => $o2->id]]);
     expect($note->items)->toHaveCount(2)->and($note->sales_order_id)->toBeNull();
 
-    expect(fn () => $this->ddt->createFromOrders([['sales_order_id' => $o3->id], ['sales_order_id' => logisticsOrder($this->tenant->id, $this->customer->id, $this->product->id, 1, 'SO-B4')->id]]))
+    expect(fn () => $this->ddt->createFromOrders([['sales_order_id' => $o3->id], ['sales_order_id' => wmsOrder($this->tenant->id, $this->customer->id, $this->product->id, 1, 'SO-B4')->id]]))
         ->toThrow(DomainException::class, 'same customer');
 });
 
 test('cancelling a draft DDT releases the delivered quantities back to the order', function (): void {
-    $order = logisticsOrder($this->tenant->id, $this->customer->id, $this->product->id, 5, 'SO-C');
+    $order = wmsOrder($this->tenant->id, $this->customer->id, $this->product->id, 5, 'SO-C');
     $note = $this->ddt->createFromOrders([['sales_order_id' => $order->id]]);
     expect($order->fresh()->fulfillment_status)->toBe('fulfilled');
 
@@ -69,7 +69,7 @@ test('cancelling a draft DDT releases the delivered quantities back to the order
 });
 
 test('cumulative deferred invoice groups several DDTs and tracks the line links and statuses', function (): void {
-    $order = logisticsOrder($this->tenant->id, $this->customer->id, $this->product->id, 10, 'SO-D');
+    $order = wmsOrder($this->tenant->id, $this->customer->id, $this->product->id, 10, 'SO-D');
     $line = $order->items->first();
     $a = $this->ddt->createFromOrders([['sales_order_id' => $order->id, 'items' => [['sales_order_item_id' => $line->id, 'quantity' => 4]]]]);
     $b = $this->ddt->createFromOrders([['sales_order_id' => $order->id]]);
@@ -102,7 +102,7 @@ test('deferred invoicing enforces customer, currency, calendar month and status 
         'type' => 'outbound_sale', 'contact_id' => $customerId,
     ], $extra), [['description' => 'Goods', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 22]]));
 
-    $other = logisticsCustomer($this->tenant->id, 'Altro');
+    $other = wmsCustomer($this->tenant->id, 'Altro');
     expect(fn () => $service->invoice([$mk($this->customer->id)->id, $mk($other->id)->id]))->toThrow(DomainException::class, 'same customer');
     expect(fn () => $service->invoice([$mk($this->customer->id)->id, $mk($this->customer->id, ['currency' => 'CHF'])->id]))->toThrow(DomainException::class, 'same currency');
     expect(fn () => $service->invoice([$mk($this->customer->id)->id, $mk($this->customer->id, ['date' => now()->subMonths(2)->toDateString()])->id]))->toThrow(DomainException::class, 'calendar month');

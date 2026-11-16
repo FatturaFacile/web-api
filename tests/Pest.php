@@ -97,7 +97,7 @@ function spaHeaders(): array
  *
  * @return array{tenant: Tenant, user: User}
  */
-function logisticsTenant(string $name = 'Logistics Tenant', string $role = 'owner', ?array $permissions = null): array
+function wmsTenant(string $name = 'Logistics Tenant', string $role = 'owner', ?array $permissions = null): array
 {
     $tenant = Tenant::create([
         'id' => (string) Str::uuid7(),
@@ -128,7 +128,7 @@ function logisticsTenant(string $name = 'Logistics Tenant', string $role = 'owne
     return ['tenant' => $tenant, 'user' => $user];
 }
 
-function logisticsProduct(string $tenantId, string $sku, float $cost = 10.0, float $sale = 25.0): Product
+function wmsProduct(string $tenantId, string $sku, float $cost = 10.0, float $sale = 25.0): Product
 {
     return Product::create([
         'id' => (string) Str::uuid7(),
@@ -144,7 +144,7 @@ function logisticsProduct(string $tenantId, string $sku, float $cost = 10.0, flo
 /**
  * @param  array<string, mixed>  $attributes
  */
-function logisticsWarehouse(string $tenantId, string $code, array $attributes = []): Warehouse
+function wmsWarehouse(string $tenantId, string $code, array $attributes = []): Warehouse
 {
     return Warehouse::create(array_merge([
         'tenant_id' => $tenantId,
@@ -155,12 +155,12 @@ function logisticsWarehouse(string $tenantId, string $code, array $attributes = 
     ], $attributes));
 }
 
-function logisticsCustomer(string $tenantId, string $name = 'Cliente SpA'): Contact
+function wmsCustomer(string $tenantId, string $name = 'Cliente SpA'): Contact
 {
     return Contact::create(['id' => (string) Str::uuid7(), 'tenant_id' => $tenantId, 'company_name' => $name, 'type' => 'client', 'country' => 'IT']);
 }
 
-function logisticsUserWithRole(string $tenantId, string $role): User
+function wmsUserWithRole(string $tenantId, string $role): User
 {
     $user = User::create([
         'id' => (string) Str::uuid7(),
@@ -181,7 +181,7 @@ function logisticsUserWithRole(string $tenantId, string $role): User
     return $user;
 }
 
-function logisticsOrder(string $tenantId, string $customerId, string $productId, float $qty, string $number): SalesOrder
+function wmsOrder(string $tenantId, string $customerId, string $productId, float $qty, string $number): SalesOrder
 {
     return app(SalesOrderServiceInterface::class)->createOrder([
         'tenant_id' => $tenantId, 'contact_id' => $customerId, 'order_number' => $number,

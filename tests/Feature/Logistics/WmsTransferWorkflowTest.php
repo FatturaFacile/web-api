@@ -28,14 +28,14 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     $this->seed(TranslationSeeder::class);
     app()->setLocale('en');
-    ['tenant' => $this->tenant, 'user' => $this->user] = logisticsTenant('WMS');
+    ['tenant' => $this->tenant, 'user' => $this->user] = wmsTenant('WMS');
     app(TenantContext::class)->setTenant($this->tenant);
     $this->stock = app(WarehouseStockService::class);
     $this->transfers = app(StockTransferService::class);
     $this->consignment = app(ConsignmentService::class);
-    $this->product = logisticsProduct($this->tenant->id, 'WMS-1', 10, 30);
-    $this->main = logisticsWarehouse($this->tenant->id, 'MAIN');
-    $this->branch = logisticsWarehouse($this->tenant->id, 'BRANCH');
+    $this->product = wmsProduct($this->tenant->id, 'WMS-1', 10, 30);
+    $this->main = wmsWarehouse($this->tenant->id, 'MAIN');
+    $this->branch = wmsWarehouse($this->tenant->id, 'BRANCH');
     $this->stock->receiveOpeningStock($this->main->id, $this->product->id, 100);
 });
 
@@ -77,10 +77,10 @@ test('state machine: ship requires approval, cancel works before dispatch and cl
 });
 
 test('ledger entries carry legal ownership, third party and in-transit tracking separate from the physical location', function (): void {
-    $customer = logisticsCustomer($this->tenant->id);
-    $deposit = logisticsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
+    $customer = wmsCustomer($this->tenant->id);
+    $deposit = wmsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
     $supplierId = (string) Str::uuid7();
-    $terzista = logisticsWarehouse($this->tenant->id, 'TERZISTA', ['warehouse_type' => 'subcontractor', 'linked_partner_id' => $supplierId]);
+    $terzista = wmsWarehouse($this->tenant->id, 'TERZISTA', ['warehouse_type' => 'subcontractor', 'linked_partner_id' => $supplierId]);
 
     $toCustomer = $this->transfers->receive($this->transfers->ship(wmsTransfer($this, 'customer_consignment', $this->main->id, $deposit->id, 10)));
     $this->transfers->receive($this->transfers->ship(wmsTransfer($this, 'subcontracting', $this->main->id, $terzista->id, 7)));
@@ -97,7 +97,7 @@ test('ledger entries carry legal ownership, third party and in-transit tracking 
     $atTerzista = StockMovement::query()->where('warehouse_id', $terzista->id)->first();
     expect($atTerzista->ownership_type)->toBe('subcontractor_held')->and($atTerzista->third_party_id)->toBe($supplierId);
 
-    $vendorWh = logisticsWarehouse($this->tenant->id, 'VEND', ['warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => (string) Str::uuid7()]);
+    $vendorWh = wmsWarehouse($this->tenant->id, 'VEND', ['warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => (string) Str::uuid7()]);
     $this->consignment->receiveVendorStock($vendorWh->id, [['product_id' => $this->product->id, 'quantity' => 4]]);
     expect(StockMovement::query()->where('warehouse_id', $vendorWh->id)->value('ownership_type'))->toBe('vendor_consignment');
 });
@@ -167,9 +167,9 @@ test('damaged units are quarantined in transit and reconciled together with shor
 test('inter-company transfers draft the inter-company invoice through Domain 01 and enforce entity rules', function (): void {
     $entityA = (string) Str::uuid7();
     $entityB = (string) Str::uuid7();
-    $buyer = logisticsCustomer($this->tenant->id, 'Group Company B Srl');
+    $buyer = wmsCustomer($this->tenant->id, 'Group Company B Srl');
     $this->main->update(['company_entity_id' => $entityA]);
-    $groupB = logisticsWarehouse($this->tenant->id, 'GROUP-B', ['company_entity_id' => $entityB, 'linked_partner_id' => $buyer->id]);
+    $groupB = wmsWarehouse($this->tenant->id, 'GROUP-B', ['company_entity_id' => $entityB, 'linked_partner_id' => $buyer->id]);
 
     $order = $this->transfers->ship(wmsTransfer($this, 'inter_company', $this->main->id, $groupB->id, 10));
 
@@ -185,24 +185,24 @@ test('inter-company transfers draft the inter-company invoice through Domain 01 
     // plain inter-warehouse moves never generate an invoice
     expect($this->transfers->ship(wmsTransfer($this, 'inter_warehouse', $this->main->id, $this->branch->id, 1))->inter_company_invoice_id)->toBeNull();
 
-    $sameEntity = logisticsWarehouse($this->tenant->id, 'GROUP-A2', ['company_entity_id' => $entityA, 'linked_partner_id' => $buyer->id]);
+    $sameEntity = wmsWarehouse($this->tenant->id, 'GROUP-A2', ['company_entity_id' => $entityA, 'linked_partner_id' => $buyer->id]);
     expect(fn () => wmsTransfer($this, 'inter_company', $this->main->id, $sameEntity->id))->toThrow(DomainException::class, 'different legal entities');
-    $noPartner = logisticsWarehouse($this->tenant->id, 'GROUP-C', ['company_entity_id' => (string) Str::uuid7()]);
+    $noPartner = wmsWarehouse($this->tenant->id, 'GROUP-C', ['company_entity_id' => (string) Str::uuid7()]);
     expect(fn () => wmsTransfer($this, 'inter_company', $this->main->id, $noPartner->id))->toThrow(DomainException::class, 'linked partner');
 });
 
 test('every movement type produces its DDT with the fiscal transport reason and progressive numbering', function (): void {
-    $customer = logisticsCustomer($this->tenant->id);
-    $deposit = logisticsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
+    $customer = wmsCustomer($this->tenant->id);
+    $deposit = wmsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
     $supplierId = (string) Str::uuid7();
-    $terzista = logisticsWarehouse($this->tenant->id, 'TERZISTA', ['warehouse_type' => 'subcontractor', 'linked_partner_id' => $supplierId]);
+    $terzista = wmsWarehouse($this->tenant->id, 'TERZISTA', ['warehouse_type' => 'subcontractor', 'linked_partner_id' => $supplierId]);
     $year = now()->format('Y');
 
     $ddt = fn (StockTransferOrder $o) => SalesDeliveryNote::findOrFail($o->delivery_note_id);
     $run = fn (string $purpose, string $from, string $to, float $qty) => $this->transfers->receive($this->transfers->ship(wmsTransfer($this, $purpose, $from, $to, $qty)));
 
     $internal = $ddt($run('inter_warehouse', $this->main->id, $this->branch->id, 5));
-    $internal2 = $ddt($run('technician_van', $this->main->id, logisticsWarehouse($this->tenant->id, 'VAN', ['warehouse_type' => 'mobile_van'])->id, 5));
+    $internal2 = $ddt($run('technician_van', $this->main->id, wmsWarehouse($this->tenant->id, 'VAN', ['warehouse_type' => 'mobile_van'])->id, 5));
     $consign = $ddt($run('customer_consignment', $this->main->id, $deposit->id, 20));
     $consignReturn = $ddt($run('consignment_return', $deposit->id, $this->branch->id, 5));
     $subOut = $ddt($run('subcontracting', $this->main->id, $terzista->id, 10));
@@ -229,10 +229,10 @@ test('every movement type produces its DDT with the fiscal transport reason and 
 });
 
 test('valuation segregates owned on-hand, in-transit, at customer, at subcontractor and vendor consignment held stock', function (): void {
-    $customer = logisticsCustomer($this->tenant->id);
-    $deposit = logisticsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
-    $terzista = logisticsWarehouse($this->tenant->id, 'TERZISTA', ['warehouse_type' => 'subcontractor', 'linked_partner_id' => (string) Str::uuid7()]);
-    $vendorWh = logisticsWarehouse($this->tenant->id, 'VEND', ['warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => (string) Str::uuid7()]);
+    $customer = wmsCustomer($this->tenant->id);
+    $deposit = wmsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
+    $terzista = wmsWarehouse($this->tenant->id, 'TERZISTA', ['warehouse_type' => 'subcontractor', 'linked_partner_id' => (string) Str::uuid7()]);
+    $vendorWh = wmsWarehouse($this->tenant->id, 'VEND', ['warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => (string) Str::uuid7()]);
 
     $this->transfers->receive($this->transfers->ship(wmsTransfer($this, 'customer_consignment', $this->main->id, $deposit->id, 20)));   // 200 at customer
     $this->transfers->receive($this->transfers->ship(wmsTransfer($this, 'subcontracting', $this->main->id, $terzista->id, 10)));        // 100 at subcontractor
@@ -257,7 +257,7 @@ test('valuation segregates owned on-hand, in-transit, at customer, at subcontrac
 
 test('vendor consignment: receipt keeps vendor ownership, declaration shifts it to us and drafts the purchase document', function (): void {
     $supplier = Contact::create(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'company_name' => 'Fornitore Conto Deposito', 'type' => 'supplier', 'country' => 'IT']);
-    $vendorWh = logisticsWarehouse($this->tenant->id, 'VEND', ['warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => $supplier->id]);
+    $vendorWh = wmsWarehouse($this->tenant->id, 'VEND', ['warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => $supplier->id]);
 
     expect(fn () => $this->consignment->receiveVendorStock($this->main->id, [['product_id' => $this->product->id, 'quantity' => 1]]))->toThrow(DomainException::class);
     $this->consignment->receiveVendorStock($vendorWh->id, [['product_id' => $this->product->id, 'quantity' => 50]]);
@@ -286,8 +286,8 @@ test('vendor consignment: receipt keeps vendor ownership, declaration shifts it 
 });
 
 test('customer consignment declaration ships ownership to the customer and bills a draft sales invoice', function (): void {
-    $customer = logisticsCustomer($this->tenant->id);
-    $deposit = logisticsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
+    $customer = wmsCustomer($this->tenant->id);
+    $deposit = wmsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
     $this->transfers->receive($this->transfers->ship(wmsTransfer($this, 'customer_consignment', $this->main->id, $deposit->id, 30)));
 
     $declaration = $this->consignment->declareConsumption([
@@ -311,7 +311,7 @@ test('WMS API: approval is a manager permission, discrepancies resolve through t
     ], $h)->assertCreated()->assertJsonPath('data.status', 'draft')->json('data.id');
 
     // the warehouse operator can dispatch/receive but cannot approve or resolve
-    $operator = logisticsUserWithRole($this->tenant->id, 'warehouse_operator');
+    $operator = wmsUserWithRole($this->tenant->id, 'warehouse_operator');
     Sanctum::actingAs($operator);
     $this->postJson("/api/v1/wms/transfers/{$id}/approve", [], $h)->assertForbidden()->assertJsonPath('required_permission', 'logistics.transfers.approve');
     $this->getJson('/api/v1/wms/transfers?status=draft', $h)->assertOk()->assertJsonCount(1, 'data');
@@ -343,8 +343,8 @@ test('WMS API: approval is a manager permission, discrepancies resolve through t
 });
 
 test('WMS API: third-party register, valuation report, agreements and declarations', function (): void {
-    $customer = logisticsCustomer($this->tenant->id);
-    $deposit = logisticsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
+    $customer = wmsCustomer($this->tenant->id);
+    $deposit = wmsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
     $this->transfers->receive($this->transfers->ship(wmsTransfer($this, 'customer_consignment', $this->main->id, $deposit->id, 30)));
     Sanctum::actingAs($this->user);
     $h = ['X-Tenant-Id' => $this->tenant->id];
@@ -365,7 +365,7 @@ test('WMS API: third-party register, valuation report, agreements and declaratio
     ], $h)->assertCreated()->assertJsonPath('data.status', 'posted')->assertJsonPath('data.ownership_to', 'transferred_to_customer');
     $this->getJson('/api/v1/wms/consignment/declarations', $h)->assertOk()->assertJsonCount(1, 'data');
 
-    $vendorWh = logisticsWarehouse($this->tenant->id, 'VEND', ['warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => (string) Str::uuid7()]);
+    $vendorWh = wmsWarehouse($this->tenant->id, 'VEND', ['warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => (string) Str::uuid7()]);
     $this->postJson('/api/v1/wms/consignment/vendor-receipts', ['warehouse_id' => $vendorWh->id, 'lines' => [['product_id' => $this->product->id, 'quantity' => 9]]], $h)->assertCreated();
     $this->getJson('/api/v1/wms/reports/third-party-register', $h)->assertOk()->assertJsonPath('data.valuation.buckets.third_party_vendor_consignment_held', 90);
 
@@ -374,8 +374,8 @@ test('WMS API: third-party register, valuation report, agreements and declaratio
 });
 
 test('multi-tenant isolation: transfers, discrepancies, declarations, agreements and registers never leak across tenants', function (): void {
-    $customer = logisticsCustomer($this->tenant->id);
-    $deposit = logisticsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
+    $customer = wmsCustomer($this->tenant->id);
+    $deposit = wmsWarehouse($this->tenant->id, 'CLI-DEP', ['warehouse_type' => 'customer_consignment', 'linked_partner_id' => $customer->id]);
     $order = $this->transfers->receive($this->transfers->ship(wmsTransfer($this, 'customer_consignment', $this->main->id, $deposit->id, 30)), [['line_id' => StockTransferOrder::query()->firstOrFail()->lines()->firstOrFail()->id, 'received_qty' => 28]]);
     $discrepancy = $order->discrepancies->first();
     $declaration = $this->consignment->declareConsumption([
@@ -383,7 +383,7 @@ test('multi-tenant isolation: transfers, discrepancies, declarations, agreements
     ], [['product_id' => $this->product->id, 'quantity' => 3]]);
     $agreement = $this->consignment->createAgreement(['warehouse_id' => $deposit->id, 'valid_from' => now()->toDateString()]);
 
-    ['tenant' => $other, 'user' => $intruder] = logisticsTenant('Other WMS');
+    ['tenant' => $other, 'user' => $intruder] = wmsTenant('Other WMS');
     Sanctum::actingAs($intruder);
     $h = ['X-Tenant-Id' => $other->id];
 

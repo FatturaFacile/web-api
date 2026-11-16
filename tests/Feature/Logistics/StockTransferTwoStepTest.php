@@ -20,13 +20,13 @@ use Modules\Logistics\Services\WarehouseStockService;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    ['tenant' => $this->tenant, 'user' => $this->user] = logisticsTenant('Transfers');
+    ['tenant' => $this->tenant, 'user' => $this->user] = wmsTenant('Transfers');
     app(TenantContext::class)->setTenant($this->tenant);
     $this->stock = app(WarehouseStockService::class);
     $this->transfers = app(StockTransferService::class);
-    $this->product = logisticsProduct($this->tenant->id, 'TR-1', 10, 30);
-    $this->main = logisticsWarehouse($this->tenant->id, 'MAIN');
-    $this->branch = logisticsWarehouse($this->tenant->id, 'BRANCH');
+    $this->product = wmsProduct($this->tenant->id, 'TR-1', 10, 30);
+    $this->main = wmsWarehouse($this->tenant->id, 'MAIN');
+    $this->branch = wmsWarehouse($this->tenant->id, 'BRANCH');
     $this->stock->receiveOpeningStock($this->main->id, $this->product->id, 100);
 });
 
@@ -144,7 +144,7 @@ test('inter-company transfers raise the intercompany domain hook', function (): 
     $entityA = (string) Str::uuid7();
     $entityB = (string) Str::uuid7();
     $this->main->update(['company_entity_id' => $entityA]);
-    $other = logisticsWarehouse($this->tenant->id, 'GROUP-B', ['company_entity_id' => $entityB]);
+    $other = wmsWarehouse($this->tenant->id, 'GROUP-B', ['company_entity_id' => $entityB]);
 
     $order = $this->transfers->ship(draftTransfer($this, 5, 'inter_warehouse', $other->id));
 
@@ -152,14 +152,14 @@ test('inter-company transfers raise the intercompany domain hook', function (): 
     Event::assertDispatched(InterCompanyTransferShipped::class, fn ($e) => $e->fromCompanyEntityId === $entityA && $e->toCompanyEntityId === $entityB && $e->transferId === $order->id);
 
     // same entity: no hook
-    $same = logisticsWarehouse($this->tenant->id, 'GROUP-A2', ['company_entity_id' => $entityA]);
+    $same = wmsWarehouse($this->tenant->id, 'GROUP-A2', ['company_entity_id' => $entityA]);
     $o2 = $this->transfers->ship(draftTransfer($this, 5, 'inter_warehouse', $same->id));
     expect($o2->is_inter_company)->toBeFalse();
 });
 
 test('subcontracting transfer produces a conto lavoro DDT addressed to the subcontractor', function (): void {
     $supplierId = (string) Str::uuid7();
-    $sub = logisticsWarehouse($this->tenant->id, 'TERZISTA', ['warehouse_type' => 'subcontractor', 'linked_partner_id' => $supplierId]);
+    $sub = wmsWarehouse($this->tenant->id, 'TERZISTA', ['warehouse_type' => 'subcontractor', 'linked_partner_id' => $supplierId]);
 
     $order = $this->transfers->ship(draftTransfer($this, 20, 'subcontracting', $sub->id));
     $ddt = SalesDeliveryNote::findOrFail($order->delivery_note_id);
