@@ -348,7 +348,8 @@ test('lookups feed the wizard with tenant-scoped data and an envelope the fronte
     $this->ddt->createFromOrders([['sales_order_id' => $order->id, 'items' => [['sales_order_item_id' => $order->items->first()->id, 'quantity' => 4]]]]);
     lifecycleDraft($this);
     ['tenant' => $other] = logisticsTenant('Other LK');
-    logisticsProduct($other->id, 'OTHER-SKU');
+    // BelongsToTenant forces the active tenant on create, so build the foreign product inside its own tenant context
+    app(TenantContext::class)->runWithTenant($other, fn () => logisticsProduct($other->id, 'OTHER-SKU'));
 
     Sanctum::actingAs($this->user);
     $h = ['X-Tenant-Id' => $this->tenant->id];
