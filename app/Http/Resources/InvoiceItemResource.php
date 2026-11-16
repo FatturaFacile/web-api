@@ -27,6 +27,9 @@ class InvoiceItemResource extends JsonResource
             'tax_rate' => (float) $this->tax_rate,
             'discount_percentage' => (float) $this->discount_percentage,
             'line_total' => (float) $this->line_total,
+            'natura' => $this->natura,
+            'withholding_applies' => $this->withholding_applies ?? true,
+            'fund_applies' => $this->fund_applies ?? true,
         ];
     }
 }

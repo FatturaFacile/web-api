@@ -22,6 +22,9 @@ class InvoiceItem extends Model
         'tax_rate',
         'discount_percentage',
         'line_total',
+        'natura',
+        'withholding_applies',
+        'fund_applies',
     ];
 
     protected static function booted(): void
@@ -41,6 +44,8 @@ class InvoiceItem extends Model
             'tax_rate' => 'decimal:2',
             'discount_percentage' => 'decimal:2',
             'line_total' => 'decimal:2',
+            'withholding_applies' => 'boolean',
+            'fund_applies' => 'boolean',
         ];
     }
 
