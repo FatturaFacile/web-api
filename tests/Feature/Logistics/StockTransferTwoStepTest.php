@@ -7,30 +7,29 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\Inventory\Enums\DiscrepancyStatus;
 use Modules\Inventory\Models\StockMovement;
-use Modules\Inventory\Models\Warehouse;
+use Modules\Inventory\Models\TransferDiscrepancy;
+use Modules\Inventory\Models\TransferOrder;
 use Modules\Invoicing\Models\SalesDeliveryNote;
-use Modules\Logistics\Enums\DiscrepancyStatus;
 use Modules\Logistics\Events\InterCompanyTransferShipped;
-use Modules\Logistics\Models\StockTransferOrder;
-use Modules\Logistics\Models\TransferDiscrepancy;
 use Modules\Logistics\Services\StockTransferService;
 use Modules\Logistics\Services\WarehouseStockService;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    ['tenant' => $this->tenant, 'user' => $this->user] = wmsTenant('Transfers');
+    ['tenant' => $this->tenant, 'user' => $this->user] = tfrTenant('Transfers');
     app(TenantContext::class)->setTenant($this->tenant);
     $this->stock = app(WarehouseStockService::class);
     $this->transfers = app(StockTransferService::class);
-    $this->product = wmsProduct($this->tenant->id, 'TR-1', 10, 30);
-    $this->main = wmsWarehouse($this->tenant->id, 'MAIN');
-    $this->branch = wmsWarehouse($this->tenant->id, 'BRANCH');
+    $this->product = tfrProduct($this->tenant->id, 'TR-1', 10, 30);
+    $this->main = tfrWarehouse($this->tenant->id, 'MAIN');
+    $this->branch = tfrWarehouse($this->tenant->id, 'BRANCH');
     $this->stock->receiveOpeningStock($this->main->id, $this->product->id, 100);
 });
 
-function draftTransfer(object $t, float $qty = 40, string $purpose = 'inter_warehouse', ?string $destination = null): StockTransferOrder
+function draftTransfer(object $t, float $qty = 40, string $purpose = 'inter_warehouse', ?string $destination = null): TransferOrder
 {
     return $t->transfers->approve($t->transfers->create([
         'purpose' => $purpose,
@@ -41,15 +40,14 @@ function draftTransfer(object $t, float $qty = 40, string $purpose = 'inter_ware
 
 test('ship moves stock to the transit location and issues the transfer DDT', function (): void {
     $order = draftTransfer($this);
-    expect($order->status)->toBe('approved')->and($order->transfer_number)->toBe('TRF-'.now()->format('Y').'-00001');
+    expect($order->status)->toBe('approved')->and($order->transfer_number)->toBe('TO-'.now()->format('Y').'-0001');
 
     $shipped = $this->transfers->ship($order, ['carrier_name' => 'Furgone aziendale']);
 
-    $transit = Warehouse::query()->where('warehouse_type', 'transit')->firstOrFail();
     expect($shipped->status)->toBe('in_transit')
-        ->and($shipped->transit_warehouse_id)->toBe($transit->id)
+        ->and($shipped->transit_bin_id)->not->toBeNull()
         ->and($this->stock->onHand($this->main->id, $this->product->id))->toBe(60.0)
-        ->and($this->stock->onHand($transit->id, $this->product->id))->toBe(40.0)
+        ->and($this->stock->inTransitTo($this->branch->id, $this->product->id))->toBe(40.0)
         ->and($this->stock->onHand($this->branch->id, $this->product->id))->toBe(0.0);
 
     $ddt = SalesDeliveryNote::findOrFail($shipped->delivery_note_id);
@@ -64,7 +62,7 @@ test('ship moves stock to the transit location and issues the transfer DDT', fun
         ->and((float) $ddt->items->first()->quantity)->toBe(40.0);
 
     // The stock was moved exactly once (issuing the DDT must not duplicate the movement)
-    expect(StockMovement::query()->where('movement_type', 'transfer_ship_out')->count())->toBe(1);
+    expect(StockMovement::query()->where('movement_type', 'transfer_out')->count())->toBe(1);
 });
 
 test('full receipt moves stock from transit to destination and closes the transfer', function (): void {
@@ -74,7 +72,7 @@ test('full receipt moves stock from transit to destination and closes the transf
     expect($received->status)->toBe('received')
         ->and($received->discrepancies)->toHaveCount(0)
         ->and($this->stock->onHand($this->branch->id, $this->product->id))->toBe(40.0)
-        ->and($this->stock->onHand($received->transit_warehouse_id, $this->product->id))->toBe(0.0)
+        ->and($this->stock->inTransitTo($this->branch->id, $this->product->id))->toBe(0.0)
         ->and(SalesDeliveryNote::find($received->delivery_note_id)->status)->toBe('delivered');
 });
 
@@ -92,7 +90,7 @@ test('short receipt creates a discrepancy and corrective movements happen only a
         ->and($received->discrepancies->first()->status)->toBe('pending_approval')
         // nothing corrective yet: the missing 5 units stay on the transit location
         ->and($this->stock->onHand($this->branch->id, $this->product->id))->toBe(35.0)
-        ->and($this->stock->onHand($transitId, $this->product->id))->toBe(5.0)
+        ->and($this->stock->inTransitTo($this->branch->id, $this->product->id))->toBe(5.0)
         ->and(StockMovement::query()->where('movement_type', 'like', 'transfer_write_off%')->count())->toBe(0);
 
     $discrepancy = $received->discrepancies->first();
@@ -100,12 +98,12 @@ test('short receipt creates a discrepancy and corrective movements happen only a
 
     expect($resolved->status)->toBe('approved_write_off')
         ->and($resolved->resolved_at)->not->toBeNull()
-        ->and($this->stock->onHand($transitId, $this->product->id))->toBe(0.0)
-        ->and(StockMovement::query()->where('movement_type', 'transfer_write_off_out')->count())->toBe(1)
+        ->and($this->stock->inTransitTo($this->branch->id, $this->product->id))->toBe(0.0)
+        ->and(StockMovement::query()->where('movement_type', 'transfer_write_off')->count())->toBe(1)
         ->and($received->fresh()->status)->toBe('closed');
 
     // A resolved discrepancy cannot be resolved twice
-    expect(fn () => $this->transfers->resolveDiscrepancy($resolved, DiscrepancyStatus::CarrierClaim))->toThrow(DomainException::class);
+    expect(fn () => $this->transfers->resolveDiscrepancy($resolved, DiscrepancyStatus::CarrierClaim))->toThrow(Exception::class);
 });
 
 test('discrepancy can be returned to origin or claimed with the carrier', function (): void {
@@ -116,7 +114,7 @@ test('discrepancy can be returned to origin or claimed with the carrier', functi
 
     $this->transfers->resolveDiscrepancy($d, DiscrepancyStatus::ReturnedToOrigin);
     expect($this->stock->onHand($this->main->id, $this->product->id))->toBe(100.0)
-        ->and($this->stock->onHand($received->transit_warehouse_id, $this->product->id))->toBe(0.0);
+        ->and($this->stock->inTransitTo($this->branch->id, $this->product->id))->toBe(0.0);
 
     $second = $this->transfers->ship(draftTransfer($this, 10));
     $rec = $this->transfers->receive($second, [['line_id' => $second->lines->first()->id, 'received_qty' => 8]]);
@@ -126,15 +124,15 @@ test('discrepancy can be returned to origin or claimed with the carrier', functi
 });
 
 test('transfer guard rails: insufficient stock, over-receipt, wrong purpose and double shipping', function (): void {
-    expect(fn () => $this->transfers->ship(draftTransfer($this, 500)))->toThrow(DomainException::class, 'Insufficient stock');
+    expect(fn () => $this->transfers->ship(draftTransfer($this, 500)))->toThrow(Exception::class, 'Insufficient available stock');
     expect($this->stock->onHand($this->main->id, $this->product->id))->toBe(100.0); // rolled back
 
     $order = $this->transfers->ship(draftTransfer($this, 10));
-    expect(fn () => $this->transfers->ship($order))->toThrow(DomainException::class)
-        ->and(fn () => $this->transfers->receive($order, [['line_id' => $order->lines->first()->id, 'received_qty' => 11]]))->toThrow(DomainException::class);
+    expect(fn () => $this->transfers->ship($order))->toThrow(Exception::class)
+        ->and(fn () => $this->transfers->receive($order, [['line_id' => $order->lines->first()->id, 'received_qty' => 11]]))->toThrow(Exception::class);
 
     // consignment purpose needs a customer consignment destination
-    expect(fn () => draftTransfer($this, 1, 'customer_consignment'))->toThrow(DomainException::class);
+    expect(fn () => draftTransfer($this, 1, 'customer_consignment'))->toThrow(Exception::class);
     expect(fn () => $this->transfers->create(['purpose' => 'inter_warehouse', 'origin_warehouse_id' => $this->main->id, 'destination_warehouse_id' => $this->main->id], [['product_id' => $this->product->id, 'quantity' => 1]]))
         ->toThrow(InvalidArgumentException::class);
 });
@@ -144,7 +142,7 @@ test('inter-company transfers raise the intercompany domain hook', function (): 
     $entityA = (string) Str::uuid7();
     $entityB = (string) Str::uuid7();
     $this->main->update(['company_entity_id' => $entityA]);
-    $other = wmsWarehouse($this->tenant->id, 'GROUP-B', ['company_entity_id' => $entityB]);
+    $other = tfrWarehouse($this->tenant->id, 'GROUP-B', ['company_entity_id' => $entityB]);
 
     $order = $this->transfers->ship(draftTransfer($this, 5, 'inter_warehouse', $other->id));
 
@@ -152,14 +150,14 @@ test('inter-company transfers raise the intercompany domain hook', function (): 
     Event::assertDispatched(InterCompanyTransferShipped::class, fn ($e) => $e->fromCompanyEntityId === $entityA && $e->toCompanyEntityId === $entityB && $e->transferId === $order->id);
 
     // same entity: no hook
-    $same = wmsWarehouse($this->tenant->id, 'GROUP-A2', ['company_entity_id' => $entityA]);
+    $same = tfrWarehouse($this->tenant->id, 'GROUP-A2', ['company_entity_id' => $entityA]);
     $o2 = $this->transfers->ship(draftTransfer($this, 5, 'inter_warehouse', $same->id));
     expect($o2->is_inter_company)->toBeFalse();
 });
 
 test('subcontracting transfer produces a conto lavoro DDT addressed to the subcontractor', function (): void {
     $supplierId = (string) Str::uuid7();
-    $sub = wmsWarehouse($this->tenant->id, 'TERZISTA', ['warehouse_type' => 'subcontractor', 'linked_partner_id' => $supplierId]);
+    $sub = tfrWarehouse($this->tenant->id, 'TERZISTA', ['warehouse_type' => 'subcontractor', 'linked_partner_id' => $supplierId]);
 
     $order = $this->transfers->ship(draftTransfer($this, 20, 'subcontracting', $sub->id));
     $ddt = SalesDeliveryNote::findOrFail($order->delivery_note_id);

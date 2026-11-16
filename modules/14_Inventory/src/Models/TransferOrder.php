@@ -22,7 +22,7 @@ use Illuminate\Support\Carbon;
  */
 final class TransferOrder extends BaseEnterpriseModel
 {
-    public const array STATUSES = ['draft', 'in_transit', 'partially_received', 'received', 'cancelled'];
+    public const array STATUSES = ['draft', 'approved', 'in_transit', 'partially_received', 'received', 'discrepancy_pending', 'closed', 'cancelled'];
 
     protected $table = 'transfer_orders';
 
@@ -32,6 +32,9 @@ final class TransferOrder extends BaseEnterpriseModel
             'requested_date' => 'date',
             'shipped_at' => 'datetime',
             'received_at' => 'datetime',
+            'approved_at' => 'datetime',
+            'closed_at' => 'datetime',
+            'is_inter_company' => 'boolean',
         ];
     }
 
@@ -57,6 +60,14 @@ final class TransferOrder extends BaseEnterpriseModel
     public function transitBin(): BelongsTo
     {
         return $this->belongsTo(WarehouseBin::class, 'transit_bin_id');
+    }
+
+    /**
+     * @return HasMany<TransferDiscrepancy, $this>
+     */
+    public function discrepancies(): HasMany
+    {
+        return $this->hasMany(TransferDiscrepancy::class, 'transfer_order_id')->orderBy('id');
     }
 
     /**

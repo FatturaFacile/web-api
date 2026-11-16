@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Actions;
 
-use Modules\Logistics\Enums\DiscrepancyStatus;
-use Modules\Logistics\Models\TransferDiscrepancy;
+use Modules\Inventory\Enums\DiscrepancyStatus;
+use Modules\Inventory\Models\TransferDiscrepancy;
 use Modules\Logistics\Services\StockTransferService;
 
 final class ResolveTransferDiscrepancyAction
@@ -18,7 +18,7 @@ final class ResolveTransferDiscrepancyAction
     public function execute(string $discrepancyId, DiscrepancyStatus $resolution, ?string $userId, ?string $transferId = null): TransferDiscrepancy
     {
         $discrepancy = TransferDiscrepancy::query()
-            ->when($transferId !== null, fn ($q) => $q->where('stock_transfer_order_id', $transferId))
+            ->when($transferId !== null, fn ($q) => $q->where('transfer_order_id', $transferId))
             ->findOrFail($discrepancyId);
 
         return $this->transfers->resolveDiscrepancy($discrepancy, $resolution, $userId);

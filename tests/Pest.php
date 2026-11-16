@@ -1,15 +1,15 @@
 <?php
 
 declare(strict_types=1);
-use Carbon\CarbonImmutable;
-use Modules\GeneralLedger\Models\FiscalPeriod;
-use Modules\GeneralLedger\Models\FiscalYear;
 use App\Models\Contact;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Models\FiscalPeriod;
+use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
 use Modules\Invoicing\Models\SalesOrder;
@@ -97,7 +97,7 @@ function spaHeaders(): array
  *
  * @return array{tenant: Tenant, user: User}
  */
-function wmsTenant(string $name = 'Logistics Tenant', string $role = 'owner', ?array $permissions = null): array
+function tfrTenant(string $name = 'Logistics Tenant', string $role = 'owner', ?array $permissions = null): array
 {
     $tenant = Tenant::create([
         'id' => (string) Str::uuid7(),
@@ -128,7 +128,7 @@ function wmsTenant(string $name = 'Logistics Tenant', string $role = 'owner', ?a
     return ['tenant' => $tenant, 'user' => $user];
 }
 
-function wmsProduct(string $tenantId, string $sku, float $cost = 10.0, float $sale = 25.0): Product
+function tfrProduct(string $tenantId, string $sku, float $cost = 10.0, float $sale = 25.0): Product
 {
     return Product::create([
         'id' => (string) Str::uuid7(),
@@ -144,7 +144,7 @@ function wmsProduct(string $tenantId, string $sku, float $cost = 10.0, float $sa
 /**
  * @param  array<string, mixed>  $attributes
  */
-function wmsWarehouse(string $tenantId, string $code, array $attributes = []): Warehouse
+function tfrWarehouse(string $tenantId, string $code, array $attributes = []): Warehouse
 {
     return Warehouse::create(array_merge([
         'tenant_id' => $tenantId,
@@ -155,12 +155,12 @@ function wmsWarehouse(string $tenantId, string $code, array $attributes = []): W
     ], $attributes));
 }
 
-function wmsCustomer(string $tenantId, string $name = 'Cliente SpA'): Contact
+function tfrCustomer(string $tenantId, string $name = 'Cliente SpA'): Contact
 {
     return Contact::create(['id' => (string) Str::uuid7(), 'tenant_id' => $tenantId, 'company_name' => $name, 'type' => 'client', 'country' => 'IT']);
 }
 
-function wmsUserWithRole(string $tenantId, string $role): User
+function tfrUserWithRole(string $tenantId, string $role): User
 {
     $user = User::create([
         'id' => (string) Str::uuid7(),
@@ -181,7 +181,7 @@ function wmsUserWithRole(string $tenantId, string $role): User
     return $user;
 }
 
-function wmsOrder(string $tenantId, string $customerId, string $productId, float $qty, string $number): SalesOrder
+function tfrOrder(string $tenantId, string $customerId, string $productId, float $qty, string $number): SalesOrder
 {
     return app(SalesOrderServiceInterface::class)->createOrder([
         'tenant_id' => $tenantId, 'contact_id' => $customerId, 'order_number' => $number,

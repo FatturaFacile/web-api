@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Services;
 
-use App\Models\Product;
+use Modules\Inventory\Models\TransferOrder;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
-use Modules\Logistics\Models\StockTransferOrder;
 
 /**
  * Domain 01 bridge: a transfer between two legal entities of the same group is a sale between those entities,
@@ -20,22 +19,29 @@ final class InterCompanyInvoicingService
     /**
      * @return string|null id of the drafted invoice, null when the receiving warehouse has no partner to bill
      */
-    public function draftInvoice(StockTransferOrder $order, Warehouse $destination, string $deliveryNoteNumber): ?string
+    public function draftInvoice(TransferOrder $order, Warehouse $destination, string $deliveryNoteNumber): ?string
     {
         if ($destination->linked_partner_id === null) {
             return null;
         }
 
         $items = [];
-        foreach ($order->lines as $line) {
-            $product = Product::query()->findOrFail($line->product_id);
+        foreach ($order->lines()->with('item.product')->get() as $line) {
+            $product = $line->item?->product;
+            if ($product === null) {
+                continue;
+            }
             $items[] = [
                 'product_id' => (string) $product->id,
-                'description' => sprintf('%s (trasferimento infragruppo %s - DDT %s)', $line->description ?? $product->name, $order->transfer_number, $deliveryNoteNumber),
-                'quantity' => (float) $line->quantity,
+                'description' => sprintf('%s (trasferimento infragruppo %s - DDT %s)', $product->name, $order->transfer_number, $deliveryNoteNumber),
+                'quantity' => (float) $line->quantity_shipped,
                 'unit_price' => (float) $product->cost_price,
                 'tax_rate' => (float) $product->tax_rate,
             ];
+        }
+
+        if ($items === []) {
+            return null;
         }
 
         $invoice = $this->invoicing->createInvoice([

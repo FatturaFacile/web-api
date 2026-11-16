@@ -20,6 +20,7 @@ final class TransferOrderLineLot extends BaseEnterpriseModel
         return [
             'quantity_shipped' => 'decimal:4',
             'quantity_received' => 'decimal:4',
+            'quantity_resolved' => 'decimal:4',
         ];
     }
 

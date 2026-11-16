@@ -36,6 +36,10 @@ test('a transfer order ships into transit, keeps lots and is received in two rec
 
     expect($order['transfer_number'])->toStartWith('TO-');
 
+    // A transfer is dispatched only once a manager approved it.
+    $this->postJson("/api/v1/inventory/transfer-orders/{$order['id']}/ship")->assertStatus(422);
+    $this->postJson("/api/v1/inventory/transfer-orders/{$order['id']}/approve")->assertOk()->assertJsonPath('status', 'approved');
+
     $shipped = $this->postJson("/api/v1/inventory/transfer-orders/{$order['id']}/ship")->assertOk()->assertJsonPath('status', 'in_transit')->json();
     $transit = WarehouseBin::query()->findOrFail($shipped['transit_bin_id']);
 
@@ -71,10 +75,11 @@ test('a transfer that the source cannot cover ships nothing', function (): void 
         'lines' => [['stock_item_id' => $item->id, 'quantity' => 3]],
     ])->assertCreated()->json();
 
+    $this->postJson("/api/v1/inventory/transfer-orders/{$order['id']}/approve")->assertOk();
     $this->postJson("/api/v1/inventory/transfer-orders/{$order['id']}/ship")->assertStatus(422);
 
     expect(wmsOnHand($this->sourceBin, $item))->toBe('2.0000')
-        ->and(TransferOrder::query()->findOrFail($order['id'])->status)->toBe('draft');
+        ->and(TransferOrder::query()->findOrFail($order['id'])->status)->toBe('approved');
 
     $this->postJson("/api/v1/inventory/transfer-orders/{$order['id']}/cancel")->assertOk()->assertJsonPath('status', 'cancelled');
 });

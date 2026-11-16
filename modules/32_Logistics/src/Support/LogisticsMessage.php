@@ -43,9 +43,18 @@ final class LogisticsMessage
             }
         }
 
-        $global = Cache::rememberForever("translations_global_{$locale}", fn (): array => Translation::query()
-            ->whereNull('tenant_id')->where('locale', $locale)->pluck('value', 'key')->map(fn ($v): string => (string) $v)->all());
+        $cacheKey = "logistics_messages_global_{$locale}";
+        $global = Cache::get($cacheKey);
 
-        return is_array($global) && isset($global[$key]) && $global[$key] !== '' ? $global[$key] : null;
+        // A dictionary that does not hold the key is reloaded: translations may have been seeded after it was cached.
+        if (! is_array($global) || ! isset($global[$key])) {
+            $global = Translation::query()
+                ->whereNull('tenant_id')->where('locale', $locale)->pluck('value', 'key')->map(fn ($v): string => (string) $v)->all();
+            if ($global !== []) {
+                Cache::put($cacheKey, $global, 300);
+            }
+        }
+
+        return isset($global[$key]) && $global[$key] !== '' ? $global[$key] : null;
     }
 }

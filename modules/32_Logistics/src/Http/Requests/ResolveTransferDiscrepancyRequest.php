@@ -6,7 +6,7 @@ namespace Modules\Logistics\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Modules\Logistics\Enums\DiscrepancyStatus;
+use Modules\Inventory\Enums\DiscrepancyStatus;
 
 /** Authorization is enforced per route by the logistics.can middleware (RBAC matrix). */
 final class ResolveTransferDiscrepancyRequest extends FormRequest

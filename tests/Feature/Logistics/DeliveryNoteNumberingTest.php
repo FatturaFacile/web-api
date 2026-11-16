@@ -13,7 +13,7 @@ use Modules\Logistics\Services\DeliveryNoteService;
 uses(RefreshDatabase::class);
 
 test('DDT numbers are progressive per tenant, fiscal year and numbering section', function (): void {
-    ['tenant' => $tenant] = wmsTenant('Numbering A');
+    ['tenant' => $tenant] = tfrTenant('Numbering A');
     app(TenantContext::class)->setTenant($tenant);
     $numbering = app(DeliveryNoteNumberingService::class);
     $year = (int) now()->format('Y');
@@ -28,8 +28,8 @@ test('DDT numbers are progressive per tenant, fiscal year and numbering section'
 });
 
 test('numbering sequences are isolated between tenants', function (): void {
-    ['tenant' => $a] = wmsTenant('Tenant A');
-    ['tenant' => $b] = wmsTenant('Tenant B');
+    ['tenant' => $a] = tfrTenant('Tenant A');
+    ['tenant' => $b] = tfrTenant('Tenant B');
     $numbering = app(DeliveryNoteNumberingService::class);
     $year = (int) now()->format('Y');
 
@@ -45,10 +45,10 @@ test('numbering sequences are isolated between tenants', function (): void {
 });
 
 test('creating delivery notes assigns the dedicated number and the default transport reason', function (): void {
-    ['tenant' => $tenant] = wmsTenant('Create DDT');
+    ['tenant' => $tenant] = tfrTenant('Create DDT');
     app(TenantContext::class)->setTenant($tenant);
-    $customer = wmsCustomer($tenant->id);
-    $product = wmsProduct($tenant->id, 'SKU-1');
+    $customer = tfrCustomer($tenant->id);
+    $product = tfrProduct($tenant->id, 'SKU-1');
 
     $note = app(DeliveryNoteService::class)->create([
         'type' => 'outbound_sale',
@@ -69,11 +69,11 @@ test('creating delivery notes assigns the dedicated number and the default trans
 });
 
 test('delivery note API isolates tenants and enforces permissions', function (): void {
-    ['tenant' => $a, 'user' => $userA] = wmsTenant('API A');
-    ['tenant' => $b, 'user' => $userB] = wmsTenant('API B');
+    ['tenant' => $a, 'user' => $userA] = tfrTenant('API A');
+    ['tenant' => $b, 'user' => $userB] = tfrTenant('API B');
 
     app(TenantContext::class)->setTenant($a);
-    $customerA = wmsCustomer($a->id);
+    $customerA = tfrCustomer($a->id);
     $noteA = app(DeliveryNoteService::class)->create(['type' => 'outbound_sale', 'contact_id' => $customerA->id], [['description' => 'Item', 'quantity' => 1]]);
     app(TenantContext::class)->clear();
 
@@ -88,7 +88,7 @@ test('delivery note API isolates tenants and enforces permissions', function ():
 });
 
 test('granular permissions protect every logistics endpoint', function (): void {
-    ['tenant' => $tenant, 'user' => $viewer] = wmsTenant('RBAC', 'member', ['delivery_notes.view']);
+    ['tenant' => $tenant, 'user' => $viewer] = tfrTenant('RBAC', 'member', ['delivery_notes.view']);
 
     Sanctum::actingAs($viewer);
     $headers = ['X-Tenant-Id' => $tenant->id];
@@ -102,7 +102,7 @@ test('granular permissions protect every logistics endpoint', function (): void 
     $this->getJson('/api/v1/logistics/consignment/ledger', $headers)->assertOk();
 
     // Wildcard permission grants everything
-    ['tenant' => $t2, 'user' => $manager] = wmsTenant('RBAC wildcard', 'member', ['logistics.*']);
+    ['tenant' => $t2, 'user' => $manager] = tfrTenant('RBAC wildcard', 'member', ['logistics.*']);
     Sanctum::actingAs($manager);
     $this->getJson('/api/v1/logistics/transfers', ['X-Tenant-Id' => $t2->id])->assertOk();
 });

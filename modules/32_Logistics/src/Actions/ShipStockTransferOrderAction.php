@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Actions;
 
-use Modules\Logistics\Models\StockTransferOrder;
+use Modules\Inventory\Models\TransferOrder;
 use Modules\Logistics\Services\StockTransferService;
 
 final class ShipStockTransferOrderAction
@@ -16,8 +16,8 @@ final class ShipStockTransferOrderAction
      *
      * @param  array<string, mixed>  $deliveryData
      */
-    public function execute(string $transferId, array $deliveryData = []): StockTransferOrder
+    public function execute(string $transferId, array $deliveryData = []): TransferOrder
     {
-        return $this->transfers->ship(StockTransferOrder::query()->findOrFail($transferId), $deliveryData);
+        return $this->transfers->ship(TransferOrder::query()->findOrFail($transferId), $deliveryData);
     }
 }

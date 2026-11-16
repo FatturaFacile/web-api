@@ -10,9 +10,10 @@ use Modules\Logistics\Enums\LegalOwnerType;
 use Modules\Logistics\Enums\WarehouseType;
 
 /**
- * Fiscal inventory valuation segregated by legal ownership and physical location:
- * owned on-hand, owned in transit, owned at customer consignment, owned at subcontractor (all balance-sheet assets)
- * and third-party vendor consignment held in our premises (never an asset).
+ * Fiscal inventory valuation segregated by legal ownership and physical location, from the quants of the inventory
+ * module at the moving average cost of the stock item: owned on-hand, owned in transit (transit bins), owned at customer
+ * consignment, owned at subcontractor (all balance-sheet assets) and third-party vendor consignment held in our premises
+ * (never an asset).
  */
 final class InventoryValuationReportQuery
 {
@@ -39,14 +40,18 @@ final class InventoryValuationReportQuery
      */
     public function execute(): array
     {
-        $rows = DB::table('warehouse_stock_levels as l')
-            ->join('warehouses as w', 'w.id', '=', 'l.warehouse_id')
-            ->join('products as p', 'p.id', '=', 'l.product_id')
-            ->where('l.tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('l.deleted_at')
+        $rows = DB::table('stock_quants as q')
+            ->join('stock_items as i', 'i.id', '=', 'q.stock_item_id')
+            ->join('warehouse_bins as b', 'b.id', '=', 'q.warehouse_bin_id')
+            ->join('warehouse_racks as r', 'r.id', '=', 'b.warehouse_rack_id')
+            ->join('warehouse_aisles as a', 'a.id', '=', 'r.warehouse_aisle_id')
+            ->join('warehouse_zones as z', 'z.id', '=', 'a.warehouse_zone_id')
+            ->join('warehouses as w', 'w.id', '=', 'z.warehouse_id')
+            ->where('q.tenant_id', $this->tenantContext->getTenantId())
+            ->whereNull('q.deleted_at')
             ->whereNull('w.deleted_at')
-            ->selectRaw('w.id as warehouse_id, w.code as warehouse_code, w.warehouse_type as warehouse_type, w.legal_owner_type as legal_owner_type, SUM(l.quantity_on_hand * p.cost_price) as value')
-            ->groupBy('w.id', 'w.code', 'w.warehouse_type', 'w.legal_owner_type')
+            ->selectRaw('w.id as warehouse_id, w.code as warehouse_code, w.warehouse_type as warehouse_type, w.legal_owner_type as legal_owner_type, z.zone_type as zone_type, SUM(q.quantity_on_hand * COALESCE(NULLIF(i.current_moving_average_cost, 0), i.standard_cost, 0)) as value')
+            ->groupBy('w.id', 'w.code', 'w.warehouse_type', 'w.legal_owner_type', 'z.zone_type')
             ->get();
 
         $buckets = [
@@ -60,11 +65,12 @@ final class InventoryValuationReportQuery
         $byWarehouse = [];
         foreach ($rows as $row) {
             $value = round((float) $row->value, 2);
-            $bucket = $this->bucketFor((string) $row->warehouse_type, (string) $row->legal_owner_type);
+            $bucket = $this->bucketFor((string) $row->warehouse_type, (string) $row->legal_owner_type, (string) $row->zone_type === 'transit');
             $buckets[$bucket] = round($buckets[$bucket] + $value, 2);
             $onBalanceSheet = $bucket !== self::BUCKET_VENDOR_CONSIGNMENT_HELD;
             if ($onBalanceSheet) {
-                $byType[$row->warehouse_type] = round(($byType[$row->warehouse_type] ?? 0.0) + $value, 2);
+                $type = $bucket === self::BUCKET_OWNED_IN_TRANSIT ? WarehouseType::Transit->value : (string) $row->warehouse_type;
+                $byType[$type] = round(($byType[$type] ?? 0.0) + $value, 2);
             }
             $byWarehouse[] = [
                 'warehouse_id' => $row->warehouse_id,
@@ -88,14 +94,16 @@ final class InventoryValuationReportQuery
         ];
     }
 
-    private function bucketFor(string $warehouseType, string $legalOwnerType): string
+    private function bucketFor(string $warehouseType, string $legalOwnerType, bool $inTransitBin): string
     {
         if ($warehouseType === WarehouseType::VendorConsignment->value || $legalOwnerType !== LegalOwnerType::Company->value) {
             return self::BUCKET_VENDOR_CONSIGNMENT_HELD;
         }
+        if ($inTransitBin) {
+            return self::BUCKET_OWNED_IN_TRANSIT;
+        }
 
         return match ($warehouseType) {
-            WarehouseType::Transit->value => self::BUCKET_OWNED_IN_TRANSIT,
             WarehouseType::CustomerConsignment->value => self::BUCKET_OWNED_AT_CUSTOMER,
             WarehouseType::Subcontractor->value => self::BUCKET_OWNED_AT_SUBCONTRACTOR,
             default => self::BUCKET_OWNED_ON_HAND,

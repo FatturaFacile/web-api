@@ -110,6 +110,38 @@ final class TransferOrderController extends Controller
     }
 
     #[OA\Post(
+        path: '/api/v1/inventory/transfer-orders/{id}/approve',
+        operationId: 'wmsApproveTransferOrder',
+        summary: 'Approve a transfer order',
+        description: 'Manager sign-off of a draft transfer order: only an approved order can be shipped.',
+        tags: ['Inventory Transfer Orders'],
+        responses: [
+            new OA\Response(response: 200, description: 'The approved transfer order'),
+            new OA\Response(response: 422, description: 'The order is not a draft'),
+        ]
+    )]
+    public function approve(string $id, TransferOrderService $transfers): JsonResponse
+    {
+        return response()->json(self::order($transfers->approve(TransferOrder::query()->findOrFail($id), (string) auth()->id())));
+    }
+
+    #[OA\Post(
+        path: '/api/v1/inventory/transfer-orders/{id}/close',
+        operationId: 'wmsCloseTransferOrder',
+        summary: 'Close a received transfer order',
+        description: 'Closes a fully received transfer order. An order with discrepancies closes with the resolution of the last one.',
+        tags: ['Inventory Transfer Orders'],
+        responses: [
+            new OA\Response(response: 200, description: 'The closed transfer order'),
+            new OA\Response(response: 422, description: 'The order is not received'),
+        ]
+    )]
+    public function close(string $id, TransferOrderService $transfers): JsonResponse
+    {
+        return response()->json(self::order($transfers->close(TransferOrder::query()->findOrFail($id))));
+    }
+
+    #[OA\Post(
         path: '/api/v1/inventory/transfer-orders/{id}/ship',
         operationId: 'wmsShipTransferOrder',
         summary: 'Ship a transfer order',
@@ -190,6 +222,12 @@ final class TransferOrderController extends Controller
             'destination_warehouse_id' => (string) $order->destination_warehouse_id,
             'transit_bin_id' => $order->transit_bin_id,
             'status' => (string) $order->status,
+            'purpose' => (string) $order->purpose,
+            'is_inter_company' => (bool) $order->is_inter_company,
+            'delivery_note_id' => $order->delivery_note_id,
+            'inter_company_invoice_id' => $order->inter_company_invoice_id,
+            'approved_at' => $order->approved_at?->toIso8601String(),
+            'closed_at' => $order->closed_at?->toIso8601String(),
             'requested_date' => $order->requested_date?->toDateString(),
             'shipped_at' => $order->shipped_at?->toIso8601String(),
             'received_at' => $order->received_at?->toIso8601String(),
@@ -201,7 +239,8 @@ final class TransferOrderController extends Controller
                 'quantity' => Quantity::of((string) $line->quantity),
                 'quantity_shipped' => Quantity::of((string) $line->quantity_shipped),
                 'quantity_received' => Quantity::of((string) $line->quantity_received),
-                'quantity_in_transit' => Quantity::sub((string) $line->quantity_shipped, (string) $line->quantity_received),
+                'quantity_damaged' => Quantity::of((string) $line->quantity_damaged),
+                'quantity_in_transit' => Quantity::sub(Quantity::sub((string) $line->quantity_shipped, (string) $line->quantity_received), (string) $line->quantity_damaged),
                 'shipped_lots' => $line->shippedLots->map(static fn (TransferOrderLineLot $lot): array => [
                     'lot_id' => $lot->lot_id,
                     'quantity_shipped' => Quantity::of((string) $lot->quantity_shipped),

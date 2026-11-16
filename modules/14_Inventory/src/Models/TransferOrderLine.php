@@ -23,6 +23,8 @@ final class TransferOrderLine extends BaseEnterpriseModel
             'quantity' => 'decimal:4',
             'quantity_shipped' => 'decimal:4',
             'quantity_received' => 'decimal:4',
+            'quantity_damaged' => 'decimal:4',
+            'discrepancy_qty' => 'decimal:4',
         ];
     }
 

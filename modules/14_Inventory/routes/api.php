@@ -185,6 +185,8 @@ Route::prefix('api/v1/inventory')
         Route::get('transfer-orders', [TransferOrderController::class, 'index'])->name('inventory.transfer-orders.index');
         Route::post('transfer-orders', [TransferOrderController::class, 'store'])->name('inventory.transfer-orders.store');
         Route::get('transfer-orders/{id}', [TransferOrderController::class, 'show'])->name('inventory.transfer-orders.show');
+        Route::post('transfer-orders/{id}/approve', [TransferOrderController::class, 'approve'])->name('inventory.transfer-orders.approve');
+        Route::post('transfer-orders/{id}/close', [TransferOrderController::class, 'close'])->name('inventory.transfer-orders.close');
         Route::post('transfer-orders/{id}/ship', [TransferOrderController::class, 'ship'])->name('inventory.transfer-orders.ship');
         Route::post('transfer-orders/{id}/receive', [TransferOrderController::class, 'receive'])->name('inventory.transfer-orders.receive');
         Route::post('transfer-orders/{id}/cancel', [TransferOrderController::class, 'cancel'])->name('inventory.transfer-orders.cancel');

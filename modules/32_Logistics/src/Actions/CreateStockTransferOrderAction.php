@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Actions;
 
-use Modules\Logistics\Models\StockTransferOrder;
+use Modules\Inventory\Models\TransferOrder;
 use Modules\Logistics\Services\StockTransferService;
 
 final class CreateStockTransferOrderAction
@@ -14,7 +14,7 @@ final class CreateStockTransferOrderAction
     /**
      * @param  array<string, mixed>  $data  validated payload including `lines`
      */
-    public function execute(array $data): StockTransferOrder
+    public function execute(array $data): TransferOrder
     {
         /** @var list<array{product_id: string, quantity: float|int|string, description?: string}> $lines */
         $lines = $data['lines'];

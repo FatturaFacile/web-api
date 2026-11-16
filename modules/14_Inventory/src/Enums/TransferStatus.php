@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Logistics\Enums;
+namespace Modules\Inventory\Enums;
 
 /**
  * Transfer order state machine:

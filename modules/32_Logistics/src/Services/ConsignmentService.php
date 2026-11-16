@@ -7,11 +7,14 @@ namespace Modules\Logistics\Services;
 use App\Models\Product;
 use App\Services\Tenancy\TenantContext;
 use DomainException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovement;
+use Modules\Inventory\Models\TransferOrder;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
 use Modules\Invoicing\Models\SalesDeliveryNote;
@@ -22,11 +25,11 @@ use Modules\Logistics\Events\ConsignmentConsumptionPosted;
 use Modules\Logistics\Models\ConsignmentAgreement;
 use Modules\Logistics\Models\ConsignmentConsumptionDeclaration;
 use Modules\Logistics\Models\ConsignmentConsumptionDeclarationLine;
-use Modules\Logistics\Models\StockTransferOrder;
 use Modules\Logistics\Queries\InventoryValuationReportQuery;
 use Modules\Logistics\Support\LogisticsMessage;
 use Modules\Procurement\Contracts\ProcurementServiceInterface;
 use Modules\Procurement\DTOs\CreatePurchaseOrderDTO;
+use Modules\Procurement\Models\Supplier;
 
 /**
  * Register of goods held by third parties (customer consignment, subcontractors) and goods of third parties held by us
@@ -57,20 +60,21 @@ final class ConsignmentService
 
         $result = [];
         foreach ($warehouses as $warehouse) {
-            $movements = StockMovement::query()->where('warehouse_id', $warehouse->id)->orderBy('executed_at')->get();
-            $productIds = $movements->pluck('product_id')->filter()->unique()->values();
+            $entries = $this->entries($warehouse);
+            $items = StockItem::query()->whereIn('id', $entries->pluck('stock_item_id')->unique()->values())->pluck('product_id', 'id');
+            $productIds = $items->filter()->unique()->values();
             $products = Product::query()->whereIn('id', $productIds)->get()->keyBy('id');
 
             $rows = [];
             foreach ($productIds as $productId) {
-                $own = $movements->where('product_id', $productId);
-                $inPeriod = $own->filter(fn ($m): bool => ($from === null || $m->executed_at >= $from) && ($to === null || $m->executed_at <= $to.' 23:59:59'));
-                $before = $from === null ? collect() : $own->filter(fn ($m): bool => $m->executed_at < $from);
+                $own = $entries->filter(fn (array $e): bool => ($items[$e['stock_item_id']] ?? null) === $productId);
+                $inPeriod = $own->filter(fn (array $e): bool => ($from === null || $e['at']->gte(Carbon::parse($from))) && ($to === null || $e['at']->lte(Carbon::parse($to)->endOfDay())));
+                $before = $from === null ? collect() : $own->filter(fn (array $e): bool => $e['at']->lt(Carbon::parse($from)));
 
-                $opening = $before->sum(fn ($m): float => $this->signed($m));
-                $sent = $inPeriod->filter(fn ($m): bool => $this->isInbound((string) $m->movement_type))->sum(fn ($m): float => (float) $m->quantity);
-                $consumed = $inPeriod->where('movement_type', 'consignment_consumption_out')->sum(fn ($m): float => (float) $m->quantity);
-                $returned = $inPeriod->filter(fn ($m): bool => str_ends_with((string) $m->movement_type, '_out') && $m->movement_type !== 'consignment_consumption_out')->sum(fn ($m): float => (float) $m->quantity);
+                $opening = $before->sum(fn (array $e): float => $e['signed']);
+                $sent = $inPeriod->where('inbound', true)->sum(fn (array $e): float => $e['quantity']);
+                $consumed = $inPeriod->where('type', 'consignment_consumption_out')->sum(fn (array $e): float => $e['quantity']);
+                $returned = $inPeriod->where('inbound', false)->where('type', '!=', 'consignment_consumption_out')->sum(fn (array $e): float => $e['quantity']);
                 $residual = $this->stock->onHand((string) $warehouse->id, (string) $productId);
                 $unitCost = (float) ($products[$productId]->cost_price ?? 0);
 
@@ -85,7 +89,7 @@ final class ConsignmentService
                     'residual_qty' => round($residual, 4),
                     'unit_cost' => $unitCost,
                     'fiscal_value' => round($residual * $unitCost, 2),
-                    'ddt_references' => $this->ddtReferences($inPeriod->filter(fn ($m): bool => $this->isInbound((string) $m->movement_type) && $m->origin_document_id !== null)),
+                    'ddt_references' => $this->ddtReferences($inPeriod->where('inbound', true)->filter(fn (array $e): bool => $e['document_id'] !== null)),
                 ];
             }
 
@@ -103,6 +107,53 @@ final class ConsignmentService
         }
 
         return $result;
+    }
+
+    /**
+     * The movements that changed the physical stock of a warehouse: into one of its bins (inbound) or out of one of its
+     * bins (outbound). Moves inside the warehouse and the transit leg of a transfer do not change what it holds.
+     *
+     * @return Collection<int, array{stock_item_id: string, quantity: float, signed: float, inbound: bool, type: string, at: Carbon, document_type: ?string, document_id: ?string}>
+     */
+    private function entries(Warehouse $warehouse): Collection
+    {
+        $binIds = DB::table('warehouse_bins as b')
+            ->join('warehouse_racks as r', 'r.id', '=', 'b.warehouse_rack_id')
+            ->join('warehouse_aisles as a', 'a.id', '=', 'r.warehouse_aisle_id')
+            ->join('warehouse_zones as z', 'z.id', '=', 'a.warehouse_zone_id')
+            ->where('z.warehouse_id', $warehouse->id)
+            ->where('z.zone_type', '!=', 'transit')
+            ->pluck('b.id')
+            ->map(static fn ($id): string => (string) $id)
+            ->all();
+        $bins = array_flip($binIds);
+
+        return StockMovement::query()
+            ->where(fn ($q) => $q->whereIn('source_location_id', $binIds)->orWhereIn('destination_location_id', $binIds))
+            ->whereNotNull('stock_item_id')
+            ->orderBy('executed_at')
+            ->get()
+            ->map(function (StockMovement $m) use ($bins): ?array {
+                $in = isset($bins[(string) $m->destination_location_id]);
+                $out = isset($bins[(string) $m->source_location_id]);
+                if ($in === $out) {
+                    return null;
+                }
+                $qty = (float) $m->quantity;
+
+                return [
+                    'stock_item_id' => (string) $m->stock_item_id,
+                    'quantity' => $qty,
+                    'signed' => $in ? $qty : -$qty,
+                    'inbound' => $in,
+                    'type' => (string) $m->movement_type,
+                    'at' => Carbon::parse($m->executed_at),
+                    'document_type' => $m->origin_document_type,
+                    'document_id' => $m->origin_document_id !== null ? (string) $m->origin_document_id : null,
+                ];
+            })
+            ->filter()
+            ->values();
     }
 
     /**
@@ -303,10 +354,21 @@ final class ConsignmentService
      * @param  list<array{product: Product, quantity: float, unit_price: float, tax_rate: float}>  $documentLines
      * @return array{0: string, 1: string, 2: float}
      */
+    /** The procurement supplier of a vendor consignment partner: the supplier record linked to the contact (or the supplier itself). */
+    private function supplierIdOf(string $partnerId): string
+    {
+        $supplier = Supplier::query()->where('contact_id', $partnerId)->orWhere('id', $partnerId)->first();
+        if ($supplier === null) {
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.NO_PARTNER_TO_BILL'));
+        }
+
+        return (string) $supplier->id;
+    }
+
     private function draftPurchaseOrder(ConsignmentConsumptionDeclaration $declaration, array $documentLines): array
     {
         $order = app(ProcurementServiceInterface::class)->createPurchaseOrder(new CreatePurchaseOrderDTO(
-            supplierId: (string) $declaration->partner_id,
+            supplierId: $this->supplierIdOf((string) $declaration->partner_id),
             orderDate: now()->toDateString(),
             expectedDeliveryDate: now()->toDateString(),
             lines: array_map(fn (array $l): array => [
@@ -324,30 +386,18 @@ final class ConsignmentService
         return ['purchase_order', (string) $order->id, (float) $order->total_gross];
     }
 
-    private function isInbound(string $movementType): bool
-    {
-        return $movementType === WarehouseStockService::INBOUND_REVERSAL || str_ends_with($movementType, '_in');
-    }
-
-    private function signed(StockMovement $movement): float
-    {
-        $qty = (float) $movement->quantity;
-
-        return $this->isInbound((string) $movement->movement_type) ? $qty : -$qty;
-    }
-
     /**
-     * @param  Collection<int, StockMovement>  $movements
+     * @param  Collection<int, array{document_type: ?string, document_id: ?string}>  $entries
      * @return list<string>
      */
-    private function ddtReferences($movements): array
+    private function ddtReferences(Collection $entries): array
     {
         $numbers = [];
-        foreach ($movements as $movement) {
-            if ($movement->origin_document_type === SalesDeliveryNote::class) {
-                $number = SalesDeliveryNote::query()->whereKey($movement->origin_document_id)->value('ddt_number');
-            } elseif ($movement->origin_document_type === StockTransferOrder::class) {
-                $noteId = StockTransferOrder::query()->whereKey($movement->origin_document_id)->value('delivery_note_id');
+        foreach ($entries as $entry) {
+            if ($entry['document_type'] === SalesDeliveryNote::class) {
+                $number = SalesDeliveryNote::query()->whereKey($entry['document_id'])->value('ddt_number');
+            } elseif ($entry['document_type'] === TransferOrder::class) {
+                $noteId = TransferOrder::query()->whereKey($entry['document_id'])->value('delivery_note_id');
                 $number = $noteId !== null ? SalesDeliveryNote::query()->whereKey($noteId)->value('ddt_number') : null;
             } else {
                 $number = null;

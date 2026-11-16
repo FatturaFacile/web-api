@@ -14,6 +14,7 @@ use Modules\Inventory\Contracts\InventoryCountServiceInterface;
 use Modules\Inventory\Contracts\InventoryReplenishmentServiceInterface;
 use Modules\Inventory\Contracts\StockReservationServiceInterface;
 use Modules\Inventory\Contracts\StockValuationServiceInterface;
+use Modules\Inventory\Contracts\TransferRouteValidator;
 use Modules\Inventory\Events\InventoryAdjustmentPostedEvent;
 use Modules\Inventory\Events\InventoryCostingReadyEvent;
 use Modules\Inventory\Events\InventoryCountCompletedEvent;
@@ -65,6 +66,7 @@ use Modules\Inventory\Services\InventoryReplenishmentService;
 use Modules\Inventory\Services\OutboundIssuePreference;
 use Modules\Inventory\Services\StockReservationService;
 use Modules\Inventory\Services\StockValuationService;
+use Modules\Inventory\Support\AnyTransferRoute;
 use Modules\Invoicing\Events\DeliveryNoteIssuedEvent;
 use Modules\Procurement\Events\GoodsReceivedEvent;
 use Modules\Procurement\Events\InventoryAdjustmentRequestEvent;
@@ -78,6 +80,9 @@ final class InventoryServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // The logistics module replaces this default with the route rules of its transfer purposes.
+        $this->app->bindIf(TransferRouteValidator::class, AnyTransferRoute::class);
+
         $this->app->singleton(DoubleEntryMovementServiceInterface::class, DoubleEntryMovementService::class);
         $this->app->singleton(DoubleEntryMovementService::class);
 

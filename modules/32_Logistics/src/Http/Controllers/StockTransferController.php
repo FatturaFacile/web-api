@@ -10,20 +10,21 @@ use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
+use Modules\Inventory\Enums\DiscrepancyStatus;
+use Modules\Inventory\Models\TransferDiscrepancy;
+use Modules\Inventory\Models\TransferOrder;
 use Modules\Logistics\Actions\ApproveStockTransferOrderAction;
 use Modules\Logistics\Actions\CloseStockTransferOrderAction;
 use Modules\Logistics\Actions\CreateStockTransferOrderAction;
 use Modules\Logistics\Actions\ReceiveStockTransferOrderAction;
 use Modules\Logistics\Actions\ResolveTransferDiscrepancyAction;
 use Modules\Logistics\Actions\ShipStockTransferOrderAction;
-use Modules\Logistics\Enums\DiscrepancyStatus;
 use Modules\Logistics\Http\Requests\ReceiveTransferOrderRequest;
 use Modules\Logistics\Http\Requests\ResolveTransferDiscrepancyRequest;
 use Modules\Logistics\Http\Requests\ScanTransferLineRequest;
 use Modules\Logistics\Http\Requests\ShipTransferOrderRequest;
 use Modules\Logistics\Http\Requests\StoreTransferOrderRequest;
-use Modules\Logistics\Models\StockTransferOrder;
-use Modules\Logistics\Models\TransferDiscrepancy;
+use Modules\Logistics\Http\Resources\TransferOrderResource;
 use Modules\Logistics\Services\StockTransferService;
 use Modules\Logistics\Support\LogisticsMessage;
 use OpenApi\Attributes as OA;
@@ -54,20 +55,20 @@ final class StockTransferController extends Controller
         $warehouseId = $request->query('warehouse_id');
         $direction = $request->query('direction');
 
-        $query = StockTransferOrder::query()->with('lines')
+        $query = TransferOrder::query()->with('lines.item')
             ->when($request->query('status'), fn ($q, $v) => $q->whereIn('status', explode(',', (string) $v)))
             ->when($request->query('purpose'), fn ($q, $v) => $q->where('purpose', $v))
             ->when($request->boolean('is_inter_company'), fn ($q) => $q->where('is_inter_company', true))
             ->when($warehouseId !== null, fn ($q) => $q->where(function ($w) use ($warehouseId, $direction): void {
                 match ($direction) {
                     'inbound' => $w->where('destination_warehouse_id', $warehouseId),
-                    'outbound' => $w->where('origin_warehouse_id', $warehouseId),
-                    default => $w->where('destination_warehouse_id', $warehouseId)->orWhere('origin_warehouse_id', $warehouseId),
+                    'outbound' => $w->where('source_warehouse_id', $warehouseId),
+                    default => $w->where('destination_warehouse_id', $warehouseId)->orWhere('source_warehouse_id', $warehouseId),
                 };
             }))
             ->orderByDesc('created_at');
 
-        return response()->json($query->paginate(min(100, (int) $request->query('per_page', 25))));
+        return response()->json($query->paginate(min(100, (int) $request->query('per_page', 25)))->through(fn (TransferOrder $order): array => TransferOrderResource::make($order)->resolve()));
     }
 
     #[OA\Get(
@@ -83,7 +84,7 @@ final class StockTransferController extends Controller
     )]
     public function show(string $id): JsonResponse
     {
-        return response()->json(['data' => StockTransferOrder::query()->with(['lines', 'discrepancies'])->findOrFail($id)]);
+        return $this->one(TransferOrder::query()->findOrFail($id));
     }
 
     #[OA\Post(
@@ -99,7 +100,7 @@ final class StockTransferController extends Controller
     )]
     public function store(StoreTransferOrderRequest $request, CreateStockTransferOrderAction $action): JsonResponse
     {
-        return $this->run(fn () => response()->json(['data' => $action->execute($request->validated())], 201));
+        return $this->run(fn () => $this->one($action->execute($request->validated()), 201));
     }
 
     #[OA\Post(
@@ -115,7 +116,7 @@ final class StockTransferController extends Controller
     )]
     public function approve(Request $request, string $id, ApproveStockTransferOrderAction $action): JsonResponse
     {
-        return $this->run(fn () => response()->json(['data' => $action->execute($id, $request->user() !== null ? (string) $request->user()->id : null)]));
+        return $this->run(fn () => $this->one($action->execute($id, $request->user() !== null ? (string) $request->user()->id : null)));
     }
 
     #[OA\Post(
@@ -131,7 +132,7 @@ final class StockTransferController extends Controller
     )]
     public function ship(ShipTransferOrderRequest $request, string $id, ShipStockTransferOrderAction $action): JsonResponse
     {
-        return $this->run(fn () => response()->json(['data' => $action->execute($id, $request->validated())]));
+        return $this->run(fn () => $this->one($action->execute($id, $request->validated())));
     }
 
     #[OA\Post(
@@ -150,7 +151,7 @@ final class StockTransferController extends Controller
     {
         $data = $request->validated();
 
-        return $this->run(fn () => response()->json(['data' => $action->execute($id, $data['lines'] ?? [], (bool) ($data['final'] ?? true))]));
+        return $this->run(fn () => $this->one($action->execute($id, $data['lines'] ?? [], (bool) ($data['final'] ?? true))));
     }
 
     #[OA\Post(
@@ -166,7 +167,7 @@ final class StockTransferController extends Controller
     )]
     public function close(string $id, CloseStockTransferOrderAction $action): JsonResponse
     {
-        return $this->run(fn () => response()->json(['data' => $action->execute($id)]));
+        return $this->run(fn () => $this->one($action->execute($id)));
     }
 
     #[OA\Post(
@@ -182,7 +183,7 @@ final class StockTransferController extends Controller
     )]
     public function cancel(string $id): JsonResponse
     {
-        return $this->run(fn () => response()->json(['data' => $this->service->cancel(StockTransferOrder::query()->findOrFail($id))]));
+        return $this->run(fn () => $this->one($this->service->cancel(TransferOrder::query()->findOrFail($id))));
     }
 
     #[OA\Post(
@@ -199,21 +200,21 @@ final class StockTransferController extends Controller
     )]
     public function scan(ScanTransferLineRequest $request, string $id): JsonResponse
     {
-        $order = StockTransferOrder::query()->with('lines')->findOrFail($id);
+        $order = TransferOrder::query()->with('lines.item')->findOrFail($id);
         $code = (string) $request->validated('code');
 
         $products = Product::query()
-            ->whereIn('id', $order->lines->pluck('product_id'))
+            ->whereIn('id', $order->lines->map(fn ($l) => $l->item?->product_id)->filter()->values())
             ->where(fn ($q) => $q->where('barcode', $code)->orWhere('sku', $code))
             ->pluck('id');
-        $line = $order->lines->first(fn ($l): bool => $products->contains($l->product_id));
+        $line = $order->lines->first(fn ($l): bool => $l->item?->product_id !== null && $products->contains($l->item->product_id));
         if ($line === null) {
             return response()->json(['message' => LogisticsMessage::get('LOGISTICS.ERRORS.LINE_NOT_IN_TRANSFER', ['line' => $code])], 422);
         }
 
         return response()->json(['data' => [
-            'line' => $line,
-            'outstanding_qty' => round((float) $line->shipped_qty - (float) $line->received_qty - (float) $line->damaged_qty, 4),
+            'line' => TransferOrderResource::line($line),
+            'outstanding_qty' => round((float) $line->quantity_shipped - (float) $line->quantity_received - (float) $line->quantity_damaged, 4),
         ]]);
     }
 
@@ -231,7 +232,7 @@ final class StockTransferController extends Controller
             ->when($request->query('status'), fn ($q, $v) => $q->where('status', $v))
             ->orderByDesc('created_at');
 
-        return response()->json($query->paginate(min(100, (int) $request->query('per_page', 25))));
+        return response()->json($query->paginate(min(100, (int) $request->query('per_page', 25)))->through(fn (TransferDiscrepancy $d): array => TransferOrderResource::discrepancy($d)));
     }
 
     #[OA\Post(
@@ -264,12 +265,17 @@ final class StockTransferController extends Controller
     {
         $resolution = DiscrepancyStatus::from((string) $request->validated('resolution'));
 
-        return $this->run(fn () => response()->json(['data' => $action->execute(
+        return $this->run(fn () => response()->json(['data' => TransferOrderResource::discrepancy($action->execute(
             $discrepancyId,
             $resolution,
             $request->user() !== null ? (string) $request->user()->id : null,
             $transferId,
-        )]));
+        ))]));
+    }
+
+    private function one(TransferOrder $order, int $status = 200): JsonResponse
+    {
+        return response()->json(['data' => TransferOrderResource::make($order->load(['lines.item', 'discrepancies']))->resolve()], $status);
     }
 
     /**

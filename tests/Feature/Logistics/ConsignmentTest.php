@@ -4,35 +4,38 @@ declare(strict_types=1);
 
 use App\Models\Contact;
 use App\Services\Tenancy\TenantContext;
+use Database\Seeders\TranslationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\Inventory\Models\TransferOrder;
 use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Invoicing\Models\SalesInvoice;
-use Modules\Logistics\Models\StockTransferOrder;
 use Modules\Logistics\Services\ConsignmentService;
 use Modules\Logistics\Services\StockTransferService;
 use Modules\Logistics\Services\WarehouseStockService;
 use Modules\Procurement\Models\PurchaseOrder;
+use Modules\Procurement\Models\Supplier;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    ['tenant' => $this->tenant, 'user' => $this->user] = wmsTenant('Consignment');
+    $this->seed(TranslationSeeder::class);
+    ['tenant' => $this->tenant, 'user' => $this->user] = tfrTenant('Consignment');
     app(TenantContext::class)->setTenant($this->tenant);
     $this->stock = app(WarehouseStockService::class);
     $this->transfers = app(StockTransferService::class);
     $this->consignment = app(ConsignmentService::class);
-    $this->product = wmsProduct($this->tenant->id, 'CD-1', 10, 30);
-    $this->main = wmsWarehouse($this->tenant->id, 'MAIN');
-    $this->customer = wmsCustomer($this->tenant->id, 'Cliente Deposito');
-    $this->deposit = wmsWarehouse($this->tenant->id, 'CLI-DEP', [
+    $this->product = tfrProduct($this->tenant->id, 'CD-1', 10, 30);
+    $this->main = tfrWarehouse($this->tenant->id, 'MAIN');
+    $this->customer = tfrCustomer($this->tenant->id, 'Cliente Deposito');
+    $this->deposit = tfrWarehouse($this->tenant->id, 'CLI-DEP', [
         'warehouse_type' => 'customer_consignment', 'linked_partner_id' => $this->customer->id,
     ]);
     $this->stock->receiveOpeningStock($this->main->id, $this->product->id, 100);
 });
 
-function sendToConsignment(object $t, float $qty): StockTransferOrder
+function sendToConsignment(object $t, float $qty): TransferOrder
 {
     $order = $t->transfers->create([
         'purpose' => 'customer_consignment', 'origin_warehouse_id' => $t->main->id, 'destination_warehouse_id' => $t->deposit->id,
@@ -75,12 +78,12 @@ test('declaring consumption discharges the consignment stock and generates a dra
     // Cannot consume more than what is held at the customer
     expect(fn () => $this->consignment->declareConsumption([
         'warehouse_id' => $this->deposit->id, 'period_start' => now()->toDateString(), 'period_end' => now()->toDateString(),
-    ], [['product_id' => $this->product->id, 'quantity' => 19]]))->toThrow(DomainException::class, 'Insufficient stock');
+    ], [['product_id' => $this->product->id, 'quantity' => 19]]))->toThrow(Exception::class, 'Insufficient stock');
 
     // Consumption is only allowed on consignment warehouses
     expect(fn () => $this->consignment->declareConsumption([
         'warehouse_id' => $this->main->id, 'period_start' => now()->toDateString(), 'period_end' => now()->toDateString(),
-    ], [['product_id' => $this->product->id, 'quantity' => 1]]))->toThrow(DomainException::class);
+    ], [['product_id' => $this->product->id, 'quantity' => 1]]))->toThrow(Exception::class);
 });
 
 test('the register of goods at third parties reports sent, consumed, residual quantity and fiscal value with DDT references', function (): void {
@@ -107,7 +110,7 @@ test('the register of goods at third parties reports sent, consumed, residual qu
 
 test('vendor consignment stock is excluded from the balance sheet valuation while goods at customers are included', function (): void {
     $supplierId = (string) Str::uuid7();
-    $vendorWh = wmsWarehouse($this->tenant->id, 'VEND-DEP', [
+    $vendorWh = tfrWarehouse($this->tenant->id, 'VEND-DEP', [
         'warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => $supplierId,
     ]);
     $this->stock->receiveOpeningStock($vendorWh->id, $this->product->id, 50); // 50 x 10 = 500 owned by the vendor
@@ -129,7 +132,8 @@ test('vendor consignment stock is excluded from the balance sheet valuation whil
 test('vendor consignment withdrawal discharges the vendor stock and drafts a purchase order', function (): void {
     // purchase_orders.supplier_id references contacts in the current schema
     $supplier = Contact::create(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'company_name' => 'Fornitore Deposito Srl', 'type' => 'supplier', 'country' => 'IT']);
-    $vendorWh = wmsWarehouse($this->tenant->id, 'VEND-DEP', [
+    $vendor = Supplier::factory()->create(['tenant_id' => $this->tenant->id, 'contact_id' => $supplier->id]);
+    $vendorWh = tfrWarehouse($this->tenant->id, 'VEND-DEP', [
         'warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => $supplier->id,
     ]);
     $this->stock->receiveOpeningStock($vendorWh->id, $this->product->id, 50);
@@ -143,7 +147,7 @@ test('vendor consignment withdrawal discharges the vendor stock and drafts a pur
         ->and($this->stock->onHand($vendorWh->id, $this->product->id))->toBe(30.0);
 
     $po = PurchaseOrder::findOrFail($report->generated_document_id);
-    expect($po->status)->toBe('draft')->and($po->supplier_id)->toBe($supplier->id);
+    expect($po->status)->toBe('draft')->and($po->supplier_id)->toBe($vendor->id);
 });
 
 test('consignment endpoints: ledger, valuation and consumption declaration', function (): void {

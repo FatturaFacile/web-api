@@ -99,7 +99,7 @@ class DocumentPdfService
         $tenantId = $document->getAttribute('tenant_id');
         $tenant = $document->relationLoaded('tenant') ? $document->getRelation('tenant') : ($tenantId ? Tenant::find($tenantId) : null);
 
-        $renderCallback = fn (): RenderedPdf => $this->withLocale($this->documentLanguage($document), function () use ($document, $tenantId): RenderedPdf {
+        $renderCallback = fn (): RenderedPdf => $this->withLocale($this->documentLanguage($document), function () use ($document, $options, $tenantId): RenderedPdf {
             $this->loadDatabaseTranslations($tenantId !== null ? (string) $tenantId : null);
             [$view, $data, $type, $number] = match (true) {
                 $document instanceof Invoice => $this->invoice($document),

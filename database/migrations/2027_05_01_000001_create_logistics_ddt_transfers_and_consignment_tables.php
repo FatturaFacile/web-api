@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Issue #158 / DDT enterprise: extends the canonical `delivery_notes` table (no parallel table is created)
- * and introduces transfer orders, discrepancies, per-warehouse stock levels and consignment consumption reports.
+ * and extends the inventory transfer orders (approval, damage/shortage discrepancies, DDT and inter-company invoice link),
+ * the stock ledger (legal ownership), and adds consignment agreements and consumption declarations.
+ *
+ * There is one transfer aggregate (`transfer_orders`, bin and lot aware) and one stock ledger (quants + `stock_movements`).
  *
  * Only portable schema-builder syntax is used so the migration runs on SQLite and PostgreSQL alike.
  */
@@ -20,20 +23,35 @@ return new class extends Migration
         $this->extendDeliveryNotes();
         $this->extendDeliveryNoteItems();
         $this->createDeliveryNoteInvoiceLinks();
-        $this->createWarehouseStockLevels();
-        $this->createStockTransferTables();
+        $this->extendStockMovements();
+        $this->extendTransferOrders();
+        $this->createTransferDiscrepancies();
         $this->createConsignmentTables();
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('consignment_consumption_lines');
-        Schema::dropIfExists('consignment_consumption_reports');
+        Schema::dropIfExists('consignment_agreements');
+        Schema::dropIfExists('consignment_consumption_declaration_lines');
+        Schema::dropIfExists('consignment_consumption_declarations');
         Schema::dropIfExists('transfer_discrepancies');
-        Schema::dropIfExists('stock_transfer_order_lines');
-        Schema::dropIfExists('stock_transfer_orders');
-        Schema::dropIfExists('warehouse_stock_levels');
         Schema::dropIfExists('delivery_note_invoice_links');
+
+        Schema::table('transfer_order_line_lots', function (Blueprint $table): void {
+            $table->dropColumn('quantity_resolved');
+        });
+        Schema::table('transfer_order_lines', function (Blueprint $table): void {
+            $table->dropColumn(['quantity_damaged', 'discrepancy_qty', 'discrepancy_reason']);
+        });
+        Schema::table('transfer_orders', function (Blueprint $table): void {
+            $table->dropIndex(['delivery_note_id']);
+            $table->dropIndex(['inter_company_invoice_id']);
+            $table->dropColumn(['purpose', 'approved_by', 'approved_at', 'closed_at', 'delivery_note_id', 'is_inter_company', 'inter_company_invoice_id']);
+        });
+        Schema::table('stock_movements', function (Blueprint $table): void {
+            $table->dropIndex('idx_stock_mov_ownership');
+            $table->dropColumn(['ownership_type', 'third_party_id', 'in_transit']);
+        });
 
         foreach (['delivery_note_items' => ['invoiced_quantity', 'uom', 'updated_by', 'deleted_by', 'created_by'],
             'delivery_notes' => ['type', 'transport_reason_code', 'carriage_terms', 'transport_by', 'carrier_id', 'carrier_vat_number',
@@ -171,63 +189,50 @@ return new class extends Migration
         });
     }
 
-    private function createWarehouseStockLevels(): void
+    private function extendStockMovements(): void
     {
-        Schema::create('warehouse_stock_levels', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
-            $table->uuid('warehouse_id');
-            $table->uuid('product_id');
-            $table->decimal('quantity_on_hand', 14, 4)->default(0);
-            $this->audit($table);
-
-            $table->unique(['tenant_id', 'warehouse_id', 'product_id'], 'uq_wh_stock_level');
-            $table->index(['tenant_id', 'product_id'], 'idx_wh_stock_product');
+        Schema::table('stock_movements', function (Blueprint $table): void {
+            $table->string('ownership_type', 30)->default('owned');
+            $table->uuid('third_party_id')->nullable();
+            $table->boolean('in_transit')->default(false);
+            $table->index(['tenant_id', 'ownership_type'], 'idx_stock_mov_ownership');
         });
     }
 
-    private function createStockTransferTables(): void
+    private function extendTransferOrders(): void
     {
-        Schema::create('stock_transfer_orders', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
-            $table->string('transfer_number', 50);
-            $table->string('purpose', 40); // inter_warehouse, technician_van, customer_consignment, subcontracting
-            $table->string('status', 30)->default('draft')->index(); // draft, in_transit, received, discrepancy_pending, reconciled, cancelled
-            $table->uuid('origin_warehouse_id');
-            $table->uuid('transit_warehouse_id')->nullable();
-            $table->uuid('destination_warehouse_id');
+        Schema::table('transfer_orders', function (Blueprint $table): void {
+            $table->string('purpose', 40)->default('inter_warehouse');
+            $table->uuid('approved_by')->nullable();
+            $table->timestamp('approved_at')->nullable();
+            $table->timestamp('closed_at')->nullable();
             $table->uuid('delivery_note_id')->nullable()->index();
             $table->boolean('is_inter_company')->default(false);
-            $table->timestamp('shipped_at')->nullable();
-            $table->timestamp('received_at')->nullable();
-            $table->text('notes')->nullable();
-            $this->audit($table);
-
-            $table->unique(['tenant_id', 'transfer_number'], 'uq_transfer_number');
+            $table->uuid('inter_company_invoice_id')->nullable()->index();
         });
 
-        Schema::create('stock_transfer_order_lines', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
-            $table->uuid('stock_transfer_order_id')->index();
-            $table->uuid('product_id');
-            $table->string('description')->nullable();
-            $table->decimal('quantity', 14, 4);
-            $table->decimal('shipped_qty', 14, 4)->default(0);
-            $table->decimal('received_qty', 14, 4)->default(0);
+        Schema::table('transfer_order_lines', function (Blueprint $table): void {
+            $table->decimal('quantity_damaged', 14, 4)->default(0);
             $table->decimal('discrepancy_qty', 14, 4)->default(0);
             $table->string('discrepancy_reason', 255)->nullable();
-            $this->audit($table);
         });
 
+        Schema::table('transfer_order_line_lots', function (Blueprint $table): void {
+            $table->decimal('quantity_resolved', 14, 4)->default(0);
+        });
+    }
+
+    private function createTransferDiscrepancies(): void
+    {
         Schema::create('transfer_discrepancies', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('tenant_id')->index();
-            $table->uuid('stock_transfer_order_id')->index();
-            $table->uuid('stock_transfer_order_line_id')->index();
-            $table->uuid('product_id');
+            $table->uuid('transfer_order_id')->index();
+            $table->uuid('transfer_order_line_id')->index();
+            $table->uuid('stock_item_id');
             $table->decimal('discrepancy_qty', 14, 4);
+            $table->decimal('shortage_qty', 14, 4)->default(0);
+            $table->decimal('damage_qty', 14, 4)->default(0);
             $table->string('discrepancy_reason', 255)->nullable();
             // pending_approval, approved_write_off, carrier_claim, returned_to_origin
             $table->string('status', 30)->default('pending_approval')->index();
@@ -239,11 +244,12 @@ return new class extends Migration
 
     private function createConsignmentTables(): void
     {
-        Schema::create('consignment_consumption_reports', function (Blueprint $table): void {
+        Schema::create('consignment_consumption_declarations', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('tenant_id')->index();
             $table->uuid('warehouse_id')->index();
             $table->uuid('partner_id')->nullable();
+            $table->uuid('agreement_id')->nullable()->index();
             $table->string('direction', 20); // customer (we invoice), vendor (we purchase)
             $table->date('period_start');
             $table->date('period_end');
@@ -251,19 +257,40 @@ return new class extends Migration
             $table->string('generated_document_type', 40)->nullable(); // sales_invoice, purchase_order
             $table->uuid('generated_document_id')->nullable();
             $table->decimal('total_amount', 15, 2)->default(0);
+            $table->string('ownership_from', 30)->nullable();
+            $table->string('ownership_to', 30)->nullable();
             $table->text('notes')->nullable();
             $this->audit($table);
         });
 
-        Schema::create('consignment_consumption_lines', function (Blueprint $table): void {
+        Schema::create('consignment_consumption_declaration_lines', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('tenant_id')->index();
-            $table->uuid('report_id')->index();
+            $table->uuid('declaration_id')->index();
             $table->uuid('product_id');
             $table->decimal('quantity', 14, 4);
             $table->decimal('unit_price', 15, 4)->default(0);
             $table->decimal('tax_rate', 5, 2)->default(0);
             $this->audit($table);
+        });
+
+        Schema::create('consignment_agreements', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->uuid('tenant_id')->index();
+            $table->string('agreement_number', 50);
+            $table->string('direction', 20); // customer (we are the consignor), vendor (we hold third-party goods)
+            $table->uuid('partner_id');
+            $table->uuid('warehouse_id');
+            $table->string('status', 20)->default('active')->index(); // active, terminated
+            $table->string('billing_frequency', 20)->default('monthly'); // monthly, quarterly, on_demand
+            $table->date('valid_from');
+            $table->date('valid_to')->nullable();
+            $table->unsignedSmallInteger('payment_terms_days')->default(30);
+            $table->text('notes')->nullable();
+            $this->audit($table);
+
+            $table->unique(['tenant_id', 'agreement_number'], 'uq_consignment_agreement_number');
+            $table->index(['tenant_id', 'direction', 'status'], 'idx_consignment_agreement_lookup');
         });
     }
 
