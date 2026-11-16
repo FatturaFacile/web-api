@@ -33,7 +33,10 @@ use App\Services\Retail\LocalFiscalPrinterGateway;
 use App\Services\Tenancy\TenantContext;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Validator as ValidationValidator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -55,6 +58,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Readable, translated field names (lang/<locale>/validation.php `attributes`) also for nested rules such as
+        // `items.*.quantity`, which Laravel would otherwise render as the raw key.
+        Validator::resolver(function ($translator, array $data, array $rules, array $messages, array $attributes): ValidationValidator {
+            $labels = $translator->get('validation.attributes');
+            if (is_array($labels)) {
+                foreach (array_keys($rules) as $key) {
+                    $leaf = Str::afterLast((string) $key, '.');
+                    if (! isset($attributes[$key]) && isset($labels[$leaf]) && is_string($labels[$leaf])) {
+                        $attributes[$key] = $labels[$leaf];
+                    }
+                }
+            }
+
+            return new ValidationValidator($translator, $data, $rules, $messages, $attributes);
+        });
+
         Gate::policy(Invoice::class, InvoicePolicy::class);
         Gate::policy(Quote::class, QuotePolicy::class);
         Gate::policy(DeliveryNote::class, DeliveryNotePolicy::class);
