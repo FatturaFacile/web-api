@@ -4,12 +4,22 @@ declare(strict_types=1);
 
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Modules\HumanResources\Contracts\CandidateDocumentStorageInterface;
+use Modules\HumanResources\Contracts\CandidateEmailSenderInterface;
+use Modules\HumanResources\Contracts\CvParserInterface;
+use Modules\HumanResources\Contracts\DigitalSignatureProviderInterface;
 use Modules\HumanResources\Contracts\EmployeeLifecycleServiceInterface;
 use Modules\HumanResources\Contracts\LeaveAndTimeServiceInterface;
+use Modules\HumanResources\Contracts\OnboardingStarterInterface;
 use Modules\HumanResources\Contracts\OrganizationManagementServiceInterface;
 use Modules\HumanResources\Contracts\PerformanceManagementServiceInterface;
+use Modules\HumanResources\Contracts\RecruitmentServiceInterface;
 use Modules\HumanResources\Contracts\TrainingAndCertificationServiceInterface;
 use Modules\HumanResources\Events\AccrualReadyEvent;
+use Modules\HumanResources\Events\CandidateApplicationReceivedEvent;
+use Modules\HumanResources\Events\CandidateDataAnonymizedEvent;
+use Modules\HumanResources\Events\CandidateHiredEvent;
+use Modules\HumanResources\Events\CandidateStageChangedEvent;
 use Modules\HumanResources\Events\CertificationExpiringEvent;
 use Modules\HumanResources\Events\EmployeeCostForecastEvent;
 use Modules\HumanResources\Events\EmployeeCostReadyEvent;
@@ -17,6 +27,8 @@ use Modules\HumanResources\Events\EmployeeHiredEvent;
 use Modules\HumanResources\Events\EmployeePromotedEvent;
 use Modules\HumanResources\Events\EmployeeTerminatedEvent;
 use Modules\HumanResources\Events\EmployeeTransferredEvent;
+use Modules\HumanResources\Events\JobOfferSentEvent;
+use Modules\HumanResources\Events\JobOpeningPublishedEvent;
 use Modules\HumanResources\Events\LaborCostReadyEvent;
 use Modules\HumanResources\Events\LeaveApprovedEvent;
 use Modules\HumanResources\Events\LeaveLiabilityReadyEvent;
@@ -35,7 +47,7 @@ use Modules\HumanResources\Models\Timesheet;
 use Modules\HumanResources\Models\TrainingRecord;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 
-test('all 17 Module 18 HR domain events implement DomainEventInterface and serialize cleanly', function () {
+test('all 23 Module 18 HR domain events (including recruiting) implement DomainEventInterface and serialize cleanly', function () {
     $events = [
         EmployeeHiredEvent::class,
         EmployeePromotedEvent::class,
@@ -54,6 +66,12 @@ test('all 17 Module 18 HR domain events implement DomainEventInterface and seria
         PayrollForecastEvent::class,
         TrainingBudgetForecastEvent::class,
         EmployeeCostForecastEvent::class,
+        JobOpeningPublishedEvent::class,
+        CandidateApplicationReceivedEvent::class,
+        CandidateStageChangedEvent::class,
+        JobOfferSentEvent::class,
+        CandidateHiredEvent::class,
+        CandidateDataAnonymizedEvent::class,
     ];
 
     foreach ($events as $eventClass) {
@@ -84,4 +102,13 @@ test('all 5 HR service contracts are bound in the container', function () {
         ->and(app(LeaveAndTimeServiceInterface::class))->toBeInstanceOf(LeaveAndTimeServiceInterface::class)
         ->and(app(PerformanceManagementServiceInterface::class))->toBeInstanceOf(PerformanceManagementServiceInterface::class)
         ->and(app(TrainingAndCertificationServiceInterface::class))->toBeInstanceOf(TrainingAndCertificationServiceInterface::class);
+});
+
+test('recruiting seams for missing modules are bound to their default implementations', function () {
+    expect(app(RecruitmentServiceInterface::class))->toBeInstanceOf(RecruitmentServiceInterface::class)
+        ->and(app(CvParserInterface::class))->toBeInstanceOf(CvParserInterface::class)
+        ->and(app(CandidateDocumentStorageInterface::class))->toBeInstanceOf(CandidateDocumentStorageInterface::class)
+        ->and(app(CandidateEmailSenderInterface::class))->toBeInstanceOf(CandidateEmailSenderInterface::class)
+        ->and(app(DigitalSignatureProviderInterface::class)->name())->toBe('manual')
+        ->and(app(OnboardingStarterInterface::class))->toBeInstanceOf(OnboardingStarterInterface::class);
 });

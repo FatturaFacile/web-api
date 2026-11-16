@@ -6,11 +6,19 @@ use Illuminate\Support\Facades\Route;
 use Modules\HumanResources\Http\Controllers\EmployeeController;
 use Modules\HumanResources\Http\Controllers\LeaveAndTimeController;
 use Modules\HumanResources\Http\Controllers\OrganizationController;
+use Modules\HumanResources\Http\Controllers\Recruiting\CandidateApplicationController;
+use Modules\HumanResources\Http\Controllers\Recruiting\InterviewScorecardController;
+use Modules\HumanResources\Http\Controllers\Recruiting\JobOfferController;
+use Modules\HumanResources\Http\Controllers\Recruiting\JobOpeningController;
+use Modules\HumanResources\Http\Controllers\Recruiting\PublicCareersController;
+use Modules\HumanResources\Http\Controllers\Recruiting\RecruitingEmailTemplateController;
+use Modules\HumanResources\Http\Controllers\Recruiting\RecruitingSettingsController;
 use Modules\HumanResources\Http\Controllers\Payroll\PayrollProfileController;
 use Modules\HumanResources\Http\Controllers\Payroll\PayrollReferenceDataController;
 use Modules\HumanResources\Http\Controllers\Payroll\PayrollRunController;
 use Modules\HumanResources\Http\Controllers\Payroll\SalaryDeclarationController;
 use Modules\HumanResources\Http\Controllers\TalentAndTrainingController;
+use Modules\HumanResources\Http\Middleware\ResolveCareersTenant;
 
 Route::prefix('api/v1/hr')
     ->middleware(['api', 'auth:sanctum'])
@@ -90,4 +98,55 @@ Route::prefix('api/v1/hr')
             Route::get('/declarations/{id}', [SalaryDeclarationController::class, 'show'])->name('declarations.show');
             Route::get('/declarations/{id}/download', [SalaryDeclarationController::class, 'download'])->name('declarations.download');
         });
+    });
+
+// Recruiting & ATS (Mod 070) - authenticated, tenant scoped
+Route::prefix('api/v1/hr/recruiting')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->name('api.v1.hr.recruiting.')
+    ->group(function (): void {
+        Route::get('/job-openings', [JobOpeningController::class, 'index'])->name('job-openings.index');
+        Route::post('/job-openings', [JobOpeningController::class, 'store'])->name('job-openings.store');
+        Route::get('/job-openings/{id}', [JobOpeningController::class, 'show'])->whereUuid('id')->name('job-openings.show');
+        Route::put('/job-openings/{id}', [JobOpeningController::class, 'update'])->whereUuid('id')->name('job-openings.update');
+        Route::post('/job-openings/{id}/publish', [JobOpeningController::class, 'publish'])->whereUuid('id')->name('job-openings.publish');
+        Route::post('/job-openings/{id}/close', [JobOpeningController::class, 'close'])->whereUuid('id')->name('job-openings.close');
+        Route::get('/job-openings/{id}/board', [JobOpeningController::class, 'board'])->whereUuid('id')->name('job-openings.board');
+
+        Route::get('/applications', [CandidateApplicationController::class, 'index'])->name('applications.index');
+        Route::post('/applications', [CandidateApplicationController::class, 'store'])->name('applications.store');
+        Route::get('/applications/{id}', [CandidateApplicationController::class, 'show'])->whereUuid('id')->name('applications.show');
+        Route::patch('/applications/{id}', [CandidateApplicationController::class, 'update'])->whereUuid('id')->name('applications.update');
+        Route::get('/applications/{id}/cv', [CandidateApplicationController::class, 'cv'])->whereUuid('id')->name('applications.cv');
+        Route::post('/applications/{id}/reparse-cv', [CandidateApplicationController::class, 'reparseCv'])->whereUuid('id')->name('applications.reparse-cv');
+        Route::post('/applications/{id}/move', [CandidateApplicationController::class, 'move'])->whereUuid('id')->name('applications.move');
+        Route::post('/applications/{id}/extend-consent', [CandidateApplicationController::class, 'extendConsent'])->whereUuid('id')->name('applications.extend-consent');
+        Route::post('/applications/{id}/anonymize', [CandidateApplicationController::class, 'anonymize'])->whereUuid('id')->name('applications.anonymize');
+        Route::post('/applications/{id}/hire', [CandidateApplicationController::class, 'hire'])->whereUuid('id')->name('applications.hire');
+        Route::get('/applications/{id}/scorecards', [InterviewScorecardController::class, 'index'])->whereUuid('id')->name('applications.scorecards.index');
+        Route::post('/applications/{id}/scorecards', [InterviewScorecardController::class, 'store'])->whereUuid('id')->name('applications.scorecards.store');
+        Route::get('/applications/{id}/offer', [JobOfferController::class, 'show'])->whereUuid('id')->name('applications.offer.show');
+        Route::post('/applications/{id}/offer', [JobOfferController::class, 'store'])->whereUuid('id')->name('applications.offer.store');
+
+        Route::post('/offers/{id}/mark-signed', [JobOfferController::class, 'markSigned'])->whereUuid('id')->name('offers.mark-signed');
+        Route::post('/offers/{id}/decline', [JobOfferController::class, 'decline'])->whereUuid('id')->name('offers.decline');
+
+        Route::get('/email-templates', [RecruitingEmailTemplateController::class, 'index'])->name('email-templates.index');
+        Route::put('/email-templates/{stage}/{locale}', [RecruitingEmailTemplateController::class, 'upsert'])->name('email-templates.upsert');
+
+        Route::get('/settings', [RecruitingSettingsController::class, 'show'])->name('settings.show');
+        Route::put('/settings', [RecruitingSettingsController::class, 'update'])->name('settings.update');
+    });
+
+// Recruiting public careers page and job feeds - no auth, tenant resolved from the careers slug only
+Route::prefix('api/v1/public/careers/{careersSlug}')
+    ->middleware(['api', 'throttle:60,1', ResolveCareersTenant::class])
+    ->name('api.v1.public.careers.')
+    ->group(function (): void {
+        Route::get('/', [PublicCareersController::class, 'show'])->name('show');
+        Route::get('/jobs', [PublicCareersController::class, 'jobs'])->name('jobs.index');
+        Route::get('/jobs/{id}', [PublicCareersController::class, 'job'])->whereUuid('id')->name('jobs.show');
+        Route::post('/jobs/{id}/apply', [PublicCareersController::class, 'apply'])->middleware('throttle:10,1,careers-apply')->whereUuid('id')->name('jobs.apply');
+        Route::get('/feed.json', [PublicCareersController::class, 'feedJson'])->name('feed.json');
+        Route::get('/feed.rss', [PublicCareersController::class, 'feedRss'])->name('feed.rss');
     });
