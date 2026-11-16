@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Contact;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -12,8 +13,6 @@ use Modules\Logistics\Models\StockTransferOrder;
 use Modules\Logistics\Services\ConsignmentService;
 use Modules\Logistics\Services\StockTransferService;
 use Modules\Logistics\Services\WarehouseStockService;
-use Modules\Procurement\Contracts\ProcurementServiceInterface;
-use Modules\Procurement\DTOs\CreateSupplierDTO;
 use Modules\Procurement\Models\PurchaseOrder;
 
 uses(RefreshDatabase::class);
@@ -128,9 +127,8 @@ test('vendor consignment stock is excluded from the balance sheet valuation whil
 });
 
 test('vendor consignment withdrawal discharges the vendor stock and drafts a purchase order', function (): void {
-    $supplier = app(ProcurementServiceInterface::class)->createSupplier(
-        new CreateSupplierDTO(companyName: 'Fornitore Deposito Srl', tenantId: (string) $this->tenant->id)
-    );
+    // purchase_orders.supplier_id references contacts in the current schema
+    $supplier = Contact::create(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'company_name' => 'Fornitore Deposito Srl', 'type' => 'supplier', 'country' => 'IT']);
     $vendorWh = logisticsWarehouse($this->tenant->id, 'VEND-DEP', [
         'warehouse_type' => 'vendor_consignment', 'legal_owner_type' => 'vendor', 'linked_partner_id' => $supplier->id,
     ]);
