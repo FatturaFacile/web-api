@@ -81,6 +81,9 @@ class Invoice extends Model
         'enasarco_base',
         'enasarco_percent',
         'enasarco_amount',
+        'free_trade_agreement_id',
+        'origin_declaration_text',
+        'duty_exemption_eligible',
     ];
 
     /**
@@ -109,6 +112,7 @@ class Invoice extends Model
             'split_payment' => 'boolean',
             'sdi_excluded' => 'boolean',
             'reverse_charge' => 'boolean',
+            'duty_exemption_eligible' => 'boolean',
             'total_paid' => 'decimal:2',
             'receivable_amount' => 'decimal:2',
             'is_deposit' => 'boolean',

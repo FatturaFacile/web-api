@@ -100,6 +100,8 @@ class SettingsController extends Controller
                     new OA\Property(property: 'qr_iban', type: 'string', maxLength: 34, nullable: true, example: 'CH4430000000000000000'),
                     new OA\Property(property: 'sdi_code', type: 'string', maxLength: 7, nullable: true, example: 'M5UXCR1'),
                     new OA\Property(property: 'pec_email', type: 'string', format: 'email', nullable: true, example: 'acme@pec.it'),
+                    new OA\Property(property: 'customs_approved_exporter_number', type: 'string', maxLength: 50, nullable: true, example: 'CH-AE-123456'),
+                    new OA\Property(property: 'rex_exporter_number', type: 'string', maxLength: 50, nullable: true, example: 'CHREX123456789'),
                     new OA\Property(property: 'settings', description: 'Free settings. `regime_fiscale` must be a RegimeFiscale of the FatturaPA schema (RF01-RF20).', type: 'object', nullable: true),
                 ]
             )
@@ -151,6 +153,8 @@ class SettingsController extends Controller
             'qr_iban' => ['nullable', 'string', 'max:34'],
             'sdi_code' => ['nullable', 'string', 'size:7'],
             'pec_email' => ['nullable', 'email'],
+            'customs_approved_exporter_number' => ['nullable', 'string', 'max:50'],
+            'rex_exporter_number' => ['nullable', 'string', 'max:50'],
             'settings' => ['nullable', 'array'],
             'settings.regime_fiscale' => ['nullable', Rule::enum(RegimeFiscale::class)],
             'settings.enasarco_agent_type' => ['nullable', Rule::in(EnasarcoParameter::AGENT_TYPES)],

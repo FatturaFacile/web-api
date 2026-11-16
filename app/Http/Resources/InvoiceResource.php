@@ -59,6 +59,9 @@ class InvoiceResource extends JsonResource
             'split_payment' => (bool) $this->split_payment,
             'reverse_charge' => (bool) $this->reverse_charge,
             'notes' => $this->notes,
+            'free_trade_agreement_id' => $this->free_trade_agreement_id,
+            'origin_declaration_text' => $this->origin_declaration_text,
+            'duty_exemption_eligible' => (bool) $this->duty_exemption_eligible,
             'items' => InvoiceItemResource::collection($this->whenLoaded('items')),
             'sdi_metadata' => $this->whenLoaded('sdiMetadata', fn () => [
                 'transmission_format' => $this->sdiMetadata->transmission_format,

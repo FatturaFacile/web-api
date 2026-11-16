@@ -70,6 +70,14 @@ class InventoryController extends Controller
                     new OA\Property(property: 'cost_price', type: 'number', format: 'float', nullable: true, example: 25.00),
                     new OA\Property(property: 'tax_rate', type: 'number', format: 'float', example: 22.0),
                     new OA\Property(property: 'track_inventory', type: 'boolean', example: true),
+                    new OA\Property(property: 'customs_taric_code_id', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'taric_code', type: 'string', nullable: true, pattern: '^\d{6}(\d{2}(\d{2})?)?$', example: '91012100'),
+                    new OA\Property(property: 'country_of_origin', type: 'string', nullable: true, example: 'CH'),
+                    new OA\Property(property: 'origin_type', type: 'string', nullable: true, enum: ['preferential', 'non_preferential']),
+                    new OA\Property(property: 'made_in_label', type: 'string', nullable: true, example: 'Swiss Made'),
+                    new OA\Property(property: 'preferential_agreement_id', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'eur1_required', type: 'boolean', example: false),
+                    new OA\Property(property: 'origin_rule_notes', type: 'string', nullable: true),
                 ]
             )
         ),

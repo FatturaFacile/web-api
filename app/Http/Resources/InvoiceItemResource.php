@@ -27,6 +27,10 @@ class InvoiceItemResource extends JsonResource
             'tax_rate' => (float) $this->tax_rate,
             'discount_percentage' => (float) $this->discount_percentage,
             'line_total' => (float) $this->line_total,
+            'taric_code' => $this->taric_code,
+            'country_of_origin' => $this->country_of_origin,
+            'origin_type' => $this->origin_type,
+            'made_in_label' => $this->made_in_label,
         ];
     }
 }

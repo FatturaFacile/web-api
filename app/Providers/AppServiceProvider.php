@@ -194,6 +194,7 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute((int) config('auth.two_factor.rate_limits.challenge_per_minute'))->by('challenge:'.hash('sha256', (string) $request->input('challenge_token'))),
             Limit::perMinute((int) config('auth.two_factor.rate_limits.challenge_per_minute') * 3)->by('ip:'.$request->ip()),
         ]);
+        Gate::define('customs.manage', fn ($user): bool => $user->hasTenantPermission(app(TenantContext::class)->getTenantId(), 'customs.manage'));
 
         Scramble::afterOpenApiGenerated(function ($openApi) {});
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Inventory;
 
+use App\Http\Requests\Concerns\CustomsOriginRules;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -13,6 +14,8 @@ use Illuminate\Validation\Rule;
  */
 class UpdateProductRequest extends FormRequest
 {
+    use CustomsOriginRules;
+
     public function authorize(): bool
     {
         return true;
@@ -24,6 +27,7 @@ class UpdateProductRequest extends FormRequest
     public function rules(): array
     {
         return [
+            ...$this->customsOriginRules(),
             'sku' => ['sometimes', 'string', 'max:50', Rule::unique('products', 'sku')->where('tenant_id', app(TenantContext::class)->getTenantId())->ignore($this->route('id'))],
             'barcode' => ['nullable', 'string', 'max:50'],
             'name' => ['sometimes', 'string'],

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Invoicing;
 
 use App\Models\Invoice;
+use App\Models\Product;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +33,8 @@ class InvoiceService
     {
         $items = array_map(static fn (array $item): array => array_intersect_key($item, array_flip([
             'product_id', 'description', 'quantity', 'unit_price', 'tax_rate', 'discount_percentage', 'revenue_account_id', 'product_charge_type_id',
-        ])), $data['items'] ?? []);
+            'taric_code', 'country_of_origin', 'origin_type', 'made_in_label',
+        ])), $this->withCustomsSnapshot($data['items'] ?? []));
         unset($data['items'], $data['invoice_number']);
 
         return $this->issue($data, $items);
@@ -65,5 +67,30 @@ class InvoiceService
 
             return Invoice::query()->with(['items', 'contact'])->findOrFail($created->id);
         });
+    }
+
+    /**
+     * Copies the customs data of the product onto every line that does not state its own: the document keeps its own
+     * snapshot, so later product edits never rewrite an issued document.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function withCustomsSnapshot(array $items): array
+    {
+        $ids = array_values(array_unique(array_filter(array_column($items, 'product_id'))));
+        $products = $ids === [] ? [] : Product::query()->whereIn('id', $ids)->get()->keyBy('id')->all();
+
+        return array_map(static function (array $item) use ($products): array {
+            $product = isset($item['product_id']) ? ($products[$item['product_id']] ?? null) : null;
+
+            return [
+                ...$item,
+                'taric_code' => $item['taric_code'] ?? $product?->taric_code,
+                'country_of_origin' => $item['country_of_origin'] ?? $product?->country_of_origin,
+                'origin_type' => $item['origin_type'] ?? $product?->origin_type?->value,
+                'made_in_label' => $item['made_in_label'] ?? $product?->made_in_label,
+            ];
+        }, $items);
     }
 }

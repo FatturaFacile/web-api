@@ -26,6 +26,10 @@ class InvoiceItem extends Model
         'line_total',
         'revenue_account_id',
         'product_charge_type_id',
+        'taric_code',
+        'country_of_origin',
+        'origin_type',
+        'made_in_label',
     ];
 
     protected function casts(): array

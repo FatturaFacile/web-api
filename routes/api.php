@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Banking\BankStatementController;
 use App\Http\Controllers\Api\V1\ConstructionController;
 use App\Http\Controllers\Api\V1\ContactInsightsController;
 use App\Http\Controllers\Api\V1\CrmController;
+use App\Http\Controllers\Api\V1\CustomsTaricCodeController;
 use App\Http\Controllers\Api\V1\Dashboard\DashboardBuilderController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeliveryNoteController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\Api\V1\Ecommerce\EcommerceWebhookController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FieldServiceController;
 use App\Http\Controllers\Api\V1\FleetRentalController;
+use App\Http\Controllers\Api\V1\FreeTradeAgreementController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\HrController;
 use App\Http\Controllers\Api\V1\IncomingInvoiceWebhookController;
@@ -39,6 +41,7 @@ use App\Http\Controllers\Api\V1\Inventory\ProductLabelController;
 use App\Http\Controllers\Api\V1\Inventory\ProductVariantController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\InvoiceController;
+use App\Http\Controllers\Api\V1\InvoiceCustomsOriginController;
 use App\Http\Controllers\Api\V1\InvoicePaymentController;
 use App\Http\Controllers\Api\V1\InvoiceQrBillController;
 use App\Http\Controllers\Api\V1\InvoiceSdiController;
@@ -216,6 +219,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/invoices/{id}/generate-qr-bill', [InvoiceController::class, 'generateQrBill'])->middleware('deprecated:/api/v1/sales/invoices/{id}/qr-bill')->name('invoices.generate-qr-bill');
             Route::get('/invoices/{id}/download-qr-bill', [InvoiceController::class, 'downloadQrBill'])->middleware('deprecated:/api/v1/sales/invoices/{id}/qr-bill')->name('invoices.download-qr-bill');
             Route::get('/invoices/{id}/qr-bill', [InvoiceQrBillController::class, 'show'])->name('invoices.qr-bill');
+            Route::post('/invoices/{id}/evaluate-customs-origin', [InvoiceCustomsOriginController::class, 'evaluate'])->name('invoices.evaluate-customs-origin');
             Route::get('/invoices/{id}/payments', [InvoicePaymentController::class, 'index'])->name('invoices.payments.index');
             Route::post('/invoices/{id}/payments', [InvoicePaymentController::class, 'store'])->name('invoices.payments.store');
             Route::post('/invoices/{id}/convert-proforma', [InvoicePaymentController::class, 'convertProforma'])->name('invoices.convert-proforma');
@@ -269,6 +273,12 @@ Route::prefix('v1')->group(function (): void {
 
             Route::apiResource('delivery-notes', DeliveryNoteController::class)->only(['index', 'show', 'destroy'])->parameters(['delivery-notes' => 'id']);
             Route::post('/delivery-notes/{id}/invoice', [DeliveryNoteController::class, 'createInvoice'])->name('delivery-notes.invoice');
+        });
+
+        // Global customs reference catalogs: readable by every member, written through the customs.manage gate
+        Route::prefix('catalog')->name('catalog.')->group(function (): void {
+            Route::apiResource('customs-taric-codes', CustomsTaricCodeController::class)->parameters(['customs-taric-codes' => 'id']);
+            Route::apiResource('free-trade-agreements', FreeTradeAgreementController::class)->parameters(['free-trade-agreements' => 'id']);
         });
 
         // 4b. Catalog, Price Lists & Payment Terms

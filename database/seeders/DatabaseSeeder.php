@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
 
             ProductCategorySeeder::class,
             ProductBrandSeeder::class,
+            CustomsAndPemOriginSeeder::class,
             ProductSeeder::class,
 
             ContactSeeder::class,
