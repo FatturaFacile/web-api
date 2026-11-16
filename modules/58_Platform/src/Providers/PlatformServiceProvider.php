@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Platform\Providers;
 
+use App\Models\User;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Modules\Platform\Console\PruneIdempotencyKeysCommand;
+use Modules\Platform\Listeners\BroadcastUnreadNotifications;
 
 /**
  * Cross-cutting platform features: idempotent mutating requests, ETag / If-Match optimistic locking (both middleware
@@ -19,6 +24,12 @@ final class PlatformServiceProvider extends ServiceProvider
         $this->app->booted(function (): void {
             $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
         });
+
+        Event::listen(NotificationSent::class, BroadcastUnreadNotifications::class);
+
+        // Realtime: clients authorise their private channel with the bearer token (POST /api/v1/broadcasting/auth).
+        Broadcast::routes(['prefix' => 'api/v1', 'middleware' => ['auth:sanctum']]);
+        Broadcast::channel('users.{id}.notifications', static fn (User $user, string $id): bool => (string) $user->id === $id);
 
         if ($this->app->runningInConsole()) {
             $this->commands([PruneIdempotencyKeysCommand::class]);

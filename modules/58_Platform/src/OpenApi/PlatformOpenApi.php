@@ -38,8 +38,17 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'channel', type: 'string', enum: ['database', 'mail']),
     new OA\Property(property: 'category', type: 'string', enum: ['general', 'billing', 'crm', 'inventory', 'hr', 'system']),
     new OA\Property(property: 'enabled', type: 'boolean'),
+    new OA\Property(property: 'frequency', type: 'string', enum: ['immediate', 'digest']),
+])]
+#[OA\Schema(schema: 'PlatformNotificationSettings', type: 'object', properties: [
+    new OA\Property(property: 'quiet_hours_enabled', type: 'boolean'),
+    new OA\Property(property: 'quiet_start', type: 'string', example: '20:00'),
+    new OA\Property(property: 'quiet_end', type: 'string', example: '08:00'),
+    new OA\Property(property: 'timezone', type: 'string', example: 'Europe/Rome'),
+    new OA\Property(property: 'muted_until', type: 'string', format: 'date-time', nullable: true),
 ])]
 #[OA\Schema(schema: 'PlatformNotificationPreferences', type: 'object', properties: [
+    new OA\Property(property: 'frequencies', type: 'array', items: new OA\Items(type: 'string')),
     new OA\Property(property: 'channels', type: 'array', items: new OA\Items(type: 'string')),
     new OA\Property(property: 'categories', type: 'array', items: new OA\Items(type: 'string')),
     new OA\Property(property: 'preferences', type: 'array', items: new OA\Items(ref: '#/components/schemas/PlatformNotificationPreference')),
