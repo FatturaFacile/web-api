@@ -286,6 +286,7 @@ final class TimeTrackingController extends Controller
                 $this->secoExport->generate($tenantId, $employeeId, $from, $to),
                 "seco_{$from}_{$to}.csv",
             ],
+            default => throw new \InvalidArgumentException("Unsupported format: {$format}"),
         };
 
         return response($content, 200, [
@@ -377,10 +378,14 @@ final class TimeTrackingController extends Controller
                 ->where('tenant_id', $tenantId)
                 ->where('user_id', $employeeId)
                 ->whereBetween('work_date', [$from, $to])
-                ->select(['user_id', 'work_date', 'worked_minutes', 'break_minutes'])
+                ->select(['user_id', 'work_date', 'worked_minutes', 'break_minutes', 'qualifying_break_minutes'])
                 ->get()->all();
 
-            $alerts = (new SwitzerlandComplianceCalculator)->checkDailyBreaks($daily);
+            $calculator = new SwitzerlandComplianceCalculator;
+            $alerts = array_merge(
+                $calculator->checkDailyBreaks($daily),
+                $calculator->checkQualifyingBreaks($daily),
+            );
         }
 
         return response()->json(['data' => $alerts]);

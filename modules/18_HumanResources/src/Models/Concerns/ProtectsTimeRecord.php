@@ -28,7 +28,7 @@ trait ProtectsTimeRecord
         }
 
         // Allow soft deletes; only block physical (force) deletions.
-        if (method_exists($this, 'isForceDeleting') && ! $this->isForceDeleting()) {
+        if (! $this->isForceDeleting()) {
             return null;
         }
 

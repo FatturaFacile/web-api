@@ -39,10 +39,12 @@ final class TimeRecordService
 
     /**
      * The employee clocks now: the sequence entry, (break start, break end)*, exit is enforced.
+     *
+     * @param  array{lat: float, lng: float, accuracy_meters?: float}|null  $gps  Point-in-time GPS only when consent is on file.
      */
-    public function clock(User $employee, TimeEventType $eventType, TimeRecordSource $source, ?string $note): TimeClockEvent
+    public function clock(User $employee, TimeEventType $eventType, TimeRecordSource $source, ?string $note, ?array $gps = null): TimeClockEvent
     {
-        return DB::transaction(function () use ($employee, $eventType, $source, $note): TimeClockEvent {
+        return DB::transaction(function () use ($employee, $eventType, $source, $note, $gps): TimeClockEvent {
             // Two clicks on the badge must not both see the previous state.
             User::query()->whereKey($employee->id)->lockForUpdate()->first();
 
@@ -55,7 +57,7 @@ final class TimeRecordService
                 ]);
             }
 
-            return $this->storeEvent($employee, (string) $employee->id, $now->startOfMinute(), $eventType, $source, $note, null);
+            return $this->storeEvent($employee, (string) $employee->id, $now->startOfMinute(), $eventType, $source, $note, null, $gps);
         });
     }
 
@@ -200,6 +202,9 @@ final class TimeRecordService
         });
     }
 
+    /**
+     * @param  array{lat: float, lng: float, accuracy_meters?: float}|null  $gps
+     */
     private function storeEvent(
         User $actor,
         string $employeeId,
@@ -208,8 +213,11 @@ final class TimeRecordService
         TimeRecordSource $source,
         ?string $note,
         ?string $reason,
+        ?array $gps = null,
     ): TimeClockEvent {
         $this->closings->assertOpen($occurredAt);
+
+        $gpsData = $this->resolveGps($employeeId, $gps);
 
         $event = TimeClockEvent::create([
             'user_id' => $employeeId,
@@ -218,11 +226,39 @@ final class TimeRecordService
             'source' => $source,
             'note' => $note,
             'created_by' => $actor->id,
+            'gps_lat' => $gpsData['lat'] ?? null,
+            'gps_lng' => $gpsData['lng'] ?? null,
+            'geolocation_consent_at' => $gpsData !== null ? CarbonImmutable::now() : null,
         ]);
 
         $this->audit($actor, $employeeId, 'TimeClockEvent', (string) $event->id, 'Created', null, $event->auditValues(), $reason);
 
         return $event;
+    }
+
+    /**
+     * Art. 4 L. 300/1970 & GDPR: GPS is stored only when the employee's profile has geolocation_enabled=true
+     * AND privacy_notice_acknowledged_at is set. Returns null if either condition is unmet.
+     *
+     * @param  array{lat: float, lng: float, accuracy_meters?: float}|null  $gps
+     * @return array{lat: float, lng: float}|null
+     */
+    private function resolveGps(string $employeeId, ?array $gps): ?array
+    {
+        if ($gps === null) {
+            return null;
+        }
+
+        $profile = TimeRecordingProfile::query()
+            ->where('user_id', $employeeId)
+            ->select(['geolocation_enabled', 'privacy_notice_acknowledged_at'])
+            ->first();
+
+        if ($profile === null || ! $profile->geolocation_enabled || $profile->privacy_notice_acknowledged_at === null) {
+            return null;
+        }
+
+        return ['lat' => (float) $gps['lat'], 'lng' => (float) $gps['lng']];
     }
 
     private function clockState(string $employeeId, CarbonImmutable $now): string

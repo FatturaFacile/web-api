@@ -14,19 +14,26 @@ use Modules\HumanResources\Contracts\LeaveAndTimeServiceInterface;
 use Modules\HumanResources\DTOs\SubmitLeaveRequestDTO;
 use Modules\HumanResources\Exceptions\HumanResourcesException;
 use Modules\HumanResources\Http\Requests\ReasonRequest;
+use Modules\HumanResources\Http\Requests\StoreTimeEventRequest;
 use Modules\HumanResources\Http\Requests\SubmitOwnLeaveRequest;
 use Modules\HumanResources\Http\Resources\EmployeeDocumentResource;
 use Modules\HumanResources\Http\Resources\LeaveBalanceResource;
 use Modules\HumanResources\Http\Resources\LeaveRequestResource;
 use Modules\HumanResources\Http\Resources\LeaveTypeSelfServiceResource;
+use Modules\HumanResources\Http\Resources\TimeClockEventResource;
 use Modules\HumanResources\Models\Certification;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\EmployeeDocument;
 use Modules\HumanResources\Models\LeaveBalance;
 use Modules\HumanResources\Models\LeaveRequest;
 use Modules\HumanResources\Models\LeaveType;
+use Modules\HumanResources\Models\TimeClockEvent;
+use Modules\HumanResources\Models\TimeRecordingProfile;
 use Modules\HumanResources\Models\TrainingRecord;
 use Modules\HumanResources\Services\EmployeeDocumentService;
+use Modules\HumanResources\Services\TimeRecordService;
+use Modules\HumanResources\Services\TimeTracking\TimeEventType;
+use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -40,6 +47,7 @@ final class EmployeeSelfServiceController extends Controller
         private readonly LeaveAndTimeServiceInterface $leave,
         private readonly EmployeeDocumentService $documents,
         private readonly TenantContext $tenantContext,
+        private readonly TimeRecordService $timeRecords,
     ) {}
 
     /**
@@ -313,6 +321,64 @@ final class EmployeeSelfServiceController extends Controller
         $document = EmployeeDocument::query()->where('employee_id', $employee->id)->where('visible_to_employee', true)->findOrFail($id);
 
         return EmployeeDocumentController::fileResponse($this->documents, $document, $request->boolean('inline'));
+    }
+
+    /**
+     * Clock the authenticated user in or out (self-service, no HR module access required).
+     * Art. 4 L. 300/1970 & GDPR: GPS is stored only when the employee's profile has consent on file.
+     */
+    public function clock(StoreTimeEventRequest $request): JsonResponse
+    {
+        $this->ownEmployee($request);
+
+        $user = $request->user();
+        $eventType = TimeEventType::from((string) $request->validated('event_type'));
+        $source = $request->validated('source');
+        $source = $source === null ? TimeRecordSource::Web : TimeRecordSource::from((string) $source);
+        $note = $request->validated('note');
+
+        $gps = null;
+        if ($request->filled('gps_lat') && $request->filled('gps_lng')) {
+            $gps = ['lat' => (float) $request->validated('gps_lat'), 'lng' => (float) $request->validated('gps_lng')];
+        }
+
+        $event = $this->timeRecords->clock($user, $eventType, $source, $note, $gps);
+
+        return response()->json(['data' => new TimeClockEventResource($event)], 201);
+    }
+
+    /**
+     * The own punch history (read-only, CJEU C-55/18 self-service access).
+     */
+    public function timeEvents(Request $request): JsonResponse
+    {
+        $this->ownEmployee($request);
+
+        $userId = (string) $request->user()->getAuthIdentifier();
+
+        $events = TimeClockEvent::query()
+            ->where('user_id', $userId)
+            ->betweenLocalDays($request->input('from'), $request->input('to'))
+            ->orderBy('occurred_at')
+            ->paginate($request->integer('per_page', 50));
+
+        return response()->json(TimeClockEventResource::collection($events)->response()->getData(true));
+    }
+
+    /**
+     * The own GPS/privacy consent settings for the clock UI (Art. 4 L. 300/1970 gate).
+     */
+    public function clockSettings(Request $request): JsonResponse
+    {
+        $this->ownEmployee($request);
+
+        $userId = (string) $request->user()->getAuthIdentifier();
+        $profile = TimeRecordingProfile::query()->where('user_id', $userId)->first();
+
+        return response()->json(['data' => [
+            'geolocation_enabled' => (bool) $profile?->geolocation_enabled,
+            'privacy_notice_acknowledged' => $profile?->privacy_notice_acknowledged_at !== null,
+        ]]);
     }
 
     /**

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\HumanResources\Models\TimeAuditEntry;
+use Modules\HumanResources\Models\TimeClockEvent;
 use Modules\HumanResources\Models\TimeDailyRecord;
 use Modules\HumanResources\Services\TimeTracking\HashChainIntegrityService;
 
@@ -276,4 +277,90 @@ test('the export endpoint rejects an invalid format', function (): void {
     tehApi($this->manager)->getJson(
         '/api/v1/hr/time/export?format=unknown&from=2026-11-01&to=2026-11-30&jurisdiction=CH'
     )->assertUnprocessable();
+});
+
+// ---------------------------------------------------------------------------
+// IT D.Lgs. 66/2003 — 11 h daily rest (Art. 7)
+// ---------------------------------------------------------------------------
+
+test('the compliance alerts endpoint flags a rest period shorter than 11 hours', function (): void {
+    // Manager records: Out at 22:00, then In at 06:00 the following day — only 8 h of rest.
+    tehApi($this->manager)->postJson('/api/v1/hr/time/events', [
+        'employee_id' => $this->employee->id,
+        'event_type' => 'Out',
+        'occurred_at' => '2026-11-02 22:00:00',
+        'reason' => 'Registered for compliance test',
+    ])->assertCreated();
+
+    tehApi($this->manager)->postJson('/api/v1/hr/time/events', [
+        'employee_id' => $this->employee->id,
+        'event_type' => 'In',
+        'occurred_at' => '2026-11-03 06:00:00',
+        'reason' => 'Registered for compliance test',
+    ])->assertCreated();
+
+    $response = tehApi($this->manager)->getJson(
+        "/api/v1/hr/time/compliance-alerts?jurisdiction=IT&from=2026-11-01&to=2026-11-30&employee_id={$this->employee->id}"
+    )->assertOk();
+
+    $alerts = $response->json('data');
+
+    expect(array_filter($alerts, static fn (array $a): bool => $a['type'] === 'rest_11h'))->not->toBeEmpty()
+        ->and($alerts[0]['actual_hours'])->toBeLessThan(11.0);
+});
+
+// ---------------------------------------------------------------------------
+// CH OLL 1 Art. 73a (Waiver) and Art. 73b (Simplified) — profile validation
+// ---------------------------------------------------------------------------
+
+test('saving a waiver profile without a collective_agreement_reference is rejected', function (): void {
+    tehApi($this->manager)->putJson("/api/v1/hr/time/profiles/{$this->employee->id}", [
+        'mode' => 'Waived',
+        'agreement_date' => '2026-01-01',
+        'agreement_valid_from' => '2026-01-01',
+        'annual_gross_salary' => 130000,
+        'legal_max_weekly_hours' => 45,
+        'weekly_hours' => 42,
+        'work_days_per_week' => 5,
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['collective_agreement_reference']);
+});
+
+test('saving a simplified profile without an agreement_date is rejected', function (): void {
+    tehApi($this->manager)->putJson("/api/v1/hr/time/profiles/{$this->employee->id}", [
+        'mode' => 'Simplified',
+        'agreement_basis' => 'collective',
+        'autonomy_percent' => 25,
+        'agreement_valid_from' => '2026-01-01',
+        'legal_max_weekly_hours' => 45,
+        'weekly_hours' => 42,
+        'work_days_per_week' => 5,
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['agreement_date']);
+});
+
+// ---------------------------------------------------------------------------
+// Retention lock — GDPR / LUL / Art. 73 OLL 1
+// ---------------------------------------------------------------------------
+
+test('force-deleting a recent clock event is blocked by the retention lock', function (): void {
+    tehApi($this->employee)->postJson('/api/v1/hr/time/events', ['event_type' => 'In'])
+        ->assertCreated();
+
+    $event = TimeClockEvent::query()
+        ->where('user_id', $this->employee->id)
+        ->first();
+
+    expect(fn () => $event->forceDelete())->toThrow(LogicException::class);
+});
+
+test('force-deleting a recent daily record is blocked by the retention lock', function (): void {
+    $record = TimeDailyRecord::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'user_id' => $this->employee->id,
+        'work_date' => '2026-11-02',
+        'worked_minutes' => 480,
+    ]);
+
+    expect(fn () => $record->forceDelete())->toThrow(LogicException::class);
 });

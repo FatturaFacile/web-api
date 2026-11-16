@@ -31,6 +31,9 @@ Route::prefix('api/v1/hr/me')
         Route::get('/training', [EmployeeSelfServiceController::class, 'training'])->name('training');
         Route::get('/documents', [EmployeeSelfServiceController::class, 'documents'])->name('documents.index');
         Route::get('/documents/{id}/download', [EmployeeSelfServiceController::class, 'downloadDocument'])->name('documents.download');
+        Route::post('/clock', [EmployeeSelfServiceController::class, 'clock'])->name('clock');
+        Route::get('/time/events', [EmployeeSelfServiceController::class, 'timeEvents'])->name('time.events');
+        Route::get('/clock-settings', [EmployeeSelfServiceController::class, 'clockSettings'])->name('clock-settings');
     });
 
 Route::prefix('api/v1/hr')

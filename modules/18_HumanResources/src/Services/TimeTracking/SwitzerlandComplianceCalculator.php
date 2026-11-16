@@ -47,6 +47,42 @@ final class SwitzerlandComplianceCalculator
     }
 
     /**
+     * Find days where qualifying breaks (>= 30 min, separately tracked per Art. 73 OLL 1) are absent for days > 7h.
+     *
+     * Art. 73 OLL 1 requires that breaks of 30 minutes or more are recorded separately from shorter interruptions.
+     * This method checks that `qualifying_break_minutes` (the sum of individual breaks >= 30 min) satisfies the rule.
+     *
+     * @param  array<object>  $dailyRecords  stdClass with: user_id, work_date, worked_minutes, qualifying_break_minutes (nullable)
+     * @return array<array{user_id: string, date: string, type: string, worked_hours: float, qualifying_break_minutes: int}>
+     */
+    public function checkQualifyingBreaks(array $dailyRecords): array
+    {
+        $violations = [];
+
+        foreach ($dailyRecords as $record) {
+            $workedMinutes = (int) $record->worked_minutes;
+
+            if ($workedMinutes <= 420) {
+                continue;
+            }
+
+            $qualifyingMinutes = (int) ($record->qualifying_break_minutes ?? 0);
+
+            if ($qualifyingMinutes < 30) {
+                $violations[] = [
+                    'user_id' => (string) $record->user_id,
+                    'date' => $record->work_date,
+                    'type' => 'qualifying_break_missing',
+                    'worked_hours' => round($workedMinutes / 60, 2),
+                    'qualifying_break_minutes' => $qualifyingMinutes,
+                ];
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
      * Determine required break duration in minutes for a given number of worked minutes.
      */
     private function requiredBreakMinutes(int $workedMinutes): int

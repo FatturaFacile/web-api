@@ -58,38 +58,54 @@ final class ItalyComplianceCalculator
     }
 
     /**
-     * Find calendar weeks where total worked minutes exceed 48 hours (Art. 4 D.Lgs. 66/2003).
-     * Uses time_daily_records where available; falls back to In/Out event pairing.
+     * Check whether the rolling average weekly hours over the reference period exceeds 48 h (Art. 4 D.Lgs. 66/2003).
+     *
+     * The law requires the AVERAGE over a reference period of up to 4 months (Art. 4 cpv. 3) not to exceed 48 h.
+     * A single week above 48 h is therefore not a violation provided the period average stays below.
      *
      * @param  array<object>  $dailyRecords  stdClass with: user_id, work_date (Y-m-d), worked_minutes
      * @return ItalyComplianceViolation[]
      */
-    public function checkWeekly48h(array $dailyRecords): array
+    public function checkWeekly48h(array $dailyRecords, int $referencePeriodMonths = 4): array
     {
         $violations = [];
 
-        // Group by user then ISO week
-        $byUserWeek = [];
+        $byUser = [];
         foreach ($dailyRecords as $record) {
+            $userId = (string) $record->user_id;
             $date = CarbonImmutable::parse($record->work_date);
-            $weekKey = $date->format('o-W'); // ISO year-week
-            $weekStart = $date->startOfWeek()->format('Y-m-d');
-            $key = $record->user_id.'|'.$weekKey;
-            $byUserWeek[$key] = [
-                'user_id' => $record->user_id,
-                'week_start' => $weekStart,
-                'minutes' => ($byUserWeek[$key]['minutes'] ?? 0) + (int) $record->worked_minutes,
-            ];
+            $minutes = (int) $record->worked_minutes;
+
+            if (! isset($byUser[$userId])) {
+                $byUser[$userId] = ['user_id' => $userId, 'total_minutes' => 0, 'min_date' => $date, 'max_date' => $date];
+            } else {
+                if ($date < $byUser[$userId]['min_date']) {
+                    $byUser[$userId]['min_date'] = $date;
+                }
+                if ($date > $byUser[$userId]['max_date']) {
+                    $byUser[$userId]['max_date'] = $date;
+                }
+            }
+
+            $byUser[$userId]['total_minutes'] += $minutes;
         }
 
-        foreach ($byUserWeek as $entry) {
-            $workedHours = $entry['minutes'] / 60;
-            if ($workedHours > self::WEEKLY_MAX_HOURS) {
+        foreach ($byUser as $entry) {
+            /** @var CarbonImmutable $minDate */
+            $minDate = $entry['min_date'];
+            /** @var CarbonImmutable $maxDate */
+            $maxDate = $entry['max_date'];
+
+            $days = max(1, $minDate->diffInDays($maxDate) + 1);
+            $weeks = $days / 7.0;
+            $avgHoursPerWeek = ($entry['total_minutes'] / 60.0) / max(1.0, $weeks);
+
+            if ($avgHoursPerWeek > self::WEEKLY_MAX_HOURS) {
                 $violations[] = new ItalyComplianceViolation(
-                    type: 'weekly_48h',
-                    userId: (string) $entry['user_id'],
-                    date: $entry['week_start'],
-                    actual: round($workedHours, 2),
+                    type: 'weekly_48h_avg',
+                    userId: $entry['user_id'],
+                    date: $minDate->format('Y-m-d'),
+                    actual: round($avgHoursPerWeek, 2),
                     limit: self::WEEKLY_MAX_HOURS,
                 );
             }

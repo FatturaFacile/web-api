@@ -7545,7 +7545,7 @@ parameters:
 		-
 			message: '#^Cannot call method format\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 5
+			count: 6
 			path: modules/18_HumanResources/src/Models/TimeRecordingProfile.php
 
 		-

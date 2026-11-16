@@ -20,6 +20,11 @@ use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
  * @property CarbonImmutable $occurred_at
  * @property TimeEventType $event_type
  * @property TimeRecordSource $source
+ * @property string|null $source_device
+ * @property string|null $amended_from_id
+ * @property string|null $gps_lat
+ * @property string|null $gps_lng
+ * @property CarbonImmutable|null $geolocation_consent_at
  */
 final class TimeClockEvent extends BaseEnterpriseModel
 {

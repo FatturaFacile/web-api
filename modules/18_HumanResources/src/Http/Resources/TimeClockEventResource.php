@@ -6,8 +6,10 @@ namespace Modules\HumanResources\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\HumanResources\Models\TimeClockEvent;
 use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
 
+/** @mixin TimeClockEvent */
 final class TimeClockEventResource extends JsonResource
 {
     public function toArray(Request $request): array

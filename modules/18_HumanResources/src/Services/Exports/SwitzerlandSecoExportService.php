@@ -46,7 +46,7 @@ final class SwitzerlandSecoExportService
     public function exportCsv(User $employee, string $from, string $to): array
     {
         $profile = TimeRecordingProfile::query()->where('user_id', $employee->id)->first();
-        $mode = $profile?->mode ?? TimeRecordingMode::Detailed;
+        $mode = $profile->mode ?? TimeRecordingMode::Detailed;
         $report = $this->calculator->evaluate($employee, $from, $to);
         $rows = $this->buildRows($employee, $report, $mode);
         $content = $this->toCsv($rows, $mode);
@@ -66,7 +66,7 @@ final class SwitzerlandSecoExportService
     public function complianceAlerts(User $employee, string $from, string $to): array
     {
         $profile = TimeRecordingProfile::query()->where('user_id', $employee->id)->first();
-        $mode = $profile?->mode ?? TimeRecordingMode::Detailed;
+        $mode = $profile->mode ?? TimeRecordingMode::Detailed;
         $report = $this->calculator->evaluate($employee, $from, $to);
 
         $alerts = [];
