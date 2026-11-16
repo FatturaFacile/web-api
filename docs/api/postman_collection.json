@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "9d310446-b01d-4a73-a5c3-0c5a86c989f8",
+        "_postman_id": "5ee1f9bf-10cc-4d0c-b329-9ed95bac0b10",
         "name": "FatturaFacile ERP API",
         "description": "Postman collection of the FatturaFacile ERP API. Set the baseUrl and frontendUrl variables, then run Auth > login: the collection fetches the CSRF cookie itself and sends Origin, Referer and X-XSRF-TOKEN; the session cookie is kept by Postman and the active tenant in tenantId. authToken is used only in the optional token mode (login with token_mode true).",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -3871,7 +3871,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"invoice_type\": \"standard\",\n    \"invoice_number\": \"string\",\n    \"related_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"payment_term_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"jurisdiction\": \"IT\",\n    \"split_payment\": false,\n    \"reverse_charge\": false,\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5\n        }\n    ],\n    \"document_type\": \"TD01\",\n    \"vat_nature\": \"N1\",\n    \"source_passive_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"linked_document_number\": \"string\",\n    \"linked_document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"declaration_of_intent_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"skip_declaration_of_intent\": false,\n    \"withholding_tax_enabled\": false,\n    \"withholding_tax_percent\": 1.5,\n    \"withholding_tax_type\": \"RT01\",\n    \"withholding_tax_reason\": \"A\",\n    \"withholding_tax_base_percent\": 1.5,\n    \"stamp_duty_applied\": false,\n    \"stamp_duty_charged\": false,\n    \"fund_enabled\": false,\n    \"fund_type\": \"TC01\",\n    \"fund_percent\": 1.5,\n    \"fund_vat_rate\": 1.5,\n    \"fund_subject_to_withholding\": false,\n    \"enasarco_enabled\": false,\n    \"enasarco_agent_type\": \"single_mandate\"\n}",
+                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"invoice_type\": \"standard\",\n    \"invoice_number\": \"string\",\n    \"related_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"payment_term_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"jurisdiction\": \"IT\",\n    \"split_payment\": false,\n    \"reverse_charge\": false,\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5,\n            \"taric_code\": \"string\",\n            \"country_of_origin\": \"string\",\n            \"origin_type\": \"preferential\",\n            \"made_in_label\": \"string\"\n        }\n    ],\n    \"document_type\": \"TD01\",\n    \"vat_nature\": \"N1\",\n    \"source_passive_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"linked_document_number\": \"string\",\n    \"linked_document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"declaration_of_intent_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"skip_declaration_of_intent\": false,\n    \"withholding_tax_enabled\": false,\n    \"withholding_tax_percent\": 1.5,\n    \"withholding_tax_type\": \"RT01\",\n    \"withholding_tax_reason\": \"A\",\n    \"withholding_tax_base_percent\": 1.5,\n    \"stamp_duty_applied\": false,\n    \"stamp_duty_charged\": false,\n    \"fund_enabled\": false,\n    \"fund_type\": \"TC01\",\n    \"fund_percent\": 1.5,\n    \"fund_vat_rate\": 1.5,\n    \"fund_subject_to_withholding\": false,\n    \"enasarco_enabled\": false,\n    \"enasarco_agent_type\": \"single_mandate\",\n    \"free_trade_agreement_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"origin_declaration_text\": \"string\",\n    \"duty_exemption_eligible\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4203,6 +4203,73 @@
                         "description": "Serves the SVG of the real QR-bill. Use GET /api/v1/sales/invoices/{id}/qr-bill or the invoice PDF instead.",
                         "auth": {
                             "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sales/invoices/:id/evaluate-customs-origin",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/invoices/:id/evaluate-customs-origin",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "invoices",
+                                ":id",
+                                "evaluate-customs-origin"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"locale\": \"it\",\n    \"customs_auth_number\": \"string\",\n    \"apply\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     }
                 },
@@ -34357,6 +34424,570 @@
         {
             "name": "Catalog",
             "item": [
+                {
+                    "name": "GET /v1/catalog/customs-taric-codes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/catalog/customs-taric-codes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "catalog",
+                                "customs-taric-codes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "level",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "is_active",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/catalog/customs-taric-codes",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/catalog/customs-taric-codes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "catalog",
+                                "customs-taric-codes"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"level\": \"HS6\",\n    \"chapter\": \"string\",\n    \"description\": [\n        \"string\"\n    ],\n    \"supplementary_unit\": \"string\",\n    \"duty_rate_notes\": \"string\",\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/catalog/customs-taric-codes/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/catalog/customs-taric-codes/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "catalog",
+                                "customs-taric-codes",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/catalog/customs-taric-codes/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/catalog/customs-taric-codes/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "catalog",
+                                "customs-taric-codes",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"level\": \"HS6\",\n    \"chapter\": \"string\",\n    \"description\": [\n        \"string\"\n    ],\n    \"supplementary_unit\": \"string\",\n    \"duty_rate_notes\": \"string\",\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /v1/catalog/customs-taric-codes/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/catalog/customs-taric-codes/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "catalog",
+                                "customs-taric-codes",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/catalog/free-trade-agreements",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/catalog/free-trade-agreements",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "catalog",
+                                "free-trade-agreements"
+                            ],
+                            "query": [
+                                {
+                                    "key": "is_active",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/catalog/free-trade-agreements",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/catalog/free-trade-agreements",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "catalog",
+                                "free-trade-agreements"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": [\n        \"string\"\n    ],\n    \"partner_countries\": [\n        \"string\"\n    ],\n    \"value_threshold_eur\": 1.5,\n    \"value_threshold_chf\": 1.5,\n    \"proof_types\": [\n        \"string\"\n    ],\n    \"supports_approved_exporter\": false,\n    \"supports_rex\": false,\n    \"declaration_templates\": [\n        \"string\"\n    ],\n    \"declaration_templates_no_auth\": [\n        \"string\"\n    ],\n    \"notes\": \"string\",\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/catalog/free-trade-agreements/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/catalog/free-trade-agreements/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "catalog",
+                                "free-trade-agreements",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/catalog/free-trade-agreements/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/catalog/free-trade-agreements/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "catalog",
+                                "free-trade-agreements",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": [\n        \"string\"\n    ],\n    \"partner_countries\": [\n        \"string\"\n    ],\n    \"value_threshold_eur\": 1.5,\n    \"value_threshold_chf\": 1.5,\n    \"proof_types\": [\n        \"string\"\n    ],\n    \"supports_approved_exporter\": false,\n    \"supports_rex\": false,\n    \"declaration_templates\": [\n        \"string\"\n    ],\n    \"declaration_templates_no_auth\": [\n        \"string\"\n    ],\n    \"notes\": \"string\",\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /v1/catalog/free-trade-agreements/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/catalog/free-trade-agreements/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "catalog",
+                                "free-trade-agreements",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
                 {
                     "name": "Compute the due-date schedule (installments and early-payment discount) for an amount",
                     "request": {
@@ -107657,6 +108288,172 @@
                     }
                 },
                 {
+                    "name": "Clock the authenticated user in or out (self-service, no HR module access required).\nArt. 4 L. 300/1970 & GDPR: GPS is stored only when the employee's profile has consent on file",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hr/me/clock",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hr",
+                                "me",
+                                "clock"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Clock the authenticated user in or out (self-service, no HR module access required).\nArt. 4 L. 300/1970 & GDPR: GPS is stored only when the employee's profile has consent on file",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"event_type\": \"In\",\n    \"source\": \"badge\",\n    \"occurred_at\": \"2026-01-31T12:00:00+00:00\",\n    \"note\": \"string\",\n    \"gps_lat\": 1.5,\n    \"gps_lng\": 1.5,\n    \"gps_accuracy_meters\": 1.5,\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "The own punch history (read-only, CJEU C-55/18 self-service access)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hr/me/time/events",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hr",
+                                "me",
+                                "time",
+                                "events"
+                            ],
+                            "query": [
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "The own punch history (read-only, CJEU C-55/18 self-service access)",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "The own GPS/privacy consent settings for the clock UI (Art. 4 L. 300/1970 gate)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hr/me/clock-settings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hr",
+                                "me",
+                                "clock-settings"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "The own GPS/privacy consent settings for the clock UI (Art. 4 L. 300/1970 gate)",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "List the contracts of an employee, newest first",
                     "request": {
                         "method": "GET",
@@ -114672,7 +115469,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"event_type\": \"In\",\n    \"source\": \"badge\",\n    \"occurred_at\": \"2026-01-31T12:00:00+00:00\",\n    \"note\": \"string\",\n    \"reason\": \"string\"\n}",
+                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"event_type\": \"In\",\n    \"source\": \"badge\",\n    \"occurred_at\": \"2026-01-31T12:00:00+00:00\",\n    \"note\": \"string\",\n    \"gps_lat\": 1.5,\n    \"gps_lng\": 1.5,\n    \"gps_accuracy_meters\": 1.5,\n    \"reason\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -115175,6 +115972,216 @@
                                     "language": "json"
                                 }
                             }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hr/time/export",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hr/time/export?from=&to=&format=&jurisdiction=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hr",
+                                "time",
+                                "export"
+                            ],
+                            "query": [
+                                {
+                                    "key": "employee_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "format",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "jurisdiction",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hr/time/verify-integrity",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hr/time/verify-integrity",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hr",
+                                "time",
+                                "verify-integrity"
+                            ],
+                            "query": [
+                                {
+                                    "key": "employee_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "include_deleted",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hr/time/compliance-alerts",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hr/time/compliance-alerts?from=&to=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hr",
+                                "time",
+                                "compliance-alerts"
+                            ],
+                            "query": [
+                                {
+                                    "key": "employee_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
                         }
                     }
                 },
@@ -118328,7 +119335,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"sku\": \"string\",\n    \"barcode\": \"string\",\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"unit_measure\": \"string\",\n    \"cost_price\": 1.5,\n    \"sale_price\": 1.5,\n    \"tax_rate\": 1.5,\n    \"hs_code\": \"string\",\n    \"min_stock\": 1.5\n}",
+                            "raw": "{\n    \"customs_taric_code_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"taric_code\": \"string\",\n    \"country_of_origin\": \"string\",\n    \"origin_type\": \"preferential\",\n    \"made_in_label\": \"string\",\n    \"preferential_agreement_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"eur1_required\": false,\n    \"origin_rule_notes\": \"string\",\n    \"sku\": \"string\",\n    \"barcode\": \"string\",\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"unit_measure\": \"string\",\n    \"cost_price\": 1.5,\n    \"sale_price\": 1.5,\n    \"tax_rate\": 1.5,\n    \"hs_code\": \"string\",\n    \"min_stock\": 1.5\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -118394,7 +119401,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"sku\": \"string\",\n    \"barcode\": \"string\",\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"unit_measure\": \"string\",\n    \"cost_price\": 1.5,\n    \"sale_price\": 1.5,\n    \"tax_rate\": 1.5,\n    \"hs_code\": \"string\",\n    \"track_inventory\": false,\n    \"is_active\": false,\n    \"min_stock\": 1.5\n}",
+                            "raw": "{\n    \"customs_taric_code_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"taric_code\": \"string\",\n    \"country_of_origin\": \"string\",\n    \"origin_type\": \"preferential\",\n    \"made_in_label\": \"string\",\n    \"preferential_agreement_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"eur1_required\": false,\n    \"origin_rule_notes\": \"string\",\n    \"sku\": \"string\",\n    \"barcode\": \"string\",\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"unit_measure\": \"string\",\n    \"cost_price\": 1.5,\n    \"sale_price\": 1.5,\n    \"tax_rate\": 1.5,\n    \"hs_code\": \"string\",\n    \"track_inventory\": false,\n    \"is_active\": false,\n    \"min_stock\": 1.5\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -166295,7 +167302,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"legal_name\": \"string\",\n    \"fiscal_code\": \"string\",\n    \"vat_number\": \"string\",\n    \"uid_number\": \"string\",\n    \"country\": \"IT\",\n    \"default_currency\": \"string\",\n    \"iban\": \"string\",\n    \"qr_iban\": \"string\",\n    \"sdi_code\": \"string\",\n    \"pec_email\": \"user@example.com\",\n    \"settings\": {\n        \"regime_fiscale\": \"RF01\",\n        \"enasarco_agent_type\": \"single_mandate\"\n    }\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"legal_name\": \"string\",\n    \"fiscal_code\": \"string\",\n    \"vat_number\": \"string\",\n    \"uid_number\": \"string\",\n    \"country\": \"IT\",\n    \"default_currency\": \"string\",\n    \"iban\": \"string\",\n    \"qr_iban\": \"string\",\n    \"sdi_code\": \"string\",\n    \"pec_email\": \"user@example.com\",\n    \"customs_approved_exporter_number\": \"string\",\n    \"rex_exporter_number\": \"string\",\n    \"settings\": {\n        \"regime_fiscale\": \"RF01\",\n        \"enasarco_agent_type\": \"single_mandate\"\n    }\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"

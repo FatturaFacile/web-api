@@ -47413,6 +47413,327 @@
                 }
             }
         },
+        "/v1/catalog/customs-taric-codes": {
+            "get": {
+                "operationId": "catalog.customs-taric-codes.index",
+                "tags": [
+                    "CustomsTaricCode"
+                ],
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "level",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CustomsTaricCodeResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "last_page",
+                                                "per_page",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "catalog.customs-taric-codes.store",
+                "tags": [
+                    "CustomsTaricCode"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreCustomsTaricCodeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/CustomsTaricCodeResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/catalog/customs-taric-codes/{id}": {
+            "get": {
+                "operationId": "catalog.customs-taric-codes.show",
+                "tags": [
+                    "CustomsTaricCode"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/CustomsTaricCodeResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "catalog.customs-taric-codes.update",
+                "tags": [
+                    "CustomsTaricCode"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreCustomsTaricCodeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/CustomsTaricCodeResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "catalog.customs-taric-codes.destroy",
+                "tags": [
+                    "CustomsTaricCode"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "null"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/planning/scenarios/{id}/submit": {
             "post": {
                 "operationId": "v1.planning.scenarios.submit",
@@ -69345,6 +69666,141 @@
                 }
             }
         },
+        "/v1/hr/me/clock": {
+            "post": {
+                "operationId": "v1.hr.me.clock",
+                "summary": "Clock the authenticated user in or out (self-service, no HR module access required).\nArt. 4 L. 300/1970 & GDPR: GPS is stored only when the employee's profile has consent on file",
+                "tags": [
+                    "EmployeeSelfService"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreTimeEventRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TimeClockEventResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/hr/me/time/events": {
+            "get": {
+                "operationId": "v1.hr.me.time.events",
+                "summary": "The own punch history (read-only, CJEU C-55/18 self-service access)",
+                "tags": [
+                    "EmployeeSelfService"
+                ],
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 50
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/hr/me/clock-settings": {
+            "get": {
+                "operationId": "v1.hr.me.clock-settings",
+                "summary": "The own GPS/privacy consent settings for the clock UI (Art. 4 L. 300/1970 gate)",
+                "tags": [
+                    "EmployeeSelfService"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "geolocation_enabled": {
+                                                    "type": "boolean"
+                                                },
+                                                "privacy_notice_acknowledged": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "geolocation_enabled",
+                                                "privacy_notice_acknowledged"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/hr/employees/{id}/contracts": {
             "get": {
                 "operationId": "v1.hr.contracts.index",
@@ -82293,6 +82749,313 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/catalog/free-trade-agreements": {
+            "get": {
+                "operationId": "catalog.free-trade-agreements.index",
+                "tags": [
+                    "FreeTradeAgreement"
+                ],
+                "parameters": [
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/FreeTradeAgreementResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "last_page",
+                                                "per_page",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "catalog.free-trade-agreements.store",
+                "tags": [
+                    "FreeTradeAgreement"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreFreeTradeAgreementRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/FreeTradeAgreementResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/catalog/free-trade-agreements/{id}": {
+            "get": {
+                "operationId": "catalog.free-trade-agreements.show",
+                "tags": [
+                    "FreeTradeAgreement"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/FreeTradeAgreementResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "catalog.free-trade-agreements.update",
+                "tags": [
+                    "FreeTradeAgreement"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreFreeTradeAgreementRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/FreeTradeAgreementResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "catalog.free-trade-agreements.destroy",
+                "tags": [
+                    "FreeTradeAgreement"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "null"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -96293,6 +97056,165 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/sales/invoices/{id}/evaluate-customs-origin": {
+            "post": {
+                "operationId": "sales.invoices.evaluate-customs-origin",
+                "tags": [
+                    "InvoiceCustomsOrigin"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EvaluateCustomsOriginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Customs origin evaluated successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "exporter_country": {
+                                                    "type": "string"
+                                                },
+                                                "importer_country": {
+                                                    "type": "string"
+                                                },
+                                                "free_trade_agreement_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "free_trade_agreement_code": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "preferential_value": {
+                                                    "type": "number"
+                                                },
+                                                "threshold": {
+                                                    "type": [
+                                                        "number",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "threshold_currency": {
+                                                    "type": "string"
+                                                },
+                                                "above_threshold": {
+                                                    "type": "boolean"
+                                                },
+                                                "authorization_number": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "authorization_type": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "enum": [
+                                                        "approved_exporter",
+                                                        "rex",
+                                                        null
+                                                    ]
+                                                },
+                                                "declaration_allowed": {
+                                                    "type": "boolean"
+                                                },
+                                                "duty_exemption_eligible": {
+                                                    "type": "boolean"
+                                                },
+                                                "locale": {
+                                                    "type": "string"
+                                                },
+                                                "declaration_text": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "applied": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "exporter_country",
+                                                "importer_country",
+                                                "free_trade_agreement_id",
+                                                "free_trade_agreement_code",
+                                                "preferential_value",
+                                                "threshold",
+                                                "threshold_currency",
+                                                "above_threshold",
+                                                "authorization_number",
+                                                "authorization_type",
+                                                "declaration_allowed",
+                                                "duty_exemption_eligible",
+                                                "locale",
+                                                "declaration_text",
+                                                "applied"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -191464,6 +192386,20 @@
                                         ],
                                         "format": "email"
                                     },
+                                    "customs_approved_exporter_number": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 50
+                                    },
+                                    "rex_exporter_number": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 50
+                                    },
                                     "settings": {
                                         "type": [
                                             "object",
@@ -227457,6 +228393,300 @@
                                     "properties": {
                                         "data": {
                                             "$ref": "#/components/schemas/TimeRecordingProfileResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/hr/time/export": {
+            "get": {
+                "operationId": "v1.hr.time.export",
+                "tags": [
+                    "TimeTracking"
+                ],
+                "parameters": [
+                    {
+                        "name": "employee_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "lul_csv",
+                                "seco_csv"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "jurisdiction",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "IT",
+                                "CH"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "text/csv; charset=UTF-8": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/hr/time/verify-integrity": {
+            "get": {
+                "operationId": "v1.hr.time.verify-integrity",
+                "tags": [
+                    "TimeTracking"
+                ],
+                "parameters": [
+                    {
+                        "name": "employee_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "include_deleted",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 200
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "verified": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "entries_checked": {
+                                                            "type": "integer"
+                                                        },
+                                                        "broken_at_id": {
+                                                            "type": "null"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "verified",
+                                                        "entries_checked",
+                                                        "broken_at_id"
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "verified": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "entries_checked": {
+                                                            "type": "integer",
+                                                            "const": 0
+                                                        },
+                                                        "broken_at_id": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "verified",
+                                                        "entries_checked",
+                                                        "broken_at_id"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/hr/time/compliance-alerts": {
+            "get": {
+                "operationId": "v1.hr.time.compliance-alerts",
+                "tags": [
+                    "TimeTracking"
+                ],
+                "parameters": [
+                    {
+                        "name": "employee_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
                                         }
                                     },
                                     "required": [
@@ -267531,6 +268761,14 @@
                 ],
                 "title": "CustomsChannel"
             },
+            "CustomsOriginType": {
+                "type": "string",
+                "enum": [
+                    "preferential",
+                    "non_preferential"
+                ],
+                "title": "CustomsOriginType"
+            },
             "CustomsRecordResource": {
                 "type": "object",
                 "properties": {
@@ -267726,6 +268964,63 @@
                     "updated_at"
                 ],
                 "title": "CustomsShipmentRequest"
+            },
+            "CustomsTaricCodeResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "level": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "chapter": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "supplementary_unit": {
+                        "type": "string"
+                    },
+                    "duty_rate_notes": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "level",
+                    "chapter",
+                    "description",
+                    "supplementary_unit",
+                    "duty_rate_notes",
+                    "is_active",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "CustomsTaricCodeResource"
             },
             "CycleCountPlanRequest": {
                 "type": "object",
@@ -272914,6 +274209,35 @@
                 ],
                 "title": "EsrsValuesRequest"
             },
+            "EvaluateCustomsOriginRequest": {
+                "type": "object",
+                "properties": {
+                    "locale": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "it",
+                            "de",
+                            "fr",
+                            "en",
+                            null
+                        ]
+                    },
+                    "customs_auth_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50
+                    },
+                    "apply": {
+                        "type": "boolean"
+                    }
+                },
+                "title": "EvaluateCustomsOriginRequest"
+            },
             "EventRequest": {
                 "type": "object",
                 "description": "An event: code, schedule, venue, capacity and waiting list. The status moves through the action endpoints.",
@@ -274839,6 +276163,86 @@
                     "email"
                 ],
                 "title": "ForgotPasswordRequest"
+            },
+            "FreeTradeAgreementResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "partner_countries": {
+                        "type": "string"
+                    },
+                    "value_threshold_eur": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "value_threshold_chf": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "proof_types": {
+                        "type": "string"
+                    },
+                    "supports_approved_exporter": {
+                        "type": "boolean"
+                    },
+                    "supports_rex": {
+                        "type": "boolean"
+                    },
+                    "declaration_templates": {
+                        "type": "string"
+                    },
+                    "declaration_templates_no_auth": {
+                        "type": "string"
+                    },
+                    "notes": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "name",
+                    "partner_countries",
+                    "value_threshold_eur",
+                    "value_threshold_chf",
+                    "proof_types",
+                    "supports_approved_exporter",
+                    "supports_rex",
+                    "declaration_templates",
+                    "declaration_templates_no_auth",
+                    "notes",
+                    "is_active",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "FreeTradeAgreementResource"
             },
             "FreightInvoiceLineResource": {
                 "type": "object",
@@ -279117,6 +280521,18 @@
                     },
                     "line_total": {
                         "type": "number"
+                    },
+                    "taric_code": {
+                        "type": "string"
+                    },
+                    "country_of_origin": {
+                        "type": "string"
+                    },
+                    "origin_type": {
+                        "type": "string"
+                    },
+                    "made_in_label": {
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -279127,7 +280543,11 @@
                     "unit_price",
                     "tax_rate",
                     "discount_percentage",
-                    "line_total"
+                    "line_total",
+                    "taric_code",
+                    "country_of_origin",
+                    "origin_type",
+                    "made_in_label"
                 ],
                 "title": "InvoiceItemResource"
             },
@@ -279298,6 +280718,15 @@
                             "string",
                             "null"
                         ]
+                    },
+                    "free_trade_agreement_id": {
+                        "type": "string"
+                    },
+                    "origin_declaration_text": {
+                        "type": "string"
+                    },
+                    "duty_exemption_eligible": {
+                        "type": "boolean"
                     },
                     "items": {
                         "type": "array",
@@ -279562,6 +280991,9 @@
                     "split_payment",
                     "reverse_charge",
                     "notes",
+                    "free_trade_agreement_id",
+                    "origin_declaration_text",
+                    "duty_exemption_eligible",
                     "document_type",
                     "vat_nature",
                     "amount_due",
@@ -325139,6 +326571,55 @@
                 ],
                 "title": "StoreContractRequest"
             },
+            "StoreCustomsTaricCodeRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "pattern": "^\\d{6}(\\d{2}(\\d{2})?)?$"
+                    },
+                    "level": {
+                        "$ref": "#/components/schemas/TaricCodeLevel"
+                    },
+                    "chapter": {
+                        "type": "string",
+                        "pattern": "^\\d{2}$",
+                        "minLength": 2,
+                        "maxLength": 2
+                    },
+                    "description": {
+                        "type": "array",
+                        "items": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "minItems": 1
+                    },
+                    "supplementary_unit": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "duty_rate_notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "code",
+                    "description"
+                ],
+                "title": "StoreCustomsTaricCodeRequest"
+            },
             "StoreDimensionRequest": {
                 "type": "object",
                 "description": "A cost centre or profit centre: code unique in the tenant, name and active flag. On update every field is optional.",
@@ -326692,6 +328173,101 @@
                 ],
                 "title": "StoreFormDocumentRequest"
             },
+            "StoreFreeTradeAgreementRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "name": {
+                        "type": "array",
+                        "items": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "minItems": 1
+                    },
+                    "partner_countries": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{2}$",
+                            "minLength": 2,
+                            "maxLength": 2
+                        },
+                        "minItems": 2
+                    },
+                    "value_threshold_eur": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "value_threshold_chf": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "proof_types": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 50
+                        },
+                        "minItems": 1
+                    },
+                    "supports_approved_exporter": {
+                        "type": "boolean"
+                    },
+                    "supports_rex": {
+                        "type": "boolean"
+                    },
+                    "declaration_templates": {
+                        "type": "array",
+                        "items": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "minItems": 1
+                    },
+                    "declaration_templates_no_auth": {
+                        "type": "array",
+                        "items": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "minItems": 1
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "code",
+                    "name",
+                    "partner_countries",
+                    "proof_types",
+                    "declaration_templates",
+                    "declaration_templates_no_auth"
+                ],
+                "title": "StoreFreeTradeAgreementRequest"
+            },
             "StoreFxRevaluationRequest": {
                 "type": "object",
                 "description": "Date and optional currency of a revaluation of open receivables and payables.",
@@ -327437,6 +329013,38 @@
                                     ],
                                     "minimum": 0,
                                     "maximum": 100
+                                },
+                                "taric_code": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "pattern": "^\\d{6}(\\d{2}(\\d{2})?)?$"
+                                },
+                                "country_of_origin": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "minLength": 2,
+                                    "maxLength": 2
+                                },
+                                "origin_type": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/CustomsOriginType"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "made_in_label": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 255
                                 }
                             },
                             "required": [
@@ -327628,6 +329236,26 @@
                             "single_mandate",
                             "multi_mandate",
                             null
+                        ]
+                    },
+                    "free_trade_agreement_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "origin_declaration_text": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 2000
+                    },
+                    "duty_exemption_eligible": {
+                        "type": [
+                            "boolean",
+                            "null"
                         ]
                     }
                 },
@@ -329668,6 +331296,62 @@
                 "type": "object",
                 "description": "Creation of a product. `min_stock` is the reorder threshold watched by the low stock dashboard widget; null means\nthe product is not monitored.",
                 "properties": {
+                    "customs_taric_code_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "taric_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^\\d{6}(\\d{2}(\\d{2})?)?$"
+                    },
+                    "country_of_origin": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^[A-Za-z]{2}$",
+                        "minLength": 2,
+                        "maxLength": 2
+                    },
+                    "origin_type": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CustomsOriginType"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "made_in_label": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "preferential_agreement_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "eur1_required": {
+                        "type": "boolean"
+                    },
+                    "origin_rule_notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "sku": {
                         "type": "string",
                         "maxLength": 50
@@ -333451,6 +335135,29 @@
                         ],
                         "maxLength": 1000
                     },
+                    "gps_lat": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "gps_lng": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": -180,
+                        "maximum": 180
+                    },
+                    "gps_accuracy_meters": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
                     "reason": {
                         "type": [
                             "string",
@@ -336855,6 +338562,15 @@
                 ],
                 "title": "TagResource"
             },
+            "TaricCodeLevel": {
+                "type": "string",
+                "enum": [
+                    "HS6",
+                    "CN8",
+                    "TARIC10"
+                ],
+                "title": "TaricCodeLevel"
+            },
             "TariffBandRequest": {
                 "type": "object",
                 "description": "Payload to create or change a tariff band.",
@@ -338504,6 +340220,12 @@
                     },
                     "occurred_at": {
                         "type": "string"
+                    },
+                    "record_hash": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -338517,7 +340239,8 @@
                     "reason",
                     "actor_id",
                     "actor_name",
-                    "occurred_at"
+                    "occurred_at",
+                    "record_hash"
                 ],
                 "title": "TimeAuditEntryResource"
             },
@@ -338583,6 +340306,21 @@
                             "string",
                             "null"
                         ]
+                    },
+                    "source_device": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "amended_from_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "has_gps": {
+                        "type": "boolean"
                     }
                 },
                 "required": [
@@ -338595,7 +340333,10 @@
                     "created_by",
                     "deleted_at",
                     "deleted_by",
-                    "deletion_reason"
+                    "deletion_reason",
+                    "source_device",
+                    "amended_from_id",
+                    "has_gps"
                 ],
                 "title": "TimeClockEventResource"
             },
@@ -338978,6 +340719,9 @@
                             "Waived"
                         ]
                     },
+                    "jurisdiction": {
+                        "type": "string"
+                    },
                     "agreement_date": {
                         "type": [
                             "string",
@@ -339017,6 +340761,21 @@
                     "salary_threshold_met": {
                         "type": "boolean"
                     },
+                    "income_threshold_confirmed": {
+                        "type": "string"
+                    },
+                    "waiver_signed_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "reference_period_months": {
+                        "type": "string"
+                    },
+                    "ordinary_weekly_hours": {
+                        "type": "string"
+                    },
                     "legal_max_weekly_hours": {
                         "type": "integer"
                     },
@@ -339049,6 +340808,7 @@
                     "employee_id",
                     "is_configured",
                     "mode",
+                    "jurisdiction",
                     "agreement_date",
                     "agreement_valid_from",
                     "agreement_valid_to",
@@ -339056,6 +340816,10 @@
                     "autonomy_percent",
                     "collective_agreement_reference",
                     "salary_threshold_met",
+                    "income_threshold_confirmed",
+                    "waiver_signed_date",
+                    "reference_period_months",
+                    "ordinary_weekly_hours",
                     "legal_max_weekly_hours",
                     "weekly_hours",
                     "work_days_per_week",
@@ -342833,6 +344597,62 @@
                 "type": "object",
                 "description": "Update of a product: only the fields sent change. `min_stock` may be set to null to stop monitoring the product.",
                 "properties": {
+                    "customs_taric_code_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "taric_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^\\d{6}(\\d{2}(\\d{2})?)?$"
+                    },
+                    "country_of_origin": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^[A-Za-z]{2}$",
+                        "minLength": 2,
+                        "maxLength": 2
+                    },
+                    "origin_type": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CustomsOriginType"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "made_in_label": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "preferential_agreement_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "eur1_required": {
+                        "type": "boolean"
+                    },
+                    "origin_rule_notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "sku": {
                         "type": "string",
                         "maxLength": 50
@@ -350250,6 +352070,10 @@
             "description": "Operations of the CustomsSettings module."
         },
         {
+            "name": "CustomsTaricCode",
+            "description": "Operations of the CustomsTaricCode module."
+        },
+        {
             "name": "Cycle",
             "description": "Operations of the Cycle module."
         },
@@ -350542,6 +352366,10 @@
             "description": "Operations of the FrameworkAgreement module."
         },
         {
+            "name": "FreeTradeAgreement",
+            "description": "Operations of the FreeTradeAgreement module."
+        },
+        {
             "name": "FreightInvoice",
             "description": "Operations of the FreightInvoice module."
         },
@@ -350668,6 +352496,10 @@
         {
             "name": "InvoiceApproval",
             "description": "Operations of the InvoiceApproval module."
+        },
+        {
+            "name": "InvoiceCustomsOrigin",
+            "description": "Operations of the InvoiceCustomsOrigin module."
         },
         {
             "name": "InvoicePayment",
