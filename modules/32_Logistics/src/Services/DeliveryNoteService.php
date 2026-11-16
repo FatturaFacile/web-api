@@ -37,8 +37,9 @@ final class DeliveryNoteService
     public function __construct(
         private readonly DeliveryNoteNumberingService $numbering,
         private readonly WarehouseStockService $stock,
-        private readonly DeliveryFulfillmentServiceInterface $fulfillment,
         private readonly TenantContext $tenantContext,
+        private readonly ShippingCarrierManager $carriers,
+        private readonly DeliveryFulfillmentServiceInterface $fulfillment,
     ) {}
 
     /**
@@ -169,20 +170,16 @@ final class DeliveryNoteService
             }
 
             $type = DeliveryNoteType::from((string) $note->type);
-
+            $this->moveStockForIssue($note, $type);
             if ($type === DeliveryNoteType::OutboundSale) {
-                // Stock is released by the existing GoodsDispatched event consumers (Inventory module).
+                // Publishes the GoodsDispatched / DeliveryNoteIssued domain events (outbox consumers).
                 $this->fulfillment->dispatchDelivery($note, (string) (auth()->id() ?? 'system'));
-            } else {
-                $this->moveStockForIssue($note, $type);
             }
 
-            $note->refresh();
             $note->update([
                 'status' => DeliveryNoteStatus::Issued->value,
-                'shipping_status' => 'dispatched',
+                'shipping_status' => DeliveryNoteStatus::Issued->shippingStatus(),
                 'issued_at' => now(),
-                'shipped_at' => $note->shipped_at ?? now(),
                 'departure_time' => $note->departure_time ?? now(),
             ]);
 
@@ -190,15 +187,79 @@ final class DeliveryNoteService
         });
     }
 
-    public function markDelivered(SalesDeliveryNote $note, ?string $signatureName = null, ?Carbon $deliveredAt = null): SalesDeliveryNote
+    /**
+     * Goods physically leave: books the shipment through the carrier driver and moves issued -> in_transit.
+     */
+    public function startTransit(SalesDeliveryNote $note): SalesDeliveryNote
     {
         if ($note->status !== DeliveryNoteStatus::Issued->value) {
-            throw new DomainException('Only issued (in transit) delivery notes can be marked as delivered.');
+            throw new DomainException('Only issued delivery notes can be dispatched.');
+        }
+
+        $shipment = $this->carriers->driverFor($note)->createShipment($note);
+
+        $note->update([
+            'status' => DeliveryNoteStatus::InTransit->value,
+            'shipping_status' => DeliveryNoteStatus::InTransit->shippingStatus(),
+            'shipped_at' => now(),
+            'tracking_number' => $note->tracking_number ?? $shipment->trackingNumber,
+            'carrier_tracking_url' => $note->carrier_tracking_url ?? $shipment->trackingUrl,
+        ]);
+
+        return $note->load('items');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  list<array<string, mixed>>|null  $items  replaces all lines when given
+     */
+    public function update(SalesDeliveryNote $note, array $data, ?array $items = null): SalesDeliveryNote
+    {
+        if ($note->status !== DeliveryNoteStatus::Draft->value) {
+            throw new DomainException('Only draft delivery notes can be edited.');
+        }
+        if ($note->sales_order_id !== null || $note->items()->whereNotNull('sales_order_item_id')->exists()) {
+            throw new DomainException('Delivery notes generated from sales orders cannot be edited; cancel and recreate them.');
+        }
+
+        return DB::transaction(function () use ($note, $data, $items): SalesDeliveryNote {
+            $this->assertWarehousesBelongToTenant($data);
+            $note->update(array_intersect_key($data, array_flip(array_diff(self::HEADER_FIELDS, ['warehouse_id', 'stock_transfer_order_id']))));
+
+            if ($items !== null) {
+                if ($items === []) {
+                    throw new InvalidArgumentException('A delivery note needs at least one line.');
+                }
+                $note->items()->delete();
+                $this->persistLines($note, $items);
+            }
+
+            return $note->refresh()->load('items');
+        });
+    }
+
+    public function delete(SalesDeliveryNote $note): void
+    {
+        if ($note->status !== DeliveryNoteStatus::Draft->value || $note->sales_order_id !== null) {
+            throw new DomainException('Only standalone draft delivery notes can be deleted; cancel the others.');
+        }
+
+        DB::transaction(function () use ($note): void {
+            $note->items()->delete();
+            $note->delete();
+        });
+    }
+
+    public function markDelivered(SalesDeliveryNote $note, ?string $signatureName = null, ?Carbon $deliveredAt = null): SalesDeliveryNote
+    {
+        if (! in_array($note->status, [DeliveryNoteStatus::Issued->value, DeliveryNoteStatus::InTransit->value], true)) {
+            throw new DomainException('Only issued or in-transit delivery notes can be marked as delivered.');
         }
 
         $note->update([
             'status' => DeliveryNoteStatus::Delivered->value,
-            'shipping_status' => 'delivered',
+            'shipping_status' => DeliveryNoteStatus::Delivered->shippingStatus(),
+            'shipped_at' => $note->shipped_at ?? now(),
             'delivered_at' => $deliveredAt ?? now(),
             'recipient_signature_name' => $signatureName,
         ]);
@@ -211,8 +272,8 @@ final class DeliveryNoteService
         return DB::transaction(function () use ($note): SalesDeliveryNote {
             $note = SalesDeliveryNote::query()->with('items')->lockForUpdate()->findOrFail($note->id);
             $status = $note->status;
-            if (! in_array($status, [DeliveryNoteStatus::Draft->value, DeliveryNoteStatus::Issued->value], true)) {
-                throw new DomainException('Only draft or issued delivery notes can be cancelled.');
+            if (! in_array($status, [DeliveryNoteStatus::Draft->value, DeliveryNoteStatus::Issued->value, DeliveryNoteStatus::InTransit->value], true)) {
+                throw new DomainException('Only draft, issued or in-transit delivery notes can be cancelled.');
             }
             if ($note->invoiceLinks()->exists()) {
                 throw new DomainException('A delivery note that has been invoiced cannot be cancelled.');
@@ -222,18 +283,22 @@ final class DeliveryNoteService
             }
 
             $type = DeliveryNoteType::from((string) $note->type);
-            if ($status === DeliveryNoteStatus::Issued->value) {
-                if ($type === DeliveryNoteType::OutboundSale) {
-                    throw new DomainException('An issued sale DDT must be reversed with a return delivery note.');
-                }
+            if ($status !== DeliveryNoteStatus::Draft->value) {
                 $this->reverseStockForIssue($note, $type);
+                if ($status === DeliveryNoteStatus::InTransit->value) {
+                    $this->carriers->driverFor($note)->cancelShipment($note);
+                }
             }
 
             if ($type === DeliveryNoteType::OutboundSale) {
                 $this->releaseOrderQuantities($note);
             }
 
-            $note->update(['status' => DeliveryNoteStatus::Cancelled->value, 'shipping_status' => 'cancelled', 'cancelled_at' => now()]);
+            $note->update([
+                'status' => DeliveryNoteStatus::Cancelled->value,
+                'shipping_status' => DeliveryNoteStatus::Cancelled->shippingStatus(),
+                'cancelled_at' => now(),
+            ]);
 
             return $note->load('items');
         });
@@ -335,19 +400,27 @@ final class DeliveryNoteService
         }
     }
 
+    /**
+     * Re-credits the origin with INBOUND_REVERSAL movements (and un-does a destination load, if any).
+     */
     private function reverseStockForIssue(SalesDeliveryNote $note, DeliveryNoteType $type): void
     {
-        $from = $type === DeliveryNoteType::ReturnFromCustomer ? null : $note->origin_warehouse_id;
-        $to = $note->destination_warehouse_id;
-        if ($from === null && $to === null) {
-            return;
-        }
+        $origin = $type === DeliveryNoteType::ReturnFromCustomer ? null : $note->origin_warehouse_id;
+        $destination = $note->destination_warehouse_id;
 
         foreach ($note->items as $item) {
             if ($item->product_id === null) {
                 continue;
             }
-            $this->stock->move((string) $item->product_id, $to, $from, (float) $item->quantity, 'ddt_cancel', SalesDeliveryNote::class, (string) $note->id);
+            $productId = (string) $item->product_id;
+            $qty = (float) $item->quantity;
+
+            if ($destination !== null) {
+                $this->stock->move($productId, $destination, null, $qty, 'ddt_cancel', SalesDeliveryNote::class, (string) $note->id);
+            }
+            if ($origin !== null) {
+                $this->stock->move($productId, null, $origin, $qty, WarehouseStockService::INBOUND_REVERSAL, SalesDeliveryNote::class, (string) $note->id, 'DDT '.$note->ddt_number.' cancelled');
+            }
         }
     }
 

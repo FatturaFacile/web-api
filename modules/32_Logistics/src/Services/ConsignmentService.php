@@ -62,7 +62,7 @@ final class ConsignmentService
                 $before = $from === null ? collect() : $own->filter(fn ($m): bool => $m->executed_at < $from);
 
                 $opening = $before->sum(fn ($m): float => $this->signed($m));
-                $sent = $inPeriod->filter(fn ($m): bool => str_ends_with((string) $m->movement_type, '_in'))->sum(fn ($m): float => (float) $m->quantity);
+                $sent = $inPeriod->filter(fn ($m): bool => $this->isInbound((string) $m->movement_type))->sum(fn ($m): float => (float) $m->quantity);
                 $consumed = $inPeriod->where('movement_type', 'consignment_consumption_out')->sum(fn ($m): float => (float) $m->quantity);
                 $returned = $inPeriod->filter(fn ($m): bool => str_ends_with((string) $m->movement_type, '_out') && $m->movement_type !== 'consignment_consumption_out')->sum(fn ($m): float => (float) $m->quantity);
                 $residual = $this->stock->onHand((string) $warehouse->id, (string) $productId);
@@ -79,7 +79,7 @@ final class ConsignmentService
                     'residual_qty' => round($residual, 4),
                     'unit_cost' => $unitCost,
                     'fiscal_value' => round($residual * $unitCost, 2),
-                    'ddt_references' => $this->ddtReferences($inPeriod->filter(fn ($m): bool => str_ends_with((string) $m->movement_type, '_in') && $m->origin_document_id !== null)),
+                    'ddt_references' => $this->ddtReferences($inPeriod->filter(fn ($m): bool => $this->isInbound((string) $m->movement_type) && $m->origin_document_id !== null)),
                 ];
             }
 
@@ -272,11 +272,16 @@ final class ConsignmentService
         return ['purchase_order', (string) $order->id, (float) $order->total_gross];
     }
 
+    private function isInbound(string $movementType): bool
+    {
+        return $movementType === WarehouseStockService::INBOUND_REVERSAL || str_ends_with($movementType, '_in');
+    }
+
     private function signed(StockMovement $movement): float
     {
         $qty = (float) $movement->quantity;
 
-        return str_ends_with((string) $movement->movement_type, '_in') ? $qty : -$qty;
+        return $this->isInbound((string) $movement->movement_type) ? $qty : -$qty;
     }
 
     /**

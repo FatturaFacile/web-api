@@ -22,6 +22,9 @@ use Modules\Logistics\Models\WarehouseStockLevel;
  */
 final class WarehouseStockService
 {
+    /** Movement type (used verbatim, no _in/_out suffix) that re-credits stock when a dispatched document is reversed. */
+    public const INBOUND_REVERSAL = 'INBOUND_REVERSAL';
+
     public function __construct(private readonly TenantContext $tenantContext) {}
 
     /**
@@ -54,14 +57,14 @@ final class WarehouseStockService
                 }
                 $level->quantity_on_hand = round((float) $level->quantity_on_hand - $quantity, 4);
                 $level->save();
-                $this->recordMovement($productId, $fromWarehouseId, -$quantity, $movementType.'_out', $referenceType, $referenceId, $notes, $unitCost);
+                $this->recordMovement($productId, $fromWarehouseId, -$quantity, $this->typed($movementType, 'out'), $referenceType, $referenceId, $notes, $unitCost);
             }
 
             if ($toWarehouseId !== null) {
                 $level = $this->lockedLevel($toWarehouseId, $productId, create: true);
                 $level->quantity_on_hand = round((float) $level->quantity_on_hand + $quantity, 4);
                 $level->save();
-                $this->recordMovement($productId, $toWarehouseId, $quantity, $movementType.'_in', $referenceType, $referenceId, $notes, $unitCost);
+                $this->recordMovement($productId, $toWarehouseId, $quantity, $this->typed($movementType, 'in'), $referenceType, $referenceId, $notes, $unitCost);
             }
         });
     }
@@ -108,6 +111,11 @@ final class WarehouseStockService
             'legal_owner_type' => LegalOwnerType::Company->value,
             'is_primary' => false,
         ]);
+    }
+
+    private function typed(string $movementType, string $direction): string
+    {
+        return $movementType === self::INBOUND_REVERSAL ? $movementType : $movementType.'_'.$direction;
     }
 
     private function lockedLevel(string $warehouseId, string $productId, bool $create = false): ?WarehouseStockLevel

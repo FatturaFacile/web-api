@@ -78,7 +78,7 @@ final class DeferredInvoicingService
                 'currency' => $first->currency ?? 'EUR',
                 'delivery_note_id' => $notes->count() === 1 ? (string) $first->id : null,
                 'invoice_type' => 'standard',
-                'notes' => 'Fattura differita - DDT: '.$notes->pluck('ddt_number')->implode(', '),
+                'notes' => 'Fattura differita - '.$notes->sortBy('date')->map(fn (SalesDeliveryNote $n): string => sprintf('DDT n. %s del %s', $n->ddt_number, $n->date->format('d/m/Y')))->implode('; '),
                 'created_by' => auth()->id(),
             ], $overrides), $invoiceItems);
 

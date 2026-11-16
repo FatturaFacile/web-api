@@ -6,27 +6,30 @@ namespace App\Policies;
 
 use App\Models\DeliveryNote;
 use App\Models\User;
+use Modules\Logistics\Support\LogisticsPermissions;
 
 class DeliveryNotePolicy
 {
     public function viewAny(User $user): bool
     {
-        return true;
+        return LogisticsPermissions::allows($user, LogisticsPermissions::DDT_VIEW);
     }
 
     public function view(User $user, DeliveryNote $note): bool
     {
-        return $this->belongsToSameTenant($user, $note);
+        return $this->belongsToSameTenant($user, $note)
+            && LogisticsPermissions::allows($user, LogisticsPermissions::DDT_VIEW);
     }
 
     public function create(User $user): bool
     {
-        return true;
+        return LogisticsPermissions::allows($user, LogisticsPermissions::DDT_CREATE);
     }
 
     public function update(User $user, DeliveryNote $note): bool
     {
-        return $this->belongsToSameTenant($user, $note);
+        return $this->belongsToSameTenant($user, $note)
+            && LogisticsPermissions::allows($user, LogisticsPermissions::DDT_UPDATE);
     }
 
     public function delete(User $user, DeliveryNote $note): bool
@@ -36,17 +39,20 @@ class DeliveryNotePolicy
         }
 
         // Cannot delete if already invoiced
-        return $note->status !== 'invoiced';
+        return $note->status !== 'invoiced'
+            && LogisticsPermissions::allows($user, LogisticsPermissions::DDT_DELETE);
     }
 
     public function invoice(User $user, DeliveryNote $note): bool
     {
-        return $this->belongsToSameTenant($user, $note);
+        return $this->belongsToSameTenant($user, $note)
+            && LogisticsPermissions::allows($user, LogisticsPermissions::DDT_INVOICE);
     }
 
     public function download(User $user, DeliveryNote $note): bool
     {
-        return $this->belongsToSameTenant($user, $note);
+        return $this->belongsToSameTenant($user, $note)
+            && LogisticsPermissions::allows($user, LogisticsPermissions::DDT_PDF);
     }
 
     private function belongsToSameTenant(User $user, DeliveryNote $note): bool

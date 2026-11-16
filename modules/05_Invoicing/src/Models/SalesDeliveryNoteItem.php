@@ -9,7 +9,7 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Logistics\Concerns\HasAuditUsers;
 
-final class SalesDeliveryNoteItem extends BaseEnterpriseModel
+class SalesDeliveryNoteItem extends BaseEnterpriseModel
 {
     use HasAuditUsers;
 

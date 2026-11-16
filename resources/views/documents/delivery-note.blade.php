@@ -27,8 +27,9 @@
 
     <table role="presentation" style="margin-top: 40px">
         <tr>
-            <td class="signature-line muted" style="width: 33%">{{ __('pdf.delivery.sign_driver') }}</td>
-            <td class="signature-line muted" style="width: 33%">{{ __('pdf.delivery.sign_carrier') }}</td>
+            <td class="signature-line muted" style="width: 25%">{{ __('pdf.delivery.sign_sender') }}</td>
+            <td class="signature-line muted" style="width: 25%">{{ __('pdf.delivery.sign_driver') }}</td>
+            <td class="signature-line muted" style="width: 25%">{{ __('pdf.delivery.sign_carrier') }}</td>
             <td class="signature-line muted">{{ __('pdf.delivery.receipt') }}</td>
         </tr>
     </table>

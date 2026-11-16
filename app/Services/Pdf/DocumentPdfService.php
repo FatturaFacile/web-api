@@ -14,6 +14,7 @@ use App\Models\Quote;
 use App\Models\SalesOrder;
 use App\Models\ServiceReport;
 use App\Models\Tenant;
+use App\Models\Translation;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Rules\PngSignature;
@@ -36,18 +37,65 @@ class DocumentPdfService
         private readonly SwissQrBillService $qrBills,
     ) {}
 
-    public function render(Model $document): RenderedPdf
+    /**
+     * @param  array{hide_prices?: bool, locale?: ?string}  $options  `locale` renders with the DB translations of that language
+     */
+    public function render(Model $document, array $options = []): RenderedPdf
+    {
+        $locale = $options['locale'] ?? null;
+        if ($locale === null) {
+            return $this->renderDocument($document, $options);
+        }
+
+        $previous = app()->getLocale();
+        app()->setLocale($locale);
+        try {
+            return $this->renderDocument($document, $options);
+        } finally {
+            app()->setLocale($previous);
+        }
+    }
+
+    /**
+     * Layers the API-managed `PDF.*` translations (translations table) over the lang files for the active locale,
+     * e.g. PDF.DELIVERY.SHIP_TO => pdf.delivery.ship_to.
+     */
+    private function loadDatabaseTranslations(?string $tenantId): void
+    {
+        $locale = app()->getLocale();
+        $lines = [];
+        $rows = Translation::query()
+            ->where('locale', $locale)
+            ->where('key', 'like', 'PDF.%')
+            ->where(fn ($q) => $q->whereNull('tenant_id')->when($tenantId !== null, fn ($q2) => $q2->orWhere('tenant_id', $tenantId)))
+            ->orderByRaw('tenant_id is not null')
+            ->get(['key', 'value']);
+
+        foreach ($rows as $row) {
+            $lines[strtolower(substr((string) $row->key, 4))] = (string) $row->value;
+        }
+
+        if ($lines !== []) {
+            app('translator')->addLines($lines, $locale, 'pdf');
+        }
+    }
+
+    /**
+     * @param  array{hide_prices?: bool, locale?: ?string}  $options
+     */
+    private function renderDocument(Model $document, array $options): RenderedPdf
     {
         $tenantContext = app(TenantContext::class);
         $tenantId = $document->getAttribute('tenant_id');
         $tenant = $document->relationLoaded('tenant') ? $document->getRelation('tenant') : ($tenantId ? Tenant::find($tenantId) : null);
 
-        $renderCallback = function () use ($document): RenderedPdf {
+        $renderCallback = function () use ($document, $options, $tenantId): RenderedPdf {
+            $this->loadDatabaseTranslations($tenantId !== null ? (string) $tenantId : null);
             [$view, $data, $type, $number] = match (true) {
                 $document instanceof Invoice => $this->invoice($document),
                 $document instanceof Quote => $this->quote($document),
                 $document instanceof SalesOrder => $this->salesOrder($document),
-                $document instanceof DeliveryNote => $this->deliveryNote($document),
+                $document instanceof DeliveryNote => $this->deliveryNote($document, $options),
                 $document instanceof WorkOrder => $this->workOrder($document),
                 $document instanceof ServiceReport => $this->serviceReport($document),
                 default => throw new InvalidArgumentException('Unsupported document class: '.$document::class),
@@ -156,11 +204,15 @@ class DocumentPdfService
     /**
      * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
      */
-    private function deliveryNote(DeliveryNote $note): array
+    /**
+     * @param  array{hide_prices?: bool, locale?: ?string}  $options
+     * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
+     */
+    private function deliveryNote(DeliveryNote $note, array $options = []): array
     {
         $note->loadMissing(['tenant', 'contact.addresses', 'items']);
         $lines = $this->lines($note->items);
-        $showPrices = (bool) $note->show_prices;
+        $showPrices = (bool) $note->show_prices && ! ($options['hide_prices'] ?? false);
 
         $net = round(array_sum(array_map(fn (array $line): float => $line['quantity'] * $line['unit_price'], $lines)), 2);
         $tax = round(array_sum(array_map(fn (array $line): float => $line['quantity'] * $line['unit_price'] * $line['tax_rate'] / 100, $lines)), 2);

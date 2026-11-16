@@ -8,7 +8,6 @@ use Laravel\Sanctum\Sanctum;
 use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
 use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Invoicing\Models\SalesInvoice;
-use Modules\Invoicing\Models\SalesOrder;
 use Modules\Logistics\Models\DeliveryNoteInvoiceLink;
 use Modules\Logistics\Services\DeferredInvoicingService;
 use Modules\Logistics\Services\DeliveryNoteService;
@@ -23,13 +22,6 @@ beforeEach(function (): void {
     $this->ddt = app(DeliveryNoteService::class);
     $this->orders = app(SalesOrderServiceInterface::class);
 });
-
-function logisticsOrder(string $tenantId, string $customerId, string $productId, float $qty, string $number): SalesOrder
-{
-    return app(SalesOrderServiceInterface::class)->createOrder([
-        'tenant_id' => $tenantId, 'contact_id' => $customerId, 'order_number' => $number,
-    ], [['product_id' => $productId, 'description' => 'Gateway', 'quantity' => $qty, 'unit_price' => 50.0, 'tax_rate' => 22.0]]);
-}
 
 test('a DDT fulfils an order partially then totally, updating delivered quantities', function (): void {
     $order = logisticsOrder($this->tenant->id, $this->customer->id, $this->product->id, 10, 'SO-A');

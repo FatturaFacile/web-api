@@ -27,6 +27,33 @@ class RoleSeeder extends Seeder
 
         $roles = [
             [
+                'code' => 'warehouse_operator',
+                'translations' => [
+                    'it' => ['label' => 'Operatore di Magazzino', 'short_label' => 'WhOp', 'description' => 'Prepara, emette e spedisce DDT e trasferimenti'],
+                    'en' => ['label' => 'Warehouse Operator', 'short_label' => 'WhOp', 'description' => 'Prepares, issues and ships delivery notes and transfers'],
+                    'de' => ['label' => 'Lagermitarbeiter', 'short_label' => 'WhOp', 'description' => 'Bereitet Lieferscheine und Umlagerungen vor und versendet sie'],
+                    'fr' => ['label' => 'Opérateur d\'Entrepôt', 'short_label' => 'WhOp', 'description' => 'Prépare, émet et expédie bons de livraison et transferts'],
+                ],
+            ],
+            [
+                'code' => 'accountant',
+                'translations' => [
+                    'it' => ['label' => 'Contabile / Commercialista', 'short_label' => 'Acct', 'description' => 'Fatturazione differita e riconciliazione conto deposito'],
+                    'en' => ['label' => 'Accountant', 'short_label' => 'Acct', 'description' => 'Deferred invoicing and consignment reconciliation'],
+                    'de' => ['label' => 'Buchhalter', 'short_label' => 'Acct', 'description' => 'Sammelrechnungen und Konsignationsabstimmung'],
+                    'fr' => ['label' => 'Comptable', 'short_label' => 'Acct', 'description' => 'Facturation différée et rapprochement des dépôts'],
+                ],
+            ],
+            [
+                'code' => 'viewer',
+                'translations' => [
+                    'it' => ['label' => 'Sola lettura', 'short_label' => 'Viewer', 'description' => 'Consultazione di DDT e logistica'],
+                    'en' => ['label' => 'Viewer', 'short_label' => 'Viewer', 'description' => 'Read-only access to delivery notes and logistics'],
+                    'de' => ['label' => 'Nur Lesezugriff', 'short_label' => 'Viewer', 'description' => 'Lesezugriff auf Lieferscheine und Logistik'],
+                    'fr' => ['label' => 'Lecture seule', 'short_label' => 'Viewer', 'description' => 'Consultation des bons de livraison et de la logistique'],
+                ],
+            ],
+            [
                 'code' => 'logistics_manager',
                 'translations' => [
                     'it' => ['label' => 'Responsabile Logistica', 'short_label' => 'LogMgr', 'description' => 'DDT, trasferimenti di magazzino, conto deposito e conto lavoro'],

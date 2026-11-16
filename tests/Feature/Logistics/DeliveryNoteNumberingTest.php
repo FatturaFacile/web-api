@@ -88,13 +88,13 @@ test('delivery note API isolates tenants and enforces permissions', function ():
 });
 
 test('granular permissions protect every logistics endpoint', function (): void {
-    ['tenant' => $tenant, 'user' => $viewer] = logisticsTenant('RBAC', 'member', ['logistics.ddt.view']);
+    ['tenant' => $tenant, 'user' => $viewer] = logisticsTenant('RBAC', 'member', ['delivery_notes.view']);
 
     Sanctum::actingAs($viewer);
     $headers = ['X-Tenant-Id' => $tenant->id];
 
     $this->getJson('/api/v1/logistics/delivery-notes', $headers)->assertOk();
-    $this->postJson('/api/v1/logistics/delivery-notes', [], $headers)->assertForbidden()->assertJsonPath('required_permission', 'logistics.ddt.create');
+    $this->postJson('/api/v1/logistics/delivery-notes', [], $headers)->assertForbidden()->assertJsonPath('required_permission', 'delivery_notes.create');
     $this->postJson('/api/v1/logistics/delivery-notes/'.Str::uuid().'/issue', [], $headers)->assertForbidden();
     $this->postJson('/api/v1/logistics/delivery-notes/'.Str::uuid().'/cancel', [], $headers)->assertForbidden();
     $this->getJson('/api/v1/logistics/transfers', $headers)->assertForbidden();
