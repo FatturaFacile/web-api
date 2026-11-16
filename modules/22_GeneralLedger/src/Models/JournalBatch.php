@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Enterprise\MultiTenant\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class JournalBatch extends BaseEnterpriseModel
 {
+    use BelongsToCompany;
+
     protected $table = 'journal_batches';
 
     protected function casts(): array

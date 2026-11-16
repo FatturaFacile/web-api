@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Enterprise\MultiTenant\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 final class CustomerLedger extends BaseEnterpriseModel
 {
+    use BelongsToCompany;
+
     protected $table = 'customer_ledger';
 
     protected function casts(): array

@@ -6,6 +6,7 @@ namespace Enterprise\MultiTenant\Providers;
 
 use App\Services\Tenancy\TenantContext;
 use Enterprise\MultiTenant\Scopes\TenantScope;
+use Enterprise\MultiTenant\Services\CompanyContext;
 use Illuminate\Support\ServiceProvider;
 
 final class MultiTenantServiceProvider extends ServiceProvider
@@ -17,5 +18,6 @@ final class MultiTenantServiceProvider extends ServiceProvider
         }
 
         $this->app->singleton(TenantScope::class);
+        $this->app->singleton(CompanyContext::class);
     }
 }

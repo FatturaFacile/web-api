@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Enterprise\MultiTenant\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class ChartOfAccount extends BaseEnterpriseModel
 {
+    use BelongsToCompany;
+
     protected $table = 'chart_of_accounts';
 
     protected static function booted(): void
