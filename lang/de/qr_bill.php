@@ -7,6 +7,7 @@ return [
     'additional_message' => 'Rechnung :number',
 
     'errors' => [
+        'invalid_qr_iban' => 'Die QR-IBAN ist ungültig: Sie muss eine Schweizer oder liechtensteinische IBAN mit einer Instituts-ID zwischen 30000 und 31999 sein.',
         'missing_tenant' => 'Die Rechnung hat keine ausstellende Firma.',
         'invalid_currency' => 'Die Schweizer QR-Rechnung unterstützt nur Rechnungen in CHF und EUR.',
         'invalid_amount' => 'Es gibt keinen offenen Betrag zu bezahlen.',
@@ -18,7 +19,15 @@ return [
         'validation_failed' => 'Die Daten der QR-Rechnung entsprechen nicht der SIX-Spezifikation.',
     ],
 
+    'parse_errors' => [
+        'qr_not_found' => 'Die Datei enthält keine lesbare Schweizer QR-Rechnung. Laden Sie ein PDF oder Bild hoch, in dem der QR-Code als Bitmap vorliegt.',
+        'invalid_payload' => 'Der Inhalt ist keine Schweizer QR-Rechnung (SPC).',
+        'unsupported_file' => 'Nicht unterstützte oder leere Datei.',
+    ],
+
     'messages' => [
+        'parsed' => 'Schweizer QR-Rechnung erfolgreich gelesen',
+        'reference_checked' => 'Referenz geprüft',
         'retrieved' => 'Schweizer QR-Rechnung erfolgreich erzeugt',
     ],
 

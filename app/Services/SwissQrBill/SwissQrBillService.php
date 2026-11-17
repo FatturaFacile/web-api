@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\SwissQrBill;
 
+use App\Contracts\SwissQrBill\SwissQrBillGeneratorInterface;
 use App\Exceptions\QrBillGenerationException;
 use App\Models\Contact;
 use App\Models\ContactAddress;
@@ -15,6 +16,8 @@ use Sprain\SwissQrBill\DataGroup\Element\CreditorInformation;
 use Sprain\SwissQrBill\DataGroup\Element\PaymentAmountInformation;
 use Sprain\SwissQrBill\DataGroup\Element\PaymentReference;
 use Sprain\SwissQrBill\DataGroup\Element\StructuredAddress;
+use Sprain\SwissQrBill\PaymentPart\Output\DisplayOptions;
+use Sprain\SwissQrBill\PaymentPart\Output\FpdfOutput\FpdfOutput;
 use Sprain\SwissQrBill\QrBill;
 use Sprain\SwissQrBill\QrCode\QrCode;
 
@@ -28,7 +31,7 @@ use Sprain\SwissQrBill\QrCode\QrCode;
  * A stored reference decides the type; without one a QR reference is derived from the invoice number when a
  * QR-IBAN is available, otherwise the bill is issued without reference. The service never writes to the database.
  */
-class SwissQrBillService
+class SwissQrBillService implements SwissQrBillGeneratorInterface
 {
     private const SUPPORTED_CURRENCIES = ['CHF', 'EUR'];
 
@@ -47,6 +50,75 @@ class SwissQrBillService
      * @throws QrBillGenerationException when the invoice data cannot produce a valid QR-bill
      */
     public function generate(Invoice $invoice): GeneratedQrBill
+    {
+        return $this->assemble($invoice)['bill'];
+    }
+
+    /**
+     * Render the payment part and receipt: attached at the bottom of an A4 page or as a standalone 210x105 mm slip.
+     * The QR code is the SIX 46x46 mm symbol (error correction M) with the 7x7 mm Swiss cross.
+     *
+     * @throws QrBillGenerationException
+     */
+    public function generatePdf(Invoice $invoice, QrBillPdfOptions $options): string
+    {
+        $qrBill = $this->assemble($invoice)['qrBill'];
+        $standalone = $options->mode === QrBillPdfOptions::MODE_STANDALONE;
+        $language = in_array($options->language, QrBillPdfOptions::LANGUAGES, true) ? $options->language : 'en';
+
+        $fpdf = $standalone ? new QrBillFpdf('L', 'mm', [105, 210]) : new QrBillFpdf('P', 'mm', 'A4');
+        $fpdf->SetMargins(0, 0, 0);
+        $fpdf->AddPage();
+
+        if (! $standalone) {
+            $fpdf->SetFont('Helvetica', '', 10);
+            $fpdf->SetXY(20, 20);
+            $fpdf->MultiCell(170, 6, (string) iconv('UTF-8', 'windows-1252//TRANSLIT', (string) __('qr_bill.additional_message', ['number' => $invoice->invoice_number], $language)));
+        }
+
+        $output = new FpdfOutput($qrBill, $language, $fpdf, 0, $standalone ? -190 : 0);
+        $output->setDisplayOptions($this->displayOptions($options->perforation));
+        $output->getPaymentPart();
+
+        // The library draws dashed lines only together with the scissors: a plain dashed line is drawn here.
+        if ($options->perforation === QrBillPdfOptions::PERFORATION_DASHED_LINE) {
+            $top = $standalone ? 0.0 : 192.0;
+
+            if (! $standalone) {
+                $this->dashedLine($fpdf, 0, $top, 210, $top);
+            }
+
+            $this->dashedLine($fpdf, 62, $top, 62, $top + 105);
+        }
+
+        return $fpdf->Output('S');
+    }
+
+    private function dashedLine(QrBillFpdf $fpdf, float $x1, float $y1, float $x2, float $y2): void
+    {
+        $fpdf->SetLineWidth(0.1);
+        $fpdf->SetDrawColor(0, 0, 0);
+        $length = hypot($x2 - $x1, $y2 - $y1);
+        $dash = 1.0;
+
+        for ($i = 0.0; $i < $length; $i += 2 * $dash) {
+            $end = min($i + $dash, $length);
+            $fpdf->Line($x1 + ($x2 - $x1) * $i / $length, $y1 + ($y2 - $y1) * $i / $length, $x1 + ($x2 - $x1) * $end / $length, $y1 + ($y2 - $y1) * $end / $length);
+        }
+    }
+
+    private function displayOptions(string $perforation): DisplayOptions
+    {
+        // NONE and DASHED_LINE leave the lines to the paper or to dashedLine(); only the scissors variant uses the library's.
+        return (new DisplayOptions)
+            ->setPrintable($perforation !== QrBillPdfOptions::PERFORATION_DASHED_LINE_WITH_SCISSORS)
+            ->setDisplayScissors($perforation === QrBillPdfOptions::PERFORATION_DASHED_LINE_WITH_SCISSORS);
+    }
+
+    /**
+     * @return array{bill: GeneratedQrBill, qrBill: QrBill}
+     */
+    private function assemble(Invoice $invoice): array
     {
         $invoice->loadMissing(['tenant', 'contact.addresses', 'qrBillData']);
 
@@ -104,7 +176,7 @@ class SwissQrBillService
 
         $qrCode = $qrBill->getQrCode();
 
-        return new GeneratedQrBill(
+        $bill = new GeneratedQrBill(
             payload: $qrCode->getText(),
             svg: $qrCode->getAsString(QrCode::FILE_FORMAT_SVG),
             pngDataUri: $qrCode->getDataUri(QrCode::FILE_FORMAT_PNG),
@@ -120,6 +192,8 @@ class SwissQrBillService
             debtorLines: $debtor !== null ? $this->addressLines($debtor) : null,
             message: $message,
         );
+
+        return ['bill' => $bill, 'qrBill' => $qrBill];
     }
 
     /**
@@ -148,19 +222,26 @@ class SwissQrBillService
 
         $qrIban = collect($candidates)->first(fn (string $iban): bool => $this->helpers->isValidQrIban($iban));
         $standardIban = collect($candidates)->first(fn (string $iban): bool => $this->isStandardSwissIban($iban));
-        $stored = strtoupper((string) preg_replace('/\s+/', '', (string) $invoice->qrBillData?->scor_reference));
+        $stored = strtoupper((string) preg_replace('/\s+/', '', (string) ($invoice->qrBillData?->scor_reference ?: $invoice->qr_reference)));
 
         if ($stored !== '') {
             return $this->storedReference($stored, $qrIban, $standardIban);
         }
 
-        if ($qrIban !== null) {
-            $seed = preg_replace('/\D/', '', (string) $invoice->invoice_number) ?: (string) crc32((string) $invoice->id);
+        $seed = preg_replace('/\D/', '', (string) $invoice->invoice_number) ?: (string) crc32((string) $invoice->id);
+        $defaultType = strtoupper((string) ($invoice->tenant->default_reference_type ?: 'QRR'));
+        // A tenant that prefers creditor references (or none) uses its standard IBAN when it has one.
+        $preferStandard = $standardIban !== null && in_array($defaultType, ['SCOR', 'NON'], true);
 
-            return [$qrIban, PaymentReference::TYPE_QR, $this->makeQrReference($seed)];
+        if ($qrIban !== null && ! $preferStandard) {
+            return [$qrIban, PaymentReference::TYPE_QR, $this->helpers->deriveQrReference($invoice->tenant->qrr_prefix, $seed)];
         }
 
         if ($standardIban !== null) {
+            if ($defaultType === 'SCOR') {
+                return [$standardIban, PaymentReference::TYPE_SCOR, $this->helpers->generateIso11649(substr($seed, -21))];
+            }
+
             return [$standardIban, PaymentReference::TYPE_NON, null];
         }
 

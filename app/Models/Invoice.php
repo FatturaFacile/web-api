@@ -23,6 +23,7 @@ class Invoice extends Model
     protected $fillable = [
         'contact_id',
         'invoice_type',
+        'qr_reference',
         'sdi_excluded',
         'invoice_number',
         'date',

@@ -85,6 +85,12 @@ class InvoiceQrBillController extends Controller
             'iban' => $bill->iban,
             'currency' => $bill->currency,
             'amount' => $bill->amount,
+            'formatted_iban' => $bill->formattedIban,
+            'formatted_reference' => $bill->formattedReference,
+            'formatted_amount' => $bill->formattedAmount,
+            'creditor_lines' => $bill->creditorLines,
+            'debtor_lines' => $bill->debtorLines,
+            'message' => $bill->message,
         ], __('qr_bill.messages.retrieved'));
     }
 }

@@ -7,6 +7,7 @@ return [
     'additional_message' => 'Invoice :number',
 
     'errors' => [
+        'invalid_qr_iban' => 'The QR-IBAN is not valid: it must be a Swiss or Liechtenstein IBAN with an institution identifier between 30000 and 31999.',
         'missing_tenant' => 'The invoice has no issuing company.',
         'invalid_currency' => 'The Swiss QR-bill only supports CHF and EUR invoices.',
         'invalid_amount' => 'There is no outstanding amount to pay.',
@@ -18,7 +19,15 @@ return [
         'validation_failed' => 'The QR-bill data does not meet the SIX specification.',
     ],
 
+    'parse_errors' => [
+        'qr_not_found' => 'The file does not contain a readable Swiss QR-bill. Upload a PDF or image where the QR code is a bitmap.',
+        'invalid_payload' => 'The payload is not a Swiss QR-bill (SPC).',
+        'unsupported_file' => 'Unsupported or empty file.',
+    ],
+
     'messages' => [
+        'parsed' => 'Swiss QR-bill parsed successfully',
+        'reference_checked' => 'Reference checked',
         'retrieved' => 'Swiss QR-bill generated successfully',
     ],
 

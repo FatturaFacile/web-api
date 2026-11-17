@@ -97,6 +97,7 @@ use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SupplierCostRuleController;
 use App\Http\Controllers\Api\V1\SupplierInvoiceController;
+use App\Http\Controllers\Api\V1\SwissQrBillController;
 use App\Http\Controllers\Api\V1\System\BootstrapSupportUserController;
 use App\Http\Controllers\Api\V1\System\TenantBackupController;
 use App\Http\Controllers\Api\V1\TenantPreferencesController;
@@ -259,6 +260,12 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 4. Sales, Invoicing & Cross-Border Billing
+        Route::prefix('swiss-qr-bill')->name('swiss-qr-bill.')->middleware('module.access:invoicing')->group(function (): void {
+            Route::post('/generate-pdf', [SwissQrBillController::class, 'generatePdf'])->name('generate-pdf');
+            Route::post('/parse', [SwissQrBillController::class, 'parse'])->name('parse');
+            Route::post('/validate-reference', [SwissQrBillController::class, 'validateReference'])->name('validate-reference');
+        });
+
         Route::prefix('sales')->name('sales.')->middleware('module.access:invoicing')->group(function (): void {
             Route::apiResource('invoices', InvoiceController::class)->parameters(['invoices' => 'id']);
             Route::post('/invoices/{id}/generate-sdi-xml', [InvoiceController::class, 'generateSdiXml'])->name('invoices.generate-sdi-xml');
