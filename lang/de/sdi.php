@@ -16,6 +16,7 @@ return [
         'bulk_sent' => 'Sammelversand an SDI verarbeitet',
         'self_invoice_created' => 'Eigenrechnung ausgestellt',
         'logs' => 'SDI-Protokolle erfolgreich abgerufen',
+        'generated' => 'FatturaPA-Datei erzeugt und geprüft',
         'notification_received' => 'Meldung empfangen',
         'channel_updated' => 'SDI-Kanal aktualisiert',
         'poll_queued' => 'Lesen des SDI-Kanals eingereiht',

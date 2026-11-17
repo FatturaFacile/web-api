@@ -16,6 +16,7 @@ return [
         'bulk_sent' => 'Invio massivo a SDI elaborato',
         'self_invoice_created' => 'Autofattura emessa',
         'logs' => 'Log SDI recuperati con successo',
+        'generated' => 'File FatturaPA generato e validato',
         'notification_received' => 'Notifica ricevuta',
         'channel_updated' => 'Canale SDI aggiornato',
         'poll_queued' => 'Lettura del canale SDI messa in coda',

@@ -16,6 +16,7 @@ return [
         'bulk_sent' => 'SDI bulk transmission processed',
         'self_invoice_created' => 'Self-invoice issued',
         'logs' => 'SDI logs retrieved successfully',
+        'generated' => 'FatturaPA file generated and validated',
         'notification_received' => 'Notification received',
         'channel_updated' => 'SDI channel updated',
         'poll_queued' => 'SDI channel read queued',

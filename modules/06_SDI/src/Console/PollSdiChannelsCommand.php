@@ -17,7 +17,7 @@ final class PollSdiChannelsCommand extends Command
 
     public function handle(): int
     {
-        $tenants = Tenant::whereNotNull('sdi_channel')->where('sdi_channel', '!=', SdiChannel::Local->value)->pluck('id');
+        $tenants = Tenant::whereNotNull('sdi_channel')->whereNotIn('sdi_channel', [SdiChannel::Local->value, SdiChannel::Manual->value])->pluck('id');
 
         $tenants->each(fn (string $tenantId) => PollSdiChannelJob::dispatch($tenantId));
 

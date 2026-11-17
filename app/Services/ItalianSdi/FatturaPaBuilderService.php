@@ -114,9 +114,11 @@ class FatturaPaBuilderService
      * Build and serialize the official FatturaPA XML (schema v1.2.3). It never fills in missing master data: the document
      * must have passed {@see SdiPreflight}, and what is still missing here is an error.
      *
+     * @param  list<array{name: string, content: string, format?: string, description?: string}>  $attachments  raw file bytes, embedded as base64 in Allegati
+     *
      * @throws InvalidArgumentException when a mandatory value is missing
      */
-    public function buildFatturaPaXml(Invoice $invoice, ?string $progressive = null): string
+    public function buildFatturaPaXml(Invoice $invoice, ?string $progressive = null, array $attachments = []): string
     {
         $tenant = $invoice->tenant;
         $contact = $invoice->contact;
@@ -161,6 +163,10 @@ class FatturaPaBuilderService
 
         if (! $type->isSelfInvoice()) {
             $body->appendChild($this->paymentData($dom, $invoice));
+        }
+
+        foreach ($attachments as $attachment) {
+            $body->appendChild($this->attachment($dom, $attachment));
         }
 
         return (string) $dom->saveXML();
@@ -246,7 +252,9 @@ class FatturaPaBuilderService
         // A self-invoice comes back to the tenant, not to the supplier it integrates.
         $sdiCode = $type->isSelfInvoice() ? $tenant->sdi_code : $contact->sdi_code;
         $pec = $type->isSelfInvoice() ? $tenant->pec_email : $contact->pec;
-        $codiceDestinatario = $sdiCode ?: '0000000';
+        $isForeignRecipient = ! $type->isSelfInvoice() && strtoupper((string) $contact->country) !== 'IT';
+        $codiceDestinatario = $isForeignRecipient ? 'XXXXXXX' : ($sdiCode ?: '0000000');
+        $pec = $isForeignRecipient ? null : $pec;
         $datiTrasmissione->appendChild($dom->createElement('CodiceDestinatario', strtoupper($codiceDestinatario)));
 
         if ($codiceDestinatario === '0000000' && ! empty($pec)) {
@@ -762,6 +770,24 @@ class FatturaPaBuilderService
         }
 
         return $datiPagamento;
+    }
+
+    /**
+     * @param  array{name: string, content: string, format?: string, description?: string}  $attachment
+     */
+    private function attachment(DOMDocument $dom, array $attachment): DOMElement
+    {
+        $allegati = $dom->createElement('Allegati');
+        $allegati->appendChild($dom->createElement('NomeAttachment', mb_substr($attachment['name'], 0, 60)));
+        $allegati->appendChild($dom->createElement('FormatoAttachment', strtoupper($attachment['format'] ?? 'PDF')));
+
+        if (! empty($attachment['description'])) {
+            $allegati->appendChild($dom->createElement('DescrizioneAttachment', mb_substr($attachment['description'], 0, 100)));
+        }
+
+        $allegati->appendChild($dom->createElement('Attachment', base64_encode($attachment['content'])));
+
+        return $allegati;
     }
 
     private function money(mixed $amount): string

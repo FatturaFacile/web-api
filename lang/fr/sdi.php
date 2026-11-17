@@ -16,6 +16,7 @@ return [
         'bulk_sent' => 'Envoi groupé au SDI traité',
         'self_invoice_created' => 'Auto-facture émise',
         'logs' => 'Journaux SDI récupérés avec succès',
+        'generated' => 'Fichier FatturaPA généré et validé',
         'notification_received' => 'Notification reçue',
         'channel_updated' => 'Canal SDI mis à jour',
         'poll_queued' => "Lecture du canal SDI mise en file d'attente",
