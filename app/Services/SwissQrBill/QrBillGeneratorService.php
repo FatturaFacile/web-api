@@ -54,29 +54,11 @@ class QrBillGeneratorService
             return false;
         }
 
-        // Move first 4 characters to end and convert letters to numbers (A=10, B=11, ... Z=35)
-        $reordered = substr($clean, 4).substr($clean, 0, 4);
-        $numericString = '';
-
-        for ($i = 0; $i < strlen($reordered); $i++) {
-            $char = $reordered[$i];
-            if (ctype_digit($char)) {
-                $numericString .= $char;
-            } elseif (ctype_alpha($char)) {
-                $numericString .= (string) (ord($char) - 55);
-            } else {
-                return false;
-            }
+        if (! ctype_alnum($clean)) {
+            return false;
         }
 
-        // Modulo 97 calculation on large numeric string
-        $remainder = 0;
-        $chunks = str_split($numericString, 7);
-        foreach ($chunks as $chunk) {
-            $remainder = (int) (($remainder.$chunk) % 97);
-        }
-
-        return $remainder === 1;
+        return $this->mod97(substr($clean, 4).substr($clean, 0, 4)) === 1;
     }
 
     /**
@@ -128,6 +110,104 @@ class QrBillGeneratorService
         $expectedChecksum = (int) substr($clean, 26, 1);
 
         return $this->calculateMod10RecursiveCheckDigit($base) === $expectedChecksum;
+    }
+
+    /**
+     * Validate an ISO 11649 creditor reference ("RF" + 2 check digits + up to 21 alphanumerics) with Mod 97-10.
+     */
+    public function validateIso11649(string $reference): bool
+    {
+        $clean = strtoupper((string) preg_replace('/\s+/', '', $reference));
+
+        if (! preg_match('/^RF[0-9]{2}[0-9A-Z]{1,21}$/', $clean)) {
+            return false;
+        }
+
+        return $this->mod97(substr($clean, 4).substr($clean, 0, 4)) === 1;
+    }
+
+    /**
+     * Build an ISO 11649 creditor reference (RF + check digits) from an alphanumeric base of up to 21 characters.
+     */
+    public function generateIso11649(string $base): string
+    {
+        $clean = strtoupper((string) preg_replace('/[^0-9A-Za-z]/', '', $base));
+
+        if ($clean === '' || strlen($clean) > 21) {
+            throw new \InvalidArgumentException('The creditor reference base must have 1 to 21 alphanumeric characters.');
+        }
+
+        $check = 98 - $this->mod97($clean.'RF00');
+
+        return 'RF'.str_pad((string) $check, 2, '0', STR_PAD_LEFT).$clean;
+    }
+
+    /**
+     * Derive a 27-digit QR reference from a (tenant) 6-digit prefix and the invoice sequence number.
+     */
+    public function deriveQrReference(?string $prefix, string $sequence): string
+    {
+        $prefix = preg_replace('/\D/', '', (string) $prefix) ?? '';
+        $sequence = preg_replace('/\D/', '', $sequence) ?? '';
+        $prefix = str_pad(substr($prefix, 0, 6), $prefix === '' ? 0 : 6, '0', STR_PAD_LEFT);
+        $sequence = substr($sequence, -(26 - strlen($prefix)));
+
+        return $this->generateScorReference($prefix.str_pad($sequence, 26 - strlen($prefix), '0', STR_PAD_LEFT));
+    }
+
+    /**
+     * Check that an account and a payment reference belong together according to the SIX rules.
+     *
+     * @return array{valid: bool, type: string, normalized: ?string, errors: array<int, string>}
+     */
+    public function checkReference(string $iban, ?string $reference): array
+    {
+        $account = strtoupper((string) preg_replace('/\s+/', '', $iban));
+        $ref = strtoupper((string) preg_replace('/\s+/', '', (string) $reference));
+        $isQrIban = $this->isValidQrIban($account);
+        $errors = [];
+
+        if (! preg_match('/^(CH|LI)/', $account) || ! $this->validateIbanChecksum($account)) {
+            $errors[] = 'invalid_creditor_iban';
+        }
+
+        $type = $ref === '' ? 'NON' : (ctype_digit($ref) ? 'QRR' : 'SCOR');
+
+        if ($type === 'QRR') {
+            if (! $this->validateScorReference($ref)) {
+                $errors[] = 'invalid_reference';
+            } elseif (! $isQrIban) {
+                $errors[] = 'reference_mismatch';
+            }
+        } elseif ($type === 'SCOR') {
+            if (! $this->validateIso11649($ref)) {
+                $errors[] = 'invalid_reference';
+            } elseif ($isQrIban) {
+                $errors[] = 'reference_mismatch';
+            }
+        } elseif ($isQrIban) {
+            // A QR-IBAN always requires a QR reference.
+            $errors[] = 'reference_mismatch';
+        }
+
+        return ['valid' => $errors === [], 'type' => $type, 'normalized' => $ref === '' ? null : $ref, 'errors' => $errors];
+    }
+
+    private function mod97(string $alphanumeric): int
+    {
+        $numeric = '';
+
+        foreach (str_split($alphanumeric) as $char) {
+            $numeric .= ctype_digit($char) ? $char : (string) (ord($char) - 55);
+        }
+
+        $remainder = 0;
+
+        foreach (str_split($numeric, 7) as $chunk) {
+            $remainder = (int) (($remainder.$chunk) % 97);
+        }
+
+        return $remainder;
     }
 
     /**

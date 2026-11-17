@@ -40,6 +40,9 @@ final class UpdateVatTaxSettingRequest extends FormRequest
             'declarant_tax_code' => ['nullable', 'string', 'max:16', 'alpha_num'],
             'declarant_role_code' => ['nullable', 'string', 'max:2'],
             'carry_over_below_minimum' => ['sometimes', 'boolean'],
+            'mwst_basis' => ['nullable', Rule::in(['agreed', 'received'])],
+            'lipe_prorata_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'lipe_advance_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 

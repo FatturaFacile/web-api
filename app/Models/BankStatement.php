@@ -32,6 +32,7 @@ class BankStatement extends Model
         'closing_balance',
         'currency',
         'total_entries',
+        'duplicate_lines',
         'status',
         'content_hash',
     ];

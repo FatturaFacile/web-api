@@ -12,7 +12,6 @@ use Modules\HumanResources\Models\CandidateApplication;
 use Modules\HumanResources\Models\CandidateEmail;
 use Modules\HumanResources\Models\InterviewScorecard;
 
-use function Tests\Feature\HumanResources\Recruiting\actAs;
 use function Tests\Feature\HumanResources\Recruiting\careersSettings;
 use function Tests\Feature\HumanResources\Recruiting\publishedOpening;
 use function Tests\Feature\HumanResources\Recruiting\recruiterOfNewTenant;
@@ -141,7 +140,7 @@ test('scorecards of two interviewers are averaged and resubmitting updates inste
 
     $secondInterviewer = User::factory()->create();
     $secondInterviewer->tenants()->attach($tenant->id, ['id' => (string) Str::uuid(), 'role' => 'member']);
-    actAs($secondInterviewer, $tenant);
+    recruitingActAs($secondInterviewer, $tenant);
 
     $this->withHeader('X-Tenant-Id', $tenant->id)->postJson("/api/v1/hr/recruiting/applications/{$application->id}/scorecards", [
         'stage' => 'technical_interview',

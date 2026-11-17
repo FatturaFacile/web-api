@@ -236,10 +236,27 @@ abstract class AbstractCamtParser implements BankStatementParserInterface
                 description: $this->description($entry, $transaction),
                 counterpartName: $this->counterpart($transaction, $direction, 'Nm'),
                 counterpartIban: $this->counterpartIban($transaction, $direction),
+                entryReference: $this->entryReference($entry, $transaction),
             );
         }
 
         return $lines;
+    }
+
+    /**
+     * The bank's own reference of the booking (AcctSvcrRef, else NtryRef): the key to recognise the same movement in
+     * another statement. With several transaction details the entry reference alone is shared, so the transaction's
+     * own AcctSvcrRef or TxId has precedence.
+     */
+    private function entryReference(SimpleXMLElement $entry, ?SimpleXMLElement $transaction): ?string
+    {
+        foreach ([(string) ($transaction?->Refs->AcctSvcrRef ?? ''), (string) ($entry->AcctSvcrRef ?? ''), (string) ($entry->NtryRef ?? '')] as $candidate) {
+            if (trim($candidate) !== '') {
+                return mb_substr(trim($candidate), 0, 100);
+            }
+        }
+
+        return null;
     }
 
     /**

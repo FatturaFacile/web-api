@@ -75,7 +75,11 @@ final class LipeXmlBuilder
         self::addAmount($document, $module, 'IvaCredito', Decimal::neg($difference));
         self::addAmount($document, $module, 'DebitoPrecedente', $data->previousDebit);
         self::addAmount($document, $module, 'CreditoPeriodoPrecedente', $data->previousCredit);
+        self::addAmount($document, $module, 'CreditoAnnoPrecedente', $data->previousYearCredit);
+        self::addAmount($document, $module, 'VersamentiAutoUE', $data->euAutoPayments);
+        self::addAmount($document, $module, 'CreditiImposta', $data->taxCredits);
         self::addAmount($document, $module, 'InteressiDovuti', $data->interest);
+        self::addAmount($document, $module, 'Acconto', $data->advance);
         self::addAmount($document, $module, 'ImportoDaVersare', $data->payable);
         self::addAmount($document, $module, 'ImportoACredito', Decimal::neg($data->payable));
 

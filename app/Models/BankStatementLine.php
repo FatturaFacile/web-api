@@ -68,6 +68,8 @@ class BankStatementLine extends Model
         'abi_code',
         'reference',
         'qr_reference',
+        'entry_reference',
+        'dedupe_key',
         'description',
         'counterpart_name',
         'counterpart_iban',

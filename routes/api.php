@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\AutomotiveController;
 use App\Http\Controllers\Api\V1\Banking\BankReconciliationRuleController;
 use App\Http\Controllers\Api\V1\Banking\BankStatementController;
+use App\Http\Controllers\Api\V1\Banking\Iso20022Controller;
 use App\Http\Controllers\Api\V1\ConstructionController;
 use App\Http\Controllers\Api\V1\ContactFiscalController;
 use App\Http\Controllers\Api\V1\ContactInsightsController;
@@ -100,6 +101,7 @@ use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SupplierCostRuleController;
 use App\Http\Controllers\Api\V1\SupplierInvoiceController;
+use App\Http\Controllers\Api\V1\SwissQrBillController;
 use App\Http\Controllers\Api\V1\System\BootstrapSupportUserController;
 use App\Http\Controllers\Api\V1\System\TenantBackupController;
 use App\Http\Controllers\Api\V1\TenantPreferencesController;
@@ -269,6 +271,12 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 4. Sales, Invoicing & Cross-Border Billing
+        Route::prefix('swiss-qr-bill')->name('swiss-qr-bill.')->middleware('module.access:invoicing')->group(function (): void {
+            Route::post('/generate-pdf', [SwissQrBillController::class, 'generatePdf'])->name('generate-pdf');
+            Route::post('/parse', [SwissQrBillController::class, 'parse'])->name('parse');
+            Route::post('/validate-reference', [SwissQrBillController::class, 'validateReference'])->name('validate-reference');
+        });
+
         Route::prefix('sales')->name('sales.')->middleware('module.access:invoicing')->group(function (): void {
             Route::apiResource('invoices', InvoiceController::class)->parameters(['invoices' => 'id']);
             Route::post('/invoices/{id}/generate-sdi-xml', [InvoiceController::class, 'generateSdiXml'])->name('invoices.generate-sdi-xml');
@@ -613,6 +621,12 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/reconciliation-rules', [BankReconciliationRuleController::class, 'store'])->name('reconciliation-rules.store');
             Route::put('/reconciliation-rules/{ruleId}', [BankReconciliationRuleController::class, 'update'])->whereUuid('ruleId')->name('reconciliation-rules.update');
             Route::delete('/reconciliation-rules/{ruleId}', [BankReconciliationRuleController::class, 'destroy'])->whereUuid('ruleId')->name('reconciliation-rules.destroy');
+
+            // ISO 20022: camt.053 / camt.054 import, manual matching queue, pain.001 payment files
+            Route::post('/iso20022/import', [Iso20022Controller::class, 'import'])->name('iso20022.import');
+            Route::post('/iso20022/pain001/export', [Iso20022Controller::class, 'pain001Export'])->name('iso20022.pain001.export');
+            Route::get('/reconciliation/transactions', [Iso20022Controller::class, 'transactions'])->name('reconciliation.transactions');
+            Route::post('/reconciliation/transactions/{lineId}/match', [BankStatementController::class, 'manualMatch'])->whereUuid('lineId')->name('reconciliation.transactions.match');
         });
 
         // System: manual tenant backups

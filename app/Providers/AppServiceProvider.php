@@ -11,6 +11,8 @@ use App\Contracts\MobilePushGateway;
 use App\Contracts\PdfGenerator;
 use App\Contracts\SdiProvider;
 use App\Contracts\Security\HostResolver;
+use App\Contracts\SwissQrBill\SwissQrBillGeneratorInterface;
+use App\Contracts\SwissQrBill\SwissQrBillParserInterface;
 use App\Listeners\Mobile\NotifyApproversOnStepAssigned;
 use App\Listeners\Mobile\RevokeMobileDevicesOnEmployeeTerminated;
 use App\Models\Appointment;
@@ -48,6 +50,8 @@ use App\Services\Pdf\DompdfPdfGenerator;
 use App\Services\Retail\LocalFiscalPrinterGateway;
 use App\Services\Security\DnsHostResolver;
 use App\Services\Security\OutboundUrlGuard;
+use App\Services\SwissQrBill\SwissQrBillParserService;
+use App\Services\SwissQrBill\SwissQrBillService;
 use App\Services\Tenancy\DocumentQuotaService;
 use App\Services\Tenancy\TenantContext;
 use App\Support\Auditing\AuditStamper;
@@ -96,6 +100,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SdiProvider::class, TenantSdiProvider::class);
         $this->app->bind(FiscalPrinterGateway::class, LocalFiscalPrinterGateway::class);
         $this->app->bind(PdfGenerator::class, DompdfPdfGenerator::class);
+        $this->app->bind(SwissQrBillGeneratorInterface::class, SwissQrBillService::class);
+        $this->app->bind(SwissQrBillParserInterface::class, SwissQrBillParserService::class);
         $this->app->singleton(EcommerceManager::class);
         $this->app->bind(HostResolver::class, DnsHostResolver::class);
         // The allow-list of outbound hosts is a local development convenience: ignored in every other environment.

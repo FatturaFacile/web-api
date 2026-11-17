@@ -6,6 +6,12 @@ namespace Modules\Treasury\Services;
 
 use App\Models\PassiveInvoice;
 use App\Models\Tenant;
+use App\Services\Banking\Iso20022\Pain001Message;
+use App\Services\Banking\Iso20022\Pain001Payment;
+use App\Services\Banking\Iso20022\Pain001SchemaValidator;
+use App\Services\Banking\Iso20022\Pain001Version;
+use App\Services\Banking\Iso20022\Pain001XmlBuilder;
+use Carbon\CarbonImmutable;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
@@ -26,15 +32,15 @@ use Modules\Treasury\Models\PaymentLine;
 
 final readonly class PaymentFactoryService implements PaymentFactoryServiceInterface
 {
-    private const string PAIN001_NAMESPACE = 'urn:iso:std:iso:20022:tech:xsd:pain.001.001.09';
-
     /** pain.002 statuses that mean the bank took the payment: settled, settling, accepted, accepted with change. */
     private const array PAIN002_EXECUTED = ['ACSC', 'ACSP', 'ACCP', 'ACWC'];
 
     public function __construct(
         private AuditLedgerInterface $auditLedger,
         private EventDispatcherInterface $dispatcher,
-        private TreasuryPositionServiceInterface $positionService
+        private TreasuryPositionServiceInterface $positionService,
+        private Pain001XmlBuilder $pain001,
+        private Pain001SchemaValidator $pain001Schema,
     ) {}
 
     public function createBatch(array $batchData, array $lines, ?string $creatorUserId = null): PaymentBatch
@@ -69,6 +75,7 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
                 'batch_reference' => $batchRef,
                 'payment_method' => $batchData['payment_method'] ?? 'sepa_credit_transfer',
                 'format' => $batchData['format'] ?? 'sepa_pain_001_it',
+                'pain_version' => $batchData['pain_version'] ?? '09',
                 'execution_date' => $batchData['execution_date'] ?? now()->toDateString(),
                 'total_amount' => $totalAmount,
                 'currency' => $batchData['currency'] ?? $bankAccount->currency ?? 'EUR',
@@ -149,83 +156,39 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
     private function buildPain001(PaymentBatch $batch, string $messageId): string
     {
         $debtorName = (string) (Tenant::query()->whereKey($batch->tenant_id)->value('legal_name') ?: $batch->bankAccount->bank_name);
-        $controlSum = number_format((float) $batch->total_amount, 2, '.', '');
+        $payments = $batch->lines->map(fn ($line): Pain001Payment => new Pain001Payment(
+            creditorName: (string) $line->recipient_name,
+            creditorIban: (string) $line->recipient_iban,
+            amount: (float) $line->amount,
+            currency: (string) $line->currency,
+            endToEndId: (string) $line->end_to_end_id,
+            instructionId: $this->optional($line->getAttribute('instruction_id')),
+            creditorBic: $this->optional($line->getAttribute('recipient_bic')),
+            reference: $this->optional($line->getAttribute('structured_creditor_ref')),
+            remittanceText: $this->optional($line->getAttribute('remittance_reference')),
+        ))->all();
 
-        $dom = new DOMDocument('1.0', 'UTF-8');
-        $dom->formatOutput = true;
-        $root = $dom->createElementNS(self::PAIN001_NAMESPACE, 'Document');
-        $dom->appendChild($root);
-        $initiation = $this->child($dom, $root, 'CstmrCdtTrfInitn');
-
-        $header = $this->child($dom, $initiation, 'GrpHdr');
-        $this->child($dom, $header, 'MsgId', $messageId);
-        $this->child($dom, $header, 'CreDtTm', now()->format('Y-m-d\TH:i:s'));
-        $this->child($dom, $header, 'NbOfTxs', (string) $batch->item_count);
-        $this->child($dom, $header, 'CtrlSum', $controlSum);
-        $this->child($dom, $this->child($dom, $header, 'InitgPty'), 'Nm', $debtorName);
-
-        $information = $this->child($dom, $initiation, 'PmtInf');
-        $this->child($dom, $information, 'PmtInfId', (string) $batch->batch_reference);
-        $this->child($dom, $information, 'PmtMtd', 'TRF');
-        $this->child($dom, $information, 'NbOfTxs', (string) $batch->item_count);
-        $this->child($dom, $information, 'CtrlSum', $controlSum);
-        $this->child($dom, $this->child($dom, $information, 'ReqdExctnDt'), 'Dt', $batch->execution_date->toDateString());
-        $this->child($dom, $this->child($dom, $information, 'Dbtr'), 'Nm', $debtorName);
-        $this->child($dom, $this->child($dom, $this->child($dom, $information, 'DbtrAcct'), 'Id'), 'IBAN', (string) $batch->bankAccount->iban);
-        $this->financialInstitution($dom, $this->child($dom, $information, 'DbtrAgt'), $batch->bankAccount->bic_swift, true);
-
-        foreach ($batch->lines as $line) {
-            $transaction = $this->child($dom, $information, 'CdtTrfTxInf');
-            $paymentId = $this->child($dom, $transaction, 'PmtId');
-
-            if (! empty($line->instruction_id)) {
-                $this->child($dom, $paymentId, 'InstrId', (string) $line->instruction_id);
-            }
-
-            $this->child($dom, $paymentId, 'EndToEndId', (string) $line->end_to_end_id);
-            $amount = $this->child($dom, $this->child($dom, $transaction, 'Amt'), 'InstdAmt', number_format((float) $line->amount, 2, '.', ''));
-            $amount->setAttribute('Ccy', (string) $line->currency);
-
-            if (! empty($line->recipient_bic)) {
-                $this->financialInstitution($dom, $this->child($dom, $transaction, 'CdtrAgt'), $line->recipient_bic, false);
-            }
-
-            $this->child($dom, $this->child($dom, $transaction, 'Cdtr'), 'Nm', (string) $line->recipient_name);
-            $this->child($dom, $this->child($dom, $this->child($dom, $transaction, 'CdtrAcct'), 'Id'), 'IBAN', (string) $line->recipient_iban);
-            $remittance = $this->child($dom, $transaction, 'RmtInf');
-
-            if (! empty($line->structured_creditor_ref)) {
-                $this->child($dom, $this->child($dom, $this->child($dom, $remittance, 'Strd'), 'CdtrRefInf'), 'Ref', (string) $line->structured_creditor_ref);
-            } else {
-                $this->child($dom, $remittance, 'Ustrd', (string) $line->remittance_reference);
-            }
-        }
-
-        return (string) $dom->saveXML();
+        return $this->pain001->build(new Pain001Message(
+            messageId: $messageId,
+            createdAt: CarbonImmutable::now(),
+            initiatorName: $debtorName,
+            paymentInfoId: (string) $batch->batch_reference,
+            executionDate: CarbonImmutable::parse($batch->execution_date),
+            debtorName: $debtorName,
+            debtorIban: (string) $batch->bankAccount->iban,
+            debtorBic: $batch->bankAccount->bic_swift !== null ? (string) $batch->bankAccount->bic_swift : null,
+            payments: $payments,
+        ), $this->version($batch));
     }
 
-    private function child(DOMDocument $dom, DOMElement $parent, string $name, ?string $value = null): DOMElement
+    private function optional(mixed $value): ?string
     {
-        $element = $dom->createElementNS(self::PAIN001_NAMESPACE, $name);
-
-        if ($value !== null) {
-            $element->appendChild($dom->createTextNode($value));
-        }
-
-        $parent->appendChild($element);
-
-        return $element;
+        return $value === null ? null : (string) $value;
     }
 
-    private function financialInstitution(DOMDocument $dom, DOMElement $agent, ?string $bic, bool $required): void
+    private function version(PaymentBatch $batch): Pain001Version
     {
-        $institution = $this->child($dom, $agent, 'FinInstnId');
-
-        if (! empty($bic)) {
-            $this->child($dom, $institution, 'BICFI', $bic);
-        } elseif ($required) {
-            $this->child($dom, $this->child($dom, $institution, 'Othr'), 'Id', 'NOTPROVIDED');
-        }
+        return Pain001Version::tryFrom((string) ($batch->pain_version ?? '09')) ?? Pain001Version::V09;
     }
 
     /**
@@ -360,6 +323,7 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
 
             $messageId = 'MSG-'.date('YmdHis').'-'.substr((string) $batch->id, 0, 8);
             $xml = $this->buildPain001($batch, $messageId);
+            $this->pain001Schema->validate($xml, $this->version($batch));
             $before = $batch->toArray();
 
             $batch->update([

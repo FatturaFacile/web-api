@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
 
     'messages' => [
+        'pain001_exported' => 'File di pagamento generato e validato rispetto allo schema ISO 20022',
         'imported' => 'Estratto conto bancario importato con successo',
         'listed' => 'Estratti conto recuperati con successo',
         'retrieved' => 'Estratto conto recuperato con successo',
@@ -18,6 +19,7 @@ return [
     ],
 
     'errors' => [
+        'not_iso20022' => 'Il file non è un estratto conto camt.053 né una notifica camt.054 ISO 20022.',
         'duplicate_statement' => 'Questo estratto conto bancario è già stato importato.',
         'line_not_credit' => 'Solo i movimenti in entrata (avere) possono essere abbinati a fatture clienti.',
         'line_already_reconciled' => 'Il movimento è già riconciliato.',
