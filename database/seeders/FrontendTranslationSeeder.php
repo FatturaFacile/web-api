@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
+use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -33,13 +34,15 @@ class FrontendTranslationSeeder extends Seeder
      */
     public static function dictionary(string $locale): array
     {
-        return match ($locale) {
+        $base = match ($locale) {
             'it' => ItalianFrontendTranslations::all(),
             'en' => EnglishFrontendTranslations::all(),
             'de' => GermanFrontendTranslations::all(),
             'fr' => FrenchFrontendTranslations::all(),
             default => throw new InvalidArgumentException("Unsupported locale [{$locale}]."),
         };
+
+        return $base + HrAtsFrontendTranslations::all($locale);
     }
 
     /**
