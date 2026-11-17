@@ -10,6 +10,8 @@ Artisan::command('inspire', function () {
 
 Schedule::command('tenants:backup --all')->dailyAt('02:00')->withoutOverlapping();
 Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping();
+// Module 19: nightly indexation + recurring invoicing (pro-rata) + renewals
+Schedule::command('subscriptions:run-automation')->dailyAt('02:30')->withoutOverlapping();
 Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlapping();
 Schedule::command('ecommerce:sync-orders')->everyFifteenMinutes()->withoutOverlapping();
 

@@ -30,6 +30,8 @@ final class InvoiceSchedule extends Model
             'service_period_start' => 'date',
             'service_period_end' => 'date',
             'estimated_amount' => 'decimal:2',
+            'proration_factor' => 'decimal:6',
+            'calculation' => 'array',
         ];
     }
 

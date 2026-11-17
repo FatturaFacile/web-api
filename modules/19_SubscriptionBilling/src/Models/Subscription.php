@@ -29,6 +29,12 @@ final class Subscription extends BaseEnterpriseModel
             'mrr' => 'decimal:2',
             'arr' => 'decimal:2',
             'is_locked' => 'boolean',
+            'last_billed_period_end' => 'date',
+            'indexation_ratio_pct' => 'decimal:2',
+            'indexation_cap_pct' => 'decimal:3',
+            'indexation_base_month' => 'date',
+            'next_indexation_date' => 'date',
+            'last_indexed_at' => 'datetime',
             'terms' => 'array',
             'metadata' => 'array',
         ];
@@ -62,6 +68,11 @@ final class Subscription extends BaseEnterpriseModel
     public function revenueContract(): HasOne
     {
         return $this->hasOne(RevenueContract::class, 'subscription_id');
+    }
+
+    public function indexationAdjustments(): HasMany
+    {
+        return $this->hasMany(IndexationAdjustment::class, 'subscription_id')->orderBy('effective_date', 'desc');
     }
 
     public function churnPredictions(): HasMany

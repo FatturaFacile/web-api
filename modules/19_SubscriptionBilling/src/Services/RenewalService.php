@@ -29,7 +29,7 @@ final readonly class RenewalService implements RenewalServiceInterface
             $expiringSubs = Subscription::with(['plan', 'items'])
                 ->where('tenant_id', $tenantId)
                 ->where('status', 'active')
-                ->where('current_period_end', '<=', $threshold)
+                ->whereDate('current_period_end', '<=', $threshold)
                 ->lockForUpdate()
                 ->get();
 

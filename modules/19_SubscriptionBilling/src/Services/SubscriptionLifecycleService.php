@@ -9,6 +9,7 @@ use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\SubscriptionBilling\Contracts\RecurringBillingServiceInterface;
 use Modules\SubscriptionBilling\Contracts\SubscriptionLifecycleServiceInterface;
 use Modules\SubscriptionBilling\DTOs\CancelSubscriptionDTO;
 use Modules\SubscriptionBilling\DTOs\CreateSubscriptionDTO;
@@ -27,6 +28,8 @@ use Modules\SubscriptionBilling\Models\Subscription;
 use Modules\SubscriptionBilling\Models\SubscriptionItem;
 use Modules\SubscriptionBilling\Models\SubscriptionPlan;
 use Modules\SubscriptionBilling\Models\SubscriptionVersion;
+use Modules\SubscriptionBilling\Support\BillingCycle;
+use Modules\SubscriptionBilling\Support\PlanPricing;
 
 final readonly class SubscriptionLifecycleService implements SubscriptionLifecycleServiceInterface
 {
@@ -38,20 +41,16 @@ final readonly class SubscriptionLifecycleService implements SubscriptionLifecyc
     public function createSubscription(CreateSubscriptionDTO $dto, ?string $actorUserId = null): Subscription
     {
         return DB::transaction(function () use ($dto, $actorUserId) {
-            $plan = SubscriptionPlan::where('tenant_id', $dto->tenantId)
+            $plan = SubscriptionPlan::with('pricingTiers')
+                ->where('tenant_id', $dto->tenantId)
                 ->where('id', $dto->planId)
                 ->firstOrFail();
 
             $startDate = Carbon::parse($dto->startDate);
             $billingInterval = $plan->billing_interval;
-            $currentPeriodEnd = match ($billingInterval) {
-                'annual' => $startDate->copy()->addYear()->subDay(),
-                'quarterly' => $startDate->copy()->addMonths(3)->subDay(),
-                'semiannual' => $startDate->copy()->addMonths(6)->subDay(),
-                default => $startDate->copy()->addMonth()->subDay(),
-            };
+            $currentPeriodEnd = Carbon::instance(BillingCycle::periodEnd($startDate, $billingInterval, $dto->billingAlignment));
 
-            $basePrice = (float) $plan->base_price;
+            $basePrice = PlanPricing::recurringAmount($plan, $dto->seats);
             $mrr = $this->calculateMrrFromPlan($plan, $basePrice);
             $arr = $mrr * 12.0;
 
@@ -79,6 +78,15 @@ final readonly class SubscriptionLifecycleService implements SubscriptionLifecyc
                 'arr' => $arr,
                 'is_locked' => false,
                 'metadata' => $dto->metadata,
+                'billing_timing' => $dto->billingTiming,
+                'billing_alignment' => $dto->billingAlignment,
+                'indexation_type' => $dto->indexationType,
+                'indexation_ratio_pct' => $dto->indexationRatioPct,
+                'indexation_cap_pct' => $dto->indexationCapPct,
+                'indexation_base_month' => $dto->indexationType !== null
+                    ? Carbon::parse($dto->indexationBaseMonth ?? $startDate)->startOfMonth()->toDateString()
+                    : null,
+                'next_indexation_date' => $dto->indexationType !== null ? $startDate->copy()->addYear()->toDateString() : null,
             ]);
 
             SubscriptionItem::create([
@@ -92,6 +100,7 @@ final readonly class SubscriptionLifecycleService implements SubscriptionLifecyc
                 'unit_price' => $basePrice,
                 'discount_percentage' => 0.00,
                 'subtotal_recurring' => $basePrice,
+                'metadata' => ['seats' => $dto->seats, 'pricing_model' => $plan->pricing_model],
             ]);
 
             foreach ($dto->items as $addon) {
@@ -286,10 +295,18 @@ final readonly class SubscriptionLifecycleService implements SubscriptionLifecyc
             $oldArr = (float) $subscription->arr;
             $cancellationDate = $dto->cancellationDate ? Carbon::parse($dto->cancellationDate) : now();
 
+            // Final pro-rata settlement must see the period state before it is closed.
+            $settlement = app(RecurringBillingServiceInterface::class)->billFinalProRata(
+                $subscription->loadMissing(['items', 'plan']),
+                Carbon::instance($cancellationDate)
+            );
+
             $subscription->update([
                 'status' => 'cancelled',
                 'cancelled_at' => $cancellationDate,
                 'cancellation_reason' => $dto->reason,
+                'cancellation_category' => $dto->category,
+                'cancellation_feedback' => $dto->feedback,
                 'mrr' => 0.00,
                 'arr' => 0.00,
             ]);
@@ -305,7 +322,7 @@ final readonly class SubscriptionLifecycleService implements SubscriptionLifecyc
                 'mrr_before' => $oldMrr,
                 'mrr_after' => 0.00,
                 'mrr_delta' => -$oldMrr,
-                'proration_amount' => 0.00,
+                'proration_amount' => $settlement['amount'] ?? 0.00,
                 'snapshot_payload' => $subscription->toArray(),
                 'change_reason' => $dto->reason,
                 'actor_user_id' => $dto->actorUserId,

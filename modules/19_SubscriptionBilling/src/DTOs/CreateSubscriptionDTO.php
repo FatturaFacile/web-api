@@ -19,6 +19,13 @@ final readonly class CreateSubscriptionDTO
         public string $paymentMethod = 'sepa_direct_debit',
         public ?string $bankAccountId = null,
         public array $items = [],
-        public array $metadata = []
+        public array $metadata = [],
+        public int $seats = 1,
+        public string $billingTiming = 'arrears',
+        public string $billingAlignment = 'anniversary',
+        public ?string $indexationType = null,
+        public float $indexationRatioPct = 100.0,
+        public ?float $indexationCapPct = null,
+        public ?string $indexationBaseMonth = null
     ) {}
 }

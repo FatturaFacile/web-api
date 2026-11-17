@@ -18,6 +18,8 @@ final class CancelSubscriptionRequest extends FormRequest
         return [
             'reason' => ['required', 'string', 'max:255'],
             'cancellation_date' => ['nullable', 'date'],
+            'category' => ['nullable', 'string', 'in:price,competitor,missing_features,support,no_longer_needed,payment_failure,other'],
+            'feedback' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

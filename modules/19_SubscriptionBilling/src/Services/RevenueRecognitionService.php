@@ -187,7 +187,7 @@ final readonly class RevenueRecognitionService implements RevenueRecognitionServ
             $pendingSchedules = RevenueSchedule::with('performanceObligation.revenueContract')
                 ->where('tenant_id', $dto->tenantId)
                 ->where('is_recognized', false)
-                ->where('period_date', '<=', $periodDate->toDateString())
+                ->whereDate('period_date', '<=', $periodDate->toDateString())
                 ->lockForUpdate()
                 ->get();
 

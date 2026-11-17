@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\SubscriptionBilling\Http\Controllers\IndexationController;
 use Modules\SubscriptionBilling\Http\Controllers\PlanController;
 use Modules\SubscriptionBilling\Http\Controllers\RevenueRecognitionController;
 use Modules\SubscriptionBilling\Http\Controllers\SubscriptionController;
+use Modules\SubscriptionBilling\Http\Controllers\SubscriptionMetricsController;
 use Modules\SubscriptionBilling\Http\Controllers\UsageBillingController;
 
 Route::prefix('api/v1/subscriptions')
@@ -25,6 +27,19 @@ Route::prefix('api/v1/subscriptions')
         Route::get('revenue-contracts', [RevenueRecognitionController::class, 'listContracts'])->name('subscriptions.revenue-contracts.index');
         Route::get('revenue-contracts/{id}', [RevenueRecognitionController::class, 'showContract'])->name('subscriptions.revenue-contracts.show');
         Route::post('revenue-recognition/recognize', [RevenueRecognitionController::class, 'recognizeBatch'])->name('subscriptions.revenue-recognition.recognize');
+
+        // Inflation indexation (ISTAT FOI / LIK)
+        Route::get('indexation/indices', [IndexationController::class, 'indices'])->name('subscriptions.indexation.indices');
+        Route::post('indexation/indices', [IndexationController::class, 'recordIndex'])->name('subscriptions.indexation.indices.store');
+        Route::get('indexation/adjustments', [IndexationController::class, 'adjustments'])->name('subscriptions.indexation.adjustments');
+        Route::post('indexation/process', [IndexationController::class, 'process'])->name('subscriptions.indexation.process');
+        Route::get('{id}/indexation/preview', [IndexationController::class, 'preview'])->name('subscriptions.indexation.preview');
+        Route::post('{id}/indexation/apply', [IndexationController::class, 'apply'])->name('subscriptions.indexation.apply');
+
+        // SaaS metrics dashboard
+        Route::get('metrics', [SubscriptionMetricsController::class, 'summary'])->name('subscriptions.metrics.summary');
+        Route::get('metrics/trend', [SubscriptionMetricsController::class, 'trend'])->name('subscriptions.metrics.trend');
+        Route::get('metrics/churn-reasons', [SubscriptionMetricsController::class, 'churnReasons'])->name('subscriptions.metrics.churn-reasons');
 
         // Enterprise Subscription Lifecycle Actions
         Route::post('{id}/activate', [SubscriptionController::class, 'activate'])->name('subscriptions.enterprise.activate');

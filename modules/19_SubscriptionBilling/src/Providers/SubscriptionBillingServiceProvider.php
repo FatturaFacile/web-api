@@ -10,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use Modules\CRM\Events\OpportunityWonEvent;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\ServiceManagement\Events\CustomerSatisfactionUpdatedEvent;
+use Modules\SubscriptionBilling\Console\RunSubscriptionAutomationCommand;
 use Modules\SubscriptionBilling\Contracts\RecurringBillingServiceInterface;
 use Modules\SubscriptionBilling\Contracts\RenewalServiceInterface;
 use Modules\SubscriptionBilling\Contracts\RevenueRecognitionServiceInterface;
@@ -76,6 +77,10 @@ final class SubscriptionBillingServiceProvider extends ServiceProvider
         $this->registerPolicies();
         $this->registerRoutes();
         $this->registerEventListeners();
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([RunSubscriptionAutomationCommand::class]);
+        }
     }
 
     private function registerPolicies(): void

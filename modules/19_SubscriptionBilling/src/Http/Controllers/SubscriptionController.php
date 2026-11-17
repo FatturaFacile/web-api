@@ -74,7 +74,14 @@ final class SubscriptionController extends Controller
             paymentMethod: $validated['payment_method'] ?? 'sepa_direct_debit',
             bankAccountId: $validated['bank_account_id'] ?? null,
             items: $validated['items'] ?? [],
-            metadata: $validated['metadata'] ?? []
+            metadata: $validated['metadata'] ?? [],
+            seats: (int) ($validated['seats'] ?? 1),
+            billingTiming: $validated['billing_timing'] ?? 'arrears',
+            billingAlignment: $validated['billing_alignment'] ?? 'anniversary',
+            indexationType: $validated['indexation_type'] ?? null,
+            indexationRatioPct: (float) ($validated['indexation_ratio_pct'] ?? 100.0),
+            indexationCapPct: isset($validated['indexation_cap_pct']) ? (float) $validated['indexation_cap_pct'] : null,
+            indexationBaseMonth: isset($validated['indexation_base_month']) ? $validated['indexation_base_month'].'-01' : null
         );
 
         $subscription = $this->createAction->execute($dto, $request->user()?->id);
@@ -174,7 +181,9 @@ final class SubscriptionController extends Controller
             subscriptionId: $id,
             reason: $validated['reason'],
             cancellationDate: $validated['cancellation_date'] ?? null,
-            actorUserId: $request->user()?->id
+            actorUserId: $request->user()?->id,
+            category: $validated['category'] ?? null,
+            feedback: $validated['feedback'] ?? null
         );
 
         $subscription = $this->lifecycleService->cancelSubscription($dto);

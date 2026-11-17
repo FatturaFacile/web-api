@@ -12,6 +12,12 @@ uses [Semantic Versioning](https://semver.org/).
   paid invoices, and `total_revenue` includes the amount already collected on them.
 ### Added
 
+- **Subscription billing automation** (`modules/19_SubscriptionBilling`): nightly `subscriptions:run-automation` command (indexation,
+  recurring invoicing, renewals) that issues real Module 05 invoices; advance/arrears billing, calendar-aligned cycles with
+  daily pro-rata for the first period and final pro-rata invoice/credit on mid-period cancellation; per-seat, tiered and
+  volume plan pricing; automatic ISTAT FOI / BFS LIK annual indexation (ratio, cap, no-deflation floor) with recalculation
+  sheet and customer notice; SaaS metrics API (MRR, ARR, logo/revenue churn, NRR, ARPA, LTV, trend) with structured
+  cancellation reasons; `qr_bill` payment method. Also fixes date comparisons that failed on SQLite.
 - **Logistics module** (`modules/32_Logistics`): enterprise DDT (IT DPR 472/96 and CH layout), progressive numbering per
   tenant / fiscal year / section, fulfilment from one or more sales orders, cumulative deferred invoicing with
   DDT-line to invoice-line links, two-step stock transfers (ship to transit + automatic DDT, receive with discrepancy

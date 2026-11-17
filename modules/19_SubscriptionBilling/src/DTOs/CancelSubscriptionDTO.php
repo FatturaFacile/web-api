@@ -10,6 +10,8 @@ final readonly class CancelSubscriptionDTO
         public string $subscriptionId,
         public string $reason,
         public ?string $cancellationDate = null,
-        public ?string $actorUserId = null
+        public ?string $actorUserId = null,
+        public ?string $category = null,
+        public ?string $feedback = null
     ) {}
 }
