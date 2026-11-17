@@ -30,6 +30,7 @@ use Modules\Invoicing\Events\SalesQuoteSubmittedEvent;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesQuote;
 use Modules\Invoicing\Models\SalesQuoteItem;
+use Modules\Pricing\Services\MarginGuardrail;
 use Modules\Workflow\Contracts\WorkflowEngineInterface;
 use Modules\Workflow\DTOs\StartWorkflowDTO;
 use Modules\Workflow\Models\WorkflowDefinition;
@@ -290,6 +291,7 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
     {
         QuoteStatus::assertTransition($quote->status, QuoteStatus::Accepted);
         app(QuoteLifecycleService::class)->assertWithinValidity($quote);
+        app(MarginGuardrail::class)->assertDocumentAllowed('sales_quote', $quote->loadMissing('items'));
 
         $quote->update([
             'status' => QuoteStatus::Accepted->value,

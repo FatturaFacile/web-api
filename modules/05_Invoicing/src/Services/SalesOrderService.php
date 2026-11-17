@@ -26,6 +26,7 @@ use Modules\Invoicing\Events\SalesOrderStockReservedEvent;
 use Modules\Invoicing\Models\CustomerAgreement;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesOrderItem;
+use Modules\Pricing\Services\MarginGuardrail;
 
 /**
  * Life cycle of the sales orders of the invoicing module: creation with price determination and decimal totals,
@@ -210,6 +211,9 @@ final class SalesOrderService implements SalesOrderServiceInterface
             }
 
             SalesOrderStatus::assertTransition($locked->status, SalesOrderStatus::Confirmed);
+
+            // A line below the margin policy blocks the confirmation unless a supervisor approved the order.
+            app(MarginGuardrail::class)->assertDocumentAllowed('sales_order', $locked->load('items'));
 
             $creditResult = $this->creditService->checkOrderCredit($locked);
 

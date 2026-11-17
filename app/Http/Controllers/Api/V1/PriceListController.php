@@ -233,6 +233,9 @@ class PriceListController extends Controller
                     'product_id' => $item['product_id'],
                     'price' => $item['price'],
                     'min_quantity' => $item['min_quantity'] ?? 1,
+                    'max_quantity' => $item['max_quantity'] ?? null,
+                    'discount_cascade' => $item['discount_cascade'] ?? null,
+                    'discount_mode' => $item['discount_mode'] ?? 'MULTIPLICATIVE',
                     'valid_from' => $item['valid_from'] ?? null,
                     'valid_to' => $item['valid_to'] ?? null,
                 ], $items));

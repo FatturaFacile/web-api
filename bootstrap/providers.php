@@ -51,6 +51,7 @@ use Modules\Planning\Providers\PlanningServiceProvider;
 use Modules\Platform\Providers\PlatformServiceProvider;
 use Modules\Plm\Providers\PlmServiceProvider;
 use Modules\PracticeManagement\Providers\PracticeManagementServiceProvider;
+use Modules\Pricing\Providers\PricingServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
 use Modules\Quality\Providers\QualityServiceProvider;
@@ -134,6 +135,7 @@ return [
     BusinessIntelligenceServiceProvider::class,
     MarketplaceServiceProvider::class,
     RebatesServiceProvider::class,
+    PricingServiceProvider::class,
     EventsServiceProvider::class,
     PlmServiceProvider::class,
     PlatformServiceProvider::class,
