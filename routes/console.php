@@ -184,3 +184,6 @@ $completenessTenantJob('appointments:reminders', static fn (Tenant $tenant): obj
 
 // Module 17 ESM (GH-396): alert once per loaner unit still out after the repaired equipment was returned
 Schedule::command('esm:loaners:scan-overdue')->dailyAt('07:30')->withoutOverlapping()->onOneServer();
+
+// GitHub Issue #138: Recurring Contracts & Periodic Billing Engine
+Schedule::command('billing:process-recurring')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
