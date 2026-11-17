@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
 
     'messages' => [
+        'pain001_exported' => 'Zahlungsdatei erzeugt und gegen das ISO-20022-Schema validiert',
         'imported' => 'Kontoauszug erfolgreich importiert',
         'listed' => 'Kontoauszüge erfolgreich abgerufen',
         'retrieved' => 'Kontoauszug erfolgreich abgerufen',
@@ -18,6 +19,7 @@ return [
     ],
 
     'errors' => [
+        'not_iso20022' => 'Die Datei ist weder ein ISO-20022-Kontoauszug (camt.053) noch eine Avisierung (camt.054).',
         'duplicate_statement' => 'Dieser Kontoauszug wurde bereits importiert.',
         'line_not_credit' => 'Nur Haben-Umsätze können mit Ausgangsrechnungen abgeglichen werden.',
         'line_already_reconciled' => 'Die Zeile ist bereits abgestimmt.',

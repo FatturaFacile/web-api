@@ -580,8 +580,14 @@ class BankReconciliationService
             return null;
         }
 
+        $reference = strtoupper((string) preg_replace('/\s+/', '', $line->qr_reference));
+
+        // The reference printed on the payment slip is stored on the invoice (`qr_reference`); invoices that carry
+        // QR-bill data of their own are matched through it as well.
         return $this->openDocuments($statement, true)
-            ->whereHas('qrBillData', fn (Builder $query) => $query->whereRaw("replace(upper(scor_reference), ' ', '') = ?", [strtoupper($line->qr_reference)]))
+            ->where(fn (Builder $query) => $query
+                ->where('qr_reference', $reference)
+                ->orWhereHas('qrBillData', fn (Builder $data) => $data->whereRaw("replace(upper(scor_reference), ' ', '') = ?", [$reference])))
             ->first();
     }
 

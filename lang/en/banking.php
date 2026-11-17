@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
 
     'messages' => [
+        'pain001_exported' => 'Payment file generated and validated against the ISO 20022 schema',
         'imported' => 'Bank statement imported successfully',
         'listed' => 'Bank statements retrieved successfully',
         'retrieved' => 'Bank statement retrieved successfully',
@@ -18,6 +19,7 @@ return [
     ],
 
     'errors' => [
+        'not_iso20022' => 'The file is not an ISO 20022 camt.053 statement or camt.054 notification.',
         'duplicate_statement' => 'This bank statement has already been imported.',
         'line_not_credit' => 'Only incoming (credit) lines can be matched with an invoice.',
         'line_already_reconciled' => 'The line is already reconciled.',

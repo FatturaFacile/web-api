@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\AutomotiveController;
 use App\Http\Controllers\Api\V1\Banking\BankReconciliationRuleController;
 use App\Http\Controllers\Api\V1\Banking\BankStatementController;
+use App\Http\Controllers\Api\V1\Banking\Iso20022Controller;
 use App\Http\Controllers\Api\V1\ConstructionController;
 use App\Http\Controllers\Api\V1\ContactFiscalController;
 use App\Http\Controllers\Api\V1\ContactInsightsController;
@@ -582,6 +583,12 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/reconciliation-rules', [BankReconciliationRuleController::class, 'store'])->name('reconciliation-rules.store');
             Route::put('/reconciliation-rules/{ruleId}', [BankReconciliationRuleController::class, 'update'])->whereUuid('ruleId')->name('reconciliation-rules.update');
             Route::delete('/reconciliation-rules/{ruleId}', [BankReconciliationRuleController::class, 'destroy'])->whereUuid('ruleId')->name('reconciliation-rules.destroy');
+
+            // ISO 20022: camt.053 / camt.054 import, manual matching queue, pain.001 payment files
+            Route::post('/iso20022/import', [Iso20022Controller::class, 'import'])->name('iso20022.import');
+            Route::post('/iso20022/pain001/export', [Iso20022Controller::class, 'pain001Export'])->name('iso20022.pain001.export');
+            Route::get('/reconciliation/transactions', [Iso20022Controller::class, 'transactions'])->name('reconciliation.transactions');
+            Route::post('/reconciliation/transactions/{lineId}/match', [BankStatementController::class, 'manualMatch'])->whereUuid('lineId')->name('reconciliation.transactions.match');
         });
 
         // System: manual tenant backups

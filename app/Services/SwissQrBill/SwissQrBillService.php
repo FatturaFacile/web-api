@@ -116,6 +116,20 @@ class SwissQrBillService implements SwissQrBillGeneratorInterface
     }
 
     /**
+     * Keep the reference printed on the slip on the invoice (indexed `qr_reference`), so the camt.054/camt.053 credit
+     * that quotes it can be matched to the invoice. Written straight to the table: the invoice itself is not edited.
+     */
+    private function rememberReference(Invoice $invoice, ?string $reference): void
+    {
+        if ($reference === null || $invoice->qr_reference === $reference || ! $invoice->exists) {
+            return;
+        }
+
+        Invoice::query()->whereKey($invoice->getKey())->toBase()->update(['qr_reference' => $reference]);
+        $invoice->forceFill(['qr_reference' => $reference])->syncOriginalAttribute('qr_reference');
+    }
+
+    /**
      * @return array{bill: GeneratedQrBill, qrBill: QrBill}
      */
     private function assemble(Invoice $invoice): array
@@ -173,6 +187,8 @@ class SwissQrBillService implements SwissQrBillGeneratorInterface
 
             throw QrBillGenerationException::because(QrBillGenerationException::VALIDATION_FAILED, $violations);
         }
+
+        $this->rememberReference($invoice, $reference);
 
         $qrCode = $qrBill->getQrCode();
 
