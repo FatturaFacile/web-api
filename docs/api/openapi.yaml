@@ -52824,6 +52824,16 @@ paths:
           in: query
           schema:
             type: string
+        -
+          name: product_id
+          in: query
+          schema:
+            type: string
+        -
+          name: asset_status
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: ''
@@ -82553,6 +82563,364 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  /v1/esm/service-contracts:
+    post:
+      operationId: v1.esm.service-contracts.store
+      tags:
+        - MaintenanceContract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveMaintenanceContractRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/ServiceContractResource'
+                      -
+                        type: object
+                        required:
+                          - assets
+                required:
+                  - data
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    get:
+      operationId: v1.esm.service-contracts.index
+      summary: 'Returns the paginated list of service contracts of the active tenant'
+      tags:
+        - ServiceContract
+      parameters:
+        -
+          name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceContractResource'
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: string
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - total
+                required:
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/esm/service-contracts/{serviceContract}':
+    put:
+      operationId: v1.esm.service-contracts.update
+      tags:
+        - MaintenanceContract
+      parameters:
+        -
+          name: serviceContract
+          in: path
+          required: true
+          description: 'The service contract ID'
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveMaintenanceContractRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ServiceContractResource'
+                required:
+                  - data
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    get:
+      operationId: v1.esm.service-contracts.show
+      summary: 'Returns a single service contract of the active tenant'
+      tags:
+        - ServiceContract
+      parameters:
+        -
+          name: serviceContract
+          in: path
+          required: true
+          description: 'The service contract ID'
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ServiceContractResource'
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/esm/service-contracts/{serviceContract}/ledger':
+    get:
+      operationId: v1.esm.service-contracts.ledger
+      tags:
+        - MaintenanceContract
+      parameters:
+        -
+          name: serviceContract
+          in: path
+          required: true
+          description: 'The service contract ID'
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContractHourTransactionResource'
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      last_page:
+                        type: string
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - last_page
+                      - total
+                required:
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/esm/service-contracts/{serviceContract}/hours/top-up':
+    post:
+      operationId: v1.esm.service-contracts.top-up
+      tags:
+        - MaintenanceContract
+      parameters:
+        -
+          name: serviceContract
+          in: path
+          required: true
+          description: 'The service contract ID'
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HourBankEntryRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ContractHourTransactionResource'
+                  contract:
+                    $ref: '#/components/schemas/ServiceContractResource'
+                required:
+                  - data
+                  - contract
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/esm/service-contracts/{serviceContract}/hours/adjust':
+    post:
+      operationId: v1.esm.service-contracts.adjust
+      tags:
+        - MaintenanceContract
+      parameters:
+        -
+          name: serviceContract
+          in: path
+          required: true
+          description: 'The service contract ID'
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HourBankEntryRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ContractHourTransactionResource'
+                  contract:
+                    $ref: '#/components/schemas/ServiceContractResource'
+                required:
+                  - data
+                  - contract
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/esm/service-contracts/{serviceContract}/residual-report':
+    post:
+      operationId: v1.esm.service-contracts.residual-report
+      tags:
+        - MaintenanceContract
+      parameters:
+        -
+          name: serviceContract
+          in: path
+          required: true
+          description: 'The service contract ID'
+          schema:
+            type: integer
+      responses:
+        '202':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    const: 'Residual hours report queued'
+                required:
+                  - message
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/esm/equipment-passports/{passport}/history':
+    get:
+      operationId: v1.esm.equipment-passports.history
+      tags:
+        - MaintenanceContract
+      parameters:
+        -
+          name: passport
+          in: path
+          required: true
+          description: 'The passport ID'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      asset:
+                        $ref: '#/components/schemas/EquipmentPassportResource'
+                      timeline:
+                        type: array
+                        items:
+                          anyOf:
+                            -
+                              type: object
+                              properties:
+                                kind:
+                                  type: string
+                                  const: work_order
+                                id:
+                                  type: string
+                                reference:
+                                  type: string
+                                status:
+                                  type: string
+                                ticket_id:
+                                  type: string
+                                occurred_at:
+                                  type:
+                                    - string
+                                    - 'null'
+                              required:
+                                - kind
+                                - id
+                                - reference
+                                - status
+                                - ticket_id
+                                - occurred_at
+                            -
+                              type: string
+                    required:
+                      - asset
+                      - timeline
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/manufacturing/kpis:
     get:
       operationId: mfg.kpis
@@ -137179,75 +137547,6 @@ paths:
           $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
-  /v1/esm/service-contracts:
-    get:
-      operationId: v1.esm.service-contracts.index
-      summary: 'Returns the paginated list of service contracts of the active tenant'
-      tags:
-        - ServiceContract
-      parameters:
-        -
-          name: status
-          in: query
-          schema:
-            type: string
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/ServiceContractResource'
-                  meta:
-                    type: object
-                    properties:
-                      current_page:
-                        type: string
-                      total:
-                        type: string
-                    required:
-                      - current_page
-                      - total
-                required:
-                  - data
-                  - meta
-        '401':
-          $ref: '#/components/responses/AuthenticationException'
-  '/v1/esm/service-contracts/{serviceContract}':
-    get:
-      operationId: v1.esm.service-contracts.show
-      summary: 'Returns a single service contract of the active tenant'
-      tags:
-        - ServiceContract
-      parameters:
-        -
-          name: serviceContract
-          in: path
-          required: true
-          description: 'The service contract ID'
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/ServiceContractResource'
-                required:
-                  - data
-        '404':
-          $ref: '#/components/responses/ModelNotFoundException'
-        '401':
-          $ref: '#/components/responses/AuthenticationException'
   /v1/esm/csat:
     post:
       operationId: v1.esm.csat.store
@@ -189538,6 +189837,63 @@ components:
         - resolved_at
         - created_at
       title: ContractCommentResource
+    ContractHourTransactionResource:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        hours:
+          type: string
+        balance_after:
+          type: string
+        work_order_id:
+          type:
+            - string
+            - 'null'
+        ticket_id:
+          type:
+            - string
+            - 'null'
+        equipment_passport_id:
+          type:
+            - string
+            - 'null'
+        serial_number:
+          type:
+            - string
+            - 'null'
+        technician_name:
+          type:
+            - string
+            - 'null'
+        reference:
+          type:
+            - string
+            - 'null'
+        description:
+          type:
+            - string
+            - 'null'
+        occurred_at:
+          type:
+            - string
+            - 'null'
+      required:
+        - id
+        - type
+        - hours
+        - balance_after
+        - work_order_id
+        - ticket_id
+        - equipment_passport_id
+        - serial_number
+        - technician_name
+        - reference
+        - description
+        - occurred_at
+      title: ContractHourTransactionResource
     ContractKind:
       type: string
       description: |
@@ -195734,6 +196090,18 @@ components:
           type:
             - string
             - 'null'
+        asset_status:
+          type: string
+        commissioning_date:
+          type:
+            - string
+            - 'null'
+        installation_site:
+          type:
+            - string
+            - 'null'
+        warranty_status:
+          type: string
         extensions:
           type: array
           items:
@@ -195768,6 +196136,10 @@ components:
         - contract_warranty_months
         - contract_clause_reference
         - installed_firmware_version
+        - asset_status
+        - commissioning_date
+        - installation_site
+        - warranty_status
         - extensions
         - components
         - created_at
@@ -198434,6 +198806,21 @@ components:
       type: array
       items: {}
       title: HospitalityResource
+    HourBankEntryRequest:
+      type: object
+      description: 'Manual top-up (positive hours) or adjustment (signed hours) of a contract hour bank.'
+      properties:
+        hours:
+          type: number
+          pattern: '^-?\d{1,8}(\.\d{1,2})?$'
+        description:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+      required:
+        - hours
+      title: HourBankEntryRequest
     HrRecordResource:
       type: object
       additionalProperties: {}
@@ -222679,6 +223066,75 @@ components:
         - locale
         - label
       title: SaveLookupTranslationRequest
+    SaveMaintenanceContractRequest:
+      type: object
+      description: 'Create/update of a recurring maintenance contract. All uniqueness and existence rules are tenant-scoped.'
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        contract_number:
+          type: string
+          maxLength: 60
+        title:
+          type: string
+          maxLength: 180
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        status:
+          type: string
+          enum:
+            - draft
+            - active
+            - suspended
+            - expired
+        billing_recurrence:
+          type: string
+          enum:
+            - monthly
+            - quarterly
+            - yearly
+        annual_value:
+          type: number
+          minimum: 0
+        sla_response_hours:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+          maximum: 9999
+        included_hours:
+          type: number
+          minimum: 0
+          maximum: 99999999
+        low_balance_threshold_percent:
+          type: integer
+          minimum: 0
+          maximum: 100
+        report_email:
+          type:
+            - string
+            - 'null'
+          format: email
+          maxLength: 255
+        asset_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          uniqueItems: true
+      required:
+        - customer_id
+        - contract_number
+        - title
+        - start_date
+      title: SaveMaintenanceContractRequest
     SaveMasterDataRequest:
       type: object
       properties:
@@ -226169,9 +226625,7 @@ components:
         status:
           type: string
         start_date:
-          type:
-            - string
-            - 'null'
+          type: string
         end_date:
           type:
             - string
@@ -226182,6 +226636,32 @@ components:
           type: string
         is_locked:
           type: boolean
+        billing_recurrence:
+          type: string
+        sla_response_hours:
+          type:
+            - string
+            - 'null'
+        included_hours:
+          type: string
+        consumed_hours:
+          type: string
+        remaining_hours:
+          type: string
+        low_balance_threshold_percent:
+          type: integer
+        low_balance:
+          type: boolean
+        report_email:
+          type: string
+        last_residual_report_at:
+          type:
+            - string
+            - 'null'
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/EquipmentPassportResource'
         created_at:
           type:
             - string
@@ -226203,6 +226683,15 @@ components:
         - contract_value
         - currency
         - is_locked
+        - billing_recurrence
+        - sla_response_hours
+        - included_hours
+        - consumed_hours
+        - remaining_hours
+        - low_balance_threshold_percent
+        - low_balance
+        - report_email
+        - last_residual_report_at
         - created_at
         - updated_at
       title: ServiceContractResource
@@ -231933,6 +232422,25 @@ components:
             - string
             - 'null'
           maxLength: 60
+        asset_status:
+          type:
+            - string
+            - 'null'
+          enum:
+            - active
+            - under_repair
+            - decommissioned
+            - null
+        commissioning_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        installation_site:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
         notes:
           type:
             - string
@@ -244114,6 +244622,22 @@ components:
             - string
             - 'null'
           maxLength: 60
+        asset_status:
+          type: string
+          enum:
+            - active
+            - under_repair
+            - decommissioned
+        commissioning_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        installation_site:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
         notes:
           type:
             - string
@@ -250563,6 +251087,9 @@ tags:
   -
     name: Maintenance
     description: 'Operations of the Maintenance module.'
+  -
+    name: MaintenanceContract
+    description: 'Operations of the MaintenanceContract module.'
   -
     name: ManufacturingKpi
     description: 'Operations of the ManufacturingKpi module.'
