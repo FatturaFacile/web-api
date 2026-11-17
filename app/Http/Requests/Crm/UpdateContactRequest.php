@@ -4,14 +4,24 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Crm;
 
+use App\Http\Requests\Concerns\ValidatesContactFiscalData;
 use App\Models\Contact;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateContactRequest extends FormRequest
 {
+    use ValidatesContactFiscalData;
+
     public function authorize(): bool
     {
-        return $this->user()?->can('update', Contact::class) ?? true;
+        $contact = Contact::find($this->route('contact'));
+
+        return $contact === null || ($this->user()?->can('update', $contact) ?? true);
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizeFiscalInput();
     }
 
     /**
@@ -19,7 +29,10 @@ class UpdateContactRequest extends FormRequest
      */
     public function rules(): array
     {
+        $current = Contact::find($this->route('contact'));
+
         return [
+            ...$this->fiscalRules((string) ($this->input('country') ?? $current?->country ?? 'IT'), $current),
             'type' => ['sometimes', 'string', 'in:client,customer,supplier,both,lead'],
             'country' => ['sometimes', 'string', 'regex:/^[A-Z]{2}$/'],
             'company_name' => ['nullable', 'string', 'max:255'],
@@ -27,11 +40,6 @@ class UpdateContactRequest extends FormRequest
             'last_name' => ['nullable', 'string', 'max:100'],
             'email' => ['nullable', 'email'],
             'phone' => ['nullable', 'string', 'max:50'],
-            'vat_number' => ['nullable', 'string', 'max:30'],
-            'fiscal_code' => ['nullable', 'string', 'max:16'],
-            'uid_number' => ['nullable', 'string', 'max:20'],
-            'sdi_code' => ['nullable', 'string', 'size:7'],
-            'pec' => ['nullable', 'email'],
             'iban' => ['nullable', 'string', 'max:34'],
             'qr_iban' => ['nullable', 'string', 'max:34'],
             'payment_terms_days' => ['nullable', 'integer', 'min:0'],

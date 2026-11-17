@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\CRM\Http\Controllers\AccountController;
 use Modules\CRM\Http\Controllers\ActivityController;
 use Modules\CRM\Http\Controllers\CampaignController;
+use Modules\CRM\Http\Controllers\ContactInteractionController;
 use Modules\CRM\Http\Controllers\ForecastController;
 use Modules\CRM\Http\Controllers\LeadActivityEventController;
 use Modules\CRM\Http\Controllers\LeadController;
@@ -52,6 +53,10 @@ Route::prefix('api/v1/crm')->middleware(['api', 'auth:sanctum', 'tenant'])->grou
     Route::post('leads/{id}/events', [LeadActivityEventController::class, 'store'])->name('crm.leads.events.store');
     Route::post('leads/{id}/rescore', [LeadController::class, 'rescore'])->name('crm.leads.rescore');
     Route::post('leads/{id}/route', [LeadController::class, 'route'])->name('crm.leads.route');
+
+    // Customer registry: interaction history (calls, emails, notes, meetings), shared by web and mobile.
+    Route::get('contacts/{id}/interactions', [ContactInteractionController::class, 'index'])->name('crm.contacts.interactions.index');
+    Route::post('contacts/{id}/interactions', [ContactInteractionController::class, 'store'])->name('crm.contacts.interactions.store');
 });
 
 // Public web-to-lead webhooks: signature / API key verified per source, throttled per source + IP.

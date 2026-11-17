@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -39,7 +40,50 @@ class Contact extends Model
         'payment_terms_days',
         'price_list_id',
         'payment_term_id',
+        'parent_id',
+        'hierarchy_type',
+        'fiscal_verified_at',
+        'fiscal_verification_source',
     ];
+
+    protected function casts(): array
+    {
+        return ['fiscal_verified_at' => 'datetime'];
+    }
+
+    /**
+     * Parent company in the corporate hierarchy (holding, subsidiary, branch).
+     *
+     * @return BelongsTo<Contact, $this>
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /**
+     * @return HasMany<Contact, $this>
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
+    }
+
+    /**
+     * @return HasMany<ContactPerson, $this>
+     */
+    public function persons(): HasMany
+    {
+        return $this->hasMany(ContactPerson::class);
+    }
+
+    /**
+     * @return HasMany<ContactConsent, $this>
+     */
+    public function consents(): HasMany
+    {
+        return $this->hasMany(ContactConsent::class);
+    }
 
     /**
      * @return Attribute<string, string>

@@ -40,4 +40,18 @@ return [
         'webhook_secret' => env('SDI_WEBHOOK_SECRET'),
     ],
 
+    // Registry lookups used to autofill and certify the customer registry (Customer 360).
+    'vies' => [
+        'base_url' => env('VIES_BASE_URL', 'https://ec.europa.eu/taxation_customs/vies/rest-api'),
+        'timeout' => (int) env('VIES_TIMEOUT', 8),
+    ],
+
+    'zefix' => [
+        'base_url' => env('ZEFIX_BASE_URL', 'https://www.zefix.admin.ch/ZefixPublicREST/api/v1'),
+        // Zefix PublicREST requires registered Basic Auth credentials; without them only the UID checksum is checked.
+        'username' => env('ZEFIX_USERNAME'),
+        'password' => env('ZEFIX_PASSWORD'),
+        'timeout' => (int) env('ZEFIX_TIMEOUT', 8),
+    ],
+
 ];
