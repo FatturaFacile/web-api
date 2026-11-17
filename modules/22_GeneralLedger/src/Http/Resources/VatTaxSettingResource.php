@@ -33,6 +33,9 @@ final class VatTaxSettingResource extends JsonResource
             'declarant_tax_code' => $this->declarant_tax_code,
             'declarant_role_code' => $this->declarant_role_code,
             'carry_over_below_minimum' => (bool) ($this->carry_over_below_minimum ?? true),
+            'mwst_basis' => $this->mwst_basis ?? 'agreed',
+            'lipe_prorata_percent' => (string) ($this->lipe_prorata_percent ?? '100.00'),
+            'lipe_advance_amount' => (string) ($this->lipe_advance_amount ?? '0.00'),
         ];
     }
 }

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Structural profile of the LIPE communication (IVP18) as produced by LipeXmlBuilder: element names, order, cardinality and
+  the amount format (comma decimal separator, two decimals). It is NOT the official Agenzia delle Entrate schema file:
+  the file must still pass the official control software before it is sent.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:iv="urn:www.agenziaentrate.gov.it:specificheTecniche:sco:ivp"
+           targetNamespace="urn:www.agenziaentrate.gov.it:specificheTecniche:sco:ivp"
+           elementFormDefault="qualified">
+
+  <xs:simpleType name="ImportoType">
+    <xs:restriction base="xs:string"><xs:pattern value="\d{1,13},\d{2}"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="CodiceFiscaleType">
+    <xs:restriction base="xs:string"><xs:pattern value="[A-Z0-9]{11,16}"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="PartitaIvaType">
+    <xs:restriction base="xs:string"><xs:pattern value="\d{11}"/></xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="Fornitura">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Intestazione">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="CodiceFornitura">
+                <xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="IVP18"/></xs:restriction></xs:simpleType>
+              </xs:element>
+              <xs:element name="CodiceFiscaleDichiarante" type="iv:CodiceFiscaleType" minOccurs="0"/>
+              <xs:element name="CodiceCarica" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Comunicazione" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Frontespizio">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="CodiceFiscale" type="iv:CodiceFiscaleType"/>
+                    <xs:element name="AnnoImposta" type="xs:gYear"/>
+                    <xs:element name="PartitaIVA" type="iv:PartitaIvaType"/>
+                    <xs:element name="CFDichiarante" type="iv:CodiceFiscaleType" minOccurs="0"/>
+                    <xs:element name="CodiceCaricaDichiarante" type="xs:string" minOccurs="0"/>
+                    <xs:element name="FirmaDichiarazione">
+                      <xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="1"/></xs:restriction></xs:simpleType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="DatiContabili">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Modulo" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="NumeroModulo" type="xs:positiveInteger"/>
+                          <xs:choice>
+                            <xs:element name="Mese">
+                              <xs:simpleType><xs:restriction base="xs:integer"><xs:minInclusive value="1"/><xs:maxInclusive value="12"/></xs:restriction></xs:simpleType>
+                            </xs:element>
+                            <xs:element name="Trimestre">
+                              <xs:simpleType><xs:restriction base="xs:integer"><xs:minInclusive value="1"/><xs:maxInclusive value="5"/></xs:restriction></xs:simpleType>
+                            </xs:element>
+                          </xs:choice>
+                          <xs:element name="TotaleOperazioniAttive" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="TotaleOperazioniPassive" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="IvaEsigibile" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="IvaDetratta" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="IvaDovuta" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="IvaCredito" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="DebitoPrecedente" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="CreditoPeriodoPrecedente" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="CreditoAnnoPrecedente" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="VersamentiAutoUE" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="CreditiImposta" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="InteressiDovuti" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="Acconto" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="ImportoDaVersare" type="iv:ImportoType" minOccurs="0"/>
+                          <xs:element name="ImportoACredito" type="iv:ImportoType" minOccurs="0"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="identificativo" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

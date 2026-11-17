@@ -12,7 +12,7 @@ final readonly class VatReturnResult
 {
     /**
      * @param  list<VatRateTotal>  $rates  ordered from the highest rate
-     * @param  array<string, mixed>  $estvBoxes
+     * @param  array<int|string, mixed>  $estvBoxes
      */
     public function __construct(
         public string $country,

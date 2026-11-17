@@ -65,6 +65,8 @@ return [
         'declaration_in_use' => "Une déclaration d'intention déjà utilisée par des documents ne peut pas être supprimée.",
         'not_a_self_invoice_source' => ":type ne peut pas être créé à partir d'une facture reçue.",
         'self_invoice_exists' => 'Un :type existe déjà pour cette facture reçue.',
+        'integration_supply_kind_required' => 'Indiquez si la fourniture concerne des biens ou des services.',
+        'integration_not_due' => "Aucune autofacture d'intégration n'est due pour cette facture fournisseur.",
     ],
     'preflight' => [
         'tenant_vat' => "Le numéro de TVA de l'entreprise est manquant.",

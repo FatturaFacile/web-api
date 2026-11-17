@@ -40,7 +40,7 @@ function recruiterOfNewTenant(): array
     return [$tenant, $user];
 }
 
-function actAs(User $user, Tenant $tenant): void
+function recruitingActAs(User $user, Tenant $tenant): void
 {
     Sanctum::actingAs($user, ['*']);
     useTenant($tenant);

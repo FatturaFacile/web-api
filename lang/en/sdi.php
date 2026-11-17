@@ -65,6 +65,8 @@ return [
         'declaration_in_use' => 'A declaration of intent already used by documents cannot be deleted.',
         'not_a_self_invoice_source' => ':type cannot be created from a received invoice.',
         'self_invoice_exists' => 'A :type already exists for this received invoice.',
+        'integration_supply_kind_required' => 'Indicate whether the supply is goods or services to generate the integration.',
+        'integration_not_due' => 'No integration self-invoice is due for this supplier invoice.',
     ],
     'preflight' => [
         'tenant_vat' => 'The VAT number of the company is missing.',

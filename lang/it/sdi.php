@@ -65,6 +65,8 @@ return [
         'declaration_in_use' => "Una dichiarazione d'intento già usata da documenti non può essere eliminata.",
         'not_a_self_invoice_source' => ':type non si può creare da una fattura ricevuta.',
         'self_invoice_exists' => 'Esiste già un :type per questa fattura ricevuta.',
+        'integration_supply_kind_required' => "Indicare se la fornitura riguarda beni o servizi per generare l'integrazione.",
+        'integration_not_due' => 'Per questa fattura fornitore non è dovuta alcuna integrazione.',
     ],
     'preflight' => [
         'tenant_vat' => "Manca la partita IVA dell'azienda.",

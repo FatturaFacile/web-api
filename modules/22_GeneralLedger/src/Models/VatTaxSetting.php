@@ -22,6 +22,9 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
  * @property string|null $interest_expense_account_id
  * @property string|null $declarant_tax_code
  * @property string|null $declarant_role_code
+ * @property string|null $mwst_basis agreed (vereinbart) or received (vereinnahmt) consideration
+ * @property string|null $lipe_prorata_percent
+ * @property string|null $lipe_advance_amount
  * @property bool $carry_over_below_minimum Italian debt not above the minimum payment moves to the next period (default) or is paid
  */
 final class VatTaxSetting extends BaseEnterpriseModel
@@ -43,6 +46,8 @@ final class VatTaxSetting extends BaseEnterpriseModel
             'sss_rate_2' => 'decimal:2',
             'flat_tax_rates' => 'array',
             'carry_over_below_minimum' => 'boolean',
+            'lipe_prorata_percent' => 'decimal:2',
+            'lipe_advance_amount' => 'decimal:2',
         ];
     }
 }
