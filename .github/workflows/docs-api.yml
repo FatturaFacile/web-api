@@ -1,8 +1,8 @@
 name: Regenerate API docs
 
-# Regenerates the OpenAPI / Postman files (docs/api) after every push to dev and commits them back, so nobody has to do it
-# locally (there is no pre-push hook for it anymore). The commit is made with GITHUB_TOKEN, which never triggers another
-# workflow run, and it only touches docs/api, so there is no loop.
+# Regenerates the OpenAPI / Postman files (docs/api) after every push to dev and opens a pull request with them, so nobody has to do it
+# locally (there is no pre-push hook for it anymore). The branch is pushed with GITHUB_TOKEN, which never triggers another
+# workflow run, and the merged change only touches docs/api (ignored by the trigger), so there is no loop.
 on:
   push:
     branches:
@@ -17,10 +17,11 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   regenerate:
-    name: Export OpenAPI and commit
+    name: Export OpenAPI and open a pull request
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -48,15 +49,22 @@ jobs:
           php artisan key:generate
           php -d memory_limit=2048M artisan docs:export
 
-      - name: Commit the regenerated files
+      - name: Open or update the pull request with the regenerated files
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if git diff --quiet -- docs/api; then
             echo "docs/api is up to date."
             exit 0
           fi
+          # dev is protected (pull request, verified signatures, code scanning): the bot never pushes to it.
+          BRANCH="docs/openapi-regenerated"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
           git add docs/api
-          git commit -m "docs: regenerate OpenAPI [skip ci]"
-          git pull --rebase origin "${{ github.ref_name }}"
-          git push origin "HEAD:${{ github.ref_name }}"
+          git commit -m "docs: regenerate OpenAPI"
+          git push --force origin "$BRANCH"
+          if [ -z "$(gh pr list --head "$BRANCH" --base "${{ github.ref_name }}" --state open --json number --jq '.[0].number')" ]; then
+            gh pr create --head "$BRANCH" --base "${{ github.ref_name }}" --title "docs: regenerate OpenAPI" --body "Automatic export of docs/api after the last push to ${{ github.ref_name }}."
+          fi

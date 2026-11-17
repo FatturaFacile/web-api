@@ -163,6 +163,34 @@ test('a monthly sales list is drafted from the invoices of the period, summing r
         ->and($report['unclassified'][0]['amount'])->toBe('50.00');
 });
 
+test('a credit note of an earlier period becomes a negative correction row of section 2, one on services stays manual', function (): void {
+    intrastatSalesFixture($this->tenant, $this->accountant);
+    $march = Invoice::where('invoice_number', 'A-0')->firstOrFail();
+    $widget = Product::where('sku', 'widget')->firstOrFail();
+    $consulting = Product::where('sku', 'consulting')->firstOrFail();
+    $german = Contact::findOrFail($march->contact_id);
+    intrastatInvoice($this->tenant, $german, 'NC-2', '2027-04-26', [[$widget, '1', '99.60']], ['invoice_type' => 'credit_note', 'related_invoice_id' => $march->id]);
+    intrastatInvoice($this->tenant, $german, 'NC-3', '2027-04-27', [[$consulting, '1', '80.00']], ['invoice_type' => 'credit_note', 'related_invoice_id' => $march->id]);
+    intrastatActAs($this->accountant, $this->tenant);
+
+    $declaration = intrastatGenerateSales()->assertCreated()->json('data');
+    $corrections = collect($declaration['lines'])->where('section', 2)->values();
+
+    expect($corrections)->toHaveCount(1)
+        ->and($corrections[0])->toMatchArray([
+            'line_number' => 1, 'partner_country_code' => 'DE', 'partner_vat_number' => '123456789', 'amount_eur' => 100, 'sign' => '-',
+            'corrected_month' => 3, 'corrected_year' => 2027, 'transaction_nature_a' => '1', 'cn8_code' => '84212100', 'net_mass_kg' => null,
+        ])
+        ->and(collect($declaration['lines'])->where('section', 4))->toHaveCount(0);
+
+    $reasons = collect($declaration['generation_report']['skipped'])->pluck('reason', 'document.number')->all();
+    expect($reasons)->toMatchArray(['NC-1' => 'credit_note', 'NC-3' => 'credit_note_services'])->and($reasons)->not->toHaveKey('NC-2');
+
+    $errors = collect($this->postJson("/api/v1/intrastat/declarations/{$declaration['id']}/validate")->json('invalid_params'))
+        ->filter(fn (array $error): bool => $error['section'] === 2);
+    expect($errors)->toHaveCount(0);
+});
+
 test('rows lacking mandatory data are reported as validation errors and the list stays a draft until they are fixed', function (): void {
     intrastatSalesFixture($this->tenant, $this->accountant);
     intrastatActAs($this->accountant, $this->tenant);
