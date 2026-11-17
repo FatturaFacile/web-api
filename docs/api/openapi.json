@@ -9710,11 +9710,12 @@
                         "in": "query",
                         "schema": {
                             "type": "array",
-                            "format": "uuid",
                             "items": {
                                 "type": "string",
                                 "format": "uuid"
-                            }
+                            },
+                            "minItems": 1,
+                            "maxItems": 200
                         }
                     }
                 ],
@@ -110269,16 +110270,9 @@
                         "name": "kpis[]",
                         "in": "query",
                         "schema": {
-                            "type": "array",
-                            "enum": [
-                                "sales",
-                                "purchases",
-                                "margin",
-                                "receivables-aging",
-                                "payables-aging",
-                                "stock-value",
-                                "project-margin",
-                                "hr-headcount"
+                            "type": [
+                                "array",
+                                "null"
                             ],
                             "items": {
                                 "type": "string",
@@ -110292,7 +110286,8 @@
                                     "project-margin",
                                     "hr-headcount"
                                 ]
-                            }
+                            },
+                            "maxItems": 8
                         }
                     }
                 ],
@@ -110629,16 +110624,9 @@
                         "name": "kpis[]",
                         "in": "query",
                         "schema": {
-                            "type": "array",
-                            "enum": [
-                                "sales",
-                                "purchases",
-                                "margin",
-                                "receivables-aging",
-                                "payables-aging",
-                                "stock-value",
-                                "project-margin",
-                                "hr-headcount"
+                            "type": [
+                                "array",
+                                "null"
                             ],
                             "items": {
                                 "type": "string",
@@ -110652,7 +110640,8 @@
                                     "project-margin",
                                     "hr-headcount"
                                 ]
-                            }
+                            },
+                            "maxItems": 8
                         }
                     }
                 ],
@@ -110763,16 +110752,9 @@
                         "name": "kpis[]",
                         "in": "query",
                         "schema": {
-                            "type": "array",
-                            "enum": [
-                                "sales",
-                                "purchases",
-                                "margin",
-                                "receivables-aging",
-                                "payables-aging",
-                                "stock-value",
-                                "project-margin",
-                                "hr-headcount"
+                            "type": [
+                                "array",
+                                "null"
                             ],
                             "items": {
                                 "type": "string",
@@ -110786,7 +110768,8 @@
                                     "project-margin",
                                     "hr-headcount"
                                 ]
-                            }
+                            },
+                            "maxItems": 8
                         }
                     }
                 ],
@@ -111057,16 +111040,9 @@
                         "name": "kpis[]",
                         "in": "query",
                         "schema": {
-                            "type": "array",
-                            "enum": [
-                                "sales",
-                                "purchases",
-                                "margin",
-                                "receivables-aging",
-                                "payables-aging",
-                                "stock-value",
-                                "project-margin",
-                                "hr-headcount"
+                            "type": [
+                                "array",
+                                "null"
                             ],
                             "items": {
                                 "type": "string",
@@ -111080,7 +111056,8 @@
                                     "project-margin",
                                     "hr-headcount"
                                 ]
-                            }
+                            },
+                            "maxItems": 8
                         }
                     }
                 ],
@@ -121043,11 +121020,15 @@
                         "name": "scenarios[]",
                         "in": "query",
                         "schema": {
-                            "type": "array",
+                            "type": [
+                                "array",
+                                "null"
+                            ],
                             "items": {
                                 "type": "string",
                                 "maxLength": 50
-                            }
+                            },
+                            "maxItems": 5
                         }
                     },
                     {
@@ -149887,13 +149868,43 @@
                                                             "type": "string"
                                                         },
                                                         "total_deductions": {
-                                                            "type": "string"
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "string"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "0"
+                                                                    ]
+                                                                }
+                                                            ]
                                                         },
                                                         "monthly_net": {
-                                                            "type": "string"
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "string"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "0"
+                                                                    ]
+                                                                }
+                                                            ]
                                                         },
                                                         "target_net_monthly": {
-                                                            "type": "string"
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "string"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "0"
+                                                                    ]
+                                                                }
+                                                            ]
                                                         },
                                                         "is_exact": {
                                                             "type": "boolean"
@@ -150002,10 +150013,30 @@
                                                             "type": "string"
                                                         },
                                                         "total_deductions": {
-                                                            "type": "string"
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "string"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "0"
+                                                                    ]
+                                                                }
+                                                            ]
                                                         },
                                                         "monthly_net": {
-                                                            "type": "string"
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "string"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "0"
+                                                                    ]
+                                                                }
+                                                            ]
                                                         },
                                                         "target_net_monthly": {
                                                             "type": "null"
@@ -150946,10 +150977,30 @@
                                                     "type": "string"
                                                 },
                                                 "total_deductions": {
-                                                    "type": "string"
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "0"
+                                                            ]
+                                                        }
+                                                    ]
                                                 },
                                                 "net_monthly_salary": {
-                                                    "type": "string"
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "0"
+                                                            ]
+                                                        }
+                                                    ]
                                                 },
                                                 "employer_total_cost": {
                                                     "type": "string"
@@ -158402,6 +158453,185 @@
                 }
             }
         },
+        "/v1/price-indices": {
+            "get": {
+                "operationId": "price-indices.index",
+                "summary": "Display a listing of price index rates",
+                "tags": [
+                    "PriceIndexRate"
+                ],
+                "parameters": [
+                    {
+                        "name": "index_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 24
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `PriceIndexRateResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PriceIndexRateResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": "string"
+                                                },
+                                                "last": {
+                                                    "type": "string"
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last_page": {
+                                                    "type": "string"
+                                                },
+                                                "links": {
+                                                    "type": "object",
+                                                    "additionalProperties": {}
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "total": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "price-indices.store",
+                "summary": "Store or update a price index rate (upsert)",
+                "tags": [
+                    "PriceIndexRate"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StorePriceIndexRateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`PriceIndexRateResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PriceIndexRateResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/catalog/price-lists/resolve-price": {
             "get": {
                 "operationId": "catalog.price-lists.resolve-price",
@@ -159827,10 +160057,16 @@
                                                     ],
                                                     "properties": {
                                                         "name": {
-                                                            "type": "string"
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
                                                         },
                                                         "email": {
-                                                            "type": "string"
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
@@ -181392,7 +181628,10 @@
                                                     "type": "string"
                                                 },
                                                 "rank": {
-                                                    "type": "null"
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
                                                 }
                                             },
                                             "required": [
@@ -182772,6 +183011,1182 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-billing/preview": {
+            "get": {
+                "operationId": "recurring-billing.preview",
+                "summary": "Preview contracts due for billing up to cutoff date",
+                "tags": [
+                    "RecurringBillingRun"
+                ],
+                "parameters": [
+                    {
+                        "name": "cutoff_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cutoff_date": {
+                                            "type": "string"
+                                        },
+                                        "total_due": {
+                                            "type": "integer"
+                                        },
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "contract_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "contract_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "customer_name": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "N/A"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "currency": {
+                                                        "type": "string"
+                                                    },
+                                                    "period_start": {
+                                                        "type": "string"
+                                                    },
+                                                    "period_end": {
+                                                        "type": "string"
+                                                    },
+                                                    "next_billing_date": {
+                                                        "type": "string"
+                                                    },
+                                                    "subtotal": {
+                                                        "type": "string"
+                                                    },
+                                                    "tax": {
+                                                        "type": "string"
+                                                    },
+                                                    "total": {
+                                                        "type": "string"
+                                                    },
+                                                    "idempotency_key": {
+                                                        "type": "string"
+                                                    },
+                                                    "is_already_billed": {
+                                                        "type": "boolean"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "contract_id",
+                                                    "contract_number",
+                                                    "customer_name",
+                                                    "currency",
+                                                    "period_start",
+                                                    "period_end",
+                                                    "next_billing_date",
+                                                    "subtotal",
+                                                    "tax",
+                                                    "total",
+                                                    "idempotency_key",
+                                                    "is_already_billed"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "cutoff_date",
+                                        "total_due",
+                                        "items"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-billing/runs": {
+            "get": {
+                "operationId": "recurring-billing.runs.index",
+                "summary": "List billing runs",
+                "tags": [
+                    "RecurringBillingRun"
+                ],
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `RecurringBillingRunResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/RecurringBillingRunResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": "string"
+                                                },
+                                                "last": {
+                                                    "type": "string"
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last_page": {
+                                                    "type": "string"
+                                                },
+                                                "links": {
+                                                    "type": "object",
+                                                    "additionalProperties": {}
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "total": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "recurring-billing.runs.store",
+                "summary": "Execute a new manual billing run",
+                "tags": [
+                    "RecurringBillingRun"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "cutoff_date": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "date-time"
+                                    },
+                                    "contract_ids": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`RecurringBillingRunResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/RecurringBillingRunResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "items"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-billing/runs/{id}": {
+            "get": {
+                "operationId": "recurring-billing.runs.show",
+                "summary": "Show billing run detail",
+                "tags": [
+                    "RecurringBillingRun"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`RecurringBillingRunResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/RecurringBillingRunResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-contracts/metrics": {
+            "get": {
+                "operationId": "recurring-contracts.metrics",
+                "summary": "Return recurring contracts metrics (MRR, ARR, active count, expiring soon, due count)",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "active_count": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "draft_count": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "suspended_count": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "due_for_billing_count": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "expiring_in_30_days_count": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "mrr": {
+                                            "type": "object",
+                                            "properties": {
+                                                "CHF": {
+                                                    "type": "string"
+                                                },
+                                                "EUR": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "CHF",
+                                                "EUR"
+                                            ]
+                                        },
+                                        "arr": {
+                                            "type": "object",
+                                            "properties": {
+                                                "CHF": {
+                                                    "type": "string"
+                                                },
+                                                "EUR": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "CHF",
+                                                "EUR"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "active_count",
+                                        "draft_count",
+                                        "suspended_count",
+                                        "due_for_billing_count",
+                                        "expiring_in_30_days_count",
+                                        "mrr",
+                                        "arr"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-contracts/{id}/activate": {
+            "post": {
+                "operationId": "recurring-contracts.activate",
+                "summary": "Activate contract",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`RecurringContractResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/RecurringContractResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "customer",
+                                                        "lines",
+                                                        "indexation_clause"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-contracts/{id}/suspend": {
+            "post": {
+                "operationId": "recurring-contracts.suspend",
+                "summary": "Suspend contract",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`RecurringContractResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/RecurringContractResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "customer",
+                                                        "lines",
+                                                        "indexation_clause"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-contracts/{id}/cancel": {
+            "post": {
+                "operationId": "recurring-contracts.cancel",
+                "summary": "Cancel contract",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "cancellation_reason": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 500
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`RecurringContractResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/RecurringContractResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "customer",
+                                                        "lines",
+                                                        "indexation_clause"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-contracts/{id}/renew": {
+            "post": {
+                "operationId": "recurring-contracts.renew",
+                "summary": "Renew contract manually",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "renewal_months": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ],
+                                        "minimum": 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`RecurringContractResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/RecurringContractResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "customer",
+                                                        "lines",
+                                                        "indexation_clause"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-contracts/{id}/apply-indexation": {
+            "post": {
+                "operationId": "recurring-contracts.apply-indexation",
+                "summary": "Apply indexation adjustment to contract",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "price_index_rate_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                },
+                                "required": [
+                                    "price_index_rate_id"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ContractIndexationLogResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ContractIndexationLogResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-contracts/{id}/bill-now": {
+            "post": {
+                "operationId": "recurring-contracts.bill-now",
+                "summary": "Bill contract immediately",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Invoice generated successfully for recurring contract."
+                                        },
+                                        "invoice_id": {
+                                            "type": "string"
+                                        },
+                                        "invoice_number": {
+                                            "type": "string"
+                                        },
+                                        "total_gross": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "invoice_id",
+                                        "invoice_number",
+                                        "total_gross"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-contracts": {
+            "get": {
+                "operationId": "recurring-contracts.index",
+                "summary": "Display a listing of recurring contracts",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "contract_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "customer_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "due_before",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `RecurringContractResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/RecurringContractResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": "string"
+                                                },
+                                                "last": {
+                                                    "type": "string"
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last_page": {
+                                                    "type": "string"
+                                                },
+                                                "links": {
+                                                    "type": "object",
+                                                    "additionalProperties": {}
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "total": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "recurring-contracts.store",
+                "summary": "Store a newly created recurring contract",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreRecurringContractRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`RecurringContractResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/RecurringContractResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "customer",
+                                                        "lines",
+                                                        "indexation_clause"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/recurring-contracts/{id}": {
+            "get": {
+                "operationId": "recurring-contracts.show",
+                "summary": "Display the specified contract",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`RecurringContractResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/RecurringContractResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "recurring-contracts.update",
+                "summary": "Update the specified contract",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateRecurringContractRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`RecurringContractResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/RecurringContractResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "customer",
+                                                        "lines",
+                                                        "indexation_clause",
+                                                        "indexation_logs"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "recurring-contracts.destroy",
+                "summary": "Remove the specified contract",
+                "tags": [
+                    "RecurringContract"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Recurring contract deleted successfully."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -203438,17 +204853,7 @@
                                                                 "type": "string"
                                                             },
                                                             "records": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string"
-                                                                    },
-                                                                    {
-                                                                        "type": "integer",
-                                                                        "enum": [
-                                                                            0
-                                                                        ]
-                                                                    }
-                                                                ]
+                                                                "type": "integer"
                                                             },
                                                             "supplier_specific_kg": {
                                                                 "type": "string"
@@ -204998,15 +206403,9 @@
                         "name": "types[]",
                         "in": "query",
                         "schema": {
-                            "type": "array",
-                            "enum": [
-                                "contact",
-                                "invoice",
-                                "quote",
-                                "product",
-                                "project",
-                                "supplier",
-                                "employee"
+                            "type": [
+                                "array",
+                                "null"
                             ],
                             "items": {
                                 "type": "string",
@@ -211464,11 +212863,11 @@
                         "in": "query",
                         "schema": {
                             "type": "array",
-                            "format": "uuid",
                             "items": {
                                 "type": "string",
                                 "format": "uuid"
-                            }
+                            },
+                            "maxItems": 1000
                         }
                     },
                     {
@@ -211972,11 +213371,11 @@
                         "in": "query",
                         "schema": {
                             "type": "array",
-                            "format": "uuid",
                             "items": {
                                 "type": "string",
                                 "format": "uuid"
-                            }
+                            },
+                            "maxItems": 1000
                         }
                     },
                     {
@@ -212169,11 +213568,11 @@
                         "in": "query",
                         "schema": {
                             "type": "array",
-                            "format": "uuid",
                             "items": {
                                 "type": "string",
                                 "format": "uuid"
-                            }
+                            },
+                            "maxItems": 1000
                         }
                     },
                     {
@@ -283673,6 +285072,140 @@
                 ],
                 "title": "ContractHourTransactionResource"
             },
+            "ContractIndexationClauseResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "recurring_contract_id": {
+                        "type": "string"
+                    },
+                    "index_type": {
+                        "type": "string"
+                    },
+                    "base_index_value": {
+                        "type": "string"
+                    },
+                    "base_index_period": {
+                        "type": "string"
+                    },
+                    "adjustment_frequency_months": {
+                        "type": "integer"
+                    },
+                    "pass_through_percent": {
+                        "type": "string"
+                    },
+                    "floor_percent": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "cap_percent": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "next_adjustment_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "last_adjusted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "recurring_contract_id",
+                    "index_type",
+                    "base_index_value",
+                    "base_index_period",
+                    "adjustment_frequency_months",
+                    "pass_through_percent",
+                    "floor_percent",
+                    "cap_percent",
+                    "next_adjustment_date",
+                    "last_adjusted_at",
+                    "is_active"
+                ],
+                "title": "ContractIndexationClauseResource"
+            },
+            "ContractIndexationLogResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "recurring_contract_id": {
+                        "type": "string"
+                    },
+                    "clause_id": {
+                        "type": "string"
+                    },
+                    "period_from": {
+                        "type": "string"
+                    },
+                    "period_to": {
+                        "type": "string"
+                    },
+                    "old_index_value": {
+                        "type": "string"
+                    },
+                    "new_index_value": {
+                        "type": "string"
+                    },
+                    "raw_delta_percent": {
+                        "type": "string"
+                    },
+                    "applied_delta_percent": {
+                        "type": "string"
+                    },
+                    "old_recurring_total": {
+                        "type": "string"
+                    },
+                    "new_recurring_total": {
+                        "type": "string"
+                    },
+                    "applied_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "applied_by_user_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "recurring_contract_id",
+                    "clause_id",
+                    "period_from",
+                    "period_to",
+                    "old_index_value",
+                    "new_index_value",
+                    "raw_delta_percent",
+                    "applied_delta_percent",
+                    "old_recurring_total",
+                    "new_recurring_total",
+                    "applied_at",
+                    "applied_by_user_id"
+                ],
+                "title": "ContractIndexationLogResource"
+            },
             "ContractKind": {
                 "type": "string",
                 "description": "The register adds no third contract table: customer contracts are the service contracts, supplier contracts the framework agreements of procurement.\n",
@@ -313444,6 +314977,58 @@
                 ],
                 "title": "PreviewPayrollRequest"
             },
+            "PriceIndexRateResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "index_type": {
+                        "type": "string"
+                    },
+                    "period": {
+                        "type": "string"
+                    },
+                    "index_value": {
+                        "type": "string"
+                    },
+                    "published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "source_reference": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "tenant_id",
+                    "index_type",
+                    "period",
+                    "index_value",
+                    "published_at",
+                    "source_reference",
+                    "created_at"
+                ],
+                "title": "PriceIndexRateResource"
+            },
             "PrintLabelsRequest": {
                 "type": "object",
                 "properties": {
@@ -319214,6 +320799,158 @@
                 "maxItems": 0,
                 "title": "RecruitingSetting"
             },
+            "RecurringBillingRunItemResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "recurring_contract_id": {
+                        "type": "string"
+                    },
+                    "contract_number": {
+                        "type": "string"
+                    },
+                    "customer_name": {
+                        "type": "string"
+                    },
+                    "billing_period_start": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "billing_period_end": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "idempotency_key": {
+                        "type": "string"
+                    },
+                    "invoice_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "invoice_number": {
+                        "type": "string"
+                    },
+                    "invoice_total": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "error_message": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "run_id",
+                    "recurring_contract_id",
+                    "contract_number",
+                    "customer_name",
+                    "billing_period_start",
+                    "billing_period_end",
+                    "idempotency_key",
+                    "invoice_id",
+                    "invoice_number",
+                    "invoice_total",
+                    "status",
+                    "error_message",
+                    "created_at"
+                ],
+                "title": "RecurringBillingRunItemResource"
+            },
+            "RecurringBillingRunResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "run_type": {
+                        "type": "string"
+                    },
+                    "target_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "contracts_processed": {
+                        "type": "integer"
+                    },
+                    "invoices_generated": {
+                        "type": "integer"
+                    },
+                    "total_amount": {
+                        "type": "string"
+                    },
+                    "started_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "finished_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RecurringBillingRunItemResource"
+                        }
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "tenant_id",
+                    "run_type",
+                    "target_date",
+                    "status",
+                    "contracts_processed",
+                    "invoices_generated",
+                    "total_amount",
+                    "started_at",
+                    "finished_at",
+                    "created_at"
+                ],
+                "title": "RecurringBillingRunResource"
+            },
             "RecurringCashItemResource": {
                 "type": "object",
                 "properties": {
@@ -319264,6 +321001,278 @@
                     "is_active"
                 ],
                 "title": "RecurringCashItemResource"
+            },
+            "RecurringContractLineResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "recurring_contract_id": {
+                        "type": "string"
+                    },
+                    "product_id": {
+                        "type": "string"
+                    },
+                    "sort_order": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "string"
+                    },
+                    "unit_price": {
+                        "type": "string"
+                    },
+                    "discount_percent": {
+                        "type": "string"
+                    },
+                    "vat_rate_id": {
+                        "type": "string"
+                    },
+                    "tax_rate": {
+                        "type": "string"
+                    },
+                    "proration_mode": {
+                        "type": "string"
+                    },
+                    "line_subtotal": {
+                        "type": "string"
+                    },
+                    "line_tax": {
+                        "type": "string"
+                    },
+                    "line_total": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "recurring_contract_id",
+                    "product_id",
+                    "sort_order",
+                    "description",
+                    "quantity",
+                    "unit_price",
+                    "discount_percent",
+                    "vat_rate_id",
+                    "tax_rate",
+                    "proration_mode",
+                    "line_subtotal",
+                    "line_tax",
+                    "line_total"
+                ],
+                "title": "RecurringContractLineResource"
+            },
+            "RecurringContractResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "customer_id": {
+                        "type": "string"
+                    },
+                    "customer": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "company_name": {
+                                "type": "string"
+                            },
+                            "email": {
+                                "type": "string"
+                            },
+                            "vat_number": {
+                                "type": "string"
+                            },
+                            "country": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "company_name",
+                            "email",
+                            "vat_number",
+                            "country"
+                        ]
+                    },
+                    "contract_number": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "contract_type": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "start_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "end_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "billing_frequency": {
+                        "type": "string"
+                    },
+                    "custom_interval_days": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "billing_timing": {
+                        "type": "string"
+                    },
+                    "next_billing_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "last_billed_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "auto_renew": {
+                        "type": "boolean"
+                    },
+                    "renewal_period_months": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "notice_period_days": {
+                        "type": "integer"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "payment_term_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "payment_method": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "invoice_auto_issue": {
+                        "type": "boolean"
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "cancellation_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "cancelled_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "subtotal": {
+                        "type": "string"
+                    },
+                    "total": {
+                        "type": "string"
+                    },
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RecurringContractLineResource"
+                        }
+                    },
+                    "indexation_clause": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ContractIndexationClauseResource"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "indexation_logs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContractIndexationLogResource"
+                        }
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "tenant_id",
+                    "customer_id",
+                    "contract_number",
+                    "title",
+                    "contract_type",
+                    "status",
+                    "start_date",
+                    "end_date",
+                    "billing_frequency",
+                    "custom_interval_days",
+                    "billing_timing",
+                    "next_billing_date",
+                    "last_billed_date",
+                    "auto_renew",
+                    "renewal_period_months",
+                    "notice_period_days",
+                    "currency",
+                    "payment_term_id",
+                    "payment_method",
+                    "invoice_auto_issue",
+                    "notes",
+                    "cancellation_reason",
+                    "cancelled_at",
+                    "subtotal",
+                    "total",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "RecurringContractResource"
             },
             "RecurringJournalResource": {
                 "type": "object",
@@ -346174,6 +348183,45 @@
                 ],
                 "title": "StorePositionRequest"
             },
+            "StorePriceIndexRateRequest": {
+                "type": "object",
+                "properties": {
+                    "index_type": {
+                        "type": "string",
+                        "enum": [
+                            "istat_foi",
+                            "swiss_ipc"
+                        ]
+                    },
+                    "period": {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}$"
+                    },
+                    "index_value": {
+                        "type": "number"
+                    },
+                    "published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "source_reference": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "index_type",
+                    "period",
+                    "index_value"
+                ],
+                "title": "StorePriceIndexRateRequest"
+            },
             "StorePriceListRequest": {
                 "type": "object",
                 "properties": {
@@ -347853,6 +349901,284 @@
                     "next_date"
                 ],
                 "title": "StoreRecurringCashItemRequest"
+            },
+            "StoreRecurringContractRequest": {
+                "type": "object",
+                "properties": {
+                    "customer_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "contract_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 64
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "contract_type": {
+                        "type": "string",
+                        "enum": [
+                            "maintenance",
+                            "rental",
+                            "software_license",
+                            "service_subscription"
+                        ]
+                    },
+                    "status": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "draft",
+                            "active",
+                            "suspended",
+                            "expired",
+                            "cancelled",
+                            null
+                        ]
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "billing_frequency": {
+                        "type": "string",
+                        "enum": [
+                            "monthly",
+                            "quarterly",
+                            "semi_annual",
+                            "annual",
+                            "custom_days"
+                        ]
+                    },
+                    "custom_interval_days": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "billing_timing": {
+                        "type": "string",
+                        "enum": [
+                            "in_advance",
+                            "in_arrears"
+                        ]
+                    },
+                    "next_billing_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "auto_renew": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "renewal_period_months": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "notice_period_days": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "currency": {
+                        "type": "string",
+                        "enum": [
+                            "CHF",
+                            "EUR"
+                        ]
+                    },
+                    "payment_term_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "payment_method": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 64
+                    },
+                    "invoice_auto_issue": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "lines": {
+                        "type": "array",
+                        "description": "Contract Lines",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "product_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "uuid"
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                },
+                                "quantity": {
+                                    "type": "number"
+                                },
+                                "unit_price": {
+                                    "type": "number"
+                                },
+                                "discount_percent": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 100
+                                },
+                                "vat_rate_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "uuid"
+                                },
+                                "tax_rate": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 100
+                                },
+                                "proration_mode": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "enum": [
+                                        "none",
+                                        "daily_exact",
+                                        "thirty_day_month",
+                                        null
+                                    ]
+                                },
+                                "sort_order": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 0
+                                }
+                            },
+                            "required": [
+                                "description",
+                                "quantity",
+                                "unit_price"
+                            ]
+                        },
+                        "minItems": 1
+                    },
+                    "indexation_clause": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "description": "Optional Indexation clause",
+                        "properties": {
+                            "index_type": {
+                                "type": "string",
+                                "enum": [
+                                    "none",
+                                    "istat_foi",
+                                    "swiss_ipc"
+                                ]
+                            },
+                            "base_index_value": {
+                                "type": "number"
+                            },
+                            "base_index_period": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}$"
+                            },
+                            "adjustment_frequency_months": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            },
+                            "pass_through_percent": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 100
+                            },
+                            "floor_percent": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "cap_percent": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "next_adjustment_date": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "customer_id",
+                    "title",
+                    "contract_type",
+                    "start_date",
+                    "billing_frequency",
+                    "billing_timing",
+                    "currency",
+                    "lines"
+                ],
+                "title": "StoreRecurringContractRequest"
             },
             "StoreRecurringJournalRequest": {
                 "type": "object",
@@ -360261,6 +362587,275 @@
                 ],
                 "title": "UpdateRecruitingSettingsRequest"
             },
+            "UpdateRecurringContractRequest": {
+                "type": "object",
+                "properties": {
+                    "customer_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "contract_number": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "contract_type": {
+                        "type": "string",
+                        "enum": [
+                            "maintenance",
+                            "rental",
+                            "software_license",
+                            "service_subscription"
+                        ]
+                    },
+                    "status": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "draft",
+                            "active",
+                            "suspended",
+                            "expired",
+                            "cancelled",
+                            null
+                        ]
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "billing_frequency": {
+                        "type": "string",
+                        "enum": [
+                            "monthly",
+                            "quarterly",
+                            "semi_annual",
+                            "annual",
+                            "custom_days"
+                        ]
+                    },
+                    "custom_interval_days": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "billing_timing": {
+                        "type": "string",
+                        "enum": [
+                            "in_advance",
+                            "in_arrears"
+                        ]
+                    },
+                    "next_billing_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "auto_renew": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "renewal_period_months": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "notice_period_days": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "currency": {
+                        "type": "string",
+                        "enum": [
+                            "CHF",
+                            "EUR"
+                        ]
+                    },
+                    "payment_term_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "payment_method": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 64
+                    },
+                    "invoice_auto_issue": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "lines": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "description": "Contract Lines",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "uuid"
+                                },
+                                "product_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "uuid"
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                },
+                                "quantity": {
+                                    "type": "number"
+                                },
+                                "unit_price": {
+                                    "type": "number"
+                                },
+                                "discount_percent": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 100
+                                },
+                                "vat_rate_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "uuid"
+                                },
+                                "tax_rate": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 100
+                                },
+                                "proration_mode": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "enum": [
+                                        "none",
+                                        "daily_exact",
+                                        "thirty_day_month",
+                                        null
+                                    ]
+                                },
+                                "sort_order": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 0
+                                }
+                            }
+                        }
+                    },
+                    "indexation_clause": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "description": "Indexation clause",
+                        "properties": {
+                            "index_type": {
+                                "type": "string",
+                                "enum": [
+                                    "none",
+                                    "istat_foi",
+                                    "swiss_ipc"
+                                ]
+                            },
+                            "base_index_value": {
+                                "type": "number"
+                            },
+                            "base_index_period": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}$"
+                            },
+                            "adjustment_frequency_months": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            },
+                            "pass_through_percent": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 100
+                            },
+                            "floor_percent": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "cap_percent": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "next_adjustment_date": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        }
+                    }
+                },
+                "title": "UpdateRecurringContractRequest"
+            },
             "UpdateSdiChannelRequest": {
                 "type": "object",
                 "properties": {
@@ -367740,6 +370335,10 @@
             "description": "Operations of the PreservationSeal module."
         },
         {
+            "name": "PriceIndexRate",
+            "description": "Operations of the PriceIndexRate module."
+        },
+        {
             "name": "PriceList",
             "description": "Operations of the PriceList module."
         },
@@ -367970,6 +370569,14 @@
         {
             "name": "RecruitingSettings",
             "description": "Operations of the RecruitingSettings module."
+        },
+        {
+            "name": "RecurringBillingRun",
+            "description": "Operations of the RecurringBillingRun module."
+        },
+        {
+            "name": "RecurringContract",
+            "description": "Operations of the RecurringContract module."
         },
         {
             "name": "RecurringJournal",
