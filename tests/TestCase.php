@@ -3,6 +3,7 @@
 namespace Tests;
 
 use App\Contracts\Security\HostResolver;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -11,6 +12,10 @@ use Tests\Support\StaticHostResolver;
 
 abstract class TestCase extends BaseTestCase
 {
+    use LazilyRefreshDatabase;
+
+    protected bool $seed = true;
+
     protected function tearDown(): void
     {
         parent::tearDown();
