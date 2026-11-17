@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use Database\Seeders\FrontendTranslationSeeder;
 use Database\Seeders\TranslationSeeder;
 use Illuminate\Console\Command;
 use ReflectionMethod;
@@ -37,7 +38,7 @@ class DumpTranslations extends Command
         $method = new ReflectionMethod(TranslationSeeder::class, self::GETTERS[$locale]);
         $method->setAccessible(true);
 
-        $this->line(json_encode($method->invoke(new TranslationSeeder), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        $this->line(json_encode([...$method->invoke(new TranslationSeeder), ...FrontendTranslationSeeder::dictionary($locale)], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
 
         return self::SUCCESS;
     }

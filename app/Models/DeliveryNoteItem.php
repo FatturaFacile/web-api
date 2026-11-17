@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Enterprise\MultiTenant\Concerns\StampsTenantFromParent;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Invoicing\Models\SalesDeliveryNoteItem;
 
@@ -14,6 +15,8 @@ use Modules\Invoicing\Models\SalesDeliveryNoteItem;
  */
 class DeliveryNoteItem extends SalesDeliveryNoteItem
 {
+    use StampsTenantFromParent;
+
     /**
      * @return BelongsTo<DeliveryNote, $this>
      */

@@ -45,6 +45,11 @@ deploy/local/certs/*.key
 deploy/local/certs/*.pem
 
 database/database.sqlite
+database/testing.sqlite
+database/*.sqlite
+database/*.sqlite3
+storage/*.sqlite
+storage/*.sqlite3
 
 # AI tools: keep the shared config, ignore scratch files and local state
 .claude/*
@@ -55,25 +60,3 @@ database/database.sqlite
 !.claude/commands/
 *.tmp
 
-# Editor / assistant tool configuration (local only)
-/CLAUDE.md
-/AGENTS.md
-/.claude/
-/.claudeignore
-/.agy
-/.agyignore
-/.ai
-/.aiignore
-/.antigravity
-/.codex
-/.copilotignore
-/.github/copilot-instructions.md
-/.github/instructions/
-/.github/prompts/
-/.github/chatmodes/
-/.cursor/
-/.cursorignore
-/.cursorrules
-/.gemini/
-/.geminiignore
-/.windsurfrules

@@ -14,6 +14,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Modules\Customs\Enums\CustomsChannel;
 use Modules\Customs\Enums\DeclarationStatus;
 use Modules\Customs\Enums\DeclarationType;
 use Modules\Customs\Exceptions\CustomsException;
@@ -21,7 +22,9 @@ use Modules\Customs\Models\CustomsDeclaration;
 use Modules\Customs\Models\CustomsDeclarationItem;
 use Modules\Customs\Models\CustomsGatewayMessage;
 use Modules\Customs\Models\CustomsSettings;
+use Modules\Customs\Services\Aida\AidaPayloadBuilder;
 use Modules\Customs\Services\Edec\EdecDeclarationXmlBuilder;
+use Modules\Customs\Services\Passar\PassarPayloadBuilder;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 
 /**
@@ -34,6 +37,8 @@ final class CustomsDeclarationService
         private readonly CustomsDeclarationValidator $validator,
         private readonly EdecDeclarationXmlBuilder $builder,
         private readonly CustomsGatewayManager $gateways,
+        private readonly PassarPayloadBuilder $passarBuilder,
+        private readonly AidaPayloadBuilder $aidaBuilder,
         private readonly PdfGenerator $pdf,
     ) {}
 
@@ -124,8 +129,13 @@ final class CustomsDeclarationService
     public function message(CustomsDeclaration $declaration): string
     {
         $declaration->load(['items', 'consignor', 'consignee', 'importer']);
+        $settings = $this->settings() ?? new CustomsSettings;
 
-        return $this->builder->build($declaration, $this->settings() ?? new CustomsSettings);
+        return match (CustomsChannel::tryFrom((string) ($settings->channel ?? config('customs.default_channel')))) {
+            CustomsChannel::Passar => $this->passarBuilder->build($declaration, $settings),
+            CustomsChannel::Aida => $this->aidaBuilder->build($declaration, $settings),
+            default => $this->builder->build($declaration, $settings),
+        };
     }
 
     public function submit(CustomsDeclaration $declaration, Tenant $tenant): CustomsDeclaration
@@ -148,6 +158,7 @@ final class CustomsDeclarationService
         $declaration->update([
             'status' => $result->isAccepted ? DeclarationStatus::Accepted : DeclarationStatus::Rejected,
             'gateway' => $gateway->name(),
+            'customs_regime' => $this->gateways->channelFor($tenant)?->regime() ?? $declaration->customs_regime,
             'submitted_at' => now(),
             'accepted_at' => $result->isAccepted ? now() : null,
             'mrn' => $result->mrn,

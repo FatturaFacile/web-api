@@ -246,6 +246,8 @@
       <excludeFolder url="file://$MODULE_DIR$/storage/api-docs" />
       <excludeFolder url="file://$MODULE_DIR$/vendor" />
       <excludeFolder url="file://$MODULE_DIR$/.claude" />
+      <excludeFolder url="file://$MODULE_DIR$/.ai" />
+      <excludeFolder url="file://$MODULE_DIR$/.codex" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
