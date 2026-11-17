@@ -19,6 +19,9 @@ class PriceListItem extends Model
         'product_id',
         'price',
         'min_quantity',
+        'max_quantity',
+        'discount_cascade',
+        'discount_mode',
         'valid_from',
         'valid_to',
     ];
@@ -27,6 +30,7 @@ class PriceListItem extends Model
     {
         return [
             'min_quantity' => 'decimal:4',
+            'max_quantity' => 'decimal:4',
             'price' => 'decimal:4',
             'valid_from' => 'date',
             'valid_to' => 'date',

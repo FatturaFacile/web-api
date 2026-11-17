@@ -108,6 +108,7 @@
             "Modules\\Platform\\": "modules/58_Platform/src/",
             "Modules\\Collaboration\\": "modules/59_Collaboration/src/",
             "Modules\\Rebates\\": "modules/60_Rebates/src/",
+            "Modules\\Pricing\\": "modules/63_Pricing/src/",
             "Modules\\Events\\": "modules/61_Events/src/",
             "Modules\\Plm\\": "modules/62_Plm/src/",
             "Modules\\Returns\\":"modules/49_Returns/src/",

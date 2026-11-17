@@ -201,6 +201,13 @@ return [
             'read' => [...$financeReaders, 'sales', 'sales_manager', 'procurement_manager'],
             'write' => [...$finance, 'sales_manager', 'procurement_manager'],
         ],
+        // Advanced pricing (price lists, cascading discounts, promotions, margin guardrails): finance and sales roles read;
+        // owners, administrators, accountants and sales managers write. Authorizing a below-margin document is further
+        // limited by the policy to owners, administrators and the role of the margin policy.
+        'pricing' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager', 'procurement_manager'],
+            'write' => [...$finance, 'sales_manager'],
+        ],
         // Credit risk and collections: finance and sales roles read; owners, administrators, accountants and sales
         // managers score customers, work the cases and request limits. Deciding a credit limit request and writing a
         // case off are reserved by the policy to owners, administrators and members granted credit-management.approve.
