@@ -16,6 +16,7 @@ use Modules\CRM\DTOs\CreateLeadDTO;
 use Modules\CRM\Http\Resources\LeadResource;
 use Modules\CRM\Models\LeadWebhookEndpoint;
 use Modules\CRM\Support\LeadPayloadMapper;
+use OpenApi\Attributes as OA;
 
 /**
  * Public Web-to-Lead endpoint (WordPress, Webflow, Meta Ads, LinkedIn Lead Gen, generic JSON).
@@ -36,6 +37,23 @@ final class LeadWebhookController extends Controller
     ) {}
 
     /** Meta (Facebook/Instagram) Lead Ads subscription handshake. */
+    #[OA\Get(
+        path: '/api/v1/webhooks/leads/{token}',
+        operationId: 'verifyCrmLeadWebhook',
+        description: 'Meta (Facebook/Instagram) Lead Ads subscription handshake: when hub_mode is subscribe and hub_verify_token equals the endpoint secret, the hub_challenge is echoed back as plain text. Public: no bearer token.',
+        summary: 'Verify lead webhook subscription',
+        tags: ['CRM Lead Webhooks'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Public token of the webhook endpoint', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'hub_mode', in: 'query', required: false, description: 'Must be subscribe', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'hub_verify_token', in: 'query', required: false, description: 'Endpoint secret', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'hub_challenge', in: 'query', required: false, description: 'Value echoed back', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Challenge echoed back', content: new OA\MediaType(mediaType: 'text/plain', schema: new OA\Schema(type: 'string'))),
+            new OA\Response(response: 403, description: 'Invalid token, mode or verify token', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string')])),
+        ]
+    )]
     public function verify(Request $request, string $token): Response|JsonResponse
     {
         $endpoint = $this->findEndpoint($token);
@@ -48,6 +66,25 @@ final class LeadWebhookController extends Controller
         return response((string) $request->query('hub_challenge'), 200)->header('Content-Type', 'text/plain');
     }
 
+    #[OA\Post(
+        path: '/api/v1/webhooks/leads/{token}',
+        operationId: 'receiveCrmLeadWebhook',
+        description: 'Public Web-to-Lead delivery (WordPress, Webflow, Meta Ads, LinkedIn Lead Gen, generic JSON), addressed by endpoint token. Authenticated by the endpoint secret: X-Webhook-Signature (sha256 HMAC of the raw body), X-Hub-Signature-256, X-Webhook-Secret or Authorization Bearer. The payload needs an email or a phone. Returns 201 for a new lead, 200 when it was merged into a duplicate.',
+        summary: 'Receive lead from webhook',
+        tags: ['CRM Lead Webhooks'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Public token of the webhook endpoint', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'X-Webhook-Signature', in: 'header', required: false, description: 'sha256=<hmac of the raw body with the endpoint secret>', schema: new OA\Schema(type: 'string')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', description: 'Provider payload, mapped to lead fields through the endpoint field_map', additionalProperties: true)),
+        responses: [
+            new OA\Response(response: 201, description: 'Lead created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'lead', ref: '#/components/schemas/CRMLeadResource'), new OA\Property(property: 'merged', type: 'boolean'), new OA\Property(property: 'duplicate_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid'))])),
+            new OA\Response(response: 200, description: 'Lead merged into an existing duplicate', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'lead', ref: '#/components/schemas/CRMLeadResource'), new OA\Property(property: 'merged', type: 'boolean'), new OA\Property(property: 'duplicate_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid'))])),
+            new OA\Response(response: 401, description: 'Invalid signature', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 404, description: 'Unknown webhook endpoint', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 422, description: 'Payload without email or phone', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string')])),
+        ]
+    )]
     public function receive(Request $request, string $token): JsonResponse
     {
         $endpoint = $this->findEndpoint($token);

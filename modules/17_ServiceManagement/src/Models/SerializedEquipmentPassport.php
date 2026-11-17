@@ -9,6 +9,7 @@ use App\Models\Product;
 use Carbon\CarbonImmutable;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
@@ -27,13 +28,18 @@ use Illuminate\Support\Carbon;
  * @property string $jurisdiction
  * @property CarbonImmutable|Carbon $delivery_date
  * @property string $warranty_policy_type
- * @property Carbon|null $warranty_start_date
- * @property Carbon $warranty_expiry_date
+ * @property CarbonImmutable|Carbon|null $warranty_start_date
+ * @property CarbonImmutable|Carbon $warranty_expiry_date
  * @property string $warranty_source
  * @property int|null $contract_warranty_months
  * @property string|null $contract_clause_reference
  * @property string|null $installed_firmware_version
  * @property string|null $notes
+ * @property string $asset_status
+ * @property Carbon|null $commissioning_date
+ * @property string|null $installation_site
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class SerializedEquipmentPassport extends BaseEnterpriseModel
 {
@@ -46,7 +52,35 @@ final class SerializedEquipmentPassport extends BaseEnterpriseModel
             'warranty_start_date' => 'date',
             'warranty_expiry_date' => 'date',
             'contract_warranty_months' => 'integer',
+            'commissioning_date' => 'date',
         ];
+    }
+
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_UNDER_REPAIR = 'under_repair';
+
+    public const STATUS_DECOMMISSIONED = 'decommissioned';
+
+    public function warrantyStatus(): string
+    {
+        return $this->warranty_expiry_date->toDateString() >= now()->toDateString() ? 'active' : 'expired';
+    }
+
+    /**
+     * @return BelongsToMany<ServiceContract, $this>
+     */
+    public function maintenanceContracts(): BelongsToMany
+    {
+        return $this->belongsToMany(ServiceContract::class, 'esm_service_contract_assets', 'equipment_passport_id', 'service_contract_id')->withTimestamps();
+    }
+
+    /**
+     * @return HasMany<WorkOrder, $this>
+     */
+    public function workOrders(): HasMany
+    {
+        return $this->hasMany(WorkOrder::class, 'equipment_passport_id');
     }
 
     /**

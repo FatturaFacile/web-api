@@ -6,14 +6,14 @@ use App\Models\Contact;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockSerialNumber;
 use Modules\ServiceManagement\Models\SerializedEquipmentPassport;
 
-uses(DatabaseTransactions::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->travelTo(now()->setDate(2026, 11, 15)->startOfDay());
@@ -21,6 +21,8 @@ beforeEach(function () {
     $this->tenant = Tenant::factory()->create(['country' => 'CH', 'default_currency' => 'CHF']);
     app(TenantContext::class)->setTenant($this->tenant);
     $this->user = User::factory()->create();
+    $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
+    $this->withHeader('X-Tenant-Id', $this->tenant->id);
     Sanctum::actingAs($this->user);
 
     $this->consumer = Contact::factory()->create([

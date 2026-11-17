@@ -19,10 +19,13 @@ arch('controllers do not execute direct database queries or raw queries')
         'App\Http\Controllers\HealthController',
     ]);
 
-arch('domain models adhere to tenant scoping expectations')
+// The tenant scope itself is enforced model by model in tests/Feature/Architecture (TenantIsolationArchTest).
+arch('domain models are Eloquent models')
     ->expect('App\Models')
     ->classes()
+    ->toExtend('Illuminate\Database\Eloquent\Model')
     ->ignoring([
+        'App\Models\Scopes',
         'App\Models\Tenant',
         'App\Models\User',
     ]);

@@ -27,7 +27,7 @@ return new class extends Migration
         });
 
         Schema::create('customs_declaration_invoices', function (Blueprint $table): void {
-            $table->uuid('tenant_id');
+            $table->uuid('tenant_id')->nullable();
             $table->uuid('declaration_id');
             $table->uuid('invoice_id');
             $table->timestamps();
@@ -40,7 +40,7 @@ return new class extends Migration
 
         Schema::create('customs_import_bills', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id');
+            $table->uuid('tenant_id')->nullable();
             $table->uuid('declaration_id')->nullable();
             $table->uuid('passive_invoice_id')->nullable();
             $table->string('bill_number', 40);

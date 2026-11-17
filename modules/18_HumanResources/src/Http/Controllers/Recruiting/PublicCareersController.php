@@ -21,6 +21,7 @@ use Modules\HumanResources\Models\JobOpening;
 use Modules\HumanResources\Models\RecruitingSettings;
 use Modules\HumanResources\Services\JobFeedBuilder;
 use Modules\HumanResources\Support\RecruitingDefaults;
+use OpenApi\Attributes as OA;
 
 /**
  * Unauthenticated careers endpoints. The tenant comes only from the careers slug (`ResolveCareersTenant`); only
@@ -36,6 +37,19 @@ final class PublicCareersController extends Controller
         private readonly SubmitCandidateApplicationAction $submitApplication
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/public/careers/{careersSlug}',
+        operationId: 'publicCareersShow',
+        description: 'Public careers page data: company name, intro, privacy notice and the available languages. No candidate data is returned.',
+        summary: 'Careers page',
+        security: [],
+        tags: ['HR Public Careers'],
+        parameters: [new OA\Parameter(name: 'careersSlug', in: 'path', required: true, description: 'Careers slug of the company', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'locale', in: 'query', required: false, description: 'Language of the texts', schema: new OA\Schema(type: 'string', enum: ['it-CH', 'de-CH', 'fr-CH', 'it-IT', 'en']))],
+        responses: [
+            new OA\Response(response: 200, description: 'Careers page', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(response: 404, description: 'Careers page or job opening not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(Request $request): JsonResponse
     {
         $settings = $this->settings($request);
@@ -54,6 +68,19 @@ final class PublicCareersController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: '/api/v1/public/careers/{careersSlug}/jobs',
+        operationId: 'publicCareersListJobs',
+        description: 'Published job openings of the company, newest first (paginated).',
+        summary: 'List published jobs',
+        security: [],
+        tags: ['HR Public Careers'],
+        parameters: [new OA\Parameter(name: 'careersSlug', in: 'path', required: true, description: 'Careers slug of the company', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'locale', in: 'query', required: false, description: 'Language of the texts', schema: new OA\Schema(type: 'string', enum: ['it-CH', 'de-CH', 'fr-CH', 'it-IT', 'en'])), new OA\Parameter(name: 'department_id', in: 'query', required: false, description: 'Department filter', schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'employment_type', in: 'query', required: false, description: 'Employment type', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'location_site', in: 'query', required: false, description: 'Exact site name (case-insensitive)', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Matches reference, site and texts', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Page size', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Paginated published jobs', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer'), new OA\Property(property: 'per_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 404, description: 'Careers page or job opening not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function jobs(Request $request): JsonResponse
     {
         $settings = $this->settings($request);
@@ -89,6 +116,19 @@ final class PublicCareersController extends Controller
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/public/careers/{careersSlug}/jobs/{id}',
+        operationId: 'publicCareersGetJob',
+        description: 'One published job opening with its texts in the requested language.',
+        summary: 'Get published job',
+        security: [],
+        tags: ['HR Public Careers'],
+        parameters: [new OA\Parameter(name: 'careersSlug', in: 'path', required: true, description: 'Careers slug of the company', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the published job opening', schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'locale', in: 'query', required: false, description: 'Language of the texts', schema: new OA\Schema(type: 'string', enum: ['it-CH', 'de-CH', 'fr-CH', 'it-IT', 'en']))],
+        responses: [
+            new OA\Response(response: 200, description: 'Job opening', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(response: 404, description: 'Careers page or job opening not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function job(Request $request, string $careersSlug, string $id): JsonResponse
     {
         $settings = $this->settings($request);
@@ -101,6 +141,22 @@ final class PublicCareersController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/public/careers/{careersSlug}/jobs/{id}/apply',
+        operationId: 'publicCareersApply',
+        description: 'Submits a candidate application with CV and GDPR consent (multipart). The consent text version must be the current one; the honeypot field website must stay empty.',
+        summary: 'Apply to a job',
+        security: [],
+        tags: ['HR Public Careers'],
+        parameters: [new OA\Parameter(name: 'careersSlug', in: 'path', required: true, description: 'Careers slug of the company', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the published job opening', schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['first_name', 'last_name', 'email', 'locale', 'consent_accepted', 'consent_text_version', 'cv'], properties: [new OA\Property(property: 'first_name', type: 'string', maxLength: 100), new OA\Property(property: 'last_name', type: 'string', maxLength: 100), new OA\Property(property: 'email', type: 'string', format: 'email'), new OA\Property(property: 'phone', type: 'string', maxLength: 50, nullable: true), new OA\Property(property: 'cover_letter', type: 'string', maxLength: 20000, nullable: true), new OA\Property(property: 'locale', type: 'string', enum: ['it-CH', 'de-CH', 'fr-CH', 'it-IT', 'en']), new OA\Property(property: 'consent_accepted', type: 'boolean', description: 'Must be accepted'), new OA\Property(property: 'consent_text_version', type: 'string', description: 'Current version from the careers page'), new OA\Property(property: 'cv', type: 'string', format: 'binary', description: 'pdf, doc or docx')]))),
+        responses: [
+            new OA\Response(response: 201, description: 'Application received', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'reference', type: 'string'), new OA\Property(property: 'message', type: 'string')])])),
+            new OA\Response(response: 404, description: 'Careers page or job opening not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 429, description: 'Too many requests', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function apply(PublicApplyRequest $request, string $careersSlug, string $id): JsonResponse
     {
         $settings = $this->settings($request);
@@ -132,11 +188,37 @@ final class PublicCareersController extends Controller
         ], 201);
     }
 
+    #[OA\Get(
+        path: '/api/v1/public/careers/{careersSlug}/feed.json',
+        operationId: 'publicCareersFeedJson',
+        description: 'JSON feed of the published jobs for job boards and aggregators.',
+        summary: 'Job feed (JSON)',
+        security: [],
+        tags: ['HR Public Careers'],
+        parameters: [new OA\Parameter(name: 'careersSlug', in: 'path', required: true, description: 'Careers slug of the company', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'locale', in: 'query', required: false, description: 'Language of the texts', schema: new OA\Schema(type: 'string', enum: ['it-CH', 'de-CH', 'fr-CH', 'it-IT', 'en']))],
+        responses: [
+            new OA\Response(response: 200, description: 'JSON job feed', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 404, description: 'Careers page or job opening not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function feedJson(Request $request): JsonResponse
     {
         return response()->json($this->feedBuilder->jsonFeed($this->settings($request), $this->requestedLocale($request)));
     }
 
+    #[OA\Get(
+        path: '/api/v1/public/careers/{careersSlug}/feed.rss',
+        operationId: 'publicCareersFeedRss',
+        description: 'RSS feed of the published jobs.',
+        summary: 'Job feed (RSS)',
+        security: [],
+        tags: ['HR Public Careers'],
+        parameters: [new OA\Parameter(name: 'careersSlug', in: 'path', required: true, description: 'Careers slug of the company', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'locale', in: 'query', required: false, description: 'Language of the texts', schema: new OA\Schema(type: 'string', enum: ['it-CH', 'de-CH', 'fr-CH', 'it-IT', 'en']))],
+        responses: [
+            new OA\Response(response: 200, description: 'RSS job feed', content: new OA\MediaType(mediaType: 'application/rss+xml', schema: new OA\Schema(type: 'string'))),
+            new OA\Response(response: 404, description: 'Careers page or job opening not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function feedRss(Request $request): Response
     {
         return response(

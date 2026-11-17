@@ -42,6 +42,7 @@ use Modules\HumanResources\Services\TimeTracking\SwitzerlandSecoExportService;
 use Modules\HumanResources\Services\TimeTracking\TimeEventType;
 use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
 use Modules\HumanResources\Services\WorkingTimeCalculator;
+use OpenApi\Attributes as OA;
 
 /**
  * Swiss working time recording. The employee is the user: `employee_id` carries a user id, because `user_id` and
@@ -242,24 +243,22 @@ final class TimeTrackingController extends Controller
         return response()->json(['data' => new TimeRecordingProfileResource($profile)]);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/hr/time/export",
-     *     summary="Download a legal working-time export (IT LUL or CH SECO).",
-     *     tags={"HR — Time Tracking"},
-     *
-     *     @OA\Parameter(name="from", in="query", required=true, @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="to", in="query", required=true, @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="format", in="query", required=true,
-     *
-     *         @OA\Schema(type="string", enum={"lul-csv","lul-zucchetti","seco-csv"})),
-     *
-     *     @OA\Parameter(name="employee_id", in="query", required=false, @OA\Schema(type="string", format="uuid")),
-     *
-     *     @OA\Response(response=200, description="File download"),
-     *     @OA\Response(response=403, description="Forbidden")
-     * )
-     */
+    #[OA\Get(
+        path: '/api/v1/hr/time/export',
+        operationId: 'hrTimeExportLegal',
+        description: 'CSV export of the working time for the period: LUL (IT) or SECO (CH). Requires the time-management ability.',
+        summary: 'Download legal time export',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Time Tracking'],
+        parameters: [new OA\Parameter(name: 'from', in: 'query', required: true, description: 'First day (inclusive)', schema: new OA\Schema(type: 'string', format: 'date')), new OA\Parameter(name: 'to', in: 'query', required: true, description: 'Last day (inclusive, not before from)', schema: new OA\Schema(type: 'string', format: 'date')), new OA\Parameter(name: 'format', in: 'query', required: true, description: 'Export format', schema: new OA\Schema(type: 'string', enum: ['lul_csv', 'seco_csv'])), new OA\Parameter(name: 'jurisdiction', in: 'query', required: true, description: 'Jurisdiction', schema: new OA\Schema(type: 'string', enum: ['IT', 'CH'])), new OA\Parameter(name: 'employee_id', in: 'query', required: false, description: 'Only this employee', schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'The CSV file', content: new OA\MediaType(mediaType: 'text/csv', schema: new OA\Schema(type: 'string', format: 'binary'))),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
+        ]
+    )]
     public function exportLegal(LegalExportRequest $request): Response
     {
         $this->authorize('manage', TimeClockEvent::class);
@@ -295,20 +294,21 @@ final class TimeTrackingController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/hr/time/verify-integrity",
-     *     summary="Verify the SHA-256 hash chain of time audit entries.",
-     *     tags={"HR — Time Tracking"},
-     *
-     *     @OA\Parameter(name="employee_id", in="query", required=false, @OA\Schema(type="string", format="uuid")),
-     *     @OA\Parameter(name="from", in="query", required=false, @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="to", in="query", required=false, @OA\Schema(type="string", format="date")),
-     *
-     *     @OA\Response(response=200, description="Integrity report"),
-     *     @OA\Response(response=403, description="Forbidden")
-     * )
-     */
+    #[OA\Get(
+        path: '/api/v1/hr/time/verify-integrity',
+        operationId: 'hrTimeVerifyIntegrity',
+        description: 'Verifies the SHA-256 hash chain of the time audit entries of the company.',
+        summary: 'Verify time audit hash chain',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Time Tracking'],
+        parameters: [new OA\Parameter(name: 'employee_id', in: 'query', required: false, description: 'Employee filter', schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'from', in: 'query', required: false, description: 'First day (inclusive)', schema: new OA\Schema(type: 'string', format: 'date')), new OA\Parameter(name: 'to', in: 'query', required: false, description: 'Last day (inclusive)', schema: new OA\Schema(type: 'string', format: 'date'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Integrity report', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
+        ]
+    )]
     public function verifyIntegrity(ListTimeRecordsRequest $request): JsonResponse
     {
         $this->authorize('viewAudit', [TimeAuditEntry::class, null]);
@@ -318,23 +318,21 @@ final class TimeTrackingController extends Controller
         return response()->json(['data' => $result->toArray()]);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/hr/time/compliance-alerts",
-     *     summary="Return legal compliance violations for the period (IT D.Lgs. 66/2003 or CH OLL 1).",
-     *     tags={"HR — Time Tracking"},
-     *
-     *     @OA\Parameter(name="employee_id", in="query", required=false, @OA\Schema(type="string", format="uuid")),
-     *     @OA\Parameter(name="from", in="query", required=true, @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="to", in="query", required=true, @OA\Schema(type="string", format="date")),
-     *     @OA\Parameter(name="jurisdiction", in="query", required=false,
-     *
-     *         @OA\Schema(type="string", enum={"IT","CH"})),
-     *
-     *     @OA\Response(response=200, description="Compliance alerts"),
-     *     @OA\Response(response=403, description="Forbidden")
-     * )
-     */
+    #[OA\Get(
+        path: '/api/v1/hr/time/compliance-alerts',
+        operationId: 'hrTimeComplianceAlerts',
+        description: 'Legal working-time violations for the period (IT D.Lgs. 66/2003 rest periods and 48h week, CH OLL 1 breaks). The period cannot exceed one year.',
+        summary: 'Time compliance alerts',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Time Tracking'],
+        parameters: [new OA\Parameter(name: 'employee_id', in: 'query', required: false, description: 'Employee (default: the caller)', schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'from', in: 'query', required: true, description: 'First day (inclusive)', schema: new OA\Schema(type: 'string', format: 'date')), new OA\Parameter(name: 'to', in: 'query', required: true, description: 'Last day (inclusive)', schema: new OA\Schema(type: 'string', format: 'date')), new OA\Parameter(name: 'jurisdiction', in: 'query', required: false, description: 'Jurisdiction (default: the one of the time profile, else CH)', schema: new OA\Schema(type: 'string', enum: ['IT', 'CH']))],
+        responses: [
+            new OA\Response(response: 200, description: 'Compliance alerts', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
+        ]
+    )]
     public function complianceAlerts(TimeReportRequest $request): JsonResponse
     {
         $this->authorize('manage', TimeClockEvent::class);

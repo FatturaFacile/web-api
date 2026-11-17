@@ -25,7 +25,9 @@ return new class extends Migration
         });
 
         Schema::create('hr_goals', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
+            // Explicit, before the self-referencing foreign key: a fluent primary() is added after it and PostgreSQL refuses the key.
+            $table->uuid('id');
+            $table->primary('id');
             $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('goal_cycle_id')->constrained('hr_goal_cycles')->cascadeOnDelete();
             $table->foreignUuid('parent_goal_id')->nullable()->constrained('hr_goals')->nullOnDelete();

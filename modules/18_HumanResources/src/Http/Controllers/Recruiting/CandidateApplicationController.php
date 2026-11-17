@@ -32,6 +32,7 @@ use Modules\HumanResources\Http\Resources\CandidateApplicationResource;
 use Modules\HumanResources\Http\Resources\JobOpeningResource;
 use Modules\HumanResources\Models\CandidateApplication;
 use Modules\HumanResources\Services\CandidateRetentionService;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -48,6 +49,20 @@ final class CandidateApplicationController extends Controller
         private readonly RecruitmentServiceInterface $recruitment
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/hr/recruiting/applications',
+        operationId: 'hrRecruitingListApplications',
+        description: 'Paginated candidate applications with scorecard count and average score.',
+        summary: 'List applications',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Recruiting'],
+        parameters: [new OA\Parameter(name: 'job_opening_id', in: 'query', required: false, description: 'Opening filter', schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'stage', in: 'query', required: false, description: 'Pipeline stage', schema: new OA\Schema(type: 'string', enum: ['applied', 'hr_screening', 'technical_interview', 'manager_interview', 'offer_extended', 'hired', 'rejected'])), new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Matches name, e-mail and reference', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'consent_expiring_within_days', in: 'query', required: false, description: 'Only applications whose privacy consent expires within these days', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Page size', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Paginated applications', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer'), new OA\Property(property: 'per_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', CandidateApplication::class);
@@ -90,6 +105,21 @@ final class CandidateApplicationController extends Controller
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/hr/recruiting/applications',
+        operationId: 'hrRecruitingCreateApplication',
+        description: 'HR enters an application on behalf of a candidate (multipart, optional CV that is parsed).',
+        summary: 'Create application manually',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Recruiting'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['job_opening_id', 'first_name', 'last_name', 'email'], properties: [new OA\Property(property: 'job_opening_id', type: 'string', format: 'uuid'), new OA\Property(property: 'first_name', type: 'string', maxLength: 100), new OA\Property(property: 'last_name', type: 'string', maxLength: 100), new OA\Property(property: 'email', type: 'string', format: 'email'), new OA\Property(property: 'phone', type: 'string', maxLength: 50, nullable: true), new OA\Property(property: 'cover_letter', type: 'string', maxLength: 20000, nullable: true), new OA\Property(property: 'locale', type: 'string', enum: ['it-CH', 'de-CH', 'fr-CH', 'it-IT', 'en'], nullable: true), new OA\Property(property: 'source', type: 'string', enum: ['careers_page', 'manual', 'referral', 'job_board'], nullable: true, description: 'Defaults to manual'), new OA\Property(property: 'retention_months', type: 'integer', nullable: true, description: 'Allowed values from the recruiting configuration (6 or 12)'), new OA\Property(property: 'cv', type: 'string', format: 'binary', nullable: true, description: 'pdf, doc or docx')]))),
+        responses: [
+            new OA\Response(response: 201, description: 'Application created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
+        ]
+    )]
     public function store(StoreCandidateApplicationRequest $request): JsonResponse
     {
         $this->authorize('create', CandidateApplication::class);
@@ -113,6 +143,21 @@ final class CandidateApplicationController extends Controller
         return response()->json(['data' => $this->detail($application, $request)], 201);
     }
 
+    #[OA\Get(
+        path: '/api/v1/hr/recruiting/applications/{id}',
+        operationId: 'hrRecruitingGetApplication',
+        description: 'Application detail with history, e-mails and current offer.',
+        summary: 'Get application',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Recruiting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the application', schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Application', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+        ]
+    )]
     public function show(Request $request, string $id): JsonResponse
     {
         $application = $this->find($id);
@@ -121,6 +166,24 @@ final class CandidateApplicationController extends Controller
         return response()->json(['data' => $this->detail($application, $request)]);
     }
 
+    #[OA\Patch(
+        path: '/api/v1/hr/recruiting/applications/{id}',
+        operationId: 'hrRecruitingUpdateApplication',
+        description: 'Updates the internal notes and the phone number. Anonymised applications cannot be changed.',
+        summary: 'Update application',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Recruiting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the application', schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'notes', type: 'string', maxLength: 20000, nullable: true), new OA\Property(property: 'phone', type: 'string', maxLength: 50, nullable: true)])),
+        responses: [
+            new OA\Response(response: 200, description: 'Application', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/HrConflict', response: 409),
+            new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
+        ]
+    )]
     public function update(UpdateCandidateApplicationRequest $request, string $id): JsonResponse
     {
         $application = $this->find($id);
@@ -136,6 +199,21 @@ final class CandidateApplicationController extends Controller
         return response()->json(['data' => $this->detail($application, $request)]);
     }
 
+    #[OA\Get(
+        path: '/api/v1/hr/recruiting/applications/{id}/cv',
+        operationId: 'hrRecruitingDownloadApplicationCv',
+        description: 'Streams the stored CV; 404 when none is available or the candidate was anonymised.',
+        summary: 'Download candidate CV',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Recruiting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the application', schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'The CV file', content: new OA\MediaType(mediaType: 'application/octet-stream', schema: new OA\Schema(type: 'string', format: 'binary'))),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+        ]
+    )]
     public function cv(string $id): StreamedResponse|JsonResponse
     {
         $application = $this->find($id);
@@ -149,6 +227,21 @@ final class CandidateApplicationController extends Controller
         return $this->documents->download($storageKey, (string) ($application->cv_original_name ?: 'cv'), $application->cv_mime_type);
     }
 
+    #[OA\Post(
+        path: '/api/v1/hr/recruiting/applications/{id}/reparse-cv',
+        operationId: 'hrRecruitingReparseApplicationCv',
+        description: 'Runs the CV parser again on the stored file.',
+        summary: 'Re-parse candidate CV',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Recruiting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the application', schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Application', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+        ]
+    )]
     public function reparseCv(Request $request, string $id): JsonResponse
     {
         $application = $this->find($id);
@@ -159,6 +252,24 @@ final class CandidateApplicationController extends Controller
         return response()->json(['data' => $this->detail($application, $request)]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/hr/recruiting/applications/{id}/move',
+        operationId: 'hrRecruitingMoveApplication',
+        description: 'Moves the application along the pipeline (kanban drag and drop); rejecting requires a reason code. Stage e-mails are sent when enabled.',
+        summary: 'Move application to a stage',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Recruiting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the application', schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['stage'], properties: [new OA\Property(property: 'stage', type: 'string', enum: ['applied', 'hr_screening', 'technical_interview', 'manager_interview', 'offer_extended', 'hired', 'rejected']), new OA\Property(property: 'board_position', type: 'integer', minimum: 0, nullable: true), new OA\Property(property: 'rejection_reason_code', type: 'string', enum: ['not_qualified', 'salary_mismatch', 'position_filled', 'withdrawn', 'no_show', 'culture_fit', 'other'], nullable: true, description: 'Required when stage is rejected'), new OA\Property(property: 'rejection_note', type: 'string', maxLength: 2000, nullable: true), new OA\Property(property: 'send_email', type: 'boolean', nullable: true, description: 'Override the stage auto-email setting'), new OA\Property(property: 'note', type: 'string', maxLength: 2000, nullable: true)])),
+        responses: [
+            new OA\Response(response: 200, description: 'Application', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/HrConflict', response: 409),
+            new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
+        ]
+    )]
     public function move(MoveCandidateStageRequest $request, string $id): JsonResponse
     {
         $application = $this->find($id);
@@ -178,6 +289,24 @@ final class CandidateApplicationController extends Controller
         return response()->json(['data' => $this->detail($application, $request)]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/hr/recruiting/applications/{id}/extend-consent',
+        operationId: 'hrRecruitingExtendApplicationConsent',
+        description: 'Extends the privacy-consent retention period of the candidate.',
+        summary: 'Extend candidate consent',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Recruiting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the application', schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['months'], properties: [new OA\Property(property: 'months', type: 'integer', description: 'Allowed values from the recruiting configuration (6 or 12)')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Application', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/HrConflict', response: 409),
+            new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
+        ]
+    )]
     public function extendConsent(ExtendConsentRequest $request, string $id): JsonResponse
     {
         $application = $this->find($id);
@@ -188,6 +317,22 @@ final class CandidateApplicationController extends Controller
         return response()->json(['data' => $this->detail($application, $request)]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/hr/recruiting/applications/{id}/anonymize',
+        operationId: 'hrRecruitingAnonymizeApplication',
+        description: 'GDPR erasure: irreversibly removes the personal data of the candidate; hired candidates cannot be anonymised.',
+        summary: 'Anonymise application',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Recruiting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the application', schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Application', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/HrConflict', response: 409),
+        ]
+    )]
     public function anonymize(Request $request, string $id): JsonResponse
     {
         $application = $this->find($id);
@@ -202,6 +347,24 @@ final class CandidateApplicationController extends Controller
         return response()->json(['data' => $this->detail($application, $request)]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/hr/recruiting/applications/{id}/hire',
+        operationId: 'hrRecruitingHireApplication',
+        description: 'Hires the candidate: creates the employee record and optionally starts the onboarding checklist.',
+        summary: 'Hire candidate',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Recruiting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the application', schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'hire_date', type: 'string', format: 'date', nullable: true), new OA\Property(property: 'work_email', type: 'string', format: 'email', nullable: true), new OA\Property(property: 'manager_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'start_onboarding', type: 'boolean', nullable: true, description: 'Defaults to true')])),
+        responses: [
+            new OA\Response(response: 201, description: 'Hire result', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'application', type: 'object'), new OA\Property(property: 'employee', type: 'object', properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'employee_number', type: 'string'), new OA\Property(property: 'full_name', type: 'string'), new OA\Property(property: 'hire_date', type: 'string', format: 'date', nullable: true)]), new OA\Property(property: 'job_opening', type: 'object'), new OA\Property(property: 'onboarding', type: 'object')])])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/HrConflict', response: 409),
+            new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
+        ]
+    )]
     public function hire(HireCandidateRequest $request, string $id): JsonResponse
     {
         $application = $this->find($id);

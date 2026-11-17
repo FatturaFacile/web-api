@@ -25,6 +25,7 @@ use Modules\ServiceManagement\Contracts\TicketServiceInterface;
 use Modules\ServiceManagement\Contracts\WorkOrderAndFieldServiceInterface;
 use Modules\ServiceManagement\Events\ChangeApprovedEvent;
 use Modules\ServiceManagement\Events\ChangeRequestCreatedEvent;
+use Modules\ServiceManagement\Events\ContractHoursDeducted;
 use Modules\ServiceManagement\Events\CustomerSatisfactionUpdatedEvent;
 use Modules\ServiceManagement\Events\EquipmentPassportRegisteredEvent;
 use Modules\ServiceManagement\Events\FieldServiceExpenseReadyEvent;
@@ -58,6 +59,7 @@ use Modules\ServiceManagement\Events\VendorClaimOpenedEvent;
 use Modules\ServiceManagement\Events\WorkOrderCompletedEvent;
 use Modules\ServiceManagement\Events\WorkOrderCreatedEvent;
 use Modules\ServiceManagement\Listeners\AssetMaintenanceESMListener;
+use Modules\ServiceManagement\Listeners\ContractHoursListener;
 use Modules\ServiceManagement\Listeners\CRMCustomerServiceListener;
 use Modules\ServiceManagement\Listeners\DispatchOutboxOnESMEventListener;
 use Modules\ServiceManagement\Listeners\HRAvailabilityListener;
@@ -199,6 +201,8 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         }
 
         // Cross-Module Listeners
+        Event::listen(WorkOrderCompletedEvent::class, [ContractHoursListener::class, 'handleWorkOrderCompleted']);
+        Event::listen(ContractHoursDeducted::class, [ContractHoursListener::class, 'handleHoursDeducted']);
         Event::listen(OpportunityWonEvent::class, [CRMCustomerServiceListener::class, 'handleOpportunityWon']);
         Event::listen(SalesQuoteAcceptedEvent::class, [CRMCustomerServiceListener::class, 'handleSalesQuoteAccepted']);
         Event::listen(AssetMaintenanceCreatedEvent::class, [AssetMaintenanceESMListener::class, 'handleAssetMaintenanceCreated']);

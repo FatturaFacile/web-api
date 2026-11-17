@@ -19,6 +19,9 @@ final readonly class UpdateEquipmentPassportDTO
         'contract_clause_reference',
         'installed_firmware_version',
         'notes',
+        'asset_status',
+        'commissioning_date',
+        'installation_site',
     ];
 
     /**
