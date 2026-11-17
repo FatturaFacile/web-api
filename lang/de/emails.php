@@ -71,6 +71,12 @@ return [
         'manual_renew' => 'Es wird nicht automatisch verlängert: Bitte kontaktieren Sie uns, wenn Sie fortfahren möchten.',
     ],
 
+    'subscription_indexation' => [
+        'subject' => 'Preisanpassung des Vertrags :number',
+        'body' => 'Gemäss der Indexierungsklausel Ihres Vertrags <strong>:number</strong> wird das wiederkehrende Entgelt ab :date von :old auf :new :currency pro Zyklus angepasst.',
+        'calculation' => 'Index :index: :base_index (:base_month) -> :new_index (:reference_month), Veränderung :variation%, angewendet :applied%.',
+    ],
+
     'account_statement' => [
         'subject' => 'Kontoauszug per :date',
         'intro' => 'Hier ist Ihr Kontoauszug per :date.',

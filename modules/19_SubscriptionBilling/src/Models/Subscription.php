@@ -48,6 +48,12 @@ use Illuminate\Support\Carbon;
  * @property bool $is_locked
  * @property bool $cancel_at_period_end
  * @property string|null $legacy_subscription_id
+ * @property string|null $indexation_type
+ * @property string $indexation_ratio_pct
+ * @property string|null $indexation_cap_pct
+ * @property CarbonImmutable|null $indexation_base_month
+ * @property CarbonImmutable|null $next_indexation_date
+ * @property Carbon|null $last_indexed_at
  * @property array<string, mixed>|null $metadata
  * @property string|null $cancellation_type
  * @property string|null $cancellation_reason_code
@@ -96,6 +102,11 @@ final class Subscription extends BaseEnterpriseModel
             'arr' => 'decimal:2',
             'renewal_price_increase_percent' => 'decimal:4',
             'is_locked' => 'boolean',
+            'indexation_ratio_pct' => 'decimal:2',
+            'indexation_cap_pct' => 'decimal:3',
+            'indexation_base_month' => 'immutable_date',
+            'next_indexation_date' => 'immutable_date',
+            'last_indexed_at' => 'datetime',
             'terms' => 'array',
             'metadata' => 'array',
         ];
@@ -151,6 +162,16 @@ final class Subscription extends BaseEnterpriseModel
     public function revenueContract(): HasOne
     {
         return $this->hasOne(RevenueContract::class, 'subscription_id');
+    }
+
+    /**
+     * Inflation-index price adjustments applied to the contract, newest first.
+     *
+     * @return HasMany<IndexationAdjustment, $this>
+     */
+    public function indexationAdjustments(): HasMany
+    {
+        return $this->hasMany(IndexationAdjustment::class, 'subscription_id')->orderBy('effective_date', 'desc');
     }
 
     /**

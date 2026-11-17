@@ -71,6 +71,12 @@ return [
         'manual_renew' => 'Il ne sera pas renouvelé automatiquement : veuillez nous contacter si vous souhaitez continuer.',
     ],
 
+    'subscription_indexation' => [
+        'subject' => 'Ajustement du prix du contrat :number',
+        'body' => 'Conformément à la clause d\'indexation de votre contrat <strong>:number</strong>, la redevance récurrente passe de :old à :new :currency par cycle, à compter du :date.',
+        'calculation' => 'Indice :index : :base_index (:base_month) -> :new_index (:reference_month), variation :variation%, appliquée :applied%.',
+    ],
+
     'account_statement' => [
         'subject' => 'Relevé de compte au :date',
         'intro' => 'Voici votre relevé de compte au :date.',

@@ -71,6 +71,12 @@ return [
         'manual_renew' => 'Non verrà rinnovato automaticamente: ci contatti se desidera proseguire.',
     ],
 
+    'subscription_indexation' => [
+        'subject' => 'Adeguamento prezzo del contratto :number',
+        'body' => 'In base alla clausola di indicizzazione del suo contratto <strong>:number</strong>, il canone ricorrente passa da :old a :new :currency per ciclo, con decorrenza :date.',
+        'calculation' => 'Indice :index: :base_index (:base_month) -> :new_index (:reference_month), variazione :variation%, applicata :applied%.',
+    ],
+
     'account_statement' => [
         'subject' => 'Estratto conto al :date',
         'intro' => 'Le inviamo il suo estratto conto al :date.',

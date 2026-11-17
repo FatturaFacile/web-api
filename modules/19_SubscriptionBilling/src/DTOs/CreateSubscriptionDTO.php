@@ -43,5 +43,9 @@ final readonly class CreateSubscriptionDTO
         public ?string $currency = null,
         public ?string $legacySubscriptionId = null,
         public ?string $subscriptionId = null,
+        public ?string $indexationType = null,
+        public string $indexationRatioPct = '100',
+        public ?string $indexationCapPct = null,
+        public ?string $indexationBaseMonth = null,
     ) {}
 }

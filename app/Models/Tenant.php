@@ -59,6 +59,9 @@ class Tenant extends Model
         'ade_telematic_address_registered',
         'ade_conservation_agreement_at',
         'document_quota_points',
+        'plan_code',
+        'max_users',
+        'max_custom_roles',
     ];
 
     /**
@@ -96,7 +99,7 @@ class Tenant extends Model
     {
         return $this->belongsToMany(User::class, 'tenant_user')
             ->using(AuditedPivot::class)
-            ->withPivot(['id', 'role', 'permissions', 'suspended_at'])
+            ->withPivot(['id', 'role', 'permissions', 'suspended_at', 'custom_role_id'])
             ->withTimestamps();
     }
 

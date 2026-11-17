@@ -128,6 +128,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'revenue_churn_rate', type: 'string'),
     new OA\Property(property: 'arpa', type: 'string'),
     new OA\Property(property: 'ltv', type: 'string', nullable: true),
+    new OA\Property(property: 'churn_reasons', type: 'array', description: 'Cancellations of the window by reason code, with the MRR lost', items: new OA\Items(type: 'object', properties: [new OA\Property(property: 'reason_code', type: 'string'), new OA\Property(property: 'subscriptions', type: 'integer'), new OA\Property(property: 'lost_mrr', type: 'string'), new OA\Property(property: 'share', type: 'string')])),
 ])]
 #[OA\Schema(schema: 'SubscriptionBillingForecast', properties: [
     new OA\Property(property: 'current_mrr', type: 'string'),

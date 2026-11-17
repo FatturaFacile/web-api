@@ -9,6 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\SubscriptionBilling\Models\Subscription;
 use Modules\SubscriptionBilling\Models\SubscriptionItem;
 use Modules\SubscriptionBilling\Models\SubscriptionVersion;
+use Modules\SubscriptionBilling\Support\Money;
 
 /**
  * A subscription contract; amounts are decimal strings.
@@ -47,6 +48,10 @@ final class SubscriptionResource extends JsonResource
             'cancellation_notice_days' => (int) $this->cancellation_notice_days,
             'renewal_price_increase_percent' => $this->getRawOriginal('renewal_price_increase_percent'),
             'cancel_at_period_end' => (bool) $this->cancel_at_period_end,
+            'indexation_type' => $this->indexation_type,
+            'indexation_ratio_pct' => $this->indexation_type !== null ? Money::round2((string) $this->getRawOriginal('indexation_ratio_pct')) : null,
+            'indexation_cap_pct' => $this->getRawOriginal('indexation_cap_pct') !== null ? Money::round((string) $this->getRawOriginal('indexation_cap_pct'), 3) : null,
+            'next_indexation_date' => $this->next_indexation_date?->toDateString(),
             'cancellation_type' => $this->cancellation_type,
             'cancellation_reason_code' => $this->cancellation_reason_code,
             'cancellation_reason' => $this->cancellation_reason,

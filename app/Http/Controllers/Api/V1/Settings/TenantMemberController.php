@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Settings;
 
 use App\Exceptions\SodConflictException;
+use App\Http\Controllers\Api\V1\Settings\Concerns\GuardsMembershipChanges;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\SaveTenantMemberRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
+use App\Services\Tenancy\AccessAudit;
+use App\Services\Tenancy\AccessPlanLimits;
 use App\Services\Tenancy\TenantContext;
 use App\Services\Tenancy\TenantMembershipService;
 use DomainException;
@@ -22,11 +25,13 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class TenantMemberController extends Controller
 {
-    use ApiResponse;
+    use ApiResponse, GuardsMembershipChanges;
 
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly TenantMembershipService $memberships,
+        private readonly AccessPlanLimits $limits,
+        private readonly AccessAudit $audit,
     ) {}
 
     #[OA\Get(
@@ -168,6 +173,8 @@ class TenantMemberController extends Controller
             return $this->problemDetailsResponse(title: 'Last Owner', detail: $exception->getMessage(), status: Response::HTTP_CONFLICT);
         }
 
+        $this->audit->record('access.member.removed', (string) $tenant->id, User::class, (string) $user->id, ['role' => $user->pivot?->role]);
+
         return $this->successResponse(message: 'Member removed from the tenant');
     }
 
@@ -184,8 +191,14 @@ class TenantMemberController extends Controller
             return $this->problemDetailsResponse(title: 'Owner Role Reserved', detail: 'Only an owner can grant the owner role.', status: Response::HTTP_FORBIDDEN);
         }
 
+        $before = $this->memberships->member($tenant, (string) $user->id);
+
+        if ($before === null) {
+            $this->limits->assertRoomForUsers($tenant);
+        }
+
         try {
-            $this->memberships->save($tenant, $user, $role, $request->modules());
+            $this->memberships->save($tenant, $user, $role, $request->modules(), $request->customRoleId());
         } catch (SodConflictException $exception) {
             return $this->problemDetailsResponse(
                 title: 'Segregation of Duties Conflict',
@@ -197,32 +210,17 @@ class TenantMemberController extends Controller
             return $this->problemDetailsResponse(title: 'Last Owner', detail: $exception->getMessage(), status: Response::HTTP_CONFLICT);
         }
 
-        $member = collect($this->memberships->members($tenant))->firstWhere('id', $user->id);
+        $member = $this->memberships->member($tenant, (string) $user->id);
+
+        $this->audit->record(
+            $before === null ? 'access.member.added' : 'access.member.updated',
+            (string) $tenant->id,
+            User::class,
+            (string) $user->id,
+            $before === null ? null : ['role' => $before['role'], 'custom_role_id' => $before['custom_role_id'], 'modules' => $before['modules']],
+            ['role' => $member['role'], 'custom_role_id' => $member['custom_role_id'], 'modules' => $member['modules']],
+        );
 
         return $this->successResponse(data: $member, message: 'Member saved', statusCode: $status);
-    }
-
-    /**
-     * Nobody changes their own membership (a lock-out), and only an owner touches the membership of an owner.
-     */
-    private function refuseSelfOrOwnerChange(Request $request, User $member): ?JsonResponse
-    {
-        if ($member->is($request->user())) {
-            return $this->problemDetailsResponse(title: 'Own Membership', detail: 'You cannot change your own membership.', status: Response::HTTP_CONFLICT);
-        }
-
-        if ($member->pivot?->role === 'owner' && ! $this->actorIsOwner($request)) {
-            return $this->problemDetailsResponse(title: 'Owner Role Reserved', detail: 'Only an owner can change the membership of an owner.', status: Response::HTTP_FORBIDDEN);
-        }
-
-        return null;
-    }
-
-    private function actorIsOwner(Request $request): bool
-    {
-        /** @var User $actor */
-        $actor = $request->user();
-
-        return $actor->is_platform_admin || $actor->getRoleInTenant((string) $this->tenantContext->getTenantId()) === 'owner';
     }
 }
