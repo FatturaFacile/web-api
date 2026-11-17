@@ -121,6 +121,10 @@ final class SubscriptionController extends Controller
             cancellationNoticeDays: (int) ($data['cancellation_notice_days'] ?? 30),
             renewalPriceIncreasePercent: isset($data['renewal_price_increase_percent']) ? (string) $data['renewal_price_increase_percent'] : null,
             notes: $data['notes'] ?? null,
+            indexationType: $data['indexation_type'] ?? null,
+            indexationRatioPct: isset($data['indexation_ratio_pct']) ? (string) $data['indexation_ratio_pct'] : '100',
+            indexationCapPct: isset($data['indexation_cap_pct']) ? (string) $data['indexation_cap_pct'] : null,
+            indexationBaseMonth: isset($data['indexation_base_month']) ? $data['indexation_base_month'].'-01' : null,
         ), $this->actor($request));
 
         return $this->contract($subscription, 'Subscription created successfully', 201);

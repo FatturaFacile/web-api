@@ -63,7 +63,56 @@ final readonly class SubscriptionMetricsService
             'revenue_churn_rate' => Money::round($revenueChurn, 4),
             'arpa' => Money::round2($arpa),
             'ltv' => Money::isPositive($monthlyChurn) ? Money::round2(Money::div($arpa, $monthlyChurn)) : null,
+            'churn_reasons' => $this->churnReasons($tenantId, $windowStart, $asOf),
         ];
+    }
+
+    /**
+     * Cancellations of the window grouped by the reason code given by the customer, the most costly first.
+     *
+     * @return list<array{reason_code: string, subscriptions: int, lost_mrr: string, share: string}>
+     */
+    private function churnReasons(string $tenantId, CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $closed = Subscription::query()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('status', Subscription::CLOSED_STATUSES)
+            ->whereDate('cancellation_effective_date', '>', $from->toDateString())
+            ->whereDate('cancellation_effective_date', '<=', $to->toDateString())
+            ->get(['id', 'cancellation_reason_code']);
+
+        if ($closed->isEmpty()) {
+            return [];
+        }
+
+        $lostBySubscription = SubscriptionVersion::query()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('subscription_id', $closed->pluck('id'))
+            ->whereIn('change_type', ['cancellation', 'expiration'])
+            ->get(['subscription_id', 'mrr_delta'])
+            ->groupBy('subscription_id')
+            ->map(fn ($rows): string => Money::abs(Money::sum($rows->map(fn ($row): string => (string) $row->getRawOriginal('mrr_delta')))));
+
+        $reasons = [];
+
+        foreach ($closed as $subscription) {
+            $code = $subscription->cancellation_reason_code ?: 'unspecified';
+            $reasons[$code] ??= ['reason_code' => $code, 'subscriptions' => 0, 'lost_mrr' => '0'];
+            $reasons[$code]['subscriptions']++;
+            $reasons[$code]['lost_mrr'] = Money::add($reasons[$code]['lost_mrr'], $lostBySubscription[$subscription->id] ?? '0');
+        }
+
+        $total = $closed->count();
+        $rows = array_map(fn (array $row): array => [
+            'reason_code' => $row['reason_code'],
+            'subscriptions' => $row['subscriptions'],
+            'lost_mrr' => Money::round2($row['lost_mrr']),
+            'share' => Money::round(Money::div((string) $row['subscriptions'], (string) $total), 4),
+        ], array_values($reasons));
+
+        usort($rows, fn (array $a, array $b): int => Money::compare($b['lost_mrr'], $a['lost_mrr']) ?: $b['subscriptions'] <=> $a['subscriptions']);
+
+        return $rows;
     }
 
     /**

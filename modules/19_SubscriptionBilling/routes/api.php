@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\SubscriptionBilling\Http\Controllers\DunningController;
+use Modules\SubscriptionBilling\Http\Controllers\IndexationController;
 use Modules\SubscriptionBilling\Http\Controllers\MetricsController;
 use Modules\SubscriptionBilling\Http\Controllers\PlanController;
 use Modules\SubscriptionBilling\Http\Controllers\PortalSubscriptionController;
@@ -30,6 +31,11 @@ Route::prefix('api/v1/subscriptions')
         Route::get('revenue-contracts', [RevenueRecognitionController::class, 'listContracts'])->name('subscriptions.revenue-contracts.index');
         Route::get('revenue-contracts/{id}', [RevenueRecognitionController::class, 'showContract'])->whereUuid('id')->name('subscriptions.revenue-contracts.show');
         Route::post('revenue-recognition/recognize', [RevenueRecognitionController::class, 'recognizeBatch'])->name('subscriptions.revenue-recognition.recognize');
+
+        Route::get('indexation/indices', [IndexationController::class, 'indices'])->name('subscriptions.indexation.indices');
+        Route::post('indexation/indices', [IndexationController::class, 'recordIndex'])->name('subscriptions.indexation.indices.store');
+        Route::get('indexation/adjustments', [IndexationController::class, 'adjustments'])->name('subscriptions.indexation.adjustments');
+        Route::post('indexation/process', [IndexationController::class, 'process'])->name('subscriptions.indexation.process');
 
         Route::get('metrics', [MetricsController::class, 'metrics'])->name('subscriptions.metrics');
         Route::get('forecast', [MetricsController::class, 'forecast'])->name('subscriptions.forecast');
@@ -59,6 +65,9 @@ Route::prefix('api/v1/sub')
             Route::post('pause', [SubscriptionController::class, 'pause'])->name('sub.contracts.pause');
             Route::post('reactivate', [SubscriptionController::class, 'reactivate'])->name('sub.contracts.reactivate');
             Route::post('bill', [SubscriptionController::class, 'bill'])->name('sub.contracts.bill');
+            Route::get('indexation/preview', [IndexationController::class, 'preview'])->name('sub.contracts.indexation.preview');
+            Route::post('indexation/apply', [IndexationController::class, 'apply'])->name('sub.contracts.indexation.apply');
+            Route::put('indexation', [IndexationController::class, 'configure'])->name('sub.contracts.indexation.configure');
             Route::get('invoices', [SubscriptionController::class, 'invoices'])->name('sub.contracts.invoices');
             Route::post('collection-failures', [SubscriptionController::class, 'collectionFailure'])->name('sub.contracts.collection-failures');
             Route::get('dunning', [SubscriptionController::class, 'dunning'])->name('sub.contracts.dunning');

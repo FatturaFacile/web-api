@@ -27,6 +27,12 @@ return [
         'auto_renew' => 'It will be renewed automatically.',
         'manual_renew' => 'It will not be renewed automatically: please contact us if you wish to continue.',
     ],
+    'subscription_indexation' => [
+        'subject' => 'Price adjustment for contract :number',
+        'body' => 'In accordance with the indexation clause of your contract <strong>:number</strong>, the recurring fee is adjusted from :old to :new :currency per cycle, effective :date.',
+        'calculation' => 'Index :index: :base_index (:base_month) -> :new_index (:reference_month), variation :variation%, applied :applied%.',
+    ],
+
     'document' => [
         'subject' => [
             'invoice' => 'Invoice :number',

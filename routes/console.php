@@ -48,6 +48,7 @@ use Modules\ServiceManagement\Jobs\ProcessServiceContractRenewalsJob;
 use Modules\ServiceManagement\Jobs\ScanSLABreachesJob;
 use Modules\SubscriptionBilling\Jobs\AggregateMeteredUsageJob;
 use Modules\SubscriptionBilling\Jobs\ProcessRecurringBillingJob;
+use Modules\SubscriptionBilling\Jobs\ProcessSubscriptionIndexationJob;
 use Modules\SubscriptionBilling\Jobs\ProcessSubscriptionRenewalsJob;
 use Modules\SubscriptionBilling\Jobs\RecognizeRevenueScheduleJob;
 use Modules\Visitors\Jobs\PurgeExpiredVisitorsJob;
@@ -172,6 +173,8 @@ $completenessTenantJob = static fn (string $name, Closure $job): CallbackEvent =
 )->name($name)->withoutOverlapping()->onOneServer();
 
 $completenessTenantJob('subscriptions:renewals', static fn (Tenant $tenant): object => new ProcessSubscriptionRenewalsJob($tenant->id))->dailyAt('01:50');
+// Inflation indexation (ISTAT FOI / BFS LIK) first: the cycle billed at 02:00-02:05 already carries the indexed fee.
+$completenessTenantJob('subscriptions:indexation', static fn (Tenant $tenant): object => new ProcessSubscriptionIndexationJob($tenant->id))->dailyAt('01:55');
 $completenessTenantJob('subscriptions:billing-run', static fn (Tenant $tenant): object => new ProcessRecurringBillingJob($tenant->id))
     ->dailyAt('02:05')->when(static fn (): bool => (bool) config('subscription_billing.scheduled_billing'));
 $completenessTenantJob('subscriptions:revenue-recognition', static fn (Tenant $tenant): object => new RecognizeRevenueScheduleJob($tenant->id))
