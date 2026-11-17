@@ -46,6 +46,7 @@ final class OrderBillingService
 
         $notes = SalesDeliveryNote::query()
             ->whereIn('status', DeliveryNoteStatus::invoiceable())
+            ->billable()
             ->whereNotNull('contact_id')
             ->whereDate('date', '<=', $upTo->toDateString())
             ->when($contactId !== null, fn ($q) => $q->where('contact_id', $contactId))
@@ -80,6 +81,7 @@ final class OrderBillingService
         $groups = [];
         SalesDeliveryNote::query()
             ->whereIn('status', DeliveryNoteStatus::invoiceable())
+            ->billable()
             ->whereNotNull('contact_id')
             ->orderBy('date')
             ->get()

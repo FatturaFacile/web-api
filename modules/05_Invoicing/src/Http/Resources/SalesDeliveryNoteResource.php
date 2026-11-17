@@ -33,6 +33,12 @@ final class SalesDeliveryNoteResource extends JsonResource
             'status' => $this->status,
             'shipping_status' => $this->shipping_status,
             'tracking_number' => $this->tracking_number,
+            'tracking_code' => $this->tracking_code,
+            'awb_number' => $this->awb_number,
+            'transport_reason_code' => $this->transport_reason_code,
+            'shipment_flow' => $this->shipment_flow,
+            'sender_display' => $this->sender_display,
+            'final_recipient_name' => $this->final_recipient_name,
             'shipped_at' => $this->shipped_at?->toISOString(),
             'delivered_at' => $this->delivered_at?->toISOString(),
             'contact' => $this->whenLoaded('customer', fn (): ?array => $this->customer === null ? null : [

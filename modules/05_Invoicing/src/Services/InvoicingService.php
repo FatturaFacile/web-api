@@ -384,6 +384,10 @@ final class InvoicingService implements InvoicingServiceInterface
         $today = $this->today($tenantId);
         $items = $this->billingLines->deliveryNoteLines($deliveryNote);
 
+        if (! $deliveryNote->isBillable()) {
+            throw ValidationException::withMessages(['delivery_note' => __('sales.delivery_note_on_approval', ['number' => $deliveryNote->ddt_number])]);
+        }
+
         if ($items === []) {
             throw ValidationException::withMessages(['delivery_note' => __('sales.nothing_to_invoice')]);
         }

@@ -7,10 +7,12 @@ namespace Modules\Invoicing\Models;
 use App\Models\Contact;
 use App\Models\DeliveryNote;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Logistics\Concerns\HasAuditUsers;
+use Modules\Logistics\Enums\TransportReason;
 use Modules\Logistics\Models\DeliveryNoteInvoiceLink;
 
 /**
@@ -83,5 +85,20 @@ class SalesDeliveryNote extends BaseEnterpriseModel
     public function invoiceLinks(): HasMany
     {
         return $this->hasMany(DeliveryNoteInvoiceLink::class, 'delivery_note_id');
+    }
+
+    /**
+     * Delivery notes that can be billed: goods sent on approval (conto visione) are not sold until accepted.
+     *
+     * @param  Builder<SalesDeliveryNote>  $query
+     */
+    public function scopeBillable(Builder $query): void
+    {
+        $query->where(static fn (Builder $q) => $q->whereNull('transport_reason_code')->orWhere('transport_reason_code', '!=', TransportReason::OnApproval->value));
+    }
+
+    public function isBillable(): bool
+    {
+        return $this->transport_reason_code !== TransportReason::OnApproval->value;
     }
 }

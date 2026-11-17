@@ -1,6 +1,6 @@
 version: "1.0"
 
-linter: jetbrains/qodana-php:2026.2
+linter: jetbrains/qodana:latest
 
 profile:
   name: qodana.recommended
@@ -24,13 +24,17 @@ exclude:
   - name: PhpDuplicateCodeInspection
     paths:
       - analisi
+
   - name: All
     paths:
       - node_modules
       - vendor
       - storage
+      - bootstrap/cache
       - dockers
-  
+      - public/build
+      - public/hot
+
 failureConditions:
   severityThresholds:
     critical: 0

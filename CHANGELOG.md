@@ -9,6 +9,16 @@ uses [Semantic Versioning](https://semver.org/).
 ### Added
 
 - **Subscription indexation** (`modules/19_SubscriptionBilling`): automatic annual price adjustment on ISTAT FOI (IT) and BFS LIK (CH) series, with contractual ratio, cap and no-decrease floor, recalculation sheet, once-per-cycle idempotency, customer notice by email (it/en/de/fr) and a nightly job that runs before the billing run; `churn_reasons` (by reason code, with lost MRR) in the subscription metrics; `qr_bill` payment method.
+- **Customer registry 360 (CH/IT)**: formal validation that blocks saving on a wrong Partita IVA, Codice Fiscale (omocodia
+  aware), Swiss UID `CHE-xxx.xxx.xxx` (modulo 11) or SDI code; `POST /api/v1/crm/fiscal/lookup` and
+  `/contacts/{id}/fiscal/verify` autofill and certify from VIES (IT) and Zefix (CH, `ZEFIX_USERNAME`/`ZEFIX_PASSWORD`),
+  degrading to the checksum when a registry is down; company hierarchy (`parent_id`, holding / subsidiary / branch, loop
+  protection, `/hierarchy`); role-based contact persons; unlimited legal / billing / shipping / site addresses with one
+  default per type; `/contacts/{id}/overview` 360 card
+  (open balance, credit limit and residual, quotes, orders in progress, DDT to invoice, invoices, open tickets, privacy regime and consents,
+  interactions, optional group consolidation); `/contacts/{id}/interactions` history with `updated_since` sync cursor
+  for the mobile app.
+
 - **Logistics module** (`modules/32_Logistics`): enterprise DDT (IT DPR 472/96 and CH layout), progressive numbering per
   tenant / fiscal year / section, fulfilment from one or more sales orders, cumulative deferred invoicing with
   DDT-line to invoice-line links, two-step stock transfers (ship to transit + automatic DDT, receive with discrepancy
@@ -16,6 +26,12 @@ uses [Semantic Versioning](https://semver.org/).
   invoice or purchase order, and a balance-sheet valuation that excludes vendor-owned stock (Issue #158).
 - Warehouse fields `legal_owner_type`, `linked_partner_id`, `company_entity_id` and audit columns; granular
   `logistics.*` permissions and the `logistics_manager` role; IT/EN/DE/FR translations (UI, DDT PDF and business-error messages, delivered already translated by the API) in `TranslationSeeder`.
+
+- **DDT tracking and triangular shipments**: generated tracking code and carrier waybill (AWB, `POST
+  /logistics/delivery-notes/{id}/awb`) on the DDT; `shipment_flow` (direct / triangular / dropshipping) with final
+  recipient and a sender printed on the PDF as company, blank (obscured) or custom; transport reason "conto visione"
+  (`on_approval`), excluded from every deferred-invoicing path until the customer accepts it (`POST
+  /logistics/delivery-notes/{id}/accept-approval`).
 
 ## [1.0.0] - 2026-10-23
 

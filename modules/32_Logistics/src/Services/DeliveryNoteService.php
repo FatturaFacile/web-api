@@ -18,6 +18,7 @@ use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesOrderItem;
 use Modules\Logistics\Enums\DeliveryNoteStatus;
 use Modules\Logistics\Enums\DeliveryNoteType;
+use Modules\Logistics\Enums\ShipmentFlow;
 use Modules\Logistics\Enums\TransportReason;
 use Modules\Logistics\Support\LogisticsMessage;
 
@@ -33,6 +34,7 @@ final class DeliveryNoteService
         'carrier_name', 'carrier_vat_number', 'carrier_license_plate', 'departure_time', 'goods_appearance',
         'packages_count', 'gross_weight_kg', 'net_weight_kg', 'volume_m3', 'incoterms', 'tracking_number',
         'carrier_tracking_url', 'courier', 'currency', 'notes', 'show_prices', 'date', 'stock_transfer_order_id',
+        'awb_number', 'shipment_flow', 'sender_display', 'sender_name', 'sender_address', 'final_recipient_name',
     ];
 
     public function __construct(
@@ -41,6 +43,7 @@ final class DeliveryNoteService
         private readonly TenantContext $tenantContext,
         private readonly ShippingCarrierManager $carriers,
         private readonly DeliveryFulfillmentServiceInterface $fulfillment,
+        private readonly TrackingCodeGenerator $trackingCodes,
     ) {}
 
     /**
@@ -225,6 +228,7 @@ final class DeliveryNoteService
 
         return DB::transaction(function () use ($note, $data, $items): SalesDeliveryNote {
             $this->assertWarehousesBelongToTenant($data);
+            $this->assertShipmentFlow(array_merge($note->only(['shipment_flow', 'sender_display', 'sender_name', 'final_recipient_name', 'shipping_address', 'shipping_address_id']), $data));
             $note->update(array_intersect_key($data, array_flip(array_diff(self::HEADER_FIELDS, ['warehouse_id', 'stock_transfer_order_id']))));
 
             if ($items !== null) {
@@ -319,8 +323,12 @@ final class DeliveryNoteService
         unset($attributes['warehouse_id']);
 
         $this->assertWarehousesBelongToTenant($data);
+        $this->assertShipmentFlow($data);
 
         return SalesDeliveryNote::create(array_merge([
+            'tracking_code' => $this->trackingCodes->next(),
+            'shipment_flow' => ShipmentFlow::Direct->value,
+            'sender_display' => 'company',
             'id' => (string) Str::uuid7(),
             'tenant_id' => $this->tenantContext->getTenantId(),
             'sales_order_id' => $data['sales_order_id'] ?? null,
@@ -366,6 +374,72 @@ final class DeliveryNoteService
                 'serial_number' => $item['serial_number'] ?? null,
             ]);
         }
+    }
+
+    /**
+     * Triangular and dropshipping shipments go straight to the final recipient: it must be known, and a sender printed
+     * as "custom" needs a name. The tracking code is generated and cannot be set by clients.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function assertShipmentFlow(array $data): void
+    {
+        $flow = ShipmentFlow::tryFrom((string) ($data['shipment_flow'] ?? ShipmentFlow::Direct->value));
+        if ($flow === null) {
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.INVALID_SHIPMENT_FLOW'));
+        }
+
+        if ($flow->isThirdParty() && empty($data['final_recipient_name']) && empty($data['shipping_address']) && empty($data['shipping_address_id'])) {
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.FINAL_RECIPIENT_REQUIRED'));
+        }
+
+        if (($data['sender_display'] ?? 'company') === 'custom' && empty($data['sender_name'])) {
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.SENDER_NAME_REQUIRED'));
+        }
+    }
+
+    /**
+     * Records the carrier waybill (AWB / lettera di vettura) once the carrier has taken the goods: allowed until the
+     * document is cancelled, so it can be added after the DDT has been issued or dispatched.
+     */
+    public function assignAwb(SalesDeliveryNote $note, string $awbNumber, ?string $trackingUrl = null): SalesDeliveryNote
+    {
+        return DB::transaction(function () use ($note, $awbNumber, $trackingUrl): SalesDeliveryNote {
+            $note = SalesDeliveryNote::query()->with('items')->lockForUpdate()->findOrFail($note->id);
+            if ($note->status === DeliveryNoteStatus::Cancelled->value) {
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.AWB_CANCELLED'));
+            }
+
+            $note->update(array_filter([
+                'awb_number' => trim($awbNumber),
+                'carrier_tracking_url' => $trackingUrl,
+            ], static fn (mixed $v): bool => $v !== null));
+
+            return $note->load('items');
+        });
+    }
+
+    /**
+     * Goods sent on approval (conto visione) were accepted by the customer: the document becomes a sale and can be billed.
+     */
+    public function acceptOnApproval(SalesDeliveryNote $note): SalesDeliveryNote
+    {
+        return DB::transaction(function () use ($note): SalesDeliveryNote {
+            $note = SalesDeliveryNote::query()->with('items')->lockForUpdate()->findOrFail($note->id);
+            if ($note->transport_reason_code !== TransportReason::OnApproval->value) {
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.NOT_ON_APPROVAL'));
+            }
+            if ($note->status === DeliveryNoteStatus::Cancelled->value || $note->status === DeliveryNoteStatus::Draft->value) {
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.NOT_ON_APPROVAL'));
+            }
+
+            $note->update([
+                'transport_reason_code' => TransportReason::Sale->value,
+                'transport_reason' => TransportReason::Sale->label(),
+            ]);
+
+            return $note->load('items');
+        });
     }
 
     /**

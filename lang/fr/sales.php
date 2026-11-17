@@ -141,6 +141,7 @@ return [
     'deferred_notes_other_customer' => 'Une facture différée regroupe les bons de livraison d\'un seul client.',
     'deferred_notes_other_currency' => 'Une facture différée regroupe les bons de livraison de commandes dans une seule devise.',
     'deferred_note_not_issued' => 'Le bon de livraison :number n\'a pas été expédié.',
+    'delivery_note_on_approval' => 'Le bon de livraison :number est envoyé à l\'essai: il ne peut pas être facturé tant que le client ne l\'a pas accepté.',
     'deferred_invoice_notes' => 'Facture différée des bons de livraison :numbers',
     'billing_plan_order_already_billed' => 'La commande est déjà en partie facturée : elle ne peut pas avoir de plan de facturation.',
     'billing_plan_exists' => 'La commande a déjà un plan de facturation actif.',

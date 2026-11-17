@@ -38,7 +38,12 @@ class ContactResource extends JsonResource
             'iban' => $this->iban,
             'qr_iban' => $this->qr_iban,
             'payment_terms_days' => $this->payment_terms_days,
+            'parent_id' => $this->parent_id,
+            'hierarchy_type' => $this->hierarchy_type,
+            'fiscal_verified_at' => $this->fiscal_verified_at?->toISOString(),
+            'fiscal_verification_source' => $this->fiscal_verification_source,
             'addresses' => ContactAddressResource::collection($this->whenLoaded('addresses')),
+            'persons' => ContactPersonResource::collection($this->whenLoaded('persons')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

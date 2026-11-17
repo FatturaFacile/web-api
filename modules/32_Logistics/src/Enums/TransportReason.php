@@ -13,6 +13,7 @@ enum TransportReason: string
     case ConsignmentDelivery = 'consignment_delivery';
     case ConsignmentReturn = 'consignment_return';
     case SubcontractorReturn = 'subcontractor_return';
+    case OnApproval = 'on_approval';
     case Repair = 'repair';
     case Gift = 'gift';
     case Return = 'return';
@@ -28,10 +29,17 @@ enum TransportReason: string
             self::ConsignmentDelivery => 'Conto deposito / conto vendita',
             self::ConsignmentReturn => 'Reso da conto deposito',
             self::SubcontractorReturn => 'Reso da terzista',
+            self::OnApproval => 'Conto visione',
             self::Repair => 'Riparazione',
             self::Gift => 'Omaggio',
             self::Return => 'Reso',
         };
+    }
+
+    /** Goods sent on approval (conto visione) are not sold yet: no invoice until the customer accepts them. */
+    public function isBillable(): bool
+    {
+        return $this !== self::OnApproval;
     }
 
     /**

@@ -101,6 +101,15 @@ return [
     ],
 
     'delivery' => [
+        'tracking_code' => 'Tracking code',
+        'awb' => 'Waybill (AWB)',
+        'shipment_flow' => 'Shipment type',
+        'final_recipient' => 'Final recipient',
+        'flow' => [
+            'direct' => 'Direct',
+            'triangular' => 'Triangular',
+            'dropshipping' => 'Dropshipping',
+        ],
         'ship_to' => 'Ship to',
         'transport' => 'Transport details',
         'reason' => 'Transport reason',

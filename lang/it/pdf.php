@@ -102,6 +102,15 @@ return [
     ],
 
     'delivery' => [
+        'tracking_code' => 'Codice di tracciamento',
+        'awb' => 'Lettera di vettura (AWB)',
+        'shipment_flow' => 'Tipo di spedizione',
+        'final_recipient' => 'Destinatario finale',
+        'flow' => [
+            'direct' => 'Diretta',
+            'triangular' => 'Triangolazione',
+            'dropshipping' => 'Dropshipping',
+        ],
         'ship_to' => 'Luogo di destinazione',
         'transport' => 'Dati di trasporto',
         'reason' => 'Causale del trasporto',

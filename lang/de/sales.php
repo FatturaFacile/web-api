@@ -141,6 +141,7 @@ return [
     'deferred_notes_other_customer' => 'Eine Sammelrechnung umfasst Lieferscheine eines einzigen Kunden.',
     'deferred_notes_other_currency' => 'Eine Sammelrechnung umfasst Lieferscheine von Aufträgen in einer einzigen Währung.',
     'deferred_note_not_issued' => 'Lieferschein :number wurde nicht versandt.',
+    'delivery_note_on_approval' => 'Lieferschein :number wurde zur Ansicht gesendet: Er kann erst nach Annahme durch den Kunden fakturiert werden.',
     'deferred_invoice_notes' => 'Sammelrechnung der Lieferscheine :numbers',
     'billing_plan_order_already_billed' => 'Der Auftrag ist bereits teilweise fakturiert: er kann keinen Fakturierungsplan erhalten.',
     'billing_plan_exists' => 'Der Auftrag hat bereits einen aktiven Fakturierungsplan.',

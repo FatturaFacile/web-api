@@ -153,6 +153,10 @@ final class OrderBillingService
                     throw ValidationException::withMessages(['delivery_note_ids' => __('sales.deferred_note_not_issued', ['number' => $note->ddt_number])]);
                 }
 
+                if (! $note->isBillable()) {
+                    throw ValidationException::withMessages(['delivery_note_ids' => __('sales.delivery_note_on_approval', ['number' => $note->ddt_number])]);
+                }
+
                 if ($this->lines->deliveryNoteBilled($note)) {
                     throw ValidationException::withMessages(['delivery_note_ids' => __('sales.delivery_note_already_invoiced')]);
                 }
@@ -208,6 +212,7 @@ final class OrderBillingService
         $notes = SalesDeliveryNote::query()
             ->where('tenant_id', $tenantId)
             ->where('status', DeliveryNoteStatus::Issued->value)
+            ->billable()
             ->whereDate('date', '<=', $upToDate)
             ->when($contactId !== null, static fn ($query) => $query->where('contact_id', $contactId))
             ->orderBy('date')

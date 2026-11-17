@@ -141,6 +141,7 @@ return [
     'deferred_notes_other_customer' => 'A deferred invoice collects delivery notes of a single customer.',
     'deferred_notes_other_currency' => 'A deferred invoice collects delivery notes of orders in a single currency.',
     'deferred_note_not_issued' => 'Delivery note :number has not been dispatched.',
+    'delivery_note_on_approval' => 'Delivery note :number was sent on approval: it cannot be invoiced until the customer accepts the goods.',
     'deferred_invoice_notes' => 'Deferred invoice of delivery notes :numbers',
     'billing_plan_order_already_billed' => 'Part of the order is already invoiced: it cannot get a billing plan.',
     'billing_plan_exists' => 'The order already has an active billing plan.',

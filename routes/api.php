@@ -17,7 +17,9 @@ use App\Http\Controllers\Api\V1\AutomotiveController;
 use App\Http\Controllers\Api\V1\Banking\BankReconciliationRuleController;
 use App\Http\Controllers\Api\V1\Banking\BankStatementController;
 use App\Http\Controllers\Api\V1\ConstructionController;
+use App\Http\Controllers\Api\V1\ContactFiscalController;
 use App\Http\Controllers\Api\V1\ContactInsightsController;
+use App\Http\Controllers\Api\V1\ContactRegistryController;
 use App\Http\Controllers\Api\V1\CrmController;
 use App\Http\Controllers\Api\V1\CustomsTaricCodeController;
 use App\Http\Controllers\Api\V1\Dashboard\DashboardBuilderController;
@@ -139,7 +141,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/token', [MobileAuthController::class, 'token'])->name('token');
     });
 
-    Route::get('/system/bootstrap-support',BootstrapSupportUserController::class)
+    Route::get('/system/bootstrap-support', BootstrapSupportUserController::class)
         ->middleware('throttle:5,1')
         ->name('system.bootstrap-support');
 
@@ -224,6 +226,19 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/contacts/{id}/statement', [ContactInsightsController::class, 'statement'])->name('contacts.statement');
             Route::post('/contacts/{id}/statement/email', [ContactInsightsController::class, 'emailStatement'])->name('contacts.statement.email');
             Route::apiResource('contacts', CrmController::class)->parameters(['contacts' => 'id']);
+            Route::post('/fiscal/lookup', [ContactFiscalController::class, 'lookup'])->name('fiscal.lookup');
+            Route::post('/contacts/{id}/fiscal/verify', [ContactFiscalController::class, 'verify'])->name('contacts.fiscal.verify');
+            Route::get('/contacts/{id}/overview', [ContactInsightsController::class, 'overview'])->name('contacts.overview');
+            Route::get('/contacts/{id}/hierarchy', [ContactRegistryController::class, 'hierarchy'])->name('contacts.hierarchy');
+            Route::get('/contacts/{id}/persons', [ContactRegistryController::class, 'persons'])->name('contacts.persons.index');
+            Route::post('/contacts/{id}/persons', [ContactRegistryController::class, 'storePerson'])->name('contacts.persons.store');
+            Route::put('/contacts/{id}/persons/{personId}', [ContactRegistryController::class, 'updatePerson'])->name('contacts.persons.update');
+            Route::delete('/contacts/{id}/persons/{personId}', [ContactRegistryController::class, 'destroyPerson'])->name('contacts.persons.destroy');
+            Route::get('/contacts/{id}/addresses', [ContactRegistryController::class, 'addresses'])->name('contacts.addresses.index');
+            Route::post('/contacts/{id}/addresses', [ContactRegistryController::class, 'storeAddress'])->name('contacts.addresses.store');
+            Route::put('/contacts/{id}/addresses/{addressId}', [ContactRegistryController::class, 'updateAddress'])->name('contacts.addresses.update');
+            Route::post('/contacts/{id}/addresses/{addressId}/default', [ContactRegistryController::class, 'setDefaultAddress'])->name('contacts.addresses.default');
+            Route::delete('/contacts/{id}/addresses/{addressId}', [ContactRegistryController::class, 'destroyAddress'])->name('contacts.addresses.destroy');
         });
 
         // 4. Sales, Invoicing & Cross-Border Billing
