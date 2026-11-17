@@ -327,6 +327,21 @@ final class EmployeeSelfServiceController extends Controller
      * Clock the authenticated user in or out (self-service, no HR module access required).
      * Art. 4 L. 300/1970 & GDPR: GPS is stored only when the employee's profile has consent on file.
      */
+    #[OA\Post(
+        path: '/api/v1/hr/me/clock',
+        operationId: 'hrSelfServiceClock',
+        description: 'Clocks the authenticated user in or out. GPS is stored only when the time profile has geolocation consent on file (Art. 4 L. 300/1970).',
+        summary: 'Clock in or out',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Self-Service'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['event_type'], properties: [new OA\Property(property: 'event_type', type: 'string', enum: ['In', 'Out', 'BreakStart', 'BreakEnd']), new OA\Property(property: 'source', type: 'string', enum: ['badge', 'terminal', 'web', 'mobile', 'spreadsheet', 'paper', 'manual'], nullable: true, description: 'Defaults to web'), new OA\Property(property: 'note', type: 'string', maxLength: 1000, nullable: true), new OA\Property(property: 'gps_lat', type: 'number', minimum: -90, maximum: 90, nullable: true), new OA\Property(property: 'gps_lng', type: 'number', minimum: -180, maximum: 180, nullable: true), new OA\Property(property: 'gps_accuracy_meters', type: 'number', minimum: 0, nullable: true)])),
+        responses: [
+            new OA\Response(response: 201, description: 'Clock event recorded', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesTimeClockEventResource')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
+        ]
+    )]
     public function clock(StoreTimeEventRequest $request): JsonResponse
     {
         $this->ownEmployee($request);
@@ -350,6 +365,20 @@ final class EmployeeSelfServiceController extends Controller
     /**
      * The own punch history (read-only, CJEU C-55/18 self-service access).
      */
+    #[OA\Get(
+        path: '/api/v1/hr/me/time/events',
+        operationId: 'hrSelfServiceTimeEvents',
+        description: 'The own clock events, oldest first (read-only self-service access, CJEU C-55/18).',
+        summary: 'My punch history',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Self-Service'],
+        parameters: [new OA\Parameter(name: 'from', in: 'query', required: false, description: 'First local day (inclusive)', schema: new OA\Schema(type: 'string', format: 'date')), new OA\Parameter(name: 'to', in: 'query', required: false, description: 'Last local day (inclusive)', schema: new OA\Schema(type: 'string', format: 'date')), new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Page size (default 50)', schema: new OA\Schema(type: 'integer', default: 50)), new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Paginated clock events', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/HumanResourcesTimeClockEventResource')), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+        ]
+    )]
     public function timeEvents(Request $request): JsonResponse
     {
         $this->ownEmployee($request);
@@ -368,6 +397,19 @@ final class EmployeeSelfServiceController extends Controller
     /**
      * The own GPS/privacy consent settings for the clock UI (Art. 4 L. 300/1970 gate).
      */
+    #[OA\Get(
+        path: '/api/v1/hr/me/clock-settings',
+        operationId: 'hrSelfServiceClockSettings',
+        description: 'GPS and privacy-notice consent state used by the clock UI (Art. 4 L. 300/1970 gate).',
+        summary: 'My clock privacy settings',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Self-Service'],
+        responses: [
+            new OA\Response(response: 200, description: 'Clock settings', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'geolocation_enabled', type: 'boolean'), new OA\Property(property: 'privacy_notice_acknowledged', type: 'boolean')])])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+        ]
+    )]
     public function clockSettings(Request $request): JsonResponse
     {
         $this->ownEmployee($request);

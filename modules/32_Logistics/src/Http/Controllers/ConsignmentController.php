@@ -38,6 +38,20 @@ final class ConsignmentController extends Controller
         ],
         responses: [new OA\Response(response: 200, description: 'Success')]
     )]
+
+    #[OA\Get(
+        path: '/api/v1/logistics/consignment/ledger',
+        summary: 'Register of goods at/for third parties (per warehouse and product)',
+        description: 'Requires permission delivery_notes.view.',
+        tags: ['WMS Consignment'],
+        parameters: [
+            new OA\Parameter(name: 'warehouse_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'partner_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [new OA\Response(response: 200, description: 'Success')]
+    )]
     public function ledger(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -57,6 +71,30 @@ final class ConsignmentController extends Controller
         tags: ['WMS Consignment'],
         responses: [new OA\Response(response: 200, description: 'Success')]
     )]
+
+    #[OA\Get(
+        path: '/api/v1/logistics/reports/inventory-valuation',
+        summary: 'Fiscal inventory valuation split into owned on-hand, in-transit, at customer, at subcontractor and vendor consignment held',
+        description: 'Requires permission delivery_notes.view.',
+        tags: ['WMS Consignment'],
+        responses: [new OA\Response(response: 200, description: 'Success')]
+    )]
+
+    #[OA\Get(
+        path: '/api/v1/wms/consignment/valuation',
+        summary: 'Fiscal inventory valuation split into owned on-hand, in-transit, at customer, at subcontractor and vendor consignment held',
+        description: 'Requires permission delivery_notes.view.',
+        tags: ['WMS Consignment'],
+        responses: [new OA\Response(response: 200, description: 'Success')]
+    )]
+
+    #[OA\Get(
+        path: '/api/v1/logistics/consignment/valuation',
+        summary: 'Fiscal inventory valuation split into owned on-hand, in-transit, at customer, at subcontractor and vendor consignment held',
+        description: 'Requires permission delivery_notes.view.',
+        tags: ['WMS Consignment'],
+        responses: [new OA\Response(response: 200, description: 'Success')]
+    )]
     public function valuation(InventoryValuationReportQuery $query): JsonResponse
     {
         return response()->json(['data' => $query->execute()]);
@@ -64,6 +102,19 @@ final class ConsignmentController extends Controller
 
     #[OA\Get(
         path: '/api/v1/wms/reports/third-party-register',
+        summary: 'Third-party goods register: goods at customers, at subcontractors, vendor consignment held, with valuation',
+        description: 'Requires permission delivery_notes.view.',
+        tags: ['WMS Consignment'],
+        parameters: [
+            new OA\Parameter(name: 'partner_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [new OA\Response(response: 200, description: 'Success')]
+    )]
+
+    #[OA\Get(
+        path: '/api/v1/logistics/reports/third-party-register',
         summary: 'Third-party goods register: goods at customers, at subcontractors, vendor consignment held, with valuation',
         description: 'Requires permission delivery_notes.view.',
         tags: ['WMS Consignment'],
@@ -93,6 +144,33 @@ final class ConsignmentController extends Controller
         parameters: [new OA\Parameter(name: 'warehouse_id', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
         responses: [new OA\Response(response: 200, description: 'Success')]
     )]
+
+    #[OA\Get(
+        path: '/api/v1/logistics/consignment/declarations',
+        summary: 'List consumption declarations',
+        description: 'Requires permission delivery_notes.view.',
+        tags: ['WMS Consignment'],
+        parameters: [new OA\Parameter(name: 'warehouse_id', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'Success')]
+    )]
+
+    #[OA\Get(
+        path: '/api/v1/wms/consignment/consumption-reports',
+        summary: 'List consumption declarations',
+        description: 'Requires permission delivery_notes.view.',
+        tags: ['WMS Consignment'],
+        parameters: [new OA\Parameter(name: 'warehouse_id', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'Success')]
+    )]
+
+    #[OA\Get(
+        path: '/api/v1/logistics/consignment/consumption-reports',
+        summary: 'List consumption declarations',
+        description: 'Requires permission delivery_notes.view.',
+        tags: ['WMS Consignment'],
+        parameters: [new OA\Parameter(name: 'warehouse_id', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'Success')]
+    )]
     public function declarations(Request $request): JsonResponse
     {
         $query = ConsignmentConsumptionDeclaration::query()->with('lines')
@@ -104,6 +182,42 @@ final class ConsignmentController extends Controller
 
     #[OA\Post(
         path: '/api/v1/wms/consignment/declarations',
+        summary: 'Declare periodic consumption: shifts ownership and drafts the sales invoice (customer) or purchase order (vendor)',
+        description: 'Requires permission logistics.consignment.reconcile.',
+        tags: ['WMS Consignment'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ConsumptionInput')),
+        responses: [
+            new OA\Response(response: 201, description: 'Created'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
+
+    #[OA\Post(
+        path: '/api/v1/logistics/consignment/declarations',
+        summary: 'Declare periodic consumption: shifts ownership and drafts the sales invoice (customer) or purchase order (vendor)',
+        description: 'Requires permission logistics.consignment.reconcile.',
+        tags: ['WMS Consignment'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ConsumptionInput')),
+        responses: [
+            new OA\Response(response: 201, description: 'Created'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
+
+    #[OA\Post(
+        path: '/api/v1/wms/consignment/consumption-reports',
+        summary: 'Declare periodic consumption: shifts ownership and drafts the sales invoice (customer) or purchase order (vendor)',
+        description: 'Requires permission logistics.consignment.reconcile.',
+        tags: ['WMS Consignment'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ConsumptionInput')),
+        responses: [
+            new OA\Response(response: 201, description: 'Created'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
+
+    #[OA\Post(
+        path: '/api/v1/logistics/consignment/consumption-reports',
         summary: 'Declare periodic consumption: shifts ownership and drafts the sales invoice (customer) or purchase order (vendor)',
         description: 'Requires permission logistics.consignment.reconcile.',
         tags: ['WMS Consignment'],
@@ -135,6 +249,24 @@ final class ConsignmentController extends Controller
             new OA\Response(response: 422, description: 'Validation or business rule error'),
         ]
     )]
+
+    #[OA\Post(
+        path: '/api/v1/logistics/consignment/vendor-receipts',
+        summary: 'Receive vendor-owned consignment goods on a vendor consignment warehouse',
+        description: 'Requires permission logistics.consignment.reconcile. The goods stay legally owned by the vendor.',
+        tags: ['WMS Consignment'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(properties: [
+            new OA\Property(property: 'warehouse_id', type: 'string', format: 'uuid'),
+            new OA\Property(property: 'lines', type: 'array', items: new OA\Items(properties: [
+                new OA\Property(property: 'product_id', type: 'string', format: 'uuid'),
+                new OA\Property(property: 'quantity', type: 'number'),
+            ], type: 'object')),
+        ], type: 'object')),
+        responses: [
+            new OA\Response(response: 201, description: 'Created'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
     public function vendorReceipt(VendorReceiptRequest $request): JsonResponse
     {
         $data = $request->validated();
@@ -144,6 +276,18 @@ final class ConsignmentController extends Controller
 
     #[OA\Get(
         path: '/api/v1/wms/consignment/agreements',
+        summary: 'List consignment agreements',
+        description: 'Requires permission delivery_notes.view.',
+        tags: ['WMS Consignment'],
+        parameters: [
+            new OA\Parameter(name: 'direction', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['customer', 'vendor'])),
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [new OA\Response(response: 200, description: 'Success')]
+    )]
+
+    #[OA\Get(
+        path: '/api/v1/logistics/consignment/agreements',
         summary: 'List consignment agreements',
         description: 'Requires permission delivery_notes.view.',
         tags: ['WMS Consignment'],
@@ -178,6 +322,22 @@ final class ConsignmentController extends Controller
             new OA\Response(response: 422, description: 'Validation or business rule error'),
         ]
     )]
+
+    #[OA\Post(
+        path: '/api/v1/logistics/consignment/agreements',
+        summary: 'Create a consignment agreement for a customer or vendor consignment warehouse',
+        description: 'Requires permission logistics.consignment.reconcile.',
+        tags: ['WMS Consignment'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(properties: [
+            new OA\Property(property: 'warehouse_id', type: 'string', format: 'uuid'),
+            new OA\Property(property: 'valid_from', type: 'string', format: 'date'),
+            new OA\Property(property: 'billing_frequency', type: 'string', enum: ['monthly', 'quarterly', 'on_demand']),
+        ], type: 'object')),
+        responses: [
+            new OA\Response(response: 201, description: 'Created'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
     public function storeAgreement(StoreConsignmentAgreementRequest $request): JsonResponse
     {
         return $this->run(fn () => response()->json(['data' => $this->service->createAgreement($request->validated())], 201));
@@ -185,6 +345,15 @@ final class ConsignmentController extends Controller
 
     #[OA\Post(
         path: '/api/v1/wms/consignment/agreements/{id}/terminate',
+        summary: 'Terminate a consignment agreement',
+        description: 'Requires permission logistics.consignment.reconcile.',
+        tags: ['WMS Consignment'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Success')]
+    )]
+
+    #[OA\Post(
+        path: '/api/v1/logistics/consignment/agreements/{id}/terminate',
         summary: 'Terminate a consignment agreement',
         description: 'Requires permission logistics.consignment.reconcile.',
         tags: ['WMS Consignment'],

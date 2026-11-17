@@ -3,6 +3,7 @@
 namespace Tests;
 
 use App\Contracts\Security\HostResolver;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
@@ -12,9 +13,24 @@ use Tests\Support\StaticHostResolver;
 
 abstract class TestCase extends BaseTestCase
 {
-    use LazilyRefreshDatabase;
+    use LazilyRefreshDatabase {
+        refreshDatabase as protected lazilyRefreshDatabase;
+    }
 
     protected bool $seed = true;
+
+    /**
+     * Tests that use DatabaseTransactions run on an already migrated database. Letting the lazy refresh fire there would
+     * migrate while the transaction trait has unset the event dispatcher, which is a TypeError in setEventDispatcher().
+     */
+    public function refreshDatabase()
+    {
+        if (in_array(DatabaseTransactions::class, class_uses_recursive(static::class), true)) {
+            return;
+        }
+
+        $this->lazilyRefreshDatabase();
+    }
 
     protected function tearDown(): void
     {

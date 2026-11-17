@@ -28,8 +28,8 @@ use Illuminate\Support\Carbon;
  * @property string $jurisdiction
  * @property CarbonImmutable|Carbon $delivery_date
  * @property string $warranty_policy_type
- * @property Carbon|null $warranty_start_date
- * @property Carbon $warranty_expiry_date
+ * @property CarbonImmutable|Carbon|null $warranty_start_date
+ * @property CarbonImmutable|Carbon $warranty_expiry_date
  * @property string $warranty_source
  * @property int|null $contract_warranty_months
  * @property string|null $contract_clause_reference

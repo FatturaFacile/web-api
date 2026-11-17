@@ -144,6 +144,24 @@ final class LeadController extends Controller
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/crm/leads/{id}/merge',
+        operationId: 'mergeCrmLead',
+        description: 'Merges a duplicate lead into the primary lead of the path and returns the surviving primary lead.',
+        summary: 'Merge duplicate lead',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the primary lead that survives', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['duplicate_id'], properties: [new OA\Property(property: 'duplicate_id', type: 'string', format: 'uuid')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Merged lead', content: new OA\JsonContent(ref: '#/components/schemas/CRMLeadResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function merge(Request $request, string $id): JsonResponse
     {
         $data = $request->validate(['duplicate_id' => ['required', 'uuid']]);
@@ -157,6 +175,24 @@ final class LeadController extends Controller
         return response()->json(new LeadResource($merged));
     }
 
+    #[OA\Post(
+        path: '/api/v1/crm/leads/{id}/behavior',
+        operationId: 'recordCrmLeadBehavior',
+        description: 'Registers a behavioural signal (email open, catalog download, site visit) on a lead, incrementing its engagement counters and score.',
+        summary: 'Record lead behaviour',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the lead', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['event'], properties: [new OA\Property(property: 'event', type: 'string', enum: ['email_open', 'catalog_download', 'site_visit']), new OA\Property(property: 'count', type: 'integer', minimum: 1, maximum: 100, default: 1)])),
+        responses: [
+            new OA\Response(response: 200, description: 'Updated lead', content: new OA\JsonContent(ref: '#/components/schemas/CRMLeadResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function behavior(Request $request, string $id): JsonResponse
     {
         $data = $request->validate([

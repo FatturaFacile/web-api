@@ -164,3 +164,16 @@ test('manual top-up endpoint and report trigger work, report mail carries the PD
     Mail::assertSent(ResidualHoursReportMail::class, fn (ResidualHoursReportMail $mail): bool => $mail->hasTo('rossi@example.test') && count($mail->attachments()) === 1);
     expect(ServiceContract::find($contract['id'])->last_residual_report_at)->not->toBeNull();
 });
+
+test('the residual hours mail and the PDF statement views render with the contract data', function () {
+    $contract = ServiceContract::find(mcCreateContract($this)['id']);
+    $service = app(ResidualHoursReportService::class);
+    $data = $service->viewData($contract, Contact::query()->find($contract->customer_id), 'en');
+
+    $mailHtml = (new ResidualHoursReportMail('Residual hours', $data, '%PDF', 'residual.pdf'))->render();
+    $statementHtml = view('documents.residual-hours-statement', $data)->render();
+
+    expect($mailHtml)->toContain($contract->contract_number)
+        ->and($statementHtml)->toContain($contract->contract_number)
+        ->and($statementHtml)->toContain($data['customerName']);
+});
