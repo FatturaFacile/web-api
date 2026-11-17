@@ -48,6 +48,9 @@ final class WorkOrder extends BaseEnterpriseModel implements LockableByWorkflowI
             'is_locked' => 'boolean',
             'location' => 'array',
             'metadata' => 'array',
+            'required_skills' => 'array',
+            'required_parts' => 'array',
+            'actual_arrival' => 'datetime',
         ];
     }
 

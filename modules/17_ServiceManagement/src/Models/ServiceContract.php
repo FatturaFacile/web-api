@@ -53,6 +53,9 @@ final class ServiceContract extends BaseEnterpriseModel implements LockableByWor
             'terms' => 'array',
             'entitlements' => 'array',
             'metadata' => 'array',
+            'preventive_frequency_rule' => 'array',
+            'callout_fee_amount' => 'decimal:2',
+            'hourly_labor_rate' => 'decimal:2',
         ];
     }
 
