@@ -43,6 +43,8 @@ jobs:
       - name: Export the documentation
         run: |
           cp .env.example .env
+          # Scramble inspects models/schema while analysing routes, so the sqlite file must exist (an empty one is enough).
+          touch database/database.sqlite
           php artisan key:generate
           php -d memory_limit=2048M artisan docs:export
 
