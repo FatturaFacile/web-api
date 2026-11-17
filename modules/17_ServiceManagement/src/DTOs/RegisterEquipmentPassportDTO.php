@@ -25,6 +25,9 @@ final readonly class RegisterEquipmentPassportDTO
         public ?string $installedFirmwareVersion = null,
         public ?string $notes = null,
         public array $components = [],
+        public string $assetStatus = 'active',
+        public ?string $commissioningDate = null,
+        public ?string $installationSite = null,
     ) {}
 
     /**
@@ -48,6 +51,9 @@ final readonly class RegisterEquipmentPassportDTO
             installedFirmwareVersion: $data['installed_firmware_version'] ?? null,
             notes: $data['notes'] ?? null,
             components: array_values($data['components'] ?? []),
+            assetStatus: (string) ($data['asset_status'] ?? 'active'),
+            commissioningDate: $data['commissioning_date'] ?? null,
+            installationSite: $data['installation_site'] ?? null,
         );
     }
 }

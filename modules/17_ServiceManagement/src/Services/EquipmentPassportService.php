@@ -88,6 +88,9 @@ final readonly class EquipmentPassportService implements EquipmentPassportServic
                 'contract_clause_reference' => $dto->contractClauseReference,
                 'installed_firmware_version' => $dto->installedFirmwareVersion,
                 'notes' => $dto->notes,
+                'asset_status' => $dto->assetStatus,
+                'commissioning_date' => $dto->commissioningDate,
+                'installation_site' => $dto->installationSite,
             ]);
 
             foreach ($dto->components as $component) {

@@ -39,6 +39,11 @@ final class EquipmentPassportController extends Controller
             ->when($request->filled('serial_number'), fn ($query) => $query->where('serial_number', 'like', $request->string('serial_number')->trim()->value().'%'))
             ->when($request->filled('customer_id'), fn ($query) => $query->where('current_owner_customer_id', $request->query('customer_id')))
             ->when($request->filled('jurisdiction'), fn ($query) => $query->where('jurisdiction', strtoupper((string) $request->query('jurisdiction'))))
+            ->when($request->filled('product_id'), fn ($query) => $query->where('product_id', $request->query('product_id')))
+            ->when($request->filled('asset_status'), fn ($query) => $query->where('asset_status', $request->query('asset_status')))
+            ->when($request->filled('expiring_within_days'), fn ($query) => $query
+                ->whereDate('warranty_expiry_date', '>=', $today)
+                ->whereDate('warranty_expiry_date', '<=', now()->addDays((int) $request->query('expiring_within_days'))->toDateString()))
             ->when($request->query('warranty') === 'in', fn ($query) => $query->whereDate('warranty_expiry_date', '>=', $today))
             ->when($request->query('warranty') === 'out', fn ($query) => $query->whereDate('warranty_expiry_date', '<', $today))
             ->orderByDesc('created_at')

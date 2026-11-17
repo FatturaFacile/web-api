@@ -12,6 +12,7 @@ use Modules\ServiceManagement\Http\Controllers\HelpdeskTicketController;
 use Modules\ServiceManagement\Http\Controllers\ITSMController;
 use Modules\ServiceManagement\Http\Controllers\KnowledgeBaseController;
 use Modules\ServiceManagement\Http\Controllers\LoanerController;
+use Modules\ServiceManagement\Http\Controllers\MaintenanceContractController;
 use Modules\ServiceManagement\Http\Controllers\PortalCsatController;
 use Modules\ServiceManagement\Http\Controllers\PortalHelpdeskController;
 use Modules\ServiceManagement\Http\Controllers\PortalKnowledgeBaseController;
@@ -169,6 +170,15 @@ Route::prefix('api/v1/esm')
         Route::get('/service-contracts', [ServiceContractController::class, 'index'])->name('api.v1.esm.service-contracts.index');
         Route::get('/service-contracts/{serviceContract}', [ServiceContractController::class, 'show'])->name('api.v1.esm.service-contracts.show');
         Route::post('/csat', [ServiceContractController::class, 'submitCsat'])->name('api.v1.esm.csat.store');
+
+        // Recurring maintenance contracts, hour bank and installed base history (GH-197)
+        Route::post('/service-contracts', [MaintenanceContractController::class, 'store'])->name('api.v1.esm.service-contracts.store');
+        Route::put('/service-contracts/{serviceContract}', [MaintenanceContractController::class, 'update'])->name('api.v1.esm.service-contracts.update')->whereUuid('serviceContract');
+        Route::get('/service-contracts/{serviceContract}/ledger', [MaintenanceContractController::class, 'ledger'])->name('api.v1.esm.service-contracts.ledger')->whereUuid('serviceContract');
+        Route::post('/service-contracts/{serviceContract}/hours/top-up', [MaintenanceContractController::class, 'topUp'])->name('api.v1.esm.service-contracts.top-up')->whereUuid('serviceContract');
+        Route::post('/service-contracts/{serviceContract}/hours/adjust', [MaintenanceContractController::class, 'adjust'])->name('api.v1.esm.service-contracts.adjust')->whereUuid('serviceContract');
+        Route::post('/service-contracts/{serviceContract}/residual-report', [MaintenanceContractController::class, 'sendReport'])->name('api.v1.esm.service-contracts.residual-report')->whereUuid('serviceContract');
+        Route::get('/equipment-passports/{passport}/history', [MaintenanceContractController::class, 'assetHistory'])->name('api.v1.esm.equipment-passports.history')->whereUuid('passport');
 
         // Warranty: Serialized Equipment Passports (GH-396)
         Route::get('/equipment-passports', [EquipmentPassportController::class, 'index'])->name('api.v1.esm.equipment-passports.index');
