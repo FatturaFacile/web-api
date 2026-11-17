@@ -60,25 +60,3 @@ storage/*.sqlite3
 !.claude/commands/
 *.tmp
 
-# Editor / assistant tool configuration (local only)
-/CLAUDE.md
-/AGENTS.md
-/.claude/
-/.claudeignore
-/.agy
-/.agyignore
-/.ai
-/.aiignore
-/.antigravity
-/.codex
-/.copilotignore
-/.github/copilot-instructions.md
-/.github/instructions/
-/.github/prompts/
-/.github/chatmodes/
-/.cursor/
-/.cursorignore
-/.cursorrules
-/.gemini/
-/.geminiignore
-/.windsurfrules

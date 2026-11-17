@@ -6,65 +6,65 @@
          failOnRisky="true"
          failOnWarning="true"
 >
-   <testsuites>
-    <testsuite name="Unit">
-        <directory>tests/Unit</directory>
-    </testsuite>
-    <testsuite name="Feature">
-        <directory>tests/Feature</directory>
-    </testsuite>
-</testsuites>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
 
-<source>
-    <include>
-        <directory>app</directory>
-        <directory>modules</directory>
-    </include>
-    <exclude>
-        <!-- Esclude file boilerplate non testabili unitariamente per non sporcare il coverage -->
-        <directory>app/Console</directory>
-        <file>app/Http/Middleware/Authenticate.php</file>
-        <file>app/Http/Middleware/TrustHosts.php</file>
-        <file>app/Http/Middleware/TrustProxies.php</file>
-    </exclude>
-</source>
-
-<!--
-    No <coverage><report> and no <logging> here: configured reports switch coverage on for every run, and without a
-    coverage driver (local PHP, CI with coverage: none) the run stopped with no output and exit code 1, also for a single
-    file. Reports are requested explicitly where they are needed: pass the coverage-clover and log-junit
-    options (build/logs/clover.xml, build/logs/junit.xml); locally add the coverage-html option with a coverage driver.
--->
-
-<php>
-    <!-- Rendering PDFs (dompdf) in the Feature suite needs more than PHP's default 128M;
-         setup-php in CI runs with no limit, local PHP/Docker images do not. -->
-    <ini name="memory_limit" value="2G"/>
-    <env name="APP_ENV" value="testing"/>
-    <!-- The system works over HTTPS only, tests included: requests are built as https and a plain-HTTP APP_URL stops the boot. -->
-    <env name="APP_URL" value="https://localhost" force="true"/>
-    <env name="FRONTEND_URL" value="https://localhost:4200" force="true"/>
-    <env name="SESSION_SECURE_COOKIE" value="true" force="true"/>
-    <env name="AUTH_TOKEN_MODE_ENABLED" value="false" force="true"/>
-    <env name="APP_MAINTENANCE_DRIVER" value="file"/>
-    <env name="BCRYPT_ROUNDS" value="4"/>
-    <env name="BROADCAST_CONNECTION" value="null"/>
-    <env name="CACHE_STORE" value="array"/>
+    <source>
+        <include>
+            <directory>app</directory>
+            <directory>modules</directory>
+        </include>
+        <exclude>
+            <!-- Esclude file boilerplate non testabili unitariamente per non sporcare il coverage -->
+            <directory>app/Console</directory>
+            <file>app/Http/Middleware/Authenticate.php</file>
+            <file>app/Http/Middleware/TrustHosts.php</file>
+            <file>app/Http/Middleware/TrustProxies.php</file>
+        </exclude>
+    </source>
 
     <!--
-        SQLite is the default for local runs and automated tests; CI and production use PostgreSQL.
-        DB_FOREIGN_KEYS=true ensures SQLite strictly enforces relational integrity during tests.
+        No <coverage><report> and no <logging> here: configured reports switch coverage on for every run, and without a
+        coverage driver (local PHP, CI with coverage: none) the run stopped with no output and exit code 1, also for a single
+        file. Reports are requested explicitly where they are needed: pass the coverage-clover and log-junit
+        options (build/logs/clover.xml, build/logs/junit.xml); locally add the coverage-html option with a coverage driver.
     -->
-    <env name="DB_CONNECTION" value="sqlite"/>
-    <env name="DB_DATABASE" value=":memory:"/>
-    <env name="DB_FOREIGN_KEYS" value="true"/>
-    <env name="MAIL_MAILER" value="array"/>
-    <env name="QUEUE_CONNECTION" value="sync"/>
-    <env name="TENANCY_REQUIRE_REQUEST_CONTEXT" value="false"/>
-    <env name="SDI_DEFAULT_CHANNEL" value="local"/>
-    <env name="SESSION_DRIVER" value="array"/>
-    <env name="PULSE_ENABLED" value="false"/>
-    <env name="TELESCOPE_ENABLED" value="false"/>
-    <env name="NIGHTWATCH_ENABLED" value="false"/>
-</php>
+
+    <php>
+        <!-- Rendering PDFs (dompdf) in the Feature suite needs more than PHP's default 128M;
+             setup-php in CI runs with no limit, local PHP/Docker images do not. -->
+        <ini name="memory_limit" value="2G"/>
+        <env name="APP_ENV" value="testing"/>
+        <!-- The system works over HTTPS only, tests included: requests are built as https and a plain-HTTP APP_URL stops the boot. -->
+        <env name="APP_URL" value="https://localhost" force="true"/>
+        <env name="FRONTEND_URL" value="https://localhost:4200" force="true"/>
+        <env name="SESSION_SECURE_COOKIE" value="true" force="true"/>
+        <env name="AUTH_TOKEN_MODE_ENABLED" value="false" force="true"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="BROADCAST_CONNECTION" value="null"/>
+        <env name="CACHE_STORE" value="array"/>
+
+        <!--
+            SQLite is the default for local runs; CI and real environment variables (e.g. pgsql) take precedence.
+            DatabaseTransactions-based tests need a migrated file database: DB_DATABASE=<path>.sqlite php artisan migrate.
+        -->
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="DB_FOREIGN_KEYS" value="true"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="TENANCY_REQUIRE_REQUEST_CONTEXT" value="false"/>
+        <env name="SDI_DEFAULT_CHANNEL" value="local"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="NIGHTWATCH_ENABLED" value="false"/>
+    </php>
 </phpunit>

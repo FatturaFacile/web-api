@@ -62,6 +62,10 @@ return [
     'vies' => [
         'base_url' => env('VIES_BASE_URL', 'https://ec.europa.eu/taxation_customs/vies/rest-api'),
         'timeout' => (int) env('VIES_TIMEOUT', 8),
+        'cache_ttl' => (int) env('VIES_CACHE_TTL', 86400),
+        // Own VAT number sent with each check so that VIES returns the consultation identifier (audit proof).
+        'requester_country' => env('VIES_REQUESTER_COUNTRY'),
+        'requester_number' => env('VIES_REQUESTER_NUMBER'),
     ],
 
     'zefix' => [

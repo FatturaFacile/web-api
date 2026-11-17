@@ -37,6 +37,7 @@ final class DeclarationController extends CustomsController
         new OA\Parameter(name: 'declaration_type', description: 'import, export or transit', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
         new OA\Parameter(name: 'status', description: 'Only this status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
         new OA\Parameter(name: 'mrn', description: 'Only this MRN', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        new OA\Parameter(name: 'customs_regime', description: 'edec, passar or aida', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
     ], responses: [
         new OA\Response(response: 200, description: 'Declarations', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
         new OA\Response(ref: '#/components/responses/CustomsUnauthenticated', response: 401),
@@ -50,6 +51,7 @@ final class DeclarationController extends CustomsController
             ->when($request->filled('declaration_type'), static fn ($query) => $query->where('declaration_type', (string) $request->query('declaration_type')))
             ->when($request->filled('status'), static fn ($query) => $query->where('status', (string) $request->query('status')))
             ->when($request->filled('mrn'), static fn ($query) => $query->where('mrn', (string) $request->query('mrn')))
+            ->when($request->filled('customs_regime'), static fn ($query) => $query->where('customs_regime', (string) $request->query('customs_regime')))
             ->latest();
 
         return CustomsRecordResource::collection($query->gridPaginate($this->perPage($request)));

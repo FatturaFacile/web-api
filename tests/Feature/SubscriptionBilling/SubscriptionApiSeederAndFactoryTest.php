@@ -9,7 +9,7 @@ use App\Services\Tenancy\TenantContext;
 use Database\Seeders\SubscriptionDemoDataSeeder;
 use Database\Seeders\SubscriptionReferenceSeeder;
 use Database\Seeders\SubscriptionTestingSeeder;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\SubscriptionBilling\Models\BillingRun;
 use Modules\SubscriptionBilling\Models\ChurnPrediction;
@@ -33,7 +33,7 @@ use Modules\SubscriptionBilling\Models\UsageAggregation;
 use Modules\SubscriptionBilling\Models\UsageEvent;
 use Modules\SubscriptionBilling\Models\UsageMetric;
 
-uses(DatabaseTransactions::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->tenant = Tenant::factory()->create();
