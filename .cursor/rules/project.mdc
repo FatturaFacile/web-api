@@ -1,0 +1,13 @@
+---
+description: Project coding guidelines, architectural standards, and verification commands
+globs: **/*
+alwaysApply: true
+---
+
+# Project Guidelines
+
+Refer directly to [AGENTS.md](../../AGENTS.md) for canonical instructions:
+- Strict typing (`declare(strict_types=1);`), thin controllers, FormRequests, JsonResources.
+- SQLite `:memory:` for local dev and tests (`php artisan test`). Never require PostgreSQL locally.
+- Keep migrations and queries 100% compatible across SQLite and PostgreSQL.
+- Run quality gates: `vendor/bin/pint --dirty --format agent`, `vendor/bin/phpstan analyse --memory-limit=2G`, and `php artisan test`.

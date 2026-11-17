@@ -1,26 +1,34 @@
-# Ignore list shared across AI tools
-vendor/
-node_modules/
-public/build/
-public/storage/
-storage/
-bootstrap/cache/
-.phpunit.cache/
-.phpunit.result.cache
-coverage/
+# Universal VCS & Editor Caches
+.git/
 .idea/
+.vs/
 .vscode/
 *.log
 *.sqlite
-*.sqlite-wal
-*.sqlite-shm
+*.sqlite3
+*.sqlite-journal
+.phpunit.result.cache
+
+# Environment & Secrets (Keep .env.example)
 .env
 .env.*
 !.env.example
-auth.json
-certs/
-*.pem
-*.key
-*.pfx
-*.zip
-*.pdf
+
+# Build & Test Coverage Outputs
+coverage/
+build/
+dist/
+
+# PHP / Laravel
+vendor/
+bootstrap/cache/
+storage/framework/
+storage/logs/
+public/build/
+public/hot
+
+# Node / JS
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

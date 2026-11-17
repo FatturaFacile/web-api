@@ -105,6 +105,7 @@ use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\TwoFactorController;
 use App\Http\Controllers\Api\V1\UnitOfMeasureController;
 use App\Http\Controllers\Api\V1\UserPreferencesController;
+use App\Http\Controllers\Api\V1\ViesValidationController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
 use App\Http\Controllers\Portal\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
@@ -233,6 +234,12 @@ Route::prefix('v1')->group(function (): void {
             Route::put('/layout', [DashboardBuilderController::class, 'updateLayout'])->name('layout.update');
             Route::post('/layout/reset', [DashboardBuilderController::class, 'resetLayout'])->name('layout.reset');
             Route::get('/data', [DashboardBuilderController::class, 'data'])->name('data');
+        });
+
+        // EU VAT number validation (VIES) with audit log
+        Route::prefix('fiscal/vies')->name('fiscal.vies.')->middleware('module.access:crm')->group(function (): void {
+            Route::post('/validate', [ViesValidationController::class, 'validate'])->middleware('throttle:60,1')->name('validate');
+            Route::get('/logs', [ViesValidationController::class, 'logs'])->name('logs');
         });
 
         // 3. CRM & Contacts

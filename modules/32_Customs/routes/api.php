@@ -10,10 +10,12 @@ use Modules\Customs\Http\Controllers\CustomsPortalController;
 use Modules\Customs\Http\Controllers\CustomsSettingsController;
 use Modules\Customs\Http\Controllers\DeclarationController;
 use Modules\Customs\Http\Controllers\DossierController;
+use Modules\Customs\Http\Controllers\ImportBillController;
 use Modules\Customs\Http\Controllers\MasterDataController;
 use Modules\Customs\Http\Controllers\QuoteController;
 use Modules\Customs\Http\Controllers\ShipmentRequestController;
 use Modules\Customs\Http\Controllers\TariffGridController;
+use Modules\Customs\Http\Controllers\TradeComplianceController;
 
 Route::prefix('api/v1/customs')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:customs'])
@@ -43,6 +45,21 @@ Route::prefix('api/v1/customs')
         Route::post('/declarations/{id}/items/reuse/{itemId}', [DeclarationController::class, 'reuseItem'])->name('declarations.items.reuse');
         Route::get('/declarations/{id}/message', [DeclarationController::class, 'message'])->name('declarations.message');
         Route::get('/declarations/{id}/pdf', [DeclarationController::class, 'pdf'])->name('declarations.pdf');
+        Route::get('/declarations/{id}/pro-forma', [TradeComplianceController::class, 'proForma'])->name('declarations.pro-forma');
+        Route::get('/declarations/{id}/transit-sheet', [TradeComplianceController::class, 'transitSheet'])->name('declarations.transit-sheet');
+        Route::post('/declarations/{id}/mrn', [TradeComplianceController::class, 'assignMrn'])->name('declarations.mrn');
+        Route::post('/declarations/{id}/invoices', [TradeComplianceController::class, 'linkInvoices'])->name('declarations.invoices.link');
+        Route::post('/declarations/{id}/invoices/auto-link', [TradeComplianceController::class, 'autoLink'])->name('declarations.invoices.auto-link');
+        Route::get('/declarations/{id}/export-proof', [TradeComplianceController::class, 'exportProof'])->name('declarations.export-proof');
+        Route::post('/declarations/{id}/transit-discharge', [TradeComplianceController::class, 'dischargeTransit'])->name('declarations.transit-discharge');
+        Route::get('/trade-compliance/dashboard', [TradeComplianceController::class, 'dashboard'])->name('trade-compliance.dashboard');
+
+        // Import customs bills
+        Route::get('/import-bills', [ImportBillController::class, 'index'])->name('import-bills.index');
+        Route::post('/import-bills', [ImportBillController::class, 'store'])->name('import-bills.store');
+        Route::get('/import-bills/{id}', [ImportBillController::class, 'show'])->name('import-bills.show');
+        Route::get('/import-bills/{id}/reconciliation', [ImportBillController::class, 'reconciliation'])->name('import-bills.reconciliation');
+        Route::post('/import-bills/{id}/post', [ImportBillController::class, 'post'])->name('import-bills.post');
 
         // Assessment decisions
         Route::get('/assessment-decisions', [AssessmentDecisionController::class, 'index'])->name('assessments.index');

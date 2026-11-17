@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\Intrastat\Models\IntrastatDeclaration;
@@ -59,6 +60,8 @@ function intrastatProduct(Tenant $tenant, string $sku, ?string $hsCode = null): 
 function intrastatInvoice(Tenant $tenant, Contact $contact, string $number, string $date, array $items, array $attributes = []): Invoice
 {
     $net = array_sum(array_map(static fn (array $item): float => (float) $item[2], $items));
+    $status = $attributes['status'] ?? 'posted';
+    unset($attributes['status']);
     $invoice = Invoice::create([
         'tenant_id' => $tenant->id, 'contact_id' => $contact->id, 'invoice_type' => 'standard', 'invoice_number' => $number, 'date' => $date,
         'currency' => 'EUR', 'total_net' => $net, 'total_tax' => 0, 'total_gross' => $net, 'payment_status' => 'unpaid', 'jurisdiction' => 'IT',
@@ -70,6 +73,12 @@ function intrastatInvoice(Tenant $tenant, Contact $contact, string $number, stri
             'invoice_id' => $invoice->id, 'product_id' => $product?->id, 'description' => $product?->name ?? 'Servizio', 'quantity' => $quantity,
             'unit_price' => round((float) $total / (float) $quantity, 4), 'tax_rate' => 0, 'discount_percentage' => 0, 'line_total' => $total,
         ]);
+    }
+
+    // Created as a draft so its items can be added; an issued invoice is then locked.
+    if ($status !== 'draft') {
+        DB::table('invoices')->where('id', $invoice->id)->update(['status' => $status]);
+        $invoice->refresh();
     }
 
     return $invoice;
@@ -101,6 +110,9 @@ function intrastatSalesFixture(Tenant $tenant, User $user): void
     intrastatInvoice($tenant, $german, 'A-0', '2027-03-28', [[$widget, '1', '100.00']]);
     intrastatInvoice($tenant, $french, 'A-3', '2027-04-21', [[$widget, '1', '100.00']]);
     intrastatInvoice($tenant, $italian, 'A-4', '2027-04-22', [[$widget, '1', '100.00']]);
+    // Never declared: a Swiss (extra-EU) customer and a German invoice that is still a draft.
+    intrastatInvoice($tenant, intrastatContact($tenant, 'Kunde AG', 'CH', 'CHE-123.456.788'), 'A-5', '2027-04-23', [[$widget, '1', '100.00']]);
+    intrastatInvoice($tenant, $german, 'A-6', '2027-04-24', [[$widget, '1', '100.00']], ['status' => 'draft']);
     intrastatInvoice($tenant, $german, 'NC-1', '2027-04-25', [[$widget, '1', '100.00']], ['invoice_type' => 'credit_note']);
 }
 
@@ -149,6 +161,34 @@ test('a monthly sales list is drafted from the invoices of the period, summing r
     expect(collect($report['skipped'])->pluck('reason', 'document.number')->all())->toBe(['A-3' => 'customer_without_vat_number', 'NC-1' => 'credit_note'])
         ->and(collect($report['unclassified'])->pluck('document.number')->all())->toBe(['A-1'])
         ->and($report['unclassified'][0]['amount'])->toBe('50.00');
+});
+
+test('a credit note of an earlier period becomes a negative correction row of section 2, one on services stays manual', function (): void {
+    intrastatSalesFixture($this->tenant, $this->accountant);
+    $march = Invoice::where('invoice_number', 'A-0')->firstOrFail();
+    $widget = Product::where('sku', 'widget')->firstOrFail();
+    $consulting = Product::where('sku', 'consulting')->firstOrFail();
+    $german = Contact::findOrFail($march->contact_id);
+    intrastatInvoice($this->tenant, $german, 'NC-2', '2027-04-26', [[$widget, '1', '99.60']], ['invoice_type' => 'credit_note', 'related_invoice_id' => $march->id]);
+    intrastatInvoice($this->tenant, $german, 'NC-3', '2027-04-27', [[$consulting, '1', '80.00']], ['invoice_type' => 'credit_note', 'related_invoice_id' => $march->id]);
+    intrastatActAs($this->accountant, $this->tenant);
+
+    $declaration = intrastatGenerateSales()->assertCreated()->json('data');
+    $corrections = collect($declaration['lines'])->where('section', 2)->values();
+
+    expect($corrections)->toHaveCount(1)
+        ->and($corrections[0])->toMatchArray([
+            'line_number' => 1, 'partner_country_code' => 'DE', 'partner_vat_number' => '123456789', 'amount_eur' => 100, 'sign' => '-',
+            'corrected_month' => 3, 'corrected_year' => 2027, 'transaction_nature_a' => '1', 'cn8_code' => '84212100', 'net_mass_kg' => null,
+        ])
+        ->and(collect($declaration['lines'])->where('section', 4))->toHaveCount(0);
+
+    $reasons = collect($declaration['generation_report']['skipped'])->pluck('reason', 'document.number')->all();
+    expect($reasons)->toMatchArray(['NC-1' => 'credit_note', 'NC-3' => 'credit_note_services'])->and($reasons)->not->toHaveKey('NC-2');
+
+    $errors = collect($this->postJson("/api/v1/intrastat/declarations/{$declaration['id']}/validate")->json('invalid_params'))
+        ->filter(fn (array $error): bool => $error['section'] === 2);
+    expect($errors)->toHaveCount(0);
 });
 
 test('rows lacking mandatory data are reported as validation errors and the list stays a draft until they are fixed', function (): void {
