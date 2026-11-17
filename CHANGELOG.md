@@ -8,6 +8,16 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Customer registry 360 (CH/IT)**: formal validation that blocks saving on a wrong Partita IVA, Codice Fiscale (omocodia
+  aware), Swiss UID `CHE-xxx.xxx.xxx` (modulo 11) or SDI code; `POST /api/v1/crm/fiscal/lookup` and
+  `/contacts/{id}/fiscal/verify` autofill and certify from VIES (IT) and Zefix (CH, `ZEFIX_USERNAME`/`ZEFIX_PASSWORD`),
+  degrading to the checksum when a registry is down; company hierarchy (`parent_id`, holding / subsidiary / branch, loop
+  protection, `/hierarchy`); role-based contact persons; unlimited legal / billing / shipping / site addresses with one
+  default per type; `/contacts/{id}/overview` 360 card
+  (open balance, credit limit and residual, quotes, orders in progress, DDT to invoice, invoices, open tickets, privacy regime and consents,
+  interactions, optional group consolidation); `/contacts/{id}/interactions` history with `updated_since` sync cursor
+  for the mobile app.
+
 - **Logistics module** (`modules/32_Logistics`): enterprise DDT (IT DPR 472/96 and CH layout), progressive numbering per
   tenant / fiscal year / section, fulfilment from one or more sales orders, cumulative deferred invoicing with
   DDT-line to invoice-line links, two-step stock transfers (ship to transit + automatic DDT, receive with discrepancy

@@ -11,7 +11,10 @@ use App\Http\Resources\CatalogResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Contact;
 use App\Services\Crm\ContactInsights;
+use App\Services\Crm\Customer360Service;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,8 +22,33 @@ use Symfony\Component\HttpFoundation\Response;
 class ContactInsightsController extends Controller
 {
     use ApiResponse;
+    use AuthorizesRequests;
 
-    public function __construct(private readonly ContactInsights $insights) {}
+    public function __construct(private readonly ContactInsights $insights, private readonly Customer360Service $customer360) {}
+
+    #[OA\Get(
+        path: '/api/v1/crm/contacts/{id}/overview',
+        operationId: 'getContactOverview',
+        description: '360-degree customer card: open balance, credit limit and headroom, quotes, orders in progress, delivery notes to invoice, invoices, open tickets and recent interactions. Pass group=1 to consolidate the whole corporate group.',
+        summary: 'Get customer 360 overview',
+        security: [['bearerAuth' => []]],
+        tags: ['CRM', 'Contacts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Contact UUID', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'group', in: 'query', required: false, description: 'Aggregate the contact and all its subsidiaries', schema: new OA\Schema(type: 'boolean')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Overview retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 404, description: 'Contact not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function overview(Request $request, string $id): JsonResponse
+    {
+        $contact = Contact::findOrFail($id);
+        $this->authorize('view', $contact);
+
+        return $this->successResponse($this->customer360->overview($contact, $request->boolean('group')), 'Customer overview retrieved');
+    }
 
     #[OA\Get(
         path: '/api/v1/crm/contacts/{id}/statistics',

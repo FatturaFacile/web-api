@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -43,6 +44,10 @@ class Contact extends Model
         'document_language',
         'processing_restricted_at',
         'anonymized_at',
+        'parent_id',
+        'hierarchy_type',
+        'fiscal_verified_at',
+        'fiscal_verification_source',
     ];
 
     protected function casts(): array
@@ -50,6 +55,7 @@ class Contact extends Model
         return [
             'processing_restricted_at' => 'datetime',
             'anonymized_at' => 'datetime',
+            'fiscal_verified_at' => 'datetime',
         ];
     }
 
@@ -65,6 +71,32 @@ class Contact extends Model
             'tax_id' => "COALESCE(NULLIF(contacts.vat_number, ''), NULLIF(contacts.fiscal_code, ''), NULLIF(contacts.uid_number, ''))",
             'name' => "COALESCE(NULLIF(contacts.company_name, ''), NULLIF(TRIM(COALESCE(contacts.first_name, '') || ' ' || COALESCE(contacts.last_name, '')), ''), '-')",
         ];
+    }
+
+    /**
+     * Parent company in the corporate hierarchy (holding, subsidiary, branch).
+     *
+     * @return BelongsTo<Contact, $this>
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /**
+     * @return HasMany<Contact, $this>
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
+    }
+
+    /**
+     * @return HasMany<ContactPerson, $this>
+     */
+    public function persons(): HasMany
+    {
+        return $this->hasMany(ContactPerson::class);
     }
 
     /**

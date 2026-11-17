@@ -8,6 +8,7 @@ use Modules\CRM\Http\Controllers\ActivityController;
 use Modules\CRM\Http\Controllers\CampaignController;
 use Modules\CRM\Http\Controllers\CampaignMemberController;
 use Modules\CRM\Http\Controllers\ConsentController;
+use Modules\CRM\Http\Controllers\ContactInteractionController;
 use Modules\CRM\Http\Controllers\CrmReportController;
 use Modules\CRM\Http\Controllers\DuplicateController;
 use Modules\CRM\Http\Controllers\ForecastController;
@@ -25,6 +26,10 @@ Route::prefix('api/v1/crm')->middleware(['api', 'auth:sanctum', 'tenant', 'local
     // 1. Leads
     Route::get('leads/duplicates', [LeadController::class, 'detectDuplicates'])->middleware('deprecated:/api/v1/crm/duplicates?entity=leads')->name('crm.leads.duplicates');
     Route::get('leads/{id}/score', [LeadScoringController::class, 'explain'])->name('crm.leads.score');
+    // Customer registry: interaction history (calls, emails, notes, meetings), shared by web and mobile.
+    Route::get('contacts/{id}/interactions', [ContactInteractionController::class, 'index'])->name('crm.contacts.interactions.index');
+    Route::post('contacts/{id}/interactions', [ContactInteractionController::class, 'store'])->name('crm.contacts.interactions.store');
+
     Route::post('leads/{id}/qualify', [LeadController::class, 'qualify'])->name('crm.leads.qualify');
     Route::post('leads/{id}/disqualify', [LeadController::class, 'disqualify'])->name('crm.leads.disqualify');
     Route::post('leads/{id}/convert', [LeadController::class, 'convert'])->name('crm.leads.convert');

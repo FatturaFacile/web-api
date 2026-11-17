@@ -215,7 +215,7 @@ class CrmController extends Controller
     )]
     public function show(string $id): JsonResponse
     {
-        $contact = Contact::with('addresses')->findOrFail($id);
+        $contact = Contact::with(['addresses', 'persons'])->findOrFail($id);
         $this->authorize('view', $contact);
 
         return $this->successResponse(data: new ContactResource($contact), message: 'Contact details retrieved');
