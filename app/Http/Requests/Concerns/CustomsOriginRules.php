@@ -26,6 +26,13 @@ trait CustomsOriginRules
             'preferential_agreement_id' => ['nullable', 'uuid', Rule::exists('free_trade_agreements', 'id')],
             'eur1_required' => ['sometimes', 'boolean'],
             'origin_rule_notes' => ['nullable', 'string'],
+            'swiss_hs_code' => ['nullable', 'string', 'regex:/^\d{8}$/'],
+            'supplementary_unit' => ['nullable', 'string', 'max:10'],
+            'customs_duty_rate' => ['nullable', 'numeric', 'min:0', 'max:999'],
+            'net_weight_kg' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
+            'gross_weight_kg' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
+            'packages_count' => ['nullable', 'integer', 'min:0', 'max:99999999'],
+            'preferential_origin_eligible' => ['sometimes', 'boolean'],
         ];
     }
 }

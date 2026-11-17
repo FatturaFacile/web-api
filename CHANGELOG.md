@@ -12,6 +12,7 @@ uses [Semantic Versioning](https://semver.org/).
   paid invoices, and `total_revenue` includes the amount already collected on them.
 ### Added
 
+- **Cross-border customs hub** (#143, `modules/32_Customs`): Passar and AIDA sandbox channels (payload builder plus simulated MRN; no transport to BAZG or ADM, payloads are not schema-validated), MRN validation and assignment (Union 18 characters, Swiss 18 to 21), regime and T1/T2 transit data with a bilingual tracking sheet, bilingual IT/EN and IT/DE customs pro-forma invoice with the preferential origin clause, invoice links with export-proof (eVV) matching and a "missing eVV" dashboard, import customs bills (duty kept apart from import VAT, broker invoice reconciliation, ledger posting), and product fields for Swiss HS code, weights, duty rate and preferential origin.
 - **Subscription indexation** (`modules/19_SubscriptionBilling`): automatic annual price adjustment on ISTAT FOI (IT) and BFS LIK (CH) series, with contractual ratio, cap and no-decrease floor, recalculation sheet, once-per-cycle idempotency, customer notice by email (it/en/de/fr) and a nightly job that runs before the billing run; `churn_reasons` (by reason code, with lost MRR) in the subscription metrics; `qr_bill` payment method.
 - **Customer registry 360 (CH/IT)**: formal validation that blocks saving on a wrong Partita IVA, Codice Fiscale (omocodia
   aware), Swiss UID `CHE-xxx.xxx.xxx` (modulo 11) or SDI code; `POST /api/v1/crm/fiscal/lookup` and

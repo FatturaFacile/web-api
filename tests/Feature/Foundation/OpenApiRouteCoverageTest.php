@@ -27,6 +27,9 @@ test('every API route of every module declares its OpenAPI operation', function 
             continue;
         }
 
+        // Some schema files hold several classes: the autoloader finds only the one named like the file.
+        class_exists($namespace[1].'\\'.$class[1]) || require_once $file;
+
         foreach ($attributeOf as $method => $attribute) {
             foreach ((new ReflectionClass($namespace[1].'\\'.$class[1]))->getAttributes($attribute, ReflectionAttribute::IS_INSTANCEOF) as $operation) {
                 $declared[$method.' '.$normalised((string) $operation->newInstance()->path)] = true;

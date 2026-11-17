@@ -13,6 +13,7 @@ use Modules\Customs\Models\CustomsCountry;
 use Modules\Customs\Models\CustomsDeclaration;
 use Modules\Customs\Models\CustomsDocumentType;
 use Modules\Customs\Models\CustomsDossier;
+use Modules\Customs\Models\CustomsImportBill;
 use Modules\Customs\Models\CustomsLedgerPosting;
 use Modules\Customs\Models\CustomsPackagingType;
 use Modules\Customs\Models\CustomsQuote;
@@ -44,7 +45,7 @@ final class CustomsServiceProvider extends ServiceProvider
 
         foreach ([
             CustomsTariffNumber::class, CustomsStatisticalKey::class, CustomsPackagingType::class, CustomsCountry::class,
-            CustomsDocumentType::class, CustomsSettings::class, CustomsDeclaration::class, CustomsAssessmentDecision::class,
+            CustomsDocumentType::class, CustomsSettings::class, CustomsDeclaration::class, CustomsImportBill::class, CustomsAssessmentDecision::class,
             CustomsRetrievalRun::class, CustomsLedgerPosting::class, CustomsTariffGrid::class, CustomsServiceDiscount::class,
             CustomsConsolidation::class, CustomsDossier::class, CustomsQuote::class, CustomsShipmentRequest::class,
         ] as $model) {

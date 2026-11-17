@@ -6,12 +6,25 @@ namespace Modules\Customs\Models;
 
 use App\Models\Contact;
 use App\Models\DeliveryNote;
+use App\Models\Invoice;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+use Modules\Customs\Enums\CustomsRegime;
 use Modules\Customs\Enums\DeclarationStatus;
 use Modules\Customs\Enums\DeclarationType;
+use Modules\Customs\Enums\TransitDocumentType;
 
+/**
+ * @property DeclarationType $declaration_type
+ * @property DeclarationStatus $status
+ * @property CustomsRegime $customs_regime
+ * @property TransitDocumentType $transit_document_type
+ * @property Carbon|null $transit_deadline_on
+ * @property Carbon|null $transit_discharged_at
+ */
 final class CustomsDeclaration extends CustomsRecord
 {
     use SoftDeletes;
@@ -22,6 +35,10 @@ final class CustomsDeclaration extends CustomsRecord
     {
         return [
             'declaration_type' => DeclarationType::class,
+            'customs_regime' => CustomsRegime::class,
+            'transit_document_type' => TransitDocumentType::class,
+            'transit_deadline_on' => 'date',
+            'transit_discharged_at' => 'datetime',
             'status' => DeclarationStatus::class,
             'transport_in_container' => 'boolean',
             'container_numbers' => 'array',
@@ -33,6 +50,19 @@ final class CustomsDeclaration extends CustomsRecord
             'accepted_at' => 'datetime',
             'declared_on' => 'date',
         ];
+    }
+
+    /**
+     * The invoices this declaration clears: an export declaration with an assessment decision is the proof of export of
+     * each of them.
+     *
+     * @return BelongsToMany<Invoice, $this>
+     */
+    public function invoices(): BelongsToMany
+    {
+        return $this->belongsToMany(Invoice::class, 'customs_declaration_invoices', 'declaration_id', 'invoice_id')
+            ->withPivot('tenant_id')
+            ->withTimestamps();
     }
 
     /**
