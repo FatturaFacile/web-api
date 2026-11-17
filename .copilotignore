@@ -1,0 +1,26 @@
+# Ignore list shared across AI tools
+vendor/
+node_modules/
+public/build/
+public/storage/
+storage/
+bootstrap/cache/
+.phpunit.cache/
+.phpunit.result.cache
+coverage/
+.idea/
+.vscode/
+*.log
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.env
+.env.*
+!.env.example
+auth.json
+certs/
+*.pem
+*.key
+*.pfx
+*.zip
+*.pdf
