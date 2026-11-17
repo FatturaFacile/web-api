@@ -30,6 +30,14 @@ return new class extends Migration
                 continue;
             }
 
+            foreach (Schema::getColumns($table) as $column) {
+                if ($column['name'] === 'tenant_id' && ! $column['nullable']) {
+                    Schema::table($table, static function (Blueprint $blueprint): void {
+                        $blueprint->uuid('tenant_id')->nullable()->change();
+                    });
+                }
+            }
+
             $indexed = false;
 
             foreach (Schema::getIndexes($table) as $index) {
