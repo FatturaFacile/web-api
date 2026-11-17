@@ -44,7 +44,7 @@ jobs:
     steps:
       # Check out repository under $GITHUB_WORKSPACE, enforcing LF line endings to avoid Pint indentation mismatches
       - name: Checkout Codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Ensure UNIX line endings across all PHP files to prevent false-positive Pint rule violations
       - name: Normalize Line Endings (CRLF to LF)
@@ -74,7 +74,7 @@ jobs:
 
       # Cache Composer dependencies based on composer.lock hash
       - name: Cache Composer Dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -165,7 +165,7 @@ jobs:
 
     steps:
       - name: Checkout Codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Normalize Line Endings (CRLF to LF)
         run: |
@@ -187,7 +187,7 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache Composer Dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -218,7 +218,7 @@ jobs:
         run: ./vendor/bin/pest --shard=${{ matrix.shard }}/4 --compact --coverage-clover=clover-${{ matrix.shard }}.xml
 
       - name: Upload shard coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: clover-${{ matrix.shard }}
           path: clover-${{ matrix.shard }}.xml
@@ -231,10 +231,10 @@ jobs:
 
     steps:
       - name: Checkout Codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download shard coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: clover-*
           merge-multiple: true
@@ -246,7 +246,7 @@ jobs:
           python3 scripts/merge-coverage.py --min 70 --output clover.xml clover-*.xml | tee coverage-summary.txt
 
       - name: Upload merged coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-clover
           path: |
