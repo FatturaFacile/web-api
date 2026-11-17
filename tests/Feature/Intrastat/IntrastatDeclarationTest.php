@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\Intrastat\Models\IntrastatDeclaration;
@@ -59,6 +60,8 @@ function intrastatProduct(Tenant $tenant, string $sku, ?string $hsCode = null): 
 function intrastatInvoice(Tenant $tenant, Contact $contact, string $number, string $date, array $items, array $attributes = []): Invoice
 {
     $net = array_sum(array_map(static fn (array $item): float => (float) $item[2], $items));
+    $status = $attributes['status'] ?? 'posted';
+    unset($attributes['status']);
     $invoice = Invoice::create([
         'tenant_id' => $tenant->id, 'contact_id' => $contact->id, 'invoice_type' => 'standard', 'invoice_number' => $number, 'date' => $date,
         'currency' => 'EUR', 'total_net' => $net, 'total_tax' => 0, 'total_gross' => $net, 'payment_status' => 'unpaid', 'jurisdiction' => 'IT',
@@ -70,6 +73,12 @@ function intrastatInvoice(Tenant $tenant, Contact $contact, string $number, stri
             'invoice_id' => $invoice->id, 'product_id' => $product?->id, 'description' => $product?->name ?? 'Servizio', 'quantity' => $quantity,
             'unit_price' => round((float) $total / (float) $quantity, 4), 'tax_rate' => 0, 'discount_percentage' => 0, 'line_total' => $total,
         ]);
+    }
+
+    // Created as a draft so its items can be added; an issued invoice is then locked.
+    if ($status !== 'draft') {
+        DB::table('invoices')->where('id', $invoice->id)->update(['status' => $status]);
+        $invoice->refresh();
     }
 
     return $invoice;
@@ -101,6 +110,9 @@ function intrastatSalesFixture(Tenant $tenant, User $user): void
     intrastatInvoice($tenant, $german, 'A-0', '2027-03-28', [[$widget, '1', '100.00']]);
     intrastatInvoice($tenant, $french, 'A-3', '2027-04-21', [[$widget, '1', '100.00']]);
     intrastatInvoice($tenant, $italian, 'A-4', '2027-04-22', [[$widget, '1', '100.00']]);
+    // Never declared: a Swiss (extra-EU) customer and a German invoice that is still a draft.
+    intrastatInvoice($tenant, intrastatContact($tenant, 'Kunde AG', 'CH', 'CHE-123.456.788'), 'A-5', '2027-04-23', [[$widget, '1', '100.00']]);
+    intrastatInvoice($tenant, $german, 'A-6', '2027-04-24', [[$widget, '1', '100.00']], ['status' => 'draft']);
     intrastatInvoice($tenant, $german, 'NC-1', '2027-04-25', [[$widget, '1', '100.00']], ['invoice_type' => 'credit_note']);
 }
 

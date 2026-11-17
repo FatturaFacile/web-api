@@ -71,6 +71,8 @@ final class IntrastatSourceCollector
             ->with(['contact', 'items'])
             ->whereDate('date', '>=', $from->toDateString())->whereDate('date', '<=', $to->toDateString())
             ->where('invoice_type', '!=', 'proforma')
+            // Only issued (posted) documents are declared: drafts can still change and are not fiscal documents yet.
+            ->where('status', 'posted')
             ->orderBy('date')
             ->orderBy('invoice_number')
             ->get();
