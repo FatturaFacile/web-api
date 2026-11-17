@@ -77013,6 +77013,18 @@
                                     "value": "",
                                     "disabled": true,
                                     "description": ""
+                                },
+                                {
+                                    "key": "product_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "asset_status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
                                 }
                             ],
                             "variable": []
@@ -77073,7 +77085,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"serial_number\": \"string\",\n    \"stock_serial_number_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"current_owner_customer_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"original_sales_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_type\": \"b2b\",\n    \"jurisdiction\": \"CH\",\n    \"delivery_date\": \"2026-01-31T12:00:00+00:00\",\n    \"contract_warranty_months\": 1,\n    \"contract_clause_reference\": \"string\",\n    \"installed_firmware_version\": \"string\",\n    \"notes\": \"string\",\n    \"components\": [\n        {\n            \"position\": \"string\",\n            \"component_serial\": \"string\",\n            \"component_product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"role\": \"string\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"serial_number\": \"string\",\n    \"stock_serial_number_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"current_owner_customer_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"original_sales_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_type\": \"b2b\",\n    \"jurisdiction\": \"CH\",\n    \"delivery_date\": \"2026-01-31T12:00:00+00:00\",\n    \"contract_warranty_months\": 1,\n    \"contract_clause_reference\": \"string\",\n    \"installed_firmware_version\": \"string\",\n    \"asset_status\": \"active\",\n    \"commissioning_date\": \"2026-01-31T12:00:00+00:00\",\n    \"installation_site\": \"string\",\n    \"notes\": \"string\",\n    \"components\": [\n        {\n            \"position\": \"string\",\n            \"component_serial\": \"string\",\n            \"component_product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"role\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -77231,7 +77243,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"current_owner_customer_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"original_sales_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_type\": \"b2b\",\n    \"jurisdiction\": \"CH\",\n    \"delivery_date\": \"2026-01-31T12:00:00+00:00\",\n    \"contract_warranty_months\": 1,\n    \"contract_clause_reference\": \"string\",\n    \"installed_firmware_version\": \"string\",\n    \"notes\": \"string\"\n}",
+                            "raw": "{\n    \"current_owner_customer_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"original_sales_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_type\": \"b2b\",\n    \"jurisdiction\": \"CH\",\n    \"delivery_date\": \"2026-01-31T12:00:00+00:00\",\n    \"contract_warranty_months\": 1,\n    \"contract_clause_reference\": \"string\",\n    \"installed_firmware_version\": \"string\",\n    \"asset_status\": \"active\",\n    \"commissioning_date\": \"2026-01-31T12:00:00+00:00\",\n    \"installation_site\": \"string\",\n    \"notes\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -80447,6 +80459,519 @@
                     }
                 },
                 {
+                    "name": "Returns the paginated list of service contracts of the active tenant",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/esm/service-contracts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "esm",
+                                "service-contracts"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Returns the paginated list of service contracts of the active tenant",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/esm/service-contracts",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/esm/service-contracts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "esm",
+                                "service-contracts"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"customer_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"contract_number\": \"string\",\n    \"title\": \"string\",\n    \"start_date\": \"2026-01-31T12:00:00+00:00\",\n    \"end_date\": \"2026-01-31T12:00:00+00:00\",\n    \"status\": \"draft\",\n    \"billing_recurrence\": \"monthly\",\n    \"annual_value\": 1.5,\n    \"sla_response_hours\": 1.5,\n    \"included_hours\": 1.5,\n    \"low_balance_threshold_percent\": 1,\n    \"report_email\": \"user@example.com\",\n    \"asset_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Returns a single service contract of the active tenant",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/esm/service-contracts/:serviceContract",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "esm",
+                                "service-contracts",
+                                ":serviceContract"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "serviceContract",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Returns a single service contract of the active tenant",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/esm/service-contracts/:serviceContract",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/esm/service-contracts/:serviceContract",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "esm",
+                                "service-contracts",
+                                ":serviceContract"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "serviceContract",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"customer_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"contract_number\": \"string\",\n    \"title\": \"string\",\n    \"start_date\": \"2026-01-31T12:00:00+00:00\",\n    \"end_date\": \"2026-01-31T12:00:00+00:00\",\n    \"status\": \"draft\",\n    \"billing_recurrence\": \"monthly\",\n    \"annual_value\": 1.5,\n    \"sla_response_hours\": 1.5,\n    \"included_hours\": 1.5,\n    \"low_balance_threshold_percent\": 1,\n    \"report_email\": \"user@example.com\",\n    \"asset_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/esm/service-contracts/:serviceContract/ledger",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/esm/service-contracts/:serviceContract/ledger",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "esm",
+                                "service-contracts",
+                                ":serviceContract",
+                                "ledger"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "serviceContract",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/esm/service-contracts/:serviceContract/hours/top-up",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/esm/service-contracts/:serviceContract/hours/top-up",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "esm",
+                                "service-contracts",
+                                ":serviceContract",
+                                "hours",
+                                "top-up"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "serviceContract",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"hours\": 1.5,\n    \"description\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/esm/service-contracts/:serviceContract/hours/adjust",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/esm/service-contracts/:serviceContract/hours/adjust",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "esm",
+                                "service-contracts",
+                                ":serviceContract",
+                                "hours",
+                                "adjust"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "serviceContract",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"hours\": 1.5,\n    \"description\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/esm/service-contracts/:serviceContract/residual-report",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/esm/service-contracts/:serviceContract/residual-report",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "esm",
+                                "service-contracts",
+                                ":serviceContract",
+                                "residual-report"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "serviceContract",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/esm/equipment-passports/:passport/history",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/esm/equipment-passports/:passport/history",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "esm",
+                                "equipment-passports",
+                                ":passport",
+                                "history"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "passport",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "GET /v1/esm/rma-orders/board",
                     "request": {
                         "method": "GET",
@@ -81400,104 +81925,6 @@
                                     "language": "json"
                                 }
                             }
-                        }
-                    }
-                },
-                {
-                    "name": "Returns the paginated list of service contracts of the active tenant",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/esm/service-contracts",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "esm",
-                                "service-contracts"
-                            ],
-                            "query": [
-                                {
-                                    "key": "status",
-                                    "value": "",
-                                    "disabled": true,
-                                    "description": ""
-                                }
-                            ],
-                            "variable": []
-                        },
-                        "description": "Returns the paginated list of service contracts of the active tenant",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    }
-                },
-                {
-                    "name": "Returns a single service contract of the active tenant",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/esm/service-contracts/:serviceContract",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "esm",
-                                "service-contracts",
-                                ":serviceContract"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "serviceContract",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "Returns a single service contract of the active tenant",
-                        "auth": {
-                            "type": "noauth"
                         }
                     }
                 },
