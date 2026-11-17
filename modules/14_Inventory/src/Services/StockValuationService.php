@@ -6,23 +6,26 @@ namespace Modules\Inventory\Services;
 
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Carbon;
+use Modules\Inventory\Contracts\InventoryCostingServiceInterface;
 use Modules\Inventory\Contracts\StockValuationServiceInterface;
+use Modules\Inventory\Enums\ValuationMethod;
 use Modules\Inventory\Events\InventoryValuationCalculatedEvent;
 use Modules\Inventory\Models\StockItem;
-use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockValuationSnapshot;
+use Modules\Inventory\Support\Decimal;
 use Modules\Inventory\Support\Quantity;
 
 /**
- * Item-level costing: the moving average after a receipt, the FIFO cost of a quantity taken out of stock, and the
- * daily valuation snapshot per warehouse (valued like the stock valuation report, StockValuationReportService).
+ * Item-level costing and the valuation read side: the moving average after a receipt, the FIFO cost of a quantity
+ * taken out of stock (from the persistent cost layers of InventoryCostingService, FatturaFacile/FatturaFacile#144),
+ * item valuation and the daily valuation snapshot per warehouse.
  * Computed with bcmath; the float signatures of the interface are kept for its existing callers.
  */
 final class StockValuationService implements StockValuationServiceInterface
 {
     public function __construct(
         private readonly EventDispatcher $dispatcher,
-        private readonly StockValuationReportService $report
+        private readonly InventoryCostingServiceInterface $costing
     ) {}
 
     /**
@@ -49,8 +52,8 @@ final class StockValuationService implements StockValuationServiceInterface
     }
 
     /**
-     * The FIFO cost of taking `quantityToDeplete` units out of stock: the oldest supplier receipts first. A part not
-     * covered by recorded receipts is valued at the moving average (standard cost when there is none).
+     * Cost of depleting the next $quantityToDeplete units from the open FIFO cost layers
+     * (read-only; actual depletion happens in InventoryCostingService::consumeOutbound).
      */
     public function calculateFifoValuation(StockItem $item, float $quantityToDeplete): float
     {
@@ -60,24 +63,14 @@ final class StockValuationService implements StockValuationServiceInterface
             return 0.0;
         }
 
-        $value = '0';
+        return (float) $this->costing->previewFifoCost($item, Decimal::of($quantityToDeplete));
+    }
 
-        foreach (StockMovement::query()->where('stock_item_id', $item->id)->where('movement_type', 'supplier_receipt')->orderBy('executed_at')->orderBy('id')->cursor() as $receipt) {
-            if (! Quantity::isPositive($remaining)) {
-                break;
-            }
+    public function valueItem(StockItem $item, ?string $method = null): string
+    {
+        $resolved = $method !== null ? ValuationMethod::fromStorage($method) : null;
 
-            $take = Quantity::min((string) $receipt->quantity, $remaining);
-            $value = Quantity::add($value, Quantity::mul($take, (string) $receipt->unit_cost, 10), 10);
-            $remaining = Quantity::sub($remaining, $take);
-        }
-
-        if (Quantity::isPositive($remaining)) {
-            $fallback = Quantity::isPositive((string) $item->current_moving_average_cost) ? (string) $item->current_moving_average_cost : (string) $item->standard_cost;
-            $value = Quantity::add($value, Quantity::mul($remaining, $fallback, 10), 10);
-        }
-
-        return (float) Quantity::of($value, 2);
+        return $this->costing->valueOnHand($item, $resolved ?? $this->costing->resolveEffectiveMethod($item));
     }
 
     /**
@@ -85,15 +78,29 @@ final class StockValuationService implements StockValuationServiceInterface
      */
     public function generateDailySnapshot(StockItem $item, string $warehouseId): StockValuationSnapshot
     {
-        $item->loadMissing('category');
-        $method = (string) ($item->category?->valuation_method ?? 'moving_average');
-        $quantity = Quantity::of((string) $item->quants()
+        return $this->capturePeriodicSnapshot($item, $warehouseId);
+    }
+
+    public function capturePeriodicSnapshot(StockItem $item, string $warehouseId, ?string $method = null): StockValuationSnapshot
+    {
+        $resolved = ($method !== null ? ValuationMethod::fromStorage($method) : null) ?? $this->costing->resolveEffectiveMethod($item);
+
+        $quantity = Decimal::quantity((string) $item->quants()
             ->whereHas('bin.rack.aisle.zone', fn ($q) => $q->where('warehouse_id', $warehouseId))
             ->sum('quantity_on_hand'));
-        $totalOnHand = Quantity::of((string) $item->quants()->sum('quantity_on_hand'));
 
-        $unitCost = $this->report->unitCostAt($item, $method, Carbon::now(), $totalOnHand)['unit_cost'];
-        $totalValuation = Quantity::value($quantity, $unitCost);
+        $itemOnHand = Decimal::quantity((string) $item->quants()->sum('quantity_on_hand'));
+        $itemValue = $this->costing->valueOnHand($item, $resolved);
+
+        // Warehouse share valued at the item-level unit cost of the chosen method.
+        $unitCost = Decimal::isPositive($itemOnHand)
+            ? Decimal::unitCost(Decimal::div($itemValue, $itemOnHand))
+            : Decimal::unitCost(match ($resolved) {
+                ValuationMethod::StandardCost => (string) $item->standard_cost,
+                default => (string) $item->current_moving_average_cost,
+            });
+
+        $totalValuation = Decimal::money(Decimal::mul($quantity, $unitCost));
 
         $snapshot = StockValuationSnapshot::updateOrCreate(
             [
@@ -104,7 +111,7 @@ final class StockValuationService implements StockValuationServiceInterface
             ],
             [
                 'tenant_id' => $item->tenant_id,
-                'valuation_method' => $method,
+                'valuation_method' => $resolved->value,
                 'quantity_on_hand' => $quantity,
                 'unit_cost' => $unitCost,
                 'total_valuation' => $totalValuation,
@@ -115,7 +122,7 @@ final class StockValuationService implements StockValuationServiceInterface
             snapshotId: $snapshot->id,
             stockItemId: $item->id,
             warehouseId: $warehouseId,
-            valuationMethod: $method,
+            valuationMethod: $resolved->value,
             totalValuation: (float) $totalValuation,
             tenantId: $item->tenant_id,
             companyId: (string) ($item->company_id ?? '')

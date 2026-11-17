@@ -15,20 +15,31 @@ use Modules\HumanResources\Events\EmployeeTerminatedEvent;
 use Modules\HumanResources\Events\LeaveApprovedEvent;
 use Modules\Invoicing\Events\SalesQuoteAcceptedEvent;
 use Modules\Projects\Events\ProjectClosureReadyEvent;
+use Modules\ServiceManagement\Console\ScanOverdueLoanersCommand;
+use Modules\ServiceManagement\Contracts\EquipmentPassportServiceInterface;
 use Modules\ServiceManagement\Contracts\IncidentManagementServiceInterface;
 use Modules\ServiceManagement\Contracts\ProblemAndChangeServiceInterface;
+use Modules\ServiceManagement\Contracts\RmaServiceInterface;
 use Modules\ServiceManagement\Contracts\SLAManagementServiceInterface;
 use Modules\ServiceManagement\Contracts\TicketServiceInterface;
 use Modules\ServiceManagement\Contracts\WorkOrderAndFieldServiceInterface;
 use Modules\ServiceManagement\Events\ChangeApprovedEvent;
 use Modules\ServiceManagement\Events\ChangeRequestCreatedEvent;
 use Modules\ServiceManagement\Events\CustomerSatisfactionUpdatedEvent;
+use Modules\ServiceManagement\Events\EquipmentPassportRegisteredEvent;
 use Modules\ServiceManagement\Events\FieldServiceExpenseReadyEvent;
 use Modules\ServiceManagement\Events\HelpdeskTicketChanged;
 use Modules\ServiceManagement\Events\IncidentCreatedEvent;
 use Modules\ServiceManagement\Events\IncidentResolvedEvent;
+use Modules\ServiceManagement\Events\LoanerIssuedEvent;
+use Modules\ServiceManagement\Events\LoanerOverdueEvent;
 use Modules\ServiceManagement\Events\ProblemCreatedEvent;
 use Modules\ServiceManagement\Events\ProblemResolvedEvent;
+use Modules\ServiceManagement\Events\RmaCompletedEvent;
+use Modules\ServiceManagement\Events\RmaEstimateDecidedEvent;
+use Modules\ServiceManagement\Events\RmaIssuedEvent;
+use Modules\ServiceManagement\Events\RmaStatusChangedEvent;
+use Modules\ServiceManagement\Events\RmaWarrantyCostChargedEvent;
 use Modules\ServiceManagement\Events\ServiceAccrualReadyEvent;
 use Modules\ServiceManagement\Events\ServiceCashForecastEvent;
 use Modules\ServiceManagement\Events\ServiceCostReadyEvent;
@@ -43,6 +54,7 @@ use Modules\ServiceManagement\Events\TicketClosedEvent;
 use Modules\ServiceManagement\Events\TicketCreatedEvent;
 use Modules\ServiceManagement\Events\TicketEscalatedEvent;
 use Modules\ServiceManagement\Events\TicketResolvedEvent;
+use Modules\ServiceManagement\Events\VendorClaimOpenedEvent;
 use Modules\ServiceManagement\Events\WorkOrderCompletedEvent;
 use Modules\ServiceManagement\Events\WorkOrderCreatedEvent;
 use Modules\ServiceManagement\Listeners\AssetMaintenanceESMListener;
@@ -57,29 +69,40 @@ use Modules\ServiceManagement\Listeners\WorkflowApprovalESMListener;
 use Modules\ServiceManagement\Models\BusinessHoursCalendar;
 use Modules\ServiceManagement\Models\CannedResponse;
 use Modules\ServiceManagement\Models\ChangeRequest;
+use Modules\ServiceManagement\Models\DepotRepairRmaOrder;
 use Modules\ServiceManagement\Models\HelpdeskSetting;
 use Modules\ServiceManagement\Models\Incident;
 use Modules\ServiceManagement\Models\KnowledgeArticle;
 use Modules\ServiceManagement\Models\KnowledgeCategory;
+use Modules\ServiceManagement\Models\Loaner;
 use Modules\ServiceManagement\Models\Macro;
 use Modules\ServiceManagement\Models\RoutingRule;
 use Modules\ServiceManagement\Models\SavedView;
+use Modules\ServiceManagement\Models\SerializedEquipmentPassport;
 use Modules\ServiceManagement\Models\ServiceTeam;
 use Modules\ServiceManagement\Models\SupportMailbox;
 use Modules\ServiceManagement\Models\Ticket;
+use Modules\ServiceManagement\Models\VendorWarrantyClaim;
 use Modules\ServiceManagement\Models\WorkOrder;
 use Modules\ServiceManagement\Policies\AgentToolPolicy;
 use Modules\ServiceManagement\Policies\ChangeRequestPolicy;
+use Modules\ServiceManagement\Policies\EquipmentPassportPolicy;
 use Modules\ServiceManagement\Policies\HelpdeskConfigurationPolicy;
 use Modules\ServiceManagement\Policies\IncidentPolicy;
 use Modules\ServiceManagement\Policies\KnowledgeArticlePolicy;
+use Modules\ServiceManagement\Policies\LoanerPolicy;
+use Modules\ServiceManagement\Policies\RmaOrderPolicy;
 use Modules\ServiceManagement\Policies\TicketPolicy;
+use Modules\ServiceManagement\Policies\VendorClaimPolicy;
 use Modules\ServiceManagement\Policies\WorkOrderPolicy;
+use Modules\ServiceManagement\Services\EquipmentPassportService;
 use Modules\ServiceManagement\Services\IncidentManagementService;
 use Modules\ServiceManagement\Services\ProblemAndChangeService;
+use Modules\ServiceManagement\Services\RmaService;
 use Modules\ServiceManagement\Services\SLAManagementService;
 use Modules\ServiceManagement\Services\TicketService;
 use Modules\ServiceManagement\Services\WorkOrderAndFieldService;
+use Modules\ServiceManagement\Warranty\WarrantyCalculator;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 
@@ -92,6 +115,12 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         $this->app->singleton(ProblemAndChangeServiceInterface::class, ProblemAndChangeService::class);
         $this->app->singleton(WorkOrderAndFieldServiceInterface::class, WorkOrderAndFieldService::class);
         $this->app->singleton(SLAManagementServiceInterface::class, SLAManagementService::class);
+
+        // GH-396: warranty, equipment passports and depot repair (RMA)
+        $this->mergeConfigFrom(__DIR__.'/../../config/service-management.php', 'service-management');
+        $this->app->singleton(WarrantyCalculator::class, static fn (): WarrantyCalculator => new WarrantyCalculator);
+        $this->app->singleton(EquipmentPassportServiceInterface::class, EquipmentPassportService::class);
+        $this->app->singleton(RmaServiceInterface::class, RmaService::class);
     }
 
     public function boot(): void
@@ -104,6 +133,16 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         Gate::policy(Incident::class, IncidentPolicy::class);
         Gate::policy(ChangeRequest::class, ChangeRequestPolicy::class);
         Gate::policy(WorkOrder::class, WorkOrderPolicy::class);
+        Gate::policy(SerializedEquipmentPassport::class, EquipmentPassportPolicy::class);
+        Gate::policy(DepotRepairRmaOrder::class, RmaOrderPolicy::class);
+        Gate::policy(Loaner::class, LoanerPolicy::class);
+        Gate::policy(VendorWarrantyClaim::class, VendorClaimPolicy::class);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                ScanOverdueLoanersCommand::class,
+            ]);
+        }
 
         Gate::policy(KnowledgeArticle::class, KnowledgeArticlePolicy::class);
 
@@ -144,6 +183,15 @@ final class ServiceManagementServiceProvider extends ServiceProvider
             ServiceCashForecastEvent::class,
             ServiceRevenueForecastEvent::class,
             ServicePipelineForecastEvent::class,
+            EquipmentPassportRegisteredEvent::class,
+            RmaIssuedEvent::class,
+            RmaStatusChangedEvent::class,
+            RmaEstimateDecidedEvent::class,
+            RmaWarrantyCostChargedEvent::class,
+            RmaCompletedEvent::class,
+            VendorClaimOpenedEvent::class,
+            LoanerIssuedEvent::class,
+            LoanerOverdueEvent::class,
         ];
 
         foreach ($domainEvents as $eventClass) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\HumanResources\Providers;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -11,12 +12,23 @@ use Modules\AssetManagement\Events\AssetAssignedEvent;
 use Modules\AssetManagement\Events\AssetDisposedEvent;
 use Modules\AssetManagement\Events\AssetTransferredEvent;
 use Modules\HumanResources\Console\Commands\PurgeExpiredTimeRecordsCommand;
+use Modules\HumanResources\Console\PurgeExpiredCandidateDataCommand;
+use Modules\HumanResources\Contracts\CandidateDocumentStorageInterface;
+use Modules\HumanResources\Contracts\CandidateEmailSenderInterface;
+use Modules\HumanResources\Contracts\CvParserInterface;
+use Modules\HumanResources\Contracts\DigitalSignatureProviderInterface;
 use Modules\HumanResources\Contracts\EmployeeLifecycleServiceInterface;
 use Modules\HumanResources\Contracts\LeaveAndTimeServiceInterface;
+use Modules\HumanResources\Contracts\OnboardingStarterInterface;
 use Modules\HumanResources\Contracts\OrganizationManagementServiceInterface;
 use Modules\HumanResources\Contracts\PerformanceManagementServiceInterface;
+use Modules\HumanResources\Contracts\RecruitmentServiceInterface;
 use Modules\HumanResources\Contracts\TrainingAndCertificationServiceInterface;
 use Modules\HumanResources\Events\AccrualReadyEvent;
+use Modules\HumanResources\Events\CandidateApplicationReceivedEvent;
+use Modules\HumanResources\Events\CandidateDataAnonymizedEvent;
+use Modules\HumanResources\Events\CandidateHiredEvent;
+use Modules\HumanResources\Events\CandidateStageChangedEvent;
 use Modules\HumanResources\Events\CertificationExpiringEvent;
 use Modules\HumanResources\Events\EmployeeCostForecastEvent;
 use Modules\HumanResources\Events\EmployeeCostReadyEvent;
@@ -24,6 +36,8 @@ use Modules\HumanResources\Events\EmployeeHiredEvent;
 use Modules\HumanResources\Events\EmployeePromotedEvent;
 use Modules\HumanResources\Events\EmployeeTerminatedEvent;
 use Modules\HumanResources\Events\EmployeeTransferredEvent;
+use Modules\HumanResources\Events\JobOfferSentEvent;
+use Modules\HumanResources\Events\JobOpeningPublishedEvent;
 use Modules\HumanResources\Events\LaborCostReadyEvent;
 use Modules\HumanResources\Events\LeaveApprovedEvent;
 use Modules\HumanResources\Events\LeaveLiabilityReadyEvent;
@@ -37,8 +51,10 @@ use Modules\HumanResources\Listeners\AssetAssignmentHRListener;
 use Modules\HumanResources\Listeners\DispatchOutboxOnHREventListener;
 use Modules\HumanResources\Listeners\ProjectHRListener;
 use Modules\HumanResources\Listeners\WorkflowApprovalHRListener;
+use Modules\HumanResources\Models\CandidateApplication;
 use Modules\HumanResources\Models\Department;
 use Modules\HumanResources\Models\Employee;
+use Modules\HumanResources\Models\JobOpening;
 use Modules\HumanResources\Models\LeaveRequest;
 use Modules\HumanResources\Models\PerformanceReview;
 use Modules\HumanResources\Models\TimeAuditEntry;
@@ -46,16 +62,24 @@ use Modules\HumanResources\Models\TimeClockEvent;
 use Modules\HumanResources\Models\TimeDailyRecord;
 use Modules\HumanResources\Models\TimeRecordingProfile;
 use Modules\HumanResources\Models\TrainingRecord;
+use Modules\HumanResources\Policies\CandidateApplicationPolicy;
 use Modules\HumanResources\Policies\DepartmentPolicy;
 use Modules\HumanResources\Policies\EmployeePolicy;
+use Modules\HumanResources\Policies\JobOpeningPolicy;
 use Modules\HumanResources\Policies\LeaveRequestPolicy;
 use Modules\HumanResources\Policies\PerformanceReviewPolicy;
 use Modules\HumanResources\Policies\TimeTrackingPolicy;
 use Modules\HumanResources\Policies\TrainingRecordPolicy;
 use Modules\HumanResources\Services\EmployeeLifecycleService;
+use Modules\HumanResources\Services\LaravelMailCandidateEmailSender;
 use Modules\HumanResources\Services\LeaveAndTimeService;
+use Modules\HumanResources\Services\ManualAcceptanceSignatureProvider;
+use Modules\HumanResources\Services\NaiveTextCvParser;
+use Modules\HumanResources\Services\NullOnboardingStarter;
 use Modules\HumanResources\Services\OrganizationManagementService;
 use Modules\HumanResources\Services\PerformanceManagementService;
+use Modules\HumanResources\Services\PrivateDiskCandidateDocumentStorage;
+use Modules\HumanResources\Services\RecruitmentService;
 use Modules\HumanResources\Services\TrainingAndCertificationService;
 use Modules\Projects\Events\ProjectClosureReadyEvent;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
@@ -70,6 +94,18 @@ final class HumanResourcesServiceProvider extends ServiceProvider
         $this->app->singleton(LeaveAndTimeServiceInterface::class, LeaveAndTimeService::class);
         $this->app->singleton(PerformanceManagementServiceInterface::class, PerformanceManagementService::class);
         $this->app->singleton(TrainingAndCertificationServiceInterface::class, TrainingAndCertificationService::class);
+
+        // Recruiting & ATS (Mod 070): seams for modules that do not exist yet, selected through config/recruiting.php
+        $this->app->singleton(RecruitmentServiceInterface::class, RecruitmentService::class);
+        $this->app->singleton(CandidateDocumentStorageInterface::class, PrivateDiskCandidateDocumentStorage::class);
+        $this->app->singleton(CandidateEmailSenderInterface::class, LaravelMailCandidateEmailSender::class);
+        $this->app->singleton(OnboardingStarterInterface::class, NullOnboardingStarter::class);
+        $this->app->singleton(CvParserInterface::class, fn (): CvParserInterface => match (config('recruiting.cv_parser', 'naive')) {
+            default => new NaiveTextCvParser,
+        });
+        $this->app->singleton(DigitalSignatureProviderInterface::class, fn (): DigitalSignatureProviderInterface => match (config('recruiting.signature_provider', 'manual')) {
+            default => new ManualAcceptanceSignatureProvider,
+        });
     }
 
     public function boot(): void
@@ -90,6 +126,8 @@ final class HumanResourcesServiceProvider extends ServiceProvider
         Gate::policy(TimeDailyRecord::class, TimeTrackingPolicy::class);
         Gate::policy(TimeAuditEntry::class, TimeTrackingPolicy::class);
         Gate::policy(TimeRecordingProfile::class, TimeTrackingPolicy::class);
+        Gate::policy(JobOpening::class, JobOpeningPolicy::class);
+        Gate::policy(CandidateApplication::class, CandidateApplicationPolicy::class);
 
         if ($this->app->runningInConsole()) {
             $this->commands([PurgeExpiredTimeRecordsCommand::class]);
@@ -113,11 +151,26 @@ final class HumanResourcesServiceProvider extends ServiceProvider
             PayrollForecastEvent::class,
             TrainingBudgetForecastEvent::class,
             EmployeeCostForecastEvent::class,
+            JobOpeningPublishedEvent::class,
+            CandidateApplicationReceivedEvent::class,
+            CandidateStageChangedEvent::class,
+            JobOfferSentEvent::class,
+            CandidateHiredEvent::class,
+            CandidateDataAnonymizedEvent::class,
         ];
 
         foreach ($domainEvents as $eventClass) {
             Event::listen($eventClass, DispatchOutboxOnHREventListener::class);
         }
+
+        // Recruiting GDPR / nLPD retention: daily anonymisation of candidates with expired consent
+        if ($this->app->runningInConsole()) {
+            $this->commands([PurgeExpiredCandidateDataCommand::class]);
+        }
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('hr:recruiting:purge-expired-candidates')->dailyAt('03:30')->withoutOverlapping();
+        });
 
         // Cross-Module Listeners
         Event::listen(AssetAssignedEvent::class, [AssetAssignmentHRListener::class, 'handleAssetAssigned']);

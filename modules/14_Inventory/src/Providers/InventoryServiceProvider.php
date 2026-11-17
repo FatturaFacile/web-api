@@ -8,10 +8,13 @@ use App\Models\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\Inventory\Console\BackfillInventoryCostLayersCommand;
 use Modules\Inventory\Contracts\BarcodeScannerServiceInterface;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
+use Modules\Inventory\Contracts\InventoryCostingServiceInterface;
 use Modules\Inventory\Contracts\InventoryCountServiceInterface;
 use Modules\Inventory\Contracts\InventoryReplenishmentServiceInterface;
+use Modules\Inventory\Contracts\LandedCostAllocationServiceInterface;
 use Modules\Inventory\Contracts\StockReservationServiceInterface;
 use Modules\Inventory\Contracts\StockValuationServiceInterface;
 use Modules\Inventory\Contracts\TransferRouteValidator;
@@ -21,13 +24,16 @@ use Modules\Inventory\Events\InventoryCountCompletedEvent;
 use Modules\Inventory\Events\InventoryItemCreatedEvent;
 use Modules\Inventory\Events\InventoryMovementCreatedEvent;
 use Modules\Inventory\Events\InventoryRevaluationEvent;
+use Modules\Inventory\Events\InventoryRevaluedEvent;
 use Modules\Inventory\Events\InventoryValuationCalculatedEvent;
 use Modules\Inventory\Events\InventoryValuationReadyEvent;
 use Modules\Inventory\Events\InventoryWriteOffEvent;
+use Modules\Inventory\Events\LandedCostAppliedEvent;
 use Modules\Inventory\Events\LotExpiredEvent;
 use Modules\Inventory\Events\ProjectInventoryIssueEvent;
 use Modules\Inventory\Events\ProjectInventoryReservationEvent;
 use Modules\Inventory\Events\ProjectMaterialConsumptionEvent;
+use Modules\Inventory\Events\PurchasePriceVarianceRecordedEvent;
 use Modules\Inventory\Events\ReorderPointReachedEvent;
 use Modules\Inventory\Events\SerialAssignedEvent;
 use Modules\Inventory\Events\StockAdjustedEvent;
@@ -47,22 +53,31 @@ use Modules\Inventory\Listeners\SettleStockShortfallsListener;
 use Modules\Inventory\Listeners\UpdateSerialLifecycleListener;
 use Modules\Inventory\Listeners\WorkflowApprovalInventoryListener;
 use Modules\Inventory\Models\InventoryAdjustment;
+use Modules\Inventory\Models\InventoryBookExport;
 use Modules\Inventory\Models\InventoryCountSession;
+use Modules\Inventory\Models\LandedCostDocument;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockReservation;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Inventory\Policies\InventoryAdjustmentPolicy;
+use Modules\Inventory\Policies\InventoryBookPolicy;
 use Modules\Inventory\Policies\InventoryCountSessionPolicy;
 use Modules\Inventory\Policies\InventoryManagers;
+use Modules\Inventory\Policies\LandedCostDocumentPolicy;
 use Modules\Inventory\Policies\StockItemPolicy;
 use Modules\Inventory\Policies\StockMovementPolicy;
 use Modules\Inventory\Policies\StockReservationPolicy;
 use Modules\Inventory\Policies\WarehousePolicy;
 use Modules\Inventory\Services\BarcodeScannerService;
 use Modules\Inventory\Services\DoubleEntryMovementService;
+use Modules\Inventory\Services\InventoryBookService;
+use Modules\Inventory\Services\InventoryCostingService;
 use Modules\Inventory\Services\InventoryCountService;
+use Modules\Inventory\Services\InventoryPermissionChecker;
 use Modules\Inventory\Services\InventoryReplenishmentService;
+use Modules\Inventory\Services\InventoryRevaluationService;
+use Modules\Inventory\Services\LandedCostAllocationService;
 use Modules\Inventory\Services\OutboundIssuePreference;
 use Modules\Inventory\Services\StockReservationService;
 use Modules\Inventory\Services\StockValuationService;
@@ -103,6 +118,15 @@ final class InventoryServiceProvider extends ServiceProvider
 
         // Per request (or job): where the stock of a document without warehouse is taken from (shipment confirmation).
         $this->app->scoped(OutboundIssuePreference::class);
+        // Valuation engine, landed costs and inventory book (FatturaFacile/FatturaFacile#144).
+        // InventoryLedgerGatewayInterface is bound by the General Ledger module.
+        $this->app->singleton(InventoryCostingServiceInterface::class, InventoryCostingService::class);
+        $this->app->singleton(InventoryCostingService::class);
+        $this->app->singleton(LandedCostAllocationServiceInterface::class, LandedCostAllocationService::class);
+        $this->app->singleton(LandedCostAllocationService::class);
+        $this->app->singleton(InventoryRevaluationService::class);
+        $this->app->singleton(InventoryBookService::class);
+        $this->app->singleton(InventoryPermissionChecker::class);
     }
 
     public function boot(): void
@@ -119,6 +143,17 @@ final class InventoryServiceProvider extends ServiceProvider
         Gate::policy(InventoryCountSession::class, InventoryCountSessionPolicy::class);
         // Manager decisions of the warehouse: putaway rules, ABC classification, cycle count plans.
         Gate::define('inventory.manage', static fn (User $user): bool => InventoryManagers::includes($user));
+        Gate::policy(LandedCostDocument::class, LandedCostDocumentPolicy::class);
+        Gate::policy(InventoryBookExport::class, InventoryBookPolicy::class);
+
+        // Valuation abilities (tenant membership / inventory.valuation.manage)
+        Gate::define('inventory.valuation.view', fn (User $user): bool => $this->app->make(InventoryPermissionChecker::class)->isMember($user));
+        Gate::define(InventoryPermissionChecker::VALUATION_MANAGE, fn (User $user): bool => $this->app->make(InventoryPermissionChecker::class)->allows($user, InventoryPermissionChecker::VALUATION_MANAGE));
+        Gate::define(InventoryPermissionChecker::BOOK_EXPORT, fn (User $user): bool => $this->app->make(InventoryPermissionChecker::class)->allows($user, InventoryPermissionChecker::BOOK_EXPORT));
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([BackfillInventoryCostLayersCommand::class]);
+        }
 
         // Register Outbox Relaying for Domain Events
         Event::listen(InventoryItemCreatedEvent::class, DispatchOutboxOnInventoryEventListener::class);
@@ -141,6 +176,9 @@ final class InventoryServiceProvider extends ServiceProvider
         Event::listen(ProjectInventoryIssueEvent::class, DispatchOutboxOnInventoryEventListener::class);
         Event::listen(LotExpiredEvent::class, DispatchOutboxOnInventoryEventListener::class);
         Event::listen(SerialAssignedEvent::class, DispatchOutboxOnInventoryEventListener::class);
+        Event::listen(LandedCostAppliedEvent::class, DispatchOutboxOnInventoryEventListener::class);
+        Event::listen(InventoryRevaluedEvent::class, DispatchOutboxOnInventoryEventListener::class);
+        Event::listen(PurchasePriceVarianceRecordedEvent::class, DispatchOutboxOnInventoryEventListener::class);
 
         // Register Cross-Module Domain Event Listeners
         Event::listen(GoodsReceivedEvent::class, ProcurementGoodsReceivedListener::class);

@@ -96,6 +96,14 @@ final class StockItem extends BaseEnterpriseModel
         return $this->hasMany(StockReorderRule::class, 'stock_item_id');
     }
 
+    /**
+     * @return HasMany<InventoryCostLayer, $this>
+     */
+    public function costLayers(): HasMany
+    {
+        return $this->hasMany(InventoryCostLayer::class, 'stock_item_id');
+    }
+
     public function getTotalOnHandAttribute(): float
     {
         return (float) $this->quants()->sum('quantity_on_hand');

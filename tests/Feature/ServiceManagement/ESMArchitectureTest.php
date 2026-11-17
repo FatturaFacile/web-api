@@ -4,19 +4,30 @@ declare(strict_types=1);
 
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Support\Facades\Event;
+use Modules\ServiceManagement\Contracts\EquipmentPassportServiceInterface;
 use Modules\ServiceManagement\Contracts\IncidentManagementServiceInterface;
 use Modules\ServiceManagement\Contracts\ProblemAndChangeServiceInterface;
+use Modules\ServiceManagement\Contracts\RmaServiceInterface;
 use Modules\ServiceManagement\Contracts\SLAManagementServiceInterface;
 use Modules\ServiceManagement\Contracts\TicketServiceInterface;
 use Modules\ServiceManagement\Contracts\WorkOrderAndFieldServiceInterface;
 use Modules\ServiceManagement\Events\ChangeApprovedEvent;
 use Modules\ServiceManagement\Events\ChangeRequestCreatedEvent;
 use Modules\ServiceManagement\Events\CustomerSatisfactionUpdatedEvent;
+use Modules\ServiceManagement\Events\EquipmentPassportRegisteredEvent;
 use Modules\ServiceManagement\Events\FieldServiceExpenseReadyEvent;
 use Modules\ServiceManagement\Events\IncidentCreatedEvent;
 use Modules\ServiceManagement\Events\IncidentResolvedEvent;
+use Modules\ServiceManagement\Events\LoanerIssuedEvent;
+use Modules\ServiceManagement\Events\LoanerOverdueEvent;
 use Modules\ServiceManagement\Events\ProblemCreatedEvent;
 use Modules\ServiceManagement\Events\ProblemResolvedEvent;
+use Modules\ServiceManagement\Events\RmaCompletedEvent;
+use Modules\ServiceManagement\Events\RmaEstimateDecidedEvent;
+use Modules\ServiceManagement\Events\RmaIssuedEvent;
+use Modules\ServiceManagement\Events\RmaStatusChangedEvent;
+use Modules\ServiceManagement\Events\RmaWarrantyCostChargedEvent;
 use Modules\ServiceManagement\Events\ServiceAccrualReadyEvent;
 use Modules\ServiceManagement\Events\ServiceCashForecastEvent;
 use Modules\ServiceManagement\Events\ServiceCostReadyEvent;
@@ -31,12 +42,21 @@ use Modules\ServiceManagement\Events\TicketClosedEvent;
 use Modules\ServiceManagement\Events\TicketCreatedEvent;
 use Modules\ServiceManagement\Events\TicketEscalatedEvent;
 use Modules\ServiceManagement\Events\TicketResolvedEvent;
+use Modules\ServiceManagement\Events\VendorClaimOpenedEvent;
 use Modules\ServiceManagement\Events\WorkOrderCompletedEvent;
 use Modules\ServiceManagement\Events\WorkOrderCreatedEvent;
 use Modules\ServiceManagement\Models\ChangeRequest;
+use Modules\ServiceManagement\Models\DepotRepairRmaOrder;
+use Modules\ServiceManagement\Models\EquipmentComponent;
 use Modules\ServiceManagement\Models\Incident;
+use Modules\ServiceManagement\Models\Loaner;
+use Modules\ServiceManagement\Models\RmaLine;
+use Modules\ServiceManagement\Models\RmaStatusHistory;
+use Modules\ServiceManagement\Models\SerializedEquipmentPassport;
 use Modules\ServiceManagement\Models\ServiceContract;
 use Modules\ServiceManagement\Models\Ticket;
+use Modules\ServiceManagement\Models\VendorWarrantyClaim;
+use Modules\ServiceManagement\Models\WarrantyExtension;
 use Modules\ServiceManagement\Models\WorkOrder;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 
@@ -109,4 +129,48 @@ test('all 5 ESM core service contracts are bound as singletons in container', fu
 
     expect(app()->bound(SLAManagementServiceInterface::class))->toBeTrue();
     expect(app(SLAManagementServiceInterface::class))->toBeInstanceOf(SLAManagementServiceInterface::class);
+});
+
+test('all 9 GH-396 warranty and RMA domain events implement DomainEventInterface and are routed to the outbox', function () {
+    $events = [
+        EquipmentPassportRegisteredEvent::class,
+        RmaIssuedEvent::class,
+        RmaStatusChangedEvent::class,
+        RmaEstimateDecidedEvent::class,
+        RmaWarrantyCostChargedEvent::class,
+        RmaCompletedEvent::class,
+        VendorClaimOpenedEvent::class,
+        LoanerIssuedEvent::class,
+        LoanerOverdueEvent::class,
+    ];
+
+    expect(count($events))->toBe(9);
+
+    foreach ($events as $eventClass) {
+        $reflection = new ReflectionClass($eventClass);
+        expect($reflection->implementsInterface(DomainEventInterface::class))->toBeTrue()
+            ->and($reflection->isFinal())->toBeTrue()
+            ->and($reflection->isReadOnly())->toBeTrue()
+            ->and(Event::hasListeners($eventClass))->toBeTrue();
+    }
+});
+
+test('GH-396 warranty and RMA models extend BaseEnterpriseModel and services are bound', function () {
+    foreach ([
+        SerializedEquipmentPassport::class,
+        EquipmentComponent::class,
+        WarrantyExtension::class,
+        DepotRepairRmaOrder::class,
+        RmaLine::class,
+        RmaStatusHistory::class,
+        VendorWarrantyClaim::class,
+        Loaner::class,
+    ] as $modelClass) {
+        expect((new ReflectionClass($modelClass))->isSubclassOf(BaseEnterpriseModel::class))->toBeTrue();
+    }
+
+    expect(app(EquipmentPassportServiceInterface::class))->toBeInstanceOf(EquipmentPassportServiceInterface::class)
+        ->and(app(RmaServiceInterface::class))->toBeInstanceOf(RmaServiceInterface::class)
+        ->and(config('service-management.rma.loaner_grace_days'))->toBe(7)
+        ->and(config('service-management.rma.cost_bucket_code'))->toBe('WARRANTY_PROVISION');
 });

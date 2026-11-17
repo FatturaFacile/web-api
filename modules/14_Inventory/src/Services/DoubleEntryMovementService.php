@@ -8,8 +8,12 @@ use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
+use Modules\Inventory\Contracts\InventoryCostingServiceInterface;
+use Modules\Inventory\DTOs\InboundCostingDTO;
+use Modules\Inventory\DTOs\OutboundCostingDTO;
 use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Events\StockTransferredEvent;
 use Modules\Inventory\Exceptions\StockRuleViolation;
@@ -18,6 +22,7 @@ use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockQuant;
 use Modules\Inventory\Models\WarehouseBin;
+use Modules\Inventory\Support\Decimal;
 use Modules\Inventory\Support\Quantity;
 
 /**
@@ -30,10 +35,21 @@ use Modules\Inventory\Support\Quantity;
  */
 final class DoubleEntryMovementService implements DoubleEntryMovementServiceInterface
 {
+    /**
+     * Movement types (lower-cased) treated as purchase receipts for purchase price variance.
+     */
+    private const array RECEIPT_MOVEMENT_TYPES = ['purchase_receipt', 'supplier_receipt', 'receipt', 'goods_receipt'];
+
+    /**
+     * Origin document types identifying a Procurement goods receipt (landed cost target).
+     */
+    private const array RECEIPT_ORIGIN_TYPES = ['purchase_receipt', 'purchase_receipts'];
+
     public function __construct(
         private readonly EventDispatcher $dispatcher,
         private readonly AuditLedgerInterface $auditLedger,
-        private readonly InventoryFreezeGuard $freezeGuard
+        private readonly InventoryFreezeGuard $freezeGuard,
+        private readonly InventoryCostingServiceInterface $costing
     ) {}
 
     /**
@@ -64,6 +80,9 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
             }
 
             $this->freezeGuard->assertMovable(array_values(array_filter([$sourceBin, $destBin])), $dto->originDocumentType, $dto->originDocumentId);
+
+            // Item-wide on-hand before this movement (valuation hooks need it).
+            $onHandBefore = Decimal::quantity((string) StockQuant::query()->where('stock_item_id', $item->id)->sum('quantity_on_hand'));
 
             // 1. Pessimistic Lock and Decrement on Source Quant (if not virtual supplier/production)
             if ($sourceBin !== null) {
@@ -101,11 +120,43 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
             }
             $totalValuation = Quantity::value($quantity, $unitCost);
 
+            $movementId = (string) Str::uuid7();
+            $warehouseId = $sourceBin?->rack?->aisle?->zone?->warehouse_id ?? $destBin?->rack?->aisle?->zone?->warehouse_id;
+            $isReceiptOrigin = $dto->originDocumentType !== null
+                && in_array(strtolower($dto->originDocumentType), self::RECEIPT_ORIGIN_TYPES, true);
+
+            // 3b. Valuation hooks (FatturaFacile/FatturaFacile#144): inbound creates a cost layer
+            // (and PPV for standard cost), outbound depletes layers per the effective method.
+            if ($sourceBin === null && $destBin !== null) {
+                $isReceipt = $isReceiptOrigin || in_array(strtolower($dto->movementType), self::RECEIPT_MOVEMENT_TYPES, true);
+                $this->costing->recordInbound($item, new InboundCostingDTO(
+                    movementId: $movementId,
+                    quantity: Decimal::of($dto->quantity),
+                    unitCost: Decimal::of($unitCost),
+                    onHandBefore: $onHandBefore,
+                    sourceType: $isReceipt ? 'receipt' : 'adjustment',
+                    warehouseId: $warehouseId !== null ? (string) $warehouseId : null,
+                    lotId: $dto->lotId,
+                    receiptId: $isReceiptOrigin ? $dto->originDocumentId : null,
+                ));
+            } elseif ($sourceBin !== null && $destBin === null) {
+                $outbound = $this->costing->consumeOutbound($item, new OutboundCostingDTO(
+                    movementId: $movementId,
+                    quantity: Decimal::of($dto->quantity),
+                    onHandBefore: $onHandBefore,
+                    lotId: $dto->lotId,
+                    warehouseId: $warehouseId !== null ? (string) $warehouseId : null,
+                ));
+                $unitCost = Quantity::of($outbound->unitCost);
+                $totalValuation = Quantity::of($outbound->cogsAmount);
+            }
+
             // 4. Create Immutable Double-Entry Stock Movement
             $movement = StockMovement::create([
+                'id' => $movementId,
                 'tenant_id' => $item->tenant_id,
                 'company_id' => $item->company_id,
-                'warehouse_id' => $sourceBin?->rack?->aisle?->zone?->warehouse_id ?? $destBin?->rack?->aisle?->zone?->warehouse_id,
+                'warehouse_id' => $warehouseId,
                 'product_id' => null,
                 'type' => 'transfer',
                 'stock_item_id' => $item->id,

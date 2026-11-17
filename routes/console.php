@@ -178,3 +178,6 @@ $completenessTenantJob('subscriptions:revenue-recognition', static fn (Tenant $t
     ->monthlyOn(1, '02:20')->when(static fn (): bool => (bool) config('subscription_billing.scheduled_billing'));
 $completenessTenantJob('inventory:expire-lots', static fn (Tenant $tenant): object => new ExpireStockLotsJob($tenant->id))->dailyAt('00:45');
 $completenessTenantJob('appointments:reminders', static fn (Tenant $tenant): object => new QueueAppointmentRemindersJob($tenant->id))->everyFifteenMinutes();
+
+// Module 17 ESM (GH-396): alert once per loaner unit still out after the repaired equipment was returned
+Schedule::command('esm:loaners:scan-overdue')->dailyAt('07:30')->withoutOverlapping()->onOneServer();

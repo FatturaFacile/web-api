@@ -56,14 +56,19 @@ use Modules\GeneralLedger\Policies\VatSettlementPolicy;
 use Modules\GeneralLedger\Services\AccountingReconciliationService;
 use Modules\GeneralLedger\Services\DoubleEntryPostingService;
 use Modules\GeneralLedger\Services\FinancialStatementService;
+use Modules\GeneralLedger\Services\InventoryLedgerGateway;
 use Modules\GeneralLedger\Services\PeriodClosingService;
 use Modules\GeneralLedger\Services\TaxEngineReadinessService;
 use Modules\GeneralLedger\Services\VatSettlementService;
+use Modules\Inventory\Contracts\InventoryLedgerGatewayInterface;
 use Modules\Inventory\Events\InventoryAdjustmentPostedEvent;
 use Modules\Inventory\Events\InventoryCostingReadyEvent;
 use Modules\Inventory\Events\InventoryRevaluationEvent;
+use Modules\Inventory\Events\InventoryRevaluedEvent;
 use Modules\Inventory\Events\InventoryValuationReadyEvent;
 use Modules\Inventory\Events\InventoryWriteOffEvent;
+use Modules\Inventory\Events\LandedCostAppliedEvent;
+use Modules\Inventory\Events\PurchasePriceVarianceRecordedEvent;
 use Modules\Invoicing\Events\CreditNoteIssuedEvent;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\Payroll\Events\PayrollRunFinalizedEvent;
@@ -96,6 +101,10 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
         $this->app->singleton(AccountingReconciliationServiceInterface::class, AccountingReconciliationService::class);
         $this->app->singleton(VatSettlementServiceInterface::class, VatSettlementService::class);
         $this->app->singleton(TaxEngineReadinessServiceInterface::class, TaxEngineReadinessService::class);
+
+        // Inventory valuation gateway (FatturaFacile/FatturaFacile#144)
+        $this->app->singleton(InventoryLedgerGateway::class);
+        $this->app->singleton(InventoryLedgerGatewayInterface::class, InventoryLedgerGateway::class);
     }
 
     public function boot(): void
@@ -161,6 +170,9 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
         Event::listen(InventoryAdjustmentPostedEvent::class, [InventoryAccountingListener::class, 'handleAdjustmentPosted']);
         Event::listen(InventoryWriteOffEvent::class, [InventoryAccountingListener::class, 'handleWriteOff']);
         Event::listen(InventoryRevaluationEvent::class, [InventoryAccountingListener::class, 'handleRevaluation']);
+        Event::listen(LandedCostAppliedEvent::class, [InventoryAccountingListener::class, 'handleLandedCostApplied']);
+        Event::listen(InventoryRevaluedEvent::class, [InventoryAccountingListener::class, 'handleInventoryRevalued']);
+        Event::listen(PurchasePriceVarianceRecordedEvent::class, [InventoryAccountingListener::class, 'handlePurchasePriceVariance']);
 
         // Upstream Projects Event Consumers
         Event::listen(ProjectCostReadyEvent::class, [ProjectsAccountingListener::class, 'handleCostReady']);
