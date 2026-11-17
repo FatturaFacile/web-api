@@ -7,14 +7,9 @@ use App\Contracts\FiscalPrinterGateway;
 use App\Contracts\MobilePushGateway;
 use App\Contracts\PdfGenerator;
 use App\Contracts\SdiProvider;
+use App\Contracts\Security\HostResolver;
 use App\Listeners\Mobile\NotifyApproversOnStepAssigned;
 use App\Listeners\Mobile\RevokeMobileDevicesOnEmployeeTerminated;
-use App\Services\Mobile\LogPushGateway;
-use App\Services\Mobile\RelayPushGateway;
-use Illuminate\Support\Facades\Event;
-use Modules\HumanResources\Events\EmployeeTerminatedEvent;
-use Modules\Workflow\Events\WorkflowStepAssignedEvent;
-use App\Contracts\Security\HostResolver;
 use App\Models\Appointment;
 use App\Models\Contact;
 use App\Models\DeliveryNote;
@@ -43,6 +38,8 @@ use App\Policies\WorkOrderPolicy;
 use App\Services\Dashboard\WidgetRegistry;
 use App\Services\Ecommerce\EcommerceManager;
 use App\Services\ExchangeRate\EuropeanCentralBankProvider;
+use App\Services\Mobile\LogPushGateway;
+use App\Services\Mobile\RelayPushGateway;
 use App\Services\Pdf\DompdfPdfGenerator;
 use App\Services\Retail\LocalFiscalPrinterGateway;
 use App\Services\Security\DnsHostResolver;
@@ -60,15 +57,18 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\PostgresConnection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Modules\HumanResources\Events\EmployeeTerminatedEvent;
 use Modules\Invoicing\Models\DiscountPolicy;
 use Modules\Invoicing\Models\SalesInvoice;
 use Modules\SDI\Services\TenantSdiProvider;
+use Modules\Workflow\Events\WorkflowStepAssignedEvent;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -184,6 +184,8 @@ class AppServiceProvider extends ServiceProvider
         ]);
         // Backups, restores and membership changes: heavy or high-impact operations, capped per user and tenant.
         RateLimiter::for('sensitive-system', fn (Request $request): Limit => Limit::perMinute(10)->by('sensitive:'.($request->user()?->getAuthIdentifier() ?? $request->ip()).':'.$request->header('X-Tenant-Id')));
+        // Invitation links: the token is the credential, so guessing it is capped per address.
+        RateLimiter::for('invitation', fn (Request $request): Limit => Limit::perMinute(20)->by('invitation:'.$request->ip()));
         // Readiness probe: unauthenticated, so it is capped per address.
         RateLimiter::for('health', fn (Request $request): Limit => Limit::perMinute(120)->by('health:'.$request->ip()));
         RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(300)->by($request->user()?->getKey() ?: $request->ip()));

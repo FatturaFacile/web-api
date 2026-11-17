@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Services\Tenancy;
 
 use App\Exceptions\SodConflictException;
+use App\Models\Access\TenantCustomRole;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\Sso\ProvisionableRoles;
+use App\Services\Auth\UserSessions;
 use App\Support\Database\TransactionLock;
 use DomainException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -60,9 +63,23 @@ final class TenantMembershipService
      */
     public function members(Tenant $tenant): array
     {
+        $teams = $this->teamIdsByUser($tenant);
+
         return $tenant->users()->orderBy('users.name')->get()
-            ->map(fn (User $user): array => $this->describe($user, $user->pivot))
+            ->map(fn (User $user): array => $this->describe($user, $user->pivot, $teams[$user->id] ?? []))
             ->all();
+    }
+
+    /**
+     * One member of a tenant, suspended or not, as `members()` describes it.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function member(Tenant $tenant, string $userId): ?array
+    {
+        $user = $tenant->users()->where('users.id', $userId)->first();
+
+        return $user === null ? null : $this->describe($user, $user->pivot, $this->teamIdsByUser($tenant)[$user->id] ?? []);
     }
 
     /**
@@ -87,44 +104,141 @@ final class TenantMembershipService
     /**
      * Gives a user access to a tenant or changes the role and the module levels of an existing membership.
      *
+     * A custom role wins over `$role`: the membership takes the base role of the custom role and the module levels of the
+     * custom role are written to its permissions. A role alone (or `null` for the custom role) detaches the member from
+     * its custom role and clears the levels that role had set. `$modules` are applied last, as levels of this member.
+     *
      * @param  array<string, string>|null  $modules  module => level; a module that is absent keeps its level, `default` clears it
+     * @param  string|false|null  $customRoleId  false leaves the custom role as it is, null detaches it
      *
      * @throws DomainException when the change would leave the tenant without an owner
      * @throws SodConflictException when the change breaks a blocking segregation of duties rule without an exception
+     * @throws ModelNotFoundException when the custom role is not one of the tenant
      */
-    public function save(Tenant $tenant, User $user, ?string $role, ?array $modules): void
+    public function save(Tenant $tenant, User $user, ?string $role, ?array $modules, string|false|null $customRoleId = false): void
     {
-        DB::transaction(function () use ($tenant, $user, $role, $modules): void {
+        DB::transaction(function () use ($tenant, $user, $role, $modules, $customRoleId): void {
             TransactionLock::acquire("tenant-members:{$tenant->id}");
 
             $membership = $tenant->users()->where('users.id', $user->id)->first()?->pivot;
+            $custom = is_string($customRoleId) ? $this->customRole($tenant, $customRoleId) : null;
+            $permissions = $this->permissionsOf($membership?->permissions);
+            $currentCustomRoleId = $membership?->custom_role_id;
+            $storedCustomRoleId = $currentCustomRoleId;
+
+            if ($custom !== null) {
+                $permissions = $this->applyLevels($this->clearLevels($permissions, $this->moduleKeys($tenant, $currentCustomRoleId)), (array) $custom->modules);
+                $storedCustomRoleId = $custom->id;
+            } elseif ($currentCustomRoleId !== null && ($customRoleId === null || ($customRoleId === false && $role !== null))) {
+                $permissions = $this->clearLevels($permissions, $this->moduleKeys($tenant, $currentCustomRoleId));
+                $storedCustomRoleId = null;
+            }
+
+            $newRole = $custom?->base_role ?? $role ?? $membership?->role ?? 'member';
+            $permissions = $this->applyLevels($permissions, $modules ?? []);
+
+            if ($membership !== null && $membership->role === 'owner' && $newRole !== 'owner') {
+                $this->assertAnotherOwnerExists($tenant, $user);
+            }
+
+            $this->reviewSegregationOfDuties($tenant, $user, (string) $newRole, $permissions);
 
             if ($membership === null) {
-                $newPermissions = $this->applyLevels([], $modules ?? []);
-                $this->reviewSegregationOfDuties($tenant, $user, $role ?? 'member', $newPermissions);
-
                 $tenant->users()->attach($user->id, [
                     'id' => (string) Str::uuid(),
-                    'role' => $role ?? 'member',
-                    'permissions' => json_encode($newPermissions),
+                    'role' => $newRole,
+                    'permissions' => json_encode($permissions),
+                    'custom_role_id' => $storedCustomRoleId,
                 ]);
 
                 return;
             }
 
-            if ($role !== null && $membership->role === 'owner' && $role !== 'owner') {
+            $tenant->users()->updateExistingPivot($user->id, [
+                'role' => $newRole,
+                'permissions' => json_encode($permissions),
+                'custom_role_id' => $storedCustomRoleId,
+            ]);
+        });
+    }
+
+    /**
+     * Suspends a membership: the member keeps the account and the history but cannot act in the tenant until it is
+     * reactivated. The accesses opened through the SSO of the tenant end with it.
+     *
+     * @throws DomainException when the member is the last active owner
+     */
+    public function suspend(Tenant $tenant, User $user): void
+    {
+        $suspended = DB::transaction(function () use ($tenant, $user): bool {
+            TransactionLock::acquire("tenant-members:{$tenant->id}");
+
+            $membership = $tenant->users()->where('users.id', $user->id)->first()?->pivot;
+
+            if ($membership === null || $membership->suspended_at !== null) {
+                return false;
+            }
+
+            if ($membership->role === 'owner') {
                 $this->assertAnotherOwnerExists($tenant, $user);
             }
 
-            $newRole = $role ?? $membership->role;
-            $newPermissions = $this->applyLevels($this->permissionsOf($membership->permissions), $modules ?? []);
-            $this->reviewSegregationOfDuties($tenant, $user, (string) $newRole, $newPermissions);
+            $tenant->users()->updateExistingPivot($user->id, ['suspended_at' => now()]);
 
-            $tenant->users()->updateExistingPivot($user->id, [
-                'role' => $newRole,
-                'permissions' => json_encode($newPermissions),
-            ]);
+            return true;
         });
+
+        if ($suspended) {
+            app(UserSessions::class)->revokeTenantBound($user, (string) $tenant->id);
+        }
+    }
+
+    public function reactivate(Tenant $tenant, User $user): void
+    {
+        DB::transaction(function () use ($tenant, $user): void {
+            TransactionLock::acquire("tenant-members:{$tenant->id}");
+
+            $tenant->users()->updateExistingPivot($user->id, ['suspended_at' => null]);
+        });
+    }
+
+    /**
+     * Writes the module levels of a changed custom role to the memberships that hold it, together with its base role.
+     *
+     * @param  array<string, string>  $previousModules  the module levels the role had before the change
+     *
+     * @throws DomainException when the change would leave the tenant without an owner
+     */
+    public function refreshCustomRole(Tenant $tenant, TenantCustomRole $role, array $previousModules): void
+    {
+        DB::transaction(function () use ($tenant, $role, $previousModules): void {
+            TransactionLock::acquire("tenant-members:{$tenant->id}");
+
+            $holders = DB::table('tenant_user')->where('tenant_id', $tenant->id)->where('custom_role_id', $role->id)->get();
+            $cleared = array_values(array_unique([...array_keys($previousModules), ...array_keys((array) $role->modules)]));
+
+            foreach ($holders as $holder) {
+                $permissions = $this->applyLevels($this->clearLevels($this->permissionsOf($holder->permissions), $cleared), (array) $role->modules);
+
+                if ($holder->role === 'owner' && $role->base_role !== 'owner') {
+                    $user = User::query()->find($holder->user_id);
+
+                    if ($user !== null) {
+                        $this->assertAnotherOwnerExists($tenant, $user);
+                    }
+                }
+
+                DB::table('tenant_user')->where('id', $holder->id)->update(['role' => $role->base_role, 'permissions' => json_encode($permissions), 'updated_at' => now()]);
+            }
+        });
+    }
+
+    /**
+     * How many memberships of the tenant hold a custom role.
+     */
+    public function countHolders(Tenant $tenant, string $customRoleId): int
+    {
+        return DB::table('tenant_user')->where('tenant_id', $tenant->id)->where('custom_role_id', $customRoleId)->count();
     }
 
     /**
@@ -185,9 +299,10 @@ final class TenantMembershipService
     }
 
     /**
+     * @param  list<string>  $teamIds
      * @return array<string, mixed>
      */
-    private function describe(User $user, mixed $pivot): array
+    private function describe(User $user, mixed $pivot, array $teamIds = []): array
     {
         return [
             'id' => $user->id,
@@ -195,6 +310,9 @@ final class TenantMembershipService
             'email' => $user->email,
             'is_active' => $user->is_active,
             ...$this->describePivot($pivot),
+            'custom_role_id' => $pivot?->custom_role_id,
+            'team_ids' => $teamIds,
+            'created_at' => $user->created_at?->toIso8601String(),
         ];
     }
 
@@ -211,6 +329,54 @@ final class TenantMembershipService
             'permissions' => $permissions,
             'modules' => $this->levelsOf($permissions),
         ];
+    }
+
+    /**
+     * @return array<string, list<string>> user id => ids of the teams of the tenant
+     */
+    private function teamIdsByUser(Tenant $tenant): array
+    {
+        $teams = [];
+
+        foreach (DB::table('access_team_members')->where('tenant_id', $tenant->id)->whereNull('deleted_at')->get(['user_id', 'team_id']) as $row) {
+            $teams[$row->user_id][] = $row->team_id;
+        }
+
+        return $teams;
+    }
+
+    /**
+     * @throws ModelNotFoundException
+     */
+    private function customRole(Tenant $tenant, string $id): TenantCustomRole
+    {
+        return TenantCustomRole::query()->withoutGlobalScopes()->where('tenant_id', $tenant->id)->findOrFail($id);
+    }
+
+    /**
+     * The modules a custom role (also a deleted one) set levels for.
+     *
+     * @return list<string>
+     */
+    private function moduleKeys(Tenant $tenant, mixed $customRoleId): array
+    {
+        if (! is_string($customRoleId)) {
+            return [];
+        }
+
+        $role = TenantCustomRole::query()->withoutGlobalScopes()->withTrashed()->where('tenant_id', $tenant->id)->find($customRoleId);
+
+        return $role === null ? [] : array_keys((array) $role->modules);
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     * @param  list<string>  $modules
+     * @return list<string>
+     */
+    private function clearLevels(array $permissions, array $modules): array
+    {
+        return $this->applyLevels($permissions, array_fill_keys($modules, self::LevelDefault));
     }
 
     /**

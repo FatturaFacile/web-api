@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Enterprise\MultiTenant\Services;
 
 use App\Models\User;
+use App\Services\Tenancy\AccessDelegations;
 use InvalidArgumentException;
 
 /**
@@ -20,6 +21,21 @@ final class ModuleAccessGate
      * @throws InvalidArgumentException when the module is not in the configuration
      */
     public function allows(?User $user, ?string $tenantId, string $module, string $access): bool
+    {
+        if ($this->allowsOwn($user, $tenantId, $module, $access)) {
+            return true;
+        }
+
+        // A delegate acts with the access of the delegator for the period of the delegation.
+        return $user !== null && $tenantId !== null && app(AccessDelegations::class)->delegatorAllows($user, $tenantId, $module, $access, $this->allowsOwn(...));
+    }
+
+    /**
+     * The access of the user themselves, without delegations.
+     *
+     * @throws InvalidArgumentException when the module is not in the configuration
+     */
+    private function allowsOwn(?User $user, ?string $tenantId, string $module, string $access): bool
     {
         $allowedRoles = config("permissions.modules.{$module}.{$access}");
 

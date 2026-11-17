@@ -81,6 +81,7 @@ class User extends Authenticatable
             'two_factor_last_used_step' => 'integer',
             'failed_login_attempts' => 'integer',
             'login_locked_until' => 'datetime',
+            'ui_preferences' => 'array',
         ];
     }
 

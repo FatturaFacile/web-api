@@ -38,6 +38,8 @@ function writeRoutesWithoutModule(): array
         'POST api/v1/platform/notifications/{id}/read' => 'own notifications',
         'DELETE api/v1/platform/notifications/{id}' => 'own notifications',
         'DELETE api/v1/auth/sessions/{kind}/{id}' => 'own sessions',
+        // Interface preferences of the user themselves.
+        'PATCH api/v1/user/preferences' => 'own interface preferences',
         // Personal dashboard layout, stored per user.
         'PUT api/v1/dashboard/layout' => 'own layout',
         'POST api/v1/dashboard/layout/reset' => 'own layout',
@@ -68,6 +70,7 @@ function writeRoutesWithoutModule(): array
         'POST api/v1/admin/tenant-access-requests/{id}/move' => 'platform.admin',
         'POST api/v1/admin/tenant-access-requests/{id}/reject' => 'platform.admin',
         'PUT api/v1/admin/tenants/{id}/document-quota' => 'platform.admin',
+        'PUT api/v1/admin/tenants/{id}/plan' => 'platform.admin',
         'PUT api/v1/admin/users/{userId}/tenants/{tenantId}' => 'platform.admin',
         'DELETE api/v1/admin/users/{userId}/tenants/{tenantId}' => 'platform.admin',
     ];

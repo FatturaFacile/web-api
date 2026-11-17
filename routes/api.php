@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Accounting\GeneralLedgerController;
 use App\Http\Controllers\Api\V1\Accounting\VendorAgingController;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\Admin\TenantAccessRequestController;
+use App\Http\Controllers\Api\V1\Admin\TenantPlanController;
 use App\Http\Controllers\Api\V1\Admin\UserTenantAccessController;
 use App\Http\Controllers\Api\V1\AlertController;
 use App\Http\Controllers\Api\V1\AppointmentController;
@@ -42,6 +43,7 @@ use App\Http\Controllers\Api\V1\Inventory\ProductBarcodeController;
 use App\Http\Controllers\Api\V1\Inventory\ProductLabelController;
 use App\Http\Controllers\Api\V1\Inventory\ProductVariantController;
 use App\Http\Controllers\Api\V1\InventoryController;
+use App\Http\Controllers\Api\V1\InvitationAcceptanceController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\InvoiceCustomsOriginController;
 use App\Http\Controllers\Api\V1\InvoicePaymentController;
@@ -83,6 +85,12 @@ use App\Http\Controllers\Api\V1\SalesReturnController;
 use App\Http\Controllers\Api\V1\SdiWebhookController;
 use App\Http\Controllers\Api\V1\ServiceReportController;
 use App\Http\Controllers\Api\V1\SessionController;
+use App\Http\Controllers\Api\V1\Settings\AccessDelegationController;
+use App\Http\Controllers\Api\V1\Settings\AccessOverviewController;
+use App\Http\Controllers\Api\V1\Settings\AccessRoleController;
+use App\Http\Controllers\Api\V1\Settings\AccessTeamController;
+use App\Http\Controllers\Api\V1\Settings\InvitationController;
+use App\Http\Controllers\Api\V1\Settings\MemberLifecycleController;
 use App\Http\Controllers\Api\V1\Settings\TenantMemberController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
@@ -96,6 +104,7 @@ use App\Http\Controllers\Api\V1\TimeAttendanceController;
 use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\TwoFactorController;
 use App\Http\Controllers\Api\V1\UnitOfMeasureController;
+use App\Http\Controllers\Api\V1\UserPreferencesController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
 use App\Http\Controllers\Portal\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
@@ -118,6 +127,9 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/resend-reset-password-email', [PasswordResetController::class, 'resend'])->middleware('throttle:password-reset-request')->name('resend-reset-password-email');
         Route::get('/validate-reset-token', [PasswordResetController::class, 'validateToken'])->middleware('throttle:password-reset-attempt')->name('validate-reset-token');
         Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset-attempt')->name('reset-password');
+        // The token of the e-mail is the credential: whoever already has an account accepts while signed in with it.
+        Route::get('/invitations/{token}', [InvitationAcceptanceController::class, 'show'])->middleware('throttle:invitation')->name('invitations.show');
+        Route::post('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'accept'])->middleware('throttle:invitation')->name('invitations.accept');
     });
 
     // Platform administrators work across tenants, so these routes have no tenant context.
@@ -126,6 +138,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/tenant-access-requests/{id}/approve', [TenantAccessRequestController::class, 'approve'])->name('tenant-access-requests.approve');
         Route::post('/tenant-access-requests/{id}/move', [TenantAccessRequestController::class, 'move'])->name('tenant-access-requests.move');
         Route::put('/tenants/{id}/document-quota', [DocumentQuotaController::class, 'update'])->name('tenants.document-quota');
+        Route::put('/tenants/{id}/plan', [TenantPlanController::class, 'update'])->whereUuid('id')->name('tenants.plan');
         Route::post('/tenant-access-requests/{id}/reject', [TenantAccessRequestController::class, 'reject'])->name('tenant-access-requests.reject');
         Route::get('/access-options', [UserTenantAccessController::class, 'options'])->name('access-options');
         Route::get('/users', [UserTenantAccessController::class, 'users'])->name('users.index');
@@ -205,6 +218,10 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/two-factor/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes'])->middleware('throttle:6,1')->name('two-factor.recovery-codes');
             Route::post('/two-factor/disable', [TwoFactorController::class, 'disable'])->middleware('throttle:6,1')->name('two-factor.disable');
         });
+
+        // Interface preferences of the signed-in user (theme, density, reduced motion).
+        Route::get('/user/preferences', [UserPreferencesController::class, 'show'])->name('user.preferences');
+        Route::patch('/user/preferences', [UserPreferencesController::class, 'update'])->name('user.preferences.update');
 
         // 2. Executive Dashboard & Financial Health
         Route::prefix('dashboard')->name('dashboard.')->group(function (): void {
@@ -624,6 +641,36 @@ Route::prefix('v1')->group(function (): void {
                 Route::post('/users', [TenantMemberController::class, 'store'])->middleware('throttle:sensitive-system')->name('users.store');
                 Route::put('/users/{userId}', [TenantMemberController::class, 'update'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.update');
                 Route::delete('/users/{userId}', [TenantMemberController::class, 'destroy'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.destroy');
+                Route::post('/users/{userId}/suspend', [MemberLifecycleController::class, 'suspend'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.suspend');
+                Route::post('/users/{userId}/reactivate', [MemberLifecycleController::class, 'reactivate'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.reactivate');
+                Route::post('/users/import', [MemberLifecycleController::class, 'import'])->middleware('throttle:sensitive-system')->name('users.import');
+
+                Route::get('/invitations', [InvitationController::class, 'index'])->name('invitations.index');
+                Route::post('/invitations', [InvitationController::class, 'store'])->middleware('throttle:sensitive-system')->name('invitations.store');
+                Route::post('/invitations/{id}/resend', [InvitationController::class, 'resend'])->whereUuid('id')->middleware('throttle:sensitive-system')->name('invitations.resend');
+                Route::delete('/invitations/{id}', [InvitationController::class, 'destroy'])->whereUuid('id')->name('invitations.destroy');
+
+                // Custom roles, teams, delegations, plan limits and the history of access changes.
+                Route::prefix('access')->name('access.')->group(function (): void {
+                    Route::get('/roles', [AccessRoleController::class, 'index'])->name('roles.index');
+                    Route::post('/roles', [AccessRoleController::class, 'store'])->name('roles.store');
+                    Route::put('/roles/{id}', [AccessRoleController::class, 'update'])->whereUuid('id')->name('roles.update');
+                    Route::delete('/roles/{id}', [AccessRoleController::class, 'destroy'])->whereUuid('id')->name('roles.destroy');
+                    Route::get('/matrix', [AccessRoleController::class, 'matrix'])->name('matrix');
+
+                    Route::get('/teams', [AccessTeamController::class, 'index'])->name('teams.index');
+                    Route::post('/teams', [AccessTeamController::class, 'store'])->name('teams.store');
+                    Route::put('/teams/{id}', [AccessTeamController::class, 'update'])->whereUuid('id')->name('teams.update');
+                    Route::put('/teams/{id}/members', [AccessTeamController::class, 'members'])->whereUuid('id')->name('teams.members');
+                    Route::delete('/teams/{id}', [AccessTeamController::class, 'destroy'])->whereUuid('id')->name('teams.destroy');
+
+                    Route::get('/delegations', [AccessDelegationController::class, 'index'])->name('delegations.index');
+                    Route::post('/delegations', [AccessDelegationController::class, 'store'])->name('delegations.store');
+                    Route::delete('/delegations/{id}', [AccessDelegationController::class, 'destroy'])->whereUuid('id')->name('delegations.destroy');
+
+                    Route::get('/limits', [AccessOverviewController::class, 'limits'])->name('limits');
+                    Route::get('/audit', [AccessOverviewController::class, 'audit'])->name('audit');
+                });
                 Route::get('/access-options', [TenantMemberController::class, 'options'])->name('access-options');
                 Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
                 Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');
