@@ -9,6 +9,7 @@ use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
+use Database\Seeders\Translations\MainFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,7 @@ class FrontendTranslationSeeder extends Seeder
             default => throw new InvalidArgumentException("Unsupported locale [{$locale}]."),
         };
 
-        return $base + HrAtsFrontendTranslations::all($locale);
+        return $base + HrAtsFrontendTranslations::all($locale) + MainFrontendTranslations::all($locale);
     }
 
     /**
