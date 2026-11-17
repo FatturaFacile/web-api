@@ -52,11 +52,12 @@
     <env name="CACHE_STORE" value="array"/>
 
     <!--
-        SQLite is the default for local runs; CI and real environment variables (e.g. pgsql) take precedence.
-        DatabaseTransactions-based tests need a migrated file database: DB_DATABASE=<path>.sqlite php artisan migrate.
+        SQLite is the default for local runs and automated tests; CI and production use PostgreSQL.
+        DB_FOREIGN_KEYS=true ensures SQLite strictly enforces relational integrity during tests.
     -->
     <env name="DB_CONNECTION" value="sqlite"/>
     <env name="DB_DATABASE" value=":memory:"/>
+    <env name="DB_FOREIGN_KEYS" value="true"/>
     <env name="MAIL_MAILER" value="array"/>
     <env name="QUEUE_CONNECTION" value="sync"/>
     <env name="TENANCY_REQUIRE_REQUEST_CONTEXT" value="false"/>
