@@ -75,6 +75,9 @@ use App\Http\Controllers\Api\V1\PurchaseOrderController;
 use App\Http\Controllers\Api\V1\PurchasesController;
 use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\QuoteRevisionController;
+use App\Http\Controllers\Api\V1\RecurringContracts\PriceIndexRateController;
+use App\Http\Controllers\Api\V1\RecurringContracts\RecurringBillingRunController;
+use App\Http\Controllers\Api\V1\RecurringContracts\RecurringContractController;
 use App\Http\Controllers\Api\V1\RegistrationController;
 use App\Http\Controllers\Api\V1\SalesKpiController;
 use App\Http\Controllers\Api\V1\SalesOrderController;
@@ -326,6 +329,34 @@ Route::prefix('v1')->group(function (): void {
 
             Route::apiResource('delivery-notes', DeliveryNoteController::class)->only(['index', 'show', 'destroy'])->parameters(['delivery-notes' => 'id']);
             Route::post('/delivery-notes/{id}/invoice', [DeliveryNoteController::class, 'createInvoice'])->name('delivery-notes.invoice');
+        });
+
+        // 4.1 Recurring Contracts, Subscriptions & Periodic Billing Engine (Issue #138)
+        Route::middleware('module.access:invoicing')->group(function (): void {
+            // Price index registry (shared / tenant-specific ISTAT FOI & Swiss IPC)
+            Route::get('/price-indices', [PriceIndexRateController::class, 'index'])->name('price-indices.index');
+            Route::post('/price-indices', [PriceIndexRateController::class, 'store'])->name('price-indices.store');
+
+            // Recurring Billing Runs
+            Route::get('/recurring-billing/preview', [RecurringBillingRunController::class, 'preview'])->name('recurring-billing.preview');
+            Route::get('/recurring-billing/runs', [RecurringBillingRunController::class, 'index'])->name('recurring-billing.runs.index');
+            Route::post('/recurring-billing/runs', [RecurringBillingRunController::class, 'store'])->name('recurring-billing.runs.store');
+            Route::get('/recurring-billing/runs/{id}', [RecurringBillingRunController::class, 'show'])->whereUuid('id')->name('recurring-billing.runs.show');
+
+            // Recurring Contracts CRUD & Lifecycle actions
+            Route::get('/recurring-contracts/metrics', [RecurringContractController::class, 'metrics'])->name('recurring-contracts.metrics');
+            Route::post('/recurring-contracts/{id}/activate', [RecurringContractController::class, 'activate'])->whereUuid('id')->name('recurring-contracts.activate');
+            Route::post('/recurring-contracts/{id}/suspend', [RecurringContractController::class, 'suspend'])->whereUuid('id')->name('recurring-contracts.suspend');
+            Route::post('/recurring-contracts/{id}/cancel', [RecurringContractController::class, 'cancel'])->whereUuid('id')->name('recurring-contracts.cancel');
+            Route::post('/recurring-contracts/{id}/renew', [RecurringContractController::class, 'renew'])->whereUuid('id')->name('recurring-contracts.renew');
+            Route::post('/recurring-contracts/{id}/apply-indexation', [RecurringContractController::class, 'applyIndexation'])->whereUuid('id')->name('recurring-contracts.apply-indexation');
+            Route::post('/recurring-contracts/{id}/bill-now', [RecurringContractController::class, 'billNow'])->whereUuid('id')->name('recurring-contracts.bill-now');
+
+            Route::get('/recurring-contracts', [RecurringContractController::class, 'index'])->name('recurring-contracts.index');
+            Route::post('/recurring-contracts', [RecurringContractController::class, 'store'])->name('recurring-contracts.store');
+            Route::get('/recurring-contracts/{id}', [RecurringContractController::class, 'show'])->whereUuid('id')->name('recurring-contracts.show');
+            Route::put('/recurring-contracts/{id}', [RecurringContractController::class, 'update'])->whereUuid('id')->name('recurring-contracts.update');
+            Route::delete('/recurring-contracts/{id}', [RecurringContractController::class, 'destroy'])->whereUuid('id')->name('recurring-contracts.destroy');
         });
 
         // Global customs reference catalogs: readable by every member, written through the customs.manage gate
