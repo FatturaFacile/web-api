@@ -16,6 +16,12 @@ uses [Semantic Versioning](https://semver.org/).
 - Warehouse fields `legal_owner_type`, `linked_partner_id`, `company_entity_id` and audit columns; granular
   `logistics.*` permissions and the `logistics_manager` role; IT/EN/DE/FR translations (UI, DDT PDF and business-error messages, delivered already translated by the API) in `TranslationSeeder`.
 
+- **DDT tracking and triangular shipments**: generated tracking code and carrier waybill (AWB, `POST
+  /logistics/delivery-notes/{id}/awb`) on the DDT; `shipment_flow` (direct / triangular / dropshipping) with final
+  recipient and a sender printed on the PDF as company, blank (obscured) or custom; transport reason "conto visione"
+  (`on_approval`), excluded from every deferred-invoicing path until the customer accepts it (`POST
+  /logistics/delivery-notes/{id}/accept-approval`).
+
 ## [1.0.0] - 2026-10-23
 
 First production release: a complete multi-tenant ERP API for Italian and Swiss businesses. Database migrations are

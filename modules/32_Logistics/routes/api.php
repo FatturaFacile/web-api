@@ -33,6 +33,8 @@ Route::prefix('api/v1/logistics')
         Route::post('delivery-notes/{id}/issue', [DeliveryNoteController::class, 'issue'])->middleware('logistics.can:'.P::DDT_ISSUE)->name('ddt.issue');
         Route::post('delivery-notes/{id}/dispatch', [DeliveryNoteController::class, 'dispatch'])->middleware('logistics.can:'.P::DDT_ISSUE)->name('ddt.dispatch');
         Route::post('delivery-notes/{id}/deliver', [DeliveryNoteController::class, 'deliver'])->middleware('logistics.can:'.P::DDT_ISSUE)->name('ddt.deliver');
+        Route::post('delivery-notes/{id}/awb', [DeliveryNoteController::class, 'assignAwb'])->middleware('logistics.can:'.P::DDT_ISSUE)->name('ddt.awb');
+        Route::post('delivery-notes/{id}/accept-approval', [DeliveryNoteController::class, 'acceptApproval'])->middleware('logistics.can:'.P::DDT_ISSUE)->name('ddt.accept-approval');
         Route::post('delivery-notes/{id}/cancel', [DeliveryNoteController::class, 'cancel'])->middleware('logistics.can:'.P::DDT_CANCEL)->name('ddt.cancel');
 
     });

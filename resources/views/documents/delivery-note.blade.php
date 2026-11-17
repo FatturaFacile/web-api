@@ -15,6 +15,10 @@
         <tr><td>{{ __('pdf.delivery.carriage_terms') }}</td><td>{{ $transport['carriage_terms'] ? __('pdf.delivery.carriage.'.$transport['carriage_terms']) : '' }}</td><td>{{ __('pdf.delivery.transport_by') }}</td><td>{{ $transport['transport_by'] ? __('pdf.delivery.by.'.$transport['transport_by']) : '' }}</td></tr>
         <tr><td>{{ $jurisdiction === 'CH' ? __('pdf.delivery.carrier_uid') : __('pdf.delivery.carrier_vat') }}</td><td>{{ $transport['carrier_vat_number'] }}</td><td>{{ __('pdf.delivery.incoterms') }}</td><td>{{ $transport['incoterms'] }}</td></tr>
         <tr><td>{{ __('pdf.delivery.net_weight') }}</td><td>{{ $transport['net_weight_kg'] !== null ? number_format($transport['net_weight_kg'], 2) : '' }}</td><td>{{ __('pdf.delivery.volume') }}</td><td>{{ $transport['volume_m3'] !== null ? number_format($transport['volume_m3'], 3) : '' }}</td></tr>
+        <tr><td>{{ __('pdf.delivery.tracking_code') }}</td><td>{{ $transport['tracking_code'] }}</td><td>{{ __('pdf.delivery.awb') }}</td><td>{{ $transport['awb_number'] }}</td></tr>
+        @if ($transport['shipment_flow'] !== 'direct' || $transport['final_recipient_name'])
+            <tr><td>{{ __('pdf.delivery.shipment_flow') }}</td><td>{{ __('pdf.delivery.flow.'.$transport['shipment_flow']) }}</td><td>{{ __('pdf.delivery.final_recipient') }}</td><td>{{ $transport['final_recipient_name'] }}</td></tr>
+        @endif
     </table>
 
     @include('documents.partials.lines', ['showDiscount' => false])

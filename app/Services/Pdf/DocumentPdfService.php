@@ -289,9 +289,31 @@ class DocumentPdfService
                 'net_weight_kg' => $note->net_weight_kg !== null ? (float) $note->net_weight_kg : null,
                 'volume_m3' => $note->volume_m3 !== null ? (float) $note->volume_m3 : null,
                 'tracking_number' => $note->tracking_number,
+                'tracking_code' => $note->tracking_code,
+                'awb_number' => $note->awb_number,
+                'shipment_flow' => $note->shipment_flow ?? 'direct',
+                'final_recipient_name' => $note->final_recipient_name,
             ],
+            'sender_override' => $this->senderOverride($note),
             'jurisdiction' => $note->tenant?->country === 'CH' ? 'CH' : 'IT',
         ]), 'delivery_note', $note->ddt_number];
+    }
+
+    /**
+     * Sender printed on a triangular / dropshipping DDT instead of the issuer: blank (obscured) or a custom name and address.
+     *
+     * @return array{name: ?string, address_lines: array<int, string>}|null
+     */
+    private function senderOverride(DeliveryNote $note): ?array
+    {
+        return match ($note->sender_display ?? 'company') {
+            'blank' => ['name' => null, 'address_lines' => []],
+            'custom' => [
+                'name' => $note->sender_name,
+                'address_lines' => array_values(array_filter(array_map('trim', preg_split('/\R/', (string) $note->sender_address) ?: []))),
+            ],
+            default => null,
+        };
     }
 
     /**

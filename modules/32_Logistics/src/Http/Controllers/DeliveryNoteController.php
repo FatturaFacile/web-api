@@ -15,6 +15,7 @@ use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Logistics\Enums\DeliveryNoteType;
+use Modules\Logistics\Enums\ShipmentFlow;
 use Modules\Logistics\Enums\TransportReason;
 use Modules\Logistics\Services\DeliveryNoteService;
 use Modules\Logistics\Services\OrderBillingService;
@@ -289,6 +290,50 @@ final class DeliveryNoteController extends Controller
     }
 
     #[OA\Post(
+        path: '/api/v1/logistics/delivery-notes/{id}/awb',
+        summary: 'Link the carrier waybill (AWB / lettera di vettura) to a delivery note',
+        description: 'Requires permission delivery_notes.issue. Allowed on issued and dispatched documents, so the waybill can be added once the carrier has taken the goods.',
+        tags: ['Logistics DDT'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['awb_number'], properties: [
+            new OA\Property(property: 'awb_number', type: 'string', maxLength: 60),
+            new OA\Property(property: 'carrier_tracking_url', type: 'string', format: 'uri', nullable: true),
+        ])),
+        responses: [
+            new OA\Response(response: 200, description: 'Success'),
+            new OA\Response(response: 403, description: 'Missing logistics permission'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
+    public function assignAwb(Request $request, string $id): JsonResponse
+    {
+        $data = $request->validate(['awb_number' => ['required', 'string', 'max:60'], 'carrier_tracking_url' => ['nullable', 'url', 'max:500']]);
+
+        return $this->transition(fn (SalesDeliveryNote $n) => $this->service->assignAwb($n, $data['awb_number'], $data['carrier_tracking_url'] ?? null), $id);
+    }
+
+    #[OA\Post(
+        path: '/api/v1/logistics/delivery-notes/{id}/accept-approval',
+        summary: 'Customer accepted goods sent on approval (conto visione): the document becomes a sale and can be invoiced',
+        description: 'Requires permission delivery_notes.issue.',
+        tags: ['Logistics DDT'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Success'),
+            new OA\Response(response: 403, description: 'Missing logistics permission'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
+    public function acceptApproval(string $id): JsonResponse
+    {
+        return $this->transition(fn (SalesDeliveryNote $n) => $this->service->acceptOnApproval($n), $id);
+    }
+
+    #[OA\Post(
         path: '/api/v1/logistics/delivery-notes/{id}/cancel',
         summary: 'Cancel a draft or issued delivery note',
         description: 'Requires permission delivery_notes.cancel.',
@@ -422,6 +467,12 @@ final class DeliveryNoteController extends Controller
             'volume_m3' => ['nullable', 'numeric', 'min:0'],
             'incoterms' => ['nullable', Rule::in(['EXW', 'FCA', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP', 'FAS', 'FOB', 'CFR', 'CIF'])],
             'tracking_number' => ['nullable', 'string', 'max:100'],
+            'awb_number' => ['nullable', 'string', 'max:60'],
+            'shipment_flow' => ['sometimes', Rule::in(ShipmentFlow::values())],
+            'sender_display' => ['sometimes', Rule::in(['company', 'blank', 'custom'])],
+            'sender_name' => ['nullable', 'string', 'max:255'],
+            'sender_address' => ['nullable', 'string', 'max:1000'],
+            'final_recipient_name' => ['nullable', 'string', 'max:255'],
             'carrier_tracking_url' => ['nullable', 'url', 'max:500'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'notes' => ['nullable', 'string'],

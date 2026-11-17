@@ -141,6 +141,7 @@ return [
     'deferred_notes_other_customer' => 'Una fattura differita raccoglie i DDT di un solo cliente.',
     'deferred_notes_other_currency' => 'Una fattura differita raccoglie i DDT di ordini in una sola valuta.',
     'deferred_note_not_issued' => 'Il DDT :number non è stato spedito.',
+    'delivery_note_on_approval' => 'Il DDT :number è inviato in conto visione: non è fatturabile finché il cliente non lo accetta.',
     'deferred_invoice_notes' => 'Fattura differita dei DDT :numbers',
     'billing_plan_order_already_billed' => 'L\'ordine è già in parte fatturato: non può avere un piano di fatturazione.',
     'billing_plan_exists' => 'L\'ordine ha già un piano di fatturazione attivo.',

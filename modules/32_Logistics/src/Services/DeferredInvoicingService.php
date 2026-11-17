@@ -124,6 +124,9 @@ final class DeferredInvoicingService
             if (! in_array($note->status, DeliveryNoteStatus::invoiceable(), true)) {
                 throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.NOT_INVOICEABLE', ['number' => $note->ddt_number, 'status' => $note->status]));
             }
+            if (! $note->isBillable()) {
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.ON_APPROVAL_NOT_BILLABLE', ['number' => $note->ddt_number]));
+            }
             if ($note->contact_id === null) {
                 throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.NO_CUSTOMER_TO_INVOICE', ['number' => $note->ddt_number]));
             }

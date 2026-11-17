@@ -101,6 +101,15 @@ return [
     ],
 
     'delivery' => [
+        'tracking_code' => 'Sendungsverfolgungscode',
+        'awb' => 'Frachtbrief (AWB)',
+        'shipment_flow' => 'Versandart',
+        'final_recipient' => 'Endempfänger',
+        'flow' => [
+            'direct' => 'Direkt',
+            'triangular' => 'Streckengeschäft',
+            'dropshipping' => 'Dropshipping',
+        ],
         'ship_to' => 'Lieferadresse',
         'transport' => 'Transportangaben',
         'reason' => 'Transportgrund',

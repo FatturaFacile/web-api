@@ -27,20 +27,28 @@
 <body>
     <footer>
         @if (! empty($branding['footer_text'])) {{ $branding['footer_text'] }}<br> @endif
+        @if (! isset($sender_override))
         {{ $tenant?->legal_name ?: $tenant?->name }}
         @if ($tenant?->vat_number) · {{ __('pdf.vat_number') }} {{ $tenant->vat_number }} @endif
         @if ($tenant?->iban) · {{ __('pdf.payment.iban') }} {{ $tenant->iban }} @endif
+        @endif
     </footer>
 
     <table class="header" role="presentation">
         <tr>
             <td style="width: 55%">
                 @if (! empty($branding['logo_data_uri'])) <img src="{{ $branding['logo_data_uri'] }}" alt="" style="max-height: 55px; max-width: 180px"><br> @endif
+                @if (isset($sender_override))
+                    {{-- Triangular / dropshipping shipment: the issuer is not printed as sender --}}
+                    @if ($sender_override['name'] !== null) <strong style="font-size: 13px">{{ $sender_override['name'] }}</strong><br> @endif
+                    @foreach ($sender_override['address_lines'] as $line) {{ $line }}<br> @endforeach
+                @else
                 <strong style="font-size: 13px">{{ $tenant?->legal_name ?: $tenant?->name }}</strong><br>
                 @foreach ($tenant_address_lines as $line) {{ $line }}<br> @endforeach
                 @if ($tenant?->vat_number) {{ __('pdf.vat_number') }}: {{ $tenant->vat_number }}<br> @endif
                 @if ($tenant?->fiscal_code) {{ __('pdf.fiscal_code') }}: {{ $tenant->fiscal_code }}<br> @endif
                 @if ($tenant?->uid_number) {{ __('pdf.uid_number') }}: {{ $tenant->uid_number }}<br> @endif
+                @endif
             </td>
             <td style="width: 45%" class="right">
                 <h1>{{ __("pdf.titles.{$type}") }}</h1>
