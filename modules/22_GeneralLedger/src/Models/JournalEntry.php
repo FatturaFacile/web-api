@@ -14,11 +14,8 @@ use Modules\GeneralLedger\Services\Tax\Decimal;
 
 final class JournalEntry extends BaseEnterpriseModel
 {
-<<<<<<< HEAD
-    use ProtectsPostedJournalEntry;
-=======
     use BelongsToCompany;
->>>>>>> claude/multi-company-sites-management-72f618
+    use ProtectsPostedJournalEntry;
 
     protected $table = 'journal_entries';
 

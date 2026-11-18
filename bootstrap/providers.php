@@ -12,7 +12,6 @@ use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
-<<<<<<< HEAD
 use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
 use Modules\Budgeting\Providers\BudgetingServiceProvider;
@@ -23,10 +22,8 @@ use Modules\Communication\Providers\CommunicationServiceProvider;
 use Modules\Configurator\Providers\ConfiguratorServiceProvider;
 use Modules\ConstructionTrades\Providers\ConstructionTradesServiceProvider;
 use Modules\Contracts\Providers\ContractsServiceProvider;
-use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
-=======
 use Modules\CorporateGroup\Providers\CorporateGroupServiceProvider;
->>>>>>> claude/multi-company-sites-management-72f618
+use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
