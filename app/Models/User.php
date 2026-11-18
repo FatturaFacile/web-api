@@ -37,6 +37,9 @@ class User extends Authenticatable
         'password',
         'phone',
         'locale',
+        'theme_preference',
+        'ui_density',
+        'reduced_motion',
         'is_active',
         'email_verified_at',
     ];
@@ -75,6 +78,7 @@ class User extends Authenticatable
             'is_platform_admin' => 'boolean',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'reduced_motion' => 'boolean',
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',

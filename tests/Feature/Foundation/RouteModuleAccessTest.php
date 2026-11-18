@@ -39,6 +39,7 @@ function writeRoutesWithoutModule(): array
         'DELETE api/v1/platform/notifications/{id}' => 'own notifications',
         'DELETE api/v1/auth/sessions/{kind}/{id}' => 'own sessions',
         // Interface preferences of the user themselves.
+        // Interface preferences (theme, density, motion), stored per user.
         'PATCH api/v1/user/preferences' => 'own interface preferences',
         // Personal dashboard layout, stored per user.
         'PUT api/v1/dashboard/layout' => 'own layout',

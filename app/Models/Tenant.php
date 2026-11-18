@@ -99,6 +99,19 @@ class Tenant extends Model
     }
 
     /**
+     * The look and feel stored in the settings: brand_primary_color, brand_secondary_color, brand_logo_url, default_theme.
+     *
+     * @return array<string, mixed>
+     */
+    public function branding(): array
+    {
+        $settings = $this->getAttribute('settings');
+        $branding = is_array($settings) ? ($settings['branding'] ?? []) : [];
+
+        return is_array($branding) ? $branding : [];
+    }
+
+    /**
      * @return BelongsToMany<User, $this, TenantMembership, 'pivot'>
      */
     public function users(): BelongsToMany

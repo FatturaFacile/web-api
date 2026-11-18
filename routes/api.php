@@ -104,6 +104,7 @@ use App\Http\Controllers\Api\V1\SupplierInvoiceController;
 use App\Http\Controllers\Api\V1\SwissQrBillController;
 use App\Http\Controllers\Api\V1\System\BootstrapSupportUserController;
 use App\Http\Controllers\Api\V1\System\TenantBackupController;
+use App\Http\Controllers\Api\V1\TenantBrandingController;
 use App\Http\Controllers\Api\V1\TenantPreferencesController;
 use App\Http\Controllers\Api\V1\TimeAttendanceController;
 use App\Http\Controllers\Api\V1\TreasuryController;
@@ -676,6 +677,10 @@ Route::prefix('v1')->group(function (): void {
 
             Route::post('/receipts/parse', [MobileReceiptController::class, 'parse'])->name('receipts.parse');
         });
+        // Look and feel: the branding of the tenant (every member reads, the system module writes) and the interface
+        // preferences of the user themselves.
+        Route::get('/tenant/branding', [TenantBrandingController::class, 'show'])->name('tenant.branding');
+        Route::patch('/tenant/branding', [TenantBrandingController::class, 'update'])->middleware('module.access:system')->name('tenant.branding.update');
 
         Route::prefix('settings')->name('settings.')->group(function (): void {
             // Every member reads the company profile, its preferences and branches: the clients need them on every page.
