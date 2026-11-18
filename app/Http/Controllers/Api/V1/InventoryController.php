@@ -98,6 +98,29 @@ class InventoryController extends Controller
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/inventory/products/{id}',
+        operationId: 'getInventoryProduct',
+        description: 'Retrieve a single catalog product by UUID.',
+        summary: 'Show product',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Inventory'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Product retrieved successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Product not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function showProduct(string $id): JsonResponse
+    {
+        $product = Product::with(['brand', 'parent'])->findOrFail($id);
+
+        return $this->successResponse(data: $product, message: 'Product retrieved');
+    }
+
     #[OA\Put(
         path: '/api/v1/inventory/products/{id}',
         operationId: 'updateInventoryProduct',
@@ -121,6 +144,30 @@ class InventoryController extends Controller
         $product->update($request->validated());
 
         return $this->successResponse(data: $product->refresh(), message: __('inventory.messages.product_updated'));
+    }
+
+    #[OA\Delete(
+        path: '/api/v1/inventory/products/{id}',
+        operationId: 'deleteInventoryProduct',
+        description: 'Delete a catalog product by UUID.',
+        summary: 'Delete product',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Inventory'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Product deleted successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Product not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function destroyProduct(string $id): JsonResponse
+    {
+        $product = Product::findOrFail($id);
+        $product->delete();
+
+        return $this->successResponse(data: null, message: 'Product deleted');
     }
 
     public function warehouses(): JsonResponse

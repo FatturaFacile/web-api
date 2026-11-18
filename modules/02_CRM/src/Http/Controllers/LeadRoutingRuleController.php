@@ -40,6 +40,13 @@ final class LeadRoutingRuleController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
+    #[OA\Get(
+        path: '/api/v1/crm/routing-rules',
+        operationId: 'listCrmRoutingRules',
+        summary: 'List lead routing rules',
+        tags: ['CRM Lead Routing'],
+        responses: [new OA\Response(response: 200, description: 'Rules')]
+    )]
     public function index(Request $request): JsonResponse
     {
         if ($this->isRoutingRulesRoute($request)) {
@@ -79,6 +86,13 @@ final class LeadRoutingRuleController extends Controller
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
+    #[OA\Post(
+        path: '/api/v1/crm/routing-rules',
+        operationId: 'createCrmRoutingRule',
+        summary: 'Create lead routing rule',
+        tags: ['CRM Lead Routing'],
+        responses: [new OA\Response(response: 201, description: 'Rule created')]
+    )]
     public function store(Request $request): JsonResponse
     {
         if ($this->isRoutingRulesRoute($request)) {
@@ -104,6 +118,14 @@ final class LeadRoutingRuleController extends Controller
         return response()->json($rule, 201);
     }
 
+    #[OA\Get(
+        path: '/api/v1/crm/routing-rules/{id}',
+        operationId: 'showCrmRoutingRule',
+        summary: 'Show lead routing rule',
+        tags: ['CRM Lead Routing'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Rule')]
+    )]
     public function show(string $id): JsonResponse
     {
         $rule = LeadRoutingRule::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id);
@@ -149,6 +171,14 @@ final class LeadRoutingRuleController extends Controller
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
+    #[OA\Put(
+        path: '/api/v1/crm/routing-rules/{id}',
+        operationId: 'updateCrmRoutingRule',
+        summary: 'Update lead routing rule',
+        tags: ['CRM Lead Routing'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Updated rule')]
+    )]
     public function update(Request $request, string $id): JsonResponse
     {
         $rule = LeadRoutingRule::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id);
@@ -193,6 +223,14 @@ final class LeadRoutingRuleController extends Controller
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
+    #[OA\Delete(
+        path: '/api/v1/crm/routing-rules/{id}',
+        operationId: 'deleteCrmRoutingRule',
+        summary: 'Delete lead routing rule',
+        tags: ['CRM Lead Routing'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 204, description: 'Rule deleted')]
+    )]
     public function destroy(Request $request, string $id): JsonResponse
     {
         $rule = LeadRoutingRule::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id);
@@ -204,6 +242,13 @@ final class LeadRoutingRuleController extends Controller
         return response()->json(null, 204);
     }
 
+    #[OA\Post(
+        path: '/api/v1/crm/routing-rules/reorder',
+        operationId: 'reorderCrmRoutingRules',
+        summary: 'Reorder lead routing rules',
+        tags: ['CRM Lead Routing'],
+        responses: [new OA\Response(response: 200, description: 'Rules reordered')]
+    )]
     public function reorder(ReorderLeadRoutingRulesRequest $request): JsonResponse
     {
         $this->authorize('create', LeadRoutingRule::class);

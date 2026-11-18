@@ -15,6 +15,7 @@ use Modules\CRM\Http\Requests\MergeLeadDuplicateRequest;
 use Modules\CRM\Http\Resources\LeadDuplicateCandidateResource;
 use Modules\CRM\Http\Resources\LeadResource;
 use Modules\CRM\Models\LeadDuplicateCandidate;
+use OpenApi\Attributes as OA;
 
 final class LeadDuplicateController extends Controller
 {
@@ -57,6 +58,14 @@ final class LeadDuplicateController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/crm/duplicates/{id}/merge',
+        operationId: 'mergeCrmDuplicateCandidate',
+        summary: 'Merge lead duplicate candidate',
+        tags: ['CRM'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Duplicate merged')]
+    )]
     public function merge(MergeLeadDuplicateRequest $request, string $id): JsonResponse
     {
         $candidate = $this->findCandidate($id);
@@ -85,6 +94,14 @@ final class LeadDuplicateController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/crm/duplicates/{id}/dismiss',
+        operationId: 'dismissCrmDuplicateCandidate',
+        summary: 'Dismiss lead duplicate candidate',
+        tags: ['CRM'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Duplicate dismissed')]
+    )]
     public function dismiss(Request $request, string $id): JsonResponse
     {
         $candidate = $this->findCandidate($id);

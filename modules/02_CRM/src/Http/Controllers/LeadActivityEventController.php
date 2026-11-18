@@ -14,6 +14,7 @@ use Modules\CRM\Http\Requests\StoreLeadActivityEventRequest;
 use Modules\CRM\Http\Resources\LeadActivityEventResource;
 use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\LeadActivityEvent;
+use OpenApi\Attributes as OA;
 
 final class LeadActivityEventController extends Controller
 {
@@ -22,6 +23,14 @@ final class LeadActivityEventController extends Controller
         private readonly LeadEventServiceInterface $events,
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/crm/leads/{id}/events',
+        operationId: 'listCrmLeadEvents',
+        summary: 'List lead behavioural events',
+        tags: ['CRM'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Lead events')]
+    )]
     public function index(Request $request, string $id): JsonResponse
     {
         $lead = $this->findLead($id);
@@ -49,6 +58,14 @@ final class LeadActivityEventController extends Controller
     /**
      * Records a behavioural event and re-scores the lead (201). Replaying an external_id returns 200.
      */
+    #[OA\Post(
+        path: '/api/v1/crm/leads/{id}/events',
+        operationId: 'storeCrmLeadEvent',
+        summary: 'Record lead behavioural event',
+        tags: ['CRM'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 201, description: 'Lead event recorded')]
+    )]
     public function store(StoreLeadActivityEventRequest $request, string $id): JsonResponse
     {
         $lead = $this->findLead($id);

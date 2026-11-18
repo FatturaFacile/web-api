@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Modules\CRM\Http\Requests\UpdateLeadSettingRequest;
 use Modules\CRM\Http\Resources\LeadSettingResource;
 use Modules\CRM\Models\LeadSetting;
+use OpenApi\Attributes as OA;
 
 final class LeadSettingController extends Controller
 {
@@ -17,6 +18,13 @@ final class LeadSettingController extends Controller
         private readonly TenantContext $tenantContext,
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/crm/lead-settings',
+        operationId: 'showCrmLeadSettings',
+        summary: 'Show lead settings',
+        tags: ['CRM'],
+        responses: [new OA\Response(response: 200, description: 'Lead settings')]
+    )]
     public function show(): JsonResponse
     {
         $settings = LeadSetting::forTenant((string) $this->tenantContext->getTenantId());
@@ -25,6 +33,13 @@ final class LeadSettingController extends Controller
         return (new LeadSettingResource($settings))->response();
     }
 
+    #[OA\Put(
+        path: '/api/v1/crm/lead-settings',
+        operationId: 'updateCrmLeadSettings',
+        summary: 'Update lead settings',
+        tags: ['CRM'],
+        responses: [new OA\Response(response: 200, description: 'Lead settings updated')]
+    )]
     public function update(UpdateLeadSettingRequest $request): JsonResponse
     {
         $settings = LeadSetting::forTenant((string) $this->tenantContext->getTenantId());

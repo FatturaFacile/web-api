@@ -13,6 +13,7 @@ use Modules\CRM\Http\Requests\RotateLeadSourceSecretRequest;
 use Modules\CRM\Http\Requests\StoreLeadSourceRequest;
 use Modules\CRM\Http\Resources\LeadSourceResource;
 use Modules\CRM\Models\LeadSource;
+use OpenApi\Attributes as OA;
 
 final class LeadSourceController extends Controller
 {
@@ -23,6 +24,13 @@ final class LeadSourceController extends Controller
         private readonly LeadSourceCredentialServiceInterface $credentials,
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/crm/lead-sources',
+        operationId: 'listCrmLeadSources',
+        summary: 'List lead sources',
+        tags: ['CRM'],
+        responses: [new OA\Response(response: 200, description: 'Lead sources')]
+    )]
     public function index(): JsonResponse
     {
         $this->authorize('viewAny', LeadSource::class);
@@ -41,6 +49,13 @@ final class LeadSourceController extends Controller
     /**
      * Creates the source with fresh credentials, returned once as webhook_secret and api_key.
      */
+    #[OA\Post(
+        path: '/api/v1/crm/lead-sources',
+        operationId: 'createCrmLeadSource',
+        summary: 'Create lead source',
+        tags: ['CRM'],
+        responses: [new OA\Response(response: 201, description: 'Lead source created')]
+    )]
     public function store(StoreLeadSourceRequest $request): JsonResponse
     {
         $this->authorize('create', LeadSource::class);
@@ -54,6 +69,14 @@ final class LeadSourceController extends Controller
         return $this->withCredentials($source, $plain, 201);
     }
 
+    #[OA\Get(
+        path: '/api/v1/crm/lead-sources/{id}',
+        operationId: 'showCrmLeadSource',
+        summary: 'Show lead source',
+        tags: ['CRM'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Lead source')]
+    )]
     public function show(string $id): JsonResponse
     {
         $source = $this->findSource($id);
@@ -62,6 +85,14 @@ final class LeadSourceController extends Controller
         return (new LeadSourceResource($source))->response();
     }
 
+    #[OA\Put(
+        path: '/api/v1/crm/lead-sources/{id}',
+        operationId: 'updateCrmLeadSource',
+        summary: 'Update lead source',
+        tags: ['CRM'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Lead source updated')]
+    )]
     public function update(StoreLeadSourceRequest $request, string $id): JsonResponse
     {
         $source = $this->findSource($id);
@@ -72,6 +103,14 @@ final class LeadSourceController extends Controller
         return (new LeadSourceResource($source))->response();
     }
 
+    #[OA\Delete(
+        path: '/api/v1/crm/lead-sources/{id}',
+        operationId: 'deleteCrmLeadSource',
+        summary: 'Delete lead source',
+        tags: ['CRM'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 204, description: 'Lead source deleted')]
+    )]
     public function destroy(string $id): JsonResponse
     {
         $source = $this->findSource($id);
@@ -82,6 +121,14 @@ final class LeadSourceController extends Controller
         return response()->json(null, 204);
     }
 
+    #[OA\Post(
+        path: '/api/v1/crm/lead-sources/{id}/rotate-secret',
+        operationId: 'rotateCrmLeadSourceSecret',
+        summary: 'Rotate lead source secret',
+        tags: ['CRM'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Secret rotated')]
+    )]
     public function rotateSecret(RotateLeadSourceSecretRequest $request, string $id): JsonResponse
     {
         $source = $this->findSource($id);

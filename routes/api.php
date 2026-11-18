@@ -469,7 +469,9 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('inventory')->name('inventory.')->middleware('module.access:inventory')->group(function (): void {
             Route::get('/products', [InventoryController::class, 'products'])->name('products');
             Route::post('/products', [InventoryController::class, 'storeProduct'])->name('products.store');
-            Route::put('/products/{id}', [InventoryController::class, 'updateProduct'])->name('products.update');
+            Route::get('/products/{id}', [InventoryController::class, 'showProduct'])->whereUuid('id')->name('products.show');
+            Route::put('/products/{id}', [InventoryController::class, 'updateProduct'])->whereUuid('id')->name('products.update');
+            Route::delete('/products/{id}', [InventoryController::class, 'destroyProduct'])->whereUuid('id')->name('products.destroy');
             Route::get('/delivery-notes', [InventoryController::class, 'deliveryNotes'])->name('delivery-notes');
             Route::get('/stock-levels', [StockController::class, 'levels'])->name('stock-levels');
             // Deprecated: no approval and no ledger entry; the successor is the Inventory adjustment flow

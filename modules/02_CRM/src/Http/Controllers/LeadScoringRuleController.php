@@ -14,6 +14,7 @@ use Modules\CRM\Http\Requests\StoreLeadScoringRuleRequest;
 use Modules\CRM\Http\Resources\LeadScoringRuleResource;
 use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\LeadScoringRule;
+use OpenApi\Attributes as OA;
 
 final class LeadScoringRuleController extends Controller
 {
@@ -27,6 +28,13 @@ final class LeadScoringRuleController extends Controller
         private readonly LeadScoringServiceInterface $scoring,
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/crm/scoring-rules',
+        operationId: 'listCrmScoringRules',
+        summary: 'List lead scoring rules',
+        tags: ['CRM'],
+        responses: [new OA\Response(response: 200, description: 'Scoring rules')]
+    )]
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', LeadScoringRule::class);
@@ -52,6 +60,13 @@ final class LeadScoringRuleController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/crm/scoring-rules',
+        operationId: 'createCrmScoringRule',
+        summary: 'Create lead scoring rule',
+        tags: ['CRM'],
+        responses: [new OA\Response(response: 201, description: 'Scoring rule created')]
+    )]
     public function store(StoreLeadScoringRuleRequest $request): JsonResponse
     {
         $this->authorize('create', LeadScoringRule::class);
@@ -65,6 +80,14 @@ final class LeadScoringRuleController extends Controller
         return (new LeadScoringRuleResource($rule))->response()->setStatusCode(201);
     }
 
+    #[OA\Get(
+        path: '/api/v1/crm/scoring-rules/{id}',
+        operationId: 'showCrmScoringRule',
+        summary: 'Show lead scoring rule',
+        tags: ['CRM'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Scoring rule')]
+    )]
     public function show(string $id): JsonResponse
     {
         $rule = $this->findRule($id);
@@ -73,6 +96,14 @@ final class LeadScoringRuleController extends Controller
         return (new LeadScoringRuleResource($rule))->response();
     }
 
+    #[OA\Put(
+        path: '/api/v1/crm/scoring-rules/{id}',
+        operationId: 'updateCrmScoringRule',
+        summary: 'Update lead scoring rule',
+        tags: ['CRM'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Scoring rule updated')]
+    )]
     public function update(StoreLeadScoringRuleRequest $request, string $id): JsonResponse
     {
         $rule = $this->findRule($id);
@@ -83,6 +114,14 @@ final class LeadScoringRuleController extends Controller
         return (new LeadScoringRuleResource($rule->fresh() ?? $rule))->response();
     }
 
+    #[OA\Delete(
+        path: '/api/v1/crm/scoring-rules/{id}',
+        operationId: 'deleteCrmScoringRule',
+        summary: 'Delete lead scoring rule',
+        tags: ['CRM'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 204, description: 'Scoring rule deleted')]
+    )]
     public function destroy(string $id): JsonResponse
     {
         $rule = $this->findRule($id);
@@ -96,6 +135,13 @@ final class LeadScoringRuleController extends Controller
     /**
      * Scores an existing lead (lead_id) or a hypothetical one (lead: {...}) without saving anything.
      */
+    #[OA\Post(
+        path: '/api/v1/crm/scoring-rules/preview',
+        operationId: 'previewCrmScoringRule',
+        summary: 'Preview lead score',
+        tags: ['CRM'],
+        responses: [new OA\Response(response: 200, description: 'Score preview')]
+    )]
     public function preview(PreviewLeadScoreRequest $request): JsonResponse
     {
         $this->authorize('viewAny', LeadScoringRule::class);

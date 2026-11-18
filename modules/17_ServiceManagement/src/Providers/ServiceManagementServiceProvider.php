@@ -65,6 +65,7 @@ use Modules\ServiceManagement\Listeners\CRMCustomerServiceListener;
 use Modules\ServiceManagement\Listeners\DispatchOutboxOnESMEventListener;
 use Modules\ServiceManagement\Listeners\HRAvailabilityListener;
 use Modules\ServiceManagement\Listeners\ProjectESMListener;
+use Modules\ServiceManagement\Listeners\RmaAccountingAndInventoryListener;
 use Modules\ServiceManagement\Listeners\SendCsatSurveyListener;
 use Modules\ServiceManagement\Listeners\SendHelpdeskNotificationsListener;
 use Modules\ServiceManagement\Listeners\SendHelpdeskReplyEmailListener;
@@ -216,5 +217,7 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         Event::listen(LeaveApprovedEvent::class, [HRAvailabilityListener::class, 'handleLeaveApproved']);
         Event::listen(WorkflowInstanceCompletedEvent::class, [WorkflowApprovalESMListener::class, 'handleWorkflowApproved']);
         Event::listen(WorkflowInstanceRejectedEvent::class, [WorkflowApprovalESMListener::class, 'handleWorkflowRejected']);
+        Event::listen(RmaWarrantyCostChargedEvent::class, [RmaAccountingAndInventoryListener::class, 'handleWarrantyCostCharged']);
+        Event::listen(RmaCompletedEvent::class, [RmaAccountingAndInventoryListener::class, 'handleRmaCompleted']);
     }
 }
