@@ -196,7 +196,7 @@ final readonly class NaiveTextCvParser implements CvParserInterface
 
             $current = '';
             foreach ($operators as $operator) {
-                if (isset($operator[3]) && $operator[3] !== '') {
+                if (isset($operator[3])) {
                     if (trim($current) !== '') {
                         $lines[] = trim($current);
                     }

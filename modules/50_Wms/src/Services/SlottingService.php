@@ -56,7 +56,7 @@ final class SlottingService
                 $rule = $rules->first(static fn (WmsSlottingRule $candidate): bool => ($candidate->abc_class === null || $candidate->abc_class === $class)
                     && ($candidate->min_velocity === null || bccomp($velocity, (string) $candidate->min_velocity, 4) >= 0)
                     && ($candidate->max_velocity === null || bccomp($velocity, (string) $candidate->max_velocity, 4) < 0));
-                $wantedType = $rule?->target_bin_type ?? self::DefaultBinTypes[$class];
+                $wantedType = $rule->target_bin_type ?? self::DefaultBinTypes[$class];
                 $wantedZone = $rule?->target_zone_id;
 
                 // The bin that holds most of the item is the one to move it from.

@@ -119,7 +119,6 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         $this->app->singleton(SLAManagementServiceInterface::class, SLAManagementService::class);
 
         // GH-396: warranty, equipment passports and depot repair (RMA)
-        $this->mergeConfigFrom(__DIR__.'/../../config/service-management.php', 'service-management');
         $this->app->singleton(WarrantyCalculator::class, static fn (): WarrantyCalculator => new WarrantyCalculator);
         $this->app->singleton(EquipmentPassportServiceInterface::class, EquipmentPassportService::class);
         $this->app->singleton(RmaServiceInterface::class, RmaService::class);

@@ -65,7 +65,7 @@ final class VehicleStockUnit extends WorkshopRecord
      */
     protected function soldAt(): Attribute
     {
-        return Attribute::get(fn (): ?string => $this->sale?->sale_date?->toDateString());
+        return Attribute::get(fn (): ?string => $this->sale?->sale_date->toDateString());
     }
 
     /**

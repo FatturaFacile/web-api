@@ -272,7 +272,7 @@ final class HrAnalyticsService
                 'full_name' => $employee->full_name,
                 'department_id' => $employee->department_id,
                 'probation_end_date' => $day($employee->probation_end_date),
-                'days_remaining' => $remaining($employee->probation_end_date),
+                'days_remaining' => $remaining(Carbon::parse($employee->probation_end_date)),
             ]);
 
         $contracts = EmploymentContract::query()

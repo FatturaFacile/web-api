@@ -184,7 +184,7 @@ final class GridQuery
         }
 
         $keep = $sort === null ? ($base->orders ?? []) : [];
-        $keepBindings = $sort === null ? ($base->bindings['order'] ?? []) : [];
+        $keepBindings = $sort === null ? $base->bindings['order'] : [];
         $query->reorder();
 
         if ($group !== null) {
@@ -197,7 +197,7 @@ final class GridQuery
         foreach ($keep as $order) {
             $base->orders[] = $order;
         }
-        $base->bindings['order'] = [...($base->bindings['order'] ?? []), ...$keepBindings];
+        $base->bindings['order'] = [...$base->bindings['order'], ...$keepBindings];
 
         $id = $sort !== null && $sort !== 'id' ? $columns->expression('id') : null;
         if ($id !== null) {

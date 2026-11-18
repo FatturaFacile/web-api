@@ -97,7 +97,7 @@ final readonly class DunningStrategyService
     {
         $previous = -1;
 
-        foreach (array_values($steps) as $index => $step) {
+        foreach ($steps as $index => $step) {
             if ((int) $step['days_after_due'] < $previous) {
                 throw ValidationException::withMessages(["steps.{$index}.days_after_due" => [__('credit_errors.strategy.days_order')]]);
             }
@@ -111,7 +111,7 @@ final readonly class DunningStrategyService
      */
     private function writeSteps(CreditDunningStrategy $strategy, array $steps): void
     {
-        foreach (array_values($steps) as $index => $step) {
+        foreach ($steps as $index => $step) {
             CreditDunningStep::create([
                 'tenant_id' => $strategy->tenant_id,
                 'strategy_id' => $strategy->id,

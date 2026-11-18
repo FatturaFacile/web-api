@@ -19,6 +19,9 @@ use Modules\Workflow\Models\WorkflowInstance;
  * @property Carbon|null $hire_date
  * @property Carbon|null $birth_date
  * @property Carbon|null $termination_date
+ * @property Carbon|null $probation_end_date
+ * @property Carbon|null $confirmation_date
+ * @property array<array-key, string|array<string, mixed>>|null $equipment_assigned
  */
 final class Employee extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
@@ -68,6 +71,9 @@ final class Employee extends BaseEnterpriseModel implements LockableByWorkflowIn
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    /**
+     * @return BelongsTo<Department, $this>
+     */
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'department_id');
@@ -88,6 +94,9 @@ final class Employee extends BaseEnterpriseModel implements LockableByWorkflowIn
         return $this->belongsTo(CostCenter::class, 'cost_center_id');
     }
 
+    /**
+     * @return BelongsTo<Position, $this>
+     */
     public function position(): BelongsTo
     {
         return $this->belongsTo(Position::class, 'position_id');

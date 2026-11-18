@@ -240,7 +240,7 @@ final class ReturnService
         $document->load('lines');
         $used = [];
         $returned = [];
-        $find = function (PosSaleItem $item) use ($document, &$used): ?CommercialDocumentLine {
+        $find = function (PosSaleItem $item, array $used) use ($document): ?CommercialDocumentLine {
             return $document->lines->first(static fn (CommercialDocumentLine $line): bool => ! in_array($line->id, $used, true)
                 && $line->description === (string) $item->description
                 && bccomp((string) $line->unit_price, (string) $item->unit_price, 4) === 0
@@ -249,7 +249,7 @@ final class ReturnService
         $itemsById = $items->keyBy('id');
 
         foreach ($lines as $line) {
-            $docLine = $find($itemsById->get($line['pos_sale_item_id']));
+            $docLine = $find($itemsById->get($line['pos_sale_item_id']), $used);
 
             if ($docLine === null) {
                 continue;
@@ -264,7 +264,7 @@ final class ReturnService
         foreach ($items->filter(static fn (PosSaleItem $item): bool => bccomp((string) $item->unit_price, '0', 4) < 0) as $discount) {
             $rate = bcadd((string) $discount->tax_rate, '0', 2);
             $base = $this->netAtRate($positive, $rate);
-            $docLine = $find($discount);
+            $docLine = $find($discount, $used);
 
             if ($docLine === null || bccomp($base, '0', 2) <= 0) {
                 continue;

@@ -22,7 +22,7 @@ class InventoryCostLayerFactory extends Factory
      */
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? (string) Str::uuid7();
+        $tenantId = Tenant::first()->id ?? (string) Str::uuid7();
         $quantity = fake()->randomFloat(0, 1, 50);
 
         return [

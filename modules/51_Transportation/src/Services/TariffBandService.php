@@ -50,7 +50,7 @@ final class TariffBandService extends TransportationCrudService
         $overlapping = TmsTariffBand::query()
             ->where('tenant_id', $tenantId)
             ->where('tariff_table_id', $merged['tariff_table_id'])
-            ->when($existing !== null, static fn ($query) => $query->where('id', '!=', $existing?->id))
+            ->when($existing !== null, static fn ($query) => $query->where('id', '!=', $existing?->getKey()))
             ->get()
             ->first(fn (TmsTariffBand $band): bool => ($band->origin_zone ?? null) === ($merged['origin_zone'] ?? null)
                 && ($band->destination_zone ?? null) === ($merged['destination_zone'] ?? null)

@@ -127,7 +127,7 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
 
             // 3b. Valuation hooks (FatturaFacile/FatturaFacile#144): inbound creates a cost layer
             // (and PPV for standard cost), outbound depletes layers per the effective method.
-            if ($sourceBin === null && $destBin !== null) {
+            if ($sourceBin === null) {
                 $isReceipt = $isReceiptOrigin || in_array(strtolower($dto->movementType), self::RECEIPT_MOVEMENT_TYPES, true);
                 $this->costing->recordInbound($item, new InboundCostingDTO(
                     movementId: $movementId,
@@ -139,7 +139,7 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
                     lotId: $dto->lotId,
                     receiptId: $isReceiptOrigin ? $dto->originDocumentId : null,
                 ));
-            } elseif ($sourceBin !== null && $destBin === null) {
+            } elseif ($destBin === null) {
                 $outbound = $this->costing->consumeOutbound($item, new OutboundCostingDTO(
                     movementId: $movementId,
                     quantity: Decimal::of($dto->quantity),

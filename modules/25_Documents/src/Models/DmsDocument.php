@@ -129,7 +129,7 @@ final class DmsDocument extends BaseEnterpriseModel
     }
 
     /**
-     * @return BelongsToMany<DmsTag, $this>
+     * @return BelongsToMany<DmsTag, $this, AuditedPivot, 'pivot'>
      */
     public function tags(): BelongsToMany
     {

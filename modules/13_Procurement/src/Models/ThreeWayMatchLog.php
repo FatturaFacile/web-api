@@ -6,7 +6,11 @@ namespace Modules\Procurement\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $evaluated_at
+ */
 final class ThreeWayMatchLog extends BaseEnterpriseModel
 {
     protected $table = 'three_way_match_logs';
@@ -24,6 +28,9 @@ final class ThreeWayMatchLog extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<PurchaseOrder, $this>
+     */
     public function purchaseOrder(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');

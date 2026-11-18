@@ -59,7 +59,7 @@ final class WmsDashboardService
         $perDay = [];
 
         for ($day = $from->copy(); $day->lessThanOrEqualTo($to); $day->addDay()) {
-            $perDay[$day->toDateString()] = ['date' => $day->toDateString(), 'total' => 0, ...array_fill_keys(WmsTask::TaskTypes, 0)];
+            $perDay[$day->toDateString()] = ['total' => 0, ...array_fill_keys(WmsTask::TaskTypes, 0)];
         }
 
         foreach ($rows as $row) {
@@ -72,7 +72,13 @@ final class WmsDashboardService
             }
         }
 
-        return ['total' => $rows->count(), 'by_type' => $byType, 'per_day' => array_values($perDay)];
+        $days = [];
+
+        foreach ($perDay as $date => $counts) {
+            $days[] = ['date' => $date, ...$counts];
+        }
+
+        return ['total' => $rows->count(), 'by_type' => $byType, 'per_day' => $days];
     }
 
     /**

@@ -25,7 +25,7 @@ final class SalesDeliveryNoteResource extends JsonResource
             'sales_order_id' => $this->sales_order_id,
             'warehouse_id' => $this->warehouse_id,
             'ddt_number' => $this->ddt_number,
-            'date' => $this->date?->toDateString(),
+            'date' => $this->date->toDateString(),
             'transport_reason' => $this->transport_reason,
             'packages_count' => $this->packages_count,
             'gross_weight_kg' => (float) $this->gross_weight_kg,

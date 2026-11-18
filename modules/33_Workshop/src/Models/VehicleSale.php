@@ -6,9 +6,12 @@ namespace Modules\Workshop\Models;
 
 use App\Models\Contact;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * The sale of a stock vehicle to a buyer, invoiced through the invoicing flow.
+ *
+ * @property Carbon $sale_date
  */
 final class VehicleSale extends WorkshopRecord
 {

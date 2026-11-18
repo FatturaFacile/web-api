@@ -55,7 +55,7 @@ trait ValidatesContactFiscalData
     protected function fiscalRules(string $country, ?Contact $current = null): array
     {
         $vat = ['nullable', 'string', 'max:30'];
-        $vatValue = (string) $this->input('vat_number', $current?->vat_number ?? '');
+        $vatValue = (string) $this->input('vat_number', $current->vat_number ?? '');
 
         if ($country === 'IT') {
             $vat[] = new ValidFiscalIdentifier('it_vat');

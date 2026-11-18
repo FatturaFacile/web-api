@@ -19,6 +19,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $requested_date
  * @property Carbon|null $shipped_at
  * @property Carbon|null $received_at
+ * @property Carbon|null $approved_at
+ * @property Carbon|null $closed_at
  */
 final class TransferOrder extends BaseEnterpriseModel
 {

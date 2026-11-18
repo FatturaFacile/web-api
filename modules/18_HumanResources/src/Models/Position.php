@@ -23,6 +23,9 @@ final class Position extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<Department, $this>
+     */
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'department_id');

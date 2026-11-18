@@ -9,6 +9,12 @@ use LogicException;
 
 /**
  * Append-only audit entry of a signature request: it can be created, never changed or deleted.
+ *
+ * @property string $request_id
+ * @property string|null $signer_id
+ * @property string $event
+ * @property string|null $actor_id
+ * @property array<string, mixed>|null $metadata
  */
 final class ContractSignatureEvent extends BaseEnterpriseModel
 {

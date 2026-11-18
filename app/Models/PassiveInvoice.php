@@ -12,10 +12,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Workflow\Contracts\ReactsToWorkflowOutcome;
 use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * @property Carbon $date
+ * @property Carbon|null $due_date
+ */
 class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
 {
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
@@ -151,7 +156,7 @@ class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
     /**
      * Name of the supplier contact (company name, or first and last name): only known once the supplier is loaded.
      *
-     * @return Attribute<string|null, never>
+     * @return Attribute<non-falsy-string|null, never>
      */
     protected function supplierName(): Attribute
     {

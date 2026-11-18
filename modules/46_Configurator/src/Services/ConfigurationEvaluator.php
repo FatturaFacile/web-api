@@ -261,7 +261,7 @@ final class ConfigurationEvaluator
                 continue;
             }
 
-            if ($group->min_select !== null && $count < $group->min_select && ($count > 0 || $group->is_required)) {
+            if ($group->min_select !== null && $count < $group->min_select && $count > 0) {
                 $violations[] = $this->violation('multi_below_min', "Choose at least {$group->min_select} options of {$group->name}.", $groupCode, params: ['group' => $groupCode, 'name' => $group->name, 'min' => $group->min_select]);
             }
 
@@ -284,7 +284,7 @@ final class ConfigurationEvaluator
             }
 
             foreach ($rule->target_options ?? [] as $code) {
-                $name = ($definition->options[$code] ?? null)?->name ?? $code;
+                $name = $definition->options[$code]->name ?? $code;
                 $groupCode = $definition->groupOfOption[$code] ?? null;
 
                 if ($rule->type === ConfiguratorRule::Requires && ! isset($selected[$code])) {

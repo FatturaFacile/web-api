@@ -52,10 +52,7 @@ final class FormulaEvaluator
      */
     public function references(string $formula): array
     {
-        $references = [];
-        $this->collect($this->parse($formula), $references);
-
-        return array_values(array_unique($references));
+        return array_values(array_unique($this->collect($this->parse($formula))));
     }
 
     /**
@@ -219,15 +216,15 @@ final class FormulaEvaluator
 
     /**
      * @param  array<int, mixed>  $node
-     * @param  list<string>  $references
+     * @return list<string>
      */
-    private function collect(array $node, array &$references): void
+    private function collect(array $node): array
     {
-        match ($node[0]) {
-            'ref' => $references[] = $node[1],
-            'neg' => $this->collect($node[1], $references),
-            'num' => null,
-            default => [$this->collect($node[1], $references), $this->collect($node[2], $references)],
+        return match ($node[0]) {
+            'ref' => [(string) $node[1]],
+            'neg' => $this->collect($node[1]),
+            'num' => [],
+            default => [...$this->collect($node[1]), ...$this->collect($node[2])],
         };
     }
 

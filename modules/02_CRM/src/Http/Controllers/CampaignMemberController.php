@@ -188,7 +188,7 @@ final class CampaignMemberController extends Controller
             'contact_id' => $member->contact_id,
             'lead_id' => $member->lead_id,
             'name' => $this->displayName($member),
-            'email' => $member->contact?->email ?? $member->lead?->email,
+            'email' => $member->contact->email ?? $member->lead?->email,
             'status' => $member->status,
             'suppression_reason' => $member->suppression_reason,
             'sent_at' => $member->sent_at?->toIso8601String(),

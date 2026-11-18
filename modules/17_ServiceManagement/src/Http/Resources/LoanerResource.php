@@ -29,7 +29,7 @@ final class LoanerResource extends JsonResource
             'loaner_product_id' => $this->loaner_product_id,
             'customer_id' => $this->customer_id,
             'register_type' => $this->register_type,
-            'issued_at' => $this->issued_at?->toIso8601String(),
+            'issued_at' => $this->issued_at->toIso8601String(),
             'expected_return_at' => $this->expected_return_at?->toIso8601String(),
             'returned_at' => $this->returned_at?->toIso8601String(),
             'status' => $this->status,

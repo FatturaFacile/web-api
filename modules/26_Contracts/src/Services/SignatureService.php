@@ -32,7 +32,7 @@ final class SignatureService
      */
     public function providerNames(): array
     {
-        return array_values(array_map(static fn (SignatureProvider $provider): string => $provider->name(), $this->providers()));
+        return array_map(static fn (SignatureProvider $provider): string => $provider->name(), $this->providers());
     }
 
     /**
@@ -68,7 +68,7 @@ final class SignatureService
                 'created_by' => $userId,
             ]);
 
-            foreach (array_values($signers) as $index => $signer) {
+            foreach ($signers as $index => $signer) {
                 ContractSigner::query()->create(['request_id' => $request->getKey(), 'name' => $signer['name'], 'email' => $signer['email'], 'position' => $index + 1, 'status' => 'pending']);
             }
 

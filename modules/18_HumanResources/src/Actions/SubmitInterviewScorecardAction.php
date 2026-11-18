@@ -29,11 +29,11 @@ final readonly class SubmitInterviewScorecardAction
                 throw RecruitingRuleViolationException::candidateAnonymized();
             }
 
-            $criteria = array_values(array_map(static fn (array $criterion): array => [
+            $criteria = array_map(static fn (array $criterion): array => [
                 'criterion' => trim((string) $criterion['criterion']),
                 'score' => (int) $criterion['score'],
                 'comment' => isset($criterion['comment']) && $criterion['comment'] !== '' ? (string) $criterion['comment'] : null,
-            ], $dto->criteriaScores));
+            ], $dto->criteriaScores);
 
             $overall = $criteria === []
                 ? 0.0

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\Pivots\AuditedPivot;
+use App\Models\Pivots\TenantMembership;
 use App\Services\Auth\UserSessions;
 use App\Services\Tenancy\TenantContext;
 use Database\Factories\UserFactory;
@@ -96,12 +96,12 @@ class User extends Authenticatable
     /**
      * The tenants the user can act in: a membership suspended by the identity provider (SCIM deactivation) is not one.
      *
-     * @return BelongsToMany<Tenant, $this>
+     * @return BelongsToMany<Tenant, $this, TenantMembership, 'pivot'>
      */
     public function tenants(): BelongsToMany
     {
         return $this->belongsToMany(Tenant::class, 'tenant_user')
-            ->using(AuditedPivot::class)
+            ->using(TenantMembership::class)
             ->withPivot(['id', 'role', 'permissions'])
             ->wherePivotNull('suspended_at')
             ->withTimestamps();

@@ -186,7 +186,7 @@ final class RecruitingService
         $checklist = OnboardingChecklist::create(['employee_id' => $employee->id, 'onboarding_template_id' => $template->id]);
         $start = CarbonImmutable::parse($startDate);
 
-        foreach (array_values($template->tasks) as $index => $task) {
+        foreach ($template->tasks as $index => $task) {
             OnboardingTask::create([
                 'onboarding_checklist_id' => $checklist->id,
                 'title' => $task['title'],

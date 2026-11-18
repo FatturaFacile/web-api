@@ -129,7 +129,7 @@ final class TripService extends TransportationCrudService
                 $lastPickup = -1;
 
                 foreach ($sequence as $index => $item) {
-                    if (($item['stop']?->stop_type ?? $item['data']['stop_type']) === 'pickup') {
+                    if (($item['stop']->stop_type ?? $item['data']['stop_type']) === 'pickup') {
                         $lastPickup = $index;
                     }
                 }
@@ -335,7 +335,7 @@ final class TripService extends TransportationCrudService
      */
     private function writeSequence(TmsTrip $trip, array $sequence): void
     {
-        foreach (array_values($sequence) as $index => $item) {
+        foreach ($sequence as $index => $item) {
             if ($item['stop'] !== null) {
                 $item['stop']->update(['sequence' => $index + 1]);
 

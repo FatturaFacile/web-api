@@ -37,7 +37,7 @@ final class TemplateAssembler
             $clause = $entry->clause;
 
             if ($clause === null || $clause->status !== 'approved') {
-                throw ValidationException::withMessages(['template_id' => __('contracts.template.clause_not_approved', ['clause' => $clause?->code ?? '-'])]);
+                throw ValidationException::withMessages(['template_id' => __('contracts.template.clause_not_approved', ['clause' => $clause->code ?? '-'])]);
             }
 
             $sections[] = trim($clause->title)."\n".$this->library->resolveBody($clause, $fallbackRanks[$clause->getKey()] ?? null);

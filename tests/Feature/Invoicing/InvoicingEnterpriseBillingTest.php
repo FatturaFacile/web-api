@@ -274,6 +274,8 @@ test('a payment term splits the amount due into installments fixed at emission',
 });
 
 test('the exchange rate of a foreign-currency invoice is frozen at emission from the exchange-rate service', function (): void {
+    // The reference data already holds EUR/USD and EUR/JPY rates: this test freezes its own and needs JPY without one.
+    ExchangeRate::withoutGlobalScopes()->where('source', 'EUR')->whereIn('target', ['USD', 'JPY'])->delete();
     ExchangeRate::create(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.250000', 'effective_date' => now()->subDays(2)->toDateString()]);
 
     $invoiceId = $this->postJson('/api/v1/sales/invoices', [
@@ -377,5 +379,5 @@ test('read-only roles read the billing endpoints and are refused every write', f
         $this->postJson($uri, [])->assertForbidden();
     }
 
-    expect(SalesInvoiceItem::withoutGlobalScopes()->count())->toBe(0);
+    expect(SalesInvoiceItem::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->count())->toBe(0);
 });

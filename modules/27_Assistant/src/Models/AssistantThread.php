@@ -6,9 +6,12 @@ namespace Modules\Assistant\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * A conversation of one user with the assistant: the questions asked in it are the question logs of the thread.
+ *
+ * @property Carbon|null $last_message_at
  */
 final class AssistantThread extends BaseEnterpriseModel
 {

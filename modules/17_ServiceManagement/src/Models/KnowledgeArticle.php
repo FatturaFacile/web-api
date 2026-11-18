@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 final class KnowledgeArticle extends BaseEnterpriseModel
 {
@@ -54,7 +55,7 @@ final class KnowledgeArticle extends BaseEnterpriseModel
      */
     public function scopeSearch(Builder $query, string $terms): Builder
     {
-        if ($query->getConnection()->getDriverName() === 'pgsql') {
+        if (DB::connection($query->getModel()->getConnectionName())->getDriverName() === 'pgsql') {
             $document = "to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(content, ''))";
 
             return $query->whereRaw("{$document} @@ websearch_to_tsquery('simple', ?)", [$terms])

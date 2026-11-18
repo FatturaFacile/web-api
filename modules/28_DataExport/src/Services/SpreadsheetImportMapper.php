@@ -29,7 +29,7 @@ final class SpreadsheetImportMapper
     public const int MaxRows = 5000;
 
     /**
-     * @var array<string, array<string, list<string>|string>>
+     * @var array<string, array{rules: array<string, list<string>>}>
      */
     private const array Datasets = [
         'contacts' => [

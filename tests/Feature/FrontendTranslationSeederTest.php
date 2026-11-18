@@ -10,10 +10,9 @@ use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Database\Seeders\TranslationSeeder;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 
-uses(DatabaseTransactions::class);
+// The database is refreshed and wrapped in a transaction by Tests\TestCase (LazilyRefreshDatabase).
 
 /**
  * @return array<string, array<string, string>>

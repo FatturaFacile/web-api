@@ -6,8 +6,13 @@ namespace Modules\Logistics\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Modules\Logistics\Concerns\HasAuditUsers;
 
+/**
+ * @property Carbon $period_start
+ * @property Carbon $period_end
+ */
 final class ConsignmentConsumptionDeclaration extends BaseEnterpriseModel
 {
     use HasAuditUsers;

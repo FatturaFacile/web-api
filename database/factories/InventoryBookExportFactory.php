@@ -21,7 +21,7 @@ class InventoryBookExportFactory extends Factory
      */
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? (string) Str::uuid7();
+        $tenantId = Tenant::first()->id ?? (string) Str::uuid7();
         $year = (int) now()->format('Y');
         $payload = (string) json_encode([
             'meta' => ['year' => $year, 'as_of' => "{$year}-12-31", 'company_id' => $tenantId, 'method_breakdown' => [], 'generated_at' => now()->toIso8601String()],

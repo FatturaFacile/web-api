@@ -6,7 +6,12 @@ namespace Modules\CRM\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property array<string, string>|null $field_map
+ * @property Carbon|null $last_received_at
+ */
 final class LeadWebhookEndpoint extends BaseEnterpriseModel
 {
     protected $table = 'crm_lead_webhook_endpoints';

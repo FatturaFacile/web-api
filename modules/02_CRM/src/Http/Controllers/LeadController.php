@@ -106,7 +106,7 @@ final class LeadController extends Controller
     public function store(StoreLeadRequest $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $actorId = (string) ($request->user()?->id ?? 'system');
+        $actorId = (string) ($request->user()->id ?? 'system');
 
         $result = $this->leadService->captureLeadWithOutcome(new CreateLeadDTO(
             tenantId: (string) $tenant->id,
@@ -170,7 +170,7 @@ final class LeadController extends Controller
         $primary = Lead::where('tenant_id', $tenant->id)->findOrFail($id);
         $duplicate = Lead::where('tenant_id', $tenant->id)->findOrFail($data['duplicate_id']);
 
-        $merged = $this->leadService->mergeLeads($primary, $duplicate, (string) ($request->user()?->id ?? 'system'));
+        $merged = $this->leadService->mergeLeads($primary, $duplicate, (string) ($request->user()->id ?? 'system'));
 
         return response()->json(new LeadResource($merged));
     }
@@ -326,7 +326,7 @@ final class LeadController extends Controller
     {
         $tenant = $this->tenantContext->getTenant();
         $lead = Lead::where('tenant_id', $tenant->id)->findOrFail($id);
-        $actorId = (string) ($request->user()?->id ?? 'system');
+        $actorId = (string) ($request->user()->id ?? 'system');
 
         $qualified = $this->leadService->qualifyLead($lead, $actorId);
 
@@ -360,7 +360,7 @@ final class LeadController extends Controller
 
         $tenant = $this->tenantContext->getTenant();
         $lead = Lead::where('tenant_id', $tenant->id)->findOrFail($id);
-        $actorId = (string) ($request->user()?->id ?? 'system');
+        $actorId = (string) ($request->user()->id ?? 'system');
 
         $disqualified = $this->leadService->disqualifyLead($lead, $request->input('reason'), $actorId);
 
@@ -393,7 +393,7 @@ final class LeadController extends Controller
     {
         $tenant = $this->tenantContext->getTenant();
         $lead = Lead::where('tenant_id', $tenant->id)->findOrFail($id);
-        $actorId = (string) ($request->user()?->id ?? 'system');
+        $actorId = (string) ($request->user()->id ?? 'system');
 
         if ($lead->status === 'converted') {
             return response()->json(['message' => "Lead [{$lead->id}] has already been converted."], 409);

@@ -101,7 +101,7 @@ final readonly class SupplierRiskService
             $reasons[] = ['code' => 'document_expired', 'points' => 40, 'detail' => $document->requirement?->code];
         }
 
-        foreach ($accepted->reject(static fn (SupplierDocumentSubmission $document): bool => $document->isExpired($today))->filter(static fn (SupplierDocumentSubmission $document): bool => $document->expires_at->toDateString() <= now()->addDays((int) ($document->requirement?->alert_days ?? 30))->toDateString())->take(3) as $document) {
+        foreach ($accepted->reject(static fn (SupplierDocumentSubmission $document): bool => $document->isExpired($today))->filter(static fn (SupplierDocumentSubmission $document): bool => $document->expires_at->toDateString() <= now()->addDays((int) ($document->requirement->alert_days ?? 30))->toDateString())->take(3) as $document) {
             $reasons[] = ['code' => 'document_expiring', 'points' => 10, 'detail' => $document->requirement?->code];
         }
 

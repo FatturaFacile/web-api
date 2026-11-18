@@ -17,7 +17,7 @@ use Modules\Inventory\Models\StockItem;
 final class ValuationConfigResource extends JsonResource
 {
     /**
-     * @return array{item_id: string, sku: string, category_id: string|null, category_method: string|null, item_method: string|null, effective_method: string, source: string}
+     * @return array{item_id: string, sku: string, category_id: string, category_method: string|null, item_method: string|null, effective_method: string, source: string}
      */
     public function toArray(Request $request): array
     {
@@ -28,7 +28,7 @@ final class ValuationConfigResource extends JsonResource
         return [
             'item_id' => (string) $item->id,
             'sku' => (string) $item->sku,
-            'category_id' => $item->category_id !== null ? (string) $item->category_id : null,
+            'category_id' => (string) $item->category_id,
             'category_method' => $method['category_method'],
             'item_method' => $method['item_method'],
             'effective_method' => $method['effective_method'],

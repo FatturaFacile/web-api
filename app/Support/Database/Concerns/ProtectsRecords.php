@@ -22,9 +22,9 @@ trait ProtectsRecords
 {
     public static function bootProtectsRecords(): void
     {
-        static::creating(static fn (Model $model) => $model->assertRecordMutable('create'));
-        static::updating(static fn (Model $model) => $model->assertRecordMutable('update'));
-        static::deleting(static fn (Model $model) => $model->assertRecordMutable('delete'));
+        static::creating(static fn (self $model) => $model->assertRecordMutable('create'));
+        static::updating(static fn (self $model) => $model->assertRecordMutable('update'));
+        static::deleting(static fn (self $model) => $model->assertRecordMutable('delete'));
     }
 
     /**

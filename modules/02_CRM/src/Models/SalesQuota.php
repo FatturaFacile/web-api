@@ -6,9 +6,13 @@ namespace Modules\CRM\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * A sales target of a user (optionally for a territory) over a period; attainment is computed from the opportunities won in the period.
+ *
+ * @property Carbon $period_start
+ * @property Carbon $period_end
  */
 final class SalesQuota extends BaseEnterpriseModel
 {

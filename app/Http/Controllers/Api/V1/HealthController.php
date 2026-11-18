@@ -40,7 +40,11 @@ class HealthController extends Controller
     public function ready(): JsonResponse
     {
         $checks = [
-            'database' => $this->passes(static fn (): bool => Tenant::query()->getConnection()->getPdo() !== null),
+            'database' => $this->passes(static function (): bool {
+                Tenant::query()->getModel()->getConnection()->getPdo();
+
+                return true;
+            }),
             'cache' => $this->passes(static function (): bool {
                 $key = 'health:ready:'.bin2hex(random_bytes(4));
                 Cache::put($key, 'ok', 10);
@@ -48,7 +52,11 @@ class HealthController extends Controller
 
                 return $value === 'ok';
             }),
-            'storage' => $this->passes(static fn (): bool => is_array(Storage::disk((string) config('backup.disk', 'private'))->directories())),
+            'storage' => $this->passes(static function (): bool {
+                Storage::disk((string) config('backup.disk', 'private'))->directories();
+
+                return true;
+            }),
         ];
 
         $ready = ! in_array('fail', $checks, true);

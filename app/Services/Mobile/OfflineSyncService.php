@@ -8,6 +8,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -52,7 +53,7 @@ final class OfflineSyncService
         $query = $modelClass::query();
         $usesSoftDeletes = in_array(SoftDeletes::class, class_uses_recursive($modelClass), true);
         if ($usesSoftDeletes) {
-            $query->withTrashed();
+            $query->withoutGlobalScope(SoftDeletingScope::class);
         }
         if (! empty($config['own'])) {
             $query->where($config['own'], $user->id);
@@ -77,7 +78,7 @@ final class OfflineSyncService
         $data = [];
         $deleted = [];
         foreach ($rows as $row) {
-            if ($usesSoftDeletes && $row->trashed()) {
+            if ($usesSoftDeletes && method_exists($row, 'trashed') && $row->trashed()) {
                 $deleted[] = (string) $row->getKey();
 
                 continue;
@@ -91,7 +92,7 @@ final class OfflineSyncService
             'data' => $data,
             'deleted' => $deleted,
             'next_cursor' => $hasMore && $last !== null
-                ? base64_encode($last->updated_at->format('Y-m-d H:i:s').'|'.$last->getKey())
+                ? base64_encode($last->getAttribute('updated_at')->format('Y-m-d H:i:s').'|'.$last->getKey())
                 : null,
             'server_time' => $serverTime->toIso8601String(),
             'has_more' => $hasMore,

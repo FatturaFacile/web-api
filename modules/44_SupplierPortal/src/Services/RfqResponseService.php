@@ -23,7 +23,7 @@ final readonly class RfqResponseService
     /**
      * Requests that were issued, with how many suppliers answered.
      *
-     * @return Collection<int, array<string, mixed>>
+     * @return Collection<int, array{id: string, rfq_number: string, title: string, status: string, response_deadline: string, is_open: bool, currency: string, invited_count: int, responded_count: int, declined_count: int}>
      */
     public function summaries(?string $status): Collection
     {
@@ -61,7 +61,7 @@ final readonly class RfqResponseService
 
         $quotes = collect($comparison['quotes'])->map(static fn (array $quote): array => [
             ...$quote,
-            'risk_level' => $risk->get($quote['supplier_id'])?->level ?? 'none',
+            'risk_level' => $risk->get($quote['supplier_id'])->level ?? 'none',
         ]);
 
         $recommended = $quotes->first(static fn (array $quote): bool => $quote['covers_all_lines'] && ! in_array($quote['risk_level'], ['high', 'critical'], true));
@@ -70,7 +70,7 @@ final readonly class RfqResponseService
             'supplier_id' => (string) $invitation->supplier_id,
             'supplier_name' => $invitation->supplier?->company_name,
             'qualification_status' => $invitation->supplier?->qualification_status,
-            'risk_level' => $risk->get($invitation->supplier_id)?->level ?? 'none',
+            'risk_level' => $risk->get($invitation->supplier_id)->level ?? 'none',
             'status' => (string) $invitation->status,
             'invited_at' => $invitation->invited_at?->toIso8601String(),
             'responded_at' => $invitation->responded_at?->toIso8601String(),

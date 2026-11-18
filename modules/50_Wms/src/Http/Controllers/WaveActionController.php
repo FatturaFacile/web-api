@@ -25,10 +25,10 @@ final class WaveActionController extends Controller
 
     #[OA\Post(path: '/api/v1/wms/waves/plan', operationId: 'planWmsWave', description: 'Collects the open, unassigned pick tasks of the warehouse of the rule that match it (minimum priority, due window, reference prefix), most urgent first up to the maximum size, and groups them in a planned wave. Refused when fewer tasks than the minimum match.', summary: 'Plan a wave', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['wave_rule_id'], properties: [new OA\Property(property: 'wave_rule_id', type: 'string', format: 'uuid')])), responses: [
         new OA\Response(response: 201, description: 'The planned wave', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/WmsWave')])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
-        new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/WmsHubUnprocessable', response: 422),
     ])]
     public function plan(Request $request): JsonResponse
     {
@@ -42,10 +42,10 @@ final class WaveActionController extends Controller
 
     #[OA\Post(path: '/api/v1/wms/waves/{id}/release', operationId: 'releaseWmsWave', description: 'Releases a planned wave to the floor: its tasks can now be claimed by the operators.', summary: 'Release a wave', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(ref: '#/components/parameters/WmsId')], responses: [
         new OA\Response(response: 200, description: 'Result', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/WmsWave')])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
-        new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/WmsHubUnprocessable', response: 422),
     ])]
     public function release(string $id): WaveResource
     {
@@ -57,10 +57,10 @@ final class WaveActionController extends Controller
 
     #[OA\Post(path: '/api/v1/wms/waves/{id}/complete', operationId: 'completeWmsWave', description: 'Closes a released wave once every one of its tasks is closed (completed, short, skipped or cancelled).', summary: 'Complete a wave', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(ref: '#/components/parameters/WmsId')], responses: [
         new OA\Response(response: 200, description: 'Result', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/WmsWave')])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
-        new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/WmsHubUnprocessable', response: 422),
     ])]
     public function complete(string $id): WaveResource
     {
@@ -72,10 +72,10 @@ final class WaveActionController extends Controller
 
     #[OA\Post(path: '/api/v1/wms/waves/{id}/cancel', operationId: 'cancelWmsWave', description: 'Cancels a wave in which no task has started and gives its tasks back to the open queue.', summary: 'Cancel a wave', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(ref: '#/components/parameters/WmsId')], responses: [
         new OA\Response(response: 200, description: 'Result', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/WmsWave')])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
-        new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/WmsHubUnprocessable', response: 422),
     ])]
     public function cancel(string $id): WaveResource
     {

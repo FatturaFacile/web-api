@@ -8,6 +8,7 @@ use App\Models\Contact;
 use App\Models\Vehicle;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * A workshop estimate: labour and part lines offered to the customer before any work starts. It is sent, approved or
@@ -22,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $status
  * @property string $currency
  * @property ?string $folder_id
+ * @property Carbon|null $valid_until
  */
 final class WorkshopEstimate extends WorkshopRecord
 {

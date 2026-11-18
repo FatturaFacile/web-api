@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Global (non tenant-scoped) free trade agreement (PEM / CH-EU, EU-UK, ...) with origin declaration templates.
+ *
+ * @property array<string, string> $declaration_templates
+ * @property array<string, string> $declaration_templates_no_auth
  */
 class FreeTradeAgreement extends Model
 {

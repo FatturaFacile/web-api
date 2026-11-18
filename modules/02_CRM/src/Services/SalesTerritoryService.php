@@ -25,7 +25,7 @@ final class SalesTerritoryService
     public function matchFor(Account $account, ?Collection $territories = null): ?SalesTerritory
     {
         $territories ??= $this->activeTerritories((string) $account->tenant_id);
-        $country = str($account->primaryContact?->country ?? '')->upper()->toString();
+        $country = str($account->primaryContact->country ?? '')->upper()->toString();
         $industry = str((string) $account->industry)->lower()->toString();
         $tier = str((string) $account->tier)->lower()->toString();
 

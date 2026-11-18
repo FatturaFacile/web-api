@@ -9,6 +9,7 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\Inventory\Models\StockSerialNumber;
@@ -320,8 +321,8 @@ final readonly class EquipmentPassportService implements EquipmentPassportServic
         $result = $this->evaluateWarranty($passport);
 
         $passport->warranty_policy_type = $result->policyType->value;
-        $passport->warranty_start_date = $result->startDate;
-        $passport->warranty_expiry_date = $result->expiryDate;
+        $passport->warranty_start_date = Carbon::instance($result->startDate);
+        $passport->warranty_expiry_date = Carbon::instance($result->expiryDate);
         $passport->warranty_source = $result->source;
     }
 

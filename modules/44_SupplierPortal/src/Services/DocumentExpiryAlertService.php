@@ -48,7 +48,7 @@ final readonly class DocumentExpiryAlertService
 
         foreach ($this->documents->expiring(max($windowDays, (int) config('supplier_portal.final_alert_days'))) as $submission) {
             $daysLeft = (int) now()->startOfDay()->diffInDays($submission->expires_at->startOfDay(), false);
-            $threshold = $this->thresholdFor($daysLeft, (int) ($submission->requirement?->alert_days ?? 30));
+            $threshold = $this->thresholdFor($daysLeft, (int) ($submission->requirement->alert_days ?? 30));
 
             if ($threshold === null) {
                 continue;
@@ -61,8 +61,8 @@ final readonly class DocumentExpiryAlertService
             }
 
             Notification::send($recipients, new SupplierDocumentExpiringNotification(
-                (string) ($submission->supplier?->company_name ?? ''),
-                (string) ($submission->requirement?->name ?? ''),
+                (string) ($submission->supplier->company_name ?? ''),
+                (string) ($submission->requirement->name ?? ''),
                 $submission->expires_at->toDateString(),
                 $daysLeft,
                 (string) $submission->supplier_id,

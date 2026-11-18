@@ -23,7 +23,7 @@ final class TimeRetentionService
     {
         // Italy LUL/INPS requires 10-year minimum; CH OLL 1 Art. 73 requires 5-year minimum
         $minimumYears = ($tenant->country ?? '') === 'IT'
-            ? StatutoryRetentionCatalogue::STATUTORY_ACCOUNTING_YEARS
+            ? StatutoryRetentionCatalogue::FISCAL_RECORD_YEARS
             : StatutoryRetentionCatalogue::STATUTORY_EMPLOYMENT_YEARS;
 
         $cutoff = DataRetentionPolicy::cutoff($today, max($configuredYears, $minimumYears));

@@ -48,7 +48,7 @@ final class SpreadService
     }
 
     /**
-     * @param  list<numeric-string|int|float>|null  $weights
+     * @param  array<mixed>|null  $weights
      * @return list<string>
      */
     public function assertSeasonalWeights(?array $weights): array
@@ -68,7 +68,7 @@ final class SpreadService
 
     /**
      * @param  list<int>  $periods
-     * @param  list<numeric-string|int|float>|null  $weights
+     * @param  array<mixed>|null  $weights
      * @return list<string>
      */
     private function seasonal(array $periods, ?array $weights): array
@@ -89,7 +89,7 @@ final class SpreadService
 
     /**
      * @param  list<int>  $periods
-     * @param  list<numeric-string|int|float>|null  $percentages
+     * @param  array<mixed>|null  $percentages
      * @return list<string>
      */
     private function percentages(array $periods, ?array $percentages): array

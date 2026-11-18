@@ -6,9 +6,13 @@ namespace Modules\HumanResources\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * @property Carbon $work_date
+ */
 final class Timesheet extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
     protected $table = 'hr_timesheets';
@@ -42,6 +46,9 @@ final class Timesheet extends BaseEnterpriseModel implements LockableByWorkflowI
         return (bool) $this->is_locked;
     }
 
+    /**
+     * @return BelongsTo<Employee, $this>
+     */
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'employee_id');

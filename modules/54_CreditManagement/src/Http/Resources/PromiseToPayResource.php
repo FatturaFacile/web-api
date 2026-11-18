@@ -24,7 +24,7 @@ final class PromiseToPayResource extends JsonResource
             'id' => $this->id,
             'case_id' => $this->case_id,
             'promised_amount' => $this->promised_amount,
-            'promised_on' => $this->promised_on?->toDateString(),
+            'promised_on' => $this->promised_on->toDateString(),
             'status' => $this->status,
             'paid_amount' => $this->paid_amount,
             'resolved_on' => $this->resolved_on?->toDateString(),

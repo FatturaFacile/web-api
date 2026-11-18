@@ -45,7 +45,7 @@ final class SessionReportService
         return [
             'session_id' => (string) $session->id,
             'status' => $session->status,
-            'opened_at' => $session->opened_at?->toIso8601String(),
+            'opened_at' => $session->opened_at->toIso8601String(),
             'closed_at' => $session->closed_at?->toIso8601String(),
             'sales_count' => $completed->count(),
             'voided_sales_count' => $sales->where('status', 'refunded')->count(),
@@ -135,7 +135,7 @@ final class SessionReportService
             'documented_gross' => $documented,
             'undocumented_gross' => bcsub($expected, $documented, 2),
             'documents_count' => $documents->count(),
-            'corrispettivi_day_closed' => $rows->isNotEmpty() && $rows->every(static fn (DailyCorrispettivo $row): bool => $row->closed_at !== null),
+            'corrispettivi_day_closed' => $rows->isNotEmpty(),
             'corrispettivi_total_gross' => $this->sumOf($rows, 'total_gross'),
             'corrispettivi_gateway_status' => $rows->pluck('gateway_status')->unique()->values()->all(),
         ];

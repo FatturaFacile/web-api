@@ -126,7 +126,7 @@ final readonly class RmaService
             $locked = $this->lock($rma);
             $this->assertMove($locked, Rma::Approved);
             $warehouse = $warehouseId !== null ? $this->stock->warehouse((string) $locked->tenant_id, $warehouseId) : null;
-            $locked->update(['status' => Rma::Approved, 'approved_at' => now(), 'approved_by' => $userId, 'warehouse_id' => $warehouse?->id ?? $locked->warehouse_id]);
+            $locked->update(['status' => Rma::Approved, 'approved_at' => now(), 'approved_by' => $userId, 'warehouse_id' => $warehouse->id ?? $locked->warehouse_id]);
             $this->ledger->record('returns.rma_approved', $locked);
 
             return $locked->refresh()->load('lines');
@@ -261,7 +261,7 @@ final readonly class RmaService
             $locked->load('lines');
 
             foreach (array_keys($supplierRoutes) as $supplierId) {
-                $warehouseId = (string) ($locked->lines->firstWhere('supplier_id', $supplierId)?->disposition_warehouse_id ?? $locked->warehouse_id);
+                $warehouseId = (string) ($locked->lines->firstWhere('supplier_id', $supplierId)->disposition_warehouse_id ?? $locked->warehouse_id);
                 $this->supplierReturns->draftFromRma($locked, $supplierId, $warehouseId, $locked->reason_code, $userId);
             }
 

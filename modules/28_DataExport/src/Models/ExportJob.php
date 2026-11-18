@@ -5,9 +5,16 @@ declare(strict_types=1);
 namespace Modules\DataExport\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Support\Carbon;
 
 /**
  * History row of one export: who asked for which dataset and period, how it went and where the file is stored.
+ *
+ * @property Carbon|null $period_from
+ * @property Carbon|null $period_to
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $expires_at
  */
 final class ExportJob extends BaseEnterpriseModel
 {

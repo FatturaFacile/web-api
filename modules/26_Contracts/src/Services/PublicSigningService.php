@@ -61,7 +61,7 @@ final class PublicSigningService
             'waiting_for_previous' => $waiting,
             'expires_on' => $request->expires_on?->toDateString(),
             'document_hash' => $request->document_hash,
-            'body' => $version?->body ?? '',
+            'body' => $version->body ?? '',
             'company_name' => $this->tenantContext->getTenant()?->name,
             'signers' => $request->signers->map(static fn (ContractSigner $row): array => ['name' => $row->name, 'position' => $row->position, 'status' => $row->status])->all(),
         ];

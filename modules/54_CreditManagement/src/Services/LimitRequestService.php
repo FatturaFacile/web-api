@@ -50,7 +50,7 @@ final readonly class LimitRequestService
                 'current_limit' => $this->receivables->creditLimit($tenantId, $customerId),
                 'requested_limit' => Decimal::round2((string) $requested),
                 'proposed_limit' => $proposal['proposed_limit'] ?? null,
-                'currency' => $data['currency'] ?? (string) (Tenant::query()->find($tenantId)?->default_currency ?? 'EUR'),
+                'currency' => $data['currency'] ?? (string) (Tenant::query()->find($tenantId)->default_currency ?? 'EUR'),
                 'status' => CreditLimitRequest::Pending,
                 'score_id' => $proposal['score_id'] ?? null,
                 'reason' => $data['reason'] ?? null,

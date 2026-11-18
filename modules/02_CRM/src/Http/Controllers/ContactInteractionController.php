@@ -121,7 +121,7 @@ final class ContactInteractionController extends Controller
         ]);
 
         $tenant = $this->tenantContext->getTenant();
-        $actorId = (string) ($request->user()?->id ?? 'system');
+        $actorId = (string) ($request->user()->id ?? 'system');
 
         $activity = $this->activityService->logActivity(new CreateActivityDTO(
             tenantId: (string) $tenant->id,

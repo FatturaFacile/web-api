@@ -28,9 +28,9 @@ final class DockAppointmentController extends Controller
 
     #[OA\Get(path: '/api/v1/wms/dock-appointments', operationId: 'listWmsDockAppointments', description: 'Dock appointments of the active company. Filters: warehouse_id, dock_door_id, direction, status, from, to, search.', summary: 'List dock appointments', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'warehouse_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'dock_door_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'direction', in: 'query', schema: new OA\Schema(type: 'string', enum: ['inbound', 'outbound'])), new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string', enum: ['scheduled', 'checked_in', 'completed', 'cancelled', 'no_show'])), new OA\Parameter(name: 'from', description: 'Y-m-d', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')), new OA\Parameter(name: 'to', description: 'Y-m-d', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')), new OA\Parameter(name: 'search', in: 'query', schema: new OA\Schema(type: 'string'))], responses: [
         new OA\Response(response: 200, description: 'Dock appointments', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WmsDockAppointment'))])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubUnprocessable', response: 422),
     ])]
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -58,9 +58,9 @@ final class DockAppointmentController extends Controller
 
     #[OA\Post(path: '/api/v1/wms/dock-appointments', operationId: 'storeWmsDockAppointment', description: 'Book a door. The door must be active and accept the direction, the end must follow the start and the slot must not overlap another scheduled or checked-in appointment of the door (422 on conflict).', summary: 'Create a dock appointment', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WmsDockAppointmentRequest')), responses: [
         new OA\Response(response: 201, description: 'Dock appointment created', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/WmsDockAppointment')])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubUnprocessable', response: 422),
     ])]
     public function store(DockAppointmentRequest $request): JsonResponse
     {
@@ -71,9 +71,9 @@ final class DockAppointmentController extends Controller
 
     #[OA\Get(path: '/api/v1/wms/dock-appointments/{id}', operationId: 'showWmsDockAppointment', description: 'Return a dock appointment.', summary: 'Show a dock appointment', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(ref: '#/components/parameters/WmsId')], responses: [
         new OA\Response(response: 200, description: 'Dock appointment', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/WmsDockAppointment')])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubNotFound', response: 404),
     ])]
     public function show(string $id): DockAppointmentResource
     {
@@ -85,10 +85,10 @@ final class DockAppointmentController extends Controller
 
     #[OA\Put(path: '/api/v1/wms/dock-appointments/{id}', operationId: 'updateWmsDockAppointment', description: 'Reschedule or change a scheduled appointment; the conflict check runs again.', summary: 'Update a dock appointment', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(ref: '#/components/parameters/WmsId')], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WmsDockAppointmentRequest')), responses: [
         new OA\Response(response: 200, description: 'Dock appointment updated', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/WmsDockAppointment')])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
-        new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/WmsHubUnprocessable', response: 422),
     ])]
     public function update(DockAppointmentRequest $request, string $id): DockAppointmentResource
     {
@@ -100,10 +100,10 @@ final class DockAppointmentController extends Controller
 
     #[OA\Delete(path: '/api/v1/wms/dock-appointments/{id}', operationId: 'deleteWmsDockAppointment', description: 'Delete a dock appointment (soft delete).', summary: 'Delete a dock appointment', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(ref: '#/components/parameters/WmsId')], responses: [
         new OA\Response(response: 204, description: 'Dock appointment deleted'),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
-        new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/WmsHubUnprocessable', response: 422),
     ])]
     public function destroy(string $id): Response
     {

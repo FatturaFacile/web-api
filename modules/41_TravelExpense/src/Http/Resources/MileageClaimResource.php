@@ -23,7 +23,7 @@ final class MileageClaimResource extends JsonResource
         return [
             'id' => $this->id,
             'trip_id' => $this->trip_id,
-            'travel_date' => $this->travel_date?->toDateString(),
+            'travel_date' => $this->travel_date->toDateString(),
             'from_location' => $this->from_location,
             'to_location' => $this->to_location,
             'vehicle_type' => $this->vehicle_type,

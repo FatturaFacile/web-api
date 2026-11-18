@@ -21,6 +21,9 @@ final class FiscalPeriod extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<FiscalYear, $this>
+     */
     public function fiscalYear(): BelongsTo
     {
         return $this->belongsTo(FiscalYear::class, 'fiscal_year_id');

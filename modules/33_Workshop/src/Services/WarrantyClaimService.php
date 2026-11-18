@@ -44,7 +44,7 @@ final class WarrantyClaimService
             $claim->fill([
                 ...$data,
                 'product_id' => $data['product_id'] ?? $line?->product_id,
-                'claimed_amount' => (string) ($data['claimed_amount'] ?? $line?->line_total ?? '0'),
+                'claimed_amount' => (string) ($data['claimed_amount'] ?? $line->line_total ?? '0'),
                 'claim_number' => $this->numbering->next('workshop_warranty_claim')['number'],
                 'currency' => $folder->currency,
                 'status' => 'draft',

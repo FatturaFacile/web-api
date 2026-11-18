@@ -6,12 +6,14 @@ namespace App\Services\Tenancy;
 
 use App\Exceptions\SodConflictException;
 use App\Models\Access\TenantCustomRole;
+use App\Models\Pivots\TenantMembership;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\Sso\ProvisionableRoles;
 use App\Services\Auth\UserSessions;
 use App\Support\Database\TransactionLock;
 use DomainException;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -65,9 +67,13 @@ final class TenantMembershipService
     {
         $teams = $this->teamIdsByUser($tenant);
 
-        return $tenant->users()->orderBy('users.name')->get()
-            ->map(fn (User $user): array => $this->describe($user, $user->pivot, $teams[$user->id] ?? []))
-            ->all();
+        $members = [];
+
+        foreach ($tenant->users()->orderBy('users.name')->get() as $user) {
+            $members[] = $this->describe($user, $this->membershipOf($user), $teams[$user->id] ?? []);
+        }
+
+        return $members;
     }
 
     /**
@@ -79,7 +85,7 @@ final class TenantMembershipService
     {
         $user = $tenant->users()->where('users.id', $userId)->first();
 
-        return $user === null ? null : $this->describe($user, $user->pivot, $this->teamIdsByUser($tenant)[$user->id] ?? []);
+        return $user === null ? null : $this->describe($user, $this->membershipOf($user), $this->teamIdsByUser($tenant)[$user->id] ?? []);
     }
 
     /**
@@ -89,16 +95,23 @@ final class TenantMembershipService
      */
     public function tenantsOf(User $user): array
     {
-        return $user->belongsToMany(Tenant::class, 'tenant_user')
+        $tenants = [];
+
+        $memberships = $user->belongsToMany(Tenant::class, 'tenant_user')
+            ->using(TenantMembership::class)
             ->withPivot(['id', 'role', 'permissions', 'suspended_at'])
             ->orderBy('tenants.name')
-            ->get()
-            ->map(fn (Tenant $tenant): array => [
+            ->get();
+
+        foreach ($memberships as $tenant) {
+            $tenants[] = [
                 'tenant_id' => $tenant->id,
                 'tenant_name' => $tenant->name,
-                ...$this->describePivot($tenant->pivot),
-            ])
-            ->all();
+                ...$this->describePivot($this->membershipOf($tenant)),
+            ];
+        }
+
+        return $tenants;
     }
 
     /**
@@ -129,12 +142,12 @@ final class TenantMembershipService
             if ($custom !== null) {
                 $permissions = $this->applyLevels($this->clearLevels($permissions, $this->moduleKeys($tenant, $currentCustomRoleId)), (array) $custom->modules);
                 $storedCustomRoleId = $custom->id;
-            } elseif ($currentCustomRoleId !== null && ($customRoleId === null || ($customRoleId === false && $role !== null))) {
+            } elseif ($currentCustomRoleId !== null && ($customRoleId === null || $role !== null)) {
                 $permissions = $this->clearLevels($permissions, $this->moduleKeys($tenant, $currentCustomRoleId));
                 $storedCustomRoleId = null;
             }
 
-            $newRole = $custom?->base_role ?? $role ?? $membership?->role ?? 'member';
+            $newRole = $custom->base_role ?? $role ?? $membership->role ?? 'member';
             $permissions = $this->applyLevels($permissions, $modules ?? []);
 
             if ($membership !== null && $membership->role === 'owner' && $newRole !== 'owner') {
@@ -299,10 +312,20 @@ final class TenantMembershipService
     }
 
     /**
+     * The membership a user or a tenant was loaded through (`tenant_user` row), null when it was not loaded that way.
+     */
+    private function membershipOf(Model $loaded): ?TenantMembership
+    {
+        $membership = $loaded->getRelation('pivot');
+
+        return $membership instanceof TenantMembership ? $membership : null;
+    }
+
+    /**
      * @param  list<string>  $teamIds
      * @return array<string, mixed>
      */
-    private function describe(User $user, mixed $pivot, array $teamIds = []): array
+    private function describe(User $user, ?TenantMembership $pivot, array $teamIds = []): array
     {
         return [
             'id' => $user->id,
@@ -319,13 +342,13 @@ final class TenantMembershipService
     /**
      * @return array<string, mixed>
      */
-    private function describePivot(mixed $pivot): array
+    private function describePivot(?TenantMembership $pivot): array
     {
         $permissions = $this->permissionsOf($pivot?->permissions);
 
         return [
             'role' => $pivot?->role,
-            'suspended' => ($pivot?->suspended_at ?? null) !== null,
+            'suspended' => $pivot?->suspended_at !== null,
             'permissions' => $permissions,
             'modules' => $this->levelsOf($permissions),
         ];

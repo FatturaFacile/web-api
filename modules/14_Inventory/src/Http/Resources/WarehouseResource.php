@@ -6,7 +6,11 @@ namespace Modules\Inventory\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Inventory\Models\Warehouse;
 
+/**
+ * @mixin Warehouse
+ */
 final class WarehouseResource extends JsonResource
 {
     /**

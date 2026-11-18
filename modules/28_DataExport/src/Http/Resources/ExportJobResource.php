@@ -6,9 +6,12 @@ namespace Modules\DataExport\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\DataExport\Models\ExportJob;
 
 /**
  * API representation of an export of the history. The storage path never leaves the API.
+ *
+ * @mixin ExportJob
  */
 final class ExportJobResource extends JsonResource
 {

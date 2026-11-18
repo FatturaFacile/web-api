@@ -28,7 +28,7 @@ final class ScoreResource extends JsonResource
             'rating' => $this->rating,
             'risk_level' => $this->risk_level,
             'breakdown' => $this->breakdown,
-            'scored_on' => $this->scored_on?->toDateString(),
+            'scored_on' => $this->scored_on->toDateString(),
             'scored_by' => $this->scored_by,
             'notes' => $this->notes,
             'created_at' => $this->created_at?->toIso8601String(),

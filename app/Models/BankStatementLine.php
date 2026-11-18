@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * One line of a bank statement. `amount` is the net amount booked, `fee_amount` the fee withheld by the bank, so the
  * gross amount paid by the debtor is `amount + fee_amount`.
+ *
+ * @property string|null $currency
  */
 class BankStatementLine extends Model
 {
@@ -89,7 +91,7 @@ class BankStatementLine extends Model
     protected static function booted(): void
     {
         static::creating(static function (self $line): void {
-            if ($line->currency === null && $line->bank_statement_id !== null) {
+            if ($line->currency === null) {
                 $line->currency = BankStatement::withoutGlobalScopes()->whereKey($line->bank_statement_id)->value('currency');
             }
         });

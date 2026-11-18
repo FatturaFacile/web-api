@@ -32,7 +32,7 @@ final class PayrollPayslipResource extends JsonResource
             'month' => $this->month,
             'employee_name' => $this->employee_name,
             'paid_days' => $this->paid_days,
-            'currency' => $this->currency,
+            'currency' => $this->relationLoaded('run') ? $this->run->currency : null,
             'gross_salary' => $this->gross_salary,
             'ahv_basis' => $this->ahv_basis,
             'alv_basis' => $this->alv_basis,

@@ -37,10 +37,10 @@ final class TransferDocumentService
             $product = $line->item?->product;
             $items[] = [
                 'product_id' => $product?->id !== null ? (string) $product->id : null,
-                'description' => (string) ($line->item?->name ?? $product?->name),
+                'description' => (string) ($line->item->name ?? $product?->name),
                 'quantity' => (float) $line->quantity_shipped,
                 // Fiscal value of the goods travelling (at cost): required on consignment / subcontracting DDTs.
-                'unit_price' => (float) ($product?->cost_price ?? $line->item?->standard_cost ?? 0),
+                'unit_price' => (float) ($product->cost_price ?? $line->item->standard_cost ?? 0),
                 'tax_rate' => 0.0,
                 'uom' => $product?->unit_measure,
             ];

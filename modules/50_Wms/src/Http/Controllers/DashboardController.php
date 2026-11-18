@@ -23,9 +23,9 @@ final class DashboardController extends Controller
 
     #[OA\Get(path: '/api/v1/wms/dashboard', operationId: 'showWmsDashboard', description: 'Tasks completed per day and by type over the last days (default 14), open tasks by status and type, the short rate of picks, the utilization of the active dock doors (booked hours over the operating hours of the period), pending slotting recommendations and open waves and cross-docks. Filters: days, warehouse_id, operating_hours (per day, default 16).', summary: 'Warehouse dashboard', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(name: 'days', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'warehouse_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'operating_hours', in: 'query', schema: new OA\Schema(type: 'integer'))], responses: [
         new OA\Response(response: 200, description: 'Dashboard', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/WmsDashboard')])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubUnprocessable', response: 422),
     ])]
     public function summary(Request $request): JsonResponse
     {

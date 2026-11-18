@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Transportation\Services;
 
 use App\Support\Database\TransactionLock;
-use Illuminate\Database\Eloquent\Model;
+use Enterprise\Foundation\Models\BaseEnterpriseModel;
 
 /**
  * Document numbers of the transportation module (TO-2027-0001 for transport orders, TR-2027-0001 for trips): one sequence
@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 final class TmsNumbering
 {
     /**
-     * @param  class-string<Model>  $model
+     * @param  class-string<BaseEnterpriseModel>  $model
      */
     public function next(string $model, string $column, string $prefix, string $tenantId): string
     {

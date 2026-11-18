@@ -177,7 +177,7 @@ final class CustomsMasterDataImporter
 
         foreach (array_chunk(array_values($rows), self::BATCH) as $chunk) {
             $existing = (clone $query)->whereNull('tenant_id')->whereIn('code', array_column($chunk, 'code'))->get(['id', ...$keys])
-                ->mapWithKeys(static fn ($row): array => [$identity($row) => $row->id]);
+                ->mapWithKeys(static fn ($row): array => [$identity($row) => $row->getKey()]);
 
             $inserts = [];
 

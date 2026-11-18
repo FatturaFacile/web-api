@@ -76,7 +76,7 @@ class MemberLifecycleController extends Controller
             return $refusal;
         }
 
-        if ($user->pivot?->suspended_at !== null) {
+        if ($user->pivot->suspended_at !== null) {
             $this->limits->assertRoomForUsers($tenant);
             $this->memberships->reactivate($tenant, $user);
             $this->audit->record('access.member.reactivated', (string) $tenant->id, User::class, (string) $user->id, ['suspended' => true], ['suspended' => false]);

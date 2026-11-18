@@ -21,7 +21,7 @@ class PortalQuoteResource extends JsonResource
         return [
             'id' => $this->id,
             'quote_number' => $this->quote_number,
-            'date' => $this->date?->toDateString(),
+            'date' => $this->date->toDateString(),
             'valid_until' => $this->valid_until?->toDateString(),
             'currency' => $this->currency ?? 'EUR',
             'total_net' => (float) $this->total_net,

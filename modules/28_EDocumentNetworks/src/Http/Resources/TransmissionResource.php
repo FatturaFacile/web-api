@@ -6,9 +6,12 @@ namespace Modules\EDocumentNetworks\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\EDocumentNetworks\Models\EDocumentTransmission;
 
 /**
  * API representation of the transmission.
+ *
+ * @mixin EDocumentTransmission
  */
 final class TransmissionResource extends JsonResource
 {

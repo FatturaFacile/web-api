@@ -173,7 +173,7 @@ class TenantMemberController extends Controller
             return $this->problemDetailsResponse(title: 'Last Owner', detail: $exception->getMessage(), status: Response::HTTP_CONFLICT);
         }
 
-        $this->audit->record('access.member.removed', (string) $tenant->id, User::class, (string) $user->id, ['role' => $user->pivot?->role]);
+        $this->audit->record('access.member.removed', (string) $tenant->id, User::class, (string) $user->id, ['role' => $user->pivot->role]);
 
         return $this->successResponse(message: 'Member removed from the tenant');
     }

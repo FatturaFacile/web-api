@@ -6,7 +6,14 @@ namespace Modules\SubscriptionBilling\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon $base_month
+ * @property Carbon $reference_month
+ * @property Carbon $effective_date
+ * @property Carbon|null $notified_at
+ */
 final class IndexationAdjustment extends BaseEnterpriseModel
 {
     protected $table = 'sub_indexation_adjustments';

@@ -232,7 +232,7 @@ final class IndexationController extends Controller
         return [
             'id' => (string) $index->id,
             'index_type' => $index->index_type,
-            'reference_month' => $index->reference_month?->format('Y-m'),
+            'reference_month' => $index->reference_month->format('Y-m'),
             'index_value' => Money::round((string) $index->getRawOriginal('index_value'), 4),
             'base_period' => $index->base_period,
             'source' => $index->source,
@@ -248,8 +248,8 @@ final class IndexationController extends Controller
             'id' => (string) $adjustment->id,
             'subscription_id' => (string) $adjustment->subscription_id,
             'index_type' => $adjustment->index_type,
-            'base_month' => $adjustment->base_month?->format('Y-m'),
-            'reference_month' => $adjustment->reference_month?->format('Y-m'),
+            'base_month' => $adjustment->base_month->format('Y-m'),
+            'reference_month' => $adjustment->reference_month->format('Y-m'),
             'base_index' => Money::round((string) $adjustment->getRawOriginal('base_index'), 4),
             'new_index' => Money::round((string) $adjustment->getRawOriginal('new_index'), 4),
             'variation_pct' => Money::round((string) $adjustment->getRawOriginal('variation_pct'), 4),
@@ -258,7 +258,7 @@ final class IndexationController extends Controller
             'new_recurring_amount' => Money::round2((string) $adjustment->getRawOriginal('new_recurring_amount')),
             'old_mrr' => Money::round2((string) $adjustment->getRawOriginal('old_mrr')),
             'new_mrr' => Money::round2((string) $adjustment->getRawOriginal('new_mrr')),
-            'effective_date' => $adjustment->effective_date?->toDateString(),
+            'effective_date' => $adjustment->effective_date->toDateString(),
             'notified_at' => $adjustment->notified_at?->toIso8601String(),
             'calculation_sheet' => $adjustment->calculation_sheet,
         ];

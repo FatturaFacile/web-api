@@ -28,7 +28,7 @@ final class DefaultRecordTypes
             labelKey: 'collaboration.types.contact',
             searchColumns: ['company_name', 'first_name', 'last_name', 'email', 'vat_number', 'fiscal_code'],
             title: static fn (Model $record): string => self::joined([$record->getAttribute('company_name'), $record->getAttribute('first_name'), $record->getAttribute('last_name')]),
-            subtitle: static fn (Model $record): ?string => self::joined([$record->getAttribute('email'), $record->getAttribute('vat_number')], ' - '),
+            subtitle: static fn (Model $record): string => self::joined([$record->getAttribute('email'), $record->getAttribute('vat_number')], ' - '),
             path: '/crm/clients',
         ));
         $registry->register(new RecordType(
@@ -38,7 +38,7 @@ final class DefaultRecordTypes
             labelKey: 'collaboration.types.invoice',
             searchColumns: ['invoice_number'],
             title: static fn (Model $record): string => (string) $record->getAttribute('invoice_number'),
-            subtitle: static fn (Model $record): ?string => self::joined([self::day($record->getAttribute('date')), $record->getAttribute('currency'), $record->getAttribute('total_gross')], ' '),
+            subtitle: static fn (Model $record): string => self::joined([self::day($record->getAttribute('date')), $record->getAttribute('currency'), $record->getAttribute('total_gross')], ' '),
             path: '/sales/invoices',
         ));
         $registry->register(new RecordType(
@@ -48,7 +48,7 @@ final class DefaultRecordTypes
             labelKey: 'collaboration.types.quote',
             searchColumns: ['quote_number'],
             title: static fn (Model $record): string => (string) $record->getAttribute('quote_number'),
-            subtitle: static fn (Model $record): ?string => self::joined([self::day($record->getAttribute('date')), $record->getAttribute('status')], ' - '),
+            subtitle: static fn (Model $record): string => self::joined([self::day($record->getAttribute('date')), $record->getAttribute('status')], ' - '),
             path: '/sales/quotes',
         ));
         $registry->register(new RecordType(
@@ -58,7 +58,7 @@ final class DefaultRecordTypes
             labelKey: 'collaboration.types.product',
             searchColumns: ['sku', 'name', 'barcode'],
             title: static fn (Model $record): string => (string) $record->getAttribute('name'),
-            subtitle: static fn (Model $record): ?string => (string) $record->getAttribute('sku'),
+            subtitle: static fn (Model $record): string => (string) $record->getAttribute('sku'),
             path: '/inventory/items',
         ));
         $registry->register(new RecordType(
@@ -68,7 +68,7 @@ final class DefaultRecordTypes
             labelKey: 'collaboration.types.project',
             searchColumns: ['project_number', 'name'],
             title: static fn (Model $record): string => (string) $record->getAttribute('name'),
-            subtitle: static fn (Model $record): ?string => (string) $record->getAttribute('project_number'),
+            subtitle: static fn (Model $record): string => (string) $record->getAttribute('project_number'),
             path: '/projects',
         ));
         $registry->register(new RecordType(
@@ -78,7 +78,7 @@ final class DefaultRecordTypes
             labelKey: 'collaboration.types.supplier',
             searchColumns: ['company_name', 'supplier_code', 'vat_number'],
             title: static fn (Model $record): string => (string) $record->getAttribute('company_name'),
-            subtitle: static fn (Model $record): ?string => (string) $record->getAttribute('supplier_code'),
+            subtitle: static fn (Model $record): string => (string) $record->getAttribute('supplier_code'),
             path: '/procurement/suppliers',
         ));
         $registry->register(new RecordType(
@@ -88,7 +88,7 @@ final class DefaultRecordTypes
             labelKey: 'collaboration.types.employee',
             searchColumns: ['full_name', 'employee_number', 'work_email'],
             title: static fn (Model $record): string => (string) $record->getAttribute('full_name'),
-            subtitle: static fn (Model $record): ?string => (string) $record->getAttribute('employee_number'),
+            subtitle: static fn (Model $record): string => (string) $record->getAttribute('employee_number'),
             path: '/hr/employees/{id}',
         ));
     }
