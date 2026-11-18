@@ -83124,6 +83124,354 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  /v1/pricing/margin-overrides:
+    get:
+      operationId: v1.pricing.margin-overrides.index
+      tags:
+        - MarginApproval
+      parameters:
+        -
+          name: document_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'Paginated set of `PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PricingResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type: string
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                      last_page:
+                        type: string
+                      links:
+                        type: object
+                        additionalProperties: {}
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                      per_page:
+                        type: integer
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/pricing/margin-overrides/approve:
+    post:
+      operationId: v1.pricing.margin-overrides.approve
+      tags:
+        - MarginApproval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarginApprovalRequest'
+      responses:
+        '201':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '403':
+          description: 'An error'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: 'Error overview.'
+                    examples:
+                      - 'Your role may not authorize a margin override.'
+                required:
+                  - message
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/pricing/margin-overrides/check/{documentType}/{documentId}':
+    get:
+      operationId: v1.pricing.margin-overrides.check
+      summary: 'The margin of a stored document, for the guardrail badge before confirming it'
+      tags:
+        - MarginApproval
+      parameters:
+        -
+          name: documentType
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                      margin_percent:
+                        type: string
+                      threshold_percent:
+                        type: string
+                      lines:
+                        type: array
+                        items:
+                          type: string
+                      has_approval:
+                        type: boolean
+                    required:
+                      - status
+                      - margin_percent
+                      - threshold_percent
+                      - lines
+                      - has_approval
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/pricing/margin-policies:
+    get:
+      operationId: v1.pricing.margin-policies.index
+      tags:
+        - MarginPolicy
+      responses:
+        '200':
+          description: 'Paginated set of `PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PricingResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type: string
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                      last_page:
+                        type: string
+                      links:
+                        type: object
+                        additionalProperties: {}
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                      per_page:
+                        type: integer
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.pricing.margin-policies.store
+      tags:
+        - MarginPolicy
+      responses:
+        '201':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/pricing/margin-policies/{id}':
+    get:
+      operationId: v1.pricing.margin-policies.show
+      tags:
+        - MarginPolicy
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: v1.pricing.margin-policies.update
+      tags:
+        - MarginPolicy
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    delete:
+      operationId: v1.pricing.margin-policies.destroy
+      tags:
+        - MarginPolicy
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   '/v1/customs/master-data/{type}':
     get:
       operationId: v1.customs.master-data.index
@@ -105557,6 +105905,100 @@ paths:
           $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/pricing/price-history:
+    get:
+      operationId: v1.pricing.history.index
+      tags:
+        - PriceHistory
+      parameters:
+        -
+          name: price_list_id
+          in: query
+          schema:
+            type: string
+        -
+          name: price_list_item_id
+          in: query
+          schema:
+            type: string
+        -
+          name: product_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'Paginated set of `PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PricingResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type: string
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                      last_page:
+                        type: string
+                      links:
+                        type: object
+                        additionalProperties: {}
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                      per_page:
+                        type: integer
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/price-indices:
     get:
       operationId: price-indices.index
@@ -106128,6 +106570,343 @@ paths:
                   - data
         '403':
           $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/pricing/price-lists/{listId}/items':
+    get:
+      operationId: v1.pricing.items.index
+      tags:
+        - PriceListItem
+      parameters:
+        -
+          name: listId
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: product_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'Paginated set of `PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PricingResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type: string
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                      last_page:
+                        type: string
+                      links:
+                        type: object
+                        additionalProperties: {}
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                      per_page:
+                        type: integer
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.pricing.items.store
+      tags:
+        - PriceListItem
+      parameters:
+        -
+          name: listId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceListItemRequest'
+      responses:
+        '201':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/pricing/price-lists/{listId}/items/bulk':
+    post:
+      operationId: v1.pricing.items.bulk
+      summary: 'Create or update items by (product, minimum quantity, validity start) in one transaction'
+      tags:
+        - PriceListItem
+      parameters:
+        -
+          name: listId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkPriceListItemsRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      created:
+                        type: integer
+                        const: 0
+                      updated:
+                        type: integer
+                        const: 0
+                    required:
+                      - created
+                      - updated
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/pricing/price-lists/{listId}/items/{id}':
+    put:
+      operationId: v1.pricing.items.update
+      tags:
+        - PriceListItem
+      parameters:
+        -
+          name: listId
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceListItemRequest'
+      responses:
+        '200':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.pricing.items.destroy
+      tags:
+        - PriceListItem
+      parameters:
+        -
+          name: listId
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/pricing/resolve:
+    post:
+      operationId: v1.pricing.resolve
+      tags:
+        - PricingResolve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolvePricingRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      currency:
+                        type: string
+                      channel:
+                        type: string
+                      date:
+                        type: string
+                      lines:
+                        type: string
+                      gifts:
+                        type: array
+                        items:
+                          type: array
+                          items: {}
+                      applied_promotions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            promotion_id:
+                              type: string
+                            code:
+                              type: string
+                            type:
+                              type: string
+                            discount_amount:
+                              type: string
+                            stackable:
+                              type: string
+                          required:
+                            - promotion_id
+                            - code
+                            - type
+                            - discount_amount
+                            - stackable
+                      document_discount:
+                        type: string
+                      subtotal:
+                        type: string
+                      total:
+                        type: string
+                      margin:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                          margin_percent:
+                            type: string
+                          threshold_percent:
+                            type: string
+                          document_margin_percent:
+                            type:
+                              - string
+                              - 'null'
+                        required:
+                          - status
+                          - margin_percent
+                          - threshold_percent
+                          - document_margin_percent
+                    required:
+                      - currency
+                      - channel
+                      - date
+                      - lines
+                      - gifts
+                      - applied_promotions
+                      - document_discount
+                      - subtotal
+                      - total
+                      - margin
+                required:
+                  - data
         '404':
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
@@ -115789,6 +116568,177 @@ paths:
           $ref: '#/components/responses/AuthorizationException'
         '404':
           $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/pricing/promotions:
+    get:
+      operationId: v1.pricing.promotions.index
+      tags:
+        - Promotion
+      responses:
+        '200':
+          description: 'Paginated set of `PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PricingResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type: string
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                      last_page:
+                        type: string
+                      links:
+                        type: object
+                        additionalProperties: {}
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                      per_page:
+                        type: integer
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.pricing.promotions.store
+      tags:
+        - Promotion
+      responses:
+        '201':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/pricing/promotions/{id}':
+    get:
+      operationId: v1.pricing.promotions.show
+      tags:
+        - Promotion
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: v1.pricing.promotions.update
+      tags:
+        - Promotion
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    delete:
+      operationId: v1.pricing.promotions.destroy
+      tags:
+        - Promotion
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/public/careers/{careersSlug}':
@@ -145563,6 +146513,177 @@ paths:
       operationId: v1.quality.spc.samples.destroy
       tags:
         - Spc
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/pricing/special-prices:
+    get:
+      operationId: v1.pricing.special-prices.index
+      tags:
+        - SpecialPrice
+      responses:
+        '200':
+          description: 'Paginated set of `PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PricingResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type: string
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                      last_page:
+                        type: string
+                      links:
+                        type: object
+                        additionalProperties: {}
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                      per_page:
+                        type: integer
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.pricing.special-prices.store
+      tags:
+        - SpecialPrice
+      responses:
+        '201':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/pricing/special-prices/{id}':
+    get:
+      operationId: v1.pricing.special-prices.show
+      tags:
+        - SpecialPrice
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: v1.pricing.special-prices.update
+      tags:
+        - SpecialPrice
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PricingResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PricingResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    delete:
+      operationId: v1.pricing.special-prices.destroy
+      tags:
+        - SpecialPrice
       parameters:
         -
           name: id
@@ -186420,6 +187541,66 @@ components:
       required:
         - lines
       title: BulkActivityRecordRequest
+    BulkPriceListItemsRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: string
+                format: uuid
+              price:
+                type: number
+                minimum: 0
+                maximum: 99999999999
+              min_quantity:
+                type:
+                  - number
+                  - 'null'
+              max_quantity:
+                type:
+                  - number
+                  - 'null'
+              discount_cascade:
+                type:
+                  - string
+                  - 'null'
+                pattern: '^\s*\d+([.,]\d+)?(\s*\+\s*\d+([.,]\d+)?)*\s*$'
+                maxLength: 120
+              discount_mode:
+                type:
+                  - string
+                  - 'null'
+                enum:
+                  - MULTIPLICATIVE
+                  - ADDITIVE
+                  - null
+              valid_from:
+                type:
+                  - string
+                  - 'null'
+                format: date
+              valid_to:
+                type:
+                  - string
+                  - 'null'
+                format: date
+            required:
+              - product_id
+              - price
+          minItems: 1
+          maxItems: 1000
+        reason:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+      required:
+        - items
+      title: BulkPriceListItemsRequest
     BulkTicketActionRequest:
       type: object
       properties:
@@ -204847,6 +206028,26 @@ components:
       required:
         - invoice_id
       title: ManualMatchRequest
+    MarginApprovalRequest:
+      type: object
+      properties:
+        document_type:
+          type: string
+          enum:
+            - sales_quote
+            - sales_order
+        document_id:
+          type: string
+          format: uuid
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+      required:
+        - document_type
+        - document_id
+      title: MarginApprovalRequest
     MarkJobOfferSignedRequest:
       type: object
       properties:
@@ -212626,6 +213827,61 @@ components:
         - source_reference
         - created_at
       title: PriceIndexRateResource
+    PriceListItemRequest:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        price:
+          type: number
+          minimum: 0
+          maximum: 99999999999
+        min_quantity:
+          type:
+            - number
+            - 'null'
+        max_quantity:
+          type:
+            - number
+            - 'null'
+        discount_cascade:
+          type:
+            - string
+            - 'null'
+          pattern: '^\s*\d+([.,]\d+)?(\s*\+\s*\d+([.,]\d+)?)*\s*$'
+          maxLength: 120
+        discount_mode:
+          type:
+            - string
+            - 'null'
+          enum:
+            - MULTIPLICATIVE
+            - ADDITIVE
+            - null
+        valid_from:
+          type:
+            - string
+            - 'null'
+          format: date
+        valid_to:
+          type:
+            - string
+            - 'null'
+          format: date
+        reason:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+      required:
+        - product_id
+        - price
+      title: PriceListItemRequest
+    PricingResource:
+      type: object
+      additionalProperties: {}
+      title: PricingResource
     PrintLabelsRequest:
       type: object
       properties:
@@ -218227,6 +219483,59 @@ components:
         - disposition
         - corrective_action
       title: ResolveNonConformanceRequest
+    ResolvePricingRequest:
+      type: object
+      properties:
+        customer_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        channel:
+          type:
+            - string
+            - 'null'
+          enum:
+            - DEFAULT
+            - B2B
+            - RETAIL
+            - ECOMMERCE
+            - null
+        date:
+          type:
+            - string
+            - 'null'
+          format: date
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: string
+                format: uuid
+              quantity:
+                type: number
+                maximum: 99999999
+              manual_discount_cascade:
+                type:
+                  - string
+                  - 'null'
+                pattern: '^\s*\d+([.,]\d+)?(\s*\+\s*\d+([.,]\d+)?)*\s*$'
+                maxLength: 120
+            required:
+              - product_id
+              - quantity
+          minItems: 1
+          maxItems: 200
+      required:
+        - currency
+        - lines
+      title: ResolvePricingRequest
     ResolvePromiseRequest:
       type: object
       description: 'Payload to close a pending promise to pay.'
@@ -222904,6 +224213,7 @@ components:
               - events
               - plm
               - rebates
+              - pricing
               - credit-management
               - wms
               - transportation
@@ -236975,6 +238285,36 @@ components:
             - 'null'
           minimum: -100
           maximum: 1000
+        code:
+          type:
+            - string
+            - 'null'
+          maxLength: 40
+        channel:
+          type:
+            - string
+            - 'null'
+          enum:
+            - DEFAULT
+            - B2B
+            - RETAIL
+            - ECOMMERCE
+            - null
+        rounding_mode:
+          type:
+            - string
+            - 'null'
+          enum:
+            - NONE
+            - SWISS_005
+            - HALF_UP_001
+            - null
+        priority:
+          type:
+            - integer
+            - 'null'
+          minimum: -1000
+          maximum: 1000
         items:
           type:
             - array
@@ -236992,6 +238332,24 @@ components:
                 type:
                   - number
                   - 'null'
+              max_quantity:
+                type:
+                  - number
+                  - 'null'
+              discount_cascade:
+                type:
+                  - string
+                  - 'null'
+                pattern: '^\s*\d+(\.\d+)?(\s*\+\s*\d+(\.\d+)?)*\s*$'
+                maxLength: 120
+              discount_mode:
+                type:
+                  - string
+                  - 'null'
+                enum:
+                  - MULTIPLICATIVE
+                  - ADDITIVE
+                  - null
               valid_from:
                 type:
                   - string
@@ -252877,6 +254235,12 @@ tags:
     name: ManufacturingSettings
     description: 'Operations of the ManufacturingSettings module.'
   -
+    name: MarginApproval
+    description: 'Operations of the MarginApproval module.'
+  -
+    name: MarginPolicy
+    description: 'Operations of the MarginPolicy module.'
+  -
     name: MasterData
     description: 'Operations of the MasterData module.'
   -
@@ -253141,11 +254505,20 @@ tags:
     name: PreservationSeal
     description: 'Operations of the PreservationSeal module.'
   -
+    name: PriceHistory
+    description: 'Operations of the PriceHistory module.'
+  -
     name: PriceIndexRate
     description: 'Operations of the PriceIndexRate module.'
   -
     name: PriceList
     description: 'Operations of the PriceList module.'
+  -
+    name: PriceListItem
+    description: 'Operations of the PriceListItem module.'
+  -
+    name: PricingResolve
+    description: 'Operations of the PricingResolve module.'
   -
     name: PricingRule
     description: 'Operations of the PricingRule module.'
@@ -253587,6 +254960,9 @@ tags:
   -
     name: Spc
     description: 'Operations of the Spc module.'
+  -
+    name: SpecialPrice
+    description: 'Operations of the SpecialPrice module.'
   -
     name: SportWork
     description: 'Operations of the SportWork module.'
