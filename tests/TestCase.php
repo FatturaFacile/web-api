@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests;
 
 use App\Contracts\Security\HostResolver;
+use Database\Seeders\TestingSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,6 +21,8 @@ abstract class TestCase extends BaseTestCase
     }
 
     protected bool $seed = true;
+
+    protected string $seeder = TestingSeeder::class;
 
     /**
      * Tests that use DatabaseTransactions run on an already migrated database. Letting the lazy refresh fire there would
@@ -49,12 +54,12 @@ abstract class TestCase extends BaseTestCase
         $this->app->instance(HostResolver::class, new StaticHostResolver);
     }
 
-    protected function setUpTraits()
+    protected function setUpTraits(): array
     {
         $uses = array_flip(class_uses_recursive(static::class));
 
         if (isset($uses[RefreshDatabase::class]) && ! RefreshDatabaseState::$migrated) {
-            if (! filter_var(env('TEST_MIGRATE_FRESH', false), FILTER_VALIDATE_BOOL) && Schema::hasTable('migrations')) {
+            if (! filter_var($_ENV['TEST_MIGRATE_FRESH'] ?? $_SERVER['TEST_MIGRATE_FRESH'] ?? false, FILTER_VALIDATE_BOOL) && Schema::hasTable('migrations')) {
                 $this->artisan('migrate', ['--force' => true]);
                 RefreshDatabaseState::$migrated = true;
             }

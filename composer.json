@@ -140,6 +140,10 @@
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test --parallel"
+        ],
+        "test:serial": [
+            "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
         ],
         "test:pg": [

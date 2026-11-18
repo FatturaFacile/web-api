@@ -45,9 +45,14 @@
    - Always use a fresh in-memory or isolated file SQLite database for local development and test execution.
    - Enforce: `DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`, `DB_FOREIGN_KEYS=true`.
    - Never require or connect to PostgreSQL for local test execution or local verification.
-2. **Test Runner & Refresh Policy**:
-   - Run tests via `php artisan test` (or `./vendor/bin/pest`).
-   - Feature and Unit test cases extend `Tests\TestCase`, utilizing `LazilyRefreshDatabase` / `RefreshDatabase` with `$seed = true`.
+2. **Test Runner, Seeding & SQLite Schema Dump Policy**:
+   - Run tests in parallel by default via `composer test` (or `php artisan test --parallel`; use `composer test:serial` only when debugging single-process issues).
+   - Feature and Unit test cases extend `Tests\TestCase`, utilizing `LazilyRefreshDatabase` / `RefreshDatabase` with `TestingSeeder::class` (keep heavy demo/translation seeders out of `TestingSeeder`).
+   - `database/schema/sqlite-schema.sql` accelerates SQLite test refreshes by skipping 360+ historical migrations. **Whenever you add or modify migrations**, regenerate the SQLite schema dump (without `--prune`, keeping all PHP migrations for PostgreSQL):
+     ```bash
+     php artisan migrate:fresh --database=sqlite --force
+     php artisan schema:dump --database=sqlite
+     ```
    - Clean local test DB initialization:
      ```bash
      php artisan migrate:fresh --seed --env=testing
@@ -68,7 +73,7 @@ All quality gates must be executed and passing before pushing or finalizing task
 | **Code Formatting** | `vendor/bin/pint --dirty --format agent` | Format changed files |
 | **Format Check** | `vendor/bin/pint --test` | Verify PSR-12 and Pint standards |
 | **Static Analysis** | `vendor/bin/phpstan analyse --memory-limit=2G` | PHPStan level 5 baseline check (zero errors) |
-| **Automated Tests** | `php artisan test` | Runs Pest / PHPUnit test suite on SQLite `:memory:` |
+| **Automated Tests** | `composer test` | Runs Pest / PHPUnit test suite in parallel on SQLite `:memory:` (`composer test:serial` for sequential) |
 | **Clear Config Cache** | `php artisan config:clear` | Ensure clean testing environment |
 | **Frontend Assets** | `npm run build` | Vite asset compilation check (when modifying frontend assets) |
 
@@ -76,5 +81,5 @@ All quality gates must be executed and passing before pushing or finalizing task
 ```bash
 vendor/bin/pint --dirty --format agent
 vendor/bin/phpstan analyse --memory-limit=2G
-php artisan test
+composer test
 ```

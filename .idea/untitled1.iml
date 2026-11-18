@@ -80,6 +80,8 @@
       <sourceFolder url="file://$MODULE_DIR$/modules/61_Events/src" isTestSource="false" packagePrefix="Modules\Events\" />
       <sourceFolder url="file://$MODULE_DIR$/modules/62_Plm/src" isTestSource="false" packagePrefix="Modules\Plm\" />
       <sourceFolder url="file://$MODULE_DIR$/modules/32_Logistics/src" isTestSource="false" packagePrefix="Modules\Logistics\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/33_CorporateGroup/src" isTestSource="false" packagePrefix="Modules\CorporateGroup\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/63_Pricing/src" isTestSource="false" packagePrefix="Modules\Pricing\" />
       <excludeFolder url="file://$MODULE_DIR$/bootstrap/cache" />
       <excludeFolder url="file://$MODULE_DIR$/storage/app" />
       <excludeFolder url="file://$MODULE_DIR$/storage/framework" />
