@@ -63,7 +63,7 @@ class ExpenseReportingService
         $monthly = [];
         for ($m = 1; $m <= 12; $m++) {
             $monthStr = sprintf('%04d-%02d', $year, $m);
-            $monthExpenses = $expenses->filter(fn (Expense $e) => $e->date && $e->date->format('Y-m') === $monthStr);
+            $monthExpenses = $expenses->filter(fn (Expense $e) => $e->date->format('Y-m') === $monthStr);
 
             $monthly[] = [
                 'month' => $monthStr,

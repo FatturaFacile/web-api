@@ -30,6 +30,7 @@ class TestingSeeder extends Seeder
             ErpLookupsSeeder::class,
             UnitOfMeasureSeeder::class,
             DocumentSequenceSeeder::class,
+            PayrollReferenceSeeder::class,
         ]);
     }
 }

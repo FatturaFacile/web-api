@@ -107,7 +107,7 @@ final readonly class LeadService implements LeadServiceInterface
             $lead->fill([
                 'score' => $evaluation['score'],
                 'rating' => $evaluation['rating'],
-                'score_breakdown' => $evaluation['breakdown'],
+                'score_breakdown' => ['model' => $evaluation['model'], 'items' => $evaluation['breakdown']],
                 'score_calculated_at' => now(),
             ])->save();
 
@@ -175,7 +175,8 @@ final readonly class LeadService implements LeadServiceInterface
         $lead->update([
             'score' => $evaluation['score'],
             'rating' => $evaluation['rating'],
-            'score_breakdown' => $evaluation['breakdown'],
+            'score_breakdown' => ['model' => $evaluation['model'], 'items' => $evaluation['breakdown']],
+            'score_calculated_at' => now(),
         ]);
 
         return $lead;

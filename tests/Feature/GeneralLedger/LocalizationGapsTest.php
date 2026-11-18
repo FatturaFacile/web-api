@@ -19,10 +19,11 @@ use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\JournalLine;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
 use Modules\GeneralLedger\Services\Localization\SiiVatBookExporter;
+use Tests\Support\WithoutSeeding;
 
 require_once __DIR__.'/../Compliance/ComplianceHelpers.php';
 
-uses(RefreshDatabase::class);
+uses(WithoutSeeding::class, RefreshDatabase::class);
 
 afterEach(fn () => app(TenantContext::class)->clear());
 

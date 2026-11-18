@@ -122,6 +122,26 @@ return [
         'license_plate' => 'Targa',
         'departure' => 'Partenza',
         'receipt' => 'Merce ricevuta in buono stato',
+        'carriage_terms' => 'Condizioni di resa del trasporto',
+        'transport_by' => 'Trasporto a cura di',
+        'carrier_vat' => 'P.IVA del vettore',
+        'carrier_uid' => 'UID del vettore',
+        'incoterms' => 'Incoterms',
+        'net_weight' => 'Peso netto (kg)',
+        'volume' => 'Volume (m3)',
+        'sign_sender' => 'Firma del mittente',
+        'sign_driver' => 'Firma del conducente',
+        'sign_carrier' => 'Firma del vettore',
+        'carriage' => [
+            'free' => 'Porto franco',
+            'collect' => 'Porto assegnato',
+            'free_with_charge' => 'Porto franco con addebito in fattura',
+        ],
+        'by' => [
+            'sender' => 'Mittente',
+            'recipient' => 'Destinatario',
+            'carrier' => 'Vettore',
+        ],
     ],
 
     'work_order' => [

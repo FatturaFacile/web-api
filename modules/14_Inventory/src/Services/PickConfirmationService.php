@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Inventory\Services;
 
 use Illuminate\Support\Facades\DB;
-use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
 use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Exceptions\StockRuleViolation;
@@ -14,6 +13,7 @@ use Modules\Inventory\Models\StockPickList;
 use Modules\Inventory\Models\StockQuant;
 use Modules\Inventory\Models\StockReservation;
 use Modules\Inventory\Models\StockReservationAllocation;
+use Modules\Inventory\Support\Decimal;
 
 /**
  * Closes the stops of a pick list. A confirmation frees what the line held and moves what was really picked: to the
@@ -35,7 +35,7 @@ final class PickConfirmationService
                 throw new StockRuleViolation('This pick line is already closed.');
             }
 
-            if (Decimal::compare($quantityPicked, (string) $locked->quantity_to_pick) > 0) {
+            if (Decimal::comp($quantityPicked, (string) $locked->quantity_to_pick) > 0) {
                 throw new StockRuleViolation('The picked quantity exceeds the quantity on the line.');
             }
 
@@ -61,7 +61,7 @@ final class PickConfirmationService
                 ));
             }
 
-            $isShort = Decimal::compare($quantityPicked, (string) $locked->quantity_to_pick) < 0;
+            $isShort = Decimal::comp($quantityPicked, (string) $locked->quantity_to_pick) < 0;
 
             $locked->update([
                 'quantity_picked' => bcadd($quantityPicked, '0', 4),

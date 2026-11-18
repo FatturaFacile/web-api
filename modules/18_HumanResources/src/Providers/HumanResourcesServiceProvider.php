@@ -169,7 +169,7 @@ final class HumanResourcesServiceProvider extends ServiceProvider
         }
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
-            $schedule->command('hr:recruiting:purge-expired-candidates')->dailyAt('03:30')->withoutOverlapping();
+            $schedule->command('hr:recruiting:purge-expired-candidates')->dailyAt('03:30')->onOneServer()->withoutOverlapping();
         });
 
         // Cross-Module Listeners

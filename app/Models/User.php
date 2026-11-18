@@ -23,11 +23,14 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @property int $failed_login_attempts
  * @property Carbon|null $login_locked_until
+ * @property array<string, mixed>|null $ui_preferences
  */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable, SoftDeletes;
+
+    public const array UiPreferenceDefaults = ['theme_preference' => 'system', 'ui_density' => 'comfortable', 'reduced_motion' => null];
 
     protected $fillable = [
         'name',
@@ -37,9 +40,6 @@ class User extends Authenticatable
         'password',
         'phone',
         'locale',
-        'theme_preference',
-        'ui_density',
-        'reduced_motion',
         'is_active',
         'email_verified_at',
     ];
@@ -78,7 +78,6 @@ class User extends Authenticatable
             'is_platform_admin' => 'boolean',
             'password' => 'hashed',
             'is_active' => 'boolean',
-            'reduced_motion' => 'boolean',
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',
@@ -142,6 +141,33 @@ class User extends Authenticatable
     public function currentTenant(): ?Tenant
     {
         return app(TenantContext::class)->getTenant() ?? $this->tenants()->first();
+    }
+
+    /**
+     * The interface preferences live in the ui_preferences document (see UserPreferencesController), not in columns.
+     */
+    public function getThemePreferenceAttribute(): string
+    {
+        return (string) $this->uiPreference('theme_preference');
+    }
+
+    public function getUiDensityAttribute(): string
+    {
+        return (string) $this->uiPreference('ui_density');
+    }
+
+    public function getReducedMotionAttribute(): ?bool
+    {
+        $value = $this->uiPreference('reduced_motion');
+
+        return $value === null ? null : (bool) $value;
+    }
+
+    private function uiPreference(string $key): mixed
+    {
+        $stored = is_array($this->ui_preferences) ? $this->ui_preferences : [];
+
+        return array_key_exists($key, $stored) ? $stored[$key] : self::UiPreferenceDefaults[$key];
     }
 
     public function getTenantIdAttribute(): ?string

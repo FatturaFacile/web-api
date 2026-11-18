@@ -36,6 +36,16 @@ final class RetentionSuggestions
         'fleet_vehicle_assignments' => ['days' => 1825, 'rationale' => 'Names of external drivers of vehicle assignments ended more than five years ago.'],
         'hosp_reservations' => ['days' => 365, 'rationale' => 'Guest contact data of reservations older than a year.'],
         'visitors' => ['days' => 90, 'rationale' => 'Visitors register: three months. The visitors module has its own retention setting and purge job, which takes precedence.'],
+        'tl_survey_responses' => ['days' => 730, 'rationale' => 'Responses of engagement surveys that are not anonymous: two years after submission.'],
+        'tl_survey_answers' => ['days' => 730, 'rationale' => 'Free text answers of engagement surveys: two years after submission.'],
+        'tenant_invitations' => ['days' => 90, 'rationale' => 'Addresses of invitations that were never answered: three months.'],
+        'contact_persons' => ['days' => 1095, 'rationale' => 'Contact persons of customers not updated for three years.'],
+        'rec_candidate_emails' => ['days' => 180, 'rationale' => 'Emails sent to candidates follow the application: six months.'],
+        'comm_campaign_recipients' => ['days' => 730, 'rationale' => 'Addresses of campaign recipients two years after the campaign.'],
+        'comm_conversations' => ['days' => 730, 'rationale' => 'Counterparty addresses of shared inbox conversations older than two years.'],
+        'comm_conversation_messages' => ['days' => 730, 'rationale' => 'Sender addresses of shared inbox messages older than two years.'],
+        'hosp_stays' => ['days' => 365, 'rationale' => 'Guest contact data of stays older than a year.'],
+        'evt_registrations' => ['days' => 730, 'rationale' => 'Attendee addresses of events held more than two years ago.'],
     ];
 
     public function __construct(private PersonalDataRegistry $registry) {}

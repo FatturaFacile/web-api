@@ -11,7 +11,6 @@ use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
 use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Exceptions\StockRuleViolation;
@@ -19,6 +18,7 @@ use Modules\Inventory\Models\RepairOrder;
 use Modules\Inventory\Models\RepairOrderLine;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockSerialNumber;
+use Modules\Inventory\Support\Decimal;
 
 /**
  * Warranty status of a serial and the repairs opened on it. A repair copies the customer and the purchase value of the
@@ -238,7 +238,7 @@ final class RepairOrderService
                 userId: $userId
             ));
 
-            $total = Decimal::round2(Decimal::mul((string) $data['quantity'], (string) $movement->unit_cost));
+            $total = Decimal::round(Decimal::mul((string) $data['quantity'], (string) $movement->unit_cost), 2);
 
             $line = RepairOrderLine::create([
                 'tenant_id' => $locked->tenant_id,

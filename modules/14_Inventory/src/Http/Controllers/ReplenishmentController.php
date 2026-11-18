@@ -13,8 +13,7 @@ use Modules\Inventory\Http\Requests\ReorderRuleRequest;
 use Modules\Inventory\Models\StockReorderRule;
 use Modules\Inventory\Services\InventoryReplenishmentService;
 use Modules\Inventory\Support\Quantity;
-use Modules\Procurement\Models\PurchaseSuggestion;
-use Modules\Procurement\Services\PurchaseSuggestionService;
+use Modules\Procurement\Contracts\PurchaseSuggestionHandOffInterface;
 use OpenApi\Attributes as OA;
 
 /**
@@ -172,20 +171,20 @@ final class ReplenishmentController extends Controller
             new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
         ]
     )]
-    public function handOff(PurchaseSuggestionService $suggestions, TenantContext $tenantContext): JsonResponse
+    public function handOff(PurchaseSuggestionHandOffInterface $suggestions, TenantContext $tenantContext): JsonResponse
     {
-        $created = $suggestions->generate((string) $tenantContext->getTenantId());
+        $created = $suggestions->handOff((string) $tenantContext->getTenantId());
 
         return response()->json([
-            'created' => $created->count(),
-            'data' => $created->map(static fn (PurchaseSuggestion $suggestion): array => [
-                'id' => (string) $suggestion->id,
-                'source' => (string) $suggestion->source,
-                'source_id' => (string) $suggestion->source_id,
-                'quantity' => Quantity::of((string) $suggestion->quantity),
-                'supplier_id' => $suggestion->supplier_id,
-                'status' => (string) $suggestion->status,
-            ])->values()->all(),
+            'created' => count($created),
+            'data' => array_map(static fn (array $suggestion): array => [
+                'id' => $suggestion['id'],
+                'source' => $suggestion['source'],
+                'source_id' => $suggestion['source_id'],
+                'quantity' => Quantity::of($suggestion['quantity']),
+                'supplier_id' => $suggestion['supplier_id'],
+                'status' => $suggestion['status'],
+            ], $created),
         ]);
     }
 

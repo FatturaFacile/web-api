@@ -32,6 +32,9 @@ final class IntercompanyTransaction extends BaseEnterpriseModel
         return $this->belongsTo(Company::class, 'buyer_company_id');
     }
 
+    /**
+     * @return HasMany<IntercompanyDocument, $this>
+     */
     public function documents(): HasMany
     {
         return $this->hasMany(IntercompanyDocument::class, 'transaction_id');

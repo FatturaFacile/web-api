@@ -114,7 +114,7 @@ test('behavioural events and demographic data raise the score and the rating lab
 
     expect($lead->score)->toBe(41 + 10 + 15 + 5)
         ->and($lead->rating)->toBe('hot')
-        ->and($lead->score_breakdown)->toHaveKeys(['catalog_downloads', 'site_visits', 'email_opens', 'industry', 'revenue', 'geography']);
+        ->and(array_column($lead->score_breakdown['items'], 'rule'))->toContain('Catalog downloads', 'Site visits', 'Email opens', 'Industry', 'Revenue', 'Region');
 
     app()->setLocale('it');
     expect(LeadScoringService::labelFor('hot'))->toBe('Caldo')

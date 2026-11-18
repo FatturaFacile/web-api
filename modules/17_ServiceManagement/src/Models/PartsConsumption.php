@@ -8,6 +8,10 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $unit_price
+ * @property array<string, mixed>|null $metadata
+ */
 final class PartsConsumption extends BaseEnterpriseModel
 {
     protected $table = 'esm_parts_consumptions';

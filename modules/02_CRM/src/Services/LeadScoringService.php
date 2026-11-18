@@ -229,6 +229,65 @@ final class LeadScoringService
             $breakdown[] = ['rule' => 'Website available', 'points' => 10, 'reason' => (string) $lead->website];
         }
 
-        return $breakdown;
+        return [...$breakdown, ...$this->behaviourPoints($lead), ...$this->demographicPoints($lead)];
+    }
+
+    /**
+     * Engagement of the lead (email opens, catalog downloads, site visits): points per event up to a cap, from config.
+     *
+     * @return list<array{rule: string, points: int, reason: string}>
+     */
+    private function behaviourPoints(Lead $lead): array
+    {
+        $labels = ['email_opens' => 'Email opens', 'catalog_downloads' => 'Catalog downloads', 'site_visits' => 'Site visits'];
+        $items = [];
+
+        foreach ((array) config('crm_lead.scoring.behaviour', []) as $counter => $weight) {
+            $count = (int) $lead->getAttribute((string) $counter);
+            $points = min($count * (int) ($weight['points'] ?? 0), (int) ($weight['cap'] ?? PHP_INT_MAX));
+
+            if ($points > 0) {
+                $items[] = ['rule' => $labels[$counter] ?? (string) $counter, 'points' => $points, 'reason' => (string) $count];
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * Fit of the company (industry, estimated revenue, region), from config.
+     *
+     * @return list<array{rule: string, points: int, reason: string}>
+     */
+    private function demographicPoints(Lead $lead): array
+    {
+        $items = [];
+        $industry = strtolower(trim((string) $lead->industry));
+        $industryPoints = (int) (config('crm_lead.scoring.industries', [])[$industry] ?? 0);
+
+        if ($industryPoints > 0) {
+            $items[] = ['rule' => 'Industry', 'points' => $industryPoints, 'reason' => $industry];
+        }
+
+        $revenue = (float) $lead->estimated_revenue;
+        $tiers = (array) config('crm_lead.scoring.revenue_tiers', []);
+        krsort($tiers);
+
+        foreach ($tiers as $minimum => $points) {
+            if ($revenue >= (float) $minimum) {
+                $items[] = ['rule' => 'Revenue', 'points' => (int) $points, 'reason' => (string) $revenue];
+
+                break;
+            }
+        }
+
+        $region = strtolower(trim((string) $lead->region));
+        $regionPoints = (int) (config('crm_lead.scoring.regions', [])[$region] ?? 0);
+
+        if ($regionPoints > 0) {
+            $items[] = ['rule' => 'Region', 'points' => $regionPoints, 'reason' => $region];
+        }
+
+        return $items;
     }
 }

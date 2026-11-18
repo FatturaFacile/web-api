@@ -13,18 +13,18 @@ use App\Models\RecurringContracts\PriceIndexRate;
 use App\Models\RecurringContracts\RecurringContract;
 use App\Services\RecurringContracts\IndexationAdjustmentEngine;
 use App\Services\RecurringContracts\PeriodicBillingBatchProcessor;
+use App\Services\RecurringContracts\RecurringContractWriter;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class RecurringContractController extends Controller
 {
     public function __construct(
         protected PeriodicBillingBatchProcessor $batchProcessor,
-        protected IndexationAdjustmentEngine $indexationEngine
+        protected IndexationAdjustmentEngine $indexationEngine,
+        protected RecurringContractWriter $writer,
     ) {}
 
     /**
@@ -77,34 +77,8 @@ class RecurringContractController extends Controller
     {
         $validated = $request->validated();
 
-        $contract = DB::transaction(function () use ($validated, $request) {
-            $tenantId = auth()->user()?->current_tenant_id ? (string) auth()->user()->current_tenant_id : (string) $request->header('X-Tenant-Id');
-
-            $contractNumber = $validated['contract_number'] ?? ('CTR-'.strtoupper(Str::random(8)));
-            $nextBillingDate = $validated['next_billing_date'] ?? $validated['start_date'];
-
-            $contractData = collect($validated)->except(['lines', 'indexation_clause'])->toArray();
-            $contractData['contract_number'] = $contractNumber;
-            $contractData['next_billing_date'] = $nextBillingDate;
-            $contractData['tenant_id'] = $tenantId;
-            $contractData['status'] = $contractData['status'] ?? 'draft';
-
-            $contract = RecurringContract::create($contractData);
-
-            if (! empty($validated['lines'])) {
-                foreach ($validated['lines'] as $index => $line) {
-                    $line['sort_order'] = $line['sort_order'] ?? $index;
-                    $contract->lines()->create($line);
-                }
-            }
-
-            if (! empty($validated['indexation_clause'])) {
-                $clause = $validated['indexation_clause'];
-                $contract->indexationClauses()->create($clause);
-            }
-
-            return $contract->load(['customer', 'lines', 'indexationClause']);
-        });
+        $tenantId = auth()->user()?->current_tenant_id ? (string) auth()->user()->current_tenant_id : (string) $request->header('X-Tenant-Id');
+        $contract = $this->writer->create($validated, $tenantId);
 
         return (new RecurringContractResource($contract))
             ->response()
@@ -130,28 +104,7 @@ class RecurringContractController extends Controller
         $contract = RecurringContract::findOrFail($id);
         $validated = $request->validated();
 
-        DB::transaction(function () use ($contract, $validated) {
-            $contractData = collect($validated)->except(['lines', 'indexation_clause'])->toArray();
-            $contract->update($contractData);
-
-            if (isset($validated['lines'])) {
-                $contract->lines()->delete();
-                foreach ($validated['lines'] as $index => $line) {
-                    unset($line['id']);
-                    $line['sort_order'] = $line['sort_order'] ?? $index;
-                    $contract->lines()->create($line);
-                }
-            }
-
-            if (isset($validated['indexation_clause'])) {
-                $clauseData = $validated['indexation_clause'];
-                if ($contract->indexationClause) {
-                    $contract->indexationClause->update($clauseData);
-                } else {
-                    $contract->indexationClauses()->create($clauseData);
-                }
-            }
-        });
+        $this->writer->update($contract, $validated);
 
         return new RecurringContractResource($contract->load(['customer', 'lines', 'indexationClause', 'indexationLogs']));
     }
@@ -234,7 +187,7 @@ class RecurringContractController extends Controller
     /**
      * Apply indexation adjustment to contract.
      */
-    public function applyIndexation(Request $request, string $id): ContractIndexationLogResource
+    public function applyIndexation(Request $request, string $id): JsonResponse
     {
         $request->validate([
             'price_index_rate_id' => ['required', 'uuid', 'exists:price_index_rates,id'],
@@ -245,7 +198,8 @@ class RecurringContractController extends Controller
 
         $log = $this->indexationEngine->applyIndexation($contract, $rate, auth()->id());
 
-        return new ContractIndexationLogResource($log);
+        // The action applies the indexation to the contract and answers with its log: 200, not the 201 a freshly created log would imply.
+        return (new ContractIndexationLogResource($log))->response()->setStatusCode(200);
     }
 
     /**

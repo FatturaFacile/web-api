@@ -38,7 +38,7 @@ final class AdvanceFieldWorkOrderStatusHandler
 
             if ($target === 'on_site') {
                 $attributes['actual_arrival'] = $at ?? now();
-                $attributes['actual_start'] ??= $workOrder->actual_start ?? ($at ?? now());
+                $attributes['actual_start'] = $workOrder->actual_start ?? ($at ?? now());
             }
 
             $workOrder->update($attributes);

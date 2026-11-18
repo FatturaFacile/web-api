@@ -13,7 +13,11 @@ uses(RefreshDatabase::class);
 
 test('every business table has the six audit columns', function (): void {
     $excluded = ['migrations', 'sessions', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs',
-        'personal_access_tokens', 'password_reset_tokens', 'transaction_locks', 'notifications'];
+        'personal_access_tokens', 'password_reset_tokens', 'transaction_locks', 'notifications',
+        // Secret ballot: a vote carries no user, no timestamp and nothing that could link it to its voter.
+        'assoc_ballot_votes',
+        // Anonymous engagement survey: a response and its answers do not name or time-stamp who answered.
+        'tl_survey_responses', 'tl_survey_answers'];
     $incomplete = [];
 
     foreach (Schema::getTableListing(schemaQualified: false) as $table) {

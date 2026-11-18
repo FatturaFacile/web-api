@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Models\Contact;
 use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,7 +22,7 @@ class ContactFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => fn () => Tenant::first()?->id ?? Tenant::create([
+            'tenant_id' => fn () => (app(TenantContext::class)->getTenantId() ?? Tenant::first()?->id) ?? Tenant::create([
                 'name' => fake()->company(),
                 'legal_name' => fake()->company(),
                 'country' => 'IT',

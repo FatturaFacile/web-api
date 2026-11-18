@@ -1520,12 +1520,6 @@ CREATE TABLE "assoc_ballot_votes"(
   "ballot_id" varchar not null,
   "choice" varchar not null,
   "participant_id" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -23560,7 +23554,7 @@ CREATE TABLE "recurring_contract_lines"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  foreign key("vat_rate_id") references "vat_rates"("id") on delete set null on update no action,
+  foreign key("vat_rate_id") references "vat_codes"("id") on delete set null on update no action,
   foreign key("product_id") references "products"("id") on delete set null on update no action,
   foreign key("recurring_contract_id") references "recurring_contracts"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -35770,12 +35764,6 @@ CREATE TABLE "tl_survey_responses"(
   "respondent_employee_id" varchar,
   "segment" varchar,
   "submitted_on" date not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("survey_id") references "tl_surveys"("id") on delete cascade,
   primary key("id")
@@ -35792,12 +35780,6 @@ CREATE TABLE "tl_survey_answers"(
   "numeric_value" integer,
   "text_value" text,
   "submitted_on" date not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("response_id") references "tl_survey_responses"("id") on delete cascade,
   foreign key("question_id") references "tl_survey_questions"("id") on delete cascade,
@@ -38070,6 +38052,10 @@ CREATE TABLE "notification_settings"(
   "telegram_link_token" varchar,
   "whatsapp_number" varchar,
   "tenant_id" varchar,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -38091,6 +38077,10 @@ CREATE TABLE "notification_deliveries"(
   "created_at" datetime,
   "updated_at" datetime,
   "tenant_id" varchar,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -38113,6 +38103,10 @@ CREATE TABLE "notification_devices"(
   "created_at" datetime,
   "updated_at" datetime,
   "tenant_id" varchar,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -38134,6 +38128,10 @@ CREATE TABLE "notification_alert_rules"(
   "is_active" tinyint(1) not null default '1',
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -38146,6 +38144,12 @@ CREATE TABLE "notification_alert_rule_hits"(
   "subject_id" varchar not null,
   "fired_at" datetime not null,
   "tenant_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -38167,6 +38171,10 @@ CREATE TABLE "notification_digest_items"(
   "created_at" datetime,
   "updated_at" datetime,
   "tenant_id" varchar,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -38743,61 +38751,6 @@ CREATE INDEX "esm_parts_consumptions_stock_movement_id_index" on "esm_parts_cons
 CREATE INDEX "esm_parts_consumptions_lot_or_serial_id_index" on "esm_parts_consumptions"(
   "lot_or_serial_id"
 );
-CREATE TABLE "esm_digital_service_reports"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "company_id" varchar,
-  "work_order_id" varchar not null,
-  "report_number" varchar not null,
-  "work_performed_summary" text not null,
-  "checklist_json" text,
-  "labor_hours" numeric not null default '0',
-  "travel_hours" numeric not null default '0',
-  "travel_km" numeric not null default '0',
-  "apply_callout_fee" tinyint(1) not null default '0',
-  "meter_reading_hours" numeric,
-  "meter_reading_cycles" integer,
-  "customer_signer_name" varchar not null,
-  "customer_signer_role" varchar,
-  "signature_svg_data" text,
-  "signature_image_path" varchar,
-  "signature_sha256_hash" varchar not null,
-  "signed_at" datetime not null,
-  "gps_latitude" numeric,
-  "gps_longitude" numeric,
-  "photo_attachments_json" text,
-  "locale" varchar not null default 'it-IT',
-  "pdf_path" varchar,
-  "pdf_document_id" varchar,
-  "emailed_at" datetime,
-  "invoice_id" varchar,
-  "client_uuid" varchar,
-  "metadata" text,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("work_order_id") references "esm_work_orders"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "esm_digital_service_reports_tenant_id_report_number_unique" on "esm_digital_service_reports"(
-  "tenant_id",
-  "report_number"
-);
-CREATE UNIQUE INDEX "esm_digital_service_reports_tenant_id_client_uuid_unique" on "esm_digital_service_reports"(
-  "tenant_id",
-  "client_uuid"
-);
-CREATE UNIQUE INDEX "esm_digital_service_reports_work_order_id_unique" on "esm_digital_service_reports"(
-  "work_order_id"
-);
-CREATE INDEX "esm_digital_service_reports_company_id_index" on "esm_digital_service_reports"(
-  "company_id"
-);
-CREATE INDEX "esm_digital_service_reports_invoice_id_index" on "esm_digital_service_reports"(
-  "invoice_id"
-);
 CREATE TABLE "vat_validation_logs"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -38814,6 +38767,10 @@ CREATE TABLE "vat_validation_logs"(
   "validated_at" datetime not null,
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -38852,6 +38809,9 @@ CREATE TABLE "customer_special_prices"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("customer_id") references "contacts"("id") on delete cascade,
   foreign key("product_id") references "products"("id") on delete cascade,
@@ -38881,6 +38841,11 @@ CREATE TABLE "price_list_histories"(
   "changed_by_user_id" varchar,
   "reason" varchar,
   "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -38912,6 +38877,9 @@ CREATE TABLE "promotions"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -38933,6 +38901,9 @@ CREATE TABLE "margin_policies"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -38958,6 +38929,9 @@ CREATE TABLE "margin_override_approvals"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -38970,40 +38944,6 @@ CREATE INDEX "idx_margin_approvals_document" on "margin_override_approvals"(
 CREATE INDEX "margin_override_approvals_tenant_id_index" on "margin_override_approvals"(
   "tenant_id"
 );
-CREATE TABLE "vat_settlement_periods"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "vat_settlement_id" varchar,
-  "jurisdiction" varchar not null,
-  "period_type" varchar not null,
-  "period_from" date not null,
-  "period_to" date not null,
-  "regime" varchar,
-  "basis" varchar,
-  "calculation" text not null,
-  "payable_amount" numeric not null default '0',
-  "status" varchar not null default 'DRAFT',
-  "locked_at" datetime,
-  "locked_by" varchar,
-  "filed_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "vat_settlement_periods_unique_period" on "vat_settlement_periods"(
-  "tenant_id",
-  "jurisdiction",
-  "period_from",
-  "period_to"
-);
-CREATE INDEX "vat_settlement_periods_tenant_id_index" on "vat_settlement_periods"(
-  "tenant_id"
-);
-CREATE INDEX "vat_settlement_periods_vat_settlement_id_index" on "vat_settlement_periods"(
-  "vat_settlement_id"
-);
 CREATE INDEX "esm_equipment_passports_asset_status_index" on "esm_equipment_passports"(
   "asset_status"
 );
@@ -39014,6 +38954,10 @@ CREATE TABLE "esm_service_contract_assets"(
   "equipment_passport_id" varchar not null,
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("service_contract_id") references "esm_service_contracts"("id") on delete cascade,
   foreign key("equipment_passport_id") references "esm_equipment_passports"("id") on delete cascade,
@@ -39044,6 +38988,10 @@ CREATE TABLE "esm_contract_hour_transactions"(
   "occurred_at" datetime not null,
   "created_by" varchar,
   "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("service_contract_id") references "esm_service_contracts"("id") on delete cascade,
   primary key("id")
@@ -39074,6 +39022,10 @@ CREATE TABLE "customs_declaration_invoices"(
   "invoice_id" varchar not null,
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("invoice_id") references "invoices"("id") on delete cascade on update no action,
   foreign key("declaration_id") references "customs_goods_declarations"("id") on delete cascade on update no action,
@@ -39104,6 +39056,9 @@ CREATE TABLE "customs_import_bills"(
   "created_by" varchar,
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("passive_invoice_id") references "passive_invoices"("id") on delete set null on update no action,
   foreign key("declaration_id") references "customs_goods_declarations"("id") on delete set null on update no action,
@@ -39117,6 +39072,101 @@ CREATE INDEX "customs_import_bills_tenant_id_bill_date_index" on "customs_import
 CREATE UNIQUE INDEX "customs_import_bills_tenant_id_bill_number_unique" on "customs_import_bills"(
   "tenant_id",
   "bill_number"
+);
+CREATE TABLE "esm_digital_service_reports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "work_order_id" varchar not null,
+  "report_number" varchar not null,
+  "work_performed_summary" text not null,
+  "checklist_json" text,
+  "labor_hours" numeric not null default('0'),
+  "travel_hours" numeric not null default('0'),
+  "travel_km" numeric not null default('0'),
+  "apply_callout_fee" tinyint(1) not null default('0'),
+  "meter_reading_hours" numeric,
+  "meter_reading_cycles" integer,
+  "customer_signer_name" varchar not null,
+  "customer_signer_role" varchar,
+  "signature_svg_data" text,
+  "signature_image_path" varchar,
+  "signature_sha256_hash" varchar not null,
+  "signed_at" datetime not null,
+  "gps_latitude" numeric,
+  "gps_longitude" numeric,
+  "photo_attachments_json" text,
+  "locale" varchar not null default('it-IT'),
+  "pdf_path" varchar,
+  "pdf_document_id" varchar,
+  "emailed_at" datetime,
+  "invoice_id" varchar,
+  "client_uuid" varchar,
+  "metadata" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("work_order_id") references "esm_work_orders"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "esm_digital_service_reports_company_id_index" on "esm_digital_service_reports"(
+  "company_id"
+);
+CREATE INDEX "esm_digital_service_reports_invoice_id_index" on "esm_digital_service_reports"(
+  "invoice_id"
+);
+CREATE UNIQUE INDEX "esm_digital_service_reports_tenant_id_client_uuid_unique" on "esm_digital_service_reports"(
+  "tenant_id",
+  "client_uuid"
+);
+CREATE UNIQUE INDEX "esm_digital_service_reports_tenant_id_report_number_unique" on "esm_digital_service_reports"(
+  "tenant_id",
+  "report_number"
+);
+CREATE UNIQUE INDEX "esm_digital_service_reports_work_order_id_unique" on "esm_digital_service_reports"(
+  "work_order_id"
+);
+CREATE TABLE "vat_settlement_periods"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "vat_settlement_id" varchar,
+  "jurisdiction" varchar not null,
+  "period_type" varchar not null,
+  "period_from" date not null,
+  "period_to" date not null,
+  "regime" varchar,
+  "basis" varchar,
+  "calculation" text not null,
+  "payable_amount" numeric not null default('0'),
+  "status" varchar not null default('DRAFT'),
+  "locked_at" datetime,
+  "locked_by" varchar,
+  "filed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE INDEX "vat_settlement_periods_tenant_id_index" on "vat_settlement_periods"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "vat_settlement_periods_unique_period" on "vat_settlement_periods"(
+  "tenant_id",
+  "jurisdiction",
+  "period_from",
+  "period_to"
+);
+CREATE INDEX "vat_settlement_periods_vat_settlement_id_index" on "vat_settlement_periods"(
+  "vat_settlement_id"
 );
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
@@ -39483,5 +39533,6 @@ INSERT INTO migrations VALUES(361,'2027_11_24_100000_add_idempotency_to_bank_sta
 INSERT INTO migrations VALUES(362,'2027_11_25_090000_make_customs_tables_tenant_id_nullable',1);
 INSERT INTO migrations VALUES(363,'2027_11_25_100000_create_advanced_pricing_tables',1);
 INSERT INTO migrations VALUES(364,'2027_11_25_100000_create_vat_settlement_periods_table',1);
-INSERT INTO migrations VALUES(365,'2027_12_01_000100_create_esm_maintenance_hour_bank_tables',2);
-INSERT INTO migrations VALUES(366,'2027_12_01_000200_make_customs_tenant_id_nullable',2);
+INSERT INTO migrations VALUES(365,'2027_12_01_000100_create_esm_maintenance_hour_bank_tables',1);
+INSERT INTO migrations VALUES(366,'2027_12_01_000200_make_customs_tenant_id_nullable',1);
+INSERT INTO migrations VALUES(367,'2027_12_02_000100_complete_audit_and_tenant_columns_on_late_tables',1);

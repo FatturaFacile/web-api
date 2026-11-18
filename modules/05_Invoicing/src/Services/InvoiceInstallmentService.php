@@ -9,6 +9,7 @@ use App\Models\PaymentTermInstallment;
 use App\Services\Sales\DocumentTotalsCalculator;
 use Carbon\CarbonImmutable;
 use Enterprise\MultiTenant\Scopes\TenantScope;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Invoicing\Models\InvoiceInstallment;
@@ -58,7 +59,7 @@ final class InvoiceInstallmentService
         }
 
         if ($rows !== []) {
-            $invoice->due_date = $rows[count($rows) - 1]['due_date'];
+            $invoice->due_date = Carbon::parse($rows[count($rows) - 1]['due_date']);
         }
     }
 

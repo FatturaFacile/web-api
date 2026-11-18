@@ -9,6 +9,7 @@ use App\Models\Contact;
 use App\Models\LookupItem;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,7 +24,7 @@ class AppointmentFactory extends Factory
      */
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? Tenant::create([
+        $tenantId = (app(TenantContext::class)->getTenantId() ?? Tenant::first()?->id) ?? Tenant::create([
             'name' => fake()->company(),
             'legal_name' => fake()->company(),
             'country' => 'IT',

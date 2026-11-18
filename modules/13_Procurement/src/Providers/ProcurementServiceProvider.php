@@ -11,6 +11,7 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Procurement\Contracts\InventoryReceivingBridgeInterface;
 use Modules\Procurement\Contracts\ProcurementServiceInterface;
 use Modules\Procurement\Contracts\PurchaseBudgetCommitmentInterface;
+use Modules\Procurement\Contracts\PurchaseSuggestionHandOffInterface;
 use Modules\Procurement\Contracts\SupplierEvaluationServiceInterface;
 use Modules\Procurement\Contracts\ThreeWayMatchingServiceInterface;
 use Modules\Procurement\Events\GoodsReceivedEvent;
@@ -57,6 +58,7 @@ use Modules\Procurement\Services\ProcurementAuditLedgerService;
 use Modules\Procurement\Services\ProcurementService;
 use Modules\Procurement\Services\ProcurementSettingsService;
 use Modules\Procurement\Services\PurchaseBudgetCommitmentService;
+use Modules\Procurement\Services\PurchaseSuggestionService;
 use Modules\Procurement\Services\SupplierEvaluationService;
 use Modules\Procurement\Services\ThreeWayMatchingService;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
@@ -85,6 +87,7 @@ final class ProcurementServiceProvider extends ServiceProvider
         $this->app->singleton(InventoryReceivingBridgeInterface::class, InventoryReceivingBridgeService::class);
         $this->app->singleton(InventoryReceivingBridgeService::class);
 
+        $this->app->singleton(PurchaseSuggestionHandOffInterface::class, PurchaseSuggestionService::class);
         $this->app->singleton(ProcurementAuditLedgerService::class);
         $this->app->singleton(ProcurementSettingsService::class);
     }

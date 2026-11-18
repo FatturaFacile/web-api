@@ -23,6 +23,7 @@ use Modules\Workflow\Models\WorkflowInstance;
  * @property string|null $sla_response_hours
  * @property int $low_balance_threshold_percent
  * @property Carbon $start_date
+ * @property array<string, mixed>|null $preventive_frequency_rule
  * @property Carbon|null $end_date
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

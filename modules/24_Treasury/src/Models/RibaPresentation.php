@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Treasury\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HidesAuditColumns;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RibaPresentation extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTenant, HasUuids, HidesAuditColumns;
 
     protected $fillable = ['tenant_id', 'payment_batch_id', 'sia_code', 'file_name', 'flat_file', 'file_sha256', 'exported_at'];
 

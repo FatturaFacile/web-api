@@ -34,7 +34,7 @@ final readonly class ServiceReportBilling
             ? null
             : ServiceTechnician::query()->where('tenant_id', $report->tenant_id)->find($workOrder->assigned_technician_id);
 
-        $rate = ServiceAmounts::money($contract?->hourly_labor_rate ?? $technician?->hourly_billable_rate ?? '0');
+        $rate = ServiceAmounts::money($contract->hourly_labor_rate ?? $technician->hourly_billable_rate ?? '0');
         $coversLabor = $this->coverage->coversLabor($workOrder, $contract);
         $coversTravel = $this->coverage->coversTravelAndCallout($workOrder, $contract);
         $coversParts = $this->coverage->coversParts($workOrder, $contract);
@@ -49,7 +49,7 @@ final readonly class ServiceReportBilling
             $lines[] = $this->line('travel', 'travel', (string) $report->travel_hours, $rate, $coversTravel, null);
         }
 
-        $callout = ServiceAmounts::money($contract?->callout_fee_amount ?? '0');
+        $callout = ServiceAmounts::money($contract->callout_fee_amount ?? '0');
 
         if ($report->apply_callout_fee && Decimal::isPositive(ServiceAmounts::text($callout))) {
             $lines[] = $this->line('callout', 'callout', '1', $callout, $coversTravel, null);

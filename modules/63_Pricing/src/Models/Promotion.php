@@ -6,6 +6,7 @@ namespace Modules\Pricing\Models;
 
 use Carbon\CarbonInterface;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Support\Carbon;
 
 /**
  * A time-bounded promotion whose reward is described by its type-specific `rules`.
@@ -18,6 +19,8 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
  * @property array<string, mixed> $rules
  * @property bool $is_stackable
  * @property bool $is_active
+ * @property Carbon|null $valid_from
+ * @property Carbon|null $valid_to
  */
 final class Promotion extends BaseEnterpriseModel
 {

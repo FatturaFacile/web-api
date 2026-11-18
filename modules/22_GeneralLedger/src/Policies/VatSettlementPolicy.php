@@ -10,11 +10,14 @@ use Modules\GeneralLedger\Models\VatSettlement;
 
 /**
  * VAT returns are reserved to the owner, the administrators and whoever holds the accounting permission in the tenant:
- * the `accountant` role, or a grant in the permissions of the tenant membership.
+ * the `accountant` role, or a grant in the permissions of the tenant membership. The read-only accountant can view the
+ * registers and returns but not change anything.
  */
 final class VatSettlementPolicy
 {
     private const array ACCOUNTING_ROLES = ['owner', 'admin', 'accountant'];
+
+    private const array READ_ONLY_ROLES = ['accountant_readonly'];
 
     private const array MEMBERSHIP_GRANTS = ['*', 'gl.*', 'gl.journals.post'];
 
@@ -55,12 +58,20 @@ final class VatSettlementPolicy
         return $this->hasAccountingAccess($user, $this->tenantContext->getTenantId());
     }
 
+    /**
+     * The VAT returns of the country packs (CA3, modelo 303 and 390, UStVA) can also be read by the read-only accountant.
+     */
+    public function viewReturns(User $user): bool
+    {
+        return $this->hasAccountingAccess($user, $this->tenantContext->getTenantId(), true);
+    }
+
     public function manageSettings(User $user): bool
     {
         return $this->hasAccountingAccess($user, $this->tenantContext->getTenantId());
     }
 
-    private function hasAccountingAccess(User $user, ?string $tenantId): bool
+    private function hasAccountingAccess(User $user, ?string $tenantId, bool $readOnly = false): bool
     {
         if ($tenantId === null || $tenantId === '') {
             return false;
@@ -72,7 +83,7 @@ final class VatSettlementPolicy
             return false;
         }
 
-        if (in_array($membership->role, self::ACCOUNTING_ROLES, true)) {
+        if (in_array($membership->role, self::ACCOUNTING_ROLES, true) || ($readOnly && in_array($membership->role, self::READ_ONLY_ROLES, true))) {
             return true;
         }
 

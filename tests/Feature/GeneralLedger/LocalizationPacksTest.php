@@ -118,7 +118,7 @@ test('the SII book lists sales as emitidas with R1 for credit notes and purchase
     $purchases = array_map(fn (string $line): array => str_getcsv($line, ';'), explode("\r\n", trim(ltrim($exporter->csv($register, 'purchases'), "\xEF\xBB\xBF"))));
 
     expect($sales[0])->toContain('CuotaRepercutida')
-        ->and($sales[1])->toBe(['2026', '04', 'F1', '12-04-2026', 'A-1', '01', 'S1', '21.00', '100.00', '21.00', 'Cliente SL'])
+        ->and($sales[1])->toBe(['2026', '04', 'F1', '12-04-2026', 'A-1', '01', 'S1', '21.00', '100.00', '21.00', 'Cliente SL', '', '', ''])
         ->and($sales[2][2])->toBe('R1')
         ->and($sales[2][8])->toBe('-50.00')
         ->and($purchases[0])->toContain('CuotaDeducible')

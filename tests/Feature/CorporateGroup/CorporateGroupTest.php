@@ -18,6 +18,8 @@ use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\JournalEntry;
 
+require_once __DIR__.'/../Logistics/fixtures.php';
+
 uses(RefreshDatabase::class);
 
 /**
@@ -55,7 +57,8 @@ function corpCompany(string $tenantId, string $code, string $currency = 'EUR'): 
 }
 
 beforeEach(function (): void {
-    ['tenant' => $this->tenant, 'user' => $this->owner] = logisticsTenant('Group');
+    $this->tenant = logisticsTenant('Group');
+    $this->owner = logisticsUser($this->tenant);
     app(TenantContext::class)->setTenant($this->tenant);
     $this->tenantId = (string) $this->tenant->id;
     $this->a = corpCompany($this->tenantId, 'ITA');
@@ -234,7 +237,7 @@ test('rows without company stay visible as generic data in every company', funct
 });
 
 test('the API limits companies and intercompany to what the user is granted', function (): void {
-    $accountant = logisticsUserWithRole($this->tenantId, 'viewer');
+    $accountant = logisticsUser($this->tenant, 'viewer');
     $headers = ['X-Tenant-Id' => $this->tenantId];
 
     // Owner grants the user access to company A only, as accountant.
@@ -285,7 +288,7 @@ test('the API records an intercompany operation and serves the consolidated repo
 });
 
 test('a user restricted to one company cannot run a consolidation over others', function (): void {
-    $viewer = logisticsUserWithRole($this->tenantId, 'viewer');
+    $viewer = logisticsUser($this->tenant, 'viewer');
     CompanyMember::create(['tenant_id' => $this->tenantId, 'company_id' => $this->a['company']->id, 'user_id' => $viewer->id, 'role' => 'company_admin']);
     $headers = ['X-Tenant-Id' => $this->tenantId];
 

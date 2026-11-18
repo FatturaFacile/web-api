@@ -51,6 +51,8 @@ const SCHEDULE_CLEANUPS = [
     'dms:retention' => 'guarded: statutory document types',
     'hr:purge-employee-documents' => 'guarded: payslips and contracts',
     'visitors:purge' => 'visitor data, erasable',
+    'hr:recruiting:purge-expired-candidates' => 'candidate data past the consent period, erasable (anonymisation)',
+    'platform:prune-idempotency-keys' => 'idempotency keys, technical data',
     'associations:expire-memberships' => 'import previews, memberships stay',
     'sales:expire-quotes' => 'status change only',
     'inventory:expire-lots' => 'status change only',
@@ -69,6 +71,11 @@ const SCHEDULE_NON_CLEANUPS = [
     'associations:fee-reminders', 'associations:renewal-reminders', 'associations:certificate-alerts', 'associations:volunteer-alerts',
     'customs:assessment-decisions', 'workspace:sync', 'fiscal-retail:retry-transmissions', 'subscriptions:renewals', 'subscriptions:billing-run',
     'subscriptions:revenue-recognition', 'appointments:reminders',
+    'platform:notification-digests', 'platform:notification-alert-rules', 'esm:preventive-maintenance', 'dms:anchor-preservation-chain',
+    'contracts:expire-signature-requests', 'facility:release-no-shows', 'facility:generate-inspections', 'hospitality:release-expired-blocks',
+    'practice:expire-fee-proposals', 'communication:due-campaigns', 'subscriptions:indexation',
+    'exports:run-scheduled', 'business-intelligence:run-snapshots', 'marketplace:check-health', 'supplier-portal:alert-expiring-documents',
+    'crm:process-automation', 'esm:loaners:scan-overdue', 'billing:process-recurring',
 ];
 
 beforeEach(function (): void {
@@ -85,7 +92,7 @@ afterEach(fn () => app(TenantContext::class)->clear());
  */
 function statutoryScheduleName(Event $event): string
 {
-    $name = $event instanceof CallbackEvent ? (string) $event->description : (string) preg_replace("/^.*?artisan'?\s+/", '', (string) $event->command);
+    $name = $event instanceof CallbackEvent ? (string) $event->description : (string) preg_replace("/^.*?artisan['\"]?\s+/", '', (string) $event->command);
 
     return explode(' ', $name)[0];
 }

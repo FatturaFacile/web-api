@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Treasury\Models;
 
+use App\Models\Concerns\HidesAuditColumns;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 
 final class FxPosition extends BaseEnterpriseModel
 {
+    use HidesAuditColumns;
+
     protected $table = 'fx_positions';
 
     protected function casts(): array

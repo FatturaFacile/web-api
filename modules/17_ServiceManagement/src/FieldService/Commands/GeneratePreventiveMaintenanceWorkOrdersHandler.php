@@ -139,10 +139,6 @@ final class GeneratePreventiveMaintenanceWorkOrdersHandler
     {
         $base = $asset->last_service_date ?? $contract->start_date;
 
-        if ($base === null) {
-            return null;
-        }
-
         return self::calendarDueAfter($calendar, CarbonImmutable::parse($base));
     }
 

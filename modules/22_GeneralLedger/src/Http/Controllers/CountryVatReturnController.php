@@ -110,7 +110,7 @@ final class CountryVatReturnController extends Controller
     ])]
     public function modelo390(Request $request): JsonResponse
     {
-        $this->authorize('viewRegisters', VatSettlement::class);
+        $this->authorize('viewReturns', VatSettlement::class);
         $validated = $request->validate(['year' => ['required', 'integer', 'min:2000', 'max:2100']]);
 
         return response()->json(['data' => $this->returns->modelo390($this->tenantId(), (int) $validated['year'])]);
@@ -162,7 +162,7 @@ final class CountryVatReturnController extends Controller
     ])]
     public function datev(Request $request, DatevExporter $exporter): Response
     {
-        $this->authorize('viewRegisters', VatSettlement::class);
+        $this->authorize('viewReturns', VatSettlement::class);
         $validated = $request->validate([
             'from' => ['required', 'date_format:Y-m-d'],
             'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from'],
@@ -206,7 +206,7 @@ final class CountryVatReturnController extends Controller
      */
     private function period(Request $request, bool $withCredit): array
     {
-        $this->authorize('viewRegisters', VatSettlement::class);
+        $this->authorize('viewReturns', VatSettlement::class);
         $validated = $request->validate([
             'from' => ['required', 'date_format:Y-m-d'],
             'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from'],

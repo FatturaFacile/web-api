@@ -8,6 +8,7 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
@@ -24,6 +25,16 @@ use Modules\Workflow\Models\WorkflowInstance;
  * @property bool $is_invoiced
  * @property string|null $invoice_id
  * @property string|null $customer_id
+ * @property Carbon|null $scheduled_start
+ * @property Carbon|null $scheduled_end
+ * @property Carbon|null $actual_start
+ * @property Carbon|null $actual_end
+ * @property Carbon|null $actual_arrival
+ * @property Carbon|null $signed_at
+ * @property array<string, mixed>|null $location
+ * @property array<string, mixed>|null $metadata
+ * @property array<int|string, mixed>|null $required_skills
+ * @property array<int|string, array{product_id: string, quantity: float|int|string}>|null $required_parts
  */
 final class WorkOrder extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {

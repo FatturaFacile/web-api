@@ -47,7 +47,7 @@ final class MaintenanceContractResource extends JsonResource
             'customer_id' => (string) $this->customer_id,
             'contract_number' => (string) $this->contract_number,
             'title' => (string) $this->title,
-            'start_date' => $this->start_date?->toDateString(),
+            'start_date' => $this->start_date->toDateString(),
             'end_date' => $this->end_date?->toDateString(),
             'status' => (string) $this->status,
             'coverage_type' => (string) $this->coverage_type,

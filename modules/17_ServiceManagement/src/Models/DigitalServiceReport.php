@@ -6,6 +6,7 @@ namespace Modules\ServiceManagement\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * The digital service report of a field work order (GH-202): what was done on site, the metrics that drive billing and
@@ -22,6 +23,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $signature_sha256_hash
  * @property string|null $pdf_path
  * @property string|null $invoice_id
+ * @property Carbon $signed_at
+ * @property array<int|string, mixed>|null $checklist_json
+ * @property array<int|string, mixed>|null $photo_attachments_json
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $emailed_at
  */
 final class DigitalServiceReport extends BaseEnterpriseModel
 {

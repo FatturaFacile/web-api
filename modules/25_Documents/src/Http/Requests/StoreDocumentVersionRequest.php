@@ -14,7 +14,10 @@ final class StoreDocumentVersionRequest extends FormRequest
 {
     use ValidatesUploadContentLength;
 
-    protected int $maxContentLengthBytes = 25 * 1024 * 1024;
+    protected function maxContentLengthBytes(): int
+    {
+        return 25 * 1024 * 1024;
+    }
 
     /**
      * Access is decided by the module.access middleware.

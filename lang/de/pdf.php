@@ -121,6 +121,26 @@ return [
         'license_plate' => 'Kontrollschild',
         'departure' => 'Abgang',
         'receipt' => 'Ware in gutem Zustand erhalten',
+        'carriage_terms' => 'Lieferbedingungen für den Transport',
+        'transport_by' => 'Transport organisiert durch',
+        'carrier_vat' => 'MWST-Nr. des Spediteurs',
+        'carrier_uid' => 'UID des Spediteurs',
+        'incoterms' => 'Incoterms',
+        'net_weight' => 'Nettogewicht (kg)',
+        'volume' => 'Volumen (m3)',
+        'sign_sender' => 'Unterschrift des Absenders',
+        'sign_driver' => 'Unterschrift des Fahrers',
+        'sign_carrier' => 'Unterschrift des Spediteurs',
+        'carriage' => [
+            'free' => 'Franko',
+            'collect' => 'Unfrei',
+            'free_with_charge' => 'Franko mit Rückbelastung',
+        ],
+        'by' => [
+            'sender' => 'Absender',
+            'recipient' => 'Empfänger',
+            'carrier' => 'Spediteur',
+        ],
     ],
 
     'work_order' => [

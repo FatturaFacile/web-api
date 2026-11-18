@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Modules\Projects\Models\Project;
@@ -20,7 +21,7 @@ class ProjectTimesheetFactory extends Factory
 
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? (string) Str::uuid7();
+        $tenantId = (app(TenantContext::class)->getTenantId() ?? Tenant::first()?->id) ?? (string) Str::uuid7();
         $userId = User::first()?->id ?? (string) Str::uuid7();
         $hours = fake()->randomFloat(2, 4, 8);
         $costRate = 45.00;

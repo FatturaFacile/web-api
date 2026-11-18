@@ -156,6 +156,19 @@ function writeRoutesWithoutModule(): array
         'POST api/v1/logistics/consignment/vendor-receipts' => 'logistics.can permission',
         'POST api/v1/logistics/consignment/agreements' => 'logistics.can permission',
         'POST api/v1/logistics/consignment/agreements/{id}/terminate' => 'logistics.can permission',
+        // Corporate group: access is granted per company by CorporatePermissions (company roles of the group), which
+        // every action checks through authorizeCompany, so a tenant-wide module rule would not fit.
+        'POST api/v1/corporate-group/companies' => 'CorporatePermissions, per company',
+        'PUT api/v1/corporate-group/companies/{id}' => 'CorporatePermissions, per company',
+        'DELETE api/v1/corporate-group/companies/{id}' => 'CorporatePermissions, per company',
+        'POST api/v1/corporate-group/companies/{id}/sites' => 'CorporatePermissions, per company',
+        'DELETE api/v1/corporate-group/companies/{id}/sites/{siteId}' => 'CorporatePermissions, per company',
+        'POST api/v1/corporate-group/companies/{id}/members' => 'CorporatePermissions, per company',
+        'DELETE api/v1/corporate-group/companies/{id}/members/{userId}' => 'CorporatePermissions, per company',
+        'PUT api/v1/corporate-group/companies/{id}/accounting-settings' => 'CorporatePermissions, per company',
+        'POST api/v1/corporate-group/intercompany/transactions' => 'CorporatePermissions, per company',
+        'POST api/v1/corporate-group/intercompany/transactions/{id}/cancel' => 'CorporatePermissions, per company',
+        'POST api/v1/corporate-group/consolidation/runs' => 'CorporatePermissions, per company',
         // Platform administration, outside any tenant.
         'POST api/v1/admin/tenant-access-requests/{id}/approve' => 'platform.admin',
         'POST api/v1/admin/tenant-access-requests/{id}/move' => 'platform.admin',

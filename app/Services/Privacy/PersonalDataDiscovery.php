@@ -20,7 +20,7 @@ final class PersonalDataDiscovery
     ];
 
     /** Suffixes and prefixes of columns that mention a token without holding personal data (keys, flags, timestamps, rates). */
-    private const array IgnoredSuffixes = ['_id', '_at', '_prefix', '_percent', '_token', '_count', '_enabled'];
+    private const array IgnoredSuffixes = ['_id', '_at', '_prefix', '_percent', '_token', '_count', '_enabled', '_opens', '_clicks'];
 
     private const array IgnoredPrefixes = ['requires_', 'is_', 'has_', 'subject_to_'];
 

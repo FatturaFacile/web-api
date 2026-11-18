@@ -122,7 +122,7 @@ final class PriceResolutionEngine
 
         [$base, $tier, $list, $item, $special] = $this->basePrice($product, $customer, $currency, $channel, $date, $quantity, $lists, $trace);
 
-        $cascade = DiscountCascade::parse($special?->discount_cascade ?? $item?->discount_cascade, (string) ($special?->discount_mode ?? $item?->discount_mode ?? DiscountCascade::Multiplicative));
+        $cascade = DiscountCascade::parse($special->discount_cascade ?? $item?->discount_cascade, (string) ($special->discount_mode ?? $item->discount_mode ?? DiscountCascade::Multiplicative));
         $afterList = $cascade->apply($base);
 
         if (! $cascade->isEmpty()) {

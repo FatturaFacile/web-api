@@ -95,7 +95,7 @@ final class IntrastatSourceCollector
                 continue;
             }
 
-            $document = ['type' => 'invoice', 'id' => (string) $invoice->id, 'number' => $invoice->invoice_number, 'date' => $invoice->date?->toDateString()];
+            $document = ['type' => 'invoice', 'id' => (string) $invoice->id, 'number' => $invoice->invoice_number, 'date' => $invoice->date->toDateString()];
 
             $correction = null;
 
@@ -198,7 +198,7 @@ final class IntrastatSourceCollector
                 continue;
             }
 
-            $document = ['type' => 'passive_invoice', 'id' => (string) $invoice->id, 'number' => $invoice->invoice_number, 'date' => $invoice->date?->toDateString()];
+            $document = ['type' => 'passive_invoice', 'id' => (string) $invoice->id, 'number' => $invoice->invoice_number, 'date' => $invoice->date->toDateString()];
 
             if ($invoice->document_type === TipoDocumento::Td04->value) {
                 $result['skipped'][] = ['document' => $document, 'reason' => 'credit_note', 'detail' => 'A credit note corrects an earlier period: enter it as a correction row (section 2 or 4).'];

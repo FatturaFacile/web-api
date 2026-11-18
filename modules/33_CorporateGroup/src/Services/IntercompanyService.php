@@ -67,8 +67,8 @@ final class IntercompanyService
             $tenantId, $data, $seller, $buyer, $sellerSettings, $buyerSettings, $net, $tax, $gross, $currency, $date, $description, $lines, $userId
         ): IntercompanyTransaction {
             $docs = [];
-            $buildDocument = function (Company $company, Company $counterparty, string $side, string $type, string $series) use (
-                $tenantId, $net, $tax, $gross, $currency, $date, $lines, &$docs, &$transaction
+            $buildDocument = function (IntercompanyTransaction $transaction, Company $company, Company $counterparty, string $side, string $type, string $series) use (
+                $tenantId, $net, $tax, $gross, $currency, $date, $lines, &$docs
             ): IntercompanyDocument {
                 $doc = IntercompanyDocument::create([
                     'tenant_id' => $tenantId,
@@ -109,10 +109,10 @@ final class IntercompanyService
             ]);
 
             // Seller side: sales order and sales invoice; buyer side: the mirrored purchase documents.
-            $buildDocument($seller, $buyer, 'seller', 'sales_order', 'ICSO');
-            $sellerInvoice = $buildDocument($seller, $buyer, 'seller', 'sales_invoice', 'ICSI');
-            $buildDocument($buyer, $seller, 'buyer', 'purchase_order', 'ICPO');
-            $buyerInvoice = $buildDocument($buyer, $seller, 'buyer', 'purchase_invoice', 'ICPI');
+            $buildDocument($transaction, $seller, $buyer, 'seller', 'sales_order', 'ICSO');
+            $sellerInvoice = $buildDocument($transaction, $seller, $buyer, 'seller', 'sales_invoice', 'ICSI');
+            $buildDocument($transaction, $buyer, $seller, 'buyer', 'purchase_order', 'ICPO');
+            $buyerInvoice = $buildDocument($transaction, $buyer, $seller, 'buyer', 'purchase_invoice', 'ICPI');
 
             if (($data['reference'] ?? '') === '') {
                 $transaction->reference = (string) $sellerInvoice->document_number;

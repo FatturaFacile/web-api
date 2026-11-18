@@ -20,19 +20,22 @@ use App\Services\Backup\TenantRestoreService;
 use Enterprise\AuditLedger\Models\AuditLedgerArchiveEntry;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Enterprise\AuditLedger\Services\AuditChainVerificationService;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\GeneralLedger\Models\JournalEntry;
+use Tests\Support\WithoutSeeding;
 
-uses(RefreshDatabase::class);
+uses(WithoutSeeding::class, RefreshDatabase::class);
 
 beforeEach(function (): void {
     Storage::fake('private');
@@ -309,6 +312,9 @@ test('an archive of another tenant is refused and nothing changes', function ():
 });
 
 test('missing, incomplete or altered manifests and data are refused before anything is touched', function (): void {
+    // Nineteen uploads in a row: the per-minute limit of the sensitive system endpoints is not what is under test here.
+    RateLimiter::for('sensitive-system', fn (): Limit => Limit::none());
+
     trSeed($this->tenant, 'Alpha');
     $backup = trBackup($this->tenant);
     $before = Contact::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->count();

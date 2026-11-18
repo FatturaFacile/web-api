@@ -18,7 +18,10 @@ $createUploadRequest = function (): FormRequest {
     {
         use ValidatesUploadContentLength;
 
-        public int $maxContentLengthBytes = 5 * 1024 * 1024; // 5 MB
+        protected function maxContentLengthBytes(): int
+        {
+            return 5 * 1024 * 1024; // 5 MB
+        }
 
         public function triggerValidation(): void
         {
@@ -63,7 +66,7 @@ test('validates upload content length passes when payload size is within limits'
     expect(true)->toBeTrue();
 });
 
-test('validates upload content length defaults to 20MB when property is not overridden', function () use ($createDefaultUploadRequest): void {
+test('validates upload content length defaults to 20MB when the method is not overridden', function () use ($createDefaultUploadRequest): void {
     $request = $createDefaultUploadRequest();
 
     $request->server->set('CONTENT_LENGTH', (string) (15 * 1024 * 1024));

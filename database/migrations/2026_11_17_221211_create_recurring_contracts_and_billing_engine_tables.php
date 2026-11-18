@@ -59,7 +59,7 @@ return new class extends Migration
             $table->decimal('quantity', 15, 4)->default(1);
             $table->decimal('unit_price', 15, 4)->default(0);
             $table->decimal('discount_percent', 5, 2)->default(0);
-            $table->foreignUuid('vat_rate_id')->nullable()->constrained('vat_rates')->nullOnDelete();
+            $table->foreignUuid('vat_rate_id')->nullable()->constrained('vat_codes')->nullOnDelete();
             $table->decimal('tax_rate', 5, 2)->default(0);
             $table->string('proration_mode', 32)->default('none'); // none, daily_exact, thirty_day_month
             $table->timestamps();

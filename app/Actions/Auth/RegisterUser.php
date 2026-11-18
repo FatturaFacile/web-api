@@ -83,7 +83,7 @@ class RegisterUser
             ])->save();
 
             TenantAccessRequest::updateOrCreate(['user_id' => $user->id], [
-                'tenant_id' => TaxIdentifier::findTenant($data['tax_id'])?->id,
+                'tenant_id' => TaxIdentifier::findTenant(TaxIdentifier::normalize($data['tax_id'], $data['country']) ?? $data['tax_id'], $data['country'])?->id,
                 'requested_company_name' => $data['company_name'],
                 'requested_tax_id' => $data['tax_id'],
                 'requested_country' => $data['country'],

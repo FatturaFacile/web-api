@@ -31,6 +31,12 @@ abstract class TestCase extends BaseTestCase
     public function refreshDatabase()
     {
         if (in_array(DatabaseTransactions::class, class_uses_recursive(static::class), true)) {
+            // An in-memory SQLite database is new for every test, so a transaction-only test finds no schema: build it
+            // (and seed it) eagerly, before the transaction starts. A persistent database (file, pgsql CI) is left alone.
+            if (! Schema::hasTable('tenants')) {
+                $this->artisan('migrate:fresh', $this->migrateFreshUsing());
+            }
+
             return;
         }
 

@@ -13,6 +13,7 @@ use Modules\HumanResources\Models\JobOffer;
 use function Tests\Feature\HumanResources\Recruiting\careersSettings;
 use function Tests\Feature\HumanResources\Recruiting\publishedOpening;
 use function Tests\Feature\HumanResources\Recruiting\recruiterOfNewTenant;
+use function Tests\Feature\HumanResources\Recruiting\recruitingActAs;
 use function Tests\Feature\HumanResources\Recruiting\useTenant;
 
 require_once __DIR__.'/RecruitingTestSupport.php';

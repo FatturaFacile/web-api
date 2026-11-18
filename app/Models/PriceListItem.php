@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $tenant_id
+ */
 class PriceListItem extends Model
 {
     use HasFactory, HasUuids, StampsTenantFromParent;

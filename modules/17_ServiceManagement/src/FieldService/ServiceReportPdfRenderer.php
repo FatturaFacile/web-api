@@ -45,7 +45,7 @@ final readonly class ServiceReportPdfRenderer
             'billing' => $this->billing->breakdown($report),
             'customerName' => $customer === null ? '-' : (string) ($customer->company_name ?: trim(($customer->first_name ?? '').' '.($customer->last_name ?? ''))),
             'technicianName' => $technician === null ? '-' : (string) $technician->name,
-            'siteAddress' => (string) ($passport?->site_address ?? ($workOrder->location['address'] ?? '-')),
+            'siteAddress' => (string) ($passport->site_address ?? ($workOrder->location['address'] ?? '-')),
             'equipmentLabel' => $passport === null ? '-' : (string) $passport->serial_number,
         ];
 

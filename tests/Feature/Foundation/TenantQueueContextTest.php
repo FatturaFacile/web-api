@@ -15,8 +15,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Tests\Support\WithoutSeeding;
 
-uses(RefreshDatabase::class);
+uses(WithoutSeeding::class, RefreshDatabase::class);
 
 final class CountContactsProbeJob implements ShouldQueue
 {

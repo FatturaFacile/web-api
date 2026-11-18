@@ -79,6 +79,8 @@ final class InventoryValuationFixtures
     {
         app(TenantContext::class)->setTenant($tenant);
         Sanctum::actingAs($user);
+        // The active tenant of an HTTP request is the one named by the header, so a user outside it is refused.
+        test()->withHeader('X-Tenant-Id', (string) $tenant->id);
     }
 
     /**

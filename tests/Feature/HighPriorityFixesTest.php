@@ -23,8 +23,9 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\WithoutSeeding;
 
-uses(RefreshDatabase::class);
+uses(WithoutSeeding::class, RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::create([

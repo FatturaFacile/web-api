@@ -14,7 +14,10 @@ class ImportBankStatementRequest extends FormRequest
 {
     use ValidatesUploadContentLength;
 
-    protected int $maxContentLengthBytes = 10 * 1024 * 1024;
+    protected function maxContentLengthBytes(): int
+    {
+        return 10 * 1024 * 1024;
+    }
 
     public function authorize(): bool
     {

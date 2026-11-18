@@ -46,6 +46,6 @@ final class PricingPolicy
      */
     public function approveMargin(User $user, ?string $requiredRole): bool
     {
-        return $this->hasRoleOrPermission($user, array_values(array_filter(['owner', 'admin', $requiredRole])), ['pricing.approve']);
+        return $this->hasRoleOrPermission($user, array_filter(['owner', 'admin', $requiredRole]), ['pricing.approve']);
     }
 }

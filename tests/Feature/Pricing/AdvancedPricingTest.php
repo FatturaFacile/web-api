@@ -40,7 +40,7 @@ function pricingApi(): mixed
     return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
-function pricingList(array $attributes = [], array $items = []): PriceList
+function advancedPricingList(array $attributes = [], array $items = []): PriceList
 {
     $list = PriceList::create(array_merge(['tenant_id' => test()->tenant->id, 'name' => 'List '.Str::random(5), 'currency' => 'EUR', 'is_active' => true], $attributes));
 
@@ -79,16 +79,16 @@ test('the price resolves through the four tiers in order', function (): void {
     expect($line['net_unit_price'])->toBe('100.0000')->and($line['price_source'])->toBe('base_price');
 
     // Tier 4: the default price list.
-    pricingList(['is_default' => true], [['price' => 95]]);
+    advancedPricingList(['is_default' => true], [['price' => 95]]);
     expect(pricingResolve()['lines'][0]['net_unit_price'])->toBe('95.0000');
 
     // Tier 3: the list of the sales channel beats the default list.
-    pricingList(['channel' => 'B2B', 'priority' => 5], [['price' => 90]]);
+    advancedPricingList(['channel' => 'B2B', 'priority' => 5], [['price' => 90]]);
     $line = pricingResolve(['channel' => 'B2B'])['lines'][0];
     expect($line['net_unit_price'])->toBe('90.0000')->and($line['price_source'])->toBe('channel_price_list');
 
     // Tier 2: the list assigned to the customer beats the channel list.
-    $customerList = pricingList([], [['price' => 80]]);
+    $customerList = advancedPricingList([], [['price' => 80]]);
     $this->contact->update(['price_list_id' => $customerList->id]);
     $line = pricingResolve(['channel' => 'B2B', 'customer_id' => $this->contact->id])['lines'][0];
     expect($line['net_unit_price'])->toBe('80.0000')->and($line['price_source'])->toBe('customer_price_list');
@@ -107,7 +107,7 @@ test('the price resolves through the four tiers in order', function (): void {
 });
 
 test('item cascades, manual cascades and quantity tiers set the net price', function (): void {
-    pricingList(['is_default' => true], [
+    advancedPricingList(['is_default' => true], [
         ['price' => 100, 'discount_cascade' => '20+5', 'discount_mode' => 'MULTIPLICATIVE'],
         ['price' => 100, 'min_quantity' => 10, 'max_quantity' => 49, 'discount_cascade' => '20+5', 'discount_mode' => 'ADDITIVE'],
         ['price' => 90, 'min_quantity' => 50],
@@ -128,7 +128,7 @@ test('item cascades, manual cascades and quantity tiers set the net price', func
 
 test('Swiss 0.05 rounding applies to a CHF price list and reports the delta', function (): void {
     $chfProduct = Product::create(['tenant_id' => $this->tenant->id, 'sku' => 'CHF-1', 'name' => 'Swiss item', 'cost_price' => 5, 'sale_price' => 19.99, 'tax_rate' => 8]);
-    pricingList(['currency' => 'CHF', 'is_default' => true, 'rounding_mode' => 'SWISS_005'], [['product_id' => $chfProduct->id, 'price' => 19.99, 'discount_cascade' => '3']]);
+    advancedPricingList(['currency' => 'CHF', 'is_default' => true, 'rounding_mode' => 'SWISS_005'], [['product_id' => $chfProduct->id, 'price' => 19.99, 'discount_cascade' => '3']]);
 
     $line = pricingResolve(['currency' => 'CHF'], ['product_id' => $chfProduct->id])['lines'][0];
 
@@ -229,7 +229,7 @@ test('a margin below the policy blocks the line, a zero price is handled and a s
 });
 
 test('price changes are recorded in an immutable history', function (): void {
-    $list = pricingList(['is_default' => true]);
+    $list = advancedPricingList(['is_default' => true]);
 
     $item = pricingApi()->postJson("/api/v1/pricing/price-lists/{$list->id}/items", [
         'product_id' => $this->product->id, 'price' => 100, 'discount_cascade' => '10', 'reason' => 'Initial price',

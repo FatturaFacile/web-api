@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Privacy;
 
+use App\Models\Access\TenantInvitation;
 use App\Models\Appointment;
 use App\Models\AuditLog;
 use App\Models\BankReconciliationRule;
@@ -11,6 +12,7 @@ use App\Models\BankStatementLine;
 use App\Models\ConstructionSite;
 use App\Models\Contact;
 use App\Models\ContactAddress;
+use App\Models\ContactPerson;
 use App\Models\DeliveryNote;
 use App\Models\EmployeeProfile;
 use App\Models\Invoice;
@@ -22,6 +24,7 @@ use App\Models\SalesOrder;
 use App\Models\ServiceReport;
 use App\Models\ServiceReportSignature;
 use App\Models\User;
+use App\Models\VatValidationLog;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use InvalidArgumentException;
@@ -31,14 +34,24 @@ use Modules\Associations\Models\PrivacySubject;
 use Modules\Associations\Models\Sponsor;
 use Modules\Childcare\Models\Child;
 use Modules\Childcare\Models\ReferencePerson;
+use Modules\Communication\Models\CampaignRecipient;
+use Modules\Communication\Models\CommunicationConversation;
+use Modules\Communication\Models\ConversationMessage;
 use Modules\Contracts\Models\ContractParty;
+use Modules\Contracts\Models\ContractSigner;
 use Modules\CRM\Models\Consent;
 use Modules\CRM\Models\Lead;
+use Modules\CRM\Models\Partner;
 use Modules\DocumentTrust\Models\PreservationAccessLog;
+use Modules\Events\Models\EventRegistration;
 use Modules\Fleet\Models\FleetVehicle;
 use Modules\Fleet\Models\FleetVehicleAssignment;
+use Modules\GeneralLedger\Models\Us1099Recipient;
 use Modules\HealthExpenses\Models\HealthExpense;
 use Modules\Hospitality\Models\Reservation;
+use Modules\Hospitality\Models\Stay;
+use Modules\HumanResources\Models\CandidateApplication;
+use Modules\HumanResources\Models\CandidateEmail;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\ExitInterview;
 use Modules\HumanResources\Models\InterviewNote;
@@ -55,6 +68,8 @@ use Modules\Payroll\Models\Payslip;
 use Modules\Procurement\Models\Supplier;
 use Modules\Procurement\Models\SupplierContact;
 use Modules\ServiceManagement\Models\CSATSurvey;
+use Modules\ServiceManagement\Models\SerializedEquipmentPassport;
+use Modules\ServiceManagement\Models\ServiceContract;
 use Modules\ServiceManagement\Models\ServiceTechnician;
 use Modules\ServiceManagement\Models\SupportMailboxMessage;
 use Modules\ServiceManagement\Models\TicketMessage;
@@ -220,6 +235,8 @@ final class PersonalDataRegistry
             'health_expense_settings' => 'Tax code of the owner of the company.',
             'sso_providers' => 'Configuration of the identity provider of the company: the allowed email domains are company data, not data of data subjects.',
             'saml_providers' => 'Configuration of the identity provider of the company: the allowed email domains and the attribute names are company data, not data of data subjects.',
+            'companies' => 'Legal entities of the corporate group (code, legal name, tax code): companies, not data subjects.',
+            'company_sites' => 'Premises of the companies of the group.',
         ];
     }
 
@@ -244,7 +261,7 @@ final class PersonalDataRegistry
             new PersonalDataEntry('invoices', [Invoice::class, SalesInvoice::class], 'Invoices', 'financial', ['bank_iban'], $fiscal, $commercialNote, ['contact' => 'contact_id']),
             new PersonalDataEntry('invoice_qr_bill_data', [InvoiceQrBillData::class], 'QR bill data of invoices', 'financial', ['qr_iban'], $fiscal, $commercialNote, [], null, false, ['column' => 'invoice_id', 'table' => 'invoices', 'parentColumn' => 'id']),
             new PersonalDataEntry('sales_orders', [SalesOrder::class, \Modules\Invoicing\Models\SalesOrder::class], 'Sales orders', 'contact', ['billing_address', 'shipping_address'], $fiscal, $commercialNote, ['contact' => 'contact_id']),
-            new PersonalDataEntry('delivery_notes', [DeliveryNote::class, SalesDeliveryNote::class], 'Delivery notes', 'contact', ['shipping_address', 'carrier_license_plate'], $fiscal, $commercialNote, ['contact' => 'contact_id']),
+            new PersonalDataEntry('delivery_notes', [DeliveryNote::class, SalesDeliveryNote::class], 'Delivery notes', 'contact', ['shipping_address', 'sender_address', 'carrier_license_plate'], $fiscal, $commercialNote, ['contact' => 'contact_id']),
             new PersonalDataEntry('purchase_orders', [PurchaseOrder::class, \Modules\Procurement\Models\PurchaseOrder::class], 'Purchase orders', 'contact', ['shipping_address'], $fiscal, $commercialNote),
             new PersonalDataEntry('service_reports', [ServiceReport::class], 'Service reports', 'contact', ['site_address'], $fiscal, $commercialNote, ['contact' => 'contact_id']),
             new PersonalDataEntry('service_report_signatures', [ServiceReportSignature::class], 'Signatures of service reports', 'identity', ['signer_email', 'ip_address'], $evidence, $evidenceNote),
@@ -276,7 +293,7 @@ final class PersonalDataRegistry
             new PersonalDataEntry('approval_decisions', [ApprovalDecision::class], 'Approval decisions', 'technical', ['ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('workflow_audit_entries', [WorkflowAuditEntry::class], 'Workflow audit entries', 'technical', ['ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('crm_consents', [Consent::class], 'CRM consents', 'contact', ['ip_address'], $evidence, 'Consent history is the proof required by art. 7(1) GDPR: kept; the IP address is pseudonymised on erasure.', ['contact' => 'contact_id', 'lead' => 'lead_id']),
-            new PersonalDataEntry('crm_leads', [Lead::class], 'CRM leads', 'identity', ['first_name', 'last_name', 'email', 'phone', 'company_name'], $erasable, 'Erased on request; a lead converted to a contact is erased through the contact.', ['lead' => 'id'], 'updated_at'),
+            new PersonalDataEntry('crm_leads', [Lead::class], 'CRM leads', 'identity', ['first_name', 'last_name', 'email', 'phone', 'phone_e164', 'company_name'], $erasable, 'Erased on request; a lead converted to a contact is erased through the contact.', ['lead' => 'id'], 'updated_at'),
             new PersonalDataEntry('suppliers', [Supplier::class], 'Suppliers', 'identity', ['fiscal_code'], $fiscal, $commercialNote),
             new PersonalDataEntry('supplier_contacts', [SupplierContact::class], 'Supplier contact persons', 'contact', ['name', 'email', 'phone'], $erasable, $operationalNote, [], 'updated_at'),
             new PersonalDataEntry('safety_data_sheet_deliveries', [SafetyDataSheetDelivery::class], 'Safety data sheet deliveries', 'contact', ['email'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
@@ -303,6 +320,21 @@ final class PersonalDataRegistry
             new PersonalDataEntry('hosp_reservations', [Reservation::class], 'Hospitality reservations', 'contact', ['guest_phone', 'guest_email'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('visitors', [Visitor::class], 'Visitors', 'identity', ['first_name', 'last_name', 'company_name', 'email', 'phone', 'document_number'], $erasable, 'Erased by the visitors purge job at the end of the retention period, and by retention policy.', ['contact' => 'contact_id', 'visitor' => 'id'], 'created_at'),
             new PersonalDataEntry('sales_representatives', [SalesRepresentative::class], 'Sales representatives', 'identity', ['email', 'phone'], $employment, 'Staff or agent data.'),
+            new PersonalDataEntry('tenant_invitations', [TenantInvitation::class], 'Invitations to join a company', 'contact', ['email'], $erasable, 'Operational data: the invited address is erased on request or by retention policy.', [], 'created_at'),
+            new PersonalDataEntry('contact_persons', [ContactPerson::class], 'Contact persons of customers', 'contact', ['first_name', 'last_name', 'email', 'phone', 'mobile'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'updated_at'),
+            new PersonalDataEntry('vat_validation_logs', [VatValidationLog::class], 'VAT number validation log', 'contact', ['trader_address'], $evidence, 'Proof of the VAT number check done before a cross-border supply: kept as evidence, never rewritten.', ['contact' => 'contact_id']),
+            new PersonalDataEntry('crm_partners', [Partner::class], 'CRM partners', 'contact', ['contact_email'], $erasable, $manualNote),
+            new PersonalDataEntry('esm_equipment_passports', [SerializedEquipmentPassport::class], 'Equipment passports', 'location', ['site_address'], $fiscal, $commercialNote),
+            new PersonalDataEntry('esm_service_contracts', [ServiceContract::class], 'Service contracts', 'contact', ['report_email'], $fiscal, $commercialNote),
+            new PersonalDataEntry('rec_candidate_applications', [CandidateApplication::class], 'Candidate applications', 'hr', ['first_name', 'last_name', 'email', 'phone'], $erasable, 'Erased by the recruiting purge job at the end of the consent period (anonymisation), not by the automated request workflow.'),
+            new PersonalDataEntry('rec_candidate_emails', [CandidateEmail::class], 'Emails sent to candidates', 'hr', ['recipient_email'], $erasable, $operationalNote, [], 'created_at'),
+            new PersonalDataEntry('us_1099_recipients', [Us1099Recipient::class], 'US 1099 recipients', 'financial', ['address_line'], $fiscal, $commercialNote, ['contact' => 'contact_id']),
+            new PersonalDataEntry('comm_campaign_recipients', [CampaignRecipient::class], 'Campaign recipients', 'contact', ['address'], $erasable, $operationalNote, ['contact' => 'contact_id', 'lead' => 'lead_id'], 'created_at'),
+            new PersonalDataEntry('comm_conversations', [CommunicationConversation::class], 'Conversations of the shared inbox', 'contact', ['counterparty_address'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
+            new PersonalDataEntry('comm_conversation_messages', [ConversationMessage::class], 'Messages of the shared inbox', 'contact', ['sender_address'], $erasable, $operationalNote, [], 'occurred_at'),
+            new PersonalDataEntry('contract_signers', [ContractSigner::class], 'Signers of contracts', 'contact', ['email'], $fiscal, 'Contract record kept for the limitation period.'),
+            new PersonalDataEntry('hosp_stays', [Stay::class], 'Hospitality stays', 'contact', ['guest_email'], $erasable, $operationalNote, [], 'created_at'),
+            new PersonalDataEntry('evt_registrations', [EventRegistration::class], 'Event registrations', 'contact', ['attendee_email'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('users', [User::class], 'User accounts', 'identity', ['name', 'first_name', 'last_name', 'email', 'phone'], $erasable, 'Membership removed per company; the global profile is anonymised only without other memberships and without employment records. Audit trails keep the user id only.', ['user' => 'id'], null, false, ['column' => 'id', 'table' => 'tenant_user', 'parentColumn' => 'user_id']),
         ];
 

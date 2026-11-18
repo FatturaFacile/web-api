@@ -38,6 +38,8 @@ use Illuminate\Support\Carbon;
  * @property string $asset_status
  * @property Carbon|null $commissioning_date
  * @property string|null $installation_site
+ * @property Carbon|null $last_service_date
+ * @property Carbon|null $next_scheduled_service_date
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
