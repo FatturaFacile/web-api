@@ -53,6 +53,14 @@ final class SerializedEquipmentPassport extends BaseEnterpriseModel
             'warranty_expiry_date' => 'date',
             'contract_warranty_months' => 'integer',
             'commissioning_date' => 'date',
+            'current_operating_hours' => 'decimal:2',
+            'current_cycle_count' => 'integer',
+            'last_service_operating_hours' => 'decimal:2',
+            'last_service_cycle_count' => 'integer',
+            'last_service_date' => 'date',
+            'next_scheduled_service_date' => 'date',
+            'site_latitude' => 'float',
+            'site_longitude' => 'float',
         ];
     }
 

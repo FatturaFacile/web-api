@@ -43,6 +43,7 @@ use Modules\Platform\Jobs\EvaluateNotificationAlertRulesJob;
 use Modules\PracticeManagement\Jobs\ExpireFeeProposalsJob;
 use Modules\Procurement\Jobs\CheckExpiringSupplierContractsJob;
 use Modules\Procurement\Jobs\EvaluateSupplierOtifScoresJob;
+use Modules\ServiceManagement\Jobs\GeneratePreventiveMaintenanceWorkOrdersJob;
 use Modules\ServiceManagement\Jobs\PollSupportMailboxesJob;
 use Modules\ServiceManagement\Jobs\ProcessServiceContractRenewalsJob;
 use Modules\ServiceManagement\Jobs\ScanSLABreachesJob;
@@ -115,6 +116,7 @@ $forEachTenant('workflow:prune-tokens', static fn (): object => new PruneExpired
 $forEachTenant('crm:activity-reminders', static fn (Tenant $tenant): object => new SendCrmActivityRemindersJob($tenant->id))->everyFiveMinutes();
 $forEachTenant('esm:sla-breaches', static fn (Tenant $tenant): object => new ScanSLABreachesJob($tenant->id))->everyFiveMinutes();
 $forEachTenant('esm:support-mailboxes', static fn (Tenant $tenant): object => new PollSupportMailboxesJob($tenant->id))->everyTwoMinutes();
+$forEachTenant('esm:preventive-maintenance', static fn (Tenant $tenant): object => new GeneratePreventiveMaintenanceWorkOrdersJob($tenant->id))->dailyAt('04:45');
 $forEachTenant('esm:contract-renewals', static fn (Tenant $tenant): object => new ProcessServiceContractRenewalsJob($tenant->id))->dailyAt('05:00');
 $forEachTenant('inventory:expire-reservations', static fn (): object => new ExpireStaleReservationsJob)->hourly();
 $forEachTenant('inventory:reorder-rules', static fn (Tenant $tenant): object => new EvaluateWarehouseReorderRulesJob($tenant->id))->hourly();

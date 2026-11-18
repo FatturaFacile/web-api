@@ -71,6 +71,9 @@ final class ServiceContract extends BaseEnterpriseModel implements LockableByWor
             'low_balance_threshold_percent' => 'integer',
             'last_residual_report_at' => 'datetime',
             'low_balance_notified_at' => 'datetime',
+            'preventive_frequency_rule' => 'array',
+            'callout_fee_amount' => 'decimal:2',
+            'hourly_labor_rate' => 'decimal:2',
         ];
     }
 

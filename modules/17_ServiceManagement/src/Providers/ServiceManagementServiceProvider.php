@@ -15,6 +15,7 @@ use Modules\HumanResources\Events\EmployeeTerminatedEvent;
 use Modules\HumanResources\Events\LeaveApprovedEvent;
 use Modules\Invoicing\Events\SalesQuoteAcceptedEvent;
 use Modules\Projects\Events\ProjectClosureReadyEvent;
+use Modules\ServiceManagement\Console\GeneratePreventiveWorkOrdersCommand;
 use Modules\ServiceManagement\Console\ScanOverdueLoanersCommand;
 use Modules\ServiceManagement\Contracts\EquipmentPassportServiceInterface;
 use Modules\ServiceManagement\Contracts\IncidentManagementServiceInterface;
@@ -126,6 +127,8 @@ final class ServiceManagementServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->loadViewsFrom(__DIR__.'/../../resources/views', 'field-service');
+
         $this->app->booted(function (): void {
             $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
         });
@@ -142,6 +145,7 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 ScanOverdueLoanersCommand::class,
+                GeneratePreventiveWorkOrdersCommand::class,
             ]);
         }
 
