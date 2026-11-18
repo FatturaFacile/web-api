@@ -74,6 +74,15 @@ class InvoicePolicy
         return $this->belongsToSameTenant($user, $invoice);
     }
 
+    /**
+     * Italian fiscal preview and reports (stamp duty, withholdings, ENASARCO) of the current tenant; tenant
+     * membership is enforced by the `tenant` middleware and every query is tenant-scoped.
+     */
+    public function viewTaxReports(User $user): bool
+    {
+        return true;
+    }
+
     public function generateQrBill(User $user, Invoice $invoice): bool
     {
         return $this->belongsToSameTenant($user, $invoice);

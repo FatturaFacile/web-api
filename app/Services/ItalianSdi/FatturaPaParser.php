@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\ItalianSdi;
 
+use App\Support\Money;
 use App\Support\Security\SafeXmlLoader;
 use InvalidArgumentException;
 use SimpleXMLElement;
@@ -134,18 +135,36 @@ class FatturaPaParser
     }
 
     /**
-     * @return list<array{type: string, amount: string, rate: ?string, reason: ?string}>
+     * @return list<array{type: string, amount: string, rate: string, reason: ?string, taxable: string}>
      */
     private function withholdings(SimpleXMLElement $body): array
     {
+        $flaggedBase = 0;
+
+        foreach ($body->xpath('DatiBeniServizi/DettaglioLinee') ?: [] as $line) {
+            if (strtoupper((string) $this->value($line, 'Ritenuta')) === 'SI') {
+                $flaggedBase += Money::toCents($this->value($line, 'PrezzoTotale') ?? '0');
+            }
+        }
+
+        foreach ($body->xpath('DatiGenerali/DatiGeneraliDocumento/DatiCassaPrevidenziale') ?: [] as $fund) {
+            if (strtoupper((string) $this->value($fund, 'Ritenuta')) === 'SI') {
+                $flaggedBase += Money::toCents($this->value($fund, 'ImportoContributoCassa') ?? '0');
+            }
+        }
+
         $withholdings = [];
 
         foreach ($body->xpath('DatiGenerali/DatiGeneraliDocumento/DatiRitenuta') ?: [] as $block) {
+            $amount = Money::toCents($this->value($block, 'ImportoRitenuta') ?? '0');
+            $rate = Money::toScaled($this->value($block, 'AliquotaRitenuta') ?? '0', 2);
+
             $withholdings[] = [
-                'type' => (string) $this->value($block, 'TipoRitenuta'),
-                'amount' => (string) $this->value($block, 'ImportoRitenuta'),
-                'rate' => $this->value($block, 'AliquotaRitenuta'),
+                'type' => strtoupper($this->value($block, 'TipoRitenuta') ?? 'RT01'),
+                'amount' => Money::fromCents($amount),
+                'rate' => Money::fromScaled($rate, 2),
                 'reason' => $this->value($block, 'CausalePagamento'),
+                'taxable' => Money::fromCents($rate > 0 ? Money::divideRounded($amount * 10000, $rate) : $flaggedBase),
             ];
         }
 

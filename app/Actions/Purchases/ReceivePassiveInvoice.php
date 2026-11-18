@@ -6,6 +6,7 @@ namespace App\Actions\Purchases;
 
 use App\Models\Contact;
 use App\Models\PassiveInvoice;
+use App\Models\PassiveInvoiceWithholding;
 use App\Services\ItalianSdi\FatturaPaParser;
 use App\Services\Purchases\SupplierCostRuleApplier;
 use App\Services\Sales\DocumentEventRecorder;
@@ -85,6 +86,21 @@ class ReceivePassiveInvoice
                 ]);
 
                 $invoice->lines()->createMany(array_map(static fn (array $line): array => [...$line, 'tenant_id' => $tenant->id], $document['lines']));
+
+                foreach ($document['withholdings'] as $withholding) {
+                    PassiveInvoiceWithholding::create([
+                        'tenant_id' => $tenant->id,
+                        'passive_invoice_id' => $invoice->id,
+                        'supplier_id' => $supplier->id,
+                        'type' => (string) ($withholding['type'] ?? 'RT01'),
+                        'reason' => isset($withholding['reason']) && $withholding['reason'] !== null ? substr((string) $withholding['reason'], 0, 2) : null,
+                        'rate' => (string) ($withholding['rate'] ?? '0.00'),
+                        'taxable_amount' => $withholding['taxable'] ?? null,
+                        'amount' => (string) ($withholding['amount'] ?? '0.00'),
+                        'withheld_year' => (int) substr((string) $document['date'], 0, 4),
+                    ]);
+                }
+
                 $this->costRules->apply($invoice);
 
                 $this->post($invoice, $deferLedgerErrors);

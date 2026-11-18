@@ -7,13 +7,17 @@ namespace Modules\CRM\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
+use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
+use Modules\CRM\Contracts\LeadIntakeServiceInterface;
 use Modules\CRM\Contracts\LeadServiceInterface;
 use Modules\CRM\DTOs\CreateLeadDTO;
+use Modules\CRM\DTOs\IntakeResult;
 use Modules\CRM\Http\Resources\LeadResource;
+use Modules\CRM\Models\LeadSource;
 use Modules\CRM\Models\LeadWebhookEndpoint;
 use Modules\CRM\Support\LeadPayloadMapper;
 use OpenApi\Attributes as OA;
@@ -34,7 +38,110 @@ final class LeadWebhookController extends Controller
     public function __construct(
         private readonly LeadServiceInterface $leadService,
         private readonly TenantContext $tenantContext,
+        private readonly ?LeadIntakeServiceInterface $intake = null,
     ) {}
+
+    public function store(Request $request, string $sourceId): JsonResponse
+    {
+        $source = $this->findSource($sourceId);
+        if ($source === null) {
+            return $this->notFound();
+        }
+
+        $intake = $this->intake ?? app(LeadIntakeServiceInterface::class);
+        $tenant = Tenant::query()->find($source->tenant_id);
+        if (! $source->is_active || ! $tenant instanceof Tenant || ! $intake->verify($request, $source)) {
+            return $this->unauthorized();
+        }
+
+        $payload = $this->payload($request);
+
+        /** @var IntakeResult $result */
+        $result = $this->tenantContext->runWithTenant($tenant, fn (): IntakeResult => $intake->ingest($source, $payload));
+
+        return response()->json(['data' => $result->toArray()], $result->isCreated() ? 201 : 200);
+    }
+
+    public function events(Request $request, string $sourceId): JsonResponse
+    {
+        $source = $this->findSource($sourceId);
+        if ($source === null) {
+            return $this->notFound();
+        }
+
+        if ($request->headers->has('X-Api-Key') || $request->input('_api_key') !== null) {
+            return $this->unauthorized();
+        }
+
+        $intake = $this->intake ?? app(LeadIntakeServiceInterface::class);
+        $tenant = Tenant::query()->find($source->tenant_id);
+        if (! $source->is_active || ! $tenant instanceof Tenant || ! $intake->verify($request, $source)) {
+            return $this->unauthorized();
+        }
+
+        $payload = $this->payload($request);
+        $result = $this->tenantContext->runWithTenant($tenant, fn (): ?array => $intake->ingestEvent($source, $payload));
+
+        if ($result === null) {
+            return response()->json(['message' => 'Lead not found.'], 404);
+        }
+
+        $created = (bool) $result['created'];
+        unset($result['created']);
+
+        return response()->json(['data' => $result], $created ? 201 : 200);
+    }
+
+    public function verifySubscription(Request $request, string $sourceId): Response|JsonResponse
+    {
+        $source = $this->findSource($sourceId);
+        if ($source === null) {
+            return $this->notFound();
+        }
+
+        $mode = (string) $request->query('hub_mode', '');
+        $token = (string) $request->query('hub_verify_token', '');
+        $challenge = (string) $request->query('hub_challenge', '');
+
+        if (! $source->is_active || $source->type !== 'meta_lead_ads' || $mode !== 'subscribe' || $challenge === '' || ! $source->verifyApiKey($token)) {
+            return $this->unauthorized();
+        }
+
+        return response($challenge, 200, ['Content-Type' => 'text/plain']);
+    }
+
+    private function findSource(string $sourceId): ?LeadSource
+    {
+        if (! Str::isUuid($sourceId)) {
+            return null;
+        }
+
+        $source = LeadSource::withoutGlobalScope(TenantScope::class)->find($sourceId);
+
+        return $source instanceof LeadSource ? $source : null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function payload(Request $request): array
+    {
+        if ($request->isJson()) {
+            return $request->json()->all();
+        }
+
+        return $request->request->all();
+    }
+
+    private function notFound(): JsonResponse
+    {
+        return response()->json(['message' => 'Not found.'], 404);
+    }
+
+    private function unauthorized(): JsonResponse
+    {
+        return response()->json(['message' => 'Unauthorized.'], 401);
+    }
 
     /** Meta (Facebook/Instagram) Lead Ads subscription handshake. */
     #[OA\Get(

@@ -16,6 +16,7 @@ use Modules\CRM\Http\Resources\ContactMasterDataResource;
 use Modules\CRM\Http\Resources\LeadResource;
 use Modules\CRM\Models\ContactMerge;
 use Modules\CRM\Models\Lead;
+use Modules\CRM\Models\LeadDuplicateCandidate;
 use Modules\CRM\Services\PartyMaster\ContactDuplicateFinder;
 use Modules\CRM\Services\PartyMaster\ContactMergeService;
 use OpenApi\Attributes as OA;
@@ -56,6 +57,14 @@ final class DuplicateController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
+        $tenantId = (string) $this->tenantContext->getTenantId();
+
+        if ($request->hasAny(['status', 'lead_id', 'match_type'])
+            || (! $request->hasAny(['entity', 'vat_number', 'fiscal_code', 'email', 'phone'])
+                && LeadDuplicateCandidate::query()->where('tenant_id', $tenantId)->exists())) {
+            return app(LeadDuplicateController::class)->index($request);
+        }
+
         $validated = $request->validate([
             'entity' => ['nullable', 'in:contacts,leads'],
             'vat_number' => ['nullable', 'string', 'max:30'],
