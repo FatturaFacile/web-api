@@ -60,3 +60,5 @@ storage/*.sqlite3
 !.claude/commands/
 *.tmp
 
+/certs/localhost.crt
+/certs/localhost.key
