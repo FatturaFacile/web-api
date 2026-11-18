@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\CustomsTaricCode;
-use App\Models\EiInboundLog;
 use App\Models\FreeTradeAgreement;
 use App\Models\PasswordHistory;
 use App\Models\TenantAccessRequest;
@@ -69,7 +68,6 @@ test('concrete domain models use BelongsToTenant trait', function (): void {
         // Global customs reference catalogs shared by every tenant
         CustomsTaricCode::class,
         FreeTradeAgreement::class,
-        EiInboundLog::class,
     ];
 
     $nonCompliant = [];

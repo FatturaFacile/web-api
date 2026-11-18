@@ -81,7 +81,7 @@ class ProcessSdiNotification
 
         $link = SdiUuidLink::withoutGlobalScopes()->where('provider', $data['provider'])->where('sdi_uuid', $data['uuid'])->first();
 
-        $log = EiInboundLog::createOrFirst(['fingerprint' => $fingerprint], [
+        $log = EiInboundLog::withoutGlobalScopes()->createOrFirst(['fingerprint' => $fingerprint], [
             'tenant_id' => $link?->tenant_id,
             'invoice_id' => $link?->invoice_id,
             'provider' => $data['provider'],
@@ -157,7 +157,7 @@ class ProcessSdiNotification
      */
     private function finishOnce(EiInboundLog $log, string $status, string $error): EiInboundLog
     {
-        EiInboundLog::query()->whereKey($log->getKey())->whereNull('processed_at')
+        EiInboundLog::withoutGlobalScopes()->whereKey($log->getKey())->whereNull('processed_at')
             ->update(['status' => $status, 'error' => $error, 'processed_at' => now()]);
 
         return $log->refresh();

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +13,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EiInboundLog extends Model
 {
+    use BelongsToTenant {
+        stampTenantOnCreating as baseStampTenantOnCreating;
+    }
     use HasFactory, HasUuids;
+
+    protected static function stampTenantOnCreating(Model $model): void
+    {
+        $tenantContext = app(TenantContext::class);
+
+        if (! $tenantContext->isExplicit() && ! $tenantContext->hasTenant() && empty($model->getAttribute('tenant_id'))) {
+            return;
+        }
+
+        static::baseStampTenantOnCreating($model);
+    }
 
     protected $fillable = [
         'tenant_id',

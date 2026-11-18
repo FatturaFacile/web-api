@@ -185,10 +185,10 @@ Route::prefix('api/v1/hr/recruiting')
         Route::post('/offers/{id}/mark-signed', [JobOfferController::class, 'markSigned'])->whereUuid('id')->name('offers.mark-signed');
         Route::post('/offers/{id}/decline', [JobOfferController::class, 'decline'])->whereUuid('id')->name('offers.decline');
 
-        Route::get('/email-templates', [RecruitingEmailTemplateController::class, 'index'])->name('email-templates.index');
+        Route::get('/email-templates', [RecruitingEmailTemplateController::class, 'index'])->middleware('module.access:hr')->name('email-templates.index');
         Route::put('/email-templates/{stage}/{locale}', [RecruitingEmailTemplateController::class, 'upsert'])->middleware('module.access:hr')->name('email-templates.upsert');
 
-        Route::get('/settings', [RecruitingSettingsController::class, 'show'])->name('settings.show');
+        Route::get('/settings', [RecruitingSettingsController::class, 'show'])->middleware('module.access:hr')->name('settings.show');
         Route::put('/settings', [RecruitingSettingsController::class, 'update'])->middleware('module.access:hr')->name('settings.update');
     });
 

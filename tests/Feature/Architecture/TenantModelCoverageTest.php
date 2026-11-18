@@ -38,7 +38,6 @@ function unscopedModelsWithTenantColumn(): array
         'Modules\Platform\Models\NotificationSetting' => 'Per-user omnichannel notification data, addressed to a central user account and read by user id.',
         'App\Models\CustomsTaricCode' => 'Global catalog of HS / CN / TARIC codes, shared by every tenant.',
         'App\Models\FreeTradeAgreement' => 'Global catalog of free trade agreements, shared by every tenant.',
-        'App\Models\EiInboundLog' => 'Inbound SDI log written by webhooks before the tenant is known; every read filters tenant_id or goes through a scoped invoice.',
         'App\Models\PasswordResetToken' => 'Central authentication data, keyed by e-mail.',
         'App\Models\TenantAccessRequest' => 'Central onboarding data read by the platform administrator.',
         'Enterprise\AuditLedger\Models\AuditLedgerEntry' => 'Append-only ledger; the API filters tenant_id explicitly.',
