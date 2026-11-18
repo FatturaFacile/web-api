@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\ServiceManagement\Models\DepotRepairRmaOrder;
 use Modules\ServiceManagement\Models\Loaner;
@@ -18,7 +19,9 @@ beforeEach(function () {
     $this->tenant = Tenant::factory()->create();
     app(TenantContext::class)->setTenant($this->tenant);
     $this->user = User::factory()->create();
+    $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
     Sanctum::actingAs($this->user);
+    $this->withHeader('X-Tenant-Id', $this->tenant->id);
 
     $this->passport = SerializedEquipmentPassport::factory()->create(['tenant_id' => $this->tenant->id]);
     $this->rma = DepotRepairRmaOrder::factory()->create([

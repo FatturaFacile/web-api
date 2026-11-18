@@ -23,8 +23,9 @@ use Mockery;
 use Modules\SubscriptionBilling\Contracts\RecurringBillingServiceInterface;
 use Modules\SubscriptionBilling\Contracts\RenewalServiceInterface;
 use Modules\SubscriptionBilling\Models\BillingRun;
+use Tests\Support\WithoutSeeding;
 
-uses(RefreshDatabase::class);
+uses(WithoutSeeding::class, RefreshDatabase::class);
 
 test('send appointment reminder job handles cancelled or already notified appointments', function (): void {
     (new AppointmentLookupSeeder)->run();

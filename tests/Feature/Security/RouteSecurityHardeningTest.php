@@ -54,9 +54,9 @@ function resolveRouteUri(RouteDefinition $route): string
 {
     return preg_replace_callback('/\{([a-zA-Z_]+)\??\}/', function (array $parameter) use ($route): string {
         $constraint = $route->wheres[$parameter[1]] ?? null;
-        $candidates = [(string) Str::uuid(), '2026', 'sample', ...explode('|', (string) $constraint)];
+        $candidates = [(string) Str::uuid(), '2026', 'sample', 'LETTERING', ...explode('|', (string) $constraint)];
 
-        return $constraint === null ? $candidates[0] : collect($candidates)->first(fn (string $value): bool => preg_match("#^(?:{$constraint})$#", $value) === 1);
+        return $constraint === null ? $candidates[0] : (collect($candidates)->first(fn (string $value): bool => $value !== '' && preg_match("#^(?:{$constraint})$#", $value) === 1) ?? $candidates[0]);
     }, $route->uri());
 }
 
@@ -98,6 +98,23 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/childcare-family',
         // Reception tablets: authenticated by the per-kiosk hashed secret, which selects the tenant, see Visitors\VisitorManagementTest.
         'api/v1/visitor-kiosk',
+        // SDI provider webhook: authenticated by the X-Webhook-Secret header (hash_equals, rejected with 401 when unset), see SdiNotificationRequest::authorize().
+        'api/v1/sdi/webhook',
+        // Stored export download: authenticated by the signature of the URL (signed, expiring), see the `signed` middleware of the DataExport module.
+        'api/v1/export-downloads',
+        // Account-less pages: the secret token of the link (stored hashed) or the careers slug is the credential and selects the tenant, throttled by IP.
+        'api/v1/public/contract-signing',
+        'api/v1/public/careers',
+        'api/v1/public/rma',
+        // Supplier portal: authenticated by the personal X-Supplier-Token header (AuthenticateSupplierPortal), which selects the tenant.
+        'api/v1/supplier-self-service',
+        // Telegram bot webhook: the secret in the URL is compared with hash_equals and unknown/unset secrets get 404.
+        'api/v1/platform/telegram/webhook',
+        // Pre-login flows: invitation tokens, mobile PKCE (runs the regular login), liveness probe, user-scoped channel authorization (auth:sanctum, own channel only).
+        'api/v1/auth/invitations',
+        'api/v1/mobile/auth/pkce',
+        'api/v1/health/ready',
+        'api/v1/broadcasting/auth',
         'docs',
         'sanctum/csrf-cookie',
         'up',
