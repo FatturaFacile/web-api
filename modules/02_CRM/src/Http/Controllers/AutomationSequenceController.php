@@ -177,7 +177,7 @@ final class AutomationSequenceController extends CrmExtensionController
     {
         AutomationStep::query()->where('tenant_id', $sequence->tenant_id)->where('sequence_id', $sequence->id)->delete();
 
-        foreach (array_values($steps) as $index => $step) {
+        foreach ($steps as $index => $step) {
             AutomationStep::create(['tenant_id' => $sequence->tenant_id, 'sequence_id' => $sequence->id, 'position' => $index + 1, ...$step]);
         }
     }

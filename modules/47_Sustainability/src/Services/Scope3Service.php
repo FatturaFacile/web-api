@@ -53,7 +53,7 @@ final class Scope3Service
         $unmapped = $buckets[0] ?? ['total' => '0', 'records' => 0];
         $supplierTotal = '0';
         foreach ($buckets as $bucket) {
-            $supplierTotal = Decimal::add($supplierTotal, $bucket['supplier'] ?? '0');
+            $supplierTotal = Decimal::add($supplierTotal, $bucket['supplier']);
         }
 
         return [

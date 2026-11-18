@@ -197,7 +197,7 @@ final readonly class DashboardService
      * @param  array<string, mixed>  $overrides  `period`, `filters`, `drill` (list of `{dimension, value}`)
      * @return array{result: array<string, mixed>, pivot: array<string, mixed>|null, drill: array<string, mixed>}
      *
-     * @throws ValidationException
+     * @throws ValidationException|AuthorizationException
      */
     public function widgetData(BiDashboard $dashboard, BiDashboardWidget $widget, User $user, array $overrides = []): array
     {
@@ -345,7 +345,7 @@ final readonly class DashboardService
 
         if ($type === 'pivot' && isset($config['pivot'])) {
             $dimensions = $spec !== null ? $this->dimensionKeys($spec) : $this->dimensionKeys($query->spec ?? []);
-            $measures = $spec !== null ? [...array_map('strval', (array) ($spec['measures'] ?? [])), ...($calculated ?? [])] : [...array_map('strval', (array) ($query->spec['measures'] ?? [])), ...($query->calculated_measures ?? [])];
+            $measures = $spec !== null ? [...array_map('strval', (array) ($spec['measures'] ?? [])), ...$calculated] : [...array_map('strval', (array) ($query->spec['measures'] ?? [])), ...($query->calculated_measures ?? [])];
             $config['pivot'] = $this->pivots->validateLayout((array) $config['pivot'], $dimensions, $measures, 'config.pivot.');
         }
 

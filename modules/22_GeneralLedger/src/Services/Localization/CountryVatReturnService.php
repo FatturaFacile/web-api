@@ -45,7 +45,7 @@ final readonly class CountryVatReturnService
 
         $rates = $data['sales']['rates'];
 
-        foreach (['08' => ['20.00', 'standard rate 20%'], '09' => ['5.50', 'reduced rate 5.5%'], '9B' => ['10.00', 'reduced rate 10%'], '10' => ['2.10', 'special rate 2.1%']] as $code => [$rate, $label]) {
+        foreach ([['08', '20.00', 'standard rate 20%'], ['09', '5.50', 'reduced rate 5.5%'], ['9B', '10.00', 'reduced rate 10%'], ['10', '2.10', 'special rate 2.1%']] as [$code, $rate, $label]) {
             $row = $rates[$rate] ?? ['base' => '0', 'tax' => '0'];
             $this->push($boxes, $code, "Taxable base, {$label}", $row['base']);
             $this->push($boxes, "{$code}_tax", "VAT due, {$label}", $row['tax']);
@@ -152,7 +152,7 @@ final readonly class CountryVatReturnService
         $output = '0';
         $rates = $data['sales']['rates'];
 
-        foreach (['81' => ['19.00', '19%'], '86' => ['7.00', '7%']] as $code => [$rate, $label]) {
+        foreach ([['81', '19.00', '19%'], ['86', '7.00', '7%']] as [$code, $rate, $label]) {
             $row = $rates[$rate] ?? ['base' => '0', 'tax' => '0'];
             $this->push($boxes, $code, "Taxable sales at {$label}", $row['base']);
             $this->push($boxes, "{$code}_tax", "Output tax at {$label}", $row['tax']);

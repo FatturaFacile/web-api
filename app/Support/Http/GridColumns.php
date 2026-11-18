@@ -6,6 +6,7 @@ namespace App\Support\Http;
 
 use BackedEnum;
 use DateTimeInterface;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use LogicException;
 use ReflectionMethod;
 use ReflectionNamedType;
 
@@ -212,8 +214,14 @@ final class GridColumns
      */
     private function tableColumns(string $table): array
     {
-        $key = $this->base->getConnection()->getName().'.'.$table;
+        $connection = $this->base->getConnection();
 
-        return self::$columnCache[$key] ??= $this->base->getConnection()->getSchemaBuilder()->getColumnListing($table);
+        if (! $connection instanceof Connection) {
+            throw new LogicException('A grid reads the columns of a table through a database connection.');
+        }
+
+        $key = $connection->getName().'.'.$table;
+
+        return self::$columnCache[$key] ??= $connection->getSchemaBuilder()->getColumnListing($table);
     }
 }

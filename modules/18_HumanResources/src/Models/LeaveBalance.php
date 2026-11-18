@@ -25,6 +25,9 @@ final class LeaveBalance extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<Employee, $this>
+     */
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'employee_id');

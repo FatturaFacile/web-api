@@ -149,7 +149,7 @@ class Customer360Service
             'over_limit' => $hasLimit && $exposure > $limit,
             'credit_status' => $profile?->credit_status,
             'risk_rating' => $profile?->risk_rating,
-            'is_credit_hold' => (bool) ($profile?->is_credit_hold ?? false),
+            'is_credit_hold' => (bool) ($profile->is_credit_hold ?? false),
             'hold_reason' => $profile?->hold_reason,
         ];
     }
@@ -169,7 +169,7 @@ class Customer360Service
                 ->map(fn (Quote $q): array => [
                     'id' => $q->id,
                     'quote_number' => $q->quote_number,
-                    'date' => $q->date?->toDateString(),
+                    'date' => $q->date->toDateString(),
                     'status' => $q->status,
                     'total_gross' => (float) $q->total_gross,
                     'currency' => $q->currency,
@@ -191,7 +191,7 @@ class Customer360Service
             'items' => $orders->take(10)->map(fn (SalesOrder $o): array => [
                 'id' => $o->id,
                 'order_number' => $o->order_number,
-                'date' => $o->date?->toDateString(),
+                'date' => $o->date->toDateString(),
                 'status' => $o->status,
                 'total_gross' => (float) $o->total_gross,
                 'currency' => $o->currency,
@@ -214,7 +214,7 @@ class Customer360Service
             'items' => $notes->take(10)->map(fn (DeliveryNote $n): array => [
                 'id' => $n->id,
                 'ddt_number' => $n->ddt_number,
-                'date' => $n->date?->toDateString(),
+                'date' => $n->date->toDateString(),
             ])->values()->all(),
         ];
     }
@@ -234,7 +234,7 @@ class Customer360Service
                     'id' => $i->id,
                     'invoice_number' => $i->invoice_number,
                     'invoice_type' => $i->invoice_type,
-                    'date' => $i->date?->toDateString(),
+                    'date' => $i->date->toDateString(),
                     'due_date' => $i->due_date?->toDateString(),
                     'total_gross' => (float) $i->total_gross,
                     'total_paid' => (float) $i->total_paid,

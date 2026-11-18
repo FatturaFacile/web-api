@@ -80,7 +80,7 @@ final class RecurringService extends WorkshopRecord
      */
     protected function interval(): Attribute
     {
-        return Attribute::get(fn (): ?string => $this->subscription?->interval?->value);
+        return Attribute::get(fn (): ?string => $this->subscription?->interval->value);
     }
 
     /**
@@ -88,7 +88,7 @@ final class RecurringService extends WorkshopRecord
      */
     protected function startDate(): Attribute
     {
-        return Attribute::get(fn (): ?string => $this->subscription?->start_date?->toDateString());
+        return Attribute::get(fn (): ?string => $this->subscription?->start_date->toDateString());
     }
 
     /**
@@ -110,7 +110,7 @@ final class RecurringService extends WorkshopRecord
     /**
      * Sum of the quantity x unit price of the subscription items (a recurring service has a single item).
      *
-     * @return Attribute<string|null, never>
+     * @return Attribute<numeric-string|null, never>
      */
     protected function unitPrice(): Attribute
     {

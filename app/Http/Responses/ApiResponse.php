@@ -36,7 +36,7 @@ trait ApiResponse
     /**
      * Return a standardized RFC 7807 Problem Details error response.
      *
-     * @param  array<string, mixed>  $invalidParams
+     * @param  array<array-key, mixed>  $invalidParams  a list of {name, reason} entries, or a map of the offending values
      */
     public function problemDetailsResponse(
         string $title,

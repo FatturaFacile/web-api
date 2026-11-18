@@ -141,11 +141,11 @@ final readonly class RebateAccrualService
             ->whereDate('date', '>=', $agreement->starts_on->toDateString())
             ->whereDate('date', '<=', $asOf->toDateString());
 
-        $invoiced = (string) ($query()->whereNotIn('invoice_type', ['credit_note', 'proforma'])->sum('total_net') ?? 0);
-        $credited = (string) ($query()
+        $invoiced = (string) $query()->whereNotIn('invoice_type', ['credit_note', 'proforma'])->sum('total_net');
+        $credited = (string) $query()
             ->where('invoice_type', 'credit_note')
             ->whereNotIn('id', RebateSettlement::query()->whereNotNull('credit_note_id')->select('credit_note_id'))
-            ->sum('total_net') ?? 0);
+            ->sum('total_net');
 
         return Decimal::round2(Decimal::sub($invoiced, $credited));
     }
@@ -158,14 +158,14 @@ final readonly class RebateAccrualService
             ->whereDate('date', '>=', $agreement->starts_on->toDateString())
             ->whereDate('date', '<=', $asOf->toDateString());
 
-        $invoiced = (string) ($query()->where('document_type', '!=', 'TD04')->sum('total_net') ?? 0);
-        $credited = (string) ($query()->where('document_type', 'TD04')->sum('total_net') ?? 0);
+        $invoiced = (string) $query()->where('document_type', '!=', 'TD04')->sum('total_net');
+        $credited = (string) $query()->where('document_type', 'TD04')->sum('total_net');
 
         return Decimal::round2(Decimal::sub($invoiced, $credited));
     }
 
     private function accruedTotal(RebateAgreement $agreement): string
     {
-        return Decimal::round2((string) (RebateAccrual::query()->where('agreement_id', $agreement->id)->sum('rebate_amount') ?? 0));
+        return Decimal::round2((string) RebateAccrual::query()->where('agreement_id', $agreement->id)->sum('rebate_amount'));
     }
 }

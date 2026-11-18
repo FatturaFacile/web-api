@@ -186,9 +186,9 @@ final class TicketService
                 'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'] ?? $product?->name,
                 'quantity' => (string) $item['quantity'],
-                'unit_price' => (string) ($item['unit_price'] ?? $product?->sale_price ?? 0),
-                'tax_rate' => (string) ($item['tax_rate'] ?? $product?->tax_rate ?? 0),
+                'unit_price' => (string) ($item['unit_price'] ?? $product->sale_price ?? 0),
+                'tax_rate' => (string) ($item['tax_rate'] ?? $product->tax_rate ?? 0),
             ];
-        }, array_values($items));
+        }, $items);
     }
 }

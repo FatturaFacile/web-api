@@ -28,8 +28,8 @@ final class InterviewScorecardResource extends JsonResource
             'interviewer_name' => $scorecard->interviewer_name,
             'stage' => (string) $scorecard->stage,
             'criteria_scores' => array_values(array_map(static fn (array $criterion): array => [
-                'criterion' => (string) ($criterion['criterion'] ?? ''),
-                'score' => (int) ($criterion['score'] ?? 0),
+                'criterion' => $criterion['criterion'],
+                'score' => $criterion['score'],
                 'comment' => $criterion['comment'] ?? null,
             ], array_filter((array) $scorecard->criteria_scores, 'is_array'))),
             'overall_score' => round((float) $scorecard->overall_score, 2),

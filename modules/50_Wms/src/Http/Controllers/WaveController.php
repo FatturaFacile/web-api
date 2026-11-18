@@ -11,7 +11,6 @@ use Illuminate\Validation\Rule;
 use Modules\Wms\Http\Controllers\Concerns\InteractsWithWms;
 use Modules\Wms\Http\Resources\WaveResource;
 use Modules\Wms\Models\WmsWave;
-use Modules\Wms\Services\WaveService;
 use OpenApi\Attributes as OA;
 
 /**
@@ -21,13 +20,11 @@ final class WaveController extends Controller
 {
     use InteractsWithWms;
 
-    public function __construct(private readonly WaveService $service) {}
-
     #[OA\Get(path: '/api/v1/wms/waves', operationId: 'listWmsWaves', description: 'Waves of the active company. Filters: warehouse_id, status.', summary: 'List waves', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'warehouse_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string', enum: ['planned', 'released', 'completed', 'cancelled']))], responses: [
         new OA\Response(response: 200, description: 'Waves', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WmsWave'))])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubUnprocessable', response: 422),
     ])]
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -47,9 +44,9 @@ final class WaveController extends Controller
 
     #[OA\Get(path: '/api/v1/wms/waves/{id}', operationId: 'showWmsWave', description: 'Return a wave.', summary: 'Show a wave', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(ref: '#/components/parameters/WmsId')], responses: [
         new OA\Response(response: 200, description: 'Wave', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/WmsWave')])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubNotFound', response: 404),
     ])]
     public function show(string $id): WaveResource
     {

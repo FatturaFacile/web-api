@@ -32,7 +32,7 @@ final class RmaResource extends JsonResource
             'sales_order_id' => $this->sales_order_id,
             'warehouse_id' => $this->warehouse_id,
             'reason_code' => $this->reason_code,
-            'requested_on' => $this->requested_on?->toDateString(),
+            'requested_on' => $this->requested_on->toDateString(),
             'window_overridden' => $this->window_overridden,
             'approved_at' => $this->approved_at?->toIso8601String(),
             'rejected_at' => $this->rejected_at?->toIso8601String(),

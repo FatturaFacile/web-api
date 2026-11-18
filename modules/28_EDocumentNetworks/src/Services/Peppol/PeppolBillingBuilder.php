@@ -122,7 +122,7 @@ final class PeppolBillingBuilder
         $this->cbc($root, 'CustomizationID', self::CUSTOMIZATION_ID);
         $this->cbc($root, 'ProfileID', self::PROFILE_ID);
         $this->cbc($root, 'ID', $this->required($invoice->invoice_number, 'invoice number'));
-        $this->cbc($root, 'IssueDate', $this->required($invoice->date?->format('Y-m-d'), 'invoice date'));
+        $this->cbc($root, 'IssueDate', $invoice->date->format('Y-m-d'));
 
         if (! $isCreditNote && $invoice->due_date !== null) {
             $this->cbc($root, 'DueDate', $invoice->due_date->format('Y-m-d'));
@@ -142,10 +142,7 @@ final class PeppolBillingBuilder
         if ($related !== null) {
             $reference = $this->cac($this->cac($root, 'BillingReference'), 'InvoiceDocumentReference');
             $this->cbc($reference, 'ID', (string) $related->invoice_number);
-
-            if ($related->date !== null) {
-                $this->cbc($reference, 'IssueDate', $related->date->format('Y-m-d'));
-            }
+            $this->cbc($reference, 'IssueDate', $related->date->format('Y-m-d'));
         }
 
         $this->party($this->cac($root, 'AccountingSupplierParty'), $this->tenantParty($tenant));

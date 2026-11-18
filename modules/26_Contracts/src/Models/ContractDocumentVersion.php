@@ -9,6 +9,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A version of the text of a contract (assembled from a template or edited during redlining).
+ *
+ * @property string $contract_kind
+ * @property string $contract_id
+ * @property int $version_no
+ * @property string $body
+ * @property string $source
+ * @property string|null $template_id
+ * @property array<string, mixed>|null $variables
+ * @property string|null $round_id
+ * @property string|null $author_id
+ * @property string|null $notes
+ * @property string $body_hash
+ * @property int|null $open_comments_count Set by withCount() on the document version listing.
  */
 final class ContractDocumentVersion extends BaseEnterpriseModel
 {

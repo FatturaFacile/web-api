@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Returns\Services;
 
 use App\Support\Database\TransactionLock;
-use Illuminate\Database\Eloquent\Model;
+use Enterprise\Foundation\Models\BaseEnterpriseModel;
 
 /**
  * Document numbers of the returns module (RMA-2027-0001, RTV-2027-0001, CLM-2027-0001): one sequence per company, kind
@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 final class ReturnsNumbering
 {
     /**
-     * @param  class-string<Model>  $model
+     * @param  class-string<BaseEnterpriseModel>  $model
      */
     public function next(string $model, string $column, string $prefix, string $tenantId): string
     {

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Modules\TravelExpense\Http\Requests;
 
 use App\Http\Requests\Concerns\TenantScopedRules;
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 use Modules\TravelExpense\Models\TravelTrip;
 
 /**
@@ -55,7 +55,7 @@ final class TripRequest extends FormRequest
             function (Validator $validator): void {
                 $data = $validator->getData();
 
-                if (($data['start_date'] ?? null) !== null && ($data['start_date'] ?? null) === ($data['end_date'] ?? null)
+                if (($data['start_date'] ?? null) !== null && $data['start_date'] === ($data['end_date'] ?? null)
                     && ! empty($data['departure_time']) && ! empty($data['return_time']) && $data['return_time'] <= $data['departure_time']) {
                     $validator->errors()->add('return_time', __('travel_errors.trip.return_before_departure'));
                 }

@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Modules\Invoicing\Models\SalesDeliveryNote;
 
 /**
@@ -15,6 +16,8 @@ use Modules\Invoicing\Models\SalesDeliveryNote;
  * the PDF engine and the policies registered on this class.
  *
  * @deprecated Use {@see SalesDeliveryNote} in new code.
+ *
+ * @property Carbon $date
  */
 class DeliveryNote extends SalesDeliveryNote
 {

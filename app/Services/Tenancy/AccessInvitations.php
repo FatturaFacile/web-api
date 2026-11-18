@@ -67,7 +67,7 @@ final class AccessInvitations
 
         $invitation = $existing ?? new TenantInvitation(['tenant_id' => $tenant->id, 'email' => $email]);
         $invitation->fill([
-            'role' => $custom?->base_role ?? $data['role'] ?? 'member',
+            'role' => $custom->base_role ?? $data['role'] ?? 'member',
             'custom_role_id' => $custom?->id,
             'modules' => $data['modules'] ?? null,
             'team_ids' => $data['team_ids'] ?? null,

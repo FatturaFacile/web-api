@@ -6,7 +6,7 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 | Module 17 Service Management: warranty & depot repair (RMA) settings
 |--------------------------------------------------------------------------
-| Merged into `service-management.*` by ServiceManagementServiceProvider.
+| Loaded as `service-management.*` (kept in the application config directory so env() keeps working with a cached config).
 */
 
 return [

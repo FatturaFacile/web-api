@@ -6,7 +6,12 @@ namespace Modules\Inventory\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $warranty_start_date
+ * @property Carbon|null $warranty_end_date
+ */
 final class StockSerialNumber extends BaseEnterpriseModel
 {
     protected $table = 'stock_serial_numbers';

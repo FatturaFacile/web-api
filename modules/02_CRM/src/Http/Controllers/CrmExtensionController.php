@@ -33,7 +33,9 @@ abstract class CrmExtensionController extends Controller
     }
 
     /**
-     * @param  Builder<Model>  $query
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
      */
     protected function paginated(Builder $query): AnonymousResourceCollection
     {
@@ -48,8 +50,11 @@ abstract class CrmExtensionController extends Controller
     }
 
     /**
-     * @param  class-string<Model>  $model
-     * @param  list<string>  $with
+     * @template TModel of Model
+     *
+     * @param  class-string<TModel>  $model
+     * @param  array<array-key, mixed>  $with
+     * @return TModel
      */
     protected function find(string $model, string $id, string $ability = 'view', array $with = []): Model
     {

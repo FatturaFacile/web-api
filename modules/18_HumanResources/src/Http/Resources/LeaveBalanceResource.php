@@ -6,7 +6,11 @@ namespace Modules\HumanResources\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\HumanResources\Models\LeaveBalance;
 
+/**
+ * @mixin LeaveBalance
+ */
 final class LeaveBalanceResource extends JsonResource
 {
     public function toArray(Request $request): array

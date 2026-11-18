@@ -10,10 +10,10 @@ use OpenApi\Attributes as OA;
  * Responses, payloads and records of the Warehouse management (WMS) endpoints.
  */
 #[OA\Tag(name: 'WMS', description: 'Advanced warehouse management on top of the inventory: RF task queue, slotting rules and recommendations, cross-docking, dock doors and appointments, wave planning and the warehouse dashboard')]
-#[OA\Response(response: 'WmsUnauthenticated', description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
-#[OA\Response(response: 'WmsForbidden', description: 'The role of the user does not allow this', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
-#[OA\Response(response: 'WmsNotFound', description: 'Record not found in the active company', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
-#[OA\Response(response: 'WmsUnprocessable', description: 'Validation error or business rule violation', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse'))]
+#[OA\Response(response: 'WmsHubUnauthenticated', description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
+#[OA\Response(response: 'WmsHubForbidden', description: 'The role of the user does not allow this', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
+#[OA\Response(response: 'WmsHubNotFound', description: 'Record not found in the active company', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
+#[OA\Response(response: 'WmsHubUnprocessable', description: 'Validation error or business rule violation', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse'))]
 #[OA\Schema(schema: 'WmsDockDoor', type: 'object', properties: [
     new OA\Property(property: 'id', type: 'string', format: 'uuid'),
     new OA\Property(property: 'warehouse_id', type: 'string', format: 'uuid'),

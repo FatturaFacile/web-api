@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Hospitality\Models;
 
+use Illuminate\Support\Carbon;
+
 /**
  * A seasonal price of a room type (or of every type) over a date range. The plan with the highest priority that covers every night wins.
  *
@@ -16,6 +18,8 @@ namespace Modules\Hospitality\Models;
  * @property int $min_stay
  * @property int $priority
  * @property bool $is_active
+ * @property Carbon $valid_from
+ * @property Carbon|null $valid_to
  */
 final class RatePlan extends HospitalityRecord
 {

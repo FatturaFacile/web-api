@@ -26,7 +26,7 @@ final class CaseActionResource extends JsonResource
             'step_id' => $this->step_id,
             'action_type' => $this->action_type,
             'channel' => $this->channel,
-            'performed_on' => $this->performed_on?->toDateString(),
+            'performed_on' => $this->performed_on->toDateString(),
             'performed_by' => $this->performed_by,
             'fee_amount' => $this->fee_amount,
             'outcome' => $this->outcome,

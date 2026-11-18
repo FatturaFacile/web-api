@@ -97,7 +97,7 @@ final class RecruitingSettings extends BaseEnterpriseModel
     {
         $custom = array_filter(
             (array) ($this->stageConfig($stage)['labels'] ?? []),
-            static fn (mixed $label): bool => is_string($label) && trim($label) !== ''
+            static fn (string $label): bool => trim($label) !== ''
         );
 
         return array_merge(RecruitingDefaults::stageLabels($stage), array_intersect_key($custom, array_flip(RecruitingLocale::values())));
@@ -138,6 +138,6 @@ final class RecruitingSettings extends BaseEnterpriseModel
     {
         $config = ((array) ($this->pipeline ?? []))[$stage->value] ?? [];
 
-        return is_array($config) ? $config : [];
+        return $config;
     }
 }

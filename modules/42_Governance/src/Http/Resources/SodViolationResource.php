@@ -33,7 +33,7 @@ final class SodViolationResource extends JsonResource
             'duty_b' => $this->duty_b,
             'status' => $this->status,
             'exception_id' => $this->exception_id,
-            'detected_at' => $this->detected_at?->toIso8601String(),
+            'detected_at' => $this->detected_at->toIso8601String(),
             'resolved_at' => $this->resolved_at?->toIso8601String(),
         ];
     }

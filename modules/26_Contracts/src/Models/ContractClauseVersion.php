@@ -9,6 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * One immutable version of the text of a clause.
+ *
+ * @property string $clause_id
+ * @property int $version_no
+ * @property string $body
+ * @property string|null $change_note
+ * @property string|null $created_by
  */
 final class ContractClauseVersion extends BaseEnterpriseModel
 {

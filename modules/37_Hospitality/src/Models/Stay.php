@@ -6,6 +6,7 @@ namespace Modules\Hospitality\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * A lodging booking: booked, checked in (a room is assigned), checked out, cancelled or no-show. Nights are check-in inclusive and check-out exclusive.
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property list<string> $nightly_rates
  * @property string|null $group_block_id
  * @property string|null $invoice_id
+ * @property Carbon $check_in_date
+ * @property Carbon $check_out_date
  */
 final class Stay extends HospitalityRecord
 {

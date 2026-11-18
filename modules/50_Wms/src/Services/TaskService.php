@@ -78,7 +78,7 @@ final class TaskService extends WmsCrudService
             }
         }
 
-        if (($merged['source_bin_id'] ?? null) !== null && ($merged['source_bin_id'] ?? null) === ($merged['destination_bin_id'] ?? null)) {
+        if (($merged['source_bin_id'] ?? null) !== null && $merged['source_bin_id'] === ($merged['destination_bin_id'] ?? null)) {
             throw ValidationException::withMessages(['destination_bin_id' => [__('wms_errors.task.same_bin')]]);
         }
 

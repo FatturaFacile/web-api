@@ -168,7 +168,7 @@ final class OffboardingService
      */
     private function taskDefinitions(Employee $employee, ?OnboardingTemplate $template): array
     {
-        $source = $template !== null ? array_values($template->tasks) : $this->defaultTasks();
+        $source = $template !== null ? $template->tasks : $this->defaultTasks();
         $assets = $this->assetNames($employee);
         $definitions = [];
 

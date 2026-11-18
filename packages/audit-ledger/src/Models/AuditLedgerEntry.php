@@ -7,8 +7,13 @@ namespace Enterprise\AuditLedger\Models;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use LogicException;
 
+/**
+ * @property array<string, mixed>|null $diff_json
+ * @property Carbon $event_timestamp
+ */
 final class AuditLedgerEntry extends Model
 {
     protected $table = 'enterprise_audit_ledger';

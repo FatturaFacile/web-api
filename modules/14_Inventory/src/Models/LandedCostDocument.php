@@ -34,6 +34,7 @@ use Modules\Inventory\Enums\LandedCostStatus;
  * @property string|null $journal_entry_id
  * @property string|null $revaluation_id
  * @property string|null $reversal_of_id
+ * @property Carbon|null $reversed_at
  */
 final class LandedCostDocument extends BaseEnterpriseModel
 {

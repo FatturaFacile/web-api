@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Enterprise\MultiTenant\Scopes\TenantScope;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Models\StockSerialNumber;
 use Modules\ServiceManagement\DTOs\IssueLoanerDTO;
@@ -186,7 +187,7 @@ final readonly class LoanerService
             }
 
             $loaner->status = $target->value;
-            $loaner->returned_at = $returnedAt;
+            $loaner->returned_at = $returnedAt !== null ? Carbon::instance($returnedAt) : null;
             $loaner->save();
 
             $this->auditLedger->record(

@@ -9,7 +9,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $sent_at
+ * @property Carbon|null $delivered_at
+ */
 class InvoiceSdiMetadata extends Model
 {
     use HasFactory, HasUuids, StampsTenantFromParent;

@@ -21,7 +21,7 @@ class LandedCostDocumentFactory extends Factory
      */
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? (string) Str::uuid7();
+        $tenantId = Tenant::first()->id ?? (string) Str::uuid7();
 
         return [
             'id' => (string) Str::uuid7(),

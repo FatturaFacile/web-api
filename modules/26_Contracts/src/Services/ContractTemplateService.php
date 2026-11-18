@@ -19,7 +19,7 @@ final class ContractTemplateService
      */
     public function save(?ContractTemplate $template, array $data): ContractTemplate
     {
-        $status = (string) ($data['status'] ?? $template?->status ?? 'draft');
+        $status = (string) ($data['status'] ?? $template->status ?? 'draft');
         $clauses = $data['clauses'] ?? null;
 
         if ($status === 'active' && is_array($clauses)) {

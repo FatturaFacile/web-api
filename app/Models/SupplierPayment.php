@@ -9,10 +9,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * A payment made to a supplier against a received invoice. Bank fees and rounding adjustments are recorded as separate
  * entries (`type`), like the payments of customer invoices.
+ *
+ * @property Carbon $paid_at
  */
 class SupplierPayment extends Model
 {

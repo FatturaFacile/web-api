@@ -21,7 +21,7 @@ class PortalInvoiceResource extends JsonResource
         return [
             'id' => $this->id,
             'invoice_number' => $this->invoice_number,
-            'date' => $this->date?->toDateString(),
+            'date' => $this->date->toDateString(),
             'due_date' => $this->due_date?->toDateString(),
             'currency' => $this->currency ?? 'EUR',
             'total_net' => (float) $this->total_net,

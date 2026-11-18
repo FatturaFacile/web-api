@@ -41,7 +41,7 @@ final readonly class RecruitmentService implements RecruitmentServiceInterface
     {
         $settings = $this->settings();
 
-        if (isset($data['careers']) && is_array($data['careers'])) {
+        if (isset($data['careers'])) {
             $careers = $data['careers'];
             $mapping = [
                 'enabled' => 'careers_enabled',
@@ -74,7 +74,7 @@ final readonly class RecruitmentService implements RecruitmentServiceInterface
             $settings->retention_default_months = (int) $data['retention']['default_months'];
         }
 
-        if (isset($data['pipeline']['stages']) && is_array($data['pipeline']['stages'])) {
+        if (isset($data['pipeline']['stages'])) {
             $pipeline = (array) ($settings->pipeline ?? []);
 
             foreach ($data['pipeline']['stages'] as $stageInput) {
@@ -119,7 +119,7 @@ final readonly class RecruitmentService implements RecruitmentServiceInterface
             return $name;
         }
 
-        return (string) ($this->tenantContext->getTenant()?->name ?? config('app.name'));
+        return (string) ($this->tenantContext->getTenant()->name ?? config('app.name'));
     }
 
     public function availableVacancy(Position $position, ?JobOpening $excluding = null): int

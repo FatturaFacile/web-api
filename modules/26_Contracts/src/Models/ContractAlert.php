@@ -5,9 +5,17 @@ declare(strict_types=1);
 namespace Modules\Contracts\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Support\Carbon;
 
 /**
  * Eloquent model of the contract alert (tenant scoped where it has a tenant_id).
+ *
+ * @property string $contract_kind
+ * @property string $contract_id
+ * @property string $alert_type
+ * @property Carbon $due_on
+ * @property string $status
+ * @property Carbon|null $acknowledged_at
  */
 final class ContractAlert extends BaseEnterpriseModel
 {

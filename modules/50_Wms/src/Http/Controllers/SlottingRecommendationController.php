@@ -11,7 +11,6 @@ use Illuminate\Validation\Rule;
 use Modules\Wms\Http\Controllers\Concerns\InteractsWithWms;
 use Modules\Wms\Http\Resources\SlottingRecommendationResource;
 use Modules\Wms\Models\WmsSlottingRecommendation;
-use Modules\Wms\Services\SlottingRecommendationService;
 use OpenApi\Attributes as OA;
 
 /**
@@ -21,13 +20,11 @@ final class SlottingRecommendationController extends Controller
 {
     use InteractsWithWms;
 
-    public function __construct(private readonly SlottingRecommendationService $service) {}
-
     #[OA\Get(path: '/api/v1/wms/slotting-recommendations', operationId: 'listWmsSlottingRecommendations', description: 'Slotting recommendations of the active company. Filters: warehouse_id, status, abc_class, stock_item_id.', summary: 'List slotting recommendations', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'warehouse_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string', enum: ['pending', 'accepted', 'rejected'])), new OA\Parameter(name: 'abc_class', in: 'query', schema: new OA\Schema(type: 'string', enum: ['A', 'B', 'C'])), new OA\Parameter(name: 'stock_item_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [
         new OA\Response(response: 200, description: 'Slotting recommendations', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WmsSlottingRecommendation'))])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubUnprocessable', response: 422),
     ])]
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -49,9 +46,9 @@ final class SlottingRecommendationController extends Controller
 
     #[OA\Get(path: '/api/v1/wms/slotting-recommendations/{id}', operationId: 'showWmsSlottingRecommendation', description: 'Return a slotting recommendation.', summary: 'Show a slotting recommendation', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(ref: '#/components/parameters/WmsId')], responses: [
         new OA\Response(response: 200, description: 'Slotting recommendation', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/WmsSlottingRecommendation')])),
-        new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
-        new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
-        new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/WmsHubUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/WmsHubForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/WmsHubNotFound', response: 404),
     ])]
     public function show(string $id): SlottingRecommendationResource
     {

@@ -58,7 +58,7 @@ final class GenerateInvoiceOriginDeclarationAction
         }
 
         $useAuthorization = $evaluation->authorizationNumber !== null;
-        $templates = (array) ($useAuthorization ? $agreement->declaration_templates : $agreement->declaration_templates_no_auth);
+        $templates = $useAuthorization ? $agreement->declaration_templates : $agreement->declaration_templates_no_auth;
         $template = $templates[$locale] ?? $templates[self::FALLBACK_LOCALE] ?? null;
         if (! is_string($template)) {
             return null;

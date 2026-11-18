@@ -10,9 +10,12 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * X (running) or Z (closing) report of a POS session, stored with the totals as they were when it was produced.
+ *
+ * @property Carbon $business_date
  */
 #[UseFactory(RetailSessionReportFactory::class)]
 final class RetailSessionReport extends Model

@@ -76,7 +76,7 @@ final class AuditStamper
             return;
         }
 
-        if (! in_array(SoftDeletes::class, class_uses_recursive($model), true) || $model->isForceDeleting()) {
+        if (! in_array(SoftDeletes::class, class_uses_recursive($model), true) || (method_exists($model, 'isForceDeleting') && $model->isForceDeleting())) {
             return;
         }
 

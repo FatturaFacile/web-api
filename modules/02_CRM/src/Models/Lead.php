@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property array{model?: string, items?: list<array{rule: string, points: int, reason: string}>}|null $score_breakdown
  * @property array<string, mixed>|null $custom_fields
  * @property Carbon|null $score_calculated_at
+ * @property Carbon|null $assigned_at
  * @property Carbon|null $converted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

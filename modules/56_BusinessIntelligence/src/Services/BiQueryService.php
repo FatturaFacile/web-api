@@ -159,7 +159,7 @@ final readonly class BiQueryService
         $errors = [];
 
         foreach (array_values(array_unique($keys)) as $index => $key) {
-            if (! is_string($key) || ! $found->has($key)) {
+            if (! $found->has($key)) {
                 $errors["calculated_measures.{$index}"][] = __('bi_errors.query.unknown_calculated');
 
                 continue;

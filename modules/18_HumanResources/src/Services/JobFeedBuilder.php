@@ -138,7 +138,7 @@ final readonly class JobFeedBuilder
         $this->appendText($document, $channel, 'title', $company);
         $this->appendText($document, $channel, 'link', rtrim((string) config('recruiting.public_careers_base_url'), '/').'/careers/'.rawurlencode($slug));
         $this->appendText($document, $channel, 'description', $settings->localizedText('intro', $channelLocale?->value) ?: $company);
-        $this->appendText($document, $channel, 'language', $channelLocale?->value ?? RecruitingLocale::En->value);
+        $this->appendText($document, $channel, 'language', $channelLocale->value ?? RecruitingLocale::En->value);
         $this->appendText($document, $channel, 'lastBuildDate', $lastBuild ?? now()->toRfc2822String());
 
         foreach ($entries as [$opening, $entryLocale]) {

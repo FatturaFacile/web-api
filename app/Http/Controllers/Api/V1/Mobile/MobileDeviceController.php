@@ -12,6 +12,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\MobileDeviceSession;
 use App\Models\MobileOfflineCacheManifest;
 use App\Models\User;
+use App\Services\Auth\UserSessions;
 use App\Services\Mobile\DeviceSessionService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
@@ -39,7 +40,7 @@ class MobileDeviceController extends Controller
 
         /** @var User $user */
         $user = $request->user();
-        $tokenId = $user->currentAccessToken()?->getKey();
+        $tokenId = UserSessions::currentTokenId($user);
 
         $device = $this->devices->register($user, (string) app(TenantContext::class)->getTenantId(), $data, $tokenId === null ? null : (int) $tokenId);
 

@@ -86,7 +86,7 @@ final class ChartTemplateController extends Controller
         abort_unless(array_key_exists($template, ChartTemplateCatalog::all()), 404);
 
         $tenantId = $this->tenantContext->getTenantId() ?? $request->user()?->tenant_id;
-        abort_unless($tenantId, 403, 'Missing or unresolvable tenant context');
+        abort_unless($tenantId !== null && $tenantId !== '', 403, 'Missing or unresolvable tenant context');
 
         return response()->json(['data' => $this->importer->import((string) $tenantId, $template)]);
     }

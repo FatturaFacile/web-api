@@ -37,7 +37,7 @@ final class DmsApprovalTemplateFactory extends Factory
     public function withRoleSteps(array $roles): static
     {
         return $this->afterCreating(function (DmsApprovalTemplate $template) use ($roles): void {
-            foreach (array_values($roles) as $index => $role) {
+            foreach ($roles as $index => $role) {
                 DmsApprovalTemplateStep::create([
                     'tenant_id' => $template->tenant_id,
                     'template_id' => $template->id,

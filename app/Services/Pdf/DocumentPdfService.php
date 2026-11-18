@@ -173,7 +173,7 @@ class DocumentPdfService
         [$qr, $qrError] = $invoice->invoice_type === 'ch_qr_bill' ? $this->swissQrBill($invoice) : [null, null];
 
         return [$invoice->invoice_type === 'ch_qr_bill' ? 'documents.ch_qr_bill' : 'documents.invoice', array_merge($this->common($invoice, $invoice->contact, $type, $invoice->invoice_number), [
-            'date' => $invoice->date?->toDateString(),
+            'date' => $invoice->date->toDateString(),
             'due_date' => $invoice->due_date?->toDateString(),
             'currency' => $invoice->currency,
             'notes' => $invoice->notes,
@@ -213,7 +213,7 @@ class DocumentPdfService
         $quote->loadMissing(['tenant', 'contact.addresses', 'items']);
 
         return ['documents.quote', array_merge($this->common($quote, $quote->contact, 'quote', $quote->quote_number), [
-            'date' => $quote->date?->toDateString(),
+            'date' => $quote->date->toDateString(),
             'valid_until' => $quote->valid_until?->toDateString(),
             'currency' => $quote->currency,
             'notes' => $quote->notes,
@@ -237,7 +237,7 @@ class DocumentPdfService
         $order->loadMissing(['tenant', 'contact.addresses', 'items']);
 
         return ['documents.quote', array_merge($this->common($order, $order->contact, 'sales_order', $order->order_number), [
-            'date' => $order->date?->toDateString(),
+            'date' => $order->date->toDateString(),
             'valid_until' => $order->due_date?->toDateString(),
             'currency' => $order->currency,
             'notes' => $order->notes,
@@ -266,7 +266,7 @@ class DocumentPdfService
         $tax = round(array_sum(array_map(fn (array $line): float => $line['quantity'] * $line['unit_price'] * $line['tax_rate'] / 100, $lines)), 2);
 
         return ['documents.delivery-note', array_merge($this->common($note, $note->contact, 'delivery_note', $note->ddt_number), [
-            'date' => $note->date?->toDateString(),
+            'date' => $note->date->toDateString(),
             'currency' => $note->currency ?? 'EUR',
             'notes' => $note->notes,
             'lines' => $lines,

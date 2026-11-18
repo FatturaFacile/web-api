@@ -21,7 +21,7 @@ class CustomsTaricCodeResource extends JsonResource
         return [
             'id' => $this->id,
             'code' => $this->code,
-            'level' => $this->level?->value,
+            'level' => $this->level->value,
             'chapter' => $this->chapter,
             'description' => $this->description,
             'supplementary_unit' => $this->supplementary_unit,

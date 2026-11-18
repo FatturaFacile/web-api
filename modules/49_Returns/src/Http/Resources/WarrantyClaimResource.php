@@ -28,7 +28,7 @@ final class WarrantyClaimResource extends JsonResource
             'lot_number' => $this->warranty?->lot_number,
             'rma_id' => $this->rma_id,
             'rma_number' => $this->rma?->rma_number,
-            'claim_date' => $this->claim_date?->toDateString(),
+            'claim_date' => $this->claim_date->toDateString(),
             'description' => $this->description,
             'status' => $this->status,
             'is_valid' => $this->is_valid,

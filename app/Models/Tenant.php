@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\Pivots\AuditedPivot;
+use App\Models\Pivots\TenantMembership;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property array<string, mixed>|null $settings
+ */
 class Tenant extends Model
 {
     /** @use HasFactory<TenantFactory> */
@@ -93,12 +96,12 @@ class Tenant extends Model
     }
 
     /**
-     * @return BelongsToMany<User, $this>
+     * @return BelongsToMany<User, $this, TenantMembership, 'pivot'>
      */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'tenant_user')
-            ->using(AuditedPivot::class)
+            ->using(TenantMembership::class)
             ->withPivot(['id', 'role', 'permissions', 'suspended_at', 'custom_role_id'])
             ->withTimestamps();
     }

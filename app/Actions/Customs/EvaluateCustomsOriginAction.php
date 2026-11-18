@@ -102,7 +102,7 @@ final class EvaluateCustomsOriginAction
         $comparable = $value;
 
         if (! in_array($currency, ['EUR', 'CHF'], true)) {
-            $currency = strtoupper((string) ($invoice->tenant?->default_currency ?? 'EUR'));
+            $currency = strtoupper((string) ($invoice->tenant->default_currency ?? 'EUR'));
             $comparable = round($value * (float) $invoice->exchange_rate, 2);
         }
 

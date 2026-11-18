@@ -26,7 +26,7 @@ class InventoryCostLayerConsumptionFactory extends Factory
 
         return [
             'id' => (string) Str::uuid7(),
-            'tenant_id' => Tenant::first()?->id ?? $layer->tenant_id,
+            'tenant_id' => Tenant::first()->id ?? $layer->tenant_id,
             'layer_id' => $layer->id,
             'stock_item_id' => $layer->stock_item_id,
             'issue_movement_id' => (string) Str::uuid7(),

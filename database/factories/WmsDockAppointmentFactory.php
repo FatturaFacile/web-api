@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Wms\Models\WmsDockAppointment;
+use Modules\Wms\Models\WmsDockDoor;
 
 /**
  * @extends Factory<WmsDockAppointment>

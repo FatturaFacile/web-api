@@ -144,7 +144,7 @@ final readonly class SendAndSignJobOfferAction
         event(new JobOfferSentEvent(
             offerId: (string) $offer->id,
             applicationId: (string) $offer->application_id,
-            jobOpeningId: (string) ($application?->job_opening_id ?? ''),
+            jobOpeningId: (string) ($application->job_opening_id ?? ''),
             signatureProvider: (string) $offer->signature_provider,
             tenantId: (string) $offer->tenant_id,
             companyId: (string) $offer->tenant_id

@@ -43,11 +43,17 @@ final class WorkflowDelegation extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function delegator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'delegator_user_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function delegate(): BelongsTo
     {
         return $this->belongsTo(User::class, 'delegate_user_id');

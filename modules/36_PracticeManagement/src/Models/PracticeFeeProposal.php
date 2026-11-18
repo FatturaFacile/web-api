@@ -6,6 +6,7 @@ namespace Modules\PracticeManagement\Models;
 
 use App\Models\Contact;
 use App\Models\LegalCase;
+use Carbon\CarbonImmutable;
 use Enterprise\Foundation\Concerns\HasUuidV7;
 use Enterprise\MultiTenant\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property string $id
  * @property ?string $tenant_id
+ * @property CarbonImmutable|null $valid_until
  */
 final class PracticeFeeProposal extends Model
 {

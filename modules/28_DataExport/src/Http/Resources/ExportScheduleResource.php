@@ -6,9 +6,12 @@ namespace Modules\DataExport\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\DataExport\Models\ExportSchedule;
 
 /**
  * API representation of a recurring export.
+ *
+ * @mixin ExportSchedule
  */
 final class ExportScheduleResource extends JsonResource
 {

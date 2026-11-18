@@ -37,7 +37,7 @@ final class ServiceRequestResource extends JsonResource
             'asset_id' => $this->asset_id,
             'work_order_id' => $this->work_order_id,
             'inspection_id' => $this->inspection_id,
-            'due_at' => $this->due_at?->toIso8601String(),
+            'due_at' => $this->due_at->toIso8601String(),
             'is_overdue' => $this->isOverdue(),
             'assigned_at' => $this->assigned_at?->toIso8601String(),
             'responded_at' => $this->responded_at?->toIso8601String(),

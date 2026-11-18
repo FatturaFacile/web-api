@@ -103,7 +103,7 @@ final class LeadPayloadMapper
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<array-key, mixed>  $data
      * @param  array<string, mixed>  $flat
      */
     private static function flatten(array $data, array &$flat): void

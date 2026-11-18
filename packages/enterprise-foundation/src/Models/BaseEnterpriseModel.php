@@ -15,8 +15,14 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
+/**
+ * @property string|null $tenant_id Null only for global records of models that allow them (see BelongsToTenant).
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 abstract class BaseEnterpriseModel extends Model
 {
     use AiEnabled,

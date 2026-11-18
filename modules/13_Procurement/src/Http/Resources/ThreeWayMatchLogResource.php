@@ -6,7 +6,11 @@ namespace Modules\Procurement\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Procurement\Models\ThreeWayMatchLog;
 
+/**
+ * @mixin ThreeWayMatchLog
+ */
 final class ThreeWayMatchLogResource extends JsonResource
 {
     /**

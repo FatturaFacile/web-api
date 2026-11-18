@@ -108,7 +108,7 @@ final class MarketplaceInstallation extends BaseEnterpriseModel
      */
     public function credentialKeysSet(): array
     {
-        return array_keys(array_filter($this->credentials ?? [], static fn (mixed $value): bool => is_string($value) && $value !== ''));
+        return array_keys(array_filter($this->credentials ?? [], static fn (string $value): bool => $value !== ''));
     }
 
     /**

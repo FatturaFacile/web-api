@@ -139,7 +139,7 @@ final class EnforceIdempotency
             }
         }
 
-        return hash('sha256', json_encode([$request->getMethod(), $request->path(), $request->query(), $request->post(), $request->getContent(), $files], JSON_THROW_ON_ERROR | JSON_PARTIAL_OUTPUT_ON_ERROR));
+        return hash('sha256', json_encode([$request->getMethod(), $request->path(), $request->query(), $request->post(), $request->getContent(), $files], JSON_PARTIAL_OUTPUT_ON_ERROR));
     }
 
     private function problem(int $status, string $translationKey): JsonResponse

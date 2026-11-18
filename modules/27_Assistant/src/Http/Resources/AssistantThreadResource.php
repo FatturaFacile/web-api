@@ -6,9 +6,12 @@ namespace Modules\Assistant\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Assistant\Models\AssistantThread;
 
 /**
  * API representation of a conversation; the messages are present on the detail only.
+ *
+ * @mixin AssistantThread
  */
 final class AssistantThreadResource extends JsonResource
 {

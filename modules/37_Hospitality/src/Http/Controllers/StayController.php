@@ -160,23 +160,23 @@ final class StayController extends Controller
         return new HospitalityResource($this->lodging->voidEntry($entry));
     }
 
-    #[OAGet(path: '/api/v1/hospitality/stays/{id}/folio-statement', operationId: 'hospitalityFolioStatement', description: 'The statement of the guest folio of a stay: charges, payments, totals per category and the balance (charges less payments). Voided lines are left out. It is available in every status, also before check-out.', summary: 'Folio statement', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Hospitality'], parameters: [new OAParameter(ref: '#/components/parameters/HospitalityId')], responses: [
-        new OAResponse(response: 200, description: 'Folio statement', content: new OAJsonContent(ref: '#/components/schemas/HospitalityFolioStatementResponse')),
-        new OAResponse(ref: '#/components/responses/HospitalityUnauthenticated', response: 401),
-        new OAResponse(ref: '#/components/responses/HospitalityForbidden', response: 403),
-        new OAResponse(ref: '#/components/responses/HospitalityNotFound', response: 404),
+    #[OA\Get(path: '/api/v1/hospitality/stays/{id}/folio-statement', operationId: 'hospitalityFolioStatement', description: 'The statement of the guest folio of a stay: charges, payments, totals per category and the balance (charges less payments). Voided lines are left out. It is available in every status, also before check-out.', summary: 'Folio statement', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Hospitality'], parameters: [new OA\Parameter(ref: '#/components/parameters/HospitalityId')], responses: [
+        new OA\Response(response: 200, description: 'Folio statement', content: new OA\JsonContent(ref: '#/components/schemas/HospitalityFolioStatementResponse')),
+        new OA\Response(ref: '#/components/responses/HospitalityUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/HospitalityForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/HospitalityNotFound', response: 404),
     ])]
     public function folioStatement(string $id): JsonResponse
     {
         return response()->json(['data' => $this->folios->statement($this->stay($id, 'view'))]);
     }
 
-    #[OAPost(path: '/api/v1/hospitality/stays/{id}/invoice', operationId: 'invoiceHospitalityFolio', description: 'Invoices the charges of a checked-out stay to a customer, once, through the sales invoicing service (numbering, VAT and ledger posting). Each charge becomes a line with the tax rate of its category, else the default rate. The folio lines carry no tax rate: the caller chooses them. Reserved to managers.', summary: 'Invoice the folio', security: [['bearerAuth' => [], 'tenantHeader' => []]], requestBody: new OARequestBody(required: true, content: new OAJsonContent(ref: '#/components/schemas/HospitalityFolioInvoiceRequest')), tags: ['Hospitality'], parameters: [new OAParameter(ref: '#/components/parameters/HospitalityId')], responses: [
-        new OAResponse(response: 201, description: 'Folio invoiced', content: new OAJsonContent(ref: '#/components/schemas/HospitalityRecordResponse')),
-        new OAResponse(ref: '#/components/responses/HospitalityUnauthenticated', response: 401),
-        new OAResponse(ref: '#/components/responses/HospitalityForbidden', response: 403),
-        new OAResponse(ref: '#/components/responses/HospitalityNotFound', response: 404),
-        new OAResponse(ref: '#/components/responses/HospitalityUnprocessable', response: 422),
+    #[OA\Post(path: '/api/v1/hospitality/stays/{id}/invoice', operationId: 'invoiceHospitalityFolio', description: 'Invoices the charges of a checked-out stay to a customer, once, through the sales invoicing service (numbering, VAT and ledger posting). Each charge becomes a line with the tax rate of its category, else the default rate. The folio lines carry no tax rate: the caller chooses them. Reserved to managers.', summary: 'Invoice the folio', security: [['bearerAuth' => [], 'tenantHeader' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HospitalityFolioInvoiceRequest')), tags: ['Hospitality'], parameters: [new OA\Parameter(ref: '#/components/parameters/HospitalityId')], responses: [
+        new OA\Response(response: 201, description: 'Folio invoiced', content: new OA\JsonContent(ref: '#/components/schemas/HospitalityRecordResponse')),
+        new OA\Response(ref: '#/components/responses/HospitalityUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/HospitalityForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/HospitalityNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/HospitalityUnprocessable', response: 422),
     ])]
     public function invoice(GroupBookingRequest $request, string $id): JsonResponse
     {
@@ -185,14 +185,14 @@ final class StayController extends Controller
         return (new HospitalityResource($this->folios->invoice($stay, $request->validated())))->response()->setStatusCode(201);
     }
 
-    #[OAGet(path: '/api/v1/hospitality/availability-grid', operationId: 'hospitalityAvailabilityGrid', description: 'Availability night by night of every active room type for the calendar grid: rooms in total, booked, held for open group blocks and still available. The interval is at most 62 days.', summary: 'Availability grid', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Hospitality'], parameters: [
-        new OAParameter(name: 'from', in: 'query', required: true, schema: new OASchema(type: 'string', format: 'date')),
-        new OAParameter(name: 'to', in: 'query', required: true, description: 'Exclusive end, after from', schema: new OASchema(type: 'string', format: 'date')),
+    #[OA\Get(path: '/api/v1/hospitality/availability-grid', operationId: 'hospitalityAvailabilityGrid', description: 'Availability night by night of every active room type for the calendar grid: rooms in total, booked, held for open group blocks and still available. The interval is at most 62 days.', summary: 'Availability grid', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Hospitality'], parameters: [
+        new OA\Parameter(name: 'from', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date')),
+        new OA\Parameter(name: 'to', in: 'query', required: true, description: 'Exclusive end, after from', schema: new OA\Schema(type: 'string', format: 'date')),
     ], responses: [
-        new OAResponse(response: 200, description: 'Availability grid', content: new OAJsonContent(ref: '#/components/schemas/HospitalityAvailabilityGridResponse')),
-        new OAResponse(ref: '#/components/responses/HospitalityUnauthenticated', response: 401),
-        new OAResponse(ref: '#/components/responses/HospitalityForbidden', response: 403),
-        new OAResponse(ref: '#/components/responses/HospitalityUnprocessable', response: 422),
+        new OA\Response(response: 200, description: 'Availability grid', content: new OA\JsonContent(ref: '#/components/schemas/HospitalityAvailabilityGridResponse')),
+        new OA\Response(ref: '#/components/responses/HospitalityUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/HospitalityForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/HospitalityUnprocessable', response: 422),
     ])]
     public function availabilityGrid(GroupBookingRequest $request): JsonResponse
     {

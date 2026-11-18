@@ -86,7 +86,7 @@ final class GovControl extends BaseEnterpriseModel
     }
 
     /**
-     * @return BelongsToMany<GovRisk, $this, GovRiskControl>
+     * @return BelongsToMany<GovRisk, $this>
      */
     public function risks(): BelongsToMany
     {

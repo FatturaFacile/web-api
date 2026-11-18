@@ -37,7 +37,7 @@ class InvoiceResource extends JsonResource
             ]),
             'invoice_type' => $this->invoice_type,
             'invoice_number' => $this->invoice_number,
-            'date' => $this->date?->toDateString(),
+            'date' => $this->date->toDateString(),
             'due_date' => $this->due_date?->toDateString(),
             'currency' => $this->currency,
             'exchange_rate' => (float) $this->exchange_rate,

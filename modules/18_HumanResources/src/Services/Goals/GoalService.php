@@ -92,7 +92,7 @@ final class GoalService
                 'status' => $data['status'] ?? Goal::StatusActive,
             ]);
 
-            foreach (array_values($data['key_results'] ?? []) as $index => $keyResult) {
+            foreach (($data['key_results'] ?? []) as $index => $keyResult) {
                 $this->makeKeyResult($goal, $keyResult, $index);
             }
 

@@ -88,9 +88,9 @@ class NotifyStaffOfPortalActivity
         }
 
         if ($responsibleUserId !== null) {
-            $responsible = $tenant->users()->whereKey($responsibleUserId)->first();
-            if ($responsible !== null) {
-                return collect([$responsible]);
+            $responsible = $tenant->users()->whereKey($responsibleUserId)->get();
+            if ($responsible->isNotEmpty()) {
+                return $responsible;
             }
         }
 

@@ -72,7 +72,7 @@ final class FecExporter
         $partner = $line->partner_id !== null ? ($partners[(string) $line->partner_id] ?? null) : null;
         $debit = (string) ($line->functional_debit ?? $line->debit_amount);
         $credit = (string) ($line->functional_credit ?? $line->credit_amount);
-        $foreign = $line->currency !== null && $line->exchange_rate !== null && (float) $line->exchange_rate !== 1.0;
+        $foreign = (float) $line->exchange_rate !== 1.0;
         $foreignAmount = Decimal::isZero((string) $line->debit_amount) ? (string) $line->credit_amount : (string) $line->debit_amount;
 
         return [

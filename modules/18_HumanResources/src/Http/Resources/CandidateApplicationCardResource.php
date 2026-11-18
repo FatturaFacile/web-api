@@ -55,7 +55,7 @@ final class CandidateApplicationCardResource extends JsonResource
             'board_position' => (int) $application->board_position,
             'source' => (string) $application->source,
             'cv_parse_status' => $application->cv_parse_status->value,
-            'skills' => array_values(array_map('strval', (array) ($application->skills ?? []))),
+            'skills' => array_map('strval', (array) ($application->skills ?? [])),
             'average_score' => $average !== null && (int) $count > 0 ? round((float) $average, 2) : null,
             'scorecards_count' => (int) $count,
             'privacy_consent_expires_at' => $application->privacy_consent_expires_at?->toIso8601ZuluString(),
