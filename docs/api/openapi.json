@@ -17215,6 +17215,73 @@
                 }
             }
         },
+        "/v1/banking/reconciliation/transactions/{lineId}/match": {
+            "post": {
+                "operationId": "banking.reconciliation.transactions.match",
+                "tags": [
+                    "BankStatement"
+                ],
+                "parameters": [
+                    {
+                        "name": "lineId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ManualMatchRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Statement line matched successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/BankStatementLineResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/inventory/barcode/scan": {
             "post": {
                 "operationId": "inventory.barcode.scan",
@@ -42247,10 +42314,7 @@
                                                                         "type": "string"
                                                                     },
                                                                     "date": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
-                                                                        ]
+                                                                        "type": "string"
                                                                     },
                                                                     "status": {
                                                                         "type": "string"
@@ -42301,10 +42365,7 @@
                                                                         "type": "string"
                                                                     },
                                                                     "date": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
-                                                                        ]
+                                                                        "type": "string"
                                                                     },
                                                                     "status": {
                                                                         "type": "string"
@@ -42352,10 +42413,7 @@
                                                                         "type": "string"
                                                                     },
                                                                     "date": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
-                                                                        ]
+                                                                        "type": "string"
                                                                     }
                                                                 },
                                                                 "required": [
@@ -42393,10 +42451,7 @@
                                                                         "type": "string"
                                                                     },
                                                                     "date": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
-                                                                        ]
+                                                                        "type": "string"
                                                                     },
                                                                     "due_date": {
                                                                         "type": [
@@ -57226,7 +57281,23 @@
                                                         },
                                                         "per_day": {
                                                             "type": "array",
-                                                            "items": {}
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "date": {
+                                                                        "anyOf": [
+                                                                            {
+                                                                                "type": "string"
+                                                                            },
+                                                                            {}
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "date"
+                                                                ],
+                                                                "additionalProperties": {}
+                                                            }
                                                         }
                                                     },
                                                     "required": [
@@ -70648,10 +70719,10 @@
                                             "type": "object",
                                             "properties": {
                                                 "from": {
-                                                    "type": "string"
+                                                    "type": "integer"
                                                 },
                                                 "to": {
-                                                    "type": "string"
+                                                    "type": "integer"
                                                 },
                                                 "added": {
                                                     "type": "integer"
@@ -84460,10 +84531,7 @@
                                                         "type": "string"
                                                     },
                                                     "date": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "currency": {
                                                         "type": "string"
@@ -100046,10 +100114,7 @@
                                                         "type": "string"
                                                     },
                                                     "reference_month": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "index_value": {
                                                         "type": "string"
@@ -100160,10 +100225,7 @@
                                                     "type": "string"
                                                 },
                                                 "reference_month": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "index_value": {
                                                     "type": "string"
@@ -100245,16 +100307,10 @@
                                                         "type": "string"
                                                     },
                                                     "base_month": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "reference_month": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "base_index": {
                                                         "type": "string"
@@ -100281,10 +100337,7 @@
                                                         "type": "string"
                                                     },
                                                     "effective_date": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "notified_at": {
                                                         "type": [
@@ -100642,16 +100695,10 @@
                                                     "type": "string"
                                                 },
                                                 "base_month": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "reference_month": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "base_index": {
                                                     "type": "string"
@@ -100678,10 +100725,7 @@
                                                     "type": "string"
                                                 },
                                                 "effective_date": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "notified_at": {
                                                     "type": [
@@ -107060,8 +107104,8 @@
                                                     "type": "string",
                                                     "enum": [
                                                         "NON",
-                                                        "QRR",
-                                                        "SCOR"
+                                                        "SCOR",
+                                                        "QRR"
                                                     ]
                                                 },
                                                 "reference": {
@@ -107076,6 +107120,58 @@
                                                 },
                                                 "amount": {
                                                     "type": "number"
+                                                },
+                                                "formatted_iban": {
+                                                    "type": "string"
+                                                },
+                                                "formatted_reference": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "formatted_amount": {
+                                                    "type": "string"
+                                                },
+                                                "creditor_lines": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string"
+                                                        }
+                                                    ],
+                                                    "minItems": 3,
+                                                    "maxItems": 3,
+                                                    "items": {}
+                                                },
+                                                "debtor_lines": {
+                                                    "type": [
+                                                        "array",
+                                                        "null"
+                                                    ],
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string"
+                                                        }
+                                                    ],
+                                                    "minItems": 3,
+                                                    "maxItems": 3,
+                                                    "items": {}
+                                                },
+                                                "message": {
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
@@ -107086,7 +107182,13 @@
                                                 "reference",
                                                 "iban",
                                                 "currency",
-                                                "amount"
+                                                "amount",
+                                                "formatted_iban",
+                                                "formatted_reference",
+                                                "formatted_amount",
+                                                "creditor_lines",
+                                                "debtor_lines",
+                                                "message"
                                             ]
                                         },
                                         "meta": {
@@ -107139,6 +107241,184 @@
                                         "detail",
                                         "instance",
                                         "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/sdi/invoices/{id}/send": {
+            "post": {
+                "operationId": "sdi.invoices.send",
+                "summary": "Transmit the invoice to SDI through the configured provider",
+                "tags": [
+                    "InvoiceSdi"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Invoice sent to SDI"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "SDI transmission failed"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 502
+                                        },
+                                        "detail": {
+                                            "type": "string"
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/sdi/invoices/{id}/notifications": {
+            "get": {
+                "operationId": "sdi.invoices.notifications",
+                "summary": "Outbound transmissions and inbound SDI receipts for an invoice",
+                "tags": [
+                    "InvoiceSdi"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "SDI logs retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "outbound": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/CatalogResource"
+                                                    }
+                                                },
+                                                "inbound": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/CatalogResource"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "outbound",
+                                                "inbound"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
                                     ]
                                 }
                             }
@@ -107417,6 +107697,349 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/banking/iso20022/import": {
+            "post": {
+                "operationId": "banking.iso20022.import",
+                "tags": [
+                    "Iso20022"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImportIso20022Request"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Bank statement imported successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "statement_id": {
+                                                    "type": "string"
+                                                },
+                                                "format": {
+                                                    "type": "string"
+                                                },
+                                                "account_iban": {
+                                                    "type": "string"
+                                                },
+                                                "currency": {
+                                                    "type": "string"
+                                                },
+                                                "statement_date": {
+                                                    "type": "string"
+                                                },
+                                                "opening_balance": {
+                                                    "type": [
+                                                        "number",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "closing_balance": {
+                                                    "type": [
+                                                        "number",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "entries": {
+                                                    "type": "integer"
+                                                },
+                                                "stored": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "duplicates": {
+                                                    "type": "integer",
+                                                    "const": 0
+                                                },
+                                                "reconciled": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "unmatched": {
+                                                    "type": "integer"
+                                                },
+                                                "auto_reconciled": {
+                                                    "type": "boolean"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "statement_id",
+                                                "format",
+                                                "account_iban",
+                                                "currency",
+                                                "statement_date",
+                                                "opening_balance",
+                                                "closing_balance",
+                                                "entries",
+                                                "stored",
+                                                "duplicates",
+                                                "reconciled",
+                                                "unmatched",
+                                                "auto_reconciled",
+                                                "status"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/banking/iso20022/pain001/export": {
+            "post": {
+                "operationId": "banking.iso20022.pain001.export",
+                "tags": [
+                    "Iso20022"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExportPain001Request"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Payment file generated and validated against the ISO 20022 schema"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "batch_id": {
+                                                    "type": "string"
+                                                },
+                                                "message_id": {
+                                                    "type": "string"
+                                                },
+                                                "format": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "sepa_pain_001_it",
+                                                        "iso_pain_001_ch"
+                                                    ]
+                                                },
+                                                "pain_version": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "xml_preview": {
+                                                    "type": "string"
+                                                },
+                                                "schema_valid": {
+                                                    "type": "boolean"
+                                                },
+                                                "filename": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "batch_id",
+                                                "message_id",
+                                                "format",
+                                                "pain_version",
+                                                "status",
+                                                "xml_preview",
+                                                "schema_valid",
+                                                "filename"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/banking/reconciliation/transactions": {
+            "get": {
+                "operationId": "banking.reconciliation.transactions",
+                "tags": [
+                    "Iso20022"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "unmatched",
+                                "matched",
+                                "all"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "direction",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "credit",
+                                "debit"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "statement_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 5,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Bank statements retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/BankStatementLineResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "string"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "last_page",
+                                                "per_page",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -114256,7 +114879,13 @@
                                                         "type": "string"
                                                     },
                                                     "field_map": {
-                                                        "type": "string"
+                                                        "type": [
+                                                            "object",
+                                                            "null"
+                                                        ],
+                                                        "additionalProperties": {
+                                                            "type": "string"
+                                                        }
                                                     },
                                                     "is_active": {
                                                         "type": "string"
@@ -155946,10 +156575,7 @@
                                                     "type": "string"
                                                 },
                                                 "opened_at": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "closed_at": {
                                                     "type": [
@@ -176552,17 +177178,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "status": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "expired"
-                                                            ]
-                                                        }
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "signer_status": {
                                                     "type": "string"
@@ -176586,17 +177202,7 @@
                                                     "type": "string"
                                                 },
                                                 "body": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                ""
-                                                            ]
-                                                        }
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "company_name": {
                                                     "type": [
@@ -176613,7 +177219,7 @@
                                                                 "type": "string"
                                                             },
                                                             "position": {
-                                                                "type": "string"
+                                                                "type": "integer"
                                                             },
                                                             "status": {
                                                                 "type": "string"
@@ -176679,17 +177285,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "status": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "expired"
-                                                            ]
-                                                        }
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "signer_status": {
                                                     "type": "string"
@@ -176713,17 +177309,7 @@
                                                     "type": "string"
                                                 },
                                                 "body": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                ""
-                                                            ]
-                                                        }
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "company_name": {
                                                     "type": [
@@ -176740,7 +177326,7 @@
                                                                 "type": "string"
                                                             },
                                                             "position": {
-                                                                "type": "string"
+                                                                "type": "integer"
                                                             },
                                                             "status": {
                                                                 "type": "string"
@@ -176816,17 +177402,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "status": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "expired"
-                                                            ]
-                                                        }
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "signer_status": {
                                                     "type": "string"
@@ -176850,17 +177426,7 @@
                                                     "type": "string"
                                                 },
                                                 "body": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                ""
-                                                            ]
-                                                        }
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "company_name": {
                                                     "type": [
@@ -176877,7 +177443,7 @@
                                                                 "type": "string"
                                                             },
                                                             "position": {
-                                                                "type": "string"
+                                                                "type": "integer"
                                                             },
                                                             "status": {
                                                                 "type": "string"
@@ -179489,6 +180055,9 @@
                                                 "format": {
                                                     "type": "string"
                                                 },
+                                                "pain_version": {
+                                                    "type": "string"
+                                                },
                                                 "status": {
                                                     "type": "string"
                                                 },
@@ -179500,6 +180069,7 @@
                                                 "batch_id",
                                                 "message_id",
                                                 "format",
+                                                "pain_version",
                                                 "status",
                                                 "xml_preview"
                                             ]
@@ -186443,6 +187013,9 @@
                                 }
                             }
                         }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -207096,12 +207669,7 @@
                                                 "sign_outgoing": {
                                                     "type": "string"
                                                 },
-                                                "zero_rate_nature": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
-                                                },
+                                                "zero_rate_nature": {},
                                                 "ade_telematic_address_registered": {
                                                     "type": "string"
                                                 },
@@ -207241,12 +207809,7 @@
                                                 "sign_outgoing": {
                                                     "type": "string"
                                                 },
-                                                "zero_rate_nature": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
-                                                },
+                                                "zero_rate_nature": {},
                                                 "ade_telematic_address_registered": {
                                                     "type": "string"
                                                 },
@@ -207561,6 +208124,430 @@
                 "security": []
             }
         },
+        "/v1/sdi/invoices/{id}/generate-xml": {
+            "post": {
+                "operationId": "sdi.invoices.generate-xml",
+                "summary": "Build the FatturaPA file, validate it against the official schema and keep it on the invoice (state generated)",
+                "tags": [
+                    "SdiInvoice"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "FatturaPA file generated and validated"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "invoice_id": {
+                                                    "type": "string"
+                                                },
+                                                "file_name": {
+                                                    "type": "string"
+                                                },
+                                                "sdi_status": {
+                                                    "type": "string"
+                                                },
+                                                "transmission_format": {
+                                                    "type": "string"
+                                                },
+                                                "valid": {
+                                                    "type": "boolean"
+                                                },
+                                                "schema_errors": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "invoice_id",
+                                                "file_name",
+                                                "sdi_status",
+                                                "transmission_format",
+                                                "valid",
+                                                "schema_errors"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/sdi/invoices/{id}/preview-html": {
+            "get": {
+                "operationId": "sdi.invoices.preview-html",
+                "summary": "The stored file (or one built on the spot) as a sandboxed, read-only HTML page",
+                "tags": [
+                    "SdiInvoice"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "text/html; charset=UTF-8": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-Content-Type-Options": {
+                                "schema": {
+                                    "type": "string",
+                                    "const": "nosniff"
+                                }
+                            },
+                            "Content-Security-Policy": {
+                                "schema": {
+                                    "type": "string",
+                                    "const": "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/sdi/invoices/{id}/download-xml": {
+            "get": {
+                "operationId": "sdi.invoices.download-xml",
+                "summary": "The stored file, for the manual channel and for archiving",
+                "tags": [
+                    "SdiInvoice"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/xml; charset=UTF-8": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "string",
+                                            "enum": [
+                                                "attachment; filename=\"invoice.xml\""
+                                            ]
+                                        }
+                                    ]
+                                }
+                            },
+                            "X-Content-Type-Options": {
+                                "schema": {
+                                    "type": "string",
+                                    "const": "nosniff"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "examples": [
+                                                ""
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/sdi/passive/import": {
+            "post": {
+                "operationId": "sdi.passive.import",
+                "summary": "Read a supplier FatturaPA (.xml, or CAdES .xml.p7m) into received-invoice drafts, with a readable preview",
+                "tags": [
+                    "SdiPassiveImport"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImportPassiveInvoiceRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Supplier invoices received"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "invoices": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "signature_verified": {
+                                                    "type": [
+                                                        "boolean",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "preview_html": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "invoices",
+                                                "signature_verified",
+                                                "preview_html"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Supplier invoices received"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "preview_html": {
+                                                    "type": "string"
+                                                },
+                                                "signature_verified": {
+                                                    "type": [
+                                                        "boolean",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "preview_html",
+                                                "signature_verified"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/sdi/supplier-invoices/{invoice}/generate-integration": {
+            "post": {
+                "operationId": "sdi.supplier-invoices.generate-integration",
+                "tags": [
+                    "SdiSupplierIntegration"
+                ],
+                "parameters": [
+                    {
+                        "name": "invoice",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerateIntegrationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Self-invoice issued"
+                                        },
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/InvoiceResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "contact",
+                                                        "items"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/sdi/transmissions": {
             "get": {
                 "operationId": "sdi.transmissions.index",
@@ -207633,10 +208620,7 @@
                                                         "type": "string"
                                                     },
                                                     "invoice_date": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "total_gross": {
                                                         "type": "string"
@@ -207731,6 +208715,76 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/sdi/webhook": {
+            "post": {
+                "operationId": "sdi.webhook",
+                "summary": "Receive an SDI receipt (delivery, rejection, ...) from the provider gateway",
+                "tags": [
+                    "SdiWebhook"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SdiNotificationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Notification received"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "invoice_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "invoice_id"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     }
                 }
             }
@@ -212289,6 +213343,37 @@
                                             "null"
                                         ],
                                         "maxLength": 34
+                                    },
+                                    "qrr_prefix": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "pattern": "^\\d{1,6}$"
+                                    },
+                                    "default_reference_type": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "enum": [
+                                            "QRR",
+                                            "SCOR",
+                                            "NON",
+                                            null
+                                        ]
+                                    },
+                                    "qr_bill_perforation": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "enum": [
+                                            "NONE",
+                                            "DASHED_LINE",
+                                            "DASHED_LINE_WITH_SCISSORS",
+                                            null
+                                        ]
                                     },
                                     "sdi_code": {
                                         "type": [
@@ -225227,10 +226312,7 @@
                                                                 ]
                                                             },
                                                             "posted_on": {
-                                                                "type": [
-                                                                    "string",
-                                                                    "null"
-                                                                ]
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
@@ -225275,10 +226357,7 @@
                                                                 ]
                                                             },
                                                             "posted_on": {
-                                                                "type": [
-                                                                    "string",
-                                                                    "null"
-                                                                ]
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
@@ -237889,10 +238968,7 @@
                                                         "type": "string"
                                                     },
                                                     "date": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "due_date": {
                                                         "type": [
@@ -240143,6 +241219,364 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/v1/swiss-qr-bill/generate-pdf": {
+            "post": {
+                "operationId": "swiss-qr-bill.generate-pdf",
+                "tags": [
+                    "SwissQrBill"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerateQrBillPdfRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/swiss-qr-bill/parse": {
+            "post": {
+                "operationId": "swiss-qr-bill.parse",
+                "tags": [
+                    "SwissQrBill"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ParseQrBillRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Swiss QR-bill parsed successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "payload": {
+                                                    "type": "string"
+                                                },
+                                                "version": {
+                                                    "type": "string"
+                                                },
+                                                "iban": {
+                                                    "type": "string"
+                                                },
+                                                "is_qr_iban": {
+                                                    "type": "boolean"
+                                                },
+                                                "creditor": {
+                                                    "type": "object",
+                                                    "additionalProperties": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                },
+                                                "amount": {
+                                                    "type": [
+                                                        "number",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "currency": {
+                                                    "type": "string"
+                                                },
+                                                "debtor": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ],
+                                                    "additionalProperties": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                },
+                                                "reference_type": {
+                                                    "type": "string"
+                                                },
+                                                "reference": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "message": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "billing_information": {
+                                                    "type": "object",
+                                                    "additionalProperties": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "valid": {
+                                                    "type": "boolean"
+                                                },
+                                                "errors": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "draft": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "supplier_name": {
+                                                            "type": "string"
+                                                        },
+                                                        "supplier_iban": {
+                                                            "type": "string"
+                                                        },
+                                                        "invoice_number": {
+                                                            "type": "string"
+                                                        },
+                                                        "invoice_date": {
+                                                            "type": "string"
+                                                        },
+                                                        "vat_number": {
+                                                            "type": "string"
+                                                        },
+                                                        "total_amount": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "currency": {
+                                                            "type": "string"
+                                                        },
+                                                        "payment_reference": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "payment_reference_type": {
+                                                            "type": "string"
+                                                        },
+                                                        "notes": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "supplier_name",
+                                                        "supplier_iban",
+                                                        "invoice_number",
+                                                        "invoice_date",
+                                                        "vat_number",
+                                                        "total_amount",
+                                                        "currency",
+                                                        "payment_reference",
+                                                        "payment_reference_type",
+                                                        "notes"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "payload",
+                                                "version",
+                                                "iban",
+                                                "is_qr_iban",
+                                                "creditor",
+                                                "amount",
+                                                "currency",
+                                                "debtor",
+                                                "reference_type",
+                                                "reference",
+                                                "message",
+                                                "billing_information",
+                                                "valid",
+                                                "errors",
+                                                "draft"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/swiss-qr-bill/validate-reference": {
+            "post": {
+                "operationId": "swiss-qr-bill.validate-reference",
+                "tags": [
+                    "SwissQrBill"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ValidateQrReferenceRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Reference checked"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "valid": {
+                                                    "type": "boolean"
+                                                },
+                                                "reference_type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "NON",
+                                                        "QRR",
+                                                        "SCOR"
+                                                    ]
+                                                },
+                                                "reference": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "formatted_reference": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "is_qr_iban": {
+                                                    "type": "boolean"
+                                                },
+                                                "errors": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "error_codes": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "invalid_creditor_iban",
+                                                            "invalid_reference",
+                                                            "reference_mismatch"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "valid",
+                                                "reference_type",
+                                                "reference",
+                                                "formatted_reference",
+                                                "is_qr_iban",
+                                                "errors",
+                                                "error_codes"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -260671,6 +262105,655 @@
                 }
             }
         },
+        "/v1/vat/settlements": {
+            "get": {
+                "operationId": "vat.settlements.index",
+                "tags": [
+                    "VatPeriodSettlement"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "jurisdiction": {
+                                                        "type": "string"
+                                                    },
+                                                    "period_type": {
+                                                        "type": "string"
+                                                    },
+                                                    "period_from": {
+                                                        "type": "string"
+                                                    },
+                                                    "period_to": {
+                                                        "type": "string"
+                                                    },
+                                                    "regime": {
+                                                        "type": "string"
+                                                    },
+                                                    "basis": {
+                                                        "type": "string"
+                                                    },
+                                                    "payable_amount": {
+                                                        "type": "string"
+                                                    },
+                                                    "status": {
+                                                        "type": "string"
+                                                    },
+                                                    "locked_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "filed_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "calculation": {
+                                                        "type": "object",
+                                                        "additionalProperties": {}
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "jurisdiction",
+                                                    "period_type",
+                                                    "period_from",
+                                                    "period_to",
+                                                    "regime",
+                                                    "basis",
+                                                    "payable_amount",
+                                                    "status",
+                                                    "locked_at",
+                                                    "filed_at",
+                                                    "calculation"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "vat.settlements.store",
+                "tags": [
+                    "VatPeriodSettlement"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PreviewVatSettlementPeriodRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "jurisdiction": {
+                                                    "type": "string"
+                                                },
+                                                "period_type": {
+                                                    "type": "string"
+                                                },
+                                                "period_from": {
+                                                    "type": "string"
+                                                },
+                                                "period_to": {
+                                                    "type": "string"
+                                                },
+                                                "regime": {
+                                                    "type": "string"
+                                                },
+                                                "basis": {
+                                                    "type": "string"
+                                                },
+                                                "payable_amount": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "locked_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "filed_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "calculation": {
+                                                    "type": "object",
+                                                    "additionalProperties": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "jurisdiction",
+                                                "period_type",
+                                                "period_from",
+                                                "period_to",
+                                                "regime",
+                                                "basis",
+                                                "payable_amount",
+                                                "status",
+                                                "locked_at",
+                                                "filed_at",
+                                                "calculation"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/vat/settlements/preview": {
+            "post": {
+                "operationId": "vat.settlements.preview",
+                "tags": [
+                    "VatPeriodSettlement"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PreviewVatSettlementPeriodRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "jurisdiction": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "IT",
+                                                        "CH"
+                                                    ]
+                                                },
+                                                "period": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "type": {
+                                                            "type": "string"
+                                                        },
+                                                        "year": {
+                                                            "type": "integer"
+                                                        },
+                                                        "number": {
+                                                            "type": "integer"
+                                                        },
+                                                        "label": {
+                                                            "type": "string"
+                                                        },
+                                                        "from": {
+                                                            "type": "string"
+                                                        },
+                                                        "to": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "type",
+                                                        "year",
+                                                        "number",
+                                                        "label",
+                                                        "from",
+                                                        "to"
+                                                    ]
+                                                },
+                                                "regime": {
+                                                    "type": "string"
+                                                },
+                                                "basis": {
+                                                    "type": "string"
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "turnover": {
+                                                            "type": "string"
+                                                        },
+                                                        "taxable_turnover": {
+                                                            "type": "string"
+                                                        },
+                                                        "output_vat": {
+                                                            "type": "string"
+                                                        },
+                                                        "input_vat": {
+                                                            "type": "string"
+                                                        },
+                                                        "previous_credit": {
+                                                            "type": "string"
+                                                        },
+                                                        "previous_debit": {
+                                                            "type": "string"
+                                                        },
+                                                        "interest": {
+                                                            "type": "string"
+                                                        },
+                                                        "payable": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "turnover",
+                                                        "taxable_turnover",
+                                                        "output_vat",
+                                                        "input_vat",
+                                                        "previous_credit",
+                                                        "previous_debit",
+                                                        "interest",
+                                                        "payable"
+                                                    ]
+                                                },
+                                                "warnings": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "const": "Received (vereinnahmt) basis is stored with the period, but the amounts are still read from the ledger by posting date (agreed basis)."
+                                                    }
+                                                },
+                                                "drilldown": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "sales": {
+                                                            "type": "array",
+                                                            "items": {}
+                                                        },
+                                                        "purchases": {
+                                                            "type": "array",
+                                                            "items": {}
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "sales",
+                                                        "purchases"
+                                                    ]
+                                                },
+                                                "previous_settlement_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "swiss_boxes": {
+                                                    "type": "string"
+                                                },
+                                                "payable_amount": {
+                                                    "type": "string"
+                                                },
+                                                "lipe_boxes": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "VP2": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP3": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP4": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP5": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP6_due": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP6_credit": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP7": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP8": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP9": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP10": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP11": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP12": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP13": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP14_payable": {
+                                                            "type": "string"
+                                                        },
+                                                        "VP14_credit": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "VP2",
+                                                        "VP3",
+                                                        "VP4",
+                                                        "VP5",
+                                                        "VP6_due",
+                                                        "VP6_credit",
+                                                        "VP7",
+                                                        "VP8",
+                                                        "VP9",
+                                                        "VP10",
+                                                        "VP11",
+                                                        "VP12",
+                                                        "VP13",
+                                                        "VP14_payable",
+                                                        "VP14_credit"
+                                                    ]
+                                                },
+                                                "lipe_meta": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "monthly": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "monthly"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "jurisdiction",
+                                                "period",
+                                                "regime",
+                                                "basis",
+                                                "totals",
+                                                "warnings",
+                                                "drilldown",
+                                                "previous_settlement_id",
+                                                "swiss_boxes",
+                                                "payable_amount",
+                                                "lipe_boxes",
+                                                "lipe_meta"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/vat/settlements/{settlement}": {
+            "get": {
+                "operationId": "vat.settlements.show",
+                "tags": [
+                    "VatPeriodSettlement"
+                ],
+                "parameters": [
+                    {
+                        "name": "settlement",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "jurisdiction": {
+                                                    "type": "string"
+                                                },
+                                                "period_type": {
+                                                    "type": "string"
+                                                },
+                                                "period_from": {
+                                                    "type": "string"
+                                                },
+                                                "period_to": {
+                                                    "type": "string"
+                                                },
+                                                "regime": {
+                                                    "type": "string"
+                                                },
+                                                "basis": {
+                                                    "type": "string"
+                                                },
+                                                "payable_amount": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "locked_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "filed_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "calculation": {
+                                                    "type": "object",
+                                                    "additionalProperties": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "jurisdiction",
+                                                "period_type",
+                                                "period_from",
+                                                "period_to",
+                                                "regime",
+                                                "basis",
+                                                "payable_amount",
+                                                "status",
+                                                "locked_at",
+                                                "filed_at",
+                                                "calculation"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/vat/settlements/{settlement}/export-xml": {
+            "get": {
+                "operationId": "vat.settlements.export-xml",
+                "tags": [
+                    "VatPeriodSettlement"
+                ],
+                "parameters": [
+                    {
+                        "name": "settlement",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/vat/settlements/{settlement}/export-pdf": {
+            "get": {
+                "operationId": "vat.settlements.export-pdf",
+                "tags": [
+                    "VatPeriodSettlement"
+                ],
+                "parameters": [
+                    {
+                        "name": "settlement",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/general-ledger/vat-registers/{type}": {
             "get": {
                 "operationId": "vatRegister.show",
@@ -278432,13 +280515,22 @@
                         "type": "integer"
                     },
                     "thread_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "feedback": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "feedback_comment": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "created_at": {
                         "type": [
@@ -279002,7 +281094,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "company_id": {
                         "type": "string"
@@ -279478,7 +281573,10 @@
                         "type": "number"
                     },
                     "currency": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "gross_amount": {
                         "type": "number"
@@ -280970,7 +283068,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "score": {
                         "type": "integer"
@@ -283189,7 +285290,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "change_number": {
                         "type": "string"
@@ -283542,13 +285646,16 @@
                         "type": "string"
                     },
                     "category": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "status": {
                         "type": "string"
                     },
                     "current_version_no": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "current_body": {
                         "type": [
@@ -283565,16 +285672,22 @@
                                     "type": "string"
                                 },
                                 "version_no": {
-                                    "type": "string"
+                                    "type": "integer"
                                 },
                                 "body": {
                                     "type": "string"
                                 },
                                 "change_note": {
-                                    "type": "string"
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
                                 },
                                 "created_by": {
-                                    "type": "string"
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
                                 },
                                 "created_at": {
                                     "type": [
@@ -283602,7 +285715,7 @@
                                     "type": "string"
                                 },
                                 "rank": {
-                                    "type": "string"
+                                    "type": "integer"
                                 },
                                 "title": {
                                     "type": "string"
@@ -283611,7 +285724,7 @@
                                     "type": "string"
                                 },
                                 "requires_approval": {
-                                    "type": "string"
+                                    "type": "boolean"
                                 }
                             },
                             "required": [
@@ -286665,10 +288778,7 @@
                         "type": "string"
                     },
                     "due_on": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "status": {
                         "type": "string"
@@ -286719,10 +288829,16 @@
                         "type": "string"
                     },
                     "author_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "line_number": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "body": {
                         "type": "string"
@@ -286731,7 +288847,10 @@
                         "type": "string"
                     },
                     "resolved_by": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "resolved_at": {
                         "type": [
@@ -287224,25 +289343,20 @@
                         "type": "string"
                     },
                     "contract_kind": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "status": {
                         "type": "string"
                     },
                     "variables": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                },
-                                "minItems": 0,
-                                "maxItems": 0
-                            }
-                        ]
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
                     },
                     "clauses": {
                         "type": "array",
@@ -287256,10 +289370,10 @@
                                     "type": "string"
                                 },
                                 "position": {
-                                    "type": "string"
+                                    "type": "integer"
                                 },
                                 "is_optional": {
-                                    "type": "string"
+                                    "type": "boolean"
                                 },
                                 "code": {
                                     "type": "string"
@@ -290639,7 +292753,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "customer_id": {
                         "type": "string"
@@ -290849,9 +292966,11 @@
                         "type": "string"
                     },
                     "level": {
-                        "type": [
-                            "string",
-                            "null"
+                        "type": "string",
+                        "enum": [
+                            "HS6",
+                            "CN8",
+                            "TARIC10"
                         ]
                     },
                     "chapter": {
@@ -294772,7 +296891,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "employee_number": {
                         "type": "string"
@@ -294853,19 +296975,18 @@
                         "type": "boolean"
                     },
                     "equipment_assigned": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "array",
-                                "items": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "anyOf": [
+                                {
                                     "type": "string"
                                 },
-                                "minItems": 0,
-                                "maxItems": 0
-                            }
-                        ]
+                                {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            ]
+                        }
                     },
                     "created_at": {
                         "type": [
@@ -296089,10 +298210,7 @@
                         "type": "string"
                     },
                     "date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "category_id": {
                         "type": "string"
@@ -296393,6 +298511,54 @@
                     "created_at"
                 ],
                 "title": "ExportJobResource"
+            },
+            "ExportPain001Request": {
+                "type": "object",
+                "description": "Selection of approved supplier invoices for a pain.001 payment file.",
+                "properties": {
+                    "invoice_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "minItems": 1,
+                        "maxItems": 500,
+                        "uniqueItems": true
+                    },
+                    "version": {
+                        "type": "string",
+                        "enum": [
+                            "03",
+                            "09"
+                        ]
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "enum": [
+                            "ch",
+                            "it"
+                        ]
+                    },
+                    "execution_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "bank_account_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    }
+                },
+                "required": [
+                    "invoice_ids"
+                ],
+                "title": "ExportPain001Request"
             },
             "ExportRequest": {
                 "type": "object",
@@ -297570,10 +299736,16 @@
                         "type": "boolean"
                     },
                     "declaration_templates": {
-                        "type": "string"
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
                     },
                     "declaration_templates_no_auth": {
-                        "type": "string"
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
                     },
                     "notes": {
                         "type": "string"
@@ -298454,6 +300626,82 @@
                 },
                 "title": "GenerateInspectionsRequest"
             },
+            "GenerateIntegrationRequest": {
+                "type": "object",
+                "properties": {
+                    "supply_kind": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "goods",
+                            "services",
+                            null
+                        ]
+                    },
+                    "date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "tax_rate": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "vat_nature": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "N1",
+                            "N2.1",
+                            "N2.2",
+                            "N3.1",
+                            "N3.2",
+                            "N3.3",
+                            "N3.4",
+                            "N3.5",
+                            "N3.6",
+                            "N4",
+                            "N5",
+                            "N6.1",
+                            "N6.2",
+                            "N6.3",
+                            "N6.4",
+                            "N6.5",
+                            "N6.6",
+                            "N6.7",
+                            "N6.8",
+                            "N6.9",
+                            "N7",
+                            null
+                        ]
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 2000
+                    }
+                },
+                "title": "GenerateIntegrationRequest"
+            },
             "GeneratePickListRequest": {
                 "type": "object",
                 "properties": {
@@ -298525,6 +300773,55 @@
                     "items"
                 ],
                 "title": "GeneratePickListRequest"
+            },
+            "GenerateQrBillPdfRequest": {
+                "type": "object",
+                "properties": {
+                    "invoice_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "mode": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "A4_ATTACHED",
+                            "STANDALONE",
+                            null
+                        ]
+                    },
+                    "perforation": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "NONE",
+                            "DASHED_LINE",
+                            "DASHED_LINE_WITH_SCISSORS",
+                            null
+                        ]
+                    },
+                    "language": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "it",
+                            "de",
+                            "fr",
+                            "en",
+                            null
+                        ]
+                    }
+                },
+                "required": [
+                    "invoice_id"
+                ],
+                "title": "GenerateQrBillPdfRequest"
             },
             "GenerateSalaryCertificatesRequest": {
                 "type": "object",
@@ -299269,6 +301566,43 @@
                 },
                 "title": "ImportForecastRequest"
             },
+            "ImportIso20022Request": {
+                "type": "object",
+                "description": "Upload of an ISO 20022 camt.053 statement or camt.054 notification (`.xml`).",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 10240 kilobytes."
+                    },
+                    "auto_reconcile": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "file"
+                ],
+                "title": "ImportIso20022Request"
+            },
+            "ImportPassiveInvoiceRequest": {
+                "type": "object",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": ".p7m files have no registered MIME type, so the extension is what counts."
+                    },
+                    "preview_only": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "file"
+                ],
+                "title": "ImportPassiveInvoiceRequest"
+            },
             "ImportPaymentsRequest": {
                 "type": "object",
                 "properties": {
@@ -299754,7 +302088,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "incident_number": {
                         "type": "string"
@@ -301658,10 +303995,7 @@
                         "type": "string"
                     },
                     "date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "due_date": {
                         "type": [
@@ -309796,10 +312130,7 @@
                         "items": {}
                     },
                     "occurred_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -310035,22 +312366,34 @@
                         "type": "string"
                     },
                     "version_no": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "source": {
                         "type": "string"
                     },
                     "template_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "round_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "author_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "notes": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "body_hash": {
                         "type": "string"
@@ -310059,7 +312402,10 @@
                         "type": "string"
                     },
                     "open_comments": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "created_at": {
                         "type": [
@@ -311058,7 +313404,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "ticket_number": {
                         "type": "string"
@@ -311294,7 +313643,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "work_order_number": {
                         "type": "string"
@@ -312051,19 +314403,28 @@
                         "type": "string"
                     },
                     "round_no": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "status": {
                         "type": "string"
                     },
                     "outcome": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "summary": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "opened_by": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "closed_at": {
                         "type": [
@@ -313340,6 +315701,22 @@
                 ],
                 "title": "PagoPaNoticeResource"
             },
+            "ParseQrBillRequest": {
+                "type": "object",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 10240 kilobytes."
+                    },
+                    "payload": {
+                        "type": "string",
+                        "maxLength": 2000
+                    }
+                },
+                "title": "ParseQrBillRequest"
+            },
             "PartConsumptionRequest": {
                 "type": "object",
                 "description": "Reserving a part of stock for a folder.",
@@ -313472,7 +315849,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "company_id": {
                         "type": "string"
@@ -314424,7 +316804,10 @@
                         "type": "string"
                     },
                     "currency": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "gross_salary": {
                         "type": "string"
@@ -315796,10 +318179,7 @@
                         "type": "string"
                     },
                     "date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "due_date": {
                         "type": [
@@ -316058,10 +318438,7 @@
                         "type": "string"
                     },
                     "date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "valid_until": {
                         "type": [
@@ -316771,6 +319148,35 @@
                     "employee_id"
                 ],
                 "title": "PreviewPayrollRequest"
+            },
+            "PreviewVatSettlementPeriodRequest": {
+                "type": "object",
+                "properties": {
+                    "period_type": {
+                        "type": "string",
+                        "enum": [
+                            "monthly",
+                            "quarterly",
+                            "semiannual"
+                        ]
+                    },
+                    "year": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                    },
+                    "period": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 12
+                    }
+                },
+                "required": [
+                    "period_type",
+                    "year",
+                    "period"
+                ],
+                "title": "PreviewVatSettlementPeriodRequest"
             },
             "PriceIndexRateResource": {
                 "type": "object",
@@ -325114,19 +327520,10 @@
                         ]
                     },
                     "weekdays": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                },
-                                "minItems": 0,
-                                "maxItems": 0
-                            }
-                        ]
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
                     },
                     "time_from": {
                         "type": "string"
@@ -328085,7 +330482,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "contact_id": {
                         "type": "string"
@@ -328100,10 +330500,7 @@
                         "type": "string"
                     },
                     "date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "transport_reason": {
                         "type": "string"
@@ -328246,7 +330643,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "contact_id": {
                         "type": "string"
@@ -328261,10 +330661,7 @@
                         "type": "string"
                     },
                     "date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "due_date": {
                         "type": [
@@ -328585,7 +330982,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "contact_id": {
                         "type": "string"
@@ -328754,7 +331154,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "contact_id": {
                         "type": "string"
@@ -337510,6 +339913,7 @@
                     "openapi",
                     "acube",
                     "invoicetronic",
+                    "manual",
                     "local"
                 ],
                 "title": "SdiChannel"
@@ -337893,7 +340297,10 @@
                         "type": "string"
                     },
                     "tenant_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "contract_number": {
                         "type": "string"
@@ -339554,7 +341961,10 @@
                         "type": "string"
                     },
                     "provider_reference": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "status": {
                         "type": "string"
@@ -339598,7 +342008,7 @@
                                     "type": "string"
                                 },
                                 "position": {
-                                    "type": "string"
+                                    "type": "integer"
                                 },
                                 "status": {
                                     "type": "string"
@@ -339610,10 +342020,16 @@
                                     ]
                                 },
                                 "signature_hash": {
-                                    "type": "string"
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
                                 },
                                 "decline_reason": {
-                                    "type": "string"
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
                                 }
                             },
                             "required": [
@@ -339640,13 +342056,23 @@
                                     "type": "string"
                                 },
                                 "signer_id": {
-                                    "type": "string"
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
                                 },
                                 "actor_id": {
-                                    "type": "string"
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
                                 },
                                 "metadata": {
-                                    "type": "string"
+                                    "type": [
+                                        "object",
+                                        "null"
+                                    ],
+                                    "additionalProperties": {}
                                 },
                                 "created_at": {
                                     "type": [
@@ -360023,10 +362449,7 @@
                         "type": "string"
                     },
                     "work_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "regular_hours": {
                         "type": "number"
@@ -360770,7 +363193,7 @@
                         ]
                     },
                     "can_retry": {
-                        "type": "string"
+                        "type": "boolean"
                     },
                     "created_at": {
                         "type": [
@@ -366097,6 +368520,32 @@
                     },
                     "carry_over_below_minimum": {
                         "type": "boolean"
+                    },
+                    "mwst_basis": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "agreed",
+                            "received",
+                            null
+                        ]
+                    },
+                    "lipe_prorata_percent": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "lipe_advance_amount": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
                     }
                 },
                 "title": "UpdateVatTaxSettingRequest"
@@ -366919,6 +369368,26 @@
                 "maxItems": 0,
                 "title": "User"
             },
+            "ValidateQrReferenceRequest": {
+                "type": "object",
+                "properties": {
+                    "iban": {
+                        "type": "string",
+                        "maxLength": 40
+                    },
+                    "reference": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 40
+                    }
+                },
+                "required": [
+                    "iban"
+                ],
+                "title": "ValidateQrReferenceRequest"
+            },
             "ValidateSalaryDeclarationRequest": {
                 "type": "object",
                 "properties": {
@@ -367025,16 +369494,28 @@
                         ]
                     },
                     "inventory_account_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "cogs_account_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "ppv_account_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "landed_cost_clearing_account_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "updated_at": {
                         "type": [
@@ -367466,6 +369947,15 @@
                     },
                     "carry_over_below_minimum": {
                         "type": "boolean"
+                    },
+                    "mwst_basis": {
+                        "type": "string"
+                    },
+                    "lipe_prorata_percent": {
+                        "type": "string"
+                    },
+                    "lipe_advance_amount": {
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -367482,7 +369972,10 @@
                     "interest_expense_account_id",
                     "declarant_tax_code",
                     "declarant_role_code",
-                    "carry_over_below_minimum"
+                    "carry_over_below_minimum",
+                    "mwst_basis",
+                    "lipe_prorata_percent",
+                    "lipe_advance_amount"
                 ],
                 "title": "VatTaxSettingResource"
             },
@@ -368599,7 +371092,10 @@
                         "type": "boolean"
                     },
                     "manager_user_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "is_locked": {
                         "type": "boolean"
@@ -368608,13 +371104,22 @@
                         "type": "string"
                     },
                     "legal_owner_type": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "linked_partner_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "company_entity_id": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "zones": {
                         "type": "array",
@@ -371812,6 +374317,10 @@
             "description": "Operations of the InvoiceSdi module."
         },
         {
+            "name": "Iso20022",
+            "description": "Operations of the Iso20022 module."
+        },
+        {
             "name": "Item",
             "description": "Operations of the Item module."
         },
@@ -372836,6 +375345,18 @@
             "description": "Operations of the SdiGatewayWebhook module."
         },
         {
+            "name": "SdiInvoice",
+            "description": "Operations of the SdiInvoice module."
+        },
+        {
+            "name": "SdiPassiveImport",
+            "description": "Operations of the SdiPassiveImport module."
+        },
+        {
+            "name": "SdiSupplierIntegration",
+            "description": "Operations of the SdiSupplierIntegration module."
+        },
+        {
             "name": "SdiTransmission",
             "description": "Operations of the SdiTransmission module."
         },
@@ -373116,6 +375637,10 @@
             "description": "Operations of the Swagger module."
         },
         {
+            "name": "SwissQrBill",
+            "description": "Operations of the SwissQrBill module."
+        },
+        {
             "name": "Tag",
             "description": "Operations of the Tag module."
         },
@@ -373294,6 +375819,10 @@
         {
             "name": "Variance",
             "description": "Operations of the Variance module."
+        },
+        {
+            "name": "VatPeriodSettlement",
+            "description": "Operations of the VatPeriodSettlement module."
         },
         {
             "name": "VatRegister",
