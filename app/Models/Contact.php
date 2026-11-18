@@ -56,6 +56,7 @@ class Contact extends Model
             'processing_restricted_at' => 'datetime',
             'anonymized_at' => 'datetime',
             'fiscal_verified_at' => 'datetime',
+            'portal_consent_at' => 'datetime',
         ];
     }
 

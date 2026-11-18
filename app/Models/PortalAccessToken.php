@@ -31,6 +31,9 @@ class PortalAccessToken extends Model
         'is_single_use',
         'used_at',
         'revoked_at',
+        'otp_hash',
+        'otp_expires_at',
+        'otp_attempts',
     ];
 
     /**
@@ -44,6 +47,8 @@ class PortalAccessToken extends Model
             'is_single_use' => 'boolean',
             'used_at' => 'datetime',
             'revoked_at' => 'datetime',
+            'otp_expires_at' => 'datetime',
+            'otp_attempts' => 'integer',
         ];
     }
 

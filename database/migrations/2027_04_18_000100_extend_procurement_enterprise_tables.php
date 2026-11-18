@@ -243,7 +243,7 @@ return new class extends Migration
             $table->timestampsTz();
             $table->softDeletesTz();
 
-            $table->unique(['tenant_id', 'landed_cost_number'], 'uq_landed_cost_number');
+            $table->unique(['tenant_id', 'landed_cost_number'], 'uq_procurement_landed_cost_number');
         });
 
         Schema::create('procurement_landed_cost_allocations', function (Blueprint $table): void {

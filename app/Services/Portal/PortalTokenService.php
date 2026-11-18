@@ -20,7 +20,13 @@ class PortalTokenService
      *
      * @var list<string>
      */
-    public const DEDICATED_TOKEN_TYPES = ['association_area', 'childcare_family', 'supplier_portal'];
+    public const DEDICATED_TOKEN_TYPES = ['association_area', 'childcare_family', 'supplier_portal', self::LOGIN_TOKEN_TYPE, self::SESSION_TOKEN_TYPE];
+
+    /** Single-use, 15-minute magic link that is exchanged for a session. */
+    public const LOGIN_TOKEN_TYPE = 'portal_login';
+
+    /** Bearer session of the self-service portal (`portal:customer` scope), issued after the magic link. */
+    public const SESSION_TOKEN_TYPE = 'portal_session';
 
     public function __construct(private readonly TenantContext $tenantContext) {}
 

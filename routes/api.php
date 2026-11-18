@@ -63,6 +63,7 @@ use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\PaymentImportController;
 use App\Http\Controllers\Api\V1\PaymentReminderController;
 use App\Http\Controllers\Api\V1\PaymentTermController;
+use App\Http\Controllers\Api\V1\PortalSettingController;
 use App\Http\Controllers\Api\V1\PosSaleController;
 use App\Http\Controllers\Api\V1\PosSessionController;
 use App\Http\Controllers\Api\V1\PosTerminalController;
@@ -107,6 +108,12 @@ use App\Http\Controllers\Api\V1\UnitOfMeasureController;
 use App\Http\Controllers\Api\V1\UserPreferencesController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
 use App\Http\Controllers\Portal\CustomerPortalController;
+use App\Http\Controllers\Portal\PortalAuthController;
+use App\Http\Controllers\Portal\PortalBrandingController;
+use App\Http\Controllers\Portal\PortalCheckoutController;
+use App\Http\Controllers\Portal\PortalDashboardController;
+use App\Http\Controllers\Portal\PortalDocumentController;
+use App\Http\Controllers\Portal\PortalSupportController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -173,11 +180,12 @@ Route::prefix('v1')->group(function (): void {
     // ----------------------------------------------------
     Route::prefix('portal')->name('portal.')->middleware('throttle:60,1')->group(function (): void {
         Route::get('/access/{token}', [CustomerPortalController::class, 'access'])->name('access');
-        Route::get('/quotes/{token}', [CustomerPortalController::class, 'showQuote'])->name('quotes.show');
-        Route::post('/quotes/{token}/approve', [CustomerPortalController::class, 'approveQuote'])->name('quotes.approve');
-        Route::post('/quotes/{token}/reject', [CustomerPortalController::class, 'rejectQuote'])->name('quotes.reject');
-        Route::get('/quotes/{token}/pdf', [CustomerPortalController::class, 'downloadQuotePdf'])->name('quotes.pdf');
-        Route::get('/invoices/{token}', [CustomerPortalController::class, 'listInvoices'])->name('invoices.list');
+        // Magic-link tokens are 64 hex characters; the session API below shares these paths with UUID ids.
+        Route::get('/quotes/{token}', [CustomerPortalController::class, 'showQuote'])->where('token', '[0-9a-f]{64}')->name('quotes.show');
+        Route::post('/quotes/{token}/approve', [CustomerPortalController::class, 'approveQuote'])->where('token', '[0-9a-f]{64}')->name('quotes.approve');
+        Route::post('/quotes/{token}/reject', [CustomerPortalController::class, 'rejectQuote'])->where('token', '[0-9a-f]{64}')->name('quotes.reject');
+        Route::get('/quotes/{token}/pdf', [CustomerPortalController::class, 'downloadQuotePdf'])->where('token', '[0-9a-f]{64}')->name('quotes.pdf');
+        Route::get('/invoices/{token}', [CustomerPortalController::class, 'listInvoices'])->where('token', '[0-9a-f]{64}')->name('invoices.list');
         Route::get('/invoices/{token}/{id}/pdf', [CustomerPortalController::class, 'downloadInvoicePdf'])->name('invoices.pdf');
         Route::get('/service-reports/{token}', [CustomerPortalController::class, 'listServiceReports'])->name('service-reports.list');
         Route::get('/service-reports/{token}/{id}/pdf', [CustomerPortalController::class, 'downloadServiceReportPdf'])->name('service-reports.pdf');
@@ -185,6 +193,32 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/tickets/{token}/reply/{ticketId}', [CustomerPortalController::class, 'replyTicket'])->name('tickets.reply');
         Route::get('/appointments/{token}', [CustomerPortalController::class, 'listAppointments'])->name('appointments.list');
         Route::get('/attachments/{token}/{attachment}', [CustomerPortalController::class, 'downloadAttachment'])->name('attachments.download');
+
+        // Self-service portal: white-label branding, passwordless sign-in and the session API of one customer.
+        Route::get('/branding', PortalBrandingController::class)->name('branding');
+        Route::post('/auth/request-link', [PortalAuthController::class, 'requestLink'])->middleware('throttle:5,1,portal-request-link')->name('auth.request-link');
+        Route::post('/auth/verify', [PortalAuthController::class, 'verify'])->middleware('throttle:10,1,portal-verify')->name('auth.verify');
+
+        Route::middleware('portal.session')->group(function (): void {
+            Route::post('/auth/logout', [PortalAuthController::class, 'logout'])->name('auth.logout');
+            Route::get('/me', PortalDashboardController::class)->name('me');
+            Route::get('/quotes', [PortalDocumentController::class, 'quotes'])->name('session.quotes.index');
+            Route::get('/quotes/{id}', [PortalDocumentController::class, 'showQuote'])->whereUuid('id')->name('session.quotes.show');
+            Route::post('/quotes/{id}/approve', [PortalDocumentController::class, 'approveQuote'])->whereUuid('id')->name('session.quotes.approve');
+            Route::post('/quotes/{id}/reject', [PortalDocumentController::class, 'rejectQuote'])->whereUuid('id')->name('session.quotes.reject');
+            Route::get('/quotes/{id}/pdf', [PortalDocumentController::class, 'quotePdf'])->whereUuid('id')->name('session.quotes.pdf');
+            Route::get('/orders', [PortalDocumentController::class, 'orders'])->name('session.orders.index');
+            Route::get('/orders/{id}', [PortalDocumentController::class, 'showOrder'])->whereUuid('id')->name('session.orders.show');
+            Route::get('/delivery-notes', [PortalDocumentController::class, 'deliveryNotes'])->name('session.delivery-notes.index');
+            Route::get('/delivery-notes/{id}/pdf', [PortalDocumentController::class, 'deliveryNotePdf'])->whereUuid('id')->name('session.delivery-notes.pdf');
+            Route::get('/invoices', [PortalDocumentController::class, 'invoices'])->name('session.invoices.index');
+            Route::get('/invoices/{id}', [PortalDocumentController::class, 'showInvoice'])->whereUuid('id')->name('session.invoices.show');
+            Route::get('/invoices/{id}/pdf', [PortalDocumentController::class, 'invoicePdf'])->whereUuid('id')->name('session.invoices.pdf');
+            Route::get('/invoices/{id}/xml', [PortalDocumentController::class, 'invoiceXml'])->whereUuid('id')->name('session.invoices.xml');
+            Route::post('/invoices/{id}/checkout', PortalCheckoutController::class)->whereUuid('id')->name('session.invoices.checkout');
+            Route::get('/tickets', [PortalSupportController::class, 'index'])->name('session.tickets.index');
+            Route::post('/tickets', [PortalSupportController::class, 'store'])->name('session.tickets.store');
+        });
     });
 
     // Enterprise authentication: SSO (OpenID Connect), tenant security policy, SCIM 2.0.
@@ -237,6 +271,8 @@ Route::prefix('v1')->group(function (): void {
 
         // 3. CRM & Contacts
         Route::prefix('crm')->name('crm.')->middleware('module.access:crm')->group(function (): void {
+            Route::get('/portal-settings', [PortalSettingController::class, 'show'])->name('portal-settings.show');
+            Route::put('/portal-settings', [PortalSettingController::class, 'update'])->name('portal-settings.update');
             Route::get('/clients', [CrmController::class, 'clients'])->name('clients');
             Route::get('/suppliers', [CrmController::class, 'suppliers'])->name('suppliers');
             Route::get('/contacts/{id}/statistics', [ContactInsightsController::class, 'statistics'])->name('contacts.statistics');

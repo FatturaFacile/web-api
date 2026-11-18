@@ -44,6 +44,12 @@ use OpenApi\Attributes as OA;
     description: 'Default user authentication: the HttpOnly + Secure Sanctum session cookie set by the login (the name follows the SESSION_COOKIE setting). Writes also need the CSRF token: call GET /sanctum/csrf-cookie first and send the XSRF-TOKEN cookie value in the X-XSRF-TOKEN header. The request must come from an https origin listed in the Sanctum stateful domains.'
 )]
 #[OA\SecurityScheme(
+    securityScheme: 'portalBearer',
+    type: 'http',
+    scheme: 'bearer',
+    description: 'Session of the customer portal (ability portal:customer): issued by POST /portal/auth/verify after a magic link, valid for 8 hours. It only opens the documents of that one customer and never works on the back-office API.'
+)]
+#[OA\SecurityScheme(
     securityScheme: 'tenantHeader',
     type: 'apiKey',
     in: 'header',
