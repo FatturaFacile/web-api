@@ -7,11 +7,15 @@ namespace Enterprise\MultiTenant\Providers;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\MultiTenant\Queue\TenantQueueContext;
 use Enterprise\MultiTenant\Scopes\TenantScope;
+<<<<<<< HEAD
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
+=======
+use Enterprise\MultiTenant\Services\CompanyContext;
+>>>>>>> claude/multi-company-sites-management-72f618
 use Illuminate\Support\ServiceProvider;
 
 final class MultiTenantServiceProvider extends ServiceProvider
@@ -23,6 +27,7 @@ final class MultiTenantServiceProvider extends ServiceProvider
         }
 
         $this->app->singleton(TenantScope::class);
+<<<<<<< HEAD
         $this->app->singleton(TenantQueueContext::class);
     }
 
@@ -36,5 +41,8 @@ final class MultiTenantServiceProvider extends ServiceProvider
 
         Event::listen(JobProcessed::class, $leave);
         Event::listen(JobExceptionOccurred::class, $leave);
+=======
+        $this->app->singleton(CompanyContext::class);
+>>>>>>> claude/multi-company-sites-management-72f618
     }
 }

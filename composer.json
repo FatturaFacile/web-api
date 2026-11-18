@@ -116,6 +116,7 @@
             "Modules\\Plm\\": "modules/62_Plm/src/",
             "Modules\\Returns\\":"modules/49_Returns/src/",
             "Modules\\Logistics\\": "modules/32_Logistics/src/",
+            "Modules\\CorporateGroup\\": "modules/33_CorporateGroup/src/",
             "Modules\\": "modules/"
         }
     },

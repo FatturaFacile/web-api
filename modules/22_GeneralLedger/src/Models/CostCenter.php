@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Enterprise\MultiTenant\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class CostCenter extends BaseEnterpriseModel
 {
+    use BelongsToCompany;
+
     protected $table = 'cost_centers';
 
     /**
