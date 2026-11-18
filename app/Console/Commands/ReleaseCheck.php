@@ -30,7 +30,7 @@ class ReleaseCheck extends Command
             "release.status.{$status}"
                 |> __(...)
                 |> (fn ($x) => sprintf('[%s] %s', $x, $label))
-                |> $this(...);
+                |> $this->line(...);
         }
 
         $this->newLine();

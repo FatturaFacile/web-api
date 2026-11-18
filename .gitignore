@@ -59,6 +59,11 @@ storage/*.sqlite3
 !.claude/skills/
 !.claude/commands/
 *.tmp
+.tmp-*
+ed[0-9]*.php
+ed[0-9]*.cjs
+_r.php
+plm[0-9]*.json
 
 /certs/localhost.crt
 /certs/localhost.key

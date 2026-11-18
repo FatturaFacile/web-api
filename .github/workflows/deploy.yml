@@ -125,19 +125,19 @@ jobs:
             # Authenticate with GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+            # Save current image tag for automatic rollback if healthcheck fails
+            PREV_IMAGE=$(docker compose images app --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | head -n 1 || true)
+
             # Pull latest application images
             docker compose pull app queue_worker scheduler
 
             # Free dangling image layers before recreating containers
             docker image prune -f
 
-            # Gracefully stop background workers and application
-            docker compose stop queue_worker scheduler app postgres || true
+            # Gracefully stop background workers and application (preserve PostgreSQL running state and data volume)
+            docker compose stop queue_worker scheduler app || true
 
-            # Remove ephemeral state of Postgres container to enforce a fresh schema
-            docker compose rm -f -v postgres
-
-            # Launch PostgreSQL container first
+            # Ensure PostgreSQL container is running without destroying its persistent volume
             docker compose up -d postgres
 
             # Poll PostgreSQL availability before starting client containers
@@ -223,6 +223,10 @@ jobs:
             if [ "$HEALTH" != "200" ]; then
               echo "Deployment failed: /up answered $HEALTH"
               docker compose logs --tail=50 app
+              if [ -n "$PREV_IMAGE" ]; then
+                echo "Rolling back app, queue_worker, and scheduler to $PREV_IMAGE..."
+                API_TAG="$PREV_IMAGE" docker compose up -d app queue_worker scheduler || true
+              fi
               exit 1
             fi
 
