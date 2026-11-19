@@ -237,6 +237,8 @@ final class PersonalDataRegistry
             'saml_providers' => 'Configuration of the identity provider of the company: the allowed email domains and the attribute names are company data, not data of data subjects.',
             'companies' => 'Legal entities of the corporate group (code, legal name, tax code): companies, not data subjects.',
             'company_sites' => 'Premises of the companies of the group.',
+            'fpa_documents' => 'Electronic invoice envelopes: the recipient PEC is a business mailbox of the customer company, personal data of the parties stays in the contacts and the invoice.',
+            'sdi_configurations' => 'Transmission settings of the company (its own fiscal code and PEC), not data of data subjects.',
         ];
     }
 
