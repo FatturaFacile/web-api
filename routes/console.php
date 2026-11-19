@@ -90,6 +90,8 @@ Schedule::command('sdi:expire-pa-deadlines')->dailyAt('03:30')->withoutOverlappi
 Schedule::command('time:purge-expired')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
 // Anonymises personal data past the retention policies of each company (privacy:apply-retention --dry-run only counts).
 Schedule::command('privacy:apply-retention')->dailyAt('03:55')->withoutOverlapping()->onOneServer();
+// Privacy Governance retention rules (module 096): expired candidates, leads and tickets are anonymised; fiscal records never.
+Schedule::command('privacy:run-retention-purge')->dailyAt('04:10')->withoutOverlapping()->onOneServer();
 
 // Mantiene snella la tabella telescope_entries eliminando i dati oltre le 24 ore. Telescope e' una dipendenza di sviluppo
 // spenta in produzione (TELESCOPE_ENABLED=false) e le sue tabelle non sono migrate: il prune gira solo se e' attivo

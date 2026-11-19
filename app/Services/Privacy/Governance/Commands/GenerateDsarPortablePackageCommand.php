@@ -1,0 +1,10 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Privacy\Governance\Commands;
+
+final readonly class GenerateDsarPortablePackageCommand
+{
+    public function __construct(public string $tenantId, public string $dsarId) {}
+}

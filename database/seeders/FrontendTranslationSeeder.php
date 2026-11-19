@@ -10,6 +10,7 @@ use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
+use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -47,6 +48,7 @@ class FrontendTranslationSeeder extends Seeder
         return $base
             + HrAtsFrontendTranslations::all($locale)
             + MainFrontendTranslations::all($locale)
+            + PrivacyGovernanceFrontendTranslations::all($locale)
             + ReleaseAuditFrontendTranslations::all($locale);
     }
 

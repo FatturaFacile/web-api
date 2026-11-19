@@ -696,6 +696,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/tenant/branding', [TenantBrandingController::class, 'show'])->name('tenant.branding');
         Route::patch('/tenant/branding', [TenantBrandingController::class, 'update'])->middleware('module.access:system')->name('tenant.branding.update');
 
+        // Privacy & Data Governance Suite (module 096): RoPA, DSAR, consent ledger, 72h breach assistant, retention rules.
+        Route::prefix('privacy')->name('privacy.governance.')->middleware('module.access:system')->group(base_path('routes/privacy_governance.php'));
+
         Route::prefix('settings')->name('settings.')->group(function (): void {
             // Every member reads the company profile, its preferences and branches: the clients need them on every page.
             Route::get('/tenant', [SettingsController::class, 'tenant'])->name('tenant');

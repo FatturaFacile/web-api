@@ -45,6 +45,7 @@ const SCHEDULE_CLEANUPS = [
     'webhooks:prune' => 'webhook delivery log, technical data',
     'time:purge-expired' => 'guarded: working time records, 5 years',
     'privacy:apply-retention' => 'guarded: erasable tables only',
+    'privacy:run-retention-purge' => 'guarded: erasable tables only, fiscal and payroll rules are statutory locked and skipped',
     'demo:reset' => 'guarded: demo flag, never in production',
     'workflow:prune-tokens' => 'approval tokens, not approval decisions',
     'hr:purge-applications' => 'applicant data, erasable',
