@@ -39135,164 +39135,6 @@ CREATE UNIQUE INDEX "vat_settlement_periods_unique_period" on "vat_settlement_pe
 CREATE INDEX "vat_settlement_periods_vat_settlement_id_index" on "vat_settlement_periods"(
   "vat_settlement_id"
 );
-CREATE TABLE "blanket_agreements"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "agreement_number" varchar not null,
-  "contact_id" varchar not null,
-  "currency_code" varchar not null default 'EUR',
-  "exchange_rate" numeric not null default '1',
-  "agreement_type" varchar not null,
-  "valid_from" date not null,
-  "valid_to" date not null,
-  "status" varchar not null default 'draft',
-  "total_committed_amount" numeric not null default '0',
-  "total_called_off_amount" numeric not null default '0',
-  "pricing_lock_mode" varchar not null default 'fixed_contract_price',
-  "over_release_tolerance_percent" numeric not null default '0',
-  "payment_terms" varchar,
-  "incoterms" varchar,
-  "notes" text,
-  "renewed_from_id" varchar,
-  "activated_at" datetime,
-  "closed_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("contact_id") references "contacts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "blanket_agreements_tenant_number_unique" on "blanket_agreements"(
-  "tenant_id",
-  "agreement_number"
-);
-CREATE INDEX "blanket_agreements_tenant_id_contact_id_index" on "blanket_agreements"(
-  "tenant_id",
-  "contact_id"
-);
-CREATE INDEX "blanket_agreements_tenant_id_status_valid_to_index" on "blanket_agreements"(
-  "tenant_id",
-  "status",
-  "valid_to"
-);
-CREATE TABLE "blanket_agreement_lines"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "blanket_agreement_id" varchar not null,
-  "line_number" integer not null,
-  "product_id" varchar,
-  "description" varchar not null,
-  "unit_of_measure" varchar not null default 'EA',
-  "target_quantity" numeric not null default '0',
-  "called_off_quantity" numeric not null default '0',
-  "delivered_quantity" numeric not null default '0',
-  "unit_price" numeric not null default '0',
-  "discount_percent" numeric not null default '0',
-  "tax_rate" numeric not null default '0',
-  "target_amount" numeric not null default '0',
-  "called_off_amount" numeric not null default '0',
-  "delivery_schedule" text,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("blanket_agreement_id") references "blanket_agreements"("id") on delete cascade,
-  foreign key("product_id") references "products"("id") on delete set null,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "blanket_agreement_lines_number_unique" on "blanket_agreement_lines"(
-  "blanket_agreement_id",
-  "line_number"
-);
-CREATE INDEX "blanket_agreement_lines_tenant_id_product_id_index" on "blanket_agreement_lines"(
-  "tenant_id",
-  "product_id"
-);
-CREATE INDEX "sales_orders_tenant_id_order_type_index" on "sales_orders"(
-  "tenant_id",
-  "order_type"
-);
-CREATE INDEX "sales_orders_blanket_agreement_id_index" on "sales_orders"(
-  "blanket_agreement_id"
-);
-CREATE INDEX "sales_order_items_parent_line_id_index" on "sales_order_items"(
-  "parent_line_id"
-);
-CREATE INDEX "sales_order_items_blanket_agreement_line_id_index" on "sales_order_items"(
-  "blanket_agreement_line_id"
-);
-CREATE INDEX "sales_order_items_tenant_id_is_backorder_index" on "sales_order_items"(
-  "tenant_id",
-  "is_backorder"
-);
-CREATE TABLE "sales_order_audit_logs"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "sales_order_id" varchar not null,
-  "sales_order_item_id" varchar,
-  "event" varchar not null,
-  "from_status" varchar,
-  "to_status" varchar,
-  "actor_id" varchar,
-  "payload" text,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("sales_order_id") references "sales_orders"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "sales_order_audit_logs_order_idx" on "sales_order_audit_logs"(
-  "tenant_id",
-  "sales_order_id",
-  "created_at"
-);
-CREATE TABLE "replenishment_requests"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "sales_order_id" varchar not null,
-  "sales_order_item_id" varchar not null,
-  "product_id" varchar,
-  "warehouse_id" varchar,
-  "request_type" varchar not null,
-  "quantity" numeric not null,
-  "needed_by" date,
-  "status" varchar not null default 'open',
-  "target_type" varchar,
-  "target_id" varchar,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("sales_order_id") references "sales_orders"("id") on delete cascade,
-  foreign key("sales_order_item_id") references "sales_order_items"("id") on delete cascade,
-  foreign key("product_id") references "products"("id") on delete set null,
-  primary key("id")
-);
-
-CREATE INDEX "replenishment_requests_tenant_id_status_index" on "replenishment_requests"(
-  "tenant_id",
-  "status"
-);
-CREATE INDEX "replenishment_requests_sales_order_item_id_index" on "replenishment_requests"(
-  "sales_order_item_id"
-);
 CREATE TABLE "crm_leads"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -39538,6 +39380,281 @@ CREATE INDEX "passive_invoice_withholdings_tenant_id_withheld_year_index" on "pa
 CREATE INDEX "passive_invoice_withholdings_tenant_id_supplier_id_index" on "passive_invoice_withholdings"(
   "tenant_id",
   "supplier_id"
+);
+CREATE TABLE "sdi_configurations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "transmitter_country_code" varchar not null default 'IT',
+  "transmitter_fiscal_code" varchar,
+  "progressivo_invio_counter" integer not null default '0',
+  "channel_type" varchar,
+  "encrypted_credentials" text,
+  "default_codice_destinatario" varchar not null default '0000000',
+  "pec_address" varchar,
+  "signature_mode" varchar not null default 'none',
+  "encrypted_certificate" text,
+  "certificate_reference" varchar,
+  "auto_sign_on_send" tinyint(1) not null default '0',
+  "legal_archiving_enabled" tinyint(1) not null default '0',
+  "sandbox_simulator_enabled" tinyint(1) not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sdi_configurations_tenant_id_unique" on "sdi_configurations"(
+  "tenant_id"
+);
+CREATE TABLE "fpa_documents"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "invoice_id" varchar,
+  "passive_invoice_id" varchar,
+  "parent_fpa_document_id" varchar,
+  "direction" varchar not null,
+  "format_transmission" varchar not null,
+  "document_type" varchar not null,
+  "document_number" varchar,
+  "document_date" date,
+  "sdi_identifier" varchar,
+  "file_name" varchar,
+  "transmission_progressive" varchar,
+  "recipient_code" varchar,
+  "recipient_pec" varchar,
+  "status" varchar not null default 'draft',
+  "xml_storage_path" varchar,
+  "signed_storage_path" varchar,
+  "sha256_hash" varchar,
+  "validation_errors" text,
+  "transmitted_at" datetime,
+  "rejected_at" datetime,
+  "resubmission_deadline_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("invoice_id") references "invoices"("id") on delete set null,
+  foreign key("passive_invoice_id") references "passive_invoices"("id") on delete set null,
+  foreign key("parent_fpa_document_id") references "fpa_documents"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fpa_documents_tenant_id_sdi_identifier_unique" on "fpa_documents"(
+  "tenant_id",
+  "sdi_identifier"
+);
+CREATE INDEX "fpa_documents_tenant_id_status_index" on "fpa_documents"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "fpa_documents_tenant_id_direction_index" on "fpa_documents"(
+  "tenant_id",
+  "direction"
+);
+CREATE INDEX "fpa_documents_invoice_id_index" on "fpa_documents"(
+  "invoice_id"
+);
+CREATE INDEX "fpa_documents_tenant_id_document_number_document_date_index" on "fpa_documents"(
+  "tenant_id",
+  "document_number",
+  "document_date"
+);
+CREATE TABLE "sdi_notifications"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "fpa_document_id" varchar not null,
+  "notification_type" varchar not null,
+  "sdi_identifier" varchar,
+  "sdi_message_id" varchar,
+  "outcome_code" varchar,
+  "error_codes" text,
+  "raw_xml_path" varchar,
+  "received_at" datetime,
+  "processed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("fpa_document_id") references "fpa_documents"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sdi_notifications_tenant_id_fpa_document_id_index" on "sdi_notifications"(
+  "tenant_id",
+  "fpa_document_id"
+);
+CREATE INDEX "sdi_notifications_fpa_document_id_notification_type_index" on "sdi_notifications"(
+  "fpa_document_id",
+  "notification_type"
+);
+CREATE TABLE "blanket_agreements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "agreement_number" varchar not null,
+  "contact_id" varchar not null,
+  "currency_code" varchar not null default 'EUR',
+  "exchange_rate" numeric not null default '1',
+  "agreement_type" varchar not null,
+  "valid_from" date not null,
+  "valid_to" date not null,
+  "status" varchar not null default 'draft',
+  "total_committed_amount" numeric not null default '0',
+  "total_called_off_amount" numeric not null default '0',
+  "pricing_lock_mode" varchar not null default 'fixed_contract_price',
+  "over_release_tolerance_percent" numeric not null default '0',
+  "payment_terms" varchar,
+  "incoterms" varchar,
+  "notes" text,
+  "renewed_from_id" varchar,
+  "activated_at" datetime,
+  "closed_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "blanket_agreements_tenant_number_unique" on "blanket_agreements"(
+  "tenant_id",
+  "agreement_number"
+);
+CREATE INDEX "blanket_agreements_tenant_id_contact_id_index" on "blanket_agreements"(
+  "tenant_id",
+  "contact_id"
+);
+CREATE INDEX "blanket_agreements_tenant_id_status_valid_to_index" on "blanket_agreements"(
+  "tenant_id",
+  "status",
+  "valid_to"
+);
+CREATE TABLE "blanket_agreement_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "blanket_agreement_id" varchar not null,
+  "line_number" integer not null,
+  "product_id" varchar,
+  "description" varchar not null,
+  "unit_of_measure" varchar not null default 'EA',
+  "target_quantity" numeric not null default '0',
+  "called_off_quantity" numeric not null default '0',
+  "delivered_quantity" numeric not null default '0',
+  "unit_price" numeric not null default '0',
+  "discount_percent" numeric not null default '0',
+  "tax_rate" numeric not null default '0',
+  "target_amount" numeric not null default '0',
+  "called_off_amount" numeric not null default '0',
+  "delivery_schedule" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("blanket_agreement_id") references "blanket_agreements"("id") on delete cascade,
+  foreign key("product_id") references "products"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "blanket_agreement_lines_number_unique" on "blanket_agreement_lines"(
+  "blanket_agreement_id",
+  "line_number"
+);
+CREATE INDEX "blanket_agreement_lines_tenant_id_product_id_index" on "blanket_agreement_lines"(
+  "tenant_id",
+  "product_id"
+);
+CREATE INDEX "sales_orders_tenant_id_order_type_index" on "sales_orders"(
+  "tenant_id",
+  "order_type"
+);
+CREATE INDEX "sales_orders_blanket_agreement_id_index" on "sales_orders"(
+  "blanket_agreement_id"
+);
+CREATE INDEX "sales_order_items_parent_line_id_index" on "sales_order_items"(
+  "parent_line_id"
+);
+CREATE INDEX "sales_order_items_blanket_agreement_line_id_index" on "sales_order_items"(
+  "blanket_agreement_line_id"
+);
+CREATE INDEX "sales_order_items_tenant_id_is_backorder_index" on "sales_order_items"(
+  "tenant_id",
+  "is_backorder"
+);
+CREATE TABLE "sales_order_audit_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "sales_order_id" varchar not null,
+  "sales_order_item_id" varchar,
+  "event" varchar not null,
+  "from_status" varchar,
+  "to_status" varchar,
+  "actor_id" varchar,
+  "payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("sales_order_id") references "sales_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sales_order_audit_logs_order_idx" on "sales_order_audit_logs"(
+  "tenant_id",
+  "sales_order_id",
+  "created_at"
+);
+CREATE TABLE "replenishment_requests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "sales_order_id" varchar not null,
+  "sales_order_item_id" varchar not null,
+  "product_id" varchar,
+  "warehouse_id" varchar,
+  "request_type" varchar not null,
+  "quantity" numeric not null,
+  "needed_by" date,
+  "status" varchar not null default 'open',
+  "target_type" varchar,
+  "target_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("sales_order_id") references "sales_orders"("id") on delete cascade,
+  foreign key("sales_order_item_id") references "sales_order_items"("id") on delete cascade,
+  foreign key("product_id") references "products"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "replenishment_requests_tenant_id_status_index" on "replenishment_requests"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "replenishment_requests_sales_order_item_id_index" on "replenishment_requests"(
+  "sales_order_item_id"
 );
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
@@ -39907,13 +40024,14 @@ INSERT INTO migrations VALUES(364,'2027_11_25_100000_create_vat_settlement_perio
 INSERT INTO migrations VALUES(365,'2027_12_01_000100_create_esm_maintenance_hour_bank_tables',1);
 INSERT INTO migrations VALUES(366,'2027_12_01_000200_make_customs_tenant_id_nullable',1);
 INSERT INTO migrations VALUES(367,'2027_12_02_000100_complete_audit_and_tenant_columns_on_late_tables',1);
-INSERT INTO migrations VALUES(368,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',2);
-INSERT INTO migrations VALUES(369,'2027_04_20_194001_add_intake_dedup_and_routing_fields_to_crm_leads_and_sources',3);
-INSERT INTO migrations VALUES(370,'2027_04_20_194002_create_crm_lead_scoring_rules_and_settings_tables',3);
-INSERT INTO migrations VALUES(371,'2027_04_20_194003_create_crm_lead_activity_events_table',3);
-INSERT INTO migrations VALUES(372,'2027_04_20_194004_create_crm_lead_routing_rules_table',3);
-INSERT INTO migrations VALUES(373,'2027_04_20_194005_create_crm_lead_duplicate_candidates_table',3);
-INSERT INTO migrations VALUES(374,'2027_04_20_286001_add_italian_tax_fields_to_invoices_and_items_issue_286',3);
-INSERT INTO migrations VALUES(375,'2027_04_20_286002_create_enasarco_annual_limits_table_issue_286',3);
-INSERT INTO migrations VALUES(376,'2027_04_20_286003_create_passive_invoice_withholdings_table_issue_286',3);
-INSERT INTO migrations VALUES(377,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',3);
+INSERT INTO migrations VALUES(368,'2027_04_20_194001_add_intake_dedup_and_routing_fields_to_crm_leads_and_sources',2);
+INSERT INTO migrations VALUES(369,'2027_04_20_194002_create_crm_lead_scoring_rules_and_settings_tables',2);
+INSERT INTO migrations VALUES(370,'2027_04_20_194003_create_crm_lead_activity_events_table',2);
+INSERT INTO migrations VALUES(371,'2027_04_20_194004_create_crm_lead_routing_rules_table',2);
+INSERT INTO migrations VALUES(372,'2027_04_20_194005_create_crm_lead_duplicate_candidates_table',2);
+INSERT INTO migrations VALUES(373,'2027_04_20_286001_add_italian_tax_fields_to_invoices_and_items_issue_286',2);
+INSERT INTO migrations VALUES(374,'2027_04_20_286002_create_enasarco_annual_limits_table_issue_286',2);
+INSERT INTO migrations VALUES(375,'2027_04_20_286003_create_passive_invoice_withholdings_table_issue_286',2);
+INSERT INTO migrations VALUES(376,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',2);
+INSERT INTO migrations VALUES(377,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',2);
+INSERT INTO migrations VALUES(378,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',3);
