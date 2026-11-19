@@ -2870,4 +2870,8 @@ return [
     'estimated_cost_budget' => 'geschätztes Kostenbudget',
     'job_id' => 'Auftrag',
     'target_margin_percent' => 'Zielmarge',
+    'sdi_simplified' => 'vereinfachte Rechnung',
+    'sdi_vehicle' => 'Fahrzeugdaten',
+    'sdi_extra' => 'optionale FatturaPA-Blöcke',
+    'sdi_data' => 'FatturaPA-Zeilendaten',
 ];

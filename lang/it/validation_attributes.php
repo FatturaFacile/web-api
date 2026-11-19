@@ -2870,4 +2870,8 @@ return [
     'estimated_cost_budget' => 'budget di costo stimato',
     'job_id' => 'commessa',
     'target_margin_percent' => 'margine obiettivo',
+    'sdi_simplified' => 'fattura semplificata',
+    'sdi_vehicle' => 'dati del veicolo',
+    'sdi_extra' => 'blocchi opzionali FatturaPA',
+    'sdi_data' => 'dati FatturaPA della riga',
 ];

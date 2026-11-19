@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Sdi\ProcessSdiNotification;
 use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\PassiveInvoice;
@@ -14,8 +15,11 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
+use Modules\SDI\Enums\FpaStatus;
+use Modules\SDI\Models\FpaDocument;
 use Modules\SDI\Services\FatturaPaHtmlRenderer;
 use Modules\SDI\Services\FatturaPaSchemaValidator;
+use Modules\SDI\Services\FatturaPaStylesheetRenderer;
 
 uses(RefreshDatabase::class);
 
@@ -227,3 +231,74 @@ function supplierPhase3Xml(string $number): string
 </p:FatturaElettronica>
 XML;
 }
+
+it('builds a simplified FSM10 file that validates against its official schema', function (): void {
+    $invoice = phase3Invoice($this->customer, ['sdi_simplified' => true, 'total_net' => 100])->load(['tenant', 'contact.addresses', 'items']);
+    $builder = app(FatturaPaBuilderService::class);
+
+    $xml = $builder->buildFatturaPaXml($invoice, '00007');
+
+    expect($builder->transmissionFormat($invoice))->toBe('FSM10')
+        ->and($xml)->toContain('FatturaElettronicaSemplificata')->toContain('<TipoDocumento>TD07</TipoDocumento>')
+        ->and($xml)->toContain('<Importo>122.00</Importo>')
+        ->and(app(FatturaPaSchemaValidator::class)->errors($xml))->toBe([]);
+});
+
+it('refuses a simplified invoice above 400 euro', function (): void {
+    $invoice = phase3Invoice($this->customer, ['sdi_simplified' => true]);
+    $invoice->items()->create(['description' => 'Big', 'quantity' => 1, 'unit_price' => 500, 'tax_rate' => 22, 'line_total' => 500]);
+
+    app(FatturaPaBuilderService::class)->buildFatturaPaXml($invoice->load(['tenant', 'contact.addresses', 'items']));
+})->throws(InvalidArgumentException::class, '400');
+
+it('adds DatiVeicoli to a TD01 sale of a vehicle and still validates', function (): void {
+    $invoice = phase3Invoice($this->customer, ['sdi_vehicle' => ['date' => '2025-06-30', 'mileage' => '12500']])->load(['tenant', 'contact.addresses', 'items']);
+
+    $xml = app(FatturaPaBuilderService::class)->buildFatturaPaXml($invoice);
+
+    expect($xml)->toContain('<DatiVeicoli>')->toContain('<TotalePercorso>12500</TotalePercorso>')
+        ->and(app(FatturaPaSchemaValidator::class)->errors($xml))->toBe([]);
+});
+
+it('validates FPA12 against its own official schema', function (): void {
+    $pa = phase3Customer($this->tenant, ['company_name' => 'Comune di Roma', 'vat_number' => '02438750586', 'sdi_code' => 'UFABCD']);
+    $xml = app(FatturaPaBuilderService::class)->buildFatturaPaXml(phase3Invoice($pa)->load(['tenant', 'contact.addresses', 'items']));
+    $dom = new DOMDocument;
+    $dom->loadXML($xml);
+
+    expect(app(FatturaPaSchemaValidator::class)->schemaFor($dom))->toBe('Schema_VFPA12_V1.2.3.xsd');
+});
+
+it('keeps the envelope in step with sending and with SDI receipts', function (): void {
+    $invoice = phase3Invoice($this->customer);
+    phase3Api()->postJson("/api/v1/sdi/invoices/{$invoice->id}/send")->assertStatus(202);
+
+    $envelope = FpaDocument::withoutGlobalScopes()->where('invoice_id', $invoice->id)->firstOrFail();
+    expect($envelope->status)->toBe(FpaStatus::Transmitted)
+        ->and($envelope->document_number)->toBe('INV-2026-0001')
+        ->and($envelope->sha256_hash)->toHaveLength(64);
+
+    app(ProcessSdiNotification::class)->execute([
+        'provider' => 'manual', 'uuid' => (string) $envelope->sdi_identifier, 'event_type' => 'NS', 'message' => '00423 total mismatch',
+    ]);
+
+    expect($envelope->refresh()->status)->toBe(FpaStatus::Rejected)
+        ->and($envelope->resubmission_deadline_at)->not->toBeNull();
+});
+
+it('records an inbound envelope for an imported supplier invoice', function (): void {
+    phase3Api()->postJson('/api/v1/sdi/passive/import', [
+        'file' => UploadedFile::fake()->createWithContent('IT01234567897_AAAAA.xml', supplierPhase3Xml('F-902')),
+    ])->assertCreated();
+
+    $envelope = FpaDocument::withoutGlobalScopes()->where('direction', 'inbound')->firstOrFail();
+    expect($envelope->document_number)->toBe('F-902')->and($envelope->passive_invoice_id)->not->toBeNull();
+});
+
+it('renders with the ministerial stylesheet, or the built-in view when xsl is unavailable', function (): void {
+    $xml = app(FatturaPaBuilderService::class)->buildFatturaPaXml(phase3Invoice($this->customer)->load(['tenant', 'contact.addresses', 'items']));
+    $renderer = app(FatturaPaStylesheetRenderer::class);
+
+    expect($renderer->render($xml, 'ministerial'))->toContain('Consulting')
+        ->and($renderer->render($xml, 'assosoftware'))->toContain('Consulting');
+});

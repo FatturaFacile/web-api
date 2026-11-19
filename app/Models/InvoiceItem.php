@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property array<string, mixed>|null $sdi_data
+ */
 class InvoiceItem extends Model
 {
     use HasFactory, HasUuids, ProtectsIssuedInvoiceItem, StampsTenantFromParent;
@@ -33,6 +36,7 @@ class InvoiceItem extends Model
         'natura',
         'withholding_applies',
         'fund_applies',
+        'sdi_data',
     ];
 
     protected function casts(): array
@@ -45,6 +49,7 @@ class InvoiceItem extends Model
             'line_total' => 'decimal:2',
             'withholding_applies' => 'boolean',
             'fund_applies' => 'boolean',
+            'sdi_data' => 'array',
         ];
     }
 

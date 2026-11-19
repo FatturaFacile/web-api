@@ -15995,6 +15995,7 @@ CREATE TABLE "invoice_items"(
   "natura" varchar,
   "withholding_applies" tinyint(1) not null default '1',
   "fund_applies" tinyint(1) not null default '1',
+  "sdi_data" text,
   foreign key("cost_center_id") references "cost_centers"("id") on delete set null on update no action,
   foreign key("invoice_id") references "invoices"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -16145,6 +16146,9 @@ CREATE TABLE "invoices"(
   "stamp_duty_charged_to_customer" tinyint(1) not null default '0',
   "legal_notices" text,
   "vat_summary" text,
+  "sdi_simplified" tinyint(1) not null default '0',
+  "sdi_vehicle" text,
+  "sdi_extra" text,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
   foreign key("quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("delivery_note_id") references "delivery_notes"("id") on delete set null on update no action,
@@ -40401,3 +40405,5 @@ INSERT INTO migrations VALUES(376,'2027_12_03_000100_complete_tenant_fks_and_enu
 INSERT INTO migrations VALUES(377,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',2);
 INSERT INTO migrations VALUES(378,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',3);
 INSERT INTO migrations VALUES(379,'2027_12_10_100000_create_controlling_tables',4);
+INSERT INTO migrations VALUES(380,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',5);
+INSERT INTO migrations VALUES(381,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',6);

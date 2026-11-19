@@ -53,6 +53,7 @@ final class SogeiCongruityValidator
         $this->checkIdentities($xp, $result);
         $this->checkLines($xp, $result);
         $this->checkSummary($xp, $result);
+        $this->checkTotal($xp, $result);
         $this->checkDocumentRules($xp, $format, $result);
 
         if ($tenantId !== null) {
@@ -79,6 +80,13 @@ final class SogeiCongruityValidator
         if ($format === 'FPR12' && $code === '0000000' && $pec === '') {
             $result->warning('00427', 'DatiTrasmissione/CodiceDestinatario');
         }
+
+        $transmitterCountry = $this->text($xp, '//*[local-name()="IdTrasmittente"]/*[local-name()="IdPaese"]');
+        $transmitterCode = $this->text($xp, '//*[local-name()="IdTrasmittente"]/*[local-name()="IdCodice"]');
+
+        if ($transmitterCountry === 'IT' && $transmitterCode !== '' && ! $this->fiscal->isValidPartitaIva($transmitterCode) && ! $this->fiscal->isValidCodiceFiscale($transmitterCode)) {
+            $result->error('00305', 'IdTrasmittente/IdCodice', ['value' => $transmitterCode]);
+        }
     }
 
     private function checkIdentities(DOMXPath $xp, ValidationResult $result): void
@@ -95,6 +103,10 @@ final class SogeiCongruityValidator
 
             if ($fiscalCode !== '' && ! $this->fiscal->isValidCodiceFiscale($fiscalCode)) {
                 $result->error('00306', $party.'/CodiceFiscale', ['value' => $fiscalCode]);
+            }
+
+            if ($party === 'CessionarioCommittente' && $vat === '' && $fiscalCode === '') {
+                $result->error('00312', $party.'/DatiAnagrafici', ['reason' => 'IdFiscaleIVA and CodiceFiscale are both missing']);
             }
         }
     }
@@ -190,9 +202,39 @@ final class SogeiCongruityValidator
         }
     }
 
+    /**
+     * 00419: ImportoTotaleDocumento against taxable amounts, tax and stamp duty. A warning, not an error: a pension fund,
+     * a rounding or a split payment legitimately move the total, and the tax authority checks it with a wide tolerance.
+     */
+    private function checkTotal(DOMXPath $xp, ValidationResult $result): void
+    {
+        $declared = $this->text($xp, '//*[local-name()="DatiGeneraliDocumento"]/*[local-name()="ImportoTotaleDocumento"]');
+
+        if ($declared === '') {
+            return;
+        }
+
+        $sum = (float) $this->text($xp, '//*[local-name()="DatiGeneraliDocumento"]/*[local-name()="Arrotondamento"]')
+            + (float) $this->text($xp, '//*[local-name()="DatiGeneraliDocumento"]/*[local-name()="DatiBollo"]/*[local-name()="ImportoBollo"]');
+
+        foreach ($xp->query('//*[local-name()="DatiRiepilogo"]') ?: [] as $summary) {
+            if ($summary instanceof DOMElement) {
+                $sum += (float) $this->childText($summary, 'ImponibileImporto') + (float) $this->childText($summary, 'Imposta');
+            }
+        }
+
+        if (abs($sum - (float) $declared) > 1.0 && abs($sum - (float) $declared) > 0.01 * abs($sum)) {
+            $result->warning('00419', 'DatiGeneraliDocumento/ImportoTotaleDocumento', ['expected' => round($sum, 2), 'actual' => (float) $declared]);
+        }
+    }
+
     private function checkDocumentRules(DOMXPath $xp, string $format, ValidationResult $result): void
     {
         $type = $this->text($xp, '//*[local-name()="TipoDocumento"]');
+
+        if ($format === 'FPA12' && $xp->query('//*[local-name()="CodiceCIG"]')->length === 0) {
+            $result->warning('PA_CIG_EXPECTED', 'DatiGenerali/DatiOrdineAcquisto/CodiceCIG');
+        }
 
         if ($format === 'FPA12') {
             foreach ($xp->query('//*[local-name()="DatiRiepilogo"]') ?: [] as $summary) {

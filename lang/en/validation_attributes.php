@@ -2870,4 +2870,8 @@ return [
     'estimated_cost_budget' => 'estimated cost budget',
     'job_id' => 'job',
     'target_margin_percent' => 'target margin',
+    'sdi_simplified' => 'simplified invoice',
+    'sdi_vehicle' => 'vehicle data',
+    'sdi_extra' => 'optional FatturaPA blocks',
+    'sdi_data' => 'FatturaPA line data',
 ];
