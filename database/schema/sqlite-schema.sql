@@ -3854,37 +3854,6 @@ CREATE INDEX "attachments_tenant_attachable_idx" on "attachments"(
 );
 CREATE INDEX "attachments_tenant_id_index" on "attachments"("tenant_id");
 CREATE INDEX "attachments_uploaded_by_index" on "attachments"("uploaded_by");
-CREATE TABLE "audit_logs"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "user_id" varchar,
-  "event" varchar not null,
-  "auditable_type" varchar not null,
-  "auditable_id" varchar not null,
-  "old_values" text,
-  "new_values" text,
-  "ip_address" varchar,
-  "user_agent" text,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("user_id") references "users"("id") on delete set null on update no action,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
-  primary key("id")
-);
-
-CREATE INDEX "audit_logs_auditable_id_index" on "audit_logs"("auditable_id");
-CREATE INDEX "audit_logs_auditable_type_index" on "audit_logs"(
-  "auditable_type"
-);
-CREATE INDEX "audit_logs_event_index" on "audit_logs"("event");
-CREATE INDEX "audit_logs_tenant_id_created_at_index" on "audit_logs"(
-  "tenant_id",
-  "created_at"
-);
 CREATE TABLE "bank_account_balances"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -40048,6 +40017,90 @@ CREATE INDEX "idx_analytics_schedules_due_at" on "analytics_export_schedules"(
   "is_active",
   "next_run_at"
 );
+CREATE TABLE "audit_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "sequence_number" integer not null,
+  "event_type" varchar not null,
+  "auditable_type" varchar not null,
+  "auditable_id" varchar,
+  "actor_type" varchar not null,
+  "actor_id" varchar,
+  "actor_email" varchar,
+  "actor_role" varchar,
+  "ip_address" varchar,
+  "user_agent" text,
+  "request_id" varchar,
+  "route_name" varchar,
+  "old_values_encrypted" text,
+  "new_values_encrypted" text,
+  "changed_fields" text,
+  "context_metadata" text,
+  "previous_hash" varchar not null,
+  "current_hash" varchar not null,
+  "hmac_signature" varchar not null,
+  "occurred_at" datetime not null,
+  foreign key("tenant_id") references "tenants"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "audit_logs_tenant_sequence_unique" on "audit_logs"(
+  "tenant_id",
+  "sequence_number"
+);
+CREATE INDEX "audit_logs_tenant_entity_index" on "audit_logs"(
+  "tenant_id",
+  "auditable_type",
+  "auditable_id"
+);
+CREATE INDEX "audit_logs_auditable_type_index" on "audit_logs"(
+  "auditable_type"
+);
+CREATE INDEX "audit_logs_auditable_id_index" on "audit_logs"("auditable_id");
+CREATE INDEX "audit_logs_actor_id_index" on "audit_logs"("actor_id");
+CREATE INDEX "audit_logs_event_type_index" on "audit_logs"("event_type");
+CREATE INDEX "audit_logs_occurred_at_index" on "audit_logs"("occurred_at");
+CREATE UNIQUE INDEX "audit_logs_current_hash_unique" on "audit_logs"(
+  "current_hash"
+);
+CREATE TABLE "audit_worm_batches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "from_sequence" integer not null,
+  "to_sequence" integer not null,
+  "record_count" integer not null,
+  "merkle_root_hash" varchar not null,
+  "storage_disk" varchar not null,
+  "storage_path" varchar not null,
+  "manifest_path" varchar not null,
+  "retention_until" datetime not null,
+  "sealed_at" datetime not null,
+  foreign key("tenant_id") references "tenants"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "audit_worm_batches_tenant_from_unique" on "audit_worm_batches"(
+  "tenant_id",
+  "from_sequence"
+);
+CREATE TABLE "audit_worm_batch_entries"(
+  "id" integer primary key autoincrement not null,
+  "tenant_id" varchar,
+  "batch_id" varchar not null,
+  "audit_log_id" varchar not null,
+  foreign key("tenant_id") references "tenants"("id") on delete restrict,
+  foreign key("batch_id") references "audit_worm_batches"("id") on delete restrict,
+  foreign key("audit_log_id") references "audit_logs"("id") on delete restrict
+);
+CREATE INDEX "audit_worm_batch_entries_tenant_batch_index" on "audit_worm_batch_entries"(
+  "tenant_id",
+  "batch_id"
+);
+CREATE UNIQUE INDEX "audit_worm_batch_entries_audit_log_id_unique" on "audit_worm_batch_entries"(
+  "audit_log_id"
+);
+CREATE TRIGGER prevent_audit_log_update BEFORE UPDATE ON audit_logs BEGIN SELECT RAISE(ABORT, 'Audit logs are strictly immutable'); END;
+CREATE TRIGGER prevent_audit_log_delete BEFORE DELETE ON audit_logs BEGIN SELECT RAISE(ABORT, 'Audit logs are strictly immutable'); END;
 CREATE TABLE "privacy_ropa_records"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -40616,4 +40669,5 @@ INSERT INTO migrations VALUES(379,'2027_12_10_100000_create_controlling_tables',
 INSERT INTO migrations VALUES(380,'2027_12_10_000100_extend_analytics_reporting_for_pivot_studio',5);
 INSERT INTO migrations VALUES(381,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',6);
 INSERT INTO migrations VALUES(382,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',7);
-INSERT INTO migrations VALUES(383,'2027_12_12_000100_create_privacy_governance_tables',8);
+INSERT INTO migrations VALUES(383,'2027_12_11_000100_create_immutable_audit_trail',8);
+INSERT INTO migrations VALUES(384,'2027_12_12_000100_create_privacy_governance_tables',9);

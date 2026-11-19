@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Audit\Concerns\HasImmutableAuditTrail;
+use App\Domain\Audit\Contracts\AuditableEntityInterface;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -17,9 +19,15 @@ use Illuminate\Support\Carbon;
 /**
  * @property Carbon|null $fiscal_verified_at
  */
-class Contact extends Model
+class Contact extends Model implements AuditableEntityInterface
 {
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+    use HasImmutableAuditTrail;
+
+    /** @var list<string> */
+    protected array $auditMask = ['iban', 'qr_iban', 'fiscal_code'];
+
+    protected bool $auditTrackReads = true;
 
     protected $attributes = [
         'type' => 'customer',

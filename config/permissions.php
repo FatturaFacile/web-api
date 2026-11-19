@@ -38,6 +38,16 @@ return [
         'workflow_design' => ['read' => $anyMember, 'write' => $managers],
         // Backups hold every record of the company, and a restore replaces them.
         'system' => ['read' => ['owner', 'admin'], 'write' => ['owner', 'admin']],
+        // The immutable audit trail: owners and administrators, or a member (an auditor) granted audit.* permissions on the
+        // membership. Each endpoint then checks its own permission (audit.view, audit.verify, audit.export, audit.worm.manage).
+        'audit_trail' => [
+            'read' => $managers,
+            'write' => $managers,
+            'grants' => [
+                'read' => ['audit.view', 'audit.verify', 'audit.export', 'audit.worm.manage', 'audit.*'],
+                'write' => ['audit.verify', 'audit.worm.manage', 'audit.*'],
+            ],
+        ],
         // A granular grant opens only the access listed here: the policies of the module do not narrow it further.
         'ledger' => [
             'read' => $financeReaders,

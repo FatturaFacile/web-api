@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
@@ -49,7 +50,8 @@ class FrontendTranslationSeeder extends Seeder
             + HrAtsFrontendTranslations::all($locale)
             + MainFrontendTranslations::all($locale)
             + PrivacyGovernanceFrontendTranslations::all($locale)
-            + ReleaseAuditFrontendTranslations::all($locale);
+            + ReleaseAuditFrontendTranslations::all($locale)
+            + AuditTrailFrontendTranslations::all($locale);
     }
 
     /**

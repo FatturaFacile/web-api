@@ -193,3 +193,4 @@ Schedule::command('esm:loaners:scan-overdue')->dailyAt('07:30')->withoutOverlapp
 
 // GitHub Issue #138: Recurring Contracts & Periodic Billing Engine
 Schedule::command('billing:process-recurring')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
+Schedule::command('audit:archive-worm')->dailyAt('03:30')->withoutOverlapping()->onOneServer();

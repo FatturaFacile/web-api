@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Audit\Concerns\HasImmutableAuditTrail;
+use App\Domain\Audit\Contracts\AuditableEntityInterface;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasFiscalAmounts;
 use App\Models\Concerns\ProtectsIssuedInvoice;
@@ -23,9 +25,12 @@ use Modules\Invoicing\Models\DeclarationOfIntent;
  * @property array<string, mixed>|null $sdi_extra
  * @property Carbon|null $due_date
  */
-class Invoice extends Model
+class Invoice extends Model implements AuditableEntityInterface
 {
     use BelongsToTenant, HasFactory, HasFiscalAmounts, HasUuids, ProtectsIssuedInvoice, SoftDeletes;
+    use HasImmutableAuditTrail;
+
+    protected bool $auditTrackReads = true;
 
     protected $fillable = [
         'contact_id',

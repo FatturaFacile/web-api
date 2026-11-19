@@ -208,6 +208,8 @@ Route::prefix('v1')->group(function (): void {
 
         // Every route below declares its module (config/permissions.php), except the ones listed in
         // tests/Feature/Foundation/RouteModuleAccessTest.php, which check the user themselves (own records, own profile).
+        require __DIR__.'/audit.php';
+
         Route::middleware('module.access:system')->group(function (): void {
             Route::post('/translations', [TranslationController::class, 'storeOrUpdate'])->name('translations.storeOrUpdate');
             Route::post('/lookups/translations', [LookupController::class, 'saveTranslation'])->name('lookups.saveTranslation');
@@ -283,11 +285,11 @@ Route::prefix('v1')->group(function (): void {
         });
 
         Route::prefix('sales')->name('sales.')->middleware('module.access:invoicing')->group(function (): void {
-            Route::apiResource('invoices', InvoiceController::class)->parameters(['invoices' => 'id']);
-            Route::post('/invoices/{id}/generate-sdi-xml', [InvoiceController::class, 'generateSdiXml'])->name('invoices.generate-sdi-xml');
+            Route::apiResource('invoices', InvoiceController::class)->parameters(['invoices' => 'id'])->middlewareFor('show', 'audit.access:Invoice,VIEWED');
+            Route::post('/invoices/{id}/generate-sdi-xml', [InvoiceController::class, 'generateSdiXml'])->middleware('audit.access:Invoice,EXPORTED,fatturapa-xml')->name('invoices.generate-sdi-xml');
             Route::post('/invoices/{id}/generate-qr-bill', [InvoiceController::class, 'generateQrBill'])->middleware('deprecated:/api/v1/sales/invoices/{id}/qr-bill')->name('invoices.generate-qr-bill');
-            Route::get('/invoices/{id}/download-qr-bill', [InvoiceController::class, 'downloadQrBill'])->middleware('deprecated:/api/v1/sales/invoices/{id}/qr-bill')->name('invoices.download-qr-bill');
-            Route::get('/invoices/{id}/qr-bill', [InvoiceQrBillController::class, 'show'])->name('invoices.qr-bill');
+            Route::get('/invoices/{id}/download-qr-bill', [InvoiceController::class, 'downloadQrBill'])->middleware(['deprecated:/api/v1/sales/invoices/{id}/qr-bill', 'audit.access:Invoice,EXPORTED,swiss-qr-bill'])->name('invoices.download-qr-bill');
+            Route::get('/invoices/{id}/qr-bill', [InvoiceQrBillController::class, 'show'])->middleware('audit.access:Invoice,EXPORTED,swiss-qr-bill')->name('invoices.qr-bill');
             Route::post('/invoices/{id}/evaluate-customs-origin', [InvoiceCustomsOriginController::class, 'evaluate'])->name('invoices.evaluate-customs-origin');
             Route::get('/invoices/{id}/payments', [InvoicePaymentController::class, 'index'])->name('invoices.payments.index');
             Route::post('/invoices/{id}/payments', [InvoicePaymentController::class, 'store'])->name('invoices.payments.store');
@@ -415,7 +417,7 @@ Route::prefix('v1')->group(function (): void {
         // A document or an attachment belongs to several modules: the controllers check the module of the record.
         Route::post('/documents/{type}/{id}/email', [DocumentEmailController::class, 'store'])->name('documents.email.store');
         Route::get('/documents/{type}/{id}/emails', [DocumentEmailController::class, 'index'])->name('documents.email.index');
-        Route::get('/documents/{type}/{id}/pdf', [DocumentPdfController::class, 'show'])->name('documents.pdf');
+        Route::get('/documents/{type}/{id}/pdf', [DocumentPdfController::class, 'show'])->middleware('audit.access:{type},EXPORTED,pdf')->name('documents.pdf');
         Route::get('/attachments', [AttachmentController::class, 'index'])->name('attachments.index');
         Route::post('/attachments', [AttachmentController::class, 'store'])->name('attachments.store');
         Route::get('/attachments/{id}/download', [AttachmentController::class, 'download'])->name('attachments.download');

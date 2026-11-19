@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\HumanResources\Models;
 
+use App\Domain\Audit\Concerns\HasImmutableAuditTrail;
+use App\Domain\Audit\Contracts\AuditableEntityInterface;
 use App\Models\User;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,8 +25,15 @@ use Modules\Workflow\Models\WorkflowInstance;
  * @property Carbon|null $confirmation_date
  * @property array<array-key, string|array<string, mixed>>|null $equipment_assigned
  */
-final class Employee extends BaseEnterpriseModel implements LockableByWorkflowInterface
+final class Employee extends BaseEnterpriseModel implements AuditableEntityInterface, LockableByWorkflowInterface
 {
+    use HasImmutableAuditTrail;
+
+    /** @var list<string> */
+    protected array $auditMask = ['tax_code', 'social_security_number', 'ahv_number', 'iban'];
+
+    protected bool $auditTrackReads = true;
+
     protected $table = 'hr_employees';
 
     protected function casts(): array
