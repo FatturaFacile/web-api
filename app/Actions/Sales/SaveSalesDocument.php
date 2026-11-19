@@ -61,6 +61,10 @@ class SaveSalesDocument
             $document->forceFill($totals);
             $document->save();
 
+            if ($document instanceof Quote && $document->quote_group_uuid === null) {
+                $document->forceFill(['quote_group_uuid' => $document->id])->save();
+            }
+
             $this->createLines($document, $lines);
             $this->events->record($document, 'created');
 
@@ -145,13 +149,18 @@ class SaveSalesDocument
     private function computeLines(array $items): array
     {
         $computed = $this->totals->calculateDecimal($items);
+        // Optional quote lines the customer did not select are kept on the quote but are not part of its totals.
+        $billable = array_values(array_filter($items, static fn (array $item): bool => ! ($item['is_optional'] ?? false) || ($item['is_selected'] ?? true)));
+        $totals = count($billable) === count($items) ? $computed : $this->totals->calculateDecimal($billable);
         $lines = [];
 
         foreach ($computed['items'] as $index => $line) {
-            $lines[] = ['product_id' => $items[$index]['product_id'] ?? null, 'description' => (string) $items[$index]['description']] + $line;
+            $lines[] = ['product_id' => $items[$index]['product_id'] ?? null, 'description' => (string) $items[$index]['description']]
+                + array_intersect_key($items[$index], array_flip(['cost_price', 'labor_cost', 'configuration_snapshot', 'is_optional', 'is_selected']))
+                + $line;
         }
 
-        return [$lines, ['total_net' => $computed['total_net'], 'total_tax' => $computed['total_tax'], 'total_gross' => $computed['total_gross']]];
+        return [$lines, ['total_net' => $totals['total_net'], 'total_tax' => $totals['total_tax'], 'total_gross' => $totals['total_gross']]];
     }
 
     /**

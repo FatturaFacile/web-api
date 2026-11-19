@@ -32,8 +32,30 @@ class QuoteResource extends JsonResource
             [
                 'contact_id' => $this->contact_id,
                 'contact' => $this->whenLoaded('contact', fn () => ['id' => $this->contact->id, 'name' => $this->contact->company_name ?: trim($this->contact->first_name.' '.$this->contact->last_name)]),
-                'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item): array => $item->toArray())->all()),
+                'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item): array => $this->lineFor($request, $item->toArray()))->all()),
             ]
         );
+    }
+
+    /**
+     * Industrial cost, labor cost, margin and the cost inside the configuration snapshot are shown only to the roles
+     * that may see them.
+     *
+     * @param  array<string, mixed>  $line
+     * @return array<string, mixed>
+     */
+    private function lineFor(Request $request, array $line): array
+    {
+        if ($request->user()?->can('viewCost', $this->resource) === true) {
+            return $line;
+        }
+
+        $line = array_diff_key($line, array_flip(['cost_price', 'labor_cost', 'margin_percentage']));
+
+        if (is_array($line['configuration_snapshot'] ?? null)) {
+            $line['configuration_snapshot'] = array_diff_key($line['configuration_snapshot'], array_flip(['cost', 'costs', 'margin']));
+        }
+
+        return $line;
     }
 }

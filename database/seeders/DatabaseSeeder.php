@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
 
             TranslationSeeder::class,
             FrontendTranslationSeeder::class,
+            CpqLocalizationSeeder::class,
             ErpLookupsSeeder::class,
             ComprehensiveLookupMasterSeeder::class,
             UnitOfMeasureSeeder::class,
@@ -48,6 +49,7 @@ class DatabaseSeeder extends Seeder
 
             DocumentSequenceSeeder::class,
 
+            CpqDefaultCatalogAndRulesSeeder::class,
             QuoteSeeder::class,
             QuoteItemSeeder::class,
 

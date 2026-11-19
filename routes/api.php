@@ -22,6 +22,9 @@ use App\Http\Controllers\Api\V1\ConstructionController;
 use App\Http\Controllers\Api\V1\ContactFiscalController;
 use App\Http\Controllers\Api\V1\ContactInsightsController;
 use App\Http\Controllers\Api\V1\ContactRegistryController;
+use App\Http\Controllers\Api\V1\Cpq\PublicQuoteSignatureController;
+use App\Http\Controllers\Api\V1\Cpq\QuoteApprovalTierController;
+use App\Http\Controllers\Api\V1\Cpq\QuoteCpqController;
 use App\Http\Controllers\Api\V1\CrmController;
 use App\Http\Controllers\Api\V1\CustomsTaricCodeController;
 use App\Http\Controllers\Api\V1\Dashboard\DashboardBuilderController;
@@ -232,6 +235,14 @@ Route::prefix('v1')->group(function (): void {
         });
     });
 
+    // Online quote signature (public, token-authenticated, rate limited).
+    Route::prefix('public/quote-signatures')->name('public.quote-signatures.')->middleware(['locale', 'throttle:30,1'])->group(function (): void {
+        Route::get('/{token}', [PublicQuoteSignatureController::class, 'show'])->name('show');
+        Route::get('/{token}/pdf', [PublicQuoteSignatureController::class, 'pdf'])->name('pdf');
+        Route::post('/{token}/sign', [PublicQuoteSignatureController::class, 'sign'])->name('sign');
+        Route::post('/{token}/request-changes', [PublicQuoteSignatureController::class, 'requestChanges'])->name('request-changes');
+    });
+
     // Enterprise authentication: SSO (OpenID Connect), tenant security policy, SCIM 2.0.
     require __DIR__.'/enterprise_auth.php';
 
@@ -349,6 +360,26 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/quotes/{id}/signature', [QuoteController::class, 'sign'])->name('quotes.signature');
             Route::post('/quotes/expire', [QuoteRevisionController::class, 'expire'])->name('quotes.expire');
             Route::post('/quotes/{id}/revise', [QuoteRevisionController::class, 'revise'])->whereUuid('id')->name('quotes.revise');
+
+            // CPQ lite: margin simulation, revision comparison, tiered approval, signature links, PDF preview.
+            Route::get('/quotes/{id}/cpq', [QuoteCpqController::class, 'show'])->whereUuid('id')->name('quotes.cpq');
+            Route::get('/quotes/{id}/margin', [QuoteCpqController::class, 'margin'])->whereUuid('id')->name('quotes.margin');
+            Route::post('/quotes/{id}/simulate', [QuoteCpqController::class, 'simulate'])->whereUuid('id')->name('quotes.simulate');
+            Route::get('/quotes/{id}/revisions', [QuoteCpqController::class, 'revisions'])->whereUuid('id')->name('quotes.revisions');
+            Route::get('/quotes/{id}/diff/{otherId}', [QuoteCpqController::class, 'diff'])->whereUuid(['id', 'otherId'])->name('quotes.diff');
+            Route::get('/quotes/{id}/approvals', [QuoteCpqController::class, 'approvals'])->whereUuid('id')->name('quotes.approvals.index');
+            Route::post('/quotes/{id}/approvals/submit', [QuoteCpqController::class, 'submitApproval'])->whereUuid('id')->name('quotes.approvals.submit');
+            Route::post('/quotes/{id}/approvals/approve', [QuoteCpqController::class, 'approve'])->whereUuid('id')->name('quotes.approvals.approve');
+            Route::post('/quotes/{id}/approvals/reject', [QuoteCpqController::class, 'reject'])->whereUuid('id')->name('quotes.approvals.reject');
+            Route::post('/quotes/{id}/signature-links', [QuoteCpqController::class, 'createSignatureLink'])->whereUuid('id')->name('quotes.signature-links.store');
+            Route::get('/quotes/{id}/signature-requests', [QuoteCpqController::class, 'signatureRequests'])->whereUuid('id')->name('quotes.signature-requests.index');
+            Route::post('/quotes/{id}/signature-requests/{requestId}/revoke', [QuoteCpqController::class, 'revokeSignatureLink'])->whereUuid(['id', 'requestId'])->name('quotes.signature-requests.revoke');
+            Route::get('/quotes/{id}/signature-requests/{requestId}/verify', [QuoteCpqController::class, 'verifySignature'])->whereUuid(['id', 'requestId'])->name('quotes.signature-requests.verify');
+            Route::get('/quotes/{id}/preview-pdf', [QuoteCpqController::class, 'previewPdf'])->whereUuid('id')->name('quotes.preview-pdf');
+            Route::get('/quote-approval-tiers', [QuoteApprovalTierController::class, 'index'])->name('quote-approval-tiers.index');
+            Route::post('/quote-approval-tiers', [QuoteApprovalTierController::class, 'store'])->name('quote-approval-tiers.store');
+            Route::put('/quote-approval-tiers/{id}', [QuoteApprovalTierController::class, 'update'])->whereUuid('id')->name('quote-approval-tiers.update');
+            Route::delete('/quote-approval-tiers/{id}', [QuoteApprovalTierController::class, 'destroy'])->whereUuid('id')->name('quote-approval-tiers.destroy');
 
             // Order fulfilment: credit check on confirmation, availability to promise, reservations, backorders.
             Route::post('/orders/{id}/confirm', [SalesOrderFulfillmentController::class, 'confirm'])->whereUuid('id')->name('orders.confirm');

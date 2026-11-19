@@ -23,6 +23,12 @@ class QuoteItem extends Model
         'tax_rate',
         'discount_percentage',
         'line_total',
+        'cost_price',
+        'labor_cost',
+        'margin_percentage',
+        'configuration_snapshot',
+        'is_optional',
+        'is_selected',
     ];
 
     protected function casts(): array
@@ -33,6 +39,12 @@ class QuoteItem extends Model
             'quantity' => 'decimal:4',
             'tax_rate' => 'decimal:2',
             'unit_price' => 'decimal:4',
+            'cost_price' => 'decimal:4',
+            'labor_cost' => 'decimal:4',
+            'margin_percentage' => 'decimal:2',
+            'configuration_snapshot' => 'array',
+            'is_optional' => 'boolean',
+            'is_selected' => 'boolean',
         ];
     }
 

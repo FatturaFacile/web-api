@@ -44,7 +44,7 @@ class DocumentPdfService
     ) {}
 
     /**
-     * @param  array{hide_prices?: bool, locale?: ?string}  $options  `locale` renders with the DB translations of that language
+     * @param  array{hide_prices?: bool, locale?: ?string, show_technical_details?: bool}  $options  `locale` renders with the DB translations of that language
      */
     public function render(Model $document, array $options = []): RenderedPdf
     {
@@ -91,7 +91,7 @@ class DocumentPdfService
     }
 
     /**
-     * @param  array{hide_prices?: bool, locale?: ?string}  $options
+     * @param  array{hide_prices?: bool, locale?: ?string, show_technical_details?: bool}  $options
      */
     private function renderDocument(Model $document, array $options): RenderedPdf
     {
@@ -99,11 +99,11 @@ class DocumentPdfService
         $tenantId = $document->getAttribute('tenant_id');
         $tenant = $document->relationLoaded('tenant') ? $document->getRelation('tenant') : ($tenantId ? Tenant::find($tenantId) : null);
 
-        $renderCallback = fn (): RenderedPdf => $this->withLocale($this->documentLanguage($document), function () use ($document, $options, $tenantId): RenderedPdf {
+        $renderCallback = fn (): RenderedPdf => $this->withLocale($options['locale'] ?? $this->documentLanguage($document), function () use ($document, $options, $tenantId): RenderedPdf {
             $this->loadDatabaseTranslations($tenantId !== null ? (string) $tenantId : null);
             [$view, $data, $type, $number] = match (true) {
                 $document instanceof Invoice => $this->invoice($document),
-                $document instanceof Quote => $this->quote($document),
+                $document instanceof Quote => $this->quote($document, $options),
                 $document instanceof SalesOrder => $this->salesOrder($document),
                 $document instanceof DeliveryNote => $this->deliveryNote($document, $options),
                 $document instanceof WorkOrder => $this->workOrder($document),
@@ -208,7 +208,7 @@ class DocumentPdfService
     /**
      * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
      */
-    private function quote(Quote $quote): array
+    private function quote(Quote $quote, array $options = []): array
     {
         $quote->loadMissing(['tenant', 'contact.addresses', 'items']);
 
@@ -226,6 +226,7 @@ class DocumentPdfService
                 'signed_at' => $quote->signed_at?->toDateString(),
                 'image' => $quote->signature_data !== null ? $this->dataUri(PngSignature::decode($quote->signature_data)) : null,
             ],
+            'cpq' => $this->quoteCpq($quote, $options),
         ]), 'quote', $quote->quote_number];
     }
 
@@ -253,7 +254,7 @@ class DocumentPdfService
      * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
      */
     /**
-     * @param  array{hide_prices?: bool, locale?: ?string}  $options
+     * @param  array{hide_prices?: bool, locale?: ?string, show_technical_details?: bool}  $options
      * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
      */
     private function deliveryNote(DeliveryNote $note, array $options = []): array
@@ -494,6 +495,62 @@ class DocumentPdfService
         }
 
         return $lines;
+    }
+
+    /**
+     * Technical and commercial parts of a CPQ quote: the configured variant of each line, optional lines, the VAT
+     * breakdown, and the audit certificate of the e-signature. `show_technical_details` false collapses the lines
+     * into one package price.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
+     */
+    private function quoteCpq(Quote $quote, array $options): array
+    {
+        $showDetails = (bool) ($options['show_technical_details'] ?? true);
+        $lines = [];
+        $vat = [];
+
+        foreach ($quote->items as $item) {
+            $selection = is_array($item->configuration_snapshot) ? ($item->configuration_snapshot['labels'] ?? []) : [];
+            $billable = ! $item->is_optional || $item->is_selected;
+            $lines[] = [
+                'description' => (string) $item->description,
+                'specs' => is_array($selection) ? array_values(array_map('strval', $selection)) : [],
+                'is_optional' => (bool) $item->is_optional,
+                'is_selected' => (bool) $item->is_selected,
+                'quantity' => (float) $item->quantity,
+                'line_total' => (float) $item->line_total,
+            ];
+
+            if ($billable) {
+                $rate = number_format((float) $item->tax_rate, 2, '.', '');
+                $vat[$rate]['rate'] = (float) $rate;
+                $vat[$rate]['taxable'] = round(($vat[$rate]['taxable'] ?? 0.0) + (float) $item->line_total, 2);
+            }
+        }
+
+        foreach ($vat as $rate => $row) {
+            $vat[$rate]['tax'] = round($row['taxable'] * $row['rate'] / 100, 2);
+        }
+
+        ksort($vat);
+        $signature = $quote->signatureRequests()->where('status', 'signed')->latest('signed_at')->first();
+
+        return [
+            'show_details' => $showDetails,
+            'lines' => $lines,
+            'vat' => array_values($vat),
+            'package_total' => (float) $quote->total_net,
+            'audit' => $signature === null ? null : [
+                'signer_name' => $signature->signer_name,
+                'signer_role' => $signature->signer_role,
+                'purchase_order_number' => $signature->purchase_order_number,
+                'signed_at' => $signature->signed_at?->toIso8601String(),
+                'ip_address' => $signature->ip_address,
+                'payload_hash' => $signature->payload_hash,
+            ],
+        ];
     }
 
     private function dataUri(?string $png): ?string

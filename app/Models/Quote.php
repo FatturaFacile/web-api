@@ -37,6 +37,10 @@ class Quote extends Model
         'signature_data',
         'signed_at',
         'signed_by',
+        'quote_group_uuid',
+        'is_current_revision',
+        'revision_notes',
+        'allow_optional_selection',
     ];
 
     protected function casts(): array
@@ -48,6 +52,8 @@ class Quote extends Model
             'total_net' => 'decimal:2',
             'total_tax' => 'decimal:2',
             'valid_until' => 'date',
+            'is_current_revision' => 'boolean',
+            'allow_optional_selection' => 'boolean',
         ];
     }
 
@@ -65,5 +71,21 @@ class Quote extends Model
     public function items(): HasMany
     {
         return $this->hasMany(QuoteItem::class)->orderBy('id');
+    }
+
+    /**
+     * @return HasMany<QuoteApprovalRequest, $this>
+     */
+    public function approvalRequests(): HasMany
+    {
+        return $this->hasMany(QuoteApprovalRequest::class)->orderBy('level');
+    }
+
+    /**
+     * @return HasMany<QuoteSignatureRequest, $this>
+     */
+    public function signatureRequests(): HasMany
+    {
+        return $this->hasMany(QuoteSignatureRequest::class);
     }
 }

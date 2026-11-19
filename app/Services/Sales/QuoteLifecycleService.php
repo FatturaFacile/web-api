@@ -63,7 +63,7 @@ final readonly class QuoteLifecycleService
     /**
      * Creates the next revision of an open quote and supersedes it.
      *
-     * @param  array{date?: string, valid_until?: ?string, notes?: ?string, custom_text?: ?string, items?: array<int, array<string, mixed>>}  $changes
+     * @param  array{date?: string, valid_until?: ?string, notes?: ?string, custom_text?: ?string, revision_notes?: ?string, items?: array<int, array<string, mixed>>}  $changes
      *
      * @throws ValidationException when the quote is not open
      */
@@ -86,8 +86,15 @@ final readonly class QuoteLifecycleService
                 'unit_price' => (string) $item->unit_price,
                 'tax_rate' => (string) $item->tax_rate,
                 'discount_percentage' => (string) ($item->discount_percentage ?? '0'),
+                'cost_price' => (string) ($item->cost_price ?? '0'),
+                'labor_cost' => (string) ($item->labor_cost ?? '0'),
+                'configuration_snapshot' => $item->configuration_snapshot,
+                'is_optional' => $item->is_optional,
+                'is_selected' => $item->is_selected,
             ])->values()->all();
-            $computed = $this->totals->calculateDecimal($sourceItems);
+            $lineValues = $this->totals->calculateDecimal($sourceItems);
+            $billable = array_filter($sourceItems, static fn (array $item): bool => ! ($item['is_optional'] ?? false) || ($item['is_selected'] ?? true));
+            $computed = array_merge($this->totals->calculateDecimal(array_values($billable)), ['items' => $lineValues['items']]);
             $number = $this->numbering->next('quote', $date->year, $tenantId);
 
             $revision = new Quote;
@@ -112,16 +119,26 @@ final readonly class QuoteLifecycleService
                 'shipping_terms' => $locked->getAttribute('shipping_terms'),
                 'revision_number' => ((int) ($locked->getAttribute('revision_number') ?? 1)) + 1,
                 'revision_of_quote_id' => $locked->id,
+                'quote_group_uuid' => $locked->quote_group_uuid ?? $locked->id,
+                'is_current_revision' => true,
+                'revision_notes' => $changes['revision_notes'] ?? null,
+                'allow_optional_selection' => $locked->allow_optional_selection,
             ])->save();
 
             foreach ($computed['items'] as $index => $line) {
+                $source = $sourceItems[$index];
                 $revision->items()->make([
-                    'product_id' => $sourceItems[$index]['product_id'] ?? null,
-                    'description' => (string) $sourceItems[$index]['description'],
+                    'product_id' => $source['product_id'] ?? null,
+                    'description' => (string) $source['description'],
+                    'cost_price' => $source['cost_price'] ?? 0,
+                    'labor_cost' => $source['labor_cost'] ?? 0,
+                    'configuration_snapshot' => $source['configuration_snapshot'] ?? null,
+                    'is_optional' => (bool) ($source['is_optional'] ?? false),
+                    'is_selected' => (bool) ($source['is_selected'] ?? true),
                 ] + $line)->forceFill(['tenant_id' => $tenantId])->save();
             }
 
-            $locked->forceFill(['status' => QuoteStatus::Superseded->value, 'superseded_at' => now()])->save();
+            $locked->forceFill(['status' => QuoteStatus::Superseded->value, 'superseded_at' => now(), 'is_current_revision' => false, 'quote_group_uuid' => $locked->quote_group_uuid ?? $locked->id])->save();
             $this->events->record($locked, 'superseded', ['revision_quote_id' => $revision->id]);
             $this->events->record($revision, 'created', ['revision_of_quote_id' => $locked->id]);
 

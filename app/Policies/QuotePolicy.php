@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Models\Quote;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 
 class QuotePolicy
 {
@@ -57,6 +58,44 @@ class QuotePolicy
     public function download(User $user, Quote $quote): bool
     {
         return $this->belongsToSameTenant($user, $quote);
+    }
+
+    /**
+     * Roles that see the industrial cost and the margin of a quote.
+     *
+     * @var list<string>
+     */
+    public const array CostVisibleRoles = ['owner', 'admin', 'sales_manager', 'sales_director', 'accountant'];
+
+    /**
+     * Roles that may decide an approval request; the level check happens in the evaluator against the pending request.
+     *
+     * @var list<string>
+     */
+    public const array ApproverRoles = ['owner', 'admin', 'sales_manager', 'sales_director'];
+
+    /**
+     * Roles that configure the approval tiers of the company.
+     *
+     * @var list<string>
+     */
+    public const array TierManagerRoles = ['owner', 'admin'];
+
+    public function viewCost(User $user, Quote $quote): bool
+    {
+        return $this->belongsToSameTenant($user, $quote) && in_array($user->getRoleInTenant((string) $quote->tenant_id), self::CostVisibleRoles, true);
+    }
+
+    public function decideApproval(User $user, Quote $quote): bool
+    {
+        return $this->belongsToSameTenant($user, $quote) && in_array($user->getRoleInTenant((string) $quote->tenant_id), self::ApproverRoles, true);
+    }
+
+    public function manageApprovalTiers(User $user): bool
+    {
+        $tenantId = app(TenantContext::class)->getTenantId();
+
+        return $tenantId !== null && in_array($user->getRoleInTenant((string) $tenantId), self::TierManagerRoles, true);
     }
 
     private function belongsToSameTenant(User $user, Quote $quote): bool
