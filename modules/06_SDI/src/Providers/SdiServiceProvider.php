@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\SDI\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\SDI\Console\ExpirePaDeadlinesCommand;
 use Modules\SDI\Console\PollSdiChannelsCommand;
 use Modules\SDI\Services\SdiGatewayManager;
 
@@ -20,7 +21,7 @@ final class SdiServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([PollSdiChannelsCommand::class]);
+            $this->commands([PollSdiChannelsCommand::class, ExpirePaDeadlinesCommand::class]);
         }
     }
 }

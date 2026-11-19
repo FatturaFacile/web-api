@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\InvoiceSdiController;
 use App\Http\Controllers\Api\V1\SdiWebhookController;
 use Illuminate\Support\Facades\Route;
+use Modules\SDI\Http\Controllers\FpaDocumentController;
 use Modules\SDI\Http\Controllers\SdiChannelController;
+use Modules\SDI\Http\Controllers\SdiConfigurationController;
 use Modules\SDI\Http\Controllers\SdiGatewayWebhookController;
 use Modules\SDI\Http\Controllers\SdiInvoiceController;
 use Modules\SDI\Http\Controllers\SdiPassiveImportController;
@@ -37,6 +39,24 @@ Route::prefix('api/v1/sdi')
         Route::get('invoices/{id}/download-xml', [SdiInvoiceController::class, 'downloadXml'])->whereUuid('id')->name('sdi.invoices.download-xml');
         Route::get('invoices/{id}/notifications', [InvoiceSdiController::class, 'logs'])->whereUuid('id')->name('sdi.invoices.notifications');
         Route::post('supplier-invoices/{invoice}/generate-integration', SdiSupplierIntegrationController::class)->whereUuid('invoice')->name('sdi.supplier-invoices.generate-integration');
+    });
+
+Route::prefix('api/v1')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:invoicing'])
+    ->group(function (): void {
+        Route::get('fpa-documents', [FpaDocumentController::class, 'index'])->name('fpa-documents.index');
+        Route::get('fpa-documents/{id}', [FpaDocumentController::class, 'show'])->whereUuid('id')->name('fpa-documents.show');
+        Route::get('fpa-documents/{id}/render', [FpaDocumentController::class, 'render'])->whereUuid('id')->name('fpa-documents.render');
+        Route::post('fpa-documents/{id}/resubmit', [FpaDocumentController::class, 'resubmit'])->whereUuid('id')->name('fpa-documents.resubmit');
+        Route::post('fpa-documents/{id}/simulate', [FpaDocumentController::class, 'simulate'])->whereUuid('id')->name('fpa-documents.simulate');
+        Route::post('sdi/invoices/{id}/preflight', [FpaDocumentController::class, 'preflight'])->whereUuid('id')->name('sdi.invoices.preflight');
+    });
+
+Route::prefix('api/v1/settings/sdi')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:system'])
+    ->group(function (): void {
+        Route::get('/', [SdiConfigurationController::class, 'show'])->name('sdi.configuration.show');
+        Route::put('/', [SdiConfigurationController::class, 'update'])->name('sdi.configuration.update');
     });
 
 Route::post('api/v1/sdi/passive/import', SdiPassiveImportController::class)
