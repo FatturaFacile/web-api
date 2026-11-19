@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureFeatureFlagEnabled;
 use App\Http\Middleware\EnsureHttpsFrontendRequestsAreStateful;
 use App\Http\Middleware\EnsureMobileDeviceActive;
 use App\Http\Middleware\EnsurePlatformAdmin;
+use App\Http\Middleware\EnsurePortalSession;
 use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\LogSensitiveDataReadAccess;
@@ -88,6 +89,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'feature' => EnsureFeatureFlagEnabled::class,
             'audit.access' => AuditSensitiveAccess::class,
             'audit.permission' => EnsureAuditPermission::class,
+            'portal.session' => EnsurePortalSession::class,
         ]);
 
         $middleware->priority([
