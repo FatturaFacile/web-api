@@ -13,6 +13,7 @@ use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\SDI\Services\FpaEnvelopeRecorder;
 
 class ProcessSdiNotification
 {
@@ -66,6 +67,7 @@ class ProcessSdiNotification
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly DocumentEventRecorder $events,
+        private readonly FpaEnvelopeRecorder $envelopes,
     ) {}
 
     /**
@@ -147,6 +149,8 @@ class ProcessSdiNotification
                 'message' => $data['message'] ?? null,
                 'courtesy_copy_required' => $status === 'not_delivered',
             ]);
+
+            $this->envelopes->mirrorEvent($invoice, $data['event_type'], $data['message'] ?? null);
 
             return $this->finish($log, 'processed');
         }));
