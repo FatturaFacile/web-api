@@ -2919,7 +2919,6 @@ return [
     'auditable_type' => 'type d\'entité',
     'auditable_id' => 'identifiant de l\'entité',
     'actor_id' => 'identifiant de l\'acteur',
-    'ip_address' => 'adresse IP',
     'changed_field' => 'champ modifié',
     'from_sequence' => 'séquence de début',
     'to_sequence' => 'séquence de fin',
@@ -2964,7 +2963,5 @@ return [
     'support_email' => "e-mail d'assistance",
     'require_otp' => 'exiger un code à usage unique',
     'allow_partial_payments' => 'autoriser les paiements partiels',
-    'from_sequence' => 'à partir de la séquence',
-    'to_sequence' => 'jusqu\'à la séquence',
 
 ];

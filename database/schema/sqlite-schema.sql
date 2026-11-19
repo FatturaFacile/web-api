@@ -40265,6 +40265,191 @@ CREATE UNIQUE INDEX "audit_worm_batch_entries_audit_log_id_unique" on "audit_wor
 );
 CREATE TRIGGER prevent_audit_log_update BEFORE UPDATE ON audit_logs BEGIN SELECT RAISE(ABORT, 'Audit logs are strictly immutable'); END;
 CREATE TRIGGER prevent_audit_log_delete BEFORE DELETE ON audit_logs BEGIN SELECT RAISE(ABORT, 'Audit logs are strictly immutable'); END;
+CREATE TABLE "privacy_ropa_records"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "activity_code" varchar not null,
+  "activity_name" varchar not null,
+  "purpose" text not null,
+  "legal_basis" varchar not null,
+  "data_subject_categories" text,
+  "personal_data_categories" text,
+  "recipient_categories" text,
+  "cross_border_transfers" text,
+  "technical_organizational_measures" text,
+  "retention_period_months" integer not null,
+  "retention_legal_reference" varchar,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "privacy_ropa_records_tenant_id_activity_code_unique" on "privacy_ropa_records"(
+  "tenant_id",
+  "activity_code"
+);
+CREATE TABLE "privacy_dsar_requests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "request_number" varchar not null,
+  "subject_type" varchar not null,
+  "subject_entity_id" varchar,
+  "subject_email" varchar not null,
+  "subject_full_name" varchar not null,
+  "request_type" varchar not null,
+  "received_at" datetime not null,
+  "statutory_deadline_at" datetime not null,
+  "deadline_extended" tinyint(1) not null default '0',
+  "extension_justification" text,
+  "status" varchar not null default 'open',
+  "identity_verified_at" datetime,
+  "identity_verification_method" varchar,
+  "completed_at" datetime,
+  "refusal_legal_justification" text,
+  "export_artifact_path" varchar,
+  "package_status" varchar,
+  "audit_notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "privacy_dsar_requests_tenant_id_request_number_unique" on "privacy_dsar_requests"(
+  "tenant_id",
+  "request_number"
+);
+CREATE INDEX "privacy_dsar_requests_tenant_id_status_index" on "privacy_dsar_requests"(
+  "tenant_id",
+  "status"
+);
+CREATE TABLE "privacy_consent_ledger"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "sequence" integer not null,
+  "subject_type" varchar not null,
+  "subject_entity_id" varchar,
+  "subject_identifier_hash" varchar not null,
+  "purpose_code" varchar not null,
+  "consent_granted" tinyint(1) not null,
+  "policy_version" varchar not null,
+  "captured_at" datetime not null,
+  "ip_address" varchar,
+  "user_agent" varchar,
+  "proof_channel" varchar not null,
+  "previous_entry_hash" varchar not null,
+  "entry_hash" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "privacy_consent_ledger_tenant_id_sequence_unique" on "privacy_consent_ledger"(
+  "tenant_id",
+  "sequence"
+);
+CREATE INDEX "privacy_consent_subject_purpose_idx" on "privacy_consent_ledger"(
+  "tenant_id",
+  "subject_identifier_hash",
+  "purpose_code"
+);
+CREATE TABLE "privacy_data_breach_incidents"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "incident_code" varchar not null,
+  "title" varchar not null,
+  "description" text,
+  "detected_at" datetime not null,
+  "notification_deadline_72h" datetime not null,
+  "jurisdiction" varchar not null,
+  "severity" varchar not null,
+  "risk_to_rights_and_freedoms" varchar not null,
+  "affected_subjects_count" integer not null default '0',
+  "affected_data_categories" text,
+  "containment_measures" text,
+  "remediation_plan" text,
+  "authority_notified_at" datetime,
+  "authority_reference_number" varchar,
+  "subjects_notified_at" datetime,
+  "status" varchar not null default 'investigating',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "privacy_data_breach_incidents_tenant_id_incident_code_unique" on "privacy_data_breach_incidents"(
+  "tenant_id",
+  "incident_code"
+);
+CREATE TABLE "privacy_retention_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "module_code" varchar not null,
+  "entity_class" varchar not null,
+  "retention_days" integer not null,
+  "action_on_expiry" varchar not null,
+  "is_statutory_locked" tinyint(1) not null default '0',
+  "legal_basis_note" varchar,
+  "is_enabled" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "privacy_retention_rules_tenant_id_module_code_unique" on "privacy_retention_rules"(
+  "tenant_id",
+  "module_code"
+);
+CREATE TABLE "privacy_retention_run_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dry_run" tinyint(1) not null default '0',
+  "evaluated_count" integer not null default '0',
+  "purged_count" integer not null default '0',
+  "anonymized_count" integer not null default '0',
+  "statutory_skipped_count" integer not null default '0',
+  "details" text,
+  "started_at" datetime not null,
+  "finished_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "privacy_retention_run_logs_tenant_id_started_at_index" on "privacy_retention_run_logs"(
+  "tenant_id",
+  "started_at"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -40653,3 +40838,4 @@ INSERT INTO migrations VALUES(384,'2027_12_10_000200_add_simplified_and_vehicle_
 INSERT INTO migrations VALUES(385,'2027_12_10_100000_create_controlling_tables',1);
 INSERT INTO migrations VALUES(386,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',1);
 INSERT INTO migrations VALUES(387,'2027_12_11_000100_create_immutable_audit_trail',1);
+INSERT INTO migrations VALUES(388,'2027_12_12_000100_create_privacy_governance_tables',1);
