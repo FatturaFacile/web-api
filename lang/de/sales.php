@@ -129,6 +129,7 @@ return [
     'document_template_invalid_logo' => 'Das Logo muss ein PNG- oder JPEG-Bild mit höchstens 512 KB sein.',
     'payment_link_not_payable' => 'Für diese Rechnung gibt es per Zahlungslink nichts einzuziehen.',
     'payment_link_already_open' => 'Die Rechnung hat bereits einen offenen Zahlungslink: Brechen Sie ihn ab, bevor Sie einen neuen erstellen.',
+    'payment_method_not_supported' => 'Diese Zahlungsart ist für diese Rechnung nicht verfügbar.',
     'payment_link_not_open' => 'Nur ein offener Zahlungslink kann abgebrochen werden.',
     'api_key_not_rotatable' => 'Ein widerrufener oder abgelaufener API-Schlüssel kann nicht rotiert werden: Erstellen Sie einen neuen.',
     'api_key_scope_not_held' => 'Sie haben den Scope :scope nicht mehr, der Schlüssel kann daher nicht von Ihnen rotiert werden.',

@@ -129,6 +129,7 @@ return [
     'document_template_invalid_logo' => 'Il logo deve essere un\'immagine PNG o JPEG di massimo 512 KB.',
     'payment_link_not_payable' => 'Questa fattura non ha importi da incassare con un link di pagamento.',
     'payment_link_already_open' => 'La fattura ha già un link di pagamento aperto: annullalo prima di crearne un altro.',
+    'payment_method_not_supported' => 'Questo metodo di pagamento non è disponibile per questa fattura.',
     'payment_link_not_open' => 'Si può annullare solo un link di pagamento aperto.',
     'api_key_not_rotatable' => 'Una chiave API revocata o scaduta non si può ruotare: creane una nuova.',
     'api_key_scope_not_held' => 'Non hai più lo scope :scope: la chiave non può essere ruotata da te.',

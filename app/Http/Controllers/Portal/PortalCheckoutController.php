@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Portal\StorePortalCheckoutRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\Invoice;
 use App\Models\PortalAccessToken;
 use App\Services\Portal\PortalTokenService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Modules\Integrations\Models\PaymentLink;
 use Modules\Integrations\Services\PaymentLinkService;
 use OpenApi\Attributes as OA;
@@ -37,27 +37,38 @@ class PortalCheckoutController extends Controller
         security: [['portalBearer' => []]],
         tags: ['Customer Portal'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'payment_method', type: 'string', enum: ['card', 'twint', 'sepa', 'paypal', 'qr'], nullable: true)])),
         responses: [
             new OA\Response(response: 201, description: 'Payment page', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 404, description: 'Not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'Nothing to pay online', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function __invoke(Request $request, string $id): JsonResponse
+    public function __invoke(StorePortalCheckoutRequest $request, string $id): JsonResponse
     {
         /** @var PortalAccessToken $session */
         $session = $request->attributes->get('portal_token');
 
         $invoice = Invoice::where('contact_id', $session->contact_id)->findOrFail($id);
 
-        $link = PaymentLink::where('invoice_id', $invoice->id)->where('status', 'open')->latest()->first() ?? $this->links->create($invoice);
+        $method = $request->validated('payment_method');
+        $link = PaymentLink::where('invoice_id', $invoice->id)->where('status', 'open')->latest()->first();
 
-        $this->tokens->logActivity($session, 'checkout_started', 'invoice', $invoice->id, ['provider' => $link->provider]);
+        // A page opened for another method is withdrawn: only one link per invoice can be open.
+        if ($link !== null && $method !== null && $link->payment_method !== $method) {
+            $this->links->cancel($link);
+            $link = null;
+        }
+
+        $link ??= $this->links->create($invoice, $method);
+
+        $this->tokens->logActivity($session, 'checkout_started', 'invoice', $invoice->id, ['provider' => $link->provider, 'payment_method' => $link->payment_method]);
 
         return $this->successResponse(
             data: [
                 'invoice_id' => $invoice->id,
                 'provider' => $link->provider,
+                'payment_method' => $link->payment_method,
                 'amount' => (string) $link->amount,
                 'currency' => $link->currency,
                 'url' => $link->url,

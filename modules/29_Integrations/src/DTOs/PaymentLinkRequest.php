@@ -18,5 +18,6 @@ final readonly class PaymentLinkRequest
         public string $currency,
         public string $description,
         public ?CarbonImmutable $expiresAt = null,
+        public ?string $paymentMethod = null,
     ) {}
 }

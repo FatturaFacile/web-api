@@ -8,6 +8,8 @@ use App\Services\Security\CsvFormulaNeutralizer;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Generator;
+use InvalidArgumentException;
+use Modules\Analytics\Calculation\FormulaParser;
 use Modules\Analytics\Export\RegionalReportFormatter;
 use OpenSpout\Common\Entity\Cell;
 use OpenSpout\Common\Entity\Cell\BooleanCell;
@@ -90,9 +92,16 @@ final class XlsxReportWriter
         ));
 
         $count = 0;
-        $write = function (array $row) use ($writer, $columns, &$count): void {
+        $templates = $this->formulaTemplates($columns);
+        $write = function (array $row) use ($writer, $columns, $templates, &$count): void {
             $count++;
-            $writer->addRow(new Row(array_map(fn (array $column): Cell => $this->cell($column, $row[$column['key']] ?? null), $columns)));
+            $cells = [];
+
+            foreach ($columns as $index => $column) {
+                $cells[] = isset($templates[$index]) ? $this->calculatedCell($column, $templates[$index], $row, $count + 1) : $this->cell($column, $row[$column['key']] ?? null);
+            }
+
+            $writer->addRow(new Row($cells));
         };
 
         foreach ($head as $row) {
@@ -121,6 +130,122 @@ final class XlsxReportWriter
         }
 
         $writer->close();
+    }
+
+    /**
+     * The Excel formula of each calculated column, as a template with `{r}` for the row number, built once per column. A
+     * formula that reads a measure which is not a column of the sheet, or that cannot be expressed in Excel, gets no template and
+     * its cells are written as values. Null (a zero divisor, a missing input) is an error cell in Excel, so the whole
+     * expression is wrapped in IFERROR(..., "") to keep the empty cell of the value.
+     *
+     * @param  list<array<string, mixed>>  $columns
+     * @return array<int, array{formula: string, refs: list<string>}>
+     */
+    private function formulaTemplates(array $columns): array
+    {
+        $letters = [];
+
+        foreach ($columns as $index => $column) {
+            $letters[(string) $column['key']] = $this->columnLetter($index + 1);
+        }
+
+        $parser = new FormulaParser;
+        $templates = [];
+
+        foreach ($columns as $index => $column) {
+            if (! isset($column['calc']['formula'], $column['calc']['prefix'])) {
+                continue;
+            }
+
+            $refs = [];
+
+            try {
+                $expression = $this->excelExpression($parser->parse((string) $column['calc']['formula']), (string) $column['calc']['prefix'], $letters, $refs);
+            } catch (InvalidArgumentException) {
+                continue;
+            }
+
+            $templates[$index] = ['formula' => '=IFERROR('.$expression.',"")', 'refs' => array_values(array_unique($refs))];
+        }
+
+        return $templates;
+    }
+
+    /**
+     * @param  array<int, mixed>  $node
+     * @param  array<string, string>  $letters
+     * @param  list<string>  $refs  keys of the cells the expression reads
+     *
+     * @throws InvalidArgumentException when a reference is not a column of the sheet
+     */
+    private function excelExpression(array $node, string $prefix, array $letters, array &$refs): string
+    {
+        switch ($node[0]) {
+            case 'num':
+                return $node[1];
+            case 'ref':
+                $key = $prefix.$node[1];
+
+                if (! isset($letters[$key])) {
+                    throw new InvalidArgumentException("No column for [{$key}].");
+                }
+
+                $refs[] = $key;
+
+                return $letters[$key].'{r}';
+            case 'neg':
+                return '(-'.$this->excelExpression($node[1], $prefix, $letters, $refs).')';
+            case 'bin':
+                return '('.$this->excelExpression($node[2], $prefix, $letters, $refs).$node[1].$this->excelExpression($node[3], $prefix, $letters, $refs).')';
+        }
+
+        $arguments = array_map(fn (array $argument): string => $this->excelExpression($argument, $prefix, $letters, $refs), $node[2]);
+
+        return match ($node[1]) {
+            'ABS' => 'ABS('.$arguments[0].')',
+            'ROUND' => 'ROUND('.$arguments[0].','.($arguments[1] ?? '0').')',
+            'NULLIF' => 'IF('.$arguments[0].'='.$arguments[1].',NA(),'.$arguments[0].')',
+            'COALESCE' => $this->coalesce($arguments),
+            default => throw new InvalidArgumentException("Function {$node[1]} has no Excel counterpart."),
+        };
+    }
+
+    /**
+     * @param  list<string>  $arguments
+     */
+    private function coalesce(array $arguments): string
+    {
+        $first = array_shift($arguments);
+
+        return $arguments === [] ? $first : 'IFERROR('.$first.','.$this->coalesce($arguments).')';
+    }
+
+    /**
+     * A native formula over the cells of the same row, with the computed value stored next to it for readers that do not
+     * recalculate. When one of the cells it reads is empty the formula would count it as zero where the report counts it
+     * as missing, so that cell is written as the value.
+     *
+     * @param  array<string, mixed>  $column
+     * @param  array{formula: string, refs: list<string>}  $template
+     * @param  array<string, mixed>  $row
+     */
+    private function calculatedCell(array $column, array $template, array $row, int $excelRow): Cell
+    {
+        $value = $row[$column['key']] ?? null;
+
+        foreach ($template['refs'] as $key) {
+            if (! is_numeric($row[$key] ?? null)) {
+                return $this->cell($column, $value);
+            }
+        }
+
+        $format = match ($column['unit'] ?? 'count') {
+            'count' => '#,##0',
+            'quantity' => '#,##0.0000',
+            default => '#,##0.00',
+        };
+
+        return new FormulaCell(str_replace('{r}', (string) $excelRow, $template['formula']), is_numeric($value) ? $this->number((string) $value) : null, $this->style($format));
     }
 
     /**

@@ -129,6 +129,7 @@ return [
     'document_template_invalid_logo' => 'Le logo doit être une image PNG ou JPEG de 512 Ko au maximum.',
     'payment_link_not_payable' => 'Cette facture n\'a rien à encaisser par lien de paiement.',
     'payment_link_already_open' => 'La facture a déjà un lien de paiement ouvert : annulez-le avant d\'en créer un autre.',
+    'payment_method_not_supported' => 'Ce moyen de paiement n\'est pas disponible pour cette facture.',
     'payment_link_not_open' => 'Seul un lien de paiement ouvert peut être annulé.',
     'api_key_not_rotatable' => 'Une clé API révoquée ou expirée ne peut pas être renouvelée : créez-en une nouvelle.',
     'api_key_scope_not_held' => 'Vous ne détenez plus le scope :scope : la clé ne peut pas être renouvelée par vous.',
