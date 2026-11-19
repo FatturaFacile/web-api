@@ -38,7 +38,7 @@ return new class extends Migration
             $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('invoice_id')->nullable()->constrained('invoices')->nullOnDelete();
             $table->foreignUuid('passive_invoice_id')->nullable()->constrained('passive_invoices')->nullOnDelete();
-            $table->foreignUuid('parent_fpa_document_id')->nullable()->constrained('fpa_documents')->nullOnDelete();
+            $table->foreignUuid('parent_fpa_document_id')->nullable();
             $table->string('direction', 10); // outbound, inbound
             $table->string('format_transmission', 5); // FPR12, FPA12, FSM10
             $table->string('document_type', 4); // TD01..TD29
@@ -66,6 +66,11 @@ return new class extends Migration
             $table->index(['tenant_id', 'direction']);
             $table->index('invoice_id');
             $table->index(['tenant_id', 'document_number', 'document_date']);
+        });
+
+        // Self-referencing key added once the primary key exists: PostgreSQL rejects it inside the create statement.
+        Schema::table('fpa_documents', function (Blueprint $table): void {
+            $table->foreign('parent_fpa_document_id')->references('id')->on('fpa_documents')->nullOnDelete();
         });
 
         Schema::create('sdi_notifications', function (Blueprint $table): void {
