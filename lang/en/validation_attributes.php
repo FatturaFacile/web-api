@@ -2914,6 +2914,6 @@ return [
     'retention_days' => 'retention days',
     'action_on_expiry' => 'action on expiry',
     'legal_basis_note' => 'legal basis note',
-    'sdi_extra' => 'additional SDI data',
-    'sdi_data' => 'SDI data',
+    'sdi_extra' => 'optional FatturaPA blocks',
+    'sdi_data' => 'FatturaPA line data',
 ];

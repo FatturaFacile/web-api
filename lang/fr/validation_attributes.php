@@ -2914,6 +2914,6 @@ return [
     'retention_days' => 'jours de conservation',
     'action_on_expiry' => 'action à l\'échéance',
     'legal_basis_note' => 'note sur la base juridique',
-    'sdi_extra' => 'données SDI supplémentaires',
-    'sdi_data' => 'données SDI',
+    'sdi_extra' => 'blocs facultatifs FatturaPA',
+    'sdi_data' => 'données FatturaPA de la ligne',
 ];

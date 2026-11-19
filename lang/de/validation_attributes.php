@@ -2914,6 +2914,6 @@ return [
     'retention_days' => 'Aufbewahrungstage',
     'action_on_expiry' => 'Aktion bei Ablauf',
     'legal_basis_note' => 'Hinweis zur Rechtsgrundlage',
-    'sdi_extra' => 'zusätzliche SDI-Daten',
-    'sdi_data' => 'SDI-Daten',
+    'sdi_extra' => 'optionale FatturaPA-Blöcke',
+    'sdi_data' => 'FatturaPA-Zeilendaten',
 ];
