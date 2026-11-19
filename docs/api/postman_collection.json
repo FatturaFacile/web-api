@@ -3987,7 +3987,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"invoice_type\": \"standard\",\n    \"invoice_number\": \"string\",\n    \"related_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"payment_term_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"jurisdiction\": \"IT\",\n    \"split_payment\": false,\n    \"reverse_charge\": false,\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5,\n            \"natura\": \"N1\",\n            \"withholding_applies\": false,\n            \"fund_applies\": false,\n            \"taric_code\": \"string\",\n            \"country_of_origin\": \"string\",\n            \"origin_type\": \"preferential\",\n            \"made_in_label\": \"string\"\n        }\n    ],\n    \"document_type\": \"TD01\",\n    \"vat_nature\": \"N1\",\n    \"source_passive_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"linked_document_number\": \"string\",\n    \"linked_document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"declaration_of_intent_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"skip_declaration_of_intent\": false,\n    \"withholding_tax_enabled\": false,\n    \"withholding_tax_percent\": 1.5,\n    \"withholding_tax_type\": \"RT01\",\n    \"withholding_tax_reason\": \"A\",\n    \"withholding_tax_base_percent\": 1.5,\n    \"stamp_duty_applied\": false,\n    \"stamp_duty_charged\": false,\n    \"fund_enabled\": false,\n    \"fund_type\": \"TC01\",\n    \"fund_percent\": 1.5,\n    \"fund_vat_rate\": 1.5,\n    \"fund_subject_to_withholding\": false,\n    \"enasarco_enabled\": false,\n    \"enasarco_agent_type\": \"single_mandate\",\n    \"vat_payability\": \"I\",\n    \"fund\": {\n        \"type\": \"TC01\",\n        \"percent\": 1.5,\n        \"vat_rate\": 1.5,\n        \"natura\": \"N1\",\n        \"withholding_applies\": false\n    },\n    \"withholding\": {\n        \"type\": \"RT01\",\n        \"reason\": \"A\",\n        \"rate\": 1.5,\n        \"taxable_percent\": 1.5,\n        \"includes_fund\": false\n    },\n    \"enasarco\": {\n        \"enabled\": false,\n        \"rate\": 1.5,\n        \"reason\": \"A\"\n    },\n    \"stamp_duty_charged_to_customer\": false,\n    \"free_trade_agreement_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"origin_declaration_text\": \"string\",\n    \"duty_exemption_eligible\": false\n}",
+                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"invoice_type\": \"standard\",\n    \"invoice_number\": \"string\",\n    \"related_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"payment_term_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"jurisdiction\": \"IT\",\n    \"split_payment\": false,\n    \"reverse_charge\": false,\n    \"sdi_simplified\": false,\n    \"sdi_vehicle\": {\n        \"date\": \"2026-01-31T12:00:00+00:00\",\n        \"mileage\": \"string\"\n    },\n    \"sdi_extra\": [\n        \"string\"\n    ],\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"sdi_data\": [\n                \"string\"\n            ],\n            \"discount_percentage\": 1.5,\n            \"natura\": \"N1\",\n            \"withholding_applies\": false,\n            \"fund_applies\": false,\n            \"taric_code\": \"string\",\n            \"country_of_origin\": \"string\",\n            \"origin_type\": \"preferential\",\n            \"made_in_label\": \"string\"\n        }\n    ],\n    \"document_type\": \"TD01\",\n    \"vat_nature\": \"N1\",\n    \"source_passive_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"linked_document_number\": \"string\",\n    \"linked_document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"declaration_of_intent_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"skip_declaration_of_intent\": false,\n    \"withholding_tax_enabled\": false,\n    \"withholding_tax_percent\": 1.5,\n    \"withholding_tax_type\": \"RT01\",\n    \"withholding_tax_reason\": \"A\",\n    \"withholding_tax_base_percent\": 1.5,\n    \"stamp_duty_applied\": false,\n    \"stamp_duty_charged\": false,\n    \"fund_enabled\": false,\n    \"fund_type\": \"TC01\",\n    \"fund_percent\": 1.5,\n    \"fund_vat_rate\": 1.5,\n    \"fund_subject_to_withholding\": false,\n    \"enasarco_enabled\": false,\n    \"enasarco_agent_type\": \"single_mandate\",\n    \"vat_payability\": \"I\",\n    \"fund\": {\n        \"type\": \"TC01\",\n        \"percent\": 1.5,\n        \"vat_rate\": 1.5,\n        \"natura\": \"N1\",\n        \"withholding_applies\": false\n    },\n    \"withholding\": {\n        \"type\": \"RT01\",\n        \"reason\": \"A\",\n        \"rate\": 1.5,\n        \"taxable_percent\": 1.5,\n        \"includes_fund\": false\n    },\n    \"enasarco\": {\n        \"enabled\": false,\n        \"rate\": 1.5,\n        \"reason\": \"A\"\n    },\n    \"stamp_duty_charged_to_customer\": false,\n    \"free_trade_agreement_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"origin_declaration_text\": \"string\",\n    \"duty_exemption_eligible\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -13729,7 +13729,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"visibility\": \"private\",\n    \"shared_role_ids\": [\n        \"string\"\n    ],\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -13844,7 +13844,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"visibility\": \"private\",\n    \"shared_role_ids\": [\n        \"string\"\n    ],\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -13970,6 +13970,56 @@
                     }
                 },
                 {
+                    "name": "Runs the saved definition as a pivot (matrix with subtotals, grand totals, calculated fields, formatting and chart)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/designed-reports/:id/pivot",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "designed-reports",
+                                ":id",
+                                "pivot"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Runs the saved definition as a pivot (matrix with subtotals, grand totals, calculated fields, formatting and chart)",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "Export a designed report",
                     "request": {
                         "method": "GET",
@@ -14007,6 +14057,12 @@
                             "query": [
                                 {
                                     "key": "format",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "locale",
                                     "value": "",
                                     "disabled": true,
                                     "description": ""
@@ -14124,6 +14180,175 @@
                                     "language": "json"
                                 }
                             }
+                        }
+                    }
+                },
+                {
+                    "name": "The next runs of a cron expression in a time zone",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/export-schedules/cron-preview",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "export-schedules",
+                                "cron-preview"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "The next runs of a cron expression in a time zone",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"cron_expression\": \"string\",\n    \"timezone\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Queues a run of the schedule now (\"Run now\"), outside its calendar",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/export-schedules/:id/run",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "export-schedules",
+                                ":id",
+                                "run"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Queues a run of the schedule now (\"Run now\"), outside its calendar",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "The execution log: the recent exports of the company, scheduled or not",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/execution-logs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "execution-logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "designed_report_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "schedule_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "The execution log: the recent exports of the company, scheduled or not",
+                        "auth": {
+                            "type": "noauth"
                         }
                     }
                 },
@@ -16088,6 +16313,49 @@
                     }
                 },
                 {
+                    "name": "The governed catalog with the options of the report studio (operators, locales, formats, chart types, channels)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/semantic/catalog",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "semantic",
+                                "catalog"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "The governed catalog with the options of the report studio (operators, locales, formats, chart types, channels)",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "Datasets the caller can report on",
                     "request": {
                         "method": "GET",
@@ -16231,7 +16499,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
+                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\",\n    \"locale\": \"it-CH\",\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -16291,7 +16559,67 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
+                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\",\n    \"locale\": \"it-CH\",\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Runs a definition that is not saved as a pivot: matrix, subtotals, grand totals, formatting and chart series",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/designer/pivot",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "designer",
+                                "pivot"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Runs a definition that is not saved as a pivot: matrix, subtotals, grand totals, formatting and chart series",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\",\n    \"locale\": \"it-CH\",\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -101387,7 +101715,14 @@
                                 ":id",
                                 "render"
                             ],
-                            "query": [],
+                            "query": [
+                                {
+                                    "key": "style",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
                             "variable": [
                                 {
                                     "key": "id",

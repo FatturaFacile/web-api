@@ -67534,11 +67534,11 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -67655,14 +67655,11 @@
                             }
                         }
                     },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             },
@@ -67805,6 +67802,402 @@
                 }
             }
         },
+        "/v1/analytics/designed-reports/{id}/pivot": {
+            "get": {
+                "operationId": "analytics.designed-reports.pivot",
+                "summary": "Runs the saved definition as a pivot (matrix with subtotals, grand totals, calculated fields, formatting and chart)",
+                "tags": [
+                    "DesignedReport"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Pivot calculated"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "row_dimensions": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "column_dimensions": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "values": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "key": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "unit": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "format": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "calculated": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "key",
+                                                                    "label",
+                                                                    "unit",
+                                                                    "format",
+                                                                    "calculated"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "key": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "unit": {
+                                                                        "type": "string",
+                                                                        "const": "number"
+                                                                    },
+                                                                    "format": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "calculated": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "key",
+                                                                    "label",
+                                                                    "unit",
+                                                                    "format",
+                                                                    "calculated"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "column_headers": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "has_total_column": {
+                                                    "type": "boolean"
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "level": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "keys": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "cells": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": [
+                                                                                "object",
+                                                                                "null"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "values": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "styles": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "values",
+                                                                                "styles"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "total": {
+                                                                        "type": [
+                                                                            "object",
+                                                                            "null"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "values": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "styles": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "values",
+                                                                            "styles"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "level",
+                                                                    "keys",
+                                                                    "label",
+                                                                    "cells",
+                                                                    "total"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "const": "grand_total"
+                                                                    },
+                                                                    "level": {
+                                                                        "type": "integer",
+                                                                        "const": 0
+                                                                    },
+                                                                    "keys": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "minItems": 0,
+                                                                        "maxItems": 0
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "cells": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": [
+                                                                                "object",
+                                                                                "null"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "values": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "styles": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "values",
+                                                                                "styles"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "total": {
+                                                                        "type": [
+                                                                            "object",
+                                                                            "null"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "values": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "styles": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "values",
+                                                                            "styles"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "level",
+                                                                    "keys",
+                                                                    "label",
+                                                                    "cells",
+                                                                    "total"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "chart": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ],
+                                                    "properties": {
+                                                        "type": {
+                                                            "type": "string"
+                                                        },
+                                                        "categories": {
+                                                            "type": "array",
+                                                            "items": {}
+                                                        },
+                                                        "series": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "name": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "data": {
+                                                                                "type": "array",
+                                                                                "items": {}
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "name",
+                                                                            "data"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "name": {},
+                                                                            "data": {
+                                                                                "type": "array",
+                                                                                "items": {}
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "name",
+                                                                            "data"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "show_legend": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "show_data_labels": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "type",
+                                                        "categories",
+                                                        "series",
+                                                        "show_legend",
+                                                        "show_data_labels"
+                                                    ]
+                                                },
+                                                "meta": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "dataset": {
+                                                            "type": "string"
+                                                        },
+                                                        "truncated": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "layout": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "rows": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "columns": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "subtotals": {
+                                                                    "type": "boolean"
+                                                                },
+                                                                "grand_totals": {
+                                                                    "type": "boolean"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "rows",
+                                                                "columns",
+                                                                "subtotals",
+                                                                "grand_totals"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "dataset",
+                                                        "truncated",
+                                                        "layout"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "row_dimensions",
+                                                "column_dimensions",
+                                                "values",
+                                                "column_headers",
+                                                "has_total_column",
+                                                "rows",
+                                                "chart",
+                                                "meta"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/analytics/designed-reports/{id}/export": {
             "get": {
                 "operationId": "analytics.designed-reports.export",
@@ -67833,6 +68226,26 @@
                                 "csv",
                                 "excel_csv",
                                 "xlsx",
+                                "pdf",
+                                "json",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "it-CH",
+                                "de-CH",
+                                "fr-CH",
+                                "it-IT",
+                                "en",
                                 null
                             ]
                         }
@@ -87494,6 +87907,119 @@
                         "content": {
                             "application/json": {
                                 "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Schedule created"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/Modules.Analytics.Http.Resources.ExportScheduleResource"
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Schedule created"
+                                                },
+                                                "data": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "schedule": {
+                                                            "$ref": "#/components/schemas/Modules.Analytics.Http.Resources.ExportScheduleResource"
+                                                        },
+                                                        "webhook_secret": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "schedule",
+                                                        "webhook_secret"
+                                                    ]
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/export-schedules/cron-preview": {
+            "post": {
+                "operationId": "analytics.export-schedules.cron-preview",
+                "summary": "The next runs of a cron expression in a time zone",
+                "tags": [
+                    "ExportSchedule"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "cron_expression": {
+                                        "type": "string",
+                                        "maxLength": 100
+                                    },
+                                    "timezone": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "cron_expression"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
                                     "type": "object",
                                     "properties": {
                                         "success": {
@@ -87501,7 +88027,76 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "const": "Schedule created"
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "next_runs": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "next_runs"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/export-schedules/{id}/run": {
+            "post": {
+                "operationId": "analytics.export-schedules.run",
+                "summary": "Queues a run of the schedule now (\"Run now\"), outside its calendar",
+                "tags": [
+                    "ExportSchedule"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Run queued"
                                         },
                                         "data": {
                                             "$ref": "#/components/schemas/Modules.Analytics.Http.Resources.ExportScheduleResource"
@@ -87522,9 +88117,155 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/execution-logs": {
+            "get": {
+                "operationId": "analytics.execution-logs.index",
+                "summary": "The execution log: the recent exports of the company, scheduled or not",
+                "tags": [
+                    "ExportSchedule"
+                ],
+                "parameters": [
+                    {
+                        "name": "designed_report_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "schedule_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "designed_report_id": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "schedule_id": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "dataset": {
+                                                        "type": "string"
+                                                    },
+                                                    "format": {
+                                                        "type": "string"
+                                                    },
+                                                    "locale": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "status": {
+                                                        "type": "string"
+                                                    },
+                                                    "row_count": {
+                                                        "type": "integer"
+                                                    },
+                                                    "truncated": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "duration_ms": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "size_bytes": {
+                                                        "type": "integer"
+                                                    },
+                                                    "error_message": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "executed_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "designed_report_id",
+                                                    "schedule_id",
+                                                    "dataset",
+                                                    "format",
+                                                    "locale",
+                                                    "status",
+                                                    "row_count",
+                                                    "truncated",
+                                                    "duration_ms",
+                                                    "size_bytes",
+                                                    "error_message",
+                                                    "executed_at"
+                                                ]
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -87615,27 +88356,67 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Schedule updated"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/Modules.Analytics.Http.Resources.ExportScheduleResource"
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
                                         },
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Schedule updated"
-                                        },
-                                        "data": {
-                                            "$ref": "#/components/schemas/Modules.Analytics.Http.Resources.ExportScheduleResource"
-                                        },
-                                        "meta": {
-                                            "type": "string"
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Schedule updated"
+                                                },
+                                                "data": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "schedule": {
+                                                            "$ref": "#/components/schemas/Modules.Analytics.Http.Resources.ExportScheduleResource"
+                                                        },
+                                                        "webhook_secret": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "schedule",
+                                                        "webhook_secret"
+                                                    ]
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
                                         }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message",
-                                        "data",
-                                        "meta"
                                     ]
                                 }
                             }
@@ -96620,6 +97401,13 @@
                         "name": "id",
                         "in": "path",
                         "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "style",
+                        "in": "query",
                         "schema": {
                             "type": "string"
                         }
@@ -223069,6 +223857,531 @@
                 }
             }
         },
+        "/v1/analytics/semantic/catalog": {
+            "get": {
+                "operationId": "analytics.semantic.catalog",
+                "summary": "The governed catalog with the options of the report studio (operators, locales, formats, chart types, channels)",
+                "tags": [
+                    "SemanticLayer"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Catalog retrieved"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "datasets": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "options": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "filter_logic": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "and"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "or"
+                                                                }
+                                                            ],
+                                                            "minItems": 2,
+                                                            "maxItems": 2,
+                                                            "items": {}
+                                                        },
+                                                        "filter_max_depth": {
+                                                            "type": "integer",
+                                                            "const": 3
+                                                        },
+                                                        "measure_operators": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "eq"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "neq"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "gt"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "gte"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "lt"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "lte"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "between"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "is_null"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "not_null"
+                                                                }
+                                                            ],
+                                                            "minItems": 9,
+                                                            "maxItems": 9,
+                                                            "items": {}
+                                                        },
+                                                        "granularities": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "day"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "week"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "month"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "quarter"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "year"
+                                                                }
+                                                            ],
+                                                            "minItems": 5,
+                                                            "maxItems": 5,
+                                                            "items": {}
+                                                        },
+                                                        "period_presets": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "month_to_date"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "last_month"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "quarter_to_date"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "year_to_date"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "last_30_days"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "last_12_months"
+                                                                }
+                                                            ],
+                                                            "minItems": 6,
+                                                            "maxItems": 6,
+                                                            "items": {}
+                                                        },
+                                                        "max_dimensions": {
+                                                            "type": "integer",
+                                                            "const": 4
+                                                        },
+                                                        "max_measures": {
+                                                            "type": "integer",
+                                                            "const": 8
+                                                        },
+                                                        "formats": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "csv"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "excel_csv"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "xlsx"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "pdf"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "json"
+                                                                }
+                                                            ],
+                                                            "minItems": 5,
+                                                            "maxItems": 5,
+                                                            "items": {}
+                                                        },
+                                                        "locales": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "it-CH"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "de-CH"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "fr-CH"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "it-IT"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "en"
+                                                                }
+                                                            ],
+                                                            "minItems": 5,
+                                                            "maxItems": 5,
+                                                            "items": {}
+                                                        },
+                                                        "chart_types": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "bar"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "stacked_bar"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "line"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "area"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "pie"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "donut"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "combo"
+                                                                }
+                                                            ],
+                                                            "minItems": 7,
+                                                            "maxItems": 7,
+                                                            "items": {}
+                                                        },
+                                                        "formatting_operators": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "gt"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "gte"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "lt"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "lte"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "eq"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "neq"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "between"
+                                                                }
+                                                            ],
+                                                            "minItems": 7,
+                                                            "maxItems": 7,
+                                                            "items": {}
+                                                        },
+                                                        "background_tokens": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "none"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "red"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "orange"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "yellow"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "green"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "blue"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "purple"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "gray"
+                                                                }
+                                                            ],
+                                                            "minItems": 8,
+                                                            "maxItems": 8,
+                                                            "items": {}
+                                                        },
+                                                        "text_tokens": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "default"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "white"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "black"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "red"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "green"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "blue"
+                                                                }
+                                                            ],
+                                                            "minItems": 6,
+                                                            "maxItems": 6,
+                                                            "items": {}
+                                                        },
+                                                        "calculated": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "functions": {
+                                                                    "type": "array",
+                                                                    "items": {}
+                                                                },
+                                                                "formats": {
+                                                                    "type": "array",
+                                                                    "prefixItems": [
+                                                                        {
+                                                                            "type": "string",
+                                                                            "const": "currency"
+                                                                        },
+                                                                        {
+                                                                            "type": "string",
+                                                                            "const": "number"
+                                                                        },
+                                                                        {
+                                                                            "type": "string",
+                                                                            "const": "percentage"
+                                                                        },
+                                                                        {
+                                                                            "type": "string",
+                                                                            "const": "integer"
+                                                                        }
+                                                                    ],
+                                                                    "minItems": 4,
+                                                                    "maxItems": 4,
+                                                                    "items": {}
+                                                                },
+                                                                "max_fields": {
+                                                                    "type": "integer",
+                                                                    "const": 10
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "functions",
+                                                                "formats",
+                                                                "max_fields"
+                                                            ]
+                                                        },
+                                                        "visibilities": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "private"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "role_shared"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "tenant_public"
+                                                                }
+                                                            ],
+                                                            "minItems": 3,
+                                                            "maxItems": 3,
+                                                            "items": {}
+                                                        },
+                                                        "delivery_channels": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "email"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "telegram"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "dms"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "webhook"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "sftp"
+                                                                }
+                                                            ],
+                                                            "minItems": 5,
+                                                            "maxItems": 5,
+                                                            "items": {}
+                                                        },
+                                                        "schedule_modes": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "daily"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "weekly"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "monthly"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "const": "cron"
+                                                                }
+                                                            ],
+                                                            "minItems": 4,
+                                                            "maxItems": 4,
+                                                            "items": {}
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "filter_logic",
+                                                        "filter_max_depth",
+                                                        "measure_operators",
+                                                        "granularities",
+                                                        "period_presets",
+                                                        "max_dimensions",
+                                                        "max_measures",
+                                                        "formats",
+                                                        "locales",
+                                                        "chart_types",
+                                                        "formatting_operators",
+                                                        "background_tokens",
+                                                        "text_tokens",
+                                                        "calculated",
+                                                        "visibilities",
+                                                        "delivery_channels",
+                                                        "schedule_modes"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "datasets",
+                                                "options"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/analytics/semantic/datasets": {
             "get": {
                 "operationId": "analytics.semantic.datasets.index",
@@ -223314,11 +224627,410 @@
                             }
                         }
                     },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/designer/pivot": {
+            "post": {
+                "operationId": "analytics.designer.pivot",
+                "summary": "Runs a definition that is not saved as a pivot: matrix, subtotals, grand totals, formatting and chart series",
+                "tags": [
+                    "SemanticLayer"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DesignerRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Pivot calculated"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "row_dimensions": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "column_dimensions": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "values": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "key": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "unit": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "format": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "calculated": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "key",
+                                                                    "label",
+                                                                    "unit",
+                                                                    "format",
+                                                                    "calculated"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "key": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "unit": {
+                                                                        "type": "string",
+                                                                        "const": "number"
+                                                                    },
+                                                                    "format": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "calculated": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "key",
+                                                                    "label",
+                                                                    "unit",
+                                                                    "format",
+                                                                    "calculated"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "column_headers": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "has_total_column": {
+                                                    "type": "boolean"
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "level": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "keys": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "cells": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": [
+                                                                                "object",
+                                                                                "null"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "values": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "styles": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "values",
+                                                                                "styles"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "total": {
+                                                                        "type": [
+                                                                            "object",
+                                                                            "null"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "values": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "styles": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "values",
+                                                                            "styles"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "level",
+                                                                    "keys",
+                                                                    "label",
+                                                                    "cells",
+                                                                    "total"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "const": "grand_total"
+                                                                    },
+                                                                    "level": {
+                                                                        "type": "integer",
+                                                                        "const": 0
+                                                                    },
+                                                                    "keys": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "minItems": 0,
+                                                                        "maxItems": 0
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "cells": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": [
+                                                                                "object",
+                                                                                "null"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "values": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "styles": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "values",
+                                                                                "styles"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "total": {
+                                                                        "type": [
+                                                                            "object",
+                                                                            "null"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "values": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "styles": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "values",
+                                                                            "styles"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "level",
+                                                                    "keys",
+                                                                    "label",
+                                                                    "cells",
+                                                                    "total"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "chart": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ],
+                                                    "properties": {
+                                                        "type": {
+                                                            "type": "string"
+                                                        },
+                                                        "categories": {
+                                                            "type": "array",
+                                                            "items": {}
+                                                        },
+                                                        "series": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "name": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "data": {
+                                                                                "type": "array",
+                                                                                "items": {}
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "name",
+                                                                            "data"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "name": {},
+                                                                            "data": {
+                                                                                "type": "array",
+                                                                                "items": {}
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "name",
+                                                                            "data"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "show_legend": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "show_data_labels": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "type",
+                                                        "categories",
+                                                        "series",
+                                                        "show_legend",
+                                                        "show_data_labels"
+                                                    ]
+                                                },
+                                                "meta": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "dataset": {
+                                                            "type": "string"
+                                                        },
+                                                        "truncated": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "layout": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "rows": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "columns": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "subtotals": {
+                                                                    "type": "boolean"
+                                                                },
+                                                                "grand_totals": {
+                                                                    "type": "boolean"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "rows",
+                                                                "columns",
+                                                                "subtotals",
+                                                                "grand_totals"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "dataset",
+                                                        "truncated",
+                                                        "layout"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "row_dimensions",
+                                                "column_dimensions",
+                                                "values",
+                                                "column_headers",
+                                                "has_total_column",
+                                                "rows",
+                                                "chart",
+                                                "meta"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -309754,6 +311466,56 @@
                         "type": "object",
                         "additionalProperties": {}
                     },
+                    "pivot": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "calculated_fields": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "key": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "formula": {
+                                    "type": "string"
+                                },
+                                "format": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "key",
+                                "label",
+                                "formula",
+                                "format"
+                            ]
+                        }
+                    },
+                    "conditional_formatting": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
+                    },
+                    "chart_config": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "visibility": {
+                        "type": "string"
+                    },
+                    "shared_role_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "is_shared": {
                         "type": "boolean"
                     },
@@ -309786,6 +311548,12 @@
                     "description",
                     "dataset",
                     "spec",
+                    "pivot",
+                    "calculated_fields",
+                    "conditional_formatting",
+                    "chart_config",
+                    "visibility",
+                    "shared_role_ids",
                     "is_shared",
                     "shared_with",
                     "is_owner",
@@ -309833,8 +311601,62 @@
                             "csv",
                             "excel_csv",
                             "xlsx",
+                            "pdf",
+                            "json",
                             null
                         ]
+                    },
+                    "locale": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "it-CH",
+                            "de-CH",
+                            "fr-CH",
+                            "it-IT",
+                            "en",
+                            null
+                        ]
+                    },
+                    "pivot": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "calculated_fields": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        },
+                        "maxItems": 10
+                    },
+                    "conditional_formatting": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        },
+                        "maxItems": 20
+                    },
+                    "chart_config": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 },
                 "required": [
@@ -328072,6 +329894,12 @@
                     "designed_report_id": {
                         "type": "string"
                     },
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "frequency": {
                         "type": "string"
                     },
@@ -328087,6 +329915,21 @@
                             "null"
                         ]
                     },
+                    "cron_expression": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "locale": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "format": {
                         "type": "string"
                     },
@@ -328099,10 +329942,91 @@
                             "type": "string"
                         }
                     },
+                    "recipient_user_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "external_emails": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "delivery_channels": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "sftp": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "host": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "port": {
+                                "anyOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer",
+                                        "enum": [
+                                            22
+                                        ]
+                                    }
+                                ]
+                            },
+                            "username": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "path": {
+                                "anyOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "string",
+                                        "enum": [
+                                            "/"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "secret_set": {
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [
+                            "host",
+                            "port",
+                            "username",
+                            "path",
+                            "secret_set"
+                        ]
+                    },
+                    "webhook_secret_set": {
+                        "type": "boolean"
+                    },
                     "is_active": {
                         "type": "boolean"
                     },
                     "next_run_on": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "next_run_at": {
                         "type": [
                             "string",
                             "null"
@@ -328131,14 +330055,24 @@
                     "id",
                     "user_id",
                     "designed_report_id",
+                    "name",
                     "frequency",
                     "day_of_week",
                     "day_of_month",
+                    "cron_expression",
+                    "timezone",
+                    "locale",
                     "format",
                     "delivery",
                     "recipients",
+                    "recipient_user_ids",
+                    "external_emails",
+                    "delivery_channels",
+                    "sftp",
+                    "webhook_secret_set",
                     "is_active",
                     "next_run_on",
+                    "next_run_at",
                     "last_run_at",
                     "last_status",
                     "last_error"
@@ -350063,7 +351997,6 @@
             },
             "SaveDesignedReportRequest": {
                 "type": "object",
-                "description": "Validates a designed report. The specification is checked against the dataset by the report engine, which knows the\nuser (access is decided by module.access, the policy of the report and the module of the dataset).",
                 "properties": {
                     "name": {
                         "type": "string",
@@ -350086,11 +352019,73 @@
                         },
                         "minItems": 1
                     },
+                    "pivot": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "calculated_fields": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        },
+                        "maxItems": 10
+                    },
+                    "conditional_formatting": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        },
+                        "maxItems": 20
+                    },
+                    "chart_config": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "is_shared": {
                         "type": [
                             "boolean",
                             "null"
                         ]
+                    },
+                    "visibility": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "private",
+                            "role_shared",
+                            "tenant_public",
+                            null
+                        ]
+                    },
+                    "shared_role_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{1,39}$"
+                        },
+                        "maxItems": 20,
+                        "uniqueItems": true
                     },
                     "shared_with": {
                         "type": [
@@ -350816,7 +352811,7 @@
             },
             "SaveExportScheduleRequest": {
                 "type": "object",
-                "description": "Validates a scheduled export. Recipients are members of the company unless the installation allows external ones.",
+                "description": "A scheduled export: either the dated kind (daily, weekly, monthly, delivered by e-mail or to the documents) or, when a\n`cron_expression` is sent, the cron kind with time zone, locale and several delivery channels.",
                 "properties": {
                     "designed_report_id": {
                         "type": "string",
@@ -350855,6 +352850,8 @@
                             "csv",
                             "excel_csv",
                             "xlsx",
+                            "pdf",
+                            "json",
                             null
                         ]
                     },
@@ -367037,6 +369034,40 @@
                             "null"
                         ]
                     },
+                    "sdi_simplified": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "sdi_vehicle": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "date": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "mileage": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 15
+                            }
+                        }
+                    },
+                    "sdi_extra": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "notes": {
                         "type": [
                             "string",
@@ -367071,6 +369102,15 @@
                                     "type": "number",
                                     "minimum": 0,
                                     "maximum": 100
+                                },
+                                "sdi_data": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "string"
+                                    }
                                 },
                                 "discount_percentage": {
                                     "type": [
