@@ -39656,6 +39656,371 @@ CREATE INDEX "replenishment_requests_tenant_id_status_index" on "replenishment_r
 CREATE INDEX "replenishment_requests_sales_order_item_id_index" on "replenishment_requests"(
   "sales_order_item_id"
 );
+CREATE TABLE "analytical_cost_centers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "parent_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "center_type" varchar not null default 'production',
+  "responsible_user_id" varchar,
+  "is_active" tinyint(1) not null default '1',
+  "valid_from" date,
+  "valid_to" date,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "analytical_cost_centers_tenant_id_code_unique" on "analytical_cost_centers"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "analytical_cost_centers_tenant_id_index" on "analytical_cost_centers"(
+  "tenant_id"
+);
+CREATE INDEX "analytical_cost_centers_parent_id_index" on "analytical_cost_centers"(
+  "parent_id"
+);
+CREATE TABLE "analytical_jobs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "customer_id" varchar,
+  "sales_order_id" varchar,
+  "cost_center_id" varchar,
+  "status" varchar not null default 'planned',
+  "start_date" date,
+  "end_date" date,
+  "contract_value" numeric not null default '0',
+  "estimated_cost_budget" numeric not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("cost_center_id") references "analytical_cost_centers"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "analytical_jobs_tenant_id_code_unique" on "analytical_jobs"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "analytical_jobs_tenant_id_index" on "analytical_jobs"(
+  "tenant_id"
+);
+CREATE INDEX "analytical_jobs_customer_id_index" on "analytical_jobs"(
+  "customer_id"
+);
+CREATE INDEX "analytical_jobs_sales_order_id_index" on "analytical_jobs"(
+  "sales_order_id"
+);
+CREATE TABLE "cost_allocation_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "fiscal_year" integer not null,
+  "fiscal_month" integer not null,
+  "status" varchar not null default 'draft',
+  "total_allocated_amount" numeric not null default '0',
+  "executed_by" varchar,
+  "executed_at" datetime,
+  "reversed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "cost_allocation_runs_tenant_id_fiscal_year_fiscal_month_index" on "cost_allocation_runs"(
+  "tenant_id",
+  "fiscal_year",
+  "fiscal_month"
+);
+CREATE INDEX "cost_allocation_runs_tenant_id_index" on "cost_allocation_runs"(
+  "tenant_id"
+);
+CREATE TABLE "cost_allocation_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "source_cost_center_id" varchar not null,
+  "driver_type" varchar not null,
+  "step_order" integer not null default '1',
+  "recipients" text not null,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("source_cost_center_id") references "analytical_cost_centers"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "cost_allocation_rules_tenant_id_step_order_index" on "cost_allocation_rules"(
+  "tenant_id",
+  "step_order"
+);
+CREATE INDEX "cost_allocation_rules_tenant_id_index" on "cost_allocation_rules"(
+  "tenant_id"
+);
+CREATE TABLE "analytical_ledger_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "posting_date" date not null,
+  "fiscal_year" integer not null,
+  "fiscal_month" integer not null,
+  "source_type" varchar not null,
+  "source_id" varchar,
+  "account_code" varchar,
+  "nature_type" varchar not null,
+  "cost_center_id" varchar,
+  "job_id" varchar,
+  "product_id" varchar,
+  "product_family_id" varchar,
+  "customer_id" varchar,
+  "sales_agent_id" varchar,
+  "amount" numeric not null,
+  "quantity" numeric not null default '0',
+  "description" varchar,
+  "is_allocated" tinyint(1) not null default '0',
+  "allocation_run_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("cost_center_id") references "analytical_cost_centers"("id") on delete set null,
+  foreign key("job_id") references "analytical_jobs"("id") on delete set null,
+  foreign key("allocation_run_id") references "cost_allocation_runs"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "analytical_ledger_entries_tenant_id_fiscal_year_fiscal_month_index" on "analytical_ledger_entries"(
+  "tenant_id",
+  "fiscal_year",
+  "fiscal_month"
+);
+CREATE INDEX "analytical_ledger_entries_tenant_id_cost_center_id_index" on "analytical_ledger_entries"(
+  "tenant_id",
+  "cost_center_id"
+);
+CREATE INDEX "analytical_ledger_entries_tenant_id_job_id_index" on "analytical_ledger_entries"(
+  "tenant_id",
+  "job_id"
+);
+CREATE INDEX "analytical_ledger_entries_tenant_id_source_type_source_id_index" on "analytical_ledger_entries"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "analytical_ledger_entries_tenant_id_index" on "analytical_ledger_entries"(
+  "tenant_id"
+);
+CREATE TABLE "bi_sales_margin_facts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "posting_date" date not null,
+  "fiscal_year" integer not null,
+  "fiscal_month" integer not null,
+  "document_type" varchar not null default 'invoice',
+  "source_id" varchar,
+  "product_id" varchar,
+  "product_family_id" varchar,
+  "customer_id" varchar,
+  "country_code" varchar,
+  "region_code" varchar,
+  "province_code" varchar,
+  "sales_agent_id" varchar,
+  "production_department_id" varchar,
+  "cost_center_id" varchar,
+  "job_id" varchar,
+  "quantity_sold" numeric not null default '0',
+  "gross_revenue" numeric not null default '0',
+  "discount_amount" numeric not null default '0',
+  "net_revenue" numeric not null default '0',
+  "direct_cogs_amount" numeric not null default '0',
+  "allocated_overhead_amount" numeric not null default '0',
+  "commission_amount" numeric not null default '0',
+  "logistics_cost_amount" numeric not null default '0',
+  "first_contribution_margin" numeric not null default '0',
+  "second_contribution_margin" numeric not null default '0',
+  "full_industrial_margin" numeric not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("cost_center_id") references "analytical_cost_centers"("id") on delete set null,
+  foreign key("job_id") references "analytical_jobs"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "bi_sales_margin_facts_tenant_id_posting_date_index" on "bi_sales_margin_facts"(
+  "tenant_id",
+  "posting_date"
+);
+CREATE INDEX "bi_sales_margin_facts_tenant_id_fiscal_year_fiscal_month_index" on "bi_sales_margin_facts"(
+  "tenant_id",
+  "fiscal_year",
+  "fiscal_month"
+);
+CREATE INDEX "bi_sales_margin_facts_tenant_id_index" on "bi_sales_margin_facts"(
+  "tenant_id"
+);
+CREATE INDEX "bi_sales_margin_facts_product_id_index" on "bi_sales_margin_facts"(
+  "product_id"
+);
+CREATE INDEX "bi_sales_margin_facts_product_family_id_index" on "bi_sales_margin_facts"(
+  "product_family_id"
+);
+CREATE INDEX "bi_sales_margin_facts_customer_id_index" on "bi_sales_margin_facts"(
+  "customer_id"
+);
+CREATE INDEX "bi_sales_margin_facts_sales_agent_id_index" on "bi_sales_margin_facts"(
+  "sales_agent_id"
+);
+CREATE INDEX "bi_sales_margin_facts_production_department_id_index" on "bi_sales_margin_facts"(
+  "production_department_id"
+);
+CREATE TABLE "bi_financial_snapshots"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "snapshot_date" date not null,
+  "fiscal_year" integer not null,
+  "fiscal_month" integer not null,
+  "accounts_receivable_balance" numeric not null default '0',
+  "overdue_receivables_balance" numeric not null default '0',
+  "accounts_payable_balance" numeric not null default '0',
+  "inventory_valuation_balance" numeric not null default '0',
+  "cash_and_bank_balance" numeric not null default '0',
+  "net_working_capital" numeric not null default '0',
+  "credit_sales_period" numeric not null default '0',
+  "credit_purchases_period" numeric not null default '0',
+  "cogs_period" numeric not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bi_financial_snapshots_tenant_id_snapshot_date_unique" on "bi_financial_snapshots"(
+  "tenant_id",
+  "snapshot_date"
+);
+CREATE INDEX "bi_financial_snapshots_tenant_id_index" on "bi_financial_snapshots"(
+  "tenant_id"
+);
+CREATE TABLE "controlling_budget_plans"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "fiscal_year" integer not null,
+  "plan_type" varchar not null default 'annual_budget',
+  "version_number" integer not null default '1',
+  "parent_plan_id" varchar,
+  "cutoff_month" integer,
+  "status" varchar not null default 'draft',
+  "currency_code" varchar not null default 'EUR',
+  "approved_by" varchar,
+  "approved_at" datetime,
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "controlling_budget_plans_tenant_id_fiscal_year_plan_type_index" on "controlling_budget_plans"(
+  "tenant_id",
+  "fiscal_year",
+  "plan_type"
+);
+CREATE INDEX "controlling_budget_plans_tenant_id_index" on "controlling_budget_plans"(
+  "tenant_id"
+);
+CREATE INDEX "controlling_budget_plans_parent_plan_id_index" on "controlling_budget_plans"(
+  "parent_plan_id"
+);
+CREATE TABLE "controlling_budget_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "plan_id" varchar not null,
+  "account_code" varchar,
+  "nature_type" varchar not null,
+  "cost_center_id" varchar,
+  "job_id" varchar,
+  "product_family_id" varchar,
+  "customer_id" varchar,
+  "country_code" varchar,
+  "region_code" varchar,
+  "sales_agent_id" varchar,
+  "production_department_id" varchar,
+  "month_01" numeric not null default '0',
+  "month_02" numeric not null default '0',
+  "month_03" numeric not null default '0',
+  "month_04" numeric not null default '0',
+  "month_05" numeric not null default '0',
+  "month_06" numeric not null default '0',
+  "month_07" numeric not null default '0',
+  "month_08" numeric not null default '0',
+  "month_09" numeric not null default '0',
+  "month_10" numeric not null default '0',
+  "month_11" numeric not null default '0',
+  "month_12" numeric not null default '0',
+  "annual_total" numeric not null default '0',
+  "target_quantity" numeric not null default '0',
+  "target_amount" numeric not null default '0',
+  "target_margin_percent" numeric,
+  "distribution_driver" varchar not null default 'equal_12',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("plan_id") references "controlling_budget_plans"("id") on delete cascade,
+  foreign key("cost_center_id") references "analytical_cost_centers"("id") on delete set null,
+  foreign key("job_id") references "analytical_jobs"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "controlling_budget_lines_tenant_id_plan_id_index" on "controlling_budget_lines"(
+  "tenant_id",
+  "plan_id"
+);
+CREATE INDEX "controlling_budget_lines_tenant_id_index" on "controlling_budget_lines"(
+  "tenant_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -40035,3 +40400,4 @@ INSERT INTO migrations VALUES(375,'2027_04_20_286003_create_passive_invoice_with
 INSERT INTO migrations VALUES(376,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',2);
 INSERT INTO migrations VALUES(377,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',2);
 INSERT INTO migrations VALUES(378,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',3);
+INSERT INTO migrations VALUES(379,'2027_12_10_100000_create_controlling_tables',4);
