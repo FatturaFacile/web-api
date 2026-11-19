@@ -20,6 +20,7 @@ use Modules\Invoicing\Models\DeclarationOfIntent;
 /**
  * @property Carbon $date
  * @property array<string, mixed>|null $sdi_vehicle
+ * @property array<string, mixed>|null $sdi_extra
  * @property Carbon|null $due_date
  */
 class Invoice extends Model
@@ -46,6 +47,7 @@ class Invoice extends Model
         'reverse_charge',
         'sdi_simplified',
         'sdi_vehicle',
+        'sdi_extra',
         'notes',
         'fiscal_year',
         'sequential_number',
@@ -134,6 +136,7 @@ class Invoice extends Model
             'reverse_charge' => 'boolean',
             'sdi_simplified' => 'boolean',
             'sdi_vehicle' => 'array',
+            'sdi_extra' => 'array',
             'duty_exemption_eligible' => 'boolean',
             'total_paid' => 'decimal:2',
             'receivable_amount' => 'decimal:2',

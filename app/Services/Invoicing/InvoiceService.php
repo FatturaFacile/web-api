@@ -52,7 +52,7 @@ class InvoiceService
         $data = $this->normalizeNestedFiscalOptions($data);
         $items = array_map(static fn (array $item): array => array_intersect_key($item, array_flip([
             'product_id', 'description', 'quantity', 'unit_price', 'tax_rate', 'discount_percentage', 'revenue_account_id', 'product_charge_type_id',
-            'taric_code', 'country_of_origin', 'origin_type', 'made_in_label', 'natura', 'withholding_applies', 'fund_applies',
+            'taric_code', 'country_of_origin', 'origin_type', 'made_in_label', 'natura', 'withholding_applies', 'fund_applies', 'sdi_data',
         ])), $this->withCustomsSnapshot($data['items'] ?? []));
         unset($data['items'], $data['invoice_number']);
 

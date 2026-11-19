@@ -27,7 +27,10 @@ use Modules\SDI\Services\SdiPreflight;
 
 class FatturaPaBuilderService
 {
-    public function __construct(private readonly VatSummaryCalculator $vat = new VatSummaryCalculator) {}
+    public function __construct(
+        private readonly VatSummaryCalculator $vat = new VatSummaryCalculator,
+        private readonly FatturaPaOptionalBlocks $optional = new FatturaPaOptionalBlocks,
+    ) {}
 
     /**
      * Validate an Italian Partita IVA (11 digits with Luhn algorithm variant).
@@ -59,11 +62,17 @@ class FatturaPaBuilderService
     }
 
     /**
-     * Validate an Italian Codice Fiscale (16 characters alphanumeric with control character).
+     * Validate an Italian Codice Fiscale: 16 characters alphanumeric with control character (natural person), or the
+     * 11 digits of a legal entity, which are a Partita IVA and carry its check digit.
      */
     public function isValidCodiceFiscale(string $cf): bool
     {
         $clean = strtoupper(trim($cf));
+
+        if (preg_match('/^\d{11}$/', $clean) === 1) {
+            return $this->isValidPartitaIva($clean);
+        }
+
         if (strlen($clean) !== 16 || ! preg_match('/^[A-Z0-9]{16}$/', $clean)) {
             return false;
         }
@@ -115,7 +124,7 @@ class FatturaPaBuilderService
      * Build and serialize the official FatturaPA XML (schema v1.2.3). It never fills in missing master data: the document
      * must have passed {@see SdiPreflight}, and what is still missing here is an error.
      *
-     * @param  list<array{name: string, content: string, format?: string, description?: string}>  $attachments  raw file bytes, embedded as base64 in Allegati
+     * @param  list<array{name: string, content: string, format?: string, description?: string, compression?: string}>  $attachments  raw file bytes, embedded as base64 in Allegati
      *
      * @throws InvalidArgumentException when a mandatory value is missing
      */
@@ -133,6 +142,13 @@ class FatturaPaBuilderService
         }
 
         $type = TipoDocumento::ofInvoice($invoice);
+
+        // `sdi_extra` mirrors the XML tree (FatturaElettronicaHeader / FatturaElettronicaBody). Two keys steer the builder
+        // instead: EsigibilitaIVA (D = deferred VAT) and PaymentRows (details merged into the payment rows by index).
+        $extra = is_array($invoice->sdi_extra) ? $invoice->sdi_extra : [];
+        $exigibility = isset($extra['EsigibilitaIVA']) ? (string) $extra['EsigibilitaIVA'] : null;
+        $paymentRows = is_array($extra['PaymentRows'] ?? null) ? array_values($extra['PaymentRows']) : [];
+        unset($extra['EsigibilitaIVA'], $extra['PaymentRows']);
 
         $dom = new DOMDocument('1.0', 'UTF-8');
         $dom->formatOutput = true;
@@ -164,19 +180,29 @@ class FatturaPaBuilderService
         $root->appendChild($body);
 
         $body->appendChild($this->generalData($dom, $invoice, $type));
-        $body->appendChild($this->goodsAndServices($dom, $invoice));
+        $body->appendChild($this->goodsAndServices($dom, $invoice, $exigibility));
 
         if ($type === TipoDocumento::Td01 && is_array($invoice->sdi_vehicle) && ! empty($invoice->sdi_vehicle['date'])) {
             $body->appendChild($this->vehicleData($dom, $invoice->sdi_vehicle));
         }
 
         if (! $type->isSelfInvoice()) {
-            $body->appendChild($this->paymentData($dom, $invoice));
+            $body->appendChild($this->paymentData($dom, $invoice, $paymentRows));
         }
 
         foreach ($attachments as $attachment) {
             $body->appendChild($this->attachment($dom, $attachment));
         }
+
+        if (is_array($extra['FatturaElettronicaHeader'] ?? null)) {
+            $this->optional->merge($dom, $header, $extra['FatturaElettronicaHeader']);
+        }
+
+        if (is_array($extra['FatturaElettronicaBody'] ?? null)) {
+            $this->optional->merge($dom, $body, $extra['FatturaElettronicaBody']);
+        }
+
+        $this->optional->sort($root);
 
         return (string) $dom->saveXML();
     }
@@ -452,7 +478,9 @@ class FatturaPaBuilderService
         $datiGeneraliDoc->appendChild($dom->createElement('ImportoTotaleDocumento', $this->money($invoice->total_gross)));
 
         foreach ($this->legalWordings($invoice) as $wording) {
-            $datiGeneraliDoc->appendChild($dom->createElement('Causale', htmlspecialchars($wording)));
+            foreach ($this->optional->chunkCausale($wording) as $chunk) {
+                $datiGeneraliDoc->appendChild($dom->createElement('Causale', htmlspecialchars($chunk)));
+            }
         }
 
         $datiGenerali->appendChild($datiGeneraliDoc);
@@ -650,7 +678,7 @@ class FatturaPaBuilderService
         return $elements;
     }
 
-    private function goodsAndServices(DOMDocument $dom, Invoice $invoice): DOMElement
+    private function goodsAndServices(DOMDocument $dom, Invoice $invoice, ?string $exigibility = null): DOMElement
     {
         $datiBeniServizi = $dom->createElement('DatiBeniServizi');
         $declaration = $invoice->declarationOfIntent;
@@ -667,6 +695,14 @@ class FatturaPaBuilderService
             $dettaglioLinee->appendChild($dom->createElement('Descrizione', htmlspecialchars(substr($item->description, 0, 1000))));
             $dettaglioLinee->appendChild($dom->createElement('Quantita', number_format((float) $item->quantity, 2, '.', '')));
             $dettaglioLinee->appendChild($dom->createElement('PrezzoUnitario', number_format((float) $item->unit_price, 4, '.', '')));
+            // PrezzoTotale is net of the line discount: the discount is stated, or SDI refuses the line (00423).
+            if ((float) $item->discount_percentage > 0) {
+                $discount = $dom->createElement('ScontoMaggiorazione');
+                $discount->appendChild($dom->createElement('Tipo', 'SC'));
+                $discount->appendChild($dom->createElement('Percentuale', $this->money($item->discount_percentage)));
+                $dettaglioLinee->appendChild($discount);
+            }
+
             $dettaglioLinee->appendChild($dom->createElement('PrezzoTotale', $this->money($item->line_total)));
             $dettaglioLinee->appendChild($dom->createElement('AliquotaIVA', number_format($rate, 2, '.', '')));
 
@@ -682,6 +718,10 @@ class FatturaPaBuilderService
                 $dettaglioLinee->appendChild($this->declarationReference($dom, $declaration));
             }
 
+            if (is_array($item->sdi_data) && $item->sdi_data !== []) {
+                $this->optional->merge($dom, $dettaglioLinee, $item->sdi_data);
+            }
+
             $datiBeniServizi->appendChild($dettaglioLinee);
             $this->addToSummary($vatAggregates, $rate, $natura, (string) $item->line_total);
         }
@@ -692,7 +732,7 @@ class FatturaPaBuilderService
         }
 
         foreach ($vatAggregates as $aggregate) {
-            $datiBeniServizi->appendChild($this->vatSummary($dom, $invoice, $aggregate));
+            $datiBeniServizi->appendChild($this->vatSummary($dom, $invoice, $aggregate, $exigibility));
         }
 
         return $datiBeniServizi;
@@ -722,7 +762,7 @@ class FatturaPaBuilderService
     /**
      * @param  array{rate: float, nature: ?string, taxable: string}  $aggregate
      */
-    private function vatSummary(DOMDocument $dom, Invoice $invoice, array $aggregate): DOMElement
+    private function vatSummary(DOMDocument $dom, Invoice $invoice, array $aggregate, ?string $exigibility = null): DOMElement
     {
         $rate = number_format($aggregate['rate'], 2, '.', '');
         $tax = $this->vat->taxOn($aggregate['taxable'], $rate);
@@ -741,7 +781,8 @@ class FatturaPaBuilderService
         if ($invoice->split_payment) {
             $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', 'S'));
         } elseif ($aggregate['nature'] === null) {
-            $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', 'I')); // Immediata
+            // Immediate unless the document states deferred VAT (D).
+            $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', $exigibility === 'D' ? 'D' : 'I'));
         }
 
         if (is_string($reference)) {
@@ -751,7 +792,10 @@ class FatturaPaBuilderService
         return $datiRiepilogo;
     }
 
-    private function paymentData(DOMDocument $dom, Invoice $invoice): DOMElement
+    /**
+     * @param  list<array<string, mixed>>  $paymentRows  extra DettaglioPagamento fields, merged into the rows by index
+     */
+    private function paymentData(DOMDocument $dom, Invoice $invoice, array $paymentRows = []): DOMElement
     {
         $tenant = $invoice->tenant;
 
@@ -765,7 +809,7 @@ class FatturaPaBuilderService
         $datiPagamento = $dom->createElement('DatiPagamento');
         $datiPagamento->appendChild($dom->createElement('CondizioniPagamento', count($rows) > 1 ? 'TP01' : 'TP02'));
 
-        foreach ($rows as $row) {
+        foreach (array_values($rows) as $index => $row) {
             $dettaglioPagamento = $dom->createElement('DettaglioPagamento');
             $dettaglioPagamento->appendChild($dom->createElement('ModalitaPagamento', $this->paymentMode($invoice)));
 
@@ -779,6 +823,10 @@ class FatturaPaBuilderService
                 $dettaglioPagamento->appendChild($dom->createElement('IBAN', preg_replace('/\s+/', '', $tenant->iban)));
             }
 
+            if (isset($paymentRows[$index])) {
+                $this->optional->merge($dom, $dettaglioPagamento, $paymentRows[$index]);
+            }
+
             $datiPagamento->appendChild($dettaglioPagamento);
         }
 
@@ -786,12 +834,16 @@ class FatturaPaBuilderService
     }
 
     /**
-     * @param  array{name: string, content: string, format?: string, description?: string}  $attachment
+     * @param  array{name: string, content: string, format?: string, description?: string, compression?: string}  $attachment
      */
     private function attachment(DOMDocument $dom, array $attachment): DOMElement
     {
         $allegati = $dom->createElement('Allegati');
         $allegati->appendChild($dom->createElement('NomeAttachment', mb_substr($attachment['name'], 0, 60)));
+        if (! empty($attachment['compression'])) {
+            $allegati->appendChild($dom->createElement('AlgoritmoCompressione', mb_substr((string) $attachment['compression'], 0, 10)));
+        }
+
         $allegati->appendChild($dom->createElement('FormatoAttachment', strtoupper($attachment['format'] ?? 'PDF')));
 
         if (! empty($attachment['description'])) {
