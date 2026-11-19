@@ -6498,6 +6498,70 @@ CREATE INDEX "crm_forecasts_user_id_index" on "crm_forecasts"("user_id");
 CREATE INDEX "crm_forecasts_workflow_instance_id_index" on "crm_forecasts"(
   "workflow_instance_id"
 );
+CREATE TABLE "crm_lead_activity_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lead_id" varchar not null,
+  "type" varchar not null,
+  "occurred_at" datetime not null,
+  "metadata" text,
+  "external_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("lead_id") references "crm_leads"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "crm_lead_activity_events_lead_external_unique" on "crm_lead_activity_events"(
+  "lead_id",
+  "external_id"
+);
+CREATE INDEX "crm_lead_activity_events_lookup_index" on "crm_lead_activity_events"(
+  "tenant_id",
+  "lead_id",
+  "type",
+  "occurred_at"
+);
+CREATE TABLE "crm_lead_duplicate_candidates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lead_id" varchar not null,
+  "candidate_lead_id" varchar,
+  "contact_id" varchar,
+  "account_id" varchar,
+  "match_type" varchar not null,
+  "confidence" numeric not null default('1'),
+  "status" varchar not null default('pending'),
+  "resolved_by" varchar,
+  "resolved_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("account_id") references "crm_accounts"("id") on delete cascade on update no action,
+  foreign key("contact_id") references "contacts"("id") on delete cascade on update no action,
+  foreign key("candidate_lead_id") references "crm_leads"("id") on delete cascade on update no action,
+  foreign key("lead_id") references "crm_leads"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "crm_lead_duplicate_candidates_lead_id_status_index" on "crm_lead_duplicate_candidates"(
+  "lead_id",
+  "status"
+);
+CREATE INDEX "crm_lead_duplicate_candidates_status_index" on "crm_lead_duplicate_candidates"(
+  "tenant_id",
+  "status",
+  "created_at"
+);
 CREATE TABLE "crm_lead_routing_rules"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -6511,12 +6575,12 @@ CREATE TABLE "crm_lead_routing_rules"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "conditions" text,
+  "round_robin_cursor" integer not null default('0'),
+  "is_default" tinyint(1) not null default('0'),
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "conditions" text,
-  "round_robin_cursor" integer not null default '0',
-  "is_default" tinyint(1) not null default '0',
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -6543,14 +6607,14 @@ CREATE TABLE "crm_lead_scoring_rules"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
   "code" varchar,
   "category" varchar,
   "event_type" varchar,
   "max_applications" integer,
   "decay_days" integer,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -6559,6 +6623,29 @@ CREATE INDEX "crm_lead_scoring_rules_tenant_id_is_active_sequence_index" on "crm
   "tenant_id",
   "is_active",
   "sequence"
+);
+CREATE TABLE "crm_lead_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "warm_threshold" integer not null default('40'),
+  "hot_threshold" integer not null default('70'),
+  "auto_qualify_threshold" integer not null default('80'),
+  "dedup_mode" varchar not null default('notify'),
+  "dedup_levenshtein_max" integer not null default('2'),
+  "dedup_similarity_min" numeric not null default('0.85'),
+  "default_country" varchar not null default('IT'),
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "crm_lead_settings_tenant_id_unique" on "crm_lead_settings"(
+  "tenant_id"
 );
 CREATE TABLE "crm_lead_sources"(
   "id" varchar not null,
@@ -6569,10 +6656,7 @@ CREATE TABLE "crm_lead_sources"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "type" varchar not null default 'manual',
+  "type" varchar not null default('manual'),
   "api_key_prefix" varchar,
   "api_key_hash" varchar,
   "webhook_secret" text,
@@ -6580,10 +6664,16 @@ CREATE TABLE "crm_lead_sources"(
   "field_mapping" text,
   "default_product_line" varchar,
   "last_received_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
 
+CREATE INDEX "crm_lead_sources_api_key_prefix_index" on "crm_lead_sources"(
+  "api_key_prefix"
+);
 CREATE UNIQUE INDEX "crm_lead_sources_tenant_id_code_unique" on "crm_lead_sources"(
   "tenant_id",
   "code"
@@ -6619,6 +6709,107 @@ CREATE TABLE "crm_lead_webhook_endpoints"(
 CREATE UNIQUE INDEX "crm_lead_webhook_endpoints_token_unique" on "crm_lead_webhook_endpoints"(
   "token"
 );
+CREATE TABLE "crm_leads"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lead_source_id" varchar,
+  "campaign_id" varchar,
+  "assigned_user_id" varchar,
+  "first_name" varchar,
+  "last_name" varchar,
+  "company_name" varchar,
+  "title" varchar,
+  "email" varchar,
+  "phone" varchar,
+  "website" varchar,
+  "country" varchar not null default('IT'),
+  "status" varchar not null default('new'),
+  "disqualification_reason" varchar,
+  "score" integer not null default('0'),
+  "rating" varchar not null default('cold'),
+  "estimated_budget" numeric,
+  "converted_at" datetime,
+  "converted_contact_id" varchar,
+  "converted_account_id" varchar,
+  "converted_opportunity_id" varchar,
+  "duplicate_hash" varchar,
+  "tags" text,
+  "custom_fields" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "phone_e164" varchar,
+  "vat_number" varchar,
+  "company_normalized" varchar,
+  "industry" varchar,
+  "region" varchar,
+  "product_line" varchar,
+  "company_size" integer,
+  "estimated_revenue" numeric,
+  "email_opens" integer not null default('0'),
+  "catalog_downloads" integer not null default('0'),
+  "site_visits" integer not null default('0'),
+  "score_breakdown" text,
+  "duplicate_of_id" varchar,
+  "assigned_at" datetime,
+  "score_calculated_at" datetime,
+  "company_name_normalized" varchar,
+  "employee_count" integer,
+  "annual_revenue_estimate" numeric,
+  "state_region" varchar,
+  "external_id" varchar,
+  "scored_at" datetime,
+  "last_activity_at" datetime,
+  "merged_into_lead_id" varchar,
+  "processing_restricted_at" datetime,
+  "anonymized_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("merged_into_lead_id") references "crm_leads"("id") on delete set null on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  foreign key("lead_source_id") references "crm_lead_sources"("id") on delete set null on update no action,
+  foreign key("campaign_id") references "crm_campaigns"("id") on delete set null on update no action,
+  foreign key("converted_contact_id") references "contacts"("id") on delete set null on update no action,
+  foreign key("converted_account_id") references "crm_accounts"("id") on delete set null on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "crm_leads_assigned_user_id_index" on "crm_leads"(
+  "assigned_user_id"
+);
+CREATE INDEX "crm_leads_company_normalized_index" on "crm_leads"(
+  "company_normalized"
+);
+CREATE INDEX "crm_leads_converted_opportunity_id_index" on "crm_leads"(
+  "converted_opportunity_id"
+);
+CREATE INDEX "crm_leads_duplicate_hash_index" on "crm_leads"(
+  "duplicate_hash"
+);
+CREATE INDEX "crm_leads_duplicate_of_id_index" on "crm_leads"(
+  "duplicate_of_id"
+);
+CREATE INDEX "crm_leads_email_index" on "crm_leads"("email");
+CREATE INDEX "crm_leads_phone_e164_index" on "crm_leads"("phone_e164");
+CREATE INDEX "crm_leads_score_index" on "crm_leads"("score");
+CREATE INDEX "crm_leads_status_index" on "crm_leads"("status");
+CREATE INDEX "crm_leads_tenant_id_company_name_email_index" on "crm_leads"(
+  "tenant_id",
+  "company_name",
+  "email"
+);
+CREATE INDEX "crm_leads_tenant_id_status_score_index" on "crm_leads"(
+  "tenant_id",
+  "status",
+  "score"
+);
+CREATE UNIQUE INDEX "crm_leads_tenant_source_external_unique" on "crm_leads"(
+  "tenant_id",
+  "lead_source_id",
+  "external_id"
+);
+CREATE INDEX "crm_leads_vat_number_index" on "crm_leads"("vat_number");
 CREATE TABLE "crm_opportunities"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -10271,6 +10462,30 @@ CREATE TABLE "employee_shifts"(
 CREATE INDEX "employee_shifts_user_id_starts_at_index" on "employee_shifts"(
   "user_id",
   "starts_at"
+);
+CREATE TABLE "enasarco_annual_limits"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "year" integer not null,
+  "rate" numeric not null,
+  "annual_minimum" numeric not null default('0'),
+  "annual_maximum_commission" numeric not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "enasarco_annual_limits_tenant_id_year_unique" on "enasarco_annual_limits"(
+  "tenant_id",
+  "year"
+);
+CREATE INDEX "enasarco_annual_limits_year_index" on "enasarco_annual_limits"(
+  "year"
 );
 CREATE TABLE "enasarco_parameters"(
   "id" varchar not null,
@@ -15980,12 +16195,12 @@ CREATE TABLE "invoice_items"(
   "product_charge_type_id" varchar,
   "cost_center_id" varchar,
   "deducted_invoice_item_id" varchar,
+  "natura" varchar,
+  "withholding_applies" tinyint(1) not null default('1'),
+  "fund_applies" tinyint(1) not null default('1'),
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "natura" varchar,
-  "withholding_applies" tinyint(1) not null default '1',
-  "fund_applies" tinyint(1) not null default '1',
   "sdi_data" text,
   foreign key("cost_center_id") references "cost_centers"("id") on delete set null on update no action,
   foreign key("invoice_id") references "invoices"("id") on delete cascade on update no action,
@@ -16123,27 +16338,27 @@ CREATE TABLE "invoices"(
   "exchange_rate_source" varchar,
   "exchange_rate_date" date,
   "payment_term_id" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "qr_reference" varchar,
   "total_due" numeric,
   "withholding_tax_taxable_percent" numeric,
   "withholding_tax_base" numeric,
-  "withholding_tax_includes_fund" tinyint(1) not null default '0',
+  "withholding_tax_includes_fund" tinyint(1) not null default('0'),
   "fund_natura" varchar,
-  "fund_withholding_applies" tinyint(1) not null default '0',
+  "fund_withholding_applies" tinyint(1) not null default('0'),
   "enasarco_commissions" numeric,
   "enasarco_taxable" numeric,
-  "stamp_duty_charged_to_customer" tinyint(1) not null default '0',
+  "stamp_duty_charged_to_customer" tinyint(1) not null default('0'),
   "legal_notices" text,
   "vat_summary" text,
-  "sdi_simplified" tinyint(1) not null default '0',
-  "sdi_vehicle" text,
-  "sdi_extra" text,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "qr_reference" varchar,
   "incoterm" varchar,
   "incoterm_place" varchar,
   "freight_amount" numeric,
   "insurance_amount" numeric,
+  "sdi_simplified" tinyint(1) not null default '0',
+  "sdi_vehicle" text,
+  "sdi_extra" text,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
   foreign key("quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("delivery_note_id") references "delivery_notes"("id") on delete set null on update no action,
@@ -18344,6 +18559,37 @@ CREATE TABLE "passive_invoice_lines"(
 CREATE INDEX "passive_invoice_lines_tenant_id_passive_invoice_id_index" on "passive_invoice_lines"(
   "tenant_id",
   "passive_invoice_id"
+);
+CREATE TABLE "passive_invoice_withholdings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "passive_invoice_id" varchar not null,
+  "supplier_id" varchar not null,
+  "type" varchar not null,
+  "reason" varchar,
+  "rate" numeric not null default('0'),
+  "taxable_amount" numeric,
+  "amount" numeric not null,
+  "withheld_year" integer,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("supplier_id") references "contacts"("id") on delete cascade on update no action,
+  foreign key("passive_invoice_id") references "passive_invoices"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "passive_invoice_withholdings_tenant_id_supplier_id_index" on "passive_invoice_withholdings"(
+  "tenant_id",
+  "supplier_id"
+);
+CREATE INDEX "passive_invoice_withholdings_tenant_id_withheld_year_index" on "passive_invoice_withholdings"(
+  "tenant_id",
+  "withheld_year"
 );
 CREATE TABLE "passive_invoices"(
   "id" varchar not null,
@@ -38698,6 +38944,117 @@ CREATE INDEX "access_delegations_tenant_id_delegator_id_index" on "access_delega
   "delegator_id"
 );
 CREATE INDEX "invoices_qr_reference_index" on "invoices"("qr_reference");
+CREATE INDEX "quotes_quote_group_uuid_index" on "quotes"("quote_group_uuid");
+CREATE TABLE "quote_approval_tiers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "level" integer not null,
+  "name" varchar not null,
+  "approver_role" varchar not null,
+  "max_line_discount_percent" numeric,
+  "max_global_discount_percent" numeric,
+  "min_margin_percent" numeric,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "quote_approval_tiers_tenant_id_level_unique" on "quote_approval_tiers"(
+  "tenant_id",
+  "level"
+);
+CREATE TABLE "quote_approval_requests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "quote_id" varchar not null,
+  "level" integer not null,
+  "required_role" varchar not null,
+  "status" varchar not null default 'pending',
+  "triggers" text,
+  "requested_by" varchar,
+  "approved_by" varchar,
+  "rejected_by" varchar,
+  "decided_at" datetime,
+  "rejection_reason" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("quote_id") references "quotes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "quote_approval_requests_quote_id_level_unique" on "quote_approval_requests"(
+  "quote_id",
+  "level"
+);
+CREATE INDEX "quote_approval_requests_tenant_id_status_index" on "quote_approval_requests"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "quote_approval_requests_status_index" on "quote_approval_requests"(
+  "status"
+);
+CREATE INDEX "quote_approval_requests_requested_by_index" on "quote_approval_requests"(
+  "requested_by"
+);
+CREATE INDEX "quote_approval_requests_approved_by_index" on "quote_approval_requests"(
+  "approved_by"
+);
+CREATE INDEX "quote_approval_requests_rejected_by_index" on "quote_approval_requests"(
+  "rejected_by"
+);
+CREATE TABLE "quote_signature_requests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "quote_id" varchar not null,
+  "token_hash" varchar not null,
+  "locale" varchar not null default 'it',
+  "expires_at" datetime not null,
+  "revoked_at" datetime,
+  "status" varchar not null default 'pending',
+  "signer_name" varchar,
+  "signer_role" varchar,
+  "purchase_order_number" varchar,
+  "signature_type" varchar,
+  "signature_data" text,
+  "selected_optional_item_ids" text,
+  "change_request" text,
+  "ip_address" varchar,
+  "user_agent" text,
+  "payload_hash" varchar,
+  "pdf_hash" varchar,
+  "signed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("quote_id") references "quotes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "quote_signature_requests_tenant_id_quote_id_index" on "quote_signature_requests"(
+  "tenant_id",
+  "quote_id"
+);
+CREATE UNIQUE INDEX "quote_signature_requests_token_hash_unique" on "quote_signature_requests"(
+  "token_hash"
+);
+CREATE INDEX "quote_signature_requests_status_index" on "quote_signature_requests"(
+  "status"
+);
 CREATE INDEX "esm_service_contracts_recurring_billing_subscription_id_index" on "esm_service_contracts"(
   "recurring_billing_subscription_id"
 );
@@ -38730,6 +39087,38 @@ CREATE INDEX "esm_parts_consumptions_stock_movement_id_index" on "esm_parts_cons
 );
 CREATE INDEX "esm_parts_consumptions_lot_or_serial_id_index" on "esm_parts_consumptions"(
   "lot_or_serial_id"
+);
+CREATE TABLE "portal_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "portal_slug" varchar,
+  "custom_domain" varchar,
+  "logo_url" varchar,
+  "favicon_url" varchar,
+  "primary_color" varchar,
+  "secondary_color" varchar,
+  "support_email" varchar,
+  "privacy_policy_url" varchar,
+  "require_otp" tinyint(1) not null default '0',
+  "allow_partial_payments" tinyint(1) not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "portal_settings_tenant_id_unique" on "portal_settings"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "portal_settings_portal_slug_unique" on "portal_settings"(
+  "portal_slug"
+);
+CREATE UNIQUE INDEX "portal_settings_custom_domain_unique" on "portal_settings"(
+  "custom_domain"
 );
 CREATE TABLE "vat_validation_logs"(
   "id" varchar not null,
@@ -39148,369 +39537,6 @@ CREATE UNIQUE INDEX "vat_settlement_periods_unique_period" on "vat_settlement_pe
 CREATE INDEX "vat_settlement_periods_vat_settlement_id_index" on "vat_settlement_periods"(
   "vat_settlement_id"
 );
-CREATE TABLE "crm_leads"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "lead_source_id" varchar,
-  "campaign_id" varchar,
-  "assigned_user_id" varchar,
-  "first_name" varchar,
-  "last_name" varchar,
-  "company_name" varchar,
-  "title" varchar,
-  "email" varchar,
-  "phone" varchar,
-  "website" varchar,
-  "country" varchar not null default('IT'),
-  "status" varchar not null default('new'),
-  "disqualification_reason" varchar,
-  "score" integer not null default('0'),
-  "rating" varchar not null default('cold'),
-  "estimated_budget" numeric,
-  "converted_at" datetime,
-  "converted_contact_id" varchar,
-  "converted_account_id" varchar,
-  "converted_opportunity_id" varchar,
-  "duplicate_hash" varchar,
-  "tags" text,
-  "custom_fields" text,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "phone_e164" varchar,
-  "vat_number" varchar,
-  "company_normalized" varchar,
-  "industry" varchar,
-  "region" varchar,
-  "product_line" varchar,
-  "company_size" integer,
-  "estimated_revenue" numeric,
-  "email_opens" integer not null default('0'),
-  "catalog_downloads" integer not null default('0'),
-  "site_visits" integer not null default('0'),
-  "score_breakdown" text,
-  "duplicate_of_id" varchar,
-  "assigned_at" datetime,
-  "score_calculated_at" datetime,
-  "processing_restricted_at" datetime,
-  "anonymized_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "company_name_normalized" varchar,
-  "employee_count" integer,
-  "annual_revenue_estimate" numeric,
-  "state_region" varchar,
-  "external_id" varchar,
-  "scored_at" datetime,
-  "last_activity_at" datetime,
-  "merged_into_lead_id" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
-  foreign key("lead_source_id") references "crm_lead_sources"("id") on delete set null on update no action,
-  foreign key("campaign_id") references "crm_campaigns"("id") on delete set null on update no action,
-  foreign key("converted_contact_id") references "contacts"("id") on delete set null on update no action,
-  foreign key("converted_account_id") references "crm_accounts"("id") on delete set null on update no action,
-  foreign key("merged_into_lead_id") references "crm_leads"("id") on delete set null,
-  primary key("id")
-);
-
-CREATE INDEX "crm_leads_assigned_user_id_index" on "crm_leads"(
-  "assigned_user_id"
-);
-CREATE INDEX "crm_leads_company_normalized_index" on "crm_leads"(
-  "company_normalized"
-);
-CREATE INDEX "crm_leads_converted_opportunity_id_index" on "crm_leads"(
-  "converted_opportunity_id"
-);
-CREATE INDEX "crm_leads_duplicate_hash_index" on "crm_leads"(
-  "duplicate_hash"
-);
-CREATE INDEX "crm_leads_duplicate_of_id_index" on "crm_leads"(
-  "duplicate_of_id"
-);
-CREATE INDEX "crm_leads_email_index" on "crm_leads"("email");
-CREATE INDEX "crm_leads_phone_e164_index" on "crm_leads"("phone_e164");
-CREATE INDEX "crm_leads_score_index" on "crm_leads"("score");
-CREATE INDEX "crm_leads_status_index" on "crm_leads"("status");
-CREATE INDEX "crm_leads_tenant_id_company_name_email_index" on "crm_leads"(
-  "tenant_id",
-  "company_name",
-  "email"
-);
-CREATE INDEX "crm_leads_tenant_id_status_score_index" on "crm_leads"(
-  "tenant_id",
-  "status",
-  "score"
-);
-CREATE INDEX "crm_leads_vat_number_index" on "crm_leads"("vat_number");
-CREATE UNIQUE INDEX "crm_leads_tenant_source_external_unique" on "crm_leads"(
-  "tenant_id",
-  "lead_source_id",
-  "external_id"
-);
-CREATE INDEX "crm_lead_sources_api_key_prefix_index" on "crm_lead_sources"(
-  "api_key_prefix"
-);
-CREATE TABLE "crm_lead_settings"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "warm_threshold" integer not null default '40',
-  "hot_threshold" integer not null default '70',
-  "auto_qualify_threshold" integer not null default '80',
-  "dedup_mode" varchar not null default 'notify',
-  "dedup_levenshtein_max" integer not null default '2',
-  "dedup_similarity_min" numeric not null default '0.85',
-  "default_country" varchar not null default 'IT',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "crm_lead_settings_tenant_id_unique" on "crm_lead_settings"(
-  "tenant_id"
-);
-CREATE TABLE "crm_lead_activity_events"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "lead_id" varchar not null,
-  "type" varchar not null,
-  "occurred_at" datetime not null,
-  "metadata" text,
-  "external_id" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("lead_id") references "crm_leads"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "crm_lead_activity_events_lead_external_unique" on "crm_lead_activity_events"(
-  "lead_id",
-  "external_id"
-);
-CREATE INDEX "crm_lead_activity_events_lookup_index" on "crm_lead_activity_events"(
-  "tenant_id",
-  "lead_id",
-  "type",
-  "occurred_at"
-);
-CREATE TABLE "crm_lead_duplicate_candidates"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "lead_id" varchar not null,
-  "candidate_lead_id" varchar,
-  "contact_id" varchar,
-  "account_id" varchar,
-  "match_type" varchar not null,
-  "confidence" numeric not null default '1',
-  "status" varchar not null default 'pending',
-  "resolved_by" varchar,
-  "resolved_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("lead_id") references "crm_leads"("id") on delete cascade,
-  foreign key("candidate_lead_id") references "crm_leads"("id") on delete cascade,
-  foreign key("contact_id") references "contacts"("id") on delete cascade,
-  foreign key("account_id") references "crm_accounts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "crm_lead_duplicate_candidates_status_index" on "crm_lead_duplicate_candidates"(
-  "tenant_id",
-  "status",
-  "created_at"
-);
-CREATE INDEX "crm_lead_duplicate_candidates_lead_id_status_index" on "crm_lead_duplicate_candidates"(
-  "lead_id",
-  "status"
-);
-CREATE TABLE "enasarco_annual_limits"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "year" integer not null,
-  "rate" numeric not null,
-  "annual_minimum" numeric not null default '0',
-  "annual_maximum_commission" numeric not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "enasarco_annual_limits_tenant_id_year_unique" on "enasarco_annual_limits"(
-  "tenant_id",
-  "year"
-);
-CREATE INDEX "enasarco_annual_limits_year_index" on "enasarco_annual_limits"(
-  "year"
-);
-CREATE TABLE "passive_invoice_withholdings"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "passive_invoice_id" varchar not null,
-  "supplier_id" varchar not null,
-  "type" varchar not null,
-  "reason" varchar,
-  "rate" numeric not null default '0',
-  "taxable_amount" numeric,
-  "amount" numeric not null,
-  "withheld_year" integer,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("passive_invoice_id") references "passive_invoices"("id") on delete cascade,
-  foreign key("supplier_id") references "contacts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "passive_invoice_withholdings_tenant_id_withheld_year_index" on "passive_invoice_withholdings"(
-  "tenant_id",
-  "withheld_year"
-);
-CREATE INDEX "passive_invoice_withholdings_tenant_id_supplier_id_index" on "passive_invoice_withholdings"(
-  "tenant_id",
-  "supplier_id"
-);
-CREATE TABLE "sdi_configurations"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "transmitter_country_code" varchar not null default 'IT',
-  "transmitter_fiscal_code" varchar,
-  "progressivo_invio_counter" integer not null default '0',
-  "channel_type" varchar,
-  "encrypted_credentials" text,
-  "default_codice_destinatario" varchar not null default '0000000',
-  "pec_address" varchar,
-  "signature_mode" varchar not null default 'none',
-  "encrypted_certificate" text,
-  "certificate_reference" varchar,
-  "auto_sign_on_send" tinyint(1) not null default '0',
-  "legal_archiving_enabled" tinyint(1) not null default '0',
-  "sandbox_simulator_enabled" tinyint(1) not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "sdi_configurations_tenant_id_unique" on "sdi_configurations"(
-  "tenant_id"
-);
-CREATE TABLE "fpa_documents"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "invoice_id" varchar,
-  "passive_invoice_id" varchar,
-  "parent_fpa_document_id" varchar,
-  "direction" varchar not null,
-  "format_transmission" varchar not null,
-  "document_type" varchar not null,
-  "document_number" varchar,
-  "document_date" date,
-  "sdi_identifier" varchar,
-  "file_name" varchar,
-  "transmission_progressive" varchar,
-  "recipient_code" varchar,
-  "recipient_pec" varchar,
-  "status" varchar not null default 'draft',
-  "xml_storage_path" varchar,
-  "signed_storage_path" varchar,
-  "sha256_hash" varchar,
-  "validation_errors" text,
-  "transmitted_at" datetime,
-  "rejected_at" datetime,
-  "resubmission_deadline_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("invoice_id") references "invoices"("id") on delete set null,
-  foreign key("passive_invoice_id") references "passive_invoices"("id") on delete set null,
-  foreign key("parent_fpa_document_id") references "fpa_documents"("id") on delete set null,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "fpa_documents_tenant_id_sdi_identifier_unique" on "fpa_documents"(
-  "tenant_id",
-  "sdi_identifier"
-);
-CREATE INDEX "fpa_documents_tenant_id_status_index" on "fpa_documents"(
-  "tenant_id",
-  "status"
-);
-CREATE INDEX "fpa_documents_tenant_id_direction_index" on "fpa_documents"(
-  "tenant_id",
-  "direction"
-);
-CREATE INDEX "fpa_documents_invoice_id_index" on "fpa_documents"(
-  "invoice_id"
-);
-CREATE INDEX "fpa_documents_tenant_id_document_number_document_date_index" on "fpa_documents"(
-  "tenant_id",
-  "document_number",
-  "document_date"
-);
-CREATE TABLE "sdi_notifications"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "fpa_document_id" varchar not null,
-  "notification_type" varchar not null,
-  "sdi_identifier" varchar,
-  "sdi_message_id" varchar,
-  "outcome_code" varchar,
-  "error_codes" text,
-  "raw_xml_path" varchar,
-  "received_at" datetime,
-  "processed_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("fpa_document_id") references "fpa_documents"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "sdi_notifications_tenant_id_fpa_document_id_index" on "sdi_notifications"(
-  "tenant_id",
-  "fpa_document_id"
-);
-CREATE INDEX "sdi_notifications_fpa_document_id_notification_type_index" on "sdi_notifications"(
-  "fpa_document_id",
-  "notification_type"
-);
 CREATE TABLE "blanket_agreements"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -39668,6 +39694,127 @@ CREATE INDEX "replenishment_requests_tenant_id_status_index" on "replenishment_r
 );
 CREATE INDEX "replenishment_requests_sales_order_item_id_index" on "replenishment_requests"(
   "sales_order_item_id"
+);
+CREATE TABLE "sdi_configurations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "transmitter_country_code" varchar not null default 'IT',
+  "transmitter_fiscal_code" varchar,
+  "progressivo_invio_counter" integer not null default '0',
+  "channel_type" varchar,
+  "encrypted_credentials" text,
+  "default_codice_destinatario" varchar not null default '0000000',
+  "pec_address" varchar,
+  "signature_mode" varchar not null default 'none',
+  "encrypted_certificate" text,
+  "certificate_reference" varchar,
+  "auto_sign_on_send" tinyint(1) not null default '0',
+  "legal_archiving_enabled" tinyint(1) not null default '0',
+  "sandbox_simulator_enabled" tinyint(1) not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sdi_configurations_tenant_id_unique" on "sdi_configurations"(
+  "tenant_id"
+);
+CREATE TABLE "fpa_documents"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "invoice_id" varchar,
+  "passive_invoice_id" varchar,
+  "parent_fpa_document_id" varchar,
+  "direction" varchar not null,
+  "format_transmission" varchar not null,
+  "document_type" varchar not null,
+  "document_number" varchar,
+  "document_date" date,
+  "sdi_identifier" varchar,
+  "file_name" varchar,
+  "transmission_progressive" varchar,
+  "recipient_code" varchar,
+  "recipient_pec" varchar,
+  "status" varchar not null default('draft'),
+  "xml_storage_path" varchar,
+  "signed_storage_path" varchar,
+  "sha256_hash" varchar,
+  "validation_errors" text,
+  "transmitted_at" datetime,
+  "rejected_at" datetime,
+  "resubmission_deadline_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("passive_invoice_id") references "passive_invoices"("id") on delete set null on update no action,
+  foreign key("invoice_id") references "invoices"("id") on delete set null on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  foreign key("parent_fpa_document_id") references "fpa_documents"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "fpa_documents_invoice_id_index" on "fpa_documents"(
+  "invoice_id"
+);
+CREATE INDEX "fpa_documents_tenant_id_direction_index" on "fpa_documents"(
+  "tenant_id",
+  "direction"
+);
+CREATE INDEX "fpa_documents_tenant_id_document_number_document_date_index" on "fpa_documents"(
+  "tenant_id",
+  "document_number",
+  "document_date"
+);
+CREATE UNIQUE INDEX "fpa_documents_tenant_id_sdi_identifier_unique" on "fpa_documents"(
+  "tenant_id",
+  "sdi_identifier"
+);
+CREATE INDEX "fpa_documents_tenant_id_status_index" on "fpa_documents"(
+  "tenant_id",
+  "status"
+);
+CREATE TABLE "sdi_notifications"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "fpa_document_id" varchar not null,
+  "notification_type" varchar not null,
+  "sdi_identifier" varchar,
+  "sdi_message_id" varchar,
+  "outcome_code" varchar,
+  "error_codes" text,
+  "raw_xml_path" varchar,
+  "received_at" datetime,
+  "processed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("fpa_document_id") references "fpa_documents"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sdi_notifications_tenant_id_fpa_document_id_index" on "sdi_notifications"(
+  "tenant_id",
+  "fpa_document_id"
+);
+CREATE INDEX "sdi_notifications_fpa_document_id_notification_type_index" on "sdi_notifications"(
+  "fpa_document_id",
+  "notification_type"
+);
+CREATE INDEX "idx_analytics_schedules_due_at" on "analytics_export_schedules"(
+  "is_active",
+  "next_run_at"
 );
 CREATE TABLE "analytical_cost_centers"(
   "id" varchar not null,
@@ -40034,10 +40181,6 @@ CREATE INDEX "controlling_budget_lines_tenant_id_plan_id_index" on "controlling_
 CREATE INDEX "controlling_budget_lines_tenant_id_index" on "controlling_budget_lines"(
   "tenant_id"
 );
-CREATE INDEX "idx_analytics_schedules_due_at" on "analytics_export_schedules"(
-  "is_active",
-  "next_run_at"
-);
 CREATE TABLE "audit_logs"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -40122,145 +40265,6 @@ CREATE UNIQUE INDEX "audit_worm_batch_entries_audit_log_id_unique" on "audit_wor
 );
 CREATE TRIGGER prevent_audit_log_update BEFORE UPDATE ON audit_logs BEGIN SELECT RAISE(ABORT, 'Audit logs are strictly immutable'); END;
 CREATE TRIGGER prevent_audit_log_delete BEFORE DELETE ON audit_logs BEGIN SELECT RAISE(ABORT, 'Audit logs are strictly immutable'); END;
-CREATE INDEX "quotes_quote_group_uuid_index" on "quotes"("quote_group_uuid");
-CREATE TABLE "quote_approval_tiers"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "level" integer not null,
-  "name" varchar not null,
-  "approver_role" varchar not null,
-  "max_line_discount_percent" numeric,
-  "max_global_discount_percent" numeric,
-  "min_margin_percent" numeric,
-  "is_active" tinyint(1) not null default '1',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "quote_approval_tiers_tenant_id_level_unique" on "quote_approval_tiers"(
-  "tenant_id",
-  "level"
-);
-CREATE TABLE "quote_approval_requests"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "quote_id" varchar not null,
-  "level" integer not null,
-  "required_role" varchar not null,
-  "status" varchar not null default 'pending',
-  "triggers" text,
-  "requested_by" varchar,
-  "approved_by" varchar,
-  "rejected_by" varchar,
-  "decided_at" datetime,
-  "rejection_reason" text,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("quote_id") references "quotes"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "quote_approval_requests_quote_id_level_unique" on "quote_approval_requests"(
-  "quote_id",
-  "level"
-);
-CREATE INDEX "quote_approval_requests_tenant_id_status_index" on "quote_approval_requests"(
-  "tenant_id",
-  "status"
-);
-CREATE INDEX "quote_approval_requests_status_index" on "quote_approval_requests"(
-  "status"
-);
-CREATE INDEX "quote_approval_requests_requested_by_index" on "quote_approval_requests"(
-  "requested_by"
-);
-CREATE INDEX "quote_approval_requests_approved_by_index" on "quote_approval_requests"(
-  "approved_by"
-);
-CREATE INDEX "quote_approval_requests_rejected_by_index" on "quote_approval_requests"(
-  "rejected_by"
-);
-CREATE TABLE "quote_signature_requests"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "quote_id" varchar not null,
-  "token_hash" varchar not null,
-  "locale" varchar not null default 'it',
-  "expires_at" datetime not null,
-  "revoked_at" datetime,
-  "status" varchar not null default 'pending',
-  "signer_name" varchar,
-  "signer_role" varchar,
-  "purchase_order_number" varchar,
-  "signature_type" varchar,
-  "signature_data" text,
-  "selected_optional_item_ids" text,
-  "change_request" text,
-  "ip_address" varchar,
-  "user_agent" text,
-  "payload_hash" varchar,
-  "pdf_hash" varchar,
-  "signed_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("quote_id") references "quotes"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "quote_signature_requests_tenant_id_quote_id_index" on "quote_signature_requests"(
-  "tenant_id",
-  "quote_id"
-);
-CREATE UNIQUE INDEX "quote_signature_requests_token_hash_unique" on "quote_signature_requests"(
-  "token_hash"
-);
-CREATE INDEX "quote_signature_requests_status_index" on "quote_signature_requests"(
-  "status"
-);
-CREATE TABLE "portal_settings"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "portal_slug" varchar,
-  "custom_domain" varchar,
-  "logo_url" varchar,
-  "favicon_url" varchar,
-  "primary_color" varchar,
-  "secondary_color" varchar,
-  "support_email" varchar,
-  "privacy_policy_url" varchar,
-  "require_otp" tinyint(1) not null default '0',
-  "allow_partial_payments" tinyint(1) not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "portal_settings_tenant_id_unique" on "portal_settings"(
-  "tenant_id"
-);
-CREATE UNIQUE INDEX "portal_settings_portal_slug_unique" on "portal_settings"(
-  "portal_slug"
-);
-CREATE UNIQUE INDEX "portal_settings_custom_domain_unique" on "portal_settings"(
-  "custom_domain"
-);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -40510,142 +40514,142 @@ INSERT INTO migrations VALUES(245,'2027_04_18_000200_remap_legacy_purchase_order
 INSERT INTO migrations VALUES(246,'2027_04_19_000100_extend_human_resources_and_payroll_tables',1);
 INSERT INTO migrations VALUES(247,'2027_04_19_000200_copy_legacy_time_entries_to_clock_events',1);
 INSERT INTO migrations VALUES(248,'2027_04_20_000100_extend_invoicing_enterprise_billing',1);
-INSERT INTO migrations VALUES(249,'2027_04_20_194006_create_notifications_table',1);
-INSERT INTO migrations VALUES(250,'2027_04_21_000100_add_wms_enterprise_tables',1);
-INSERT INTO migrations VALUES(251,'2027_04_22_000100_create_analytics_report_definitions_table',1);
-INSERT INTO migrations VALUES(252,'2027_04_22_000200_add_check_out_to_dms_documents',1);
-INSERT INTO migrations VALUES(253,'2027_04_22_000300_add_escalation_state_and_audit_sequence_to_workflow',1);
-INSERT INTO migrations VALUES(254,'2027_04_22_000400_create_contract_lifecycle_obligation_and_party_tables',1);
-INSERT INTO migrations VALUES(255,'2027_04_22_000500_create_communication_templates_and_extend_delivery_logs',1);
-INSERT INTO migrations VALUES(256,'2027_04_23_000100_create_general_ledger_controlling_tables',1);
-INSERT INTO migrations VALUES(257,'2027_04_24_000100_extend_sales_cycle_enterprise',1);
-INSERT INTO migrations VALUES(258,'2027_04_26_000100_create_hospitality_reservations_table',1);
-INSERT INTO migrations VALUES(259,'2027_04_26_000200_create_construction_site_management_tables',1);
-INSERT INTO migrations VALUES(260,'2027_04_26_000300_create_practice_retainer_tables',1);
-INSERT INTO migrations VALUES(261,'2027_04_26_000400_create_workshop_time_entries_table',1);
-INSERT INTO migrations VALUES(262,'2027_04_27_100000_make_esm_service_technician_email_optional',1);
-INSERT INTO migrations VALUES(263,'2027_04_28_000100_add_functional_amounts_to_journal_lines',1);
-INSERT INTO migrations VALUES(264,'2027_04_28_000200_backfill_functional_amounts_on_journal_lines',1);
-INSERT INTO migrations VALUES(265,'2027_04_30_000100_add_parent_foreign_key_and_tenant_indexes',1);
-INSERT INTO migrations VALUES(266,'2027_05_01_000001_create_logistics_ddt_transfers_and_consignment_tables',1);
-INSERT INTO migrations VALUES(267,'2027_05_01_000100_enhance_swiss_accounting_and_vat_compliance',1);
-INSERT INTO migrations VALUES(268,'2027_05_01_000200_enhance_swiss_payroll_elm_and_lohnausweis',1);
-INSERT INTO migrations VALUES(269,'2027_05_01_000300_enhance_time_dunning_security_and_privacy_compliance',1);
-INSERT INTO migrations VALUES(270,'2027_05_02_000100_add_missing_soft_delete_columns',1);
-INSERT INTO migrations VALUES(271,'2027_05_02_000100_create_consolidation_tables',1);
-INSERT INTO migrations VALUES(272,'2027_05_02_000100_create_enterprise_authentication_tables',1);
-INSERT INTO migrations VALUES(273,'2027_05_02_000100_create_preservation_packages_tables',1);
-INSERT INTO migrations VALUES(274,'2027_05_02_000200_create_saml_providers_and_extend_sso_identities',1);
-INSERT INTO migrations VALUES(275,'2027_05_02_100100_extend_privacy_compliance_workflow',1);
-INSERT INTO migrations VALUES(276,'2027_05_02_100200_create_quality_management_tables',1);
-INSERT INTO migrations VALUES(277,'2027_05_03_000100_add_preservation_disposal_and_timestamp_settings',1);
-INSERT INTO migrations VALUES(278,'2027_05_03_000100_add_sso_logout_binding_and_client_auth',1);
-INSERT INTO migrations VALUES(279,'2027_05_03_000100_extend_consolidation_tables',1);
-INSERT INTO migrations VALUES(280,'2027_05_04_000100_extend_consolidation_tax_release_and_currency',1);
-INSERT INTO migrations VALUES(281,'2027_05_05_000100_extend_consolidation_provision_and_interim',1);
-INSERT INTO migrations VALUES(282,'2027_05_10_000100_create_analytics_self_service_reporting_tables',1);
-INSERT INTO migrations VALUES(283,'2027_05_10_000100_create_webhook_tables',1);
-INSERT INTO migrations VALUES(284,'2027_05_10_000200_add_below_minimum_since_to_stock_reorder_rules',1);
-INSERT INTO migrations VALUES(285,'2027_05_11_000100_add_below_minimum_since_to_products',1);
-INSERT INTO migrations VALUES(286,'2027_05_12_000100_add_vat_carry_over_option',1);
-INSERT INTO migrations VALUES(287,'2027_05_12_000200_add_tenant_foreign_keys',1);
-INSERT INTO migrations VALUES(288,'2027_05_20_000100_apply_nullable_tenant_id_policy',1);
-INSERT INTO migrations VALUES(289,'2027_05_20_000200_add_soft_delete_column_to_price_list_items',1);
-INSERT INTO migrations VALUES(290,'2027_05_21_000100_add_legal_type_to_contacts',1);
-INSERT INTO migrations VALUES(291,'2027_05_22_000100_drop_postgres_immutability_triggers',1);
-INSERT INTO migrations VALUES(292,'2027_05_22_000200_restore_partial_indexes_on_sqlite',1);
-INSERT INTO migrations VALUES(293,'2027_05_22_000300_enforce_one_stock_quant_per_slot_on_every_engine',1);
-INSERT INTO migrations VALUES(294,'2027_05_23_000100_create_pagopa_payment_notices',1);
-INSERT INTO migrations VALUES(295,'2027_05_27_273001_create_rec_recruiting_core_tables',1);
-INSERT INTO migrations VALUES(296,'2027_05_27_273002_create_rec_offers_emails_and_settings_tables',1);
-INSERT INTO migrations VALUES(297,'2027_06_01_000001_extend_contacts_for_customer_registry',1);
-INSERT INTO migrations VALUES(298,'2027_06_10_000100_create_configurator_tables',1);
-INSERT INTO migrations VALUES(299,'2027_06_10_000100_create_supplier_portal_tables',1);
-INSERT INTO migrations VALUES(300,'2027_06_20_000100_create_lease_accounting_tables',1);
-INSERT INTO migrations VALUES(301,'2027_06_20_000100_create_travel_expense_tables',1);
-INSERT INTO migrations VALUES(302,'2027_06_20_043000_create_facility_management_tables',1);
-INSERT INTO migrations VALUES(303,'2027_06_20_100000_create_sustainability_tables',1);
-INSERT INTO migrations VALUES(304,'2027_06_22_100000_create_governance_tables',1);
-INSERT INTO migrations VALUES(305,'2027_06_23_100000_create_returns_tables',1);
-INSERT INTO migrations VALUES(306,'2027_06_24_100000_create_fleet_tables',1);
-INSERT INTO migrations VALUES(307,'2027_06_25_100000_create_hr_goals_and_offboarding_tables',1);
-INSERT INTO migrations VALUES(308,'2027_06_26_100000_create_communication_inbox_campaign_tables',1);
-INSERT INTO migrations VALUES(309,'2027_06_26_100000_create_crm_extension_tables',1);
-INSERT INTO migrations VALUES(310,'2027_06_26_100000_create_dms_approval_ocr_and_chain_tables',1);
-INSERT INTO migrations VALUES(311,'2027_06_26_100000_create_esrs_reporting_tables',1);
-INSERT INTO migrations VALUES(312,'2027_06_26_100000_create_retail_pos_extension_tables',1);
-INSERT INTO migrations VALUES(313,'2027_06_26_200000_create_contract_authoring_tables',1);
-INSERT INTO migrations VALUES(314,'2027_06_26_200000_create_practice_trust_expense_proposal_tables',1);
-INSERT INTO migrations VALUES(315,'2027_06_26_300000_create_quality_spc_calibration_complaint_tables',1);
-INSERT INTO migrations VALUES(316,'2027_06_26_400000_create_hospitality_lodging_tables',1);
-INSERT INTO migrations VALUES(317,'2027_06_26_500000_create_workshop_scheduling_tables',1);
-INSERT INTO migrations VALUES(318,'2027_07_01_100000_create_business_intelligence_tables',1);
-INSERT INTO migrations VALUES(319,'2027_07_01_100000_create_credit_management_tables',1);
-INSERT INTO migrations VALUES(320,'2027_07_01_100000_create_wms_tables',1);
-INSERT INTO migrations VALUES(321,'2027_07_01_110000_create_marketplace_tables',1);
-INSERT INTO migrations VALUES(322,'2027_07_02_100000_create_talent_learning_tables',1);
-INSERT INTO migrations VALUES(323,'2027_07_02_100000_create_transportation_tables',1);
-INSERT INTO migrations VALUES(324,'2027_07_10_100000_create_planning_tables',1);
-INSERT INTO migrations VALUES(325,'2027_07_11_100000_create_budgeting_tables',1);
-INSERT INTO migrations VALUES(326,'2027_07_20_100000_create_us_tax_localization_tables',1);
-INSERT INTO migrations VALUES(327,'2027_07_21_100000_create_gov_sod_tables',1);
-INSERT INTO migrations VALUES(328,'2027_07_21_110000_add_currency_to_supplier_payments_and_intragroup_transactions',1);
-INSERT INTO migrations VALUES(329,'2027_07_22_100000_make_tenants_country_a_portable_string',1);
-INSERT INTO migrations VALUES(330,'2027_07_22_110000_add_currency_to_standalone_money_tables',1);
-INSERT INTO migrations VALUES(331,'2027_11_15_100000_create_workshop_estimates_warranty_and_parts_tables',1);
-INSERT INTO migrations VALUES(332,'2027_11_15_110000_create_hospitality_group_blocks',1);
-INSERT INTO migrations VALUES(333,'2027_11_15_120000_add_stock_posting_to_wms_tasks',1);
-INSERT INTO migrations VALUES(334,'2027_11_15_125500_create_marketplace_import_tables',1);
-INSERT INTO migrations VALUES(335,'2027_11_15_130000_create_localization_gap_tables',1);
-INSERT INTO migrations VALUES(336,'2027_11_15_130000_extend_practice_expenses_trust_postings_and_fee_notes',1);
-INSERT INTO migrations VALUES(337,'2027_11_15_140000_create_gov_sod_document_rules_table',1);
-INSERT INTO migrations VALUES(338,'2027_11_15_150000_create_data_export_tables',1);
-INSERT INTO migrations VALUES(339,'2027_11_15_150000_create_platform_tables',1);
-INSERT INTO migrations VALUES(340,'2027_11_15_150100_add_failure_tracking_to_edocument_transmissions',1);
-INSERT INTO migrations VALUES(341,'2027_11_15_150200_create_assistant_threads_and_feedback',1);
-INSERT INTO migrations VALUES(342,'2027_11_16_000100_add_legal_compliance_to_time_tracking',1);
-INSERT INTO migrations VALUES(343,'2027_11_16_000200_add_geolocation_consent_fields_to_time_tables',1);
-INSERT INTO migrations VALUES(344,'2027_11_16_100000_create_collaboration_tables',1);
-INSERT INTO migrations VALUES(345,'2027_11_17_000001_add_subscription_indexation',1);
-INSERT INTO migrations VALUES(346,'2027_11_17_100000_create_rebates_tables',1);
-INSERT INTO migrations VALUES(347,'2027_11_17_110000_create_events_tables',1);
-INSERT INTO migrations VALUES(348,'2027_11_17_120000_create_plm_tables',1);
-INSERT INTO migrations VALUES(349,'2027_11_18_100000_add_tenant_index_to_child_tables',1);
-INSERT INTO migrations VALUES(350,'2027_11_18_110000_make_tenant_id_nullable_on_late_tables',1);
-INSERT INTO migrations VALUES(351,'2027_11_19_100000_add_audit_columns_to_all_tables',1);
-INSERT INTO migrations VALUES(352,'2027_11_20_100000_add_frequency_and_quiet_hours_to_notifications',1);
-INSERT INTO migrations VALUES(353,'2027_11_20_110000_create_omnichannel_notification_tables',1);
-INSERT INTO migrations VALUES(354,'2027_11_21_100000_add_tracking_and_shipment_flow_to_delivery_notes',1);
-INSERT INTO migrations VALUES(355,'2027_11_22_000100_complete_tenant_columns_and_indexes',1);
-INSERT INTO migrations VALUES(356,'2027_11_22_100000_create_access_management_tables',1);
-INSERT INTO migrations VALUES(357,'2027_11_23_100000_add_swiss_qr_bill_settings_and_invoice_qr_reference',1);
-INSERT INTO migrations VALUES(358,'2027_11_23_100000_create_field_service_preventive_and_digital_report_tables',1);
-INSERT INTO migrations VALUES(359,'2027_11_23_100000_create_vat_validation_logs_table',1);
-INSERT INTO migrations VALUES(360,'2027_11_24_100000_add_cross_border_customs_compliance',1);
-INSERT INTO migrations VALUES(361,'2027_11_24_100000_add_idempotency_to_bank_statement_lines',1);
-INSERT INTO migrations VALUES(362,'2027_11_25_090000_make_customs_tables_tenant_id_nullable',1);
-INSERT INTO migrations VALUES(363,'2027_11_25_100000_create_advanced_pricing_tables',1);
-INSERT INTO migrations VALUES(364,'2027_11_25_100000_create_vat_settlement_periods_table',1);
-INSERT INTO migrations VALUES(365,'2027_12_01_000100_create_esm_maintenance_hour_bank_tables',1);
-INSERT INTO migrations VALUES(366,'2027_12_01_000200_make_customs_tenant_id_nullable',1);
-INSERT INTO migrations VALUES(367,'2027_12_02_000100_complete_audit_and_tenant_columns_on_late_tables',1);
-INSERT INTO migrations VALUES(368,'2027_04_20_194001_add_intake_dedup_and_routing_fields_to_crm_leads_and_sources',2);
-INSERT INTO migrations VALUES(369,'2027_04_20_194002_create_crm_lead_scoring_rules_and_settings_tables',2);
-INSERT INTO migrations VALUES(370,'2027_04_20_194003_create_crm_lead_activity_events_table',2);
-INSERT INTO migrations VALUES(371,'2027_04_20_194004_create_crm_lead_routing_rules_table',2);
-INSERT INTO migrations VALUES(372,'2027_04_20_194005_create_crm_lead_duplicate_candidates_table',2);
-INSERT INTO migrations VALUES(373,'2027_04_20_286001_add_italian_tax_fields_to_invoices_and_items_issue_286',2);
-INSERT INTO migrations VALUES(374,'2027_04_20_286002_create_enasarco_annual_limits_table_issue_286',2);
-INSERT INTO migrations VALUES(375,'2027_04_20_286003_create_passive_invoice_withholdings_table_issue_286',2);
-INSERT INTO migrations VALUES(376,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',2);
-INSERT INTO migrations VALUES(377,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',2);
-INSERT INTO migrations VALUES(378,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',3);
-INSERT INTO migrations VALUES(379,'2027_12_10_100000_create_controlling_tables',4);
-INSERT INTO migrations VALUES(380,'2027_12_10_000100_extend_analytics_reporting_for_pivot_studio',5);
-INSERT INTO migrations VALUES(381,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',6);
-INSERT INTO migrations VALUES(382,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',7);
-INSERT INTO migrations VALUES(383,'2027_12_11_000100_create_immutable_audit_trail',8);
-INSERT INTO migrations VALUES(384,'2027_11_23_100000_create_cpq_lite_quoting_tables',9);
-INSERT INTO migrations VALUES(385,'2027_11_23_100000_create_portal_settings_and_login_challenges',9);
-INSERT INTO migrations VALUES(386,'2027_12_03_000100_add_incoterm_to_invoices_table',9);
-INSERT INTO migrations VALUES(387,'2027_12_03_000200_add_foreign_trade_fields_to_orders_contacts_and_tenants',9);
+INSERT INTO migrations VALUES(249,'2027_04_20_194001_add_intake_dedup_and_routing_fields_to_crm_leads_and_sources',1);
+INSERT INTO migrations VALUES(250,'2027_04_20_194002_create_crm_lead_scoring_rules_and_settings_tables',1);
+INSERT INTO migrations VALUES(251,'2027_04_20_194003_create_crm_lead_activity_events_table',1);
+INSERT INTO migrations VALUES(252,'2027_04_20_194004_create_crm_lead_routing_rules_table',1);
+INSERT INTO migrations VALUES(253,'2027_04_20_194005_create_crm_lead_duplicate_candidates_table',1);
+INSERT INTO migrations VALUES(254,'2027_04_20_194006_create_notifications_table',1);
+INSERT INTO migrations VALUES(255,'2027_04_20_286001_add_italian_tax_fields_to_invoices_and_items_issue_286',1);
+INSERT INTO migrations VALUES(256,'2027_04_20_286002_create_enasarco_annual_limits_table_issue_286',1);
+INSERT INTO migrations VALUES(257,'2027_04_20_286003_create_passive_invoice_withholdings_table_issue_286',1);
+INSERT INTO migrations VALUES(258,'2027_04_21_000100_add_wms_enterprise_tables',1);
+INSERT INTO migrations VALUES(259,'2027_04_22_000100_create_analytics_report_definitions_table',1);
+INSERT INTO migrations VALUES(260,'2027_04_22_000200_add_check_out_to_dms_documents',1);
+INSERT INTO migrations VALUES(261,'2027_04_22_000300_add_escalation_state_and_audit_sequence_to_workflow',1);
+INSERT INTO migrations VALUES(262,'2027_04_22_000400_create_contract_lifecycle_obligation_and_party_tables',1);
+INSERT INTO migrations VALUES(263,'2027_04_22_000500_create_communication_templates_and_extend_delivery_logs',1);
+INSERT INTO migrations VALUES(264,'2027_04_23_000100_create_general_ledger_controlling_tables',1);
+INSERT INTO migrations VALUES(265,'2027_04_24_000100_extend_sales_cycle_enterprise',1);
+INSERT INTO migrations VALUES(266,'2027_04_26_000100_create_hospitality_reservations_table',1);
+INSERT INTO migrations VALUES(267,'2027_04_26_000200_create_construction_site_management_tables',1);
+INSERT INTO migrations VALUES(268,'2027_04_26_000300_create_practice_retainer_tables',1);
+INSERT INTO migrations VALUES(269,'2027_04_26_000400_create_workshop_time_entries_table',1);
+INSERT INTO migrations VALUES(270,'2027_04_27_100000_make_esm_service_technician_email_optional',1);
+INSERT INTO migrations VALUES(271,'2027_04_28_000100_add_functional_amounts_to_journal_lines',1);
+INSERT INTO migrations VALUES(272,'2027_04_28_000200_backfill_functional_amounts_on_journal_lines',1);
+INSERT INTO migrations VALUES(273,'2027_04_30_000100_add_parent_foreign_key_and_tenant_indexes',1);
+INSERT INTO migrations VALUES(274,'2027_05_01_000001_create_logistics_ddt_transfers_and_consignment_tables',1);
+INSERT INTO migrations VALUES(275,'2027_05_01_000100_enhance_swiss_accounting_and_vat_compliance',1);
+INSERT INTO migrations VALUES(276,'2027_05_01_000200_enhance_swiss_payroll_elm_and_lohnausweis',1);
+INSERT INTO migrations VALUES(277,'2027_05_01_000300_enhance_time_dunning_security_and_privacy_compliance',1);
+INSERT INTO migrations VALUES(278,'2027_05_02_000100_add_missing_soft_delete_columns',1);
+INSERT INTO migrations VALUES(279,'2027_05_02_000100_create_consolidation_tables',1);
+INSERT INTO migrations VALUES(280,'2027_05_02_000100_create_enterprise_authentication_tables',1);
+INSERT INTO migrations VALUES(281,'2027_05_02_000100_create_preservation_packages_tables',1);
+INSERT INTO migrations VALUES(282,'2027_05_02_000200_create_saml_providers_and_extend_sso_identities',1);
+INSERT INTO migrations VALUES(283,'2027_05_02_100100_extend_privacy_compliance_workflow',1);
+INSERT INTO migrations VALUES(284,'2027_05_02_100200_create_quality_management_tables',1);
+INSERT INTO migrations VALUES(285,'2027_05_03_000100_add_preservation_disposal_and_timestamp_settings',1);
+INSERT INTO migrations VALUES(286,'2027_05_03_000100_add_sso_logout_binding_and_client_auth',1);
+INSERT INTO migrations VALUES(287,'2027_05_03_000100_extend_consolidation_tables',1);
+INSERT INTO migrations VALUES(288,'2027_05_04_000100_extend_consolidation_tax_release_and_currency',1);
+INSERT INTO migrations VALUES(289,'2027_05_05_000100_extend_consolidation_provision_and_interim',1);
+INSERT INTO migrations VALUES(290,'2027_05_10_000100_create_analytics_self_service_reporting_tables',1);
+INSERT INTO migrations VALUES(291,'2027_05_10_000100_create_webhook_tables',1);
+INSERT INTO migrations VALUES(292,'2027_05_10_000200_add_below_minimum_since_to_stock_reorder_rules',1);
+INSERT INTO migrations VALUES(293,'2027_05_11_000100_add_below_minimum_since_to_products',1);
+INSERT INTO migrations VALUES(294,'2027_05_12_000100_add_vat_carry_over_option',1);
+INSERT INTO migrations VALUES(295,'2027_05_12_000200_add_tenant_foreign_keys',1);
+INSERT INTO migrations VALUES(296,'2027_05_20_000100_apply_nullable_tenant_id_policy',1);
+INSERT INTO migrations VALUES(297,'2027_05_20_000200_add_soft_delete_column_to_price_list_items',1);
+INSERT INTO migrations VALUES(298,'2027_05_21_000100_add_legal_type_to_contacts',1);
+INSERT INTO migrations VALUES(299,'2027_05_22_000100_drop_postgres_immutability_triggers',1);
+INSERT INTO migrations VALUES(300,'2027_05_22_000200_restore_partial_indexes_on_sqlite',1);
+INSERT INTO migrations VALUES(301,'2027_05_22_000300_enforce_one_stock_quant_per_slot_on_every_engine',1);
+INSERT INTO migrations VALUES(302,'2027_05_23_000100_create_pagopa_payment_notices',1);
+INSERT INTO migrations VALUES(303,'2027_05_27_273001_create_rec_recruiting_core_tables',1);
+INSERT INTO migrations VALUES(304,'2027_05_27_273002_create_rec_offers_emails_and_settings_tables',1);
+INSERT INTO migrations VALUES(305,'2027_06_01_000001_extend_contacts_for_customer_registry',1);
+INSERT INTO migrations VALUES(306,'2027_06_10_000100_create_configurator_tables',1);
+INSERT INTO migrations VALUES(307,'2027_06_10_000100_create_supplier_portal_tables',1);
+INSERT INTO migrations VALUES(308,'2027_06_20_000100_create_lease_accounting_tables',1);
+INSERT INTO migrations VALUES(309,'2027_06_20_000100_create_travel_expense_tables',1);
+INSERT INTO migrations VALUES(310,'2027_06_20_043000_create_facility_management_tables',1);
+INSERT INTO migrations VALUES(311,'2027_06_20_100000_create_sustainability_tables',1);
+INSERT INTO migrations VALUES(312,'2027_06_22_100000_create_governance_tables',1);
+INSERT INTO migrations VALUES(313,'2027_06_23_100000_create_returns_tables',1);
+INSERT INTO migrations VALUES(314,'2027_06_24_100000_create_fleet_tables',1);
+INSERT INTO migrations VALUES(315,'2027_06_25_100000_create_hr_goals_and_offboarding_tables',1);
+INSERT INTO migrations VALUES(316,'2027_06_26_100000_create_communication_inbox_campaign_tables',1);
+INSERT INTO migrations VALUES(317,'2027_06_26_100000_create_crm_extension_tables',1);
+INSERT INTO migrations VALUES(318,'2027_06_26_100000_create_dms_approval_ocr_and_chain_tables',1);
+INSERT INTO migrations VALUES(319,'2027_06_26_100000_create_esrs_reporting_tables',1);
+INSERT INTO migrations VALUES(320,'2027_06_26_100000_create_retail_pos_extension_tables',1);
+INSERT INTO migrations VALUES(321,'2027_06_26_200000_create_contract_authoring_tables',1);
+INSERT INTO migrations VALUES(322,'2027_06_26_200000_create_practice_trust_expense_proposal_tables',1);
+INSERT INTO migrations VALUES(323,'2027_06_26_300000_create_quality_spc_calibration_complaint_tables',1);
+INSERT INTO migrations VALUES(324,'2027_06_26_400000_create_hospitality_lodging_tables',1);
+INSERT INTO migrations VALUES(325,'2027_06_26_500000_create_workshop_scheduling_tables',1);
+INSERT INTO migrations VALUES(326,'2027_07_01_100000_create_business_intelligence_tables',1);
+INSERT INTO migrations VALUES(327,'2027_07_01_100000_create_credit_management_tables',1);
+INSERT INTO migrations VALUES(328,'2027_07_01_100000_create_wms_tables',1);
+INSERT INTO migrations VALUES(329,'2027_07_01_110000_create_marketplace_tables',1);
+INSERT INTO migrations VALUES(330,'2027_07_02_100000_create_talent_learning_tables',1);
+INSERT INTO migrations VALUES(331,'2027_07_02_100000_create_transportation_tables',1);
+INSERT INTO migrations VALUES(332,'2027_07_10_100000_create_planning_tables',1);
+INSERT INTO migrations VALUES(333,'2027_07_11_100000_create_budgeting_tables',1);
+INSERT INTO migrations VALUES(334,'2027_07_20_100000_create_us_tax_localization_tables',1);
+INSERT INTO migrations VALUES(335,'2027_07_21_100000_create_gov_sod_tables',1);
+INSERT INTO migrations VALUES(336,'2027_07_21_110000_add_currency_to_supplier_payments_and_intragroup_transactions',1);
+INSERT INTO migrations VALUES(337,'2027_07_22_100000_make_tenants_country_a_portable_string',1);
+INSERT INTO migrations VALUES(338,'2027_07_22_110000_add_currency_to_standalone_money_tables',1);
+INSERT INTO migrations VALUES(339,'2027_11_15_100000_create_workshop_estimates_warranty_and_parts_tables',1);
+INSERT INTO migrations VALUES(340,'2027_11_15_110000_create_hospitality_group_blocks',1);
+INSERT INTO migrations VALUES(341,'2027_11_15_120000_add_stock_posting_to_wms_tasks',1);
+INSERT INTO migrations VALUES(342,'2027_11_15_125500_create_marketplace_import_tables',1);
+INSERT INTO migrations VALUES(343,'2027_11_15_130000_create_localization_gap_tables',1);
+INSERT INTO migrations VALUES(344,'2027_11_15_130000_extend_practice_expenses_trust_postings_and_fee_notes',1);
+INSERT INTO migrations VALUES(345,'2027_11_15_140000_create_gov_sod_document_rules_table',1);
+INSERT INTO migrations VALUES(346,'2027_11_15_150000_create_data_export_tables',1);
+INSERT INTO migrations VALUES(347,'2027_11_15_150000_create_platform_tables',1);
+INSERT INTO migrations VALUES(348,'2027_11_15_150100_add_failure_tracking_to_edocument_transmissions',1);
+INSERT INTO migrations VALUES(349,'2027_11_15_150200_create_assistant_threads_and_feedback',1);
+INSERT INTO migrations VALUES(350,'2027_11_16_000100_add_legal_compliance_to_time_tracking',1);
+INSERT INTO migrations VALUES(351,'2027_11_16_000200_add_geolocation_consent_fields_to_time_tables',1);
+INSERT INTO migrations VALUES(352,'2027_11_16_100000_create_collaboration_tables',1);
+INSERT INTO migrations VALUES(353,'2027_11_17_000001_add_subscription_indexation',1);
+INSERT INTO migrations VALUES(354,'2027_11_17_100000_create_rebates_tables',1);
+INSERT INTO migrations VALUES(355,'2027_11_17_110000_create_events_tables',1);
+INSERT INTO migrations VALUES(356,'2027_11_17_120000_create_plm_tables',1);
+INSERT INTO migrations VALUES(357,'2027_11_18_100000_add_tenant_index_to_child_tables',1);
+INSERT INTO migrations VALUES(358,'2027_11_18_110000_make_tenant_id_nullable_on_late_tables',1);
+INSERT INTO migrations VALUES(359,'2027_11_19_100000_add_audit_columns_to_all_tables',1);
+INSERT INTO migrations VALUES(360,'2027_11_20_100000_add_frequency_and_quiet_hours_to_notifications',1);
+INSERT INTO migrations VALUES(361,'2027_11_20_110000_create_omnichannel_notification_tables',1);
+INSERT INTO migrations VALUES(362,'2027_11_21_100000_add_tracking_and_shipment_flow_to_delivery_notes',1);
+INSERT INTO migrations VALUES(363,'2027_11_22_000100_complete_tenant_columns_and_indexes',1);
+INSERT INTO migrations VALUES(364,'2027_11_22_100000_create_access_management_tables',1);
+INSERT INTO migrations VALUES(365,'2027_11_23_100000_add_swiss_qr_bill_settings_and_invoice_qr_reference',1);
+INSERT INTO migrations VALUES(366,'2027_11_23_100000_create_cpq_lite_quoting_tables',1);
+INSERT INTO migrations VALUES(367,'2027_11_23_100000_create_field_service_preventive_and_digital_report_tables',1);
+INSERT INTO migrations VALUES(368,'2027_11_23_100000_create_portal_settings_and_login_challenges',1);
+INSERT INTO migrations VALUES(369,'2027_11_23_100000_create_vat_validation_logs_table',1);
+INSERT INTO migrations VALUES(370,'2027_11_24_100000_add_cross_border_customs_compliance',1);
+INSERT INTO migrations VALUES(371,'2027_11_24_100000_add_idempotency_to_bank_statement_lines',1);
+INSERT INTO migrations VALUES(372,'2027_11_25_090000_make_customs_tables_tenant_id_nullable',1);
+INSERT INTO migrations VALUES(373,'2027_11_25_100000_create_advanced_pricing_tables',1);
+INSERT INTO migrations VALUES(374,'2027_11_25_100000_create_vat_settlement_periods_table',1);
+INSERT INTO migrations VALUES(375,'2027_12_01_000100_create_esm_maintenance_hour_bank_tables',1);
+INSERT INTO migrations VALUES(376,'2027_12_01_000200_make_customs_tenant_id_nullable',1);
+INSERT INTO migrations VALUES(377,'2027_12_02_000100_complete_audit_and_tenant_columns_on_late_tables',1);
+INSERT INTO migrations VALUES(378,'2027_12_03_000100_add_incoterm_to_invoices_table',1);
+INSERT INTO migrations VALUES(379,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',1);
+INSERT INTO migrations VALUES(380,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',1);
+INSERT INTO migrations VALUES(381,'2027_12_03_000200_add_foreign_trade_fields_to_orders_contacts_and_tenants',1);
+INSERT INTO migrations VALUES(382,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',1);
+INSERT INTO migrations VALUES(383,'2027_12_10_000100_extend_analytics_reporting_for_pivot_studio',1);
+INSERT INTO migrations VALUES(384,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',1);
+INSERT INTO migrations VALUES(385,'2027_12_10_100000_create_controlling_tables',1);
+INSERT INTO migrations VALUES(386,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',1);
+INSERT INTO migrations VALUES(387,'2027_12_11_000100_create_immutable_audit_trail',1);

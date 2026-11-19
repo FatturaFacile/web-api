@@ -232,6 +232,7 @@ final class PersonalDataRegistry
             'vat_tax_settings' => 'VAT declarant of the company.',
             'esm_support_mailboxes' => 'Mailbox address of the company.',
             'customs_settings' => 'Address of the customs declarant (the company).',
+            'portal_settings' => 'White-label settings of the company portal (support email of the company), not of data subjects.',
             'ct_price_lists' => 'Reference to a licence in a price list (not a person).',
             'health_expense_settings' => 'Tax code of the owner of the company.',
             'sso_providers' => 'Configuration of the identity provider of the company: the allowed email domains are company data, not data of data subjects.',

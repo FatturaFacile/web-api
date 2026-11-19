@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('portal_settings', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->unique()->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->unique()->constrained('tenants')->cascadeOnDelete();
             $table->string('portal_slug', 63)->nullable()->unique();
             $table->string('custom_domain', 253)->nullable()->unique();
             $table->string('logo_url', 500)->nullable();
