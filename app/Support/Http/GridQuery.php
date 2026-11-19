@@ -153,8 +153,21 @@ final class GridQuery
             $bindings = [];
             $real = array_values(array_diff($values, [GridRequest::EMPTY]));
             if ($real !== []) {
-                $sql[] = $expression->asText().' IN ('.implode(', ', array_fill(0, count($real), '?')).')';
-                $bindings = [...$expression->bindings, ...$real];
+                $normalized = array_map(static function (string $value) use ($expression): string {
+                    if ($expression->isBoolean) {
+                        $lower = strtolower($value);
+                        if ($lower === 'true') {
+                            return '1';
+                        }
+                        if ($lower === 'false') {
+                            return '0';
+                        }
+                    }
+
+                    return preg_replace('/^(-?[0-9]+)(?:(\.[0-9]*[1-9])0+|\.0+)$/', '$1$2', $value) ?? $value;
+                }, $real);
+                $sql[] = $expression->asText().' IN ('.implode(', ', array_fill(0, count($normalized), '?')).')';
+                $bindings = [...$expression->bindings, ...$normalized];
             }
             if (count($real) !== count($values)) {
                 $sql[] = "COALESCE({$expression->cast()}, '') = ''";

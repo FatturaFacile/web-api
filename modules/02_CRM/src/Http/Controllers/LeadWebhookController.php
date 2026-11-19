@@ -41,6 +41,23 @@ final class LeadWebhookController extends Controller
         private readonly ?LeadIntakeServiceInterface $intake = null,
     ) {}
 
+    #[OA\Post(
+        path: '/api/v1/webhooks/crm/leads/{sourceId}',
+        operationId: 'ingestCrmLeadSourceWebhook',
+        description: 'Public Web-to-Lead endpoint scoped to a configured LeadSource, authenticated per source signature or API key.',
+        summary: 'Ingest lead for a CRM lead source',
+        tags: ['CRM Lead Webhooks'],
+        parameters: [
+            new OA\Parameter(name: 'sourceId', in: 'path', required: true, description: 'UUID of the configured LeadSource', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', additionalProperties: true)),
+        responses: [
+            new OA\Response(response: 201, description: 'Lead created', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 200, description: 'Lead merged into an existing record', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 401, description: 'Unauthorized webhook delivery', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 404, description: 'Lead source not found', content: new OA\JsonContent(type: 'object')),
+        ]
+    )]
     public function store(Request $request, string $sourceId): JsonResponse
     {
         $source = $this->findSource($sourceId);
@@ -62,6 +79,23 @@ final class LeadWebhookController extends Controller
         return response()->json(['data' => $result->toArray()], $result->isCreated() ? 201 : 200);
     }
 
+    #[OA\Post(
+        path: '/api/v1/webhooks/crm/leads/{sourceId}/events',
+        operationId: 'ingestCrmLeadSourceWebhookEvent',
+        description: 'Public behavioural event endpoint scoped to a configured LeadSource.',
+        summary: 'Ingest behavioural event for a CRM lead source',
+        tags: ['CRM Lead Webhooks'],
+        parameters: [
+            new OA\Parameter(name: 'sourceId', in: 'path', required: true, description: 'UUID of the configured LeadSource', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', additionalProperties: true)),
+        responses: [
+            new OA\Response(response: 201, description: 'Event recorded', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 200, description: 'Event processed', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 401, description: 'Unauthorized webhook delivery', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 404, description: 'Lead source or lead not found', content: new OA\JsonContent(type: 'object')),
+        ]
+    )]
     public function events(Request $request, string $sourceId): JsonResponse
     {
         $source = $this->findSource($sourceId);
@@ -92,6 +126,24 @@ final class LeadWebhookController extends Controller
         return response()->json(['data' => $result], $created ? 201 : 200);
     }
 
+    #[OA\Get(
+        path: '/api/v1/webhooks/crm/leads/{sourceId}',
+        operationId: 'verifyCrmLeadSourceWebhook',
+        description: 'Meta Lead Ads subscription verification handshake scoped to a LeadSource.',
+        summary: 'Verify CRM lead source webhook subscription',
+        tags: ['CRM Lead Webhooks'],
+        parameters: [
+            new OA\Parameter(name: 'sourceId', in: 'path', required: true, description: 'UUID of the configured LeadSource', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'hub_mode', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'hub_verify_token', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'hub_challenge', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Challenge echoed back', content: new OA\MediaType(mediaType: 'text/plain', schema: new OA\Schema(type: 'string'))),
+            new OA\Response(response: 401, description: 'Unauthorized verification request', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 404, description: 'Lead source not found', content: new OA\JsonContent(type: 'object')),
+        ]
+    )]
     public function verifySubscription(Request $request, string $sourceId): Response|JsonResponse
     {
         $source = $this->findSource($sourceId);

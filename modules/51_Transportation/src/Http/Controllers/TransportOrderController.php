@@ -47,8 +47,12 @@ final class TransportOrderController extends Controller
                 ->when(isset($filters['from']), static fn ($query) => $query->whereDate('delivery_to', '>=', $filters['from']))
                 ->when(isset($filters['to']), static fn ($query) => $query->whereDate('delivery_to', '<=', $filters['to']))
                 ->when(isset($filters['search']), static function ($query) use ($filters): void {
-                    $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], (string) $filters['search']).'%';
-                    $query->where(static fn ($inner) => $inner->where('number', 'like', $term)->orWhere('reference', 'like', $term)->orWhere('origin_name', 'like', $term)->orWhere('destination_name', 'like', $term));
+                    $term = '%'.mb_strtolower(str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $filters['search'])).'%';
+                    $query->where(static fn ($inner) => $inner
+                        ->whereRaw("LOWER(COALESCE(number, '')) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereRaw("LOWER(COALESCE(reference, '')) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereRaw("LOWER(COALESCE(origin_name, '')) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereRaw("LOWER(COALESCE(destination_name, '')) LIKE ? ESCAPE '!'", [$term]));
                 })
                 ->orderByDesc('created_at')
                 ->paginate($this->perPage()),

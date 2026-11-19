@@ -41055,7 +41055,7 @@
                     {
                         "name": "group",
                         "in": "path",
-                        "description": "Preference group: invoice, email, sdi, work_orders, company, labels, inventory, banking, accounting, time_tracking, visitors or sales (sales: credit_check_mode block|warn|off, credit_block_overdue_days)",
+                        "description": "Preference group: invoice, email, sdi, work_orders, company, labels, inventory, banking, accounting, time_tracking, visitors, sales or fiscal (sales: credit_check_mode block|warn|off, credit_block_overdue_days)",
                         "required": true,
                         "schema": {
                             "type": "string",
@@ -41071,7 +41071,8 @@
                                 "accounting",
                                 "time_tracking",
                                 "visitors",
-                                "sales"
+                                "sales",
+                                "fiscal"
                             ]
                         }
                     },
@@ -56914,6 +56915,235 @@
                         "tenantHeader": []
                     }
                 ]
+            }
+        },
+        "/api/v1/webhooks/crm/leads/{sourceId}": {
+            "get": {
+                "tags": [
+                    "CRM Lead Webhooks"
+                ],
+                "summary": "Verify CRM lead source webhook subscription",
+                "description": "Meta Lead Ads subscription verification handshake scoped to a LeadSource.",
+                "operationId": "verifyCrmLeadSourceWebhook",
+                "parameters": [
+                    {
+                        "name": "sourceId",
+                        "in": "path",
+                        "description": "UUID of the configured LeadSource",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "hub_mode",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "hub_verify_token",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "hub_challenge",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Challenge echoed back",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized verification request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Lead source not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            },
+            "post": {
+                "tags": [
+                    "CRM Lead Webhooks"
+                ],
+                "summary": "Ingest lead for a CRM lead source",
+                "description": "Public Web-to-Lead endpoint scoped to a configured LeadSource, authenticated per source signature or API key.",
+                "operationId": "ingestCrmLeadSourceWebhook",
+                "parameters": [
+                    {
+                        "name": "sourceId",
+                        "in": "path",
+                        "description": "UUID of the configured LeadSource",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Lead created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Lead merged into an existing record",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized webhook delivery",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Lead source not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/api/v1/webhooks/crm/leads/{sourceId}/events": {
+            "post": {
+                "tags": [
+                    "CRM Lead Webhooks"
+                ],
+                "summary": "Ingest behavioural event for a CRM lead source",
+                "description": "Public behavioural event endpoint scoped to a configured LeadSource.",
+                "operationId": "ingestCrmLeadSourceWebhookEvent",
+                "parameters": [
+                    {
+                        "name": "sourceId",
+                        "in": "path",
+                        "description": "UUID of the configured LeadSource",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Event recorded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Event processed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized webhook delivery",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Lead source or lead not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
             }
         },
         "/api/v1/webhooks/leads/{token}": {

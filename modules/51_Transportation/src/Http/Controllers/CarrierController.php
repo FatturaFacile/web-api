@@ -43,8 +43,10 @@ final class CarrierController extends Controller
                 ->when(isset($filters['mode']), static fn ($query) => $query->where('mode', $filters['mode']))
                 ->when(isset($filters['is_active']), static fn ($query) => $query->where('is_active', (bool) $filters['is_active']))
                 ->when(isset($filters['search']), static function ($query) use ($filters): void {
-                    $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], (string) $filters['search']).'%';
-                    $query->where(static fn ($inner) => $inner->where('code', 'like', $term)->orWhere('name', 'like', $term));
+                    $term = '%'.mb_strtolower(str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $filters['search'])).'%';
+                    $query->where(static fn ($inner) => $inner
+                        ->whereRaw("LOWER(COALESCE(code, '')) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereRaw("LOWER(COALESCE(name, '')) LIKE ? ESCAPE '!'", [$term]));
                 })
                 ->orderBy('name')
                 ->paginate($this->perPage()),

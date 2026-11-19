@@ -123,7 +123,8 @@ final class CandidateApplication extends BaseEnterpriseModel
      */
     public function currentOffer(): HasOne
     {
-        return $this->hasOne(JobOffer::class, 'application_id')->latestOfMany('created_at');
+        return $this->hasOne(JobOffer::class, 'application_id')
+            ->whereRaw('rec_job_offers.id = (SELECT o.id FROM rec_job_offers o WHERE o.application_id = rec_job_offers.application_id AND o.deleted_at IS NULL ORDER BY o.created_at DESC, CAST(o.id AS TEXT) DESC LIMIT 1)');
     }
 
     /**

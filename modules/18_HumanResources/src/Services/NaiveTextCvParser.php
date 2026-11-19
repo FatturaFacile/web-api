@@ -167,9 +167,9 @@ final readonly class NaiveTextCvParser implements CvParserInterface
             $output = (string) stream_get_contents($pipes[1]);
             fclose($pipes[1]);
             fclose($pipes[2]);
-            proc_close($process);
+            $exitCode = proc_close($process);
 
-            return $output;
+            return $exitCode === 0 ? $output : '';
         } finally {
             @unlink($path);
         }

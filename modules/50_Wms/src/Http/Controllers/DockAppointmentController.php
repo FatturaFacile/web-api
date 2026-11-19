@@ -48,8 +48,10 @@ final class DockAppointmentController extends Controller
                 ->when(isset($filters['from']), static fn ($query) => $query->whereDate('starts_at', '>=', $filters['from']))
                 ->when(isset($filters['to']), static fn ($query) => $query->whereDate('starts_at', '<=', $filters['to']))
                 ->when(isset($filters['search']), static function ($query) use ($filters): void {
-                    $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], (string) $filters['search']).'%';
-                    $query->where(static fn ($inner) => $inner->where('carrier_name', 'like', $term)->orWhere('reference', 'like', $term));
+                    $term = '%'.mb_strtolower(str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $filters['search'])).'%';
+                    $query->where(static fn ($inner) => $inner
+                        ->whereRaw("LOWER(COALESCE(carrier_name, '')) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereRaw("LOWER(COALESCE(reference, '')) LIKE ? ESCAPE '!'", [$term]));
                 })
                 ->orderBy('starts_at')
                 ->paginate($this->perPage()),

@@ -45,8 +45,8 @@ final class SlottingRuleController extends Controller
                 ->when(isset($filters['abc_class']), static fn ($query) => $query->where('abc_class', $filters['abc_class']))
                 ->when(isset($filters['is_active']), static fn ($query) => $query->where('is_active', (bool) $filters['is_active']))
                 ->when(isset($filters['search']), static function ($query) use ($filters): void {
-                    $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], (string) $filters['search']).'%';
-                    $query->where(static fn ($inner) => $inner->where('name', 'like', $term));
+                    $term = '%'.mb_strtolower(str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $filters['search'])).'%';
+                    $query->whereRaw("LOWER(COALESCE(name, '')) LIKE ? ESCAPE '!'", [$term]);
                 })
                 ->orderBy('priority')
                 ->paginate($this->perPage()),
