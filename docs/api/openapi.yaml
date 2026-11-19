@@ -12462,6 +12462,437 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/blanket-agreements:
+    get:
+      operationId: blanket-agreements.index
+      tags:
+        - BlanketAgreement
+      parameters:
+        -
+          name: contact_id
+          in: query
+          schema:
+            type: string
+        -
+          name: status
+          in: query
+          schema:
+            type: string
+        -
+          name: expiring_within_days
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'Paginated set of `BlanketAgreementResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        -
+                          $ref: '#/components/schemas/BlanketAgreementResource'
+                        -
+                          type: object
+                          required:
+                            - customer_name
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: blanket-agreements.store
+      tags:
+        - BlanketAgreement
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlanketAgreementRequest'
+      responses:
+        '201':
+          description: '`BlanketAgreementResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/BlanketAgreementResource'
+                      -
+                        type: object
+                        required:
+                          - customer_name
+                          - lines
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/blanket-agreements/{id}':
+    get:
+      operationId: blanket-agreements.show
+      tags:
+        - BlanketAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`BlanketAgreementResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/BlanketAgreementResource'
+                      -
+                        type: object
+                        required:
+                          - customer_name
+                          - lines
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: blanket-agreements.update
+      tags:
+        - BlanketAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlanketAgreementRequest'
+      responses:
+        '200':
+          description: '`BlanketAgreementResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/BlanketAgreementResource'
+                      -
+                        type: object
+                        required:
+                          - lines
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/blanket-agreements/{id}/activate':
+    post:
+      operationId: blanket-agreements.activate
+      tags:
+        - BlanketAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`BlanketAgreementResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/BlanketAgreementResource'
+                      -
+                        type: object
+                        required:
+                          - lines
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/blanket-agreements/{id}/suspend':
+    post:
+      operationId: blanket-agreements.suspend
+      tags:
+        - BlanketAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`BlanketAgreementResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/BlanketAgreementResource'
+                      -
+                        type: object
+                        required:
+                          - lines
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/blanket-agreements/{id}/close':
+    post:
+      operationId: blanket-agreements.close
+      tags:
+        - BlanketAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`BlanketAgreementResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/BlanketAgreementResource'
+                      -
+                        type: object
+                        required:
+                          - lines
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/blanket-agreements/{id}/renew':
+    post:
+      operationId: blanket-agreements.renew
+      tags:
+        - BlanketAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                valid_from:
+                  type:
+                    - string
+                    - 'null'
+                  format: date-time
+                valid_to:
+                  type:
+                    - string
+                    - 'null'
+                  format: date-time
+      responses:
+        '201':
+          description: '`BlanketAgreementResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/BlanketAgreementResource'
+                      -
+                        type: object
+                        required:
+                          - lines
+                required:
+                  - data
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/blanket-agreements/{id}/call-off':
+    post:
+      operationId: blanket-agreements.call-off
+      tags:
+        - BlanketAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallOffRequest'
+      responses:
+        '201':
+          description: '`WorkspaceSalesOrderResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/WorkspaceSalesOrderResource'
+                      -
+                        type: object
+                        required:
+                          - has_backorders
+                          - lines
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/manufacturing/boms:
     get:
       operationId: mfg.boms.index
@@ -52257,8 +52688,8 @@ paths:
       operationId: v1.hr.contracts.update
       description: |-
         ⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):
-          [FormRequestRulesEvaluator] SQLSTATE[HY000]: General error: 1 no such table: hr_employment_contracts (Connection: sqlite, Database: :memory:, SQL: select "start_date" from "hr_employment_contracts" where "hr_employment_contracts"."id" =  and (1 = 0) and "hr_employment_contracts"."deleted_at" is null limit 1) (at C:\dev\fattura-facile\web-api\vendor\laravel\framework\src\Illuminate\Database\Connection.php:864)
-          [NodeRulesEvaluator] Only arrays and Traversables can be unpacked, null given (at C:\dev\fattura-facile\web-api\vendor\dedoc\scramble\src\Support\OperationExtensions\RulesEvaluator\NodeRulesEvaluator.php:221)
+          [FormRequestRulesEvaluator] SQLSTATE[HY000]: General error: 1 no such table: hr_employment_contracts (Connection: sqlite, Database: :memory:, SQL: select "start_date" from "hr_employment_contracts" where "hr_employment_contracts"."id" =  and (1 = 0) and "hr_employment_contracts"."deleted_at" is null limit 1) (at C:\dev\fattura-facile\wt-sales-orders\vendor\laravel\framework\src\Illuminate\Database\Connection.php:864)
+          [NodeRulesEvaluator] Only arrays and Traversables can be unpacked, null given (at C:\dev\fattura-facile\wt-sales-orders\vendor\dedoc\scramble\src\Support\OperationExtensions\RulesEvaluator\NodeRulesEvaluator.php:221)
       summary: 'Change the descriptive data of the active contract'
       tags:
         - EmploymentContract
@@ -136884,6 +137315,704 @@ paths:
                   - meta
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/sales-orders:
+    get:
+      operationId: sales-orders.index
+      tags:
+        - SalesOrderWorkspace
+      parameters:
+        -
+          name: status
+          in: query
+          schema:
+            type: string
+        -
+          name: order_type
+          in: query
+          schema:
+            type: string
+        -
+          name: customer_id
+          in: query
+          schema:
+            type: string
+        -
+          name: credit_blocked
+          in: query
+          schema:
+            type: boolean
+            default: false
+        -
+          name: has_backorders
+          in: query
+          schema:
+            type: boolean
+            default: false
+        -
+          name: from
+          in: query
+          schema:
+            type: string
+        -
+          name: to
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'Paginated set of `WorkspaceSalesOrderResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        -
+                          $ref: '#/components/schemas/WorkspaceSalesOrderResource'
+                        -
+                          type: object
+                          required:
+                            - customer_name
+                            - blanket_agreement_number
+                            - has_backorders
+                            - lines
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: sales-orders.store
+      tags:
+        - SalesOrderWorkspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceSalesOrderRequest'
+      responses:
+        '201':
+          description: '`WorkspaceSalesOrderResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/WorkspaceSalesOrderResource'
+                      -
+                        type: object
+                        required:
+                          - customer_name
+                          - has_backorders
+                          - lines
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/sales-orders/backorders:
+    get:
+      operationId: sales-orders.backorders
+      tags:
+        - SalesOrderWorkspace
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        sales_order_item_id:
+                          type: string
+                        sales_order_id:
+                          type: string
+                        order_number:
+                          type: string
+                        customer_name:
+                          type: string
+                        product_id:
+                          type: string
+                        description:
+                          type: string
+                        is_backorder:
+                          type: string
+                        open_quantity:
+                          type: string
+                        reserved_quantity:
+                          type: string
+                        atp_status:
+                          type: string
+                        atp_promised_date:
+                          type:
+                            - string
+                            - 'null'
+                        requested_date:
+                          type:
+                            - string
+                            - 'null'
+                        replenishment_triggered:
+                          type: string
+                        replenishment_reference_type:
+                          type: string
+                      required:
+                        - sales_order_item_id
+                        - sales_order_id
+                        - order_number
+                        - customer_name
+                        - product_id
+                        - description
+                        - is_backorder
+                        - open_quantity
+                        - reserved_quantity
+                        - atp_status
+                        - atp_promised_date
+                        - requested_date
+                        - replenishment_triggered
+                        - replenishment_reference_type
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      last_page:
+                        type: integer
+                      per_page:
+                        type: integer
+                      total:
+                        type: integer
+                    required:
+                      - current_page
+                      - last_page
+                      - per_page
+                      - total
+                required:
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/sales-orders/atp-check:
+    post:
+      operationId: sales-orders.atp-check
+      tags:
+        - SalesOrderWorkspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AtpCheckRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {}
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sales-orders/{id}':
+    get:
+      operationId: sales-orders.show
+      tags:
+        - SalesOrderWorkspace
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`WorkspaceSalesOrderResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/WorkspaceSalesOrderResource'
+                      -
+                        type: object
+                        required:
+                          - customer_name
+                          - blanket_agreement_number
+                          - has_backorders
+                          - lines
+                          - delivery_notes
+                          - replenishment_requests
+                          - audit_log
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: sales-orders.update
+      tags:
+        - SalesOrderWorkspace
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceSalesOrderRequest'
+      responses:
+        '200':
+          description: '`WorkspaceSalesOrderResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/WorkspaceSalesOrderResource'
+                      -
+                        type: object
+                        required:
+                          - customer_name
+                          - blanket_agreement_number
+                          - has_backorders
+                          - lines
+                          - delivery_notes
+                          - replenishment_requests
+                          - audit_log
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: sales-orders.destroy
+      tags:
+        - SalesOrderWorkspace
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '422':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    const: 'Only a draft order can be edited or deleted.'
+                  errors:
+                    type: object
+                    properties:
+                      status:
+                        type: array
+                        prefixItems:
+                          -
+                            type: string
+                            const: 'Only a draft order can be edited or deleted.'
+                        minItems: 1
+                        maxItems: 1
+                        items: {}
+                    required:
+                      - status
+                required:
+                  - message
+                  - errors
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales-orders/{id}/confirm':
+    post:
+      operationId: sales-orders.confirm
+      tags:
+        - SalesOrderWorkspace
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmWorkspaceOrderRequest'
+      responses:
+        '200':
+          description: '`WorkspaceSalesOrderResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/WorkspaceSalesOrderResource'
+                      -
+                        type: object
+                        required:
+                          - customer_name
+                          - blanket_agreement_number
+                          - has_backorders
+                          - lines
+                          - delivery_notes
+                          - replenishment_requests
+                          - audit_log
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sales-orders/{id}/credit-release':
+    post:
+      operationId: sales-orders.credit-release
+      tags:
+        - SalesOrderWorkspace
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditReleaseRequest'
+      responses:
+        '200':
+          description: '`WorkspaceSalesOrderResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/WorkspaceSalesOrderResource'
+                      -
+                        type: object
+                        required:
+                          - customer_name
+                          - blanket_agreement_number
+                          - has_backorders
+                          - lines
+                          - delivery_notes
+                          - replenishment_requests
+                          - audit_log
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales-orders/{id}/generate-replenishment':
+    post:
+      operationId: sales-orders.generate-replenishment
+      tags:
+        - SalesOrderWorkspace
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`WorkspaceSalesOrderResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/WorkspaceSalesOrderResource'
+                      -
+                        type: object
+                        required:
+                          - customer_name
+                          - blanket_agreement_number
+                          - has_backorders
+                          - lines
+                          - delivery_notes
+                          - replenishment_requests
+                          - audit_log
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales-orders/{id}/reevaluate-atp':
+    post:
+      operationId: sales-orders.reevaluate-atp
+      tags:
+        - SalesOrderWorkspace
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`WorkspaceSalesOrderResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/WorkspaceSalesOrderResource'
+                      -
+                        type: object
+                        required:
+                          - customer_name
+                          - blanket_agreement_number
+                          - has_backorders
+                          - lines
+                          - delivery_notes
+                          - replenishment_requests
+                          - audit_log
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales-orders/{id}/create-ddt':
+    post:
+      operationId: sales-orders.create-ddt
+      tags:
+        - SalesOrderWorkspace
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDdtRequest'
+      responses:
+        '201':
+          description: '`SalesDeliveryNoteResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/SalesDeliveryNoteResource'
+                      -
+                        type: object
+                        required:
+                          - items
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sales-orders/{id}/cancel':
+    post:
+      operationId: sales-orders.cancel
+      tags:
+        - SalesOrderWorkspace
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelWorkspaceOrderRequest'
+      responses:
+        '200':
+          description: '`WorkspaceSalesOrderResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/WorkspaceSalesOrderResource'
+                      -
+                        type: object
+                        required:
+                          - customer_name
+                          - blanket_agreement_number
+                          - has_backorders
+                          - lines
+                          - delivery_notes
+                          - replenishment_requests
+                          - audit_log
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/sales/pricing/price:
     get:
       operationId: sales.pricing.price
@@ -191261,6 +192390,42 @@ components:
       type: array
       items: {}
       title: AssociationRecordResource
+    AtpCheckRequest:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: string
+                format: uuid
+              quantity:
+                type: number
+              warehouse_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              requested_date:
+                type:
+                  - string
+                  - 'null'
+                format: date-time
+            required:
+              - product_id
+              - quantity
+          minItems: 1
+          maxItems: 200
+        warehouse_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - lines
+      title: AtpCheckRequest
     AttachComponentRequest:
       type: object
       description: 'Validation of a new component of an asset.'
@@ -192245,6 +193410,246 @@ components:
         - next_billing_date
         - created_at
       title: BillingPlanResource
+    BlanketAgreementRequest:
+      type: object
+      description: 'Creates or updates a draft blanket agreement. On update the customer and the type stay as they are.'
+      properties:
+        contact_id:
+          type: string
+          format: uuid
+        agreement_type:
+          type: string
+          enum:
+            - quantity_based
+            - value_based
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+        currency_code:
+          type:
+            - string
+            - 'null'
+          minLength: 3
+          maxLength: 3
+        exchange_rate:
+          type:
+            - number
+            - 'null'
+        pricing_lock_mode:
+          type:
+            - string
+            - 'null'
+          enum:
+            - fixed_contract_price
+            - spot_price_with_discount
+            - null
+        over_release_tolerance_percent:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+          maximum: 100
+        total_committed_amount:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+        payment_terms:
+          type:
+            - string
+            - 'null'
+          maxLength: 100
+        incoterms:
+          type:
+            - string
+            - 'null'
+          maxLength: 20
+        notes:
+          type:
+            - string
+            - 'null'
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              description:
+                type: string
+                maxLength: 255
+              unit_of_measure:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 20
+              target_quantity:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+              unit_price:
+                type: number
+                minimum: 0
+              discount_percent:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+                maximum: 100
+              tax_rate:
+                type: number
+                minimum: 0
+                maximum: 100
+              target_amount:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+              delivery_schedule:
+                type:
+                  - array
+                  - 'null'
+                items:
+                  type: string
+          minItems: 1
+      title: BlanketAgreementRequest
+    BlanketAgreementResource:
+      type: object
+      properties:
+        id:
+          type: string
+        agreement_number:
+          type: string
+        contact_id:
+          type: string
+        customer_name:
+          type:
+            - string
+            - 'null'
+        currency_code:
+          type: string
+        exchange_rate:
+          type: string
+        agreement_type:
+          type: string
+        valid_from:
+          type: string
+        valid_to:
+          type: string
+        days_to_expiry:
+          type: integer
+        status:
+          type: string
+        total_committed_amount:
+          type: string
+        total_called_off_amount:
+          type: string
+        remaining_amount:
+          type: string
+        called_off_percentage:
+          type: string
+        pricing_lock_mode:
+          type: string
+        over_release_tolerance_percent:
+          type: string
+        payment_terms:
+          type: string
+        incoterms:
+          type: string
+        notes:
+          type: string
+        renewed_from_id:
+          type: string
+        activated_at:
+          type:
+            - string
+            - 'null'
+        closed_at:
+          type:
+            - string
+            - 'null'
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              line_number:
+                type: string
+              product_id:
+                type: string
+              description:
+                type: string
+              unit_of_measure:
+                type: string
+              target_quantity:
+                type: string
+              called_off_quantity:
+                type: string
+              delivered_quantity:
+                type: string
+              remaining_quantity:
+                type: string
+              unit_price:
+                type: string
+              discount_percent:
+                type: string
+              tax_rate:
+                type: string
+              target_amount:
+                type: string
+              called_off_amount:
+                type: string
+              delivery_schedule:
+                type: string
+            required:
+              - id
+              - line_number
+              - product_id
+              - description
+              - unit_of_measure
+              - target_quantity
+              - called_off_quantity
+              - delivered_quantity
+              - remaining_quantity
+              - unit_price
+              - discount_percent
+              - tax_rate
+              - target_amount
+              - called_off_amount
+              - delivery_schedule
+      required:
+        - id
+        - agreement_number
+        - contact_id
+        - currency_code
+        - exchange_rate
+        - agreement_type
+        - valid_from
+        - valid_to
+        - days_to_expiry
+        - status
+        - total_committed_amount
+        - total_called_off_amount
+        - remaining_amount
+        - called_off_percentage
+        - pricing_lock_mode
+        - over_release_tolerance_percent
+        - payment_terms
+        - incoterms
+        - notes
+        - renewed_from_id
+        - activated_at
+        - closed_at
+      title: BlanketAgreementResource
     BookShipmentRequest:
       type: object
       properties:
@@ -193427,6 +194832,45 @@ components:
         - calibrated_on
         - next_due_on
       title: CalibrationResource
+    CallOffRequest:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              blanket_agreement_line_id:
+                type: string
+                format: uuid
+              quantity:
+                type:
+                  - number
+                  - 'null'
+              amount:
+                type:
+                  - number
+                  - 'null'
+            required:
+              - blanket_agreement_line_id
+          minItems: 1
+        requested_delivery_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        warehouse_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        notes:
+          type:
+            - string
+            - 'null'
+      required:
+        - lines
+      title: CallOffRequest
     CampaignRecipientResource:
       type: object
       properties:
@@ -193671,6 +195115,15 @@ components:
             - 'null'
           maxLength: 2000
       title: CancelWorkOrderRequest
+    CancelWorkspaceOrderRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+      required:
+        - reason
+      title: CancelWorkspaceOrderRequest
     CapaResource:
       type: object
       properties:
@@ -196444,6 +197897,14 @@ components:
       required:
         - code
       title: ConfirmTwoFactorRequest
+    ConfirmWorkspaceOrderRequest:
+      type: object
+      properties:
+        auto_replenish:
+          type:
+            - boolean
+            - 'null'
+      title: ConfirmWorkspaceOrderRequest
     ConfirmedPasswordRequest:
       type: object
       description: |-
@@ -198482,6 +199943,42 @@ components:
         - name
         - components
       title: CreateBomRequest
+    CreateDdtRequest:
+      type: object
+      description: |-
+        Partial or full shipment of a sales order: the quantity per line (line id => quantity), what to do with the residual
+        of a partially shipped line and the transport data of the delivery note.
+      properties:
+        lines:
+          type:
+            - array
+            - 'null'
+          items:
+            type: number
+        residual_mode:
+          type:
+            - string
+            - 'null'
+          enum:
+            - keep_open
+            - backorder
+            - cancel_residual
+            - null
+        carrier_name:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        ddt_number:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+        notes:
+          type:
+            - string
+            - 'null'
+      title: CreateDdtRequest
     CreateDelegationRequest:
       type: object
       properties:
@@ -200186,6 +201683,16 @@ components:
         - plan_id
         - start_date
       title: CreateSubscriptionRequest
+    CreditReleaseRequest:
+      type: object
+      properties:
+        notes:
+          type: string
+          minLength: 5
+          maxLength: 2000
+      required:
+        - notes
+      title: CreditReleaseRequest
     CrmRecordResource:
       type: object
       additionalProperties: {}
@@ -229139,9 +230646,7 @@ components:
         order_number:
           type: string
         date:
-          type:
-            - string
-            - 'null'
+          type: string
         due_date:
           type:
             - string
@@ -260891,6 +262396,385 @@ components:
         - starts_at
         - ends_at
       title: WorkspaceItemResource
+    WorkspaceSalesOrderRequest:
+      type: object
+      description: 'Creates or rewrites a draft sales order of the sales orders workspace (header, ATP-relevant dates and lines).'
+      properties:
+        contact_id:
+          type: string
+          format: uuid
+        order_type:
+          type:
+            - string
+            - 'null'
+          enum:
+            - standard
+            - rush
+            - dropship
+            - null
+        warehouse_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        quote_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        due_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        requested_delivery_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        currency:
+          type:
+            - string
+            - 'null'
+          minLength: 3
+          maxLength: 3
+        payment_terms:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+        shipping_method:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+        shipping_address:
+          type:
+            - string
+            - 'null'
+        billing_address:
+          type:
+            - string
+            - 'null'
+        notes:
+          type:
+            - string
+            - 'null'
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              warehouse_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              description:
+                type: string
+                maxLength: 255
+              quantity:
+                type: number
+                minimum: 0.0001
+              unit_price:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+              tax_rate:
+                type: number
+                minimum: 0
+                maximum: 100
+              discount_percentage:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+                maximum: 100
+              uom:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 20
+              requested_date:
+                type:
+                  - string
+                  - 'null'
+                format: date-time
+            required:
+              - description
+              - quantity
+              - tax_rate
+          minItems: 1
+      required:
+        - items
+      title: WorkspaceSalesOrderRequest
+    WorkspaceSalesOrderResource:
+      type: object
+      properties:
+        id:
+          type: string
+        order_number:
+          type: string
+        order_type:
+          type: string
+        status:
+          type: string
+        contact_id:
+          type: string
+        customer_name:
+          type:
+            - string
+            - 'null'
+        blanket_agreement_id:
+          type: string
+        blanket_agreement_number:
+          type:
+            - string
+            - 'null'
+        quote_id:
+          type: string
+        warehouse_id:
+          type: string
+        date:
+          type: string
+        requested_delivery_date:
+          type:
+            - string
+            - 'null'
+        confirmed_delivery_date:
+          type:
+            - string
+            - 'null'
+        currency:
+          type: string
+        subtotal_amount:
+          type: string
+        discount_amount:
+          type: string
+        vat_amount:
+          type: string
+        total_amount:
+          type: string
+        credit_status:
+          type: string
+        credit_block_reason:
+          type: string
+        credit_approved_by:
+          type: string
+        credit_approved_at:
+          type:
+            - string
+            - 'null'
+        credit_override_notes:
+          type: string
+        allocated_percentage:
+          type: string
+        delivered_percentage:
+          type: string
+        invoiced_percentage:
+          type: string
+        has_backorders:
+          type: boolean
+        notes:
+          type: string
+        credit_exposure:
+          type: array
+          items: {}
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              product_id:
+                type: string
+              warehouse_id:
+                type: string
+              blanket_agreement_line_id:
+                type: string
+              parent_line_id:
+                type: string
+              is_backorder:
+                type: string
+              backorder_sequence:
+                type: string
+              description:
+                type: string
+              unit_of_measure:
+                type: string
+              ordered_quantity:
+                type: string
+              reserved_quantity:
+                type: string
+              delivered_quantity:
+                type: string
+              invoiced_quantity:
+                type: string
+              cancelled_quantity:
+                type: string
+              backorder_quantity:
+                type: string
+              requested_date:
+                type:
+                  - string
+                  - 'null'
+              atp_promised_date:
+                type:
+                  - string
+                  - 'null'
+              atp_status:
+                type: string
+              replenishment_triggered:
+                type: string
+              replenishment_reference_type:
+                type: string
+              replenishment_reference_id:
+                type: string
+              unit_price:
+                type: string
+              discount_percent:
+                type: string
+              tax_rate:
+                type: string
+              line_subtotal:
+                type: string
+            required:
+              - id
+              - product_id
+              - warehouse_id
+              - blanket_agreement_line_id
+              - parent_line_id
+              - is_backorder
+              - backorder_sequence
+              - description
+              - unit_of_measure
+              - ordered_quantity
+              - reserved_quantity
+              - delivered_quantity
+              - invoiced_quantity
+              - cancelled_quantity
+              - backorder_quantity
+              - requested_date
+              - atp_promised_date
+              - atp_status
+              - replenishment_triggered
+              - replenishment_reference_type
+              - replenishment_reference_id
+              - unit_price
+              - discount_percent
+              - tax_rate
+              - line_subtotal
+        delivery_notes:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              number:
+                type:
+                  - string
+                  - 'null'
+              status:
+                type: string
+            required:
+              - id
+              - number
+              - status
+        replenishment_requests:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              sales_order_item_id:
+                type: string
+              request_type:
+                type: string
+              quantity:
+                type: string
+              needed_by:
+                type:
+                  - string
+                  - 'null'
+              status:
+                type: string
+            required:
+              - id
+              - sales_order_item_id
+              - request_type
+              - quantity
+              - needed_by
+              - status
+        audit_log:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              event:
+                type: string
+              from_status:
+                type: string
+              to_status:
+                type: string
+              actor_id:
+                type: string
+              payload:
+                type: string
+              created_at:
+                type:
+                  - string
+                  - 'null'
+            required:
+              - id
+              - event
+              - from_status
+              - to_status
+              - actor_id
+              - payload
+              - created_at
+      required:
+        - id
+        - order_number
+        - order_type
+        - status
+        - contact_id
+        - blanket_agreement_id
+        - quote_id
+        - warehouse_id
+        - date
+        - requested_delivery_date
+        - confirmed_delivery_date
+        - currency
+        - subtotal_amount
+        - discount_amount
+        - vat_amount
+        - total_amount
+        - credit_status
+        - credit_block_reason
+        - credit_approved_by
+        - credit_approved_at
+        - credit_override_notes
+        - allocated_percentage
+        - delivered_percentage
+        - invoiced_percentage
+        - notes
+      title: WorkspaceSalesOrderResource
   responses:
     AuthenticationException:
       description: Unauthenticated
@@ -261128,6 +263012,9 @@ tags:
   -
     name: BillingPlan
     description: 'Operations of the BillingPlan module.'
+  -
+    name: BlanketAgreement
+    description: 'Operations of the BlanketAgreement module.'
   -
     name: Bom
     description: 'Operations of the Bom module.'
@@ -262457,6 +264344,9 @@ tags:
   -
     name: SalesOrderLine
     description: 'Operations of the SalesOrderLine module.'
+  -
+    name: SalesOrderWorkspace
+    description: 'Operations of the SalesOrderWorkspace module.'
   -
     name: SalesPricing
     description: 'Operations of the SalesPricing module.'
