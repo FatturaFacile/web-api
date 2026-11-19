@@ -2879,4 +2879,11 @@ return [
     'sdi_vehicle' => 'Fahrzeugdaten',
     'sdi_extra' => 'optionale FatturaPA-Blöcke',
     'sdi_data' => 'FatturaPA-Zeilendaten',
+    'auditable_type' => 'Entitätstyp',
+    'auditable_id' => 'Entität',
+    'actor_id' => 'Akteur',
+    'ip_address' => 'IP-Adresse',
+    'changed_field' => 'geändertes Feld',
+    'from_sequence' => 'Startsequenz',
+    'to_sequence' => 'Endsequenz',
 ];

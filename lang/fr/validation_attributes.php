@@ -2879,4 +2879,11 @@ return [
     'sdi_vehicle' => 'données du véhicule',
     'sdi_extra' => 'blocs facultatifs FatturaPA',
     'sdi_data' => 'données FatturaPA de la ligne',
+    'auditable_type' => "type d'entité",
+    'auditable_id' => 'entité',
+    'actor_id' => 'auteur',
+    'ip_address' => 'adresse IP',
+    'changed_field' => 'champ modifié',
+    'from_sequence' => 'séquence de début',
+    'to_sequence' => 'séquence de fin',
 ];
