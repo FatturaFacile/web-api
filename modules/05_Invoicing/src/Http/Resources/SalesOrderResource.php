@@ -24,7 +24,7 @@ final class SalesOrderResource extends JsonResource
             'contact_id' => $this->contact_id,
             'quote_id' => $this->quote_id,
             'order_number' => $this->order_number,
-            'date' => $this->date?->toDateString(),
+            'date' => $this->date->toDateString(),
             'due_date' => $this->due_date?->toDateString(),
             'currency' => $this->currency,
             'subtotal' => (float) $this->subtotal,

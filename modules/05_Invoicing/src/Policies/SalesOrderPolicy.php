@@ -28,6 +28,19 @@ final class SalesOrderPolicy
             && in_array($user->getRoleInTenant($tenantId), SalesQuotePolicy::ApproverRoles, true);
     }
 
+    /**
+     * Release of an order blocked by credit: the credit managers (permission `sales_orders.approve_credit`, or the
+     * owner, admin, sales manager and credit manager roles).
+     */
+    public function approveCredit(User $user, SalesOrder $order): bool
+    {
+        $tenantId = $this->tenantContext->getTenantId();
+
+        return $tenantId !== null
+            && (string) $order->tenant_id === (string) $tenantId
+            && $user->hasTenantPermission($tenantId, 'sales_orders.approve_credit', ['owner', 'admin', 'sales_manager', 'credit_manager']);
+    }
+
     public function viewAny(?User $user): bool
     {
         return true;

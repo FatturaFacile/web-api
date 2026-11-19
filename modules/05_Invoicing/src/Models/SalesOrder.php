@@ -8,7 +8,17 @@ use App\Models\Contact;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon $date
+ * @property Carbon|null $due_date
+ * @property Carbon|null $confirmed_at
+ * @property Carbon|null $approved_at
+ * @property Carbon|null $requested_delivery_date
+ * @property Carbon|null $confirmed_delivery_date
+ * @property Carbon|null $credit_approved_at
+ */
 final class SalesOrder extends BaseEnterpriseModel
 {
     protected $table = 'sales_orders';
@@ -20,6 +30,12 @@ final class SalesOrder extends BaseEnterpriseModel
             'due_date' => 'date',
             'confirmed_at' => 'datetime',
             'approved_at' => 'datetime',
+            'requested_delivery_date' => 'date',
+            'confirmed_delivery_date' => 'date',
+            'credit_approved_at' => 'datetime',
+            'allocated_percentage' => 'decimal:2',
+            'delivered_percentage' => 'decimal:2',
+            'invoiced_percentage' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'discount_amount' => 'decimal:2',
             'total_net' => 'decimal:2',
@@ -59,6 +75,9 @@ final class SalesOrder extends BaseEnterpriseModel
         return $this->hasMany(SalesOrderItem::class, 'sales_order_id');
     }
 
+    /**
+     * @return HasMany<SalesDeliveryNote, $this>
+     */
     public function deliveryNotes(): HasMany
     {
         return $this->hasMany(SalesDeliveryNote::class, 'sales_order_id');
@@ -77,5 +96,29 @@ final class SalesOrder extends BaseEnterpriseModel
     public function commissions(): HasMany
     {
         return $this->hasMany(SalesCommission::class, 'sales_order_id');
+    }
+
+    /**
+     * @return BelongsTo<BlanketAgreement, $this>
+     */
+    public function blanketAgreement(): BelongsTo
+    {
+        return $this->belongsTo(BlanketAgreement::class, 'blanket_agreement_id');
+    }
+
+    /**
+     * @return HasMany<SalesOrderAuditLog, $this>
+     */
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(SalesOrderAuditLog::class, 'sales_order_id')->orderBy('created_at');
+    }
+
+    /**
+     * @return HasMany<ReplenishmentRequest, $this>
+     */
+    public function replenishmentRequests(): HasMany
+    {
+        return $this->hasMany(ReplenishmentRequest::class, 'sales_order_id');
     }
 }
