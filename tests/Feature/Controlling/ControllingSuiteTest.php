@@ -18,14 +18,14 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     $this->tenant = Tenant::create(['name' => 'Ctl '.Str::random(5), 'legal_name' => 'Ctl Srl', 'country' => 'CH', 'default_currency' => 'EUR']);
     $this->ids = (new ControllingDemoSeeder)->run($this->tenant);
-    $this->owner = ctlMember($this->tenant, 'owner');
-    ctlAct($this->owner, $this->tenant);
+    $this->owner = cpmMember($this->tenant, 'owner');
+    cpmAct($this->owner, $this->tenant);
     $this->year = ControllingDemoSeeder::Year;
 });
 
 afterEach(fn () => app(TenantContext::class)->clear());
 
-function ctlMember(Tenant $tenant, string $role): User
+function cpmMember(Tenant $tenant, string $role): User
 {
     $user = User::create(['name' => ucfirst($role).' '.Str::random(4), 'email' => Str::random(10).'@controlling-test.example', 'password' => bcrypt(Str::random(32)), 'locale' => 'en']);
     $user->tenants()->attach($tenant->id, ['id' => (string) Str::uuid(), 'role' => $role]);
@@ -33,14 +33,14 @@ function ctlMember(Tenant $tenant, string $role): User
     return $user;
 }
 
-function ctlAct(User $user, Tenant $tenant): void
+function cpmAct(User $user, Tenant $tenant): void
 {
     app(TenantContext::class)->setTenant($tenant);
     Sanctum::actingAs($user);
     test()->withHeaders(['X-Tenant-Id' => (string) $tenant->id]);
 }
 
-function ctlEntrySum(string $column, string $value): string
+function cpmEntrySum(string $column, string $value): string
 {
     return Decimal::norm(number_format((float) DB::table('analytical_ledger_entries')->where($column, $value)->sum('amount'), 4, '.', ''));
 }
@@ -54,7 +54,7 @@ test('allocation preview, execution and reversal balance to zero and restore the
     expect(DB::table('analytical_ledger_entries')->where('source_type', 'overhead_allocation')->count())->toBe(0);
 
     $run = $this->postJson('/api/v1/controlling/allocations/execute', $payload)->assertCreated()->json('data');
-    expect(ctlEntrySum('allocation_run_id', $run['id']))->toBe('0.0000');
+    expect(cpmEntrySum('allocation_run_id', $run['id']))->toBe('0.0000');
     foreach (['CC-100', 'CC-200'] as $code) {
         $id = (string) DB::table('analytical_cost_centers')->where('code', $code)->value('id');
         $net = Decimal::norm(number_format((float) DB::table('analytical_ledger_entries')->where('cost_center_id', $id)->where('fiscal_month', 3)->where('fiscal_year', $this->year)->sum('amount'), 4, '.', ''));
@@ -63,9 +63,9 @@ test('allocation preview, execution and reversal balance to zero and restore the
     $this->postJson('/api/v1/controlling/allocations/execute', $payload)->assertUnprocessable();
 
     $this->postJson("/api/v1/controlling/allocations/{$run['id']}/reverse")->assertOk()->assertJsonPath('data.status', 'reversed');
-    expect(ctlEntrySum('allocation_run_id', $run['id']))->toBe('0.0000');
+    expect(cpmEntrySum('allocation_run_id', $run['id']))->toBe('0.0000');
     $cc100 = (string) DB::table('analytical_cost_centers')->where('code', 'CC-100')->value('id');
-    expect(Decimal::cmp(ctlEntrySum('cost_center_id', $cc100), 0))->toBeGreaterThan(0);
+    expect(Decimal::cmp(cpmEntrySum('cost_center_id', $cc100), 0))->toBeGreaterThan(0);
     $this->postJson("/api/v1/controlling/allocations/{$run['id']}/reverse")->assertUnprocessable();
     $this->postJson('/api/v1/controlling/allocations/execute', $payload)->assertCreated();
 });
@@ -200,7 +200,7 @@ test('cost centers, jobs and the analytical ledger: tree rollup, job P&L and man
 
 test('another company sees none of the controlling data and cannot reference it', function (): void {
     $other = Tenant::create(['name' => 'Other '.Str::random(5), 'legal_name' => 'Other Srl', 'country' => 'IT', 'default_currency' => 'EUR']);
-    ctlAct(ctlMember($other, 'owner'), $other);
+    cpmAct(cpmMember($other, 'owner'), $other);
 
     $this->getJson('/api/v1/controlling/cost-centers')->assertOk()->assertJsonCount(0, 'data');
     $this->getJson('/api/v1/analytics/margins/summary')->assertOk()->assertJsonPath('data.totals.net_revenue', '0.0000');
@@ -209,19 +209,19 @@ test('another company sees none of the controlling data and cannot reference it'
 });
 
 test('roles: a reader cannot write, only approvers approve and only finance runs allocations', function (): void {
-    $reader = ctlMember($this->tenant, 'accountant_readonly');
-    ctlAct($reader, $this->tenant);
+    $reader = cpmMember($this->tenant, 'accountant_readonly');
+    cpmAct($reader, $this->tenant);
     $this->getJson('/api/v1/controlling/cost-centers')->assertOk();
     $this->postJson('/api/v1/controlling/cost-centers', ['code' => 'CC-901', 'name' => 'Nope', 'center_type' => 'production'])->assertForbidden();
 
-    $accountant = ctlMember($this->tenant, 'accountant');
-    ctlAct($accountant, $this->tenant);
+    $accountant = cpmMember($this->tenant, 'accountant');
+    cpmAct($accountant, $this->tenant);
     $this->postJson('/api/v1/controlling/allocations/execute', ['fiscal_year' => $this->year, 'fiscal_month' => 4])->assertCreated();
     $plan = $this->postJson('/api/v1/budgets', ['code' => 'BUD-R', 'name' => 'Roles', 'fiscal_year' => $this->year])->assertCreated()->json('data');
     $this->postJson("/api/v1/budgets/{$plan['id']}/submit")->assertOk();
     $this->postJson("/api/v1/budgets/{$plan['id']}/approve")->assertForbidden();
 
-    ctlAct($this->owner, $this->tenant);
+    cpmAct($this->owner, $this->tenant);
     $this->postJson("/api/v1/budgets/{$plan['id']}/approve")->assertOk();
 });
 
