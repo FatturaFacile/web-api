@@ -2810,4 +2810,13 @@ return [
     'dedup_levenshtein_max' => 'distanza massima di Levenshtein',
     'dedup_similarity_min' => 'similarità minima',
     'default_country' => 'paese predefinito',
+    'agreement_type' => 'tipo di accordo',
+    'currency_code' => 'valuta',
+    'pricing_lock_mode' => 'modalità di blocco prezzo',
+    'over_release_tolerance_percent' => 'tolleranza di sovra-rilascio (%)',
+    'delivery_schedule' => 'piano di consegna',
+    'blanket_agreement_line_id' => "riga dell'accordo quadro",
+    'requested_delivery_date' => 'data di consegna richiesta',
+    'residual_mode' => 'gestione del residuo',
+    'ddt_number' => 'numero DDT',
 ];

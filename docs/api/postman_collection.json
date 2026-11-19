@@ -13729,7 +13729,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -13844,7 +13844,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -15176,7 +15176,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
+                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -15236,7 +15236,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
+                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -117899,10 +117899,6 @@
                             {
                                 "key": "X-Tenant-Id",
                                 "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -117926,18 +117922,9 @@
                                 }
                             ]
                         },
-                        "description": "Change the descriptive data of the active contract",
+                        "description": "⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):\n  [FormRequestRulesEvaluator] SQLSTATE[HY000]: General error: 1 no such table: hr_employment_contracts (Connection: sqlite, Database: :memory:, SQL: select \"start_date\" from \"hr_employment_contracts\" where \"hr_employment_contracts\".\"id\" =  and (1 = 0) and \"hr_employment_contracts\".\"deleted_at\" is null limit 1) (at C:\\dev\\fattura-facile\\web-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php:864)\n  [NodeRulesEvaluator] Only arrays and Traversables can be unpacked, null given (at C:\\dev\\fattura-facile\\web-api\\vendor\\dedoc\\scramble\\src\\Support\\OperationExtensions\\RulesEvaluator\\NodeRulesEvaluator.php:221)",
                         "auth": {
                             "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"job_title\": \"string\",\n    \"end_date\": \"2026-01-31\",\n    \"probation_end_date\": \"2026-01-31\",\n    \"collective_agreement\": \"string\",\n    \"collective_agreement_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"collective_agreement_level_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"level_code\": \"string\",\n    \"terms\": [\n        \"string\"\n    ],\n    \"notes\": \"string\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
                         }
                     }
                 },

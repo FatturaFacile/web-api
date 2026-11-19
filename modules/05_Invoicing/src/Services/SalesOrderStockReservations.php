@@ -249,6 +249,19 @@ final readonly class SalesOrderStockReservations
     }
 
     /**
+     * What the warehouse can still give of a product, net of the reservations already held; null when the product does
+     * not track inventory (a service or non-stock item, which needs no availability check).
+     */
+    public function availableQuantity(string $productId, string $tenantId, ?Warehouse $warehouse): ?string
+    {
+        if ($warehouse === null || $this->stockItems->find($productId, $tenantId) === null) {
+            return null;
+        }
+
+        return $this->availableIn($productId, $tenantId, $warehouse);
+    }
+
+    /**
      * What the eligible quants of the product in the warehouse can still give (on hand less reserved).
      */
     private function availableIn(string $productId, string $tenantId, Warehouse $warehouse): string

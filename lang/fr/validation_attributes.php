@@ -2810,4 +2810,13 @@ return [
     'dedup_levenshtein_max' => 'distance de Levenshtein maximale',
     'dedup_similarity_min' => 'similarité minimale',
     'default_country' => 'pays par défaut',
+    'agreement_type' => 'type de contrat',
+    'currency_code' => 'devise',
+    'pricing_lock_mode' => 'mode de blocage du prix',
+    'over_release_tolerance_percent' => 'tolérance de sur-appel (%)',
+    'delivery_schedule' => 'échéancier de livraison',
+    'blanket_agreement_line_id' => 'ligne du contrat-cadre',
+    'requested_delivery_date' => 'date de livraison demandée',
+    'residual_mode' => 'traitement du reliquat',
+    'ddt_number' => 'numéro du bon de livraison',
 ];

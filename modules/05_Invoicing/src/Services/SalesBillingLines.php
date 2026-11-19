@@ -178,6 +178,8 @@ final class SalesBillingLines
             SalesOrder::withoutGlobalScope(TenantScope::class)->whereKey($orderId)->update(['billing_status' => $status]);
         }
 
+        app(SalesOrderFulfillmentService::class)->refreshProgress($order);
+
         return $status;
     }
 
