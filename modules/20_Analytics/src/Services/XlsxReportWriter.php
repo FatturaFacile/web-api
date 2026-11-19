@@ -8,10 +8,12 @@ use App\Services\Security\CsvFormulaNeutralizer;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Generator;
+use Modules\Analytics\Export\RegionalReportFormatter;
 use OpenSpout\Common\Entity\Cell;
 use OpenSpout\Common\Entity\Cell\BooleanCell;
 use OpenSpout\Common\Entity\Cell\DateTimeCell;
 use OpenSpout\Common\Entity\Cell\EmptyCell;
+use OpenSpout\Common\Entity\Cell\FormulaCell;
 use OpenSpout\Common\Entity\Cell\NumericCell;
 use OpenSpout\Common\Entity\Cell\StringCell;
 use OpenSpout\Common\Entity\Row;
@@ -36,6 +38,16 @@ final class XlsxReportWriter
 {
     private const string DateFormat = 'yyyy-mm-dd';
 
+    private string $dateFormat = self::DateFormat;
+
+    /**
+     * One Style object per number format, reused by every cell. OpenSpout registers each Style instance it meets, so a new
+     * object per cell would keep one registry entry per cell in memory and defeat the streaming.
+     *
+     * @var array<string, Style>
+     */
+    private array $styles = [];
+
     /**
      * Writes the workbook to a file while the rows are produced. The first rows are buffered only to fit the column
      * widths; the rest goes to the file one row at a time.
@@ -43,10 +55,13 @@ final class XlsxReportWriter
      * @param  list<array<string, mixed>>  $columns
      * @param  iterable<array<string, mixed>>  $rows
      * @param  array<string, mixed>  $meta  row_count, truncated, period and comparison_period of the report
-     * @param  array{sheet_name: string, dataset: string, report: ?string, spec: array<string, mixed>, generated_at: DateTimeInterface}  $context
+     * @param  array{sheet_name: string, dataset: string, report: ?string, spec: array<string, mixed>, generated_at: DateTimeInterface, locale?: string, totals?: bool}  $context
      */
     public function writeToFile(string $path, array $columns, iterable $rows, array $meta, array $context): void
     {
+        $regional = isset($context['locale']) ? new RegionalReportFormatter((string) $context['locale']) : null;
+        $this->dateFormat = $regional?->dateMask() ?? self::DateFormat;
+        $this->styles = [];
         $iterator = (static function () use ($rows): Generator {
             yield from $rows;
         })();
@@ -70,11 +85,15 @@ final class XlsxReportWriter
         $sheet->setSheetView(new SheetView(freezeRow: 2));
 
         $writer->addRow(Row::fromValuesWithStyle(
-            array_map(static fn (array $column): string => CsvFormulaNeutralizer::neutralize($column['key']), $columns),
+            array_map(static fn (array $column): string => CsvFormulaNeutralizer::neutralize($regional === null ? $column['key'] : $regional->header((string) $context['dataset'], $column)), $columns),
             (new Style)->withFontBold(true)->withBackgroundColor('E7E6E6'),
         ));
 
-        $write = fn (array $row) => $writer->addRow(new Row(array_map(fn (array $column): Cell => $this->cell($column, $row[$column['key']] ?? null), $columns)));
+        $count = 0;
+        $write = function (array $row) use ($writer, $columns, &$count): void {
+            $count++;
+            $writer->addRow(new Row(array_map(fn (array $column): Cell => $this->cell($column, $row[$column['key']] ?? null), $columns)));
+        };
 
         foreach ($head as $row) {
             $write($row);
@@ -83,6 +102,10 @@ final class XlsxReportWriter
         while ($iterator->valid()) {
             $write($iterator->current());
             $iterator->next();
+        }
+
+        if ($regional !== null && $count > 0 && ($context['totals'] ?? true)) {
+            $writer->addRow(new Row($this->totalsRow($columns, $count, $regional, (string) $context['dataset'])));
         }
 
         $parameters = $writer->addNewSheetAndMakeItCurrent();
@@ -125,17 +148,69 @@ final class XlsxReportWriter
 
         $unit = $column['unit'] ?? 'count';
 
-        return new NumericCell($this->number((string) $value), (new Style)->withFormat(match ($unit) {
+        return new NumericCell($this->number((string) $value), $this->style(match ($unit) {
             'count' => '#,##0',
             'quantity' => '#,##0.0000',
             default => '#,##0.00',
         }));
     }
 
+    /**
+     * The closing row: native `=SUM(...)` formulas over the additive measure columns (counts and sums, never averages), so
+     * the workbook stays live when somebody edits or filters the data.
+     *
+     * @param  list<array<string, mixed>>  $columns
+     * @return list<Cell>
+     */
+    private function totalsRow(array $columns, int $count, RegionalReportFormatter $regional, string $dataset): array
+    {
+        $bold = (new Style)->withFontBold(true);
+        $cells = [];
+        $labelled = false;
+
+        foreach ($columns as $index => $column) {
+            $letter = $this->columnLetter($index + 1);
+
+            if (($column['kind'] ?? '') === 'measure' && ! empty($column['additive'])) {
+                $format = match ($column['unit'] ?? 'count') {
+                    'count' => '#,##0',
+                    'quantity' => '#,##0.0000',
+                    default => '#,##0.00',
+                };
+                $cells[] = new FormulaCell("=SUM({$letter}2:{$letter}".($count + 1).')', null, (new Style)->withFontBold(true)->withFormat($format));
+            } elseif (! $labelled) {
+                $cells[] = new StringCell((string) trans('analytics.export.grand_total', [], $regional->language()), $bold);
+                $labelled = true;
+            } else {
+                $cells[] = new EmptyCell(null);
+            }
+        }
+
+        return $cells;
+    }
+
+    private function columnLetter(int $number): string
+    {
+        $letters = '';
+
+        while ($number > 0) {
+            $number--;
+            $letters = chr(65 + $number % 26).$letters;
+            $number = intdiv($number, 26);
+        }
+
+        return $letters;
+    }
+
+    private function style(string $format): Style
+    {
+        return $this->styles[$format] ??= (new Style)->withFormat($format);
+    }
+
     private function dateCell(string $value): Cell
     {
         try {
-            return new DateTimeCell(new DateTimeImmutable($value), (new Style)->withFormat(self::DateFormat));
+            return new DateTimeCell(new DateTimeImmutable($value), $this->style($this->dateFormat));
         } catch (Throwable) {
             return new StringCell(CsvFormulaNeutralizer::neutralize($value));
         }
@@ -178,7 +253,7 @@ final class XlsxReportWriter
 
     /**
      * @param  array<string, mixed>  $meta
-     * @param  array{sheet_name: string, dataset: string, report: ?string, spec: array<string, mixed>, generated_at: DateTimeInterface}  $context
+     * @param  array{sheet_name: string, dataset: string, report: ?string, spec: array<string, mixed>, generated_at: DateTimeInterface, locale?: string, totals?: bool}  $context
      * @return list<array{0: string, 1: string|DateTimeInterface}>
      */
     private function parameters(array $meta, array $context): array

@@ -30,7 +30,7 @@ final readonly class StandardDatasets
      */
     public function all(): array
     {
-        return [$this->sales(), $this->purchases(), $this->inventory(), $this->ledger(), $this->projects(), $this->headcount()];
+        return [$this->sales(), $this->purchases(), $this->inventory(), $this->ledger(), $this->projects(), $this->headcount(), $this->salesLines(), $this->purchaseLines(), $this->inventoryMoves(), $this->timesheets()];
     }
 
     private function sales(): Dataset
@@ -220,6 +220,143 @@ final readonly class StandardDatasets
                 new Measure('active_headcount', 'Active headcount', Measure::UnitCount, "COUNT(CASE WHEN {$active} THEN 1 END)"),
                 new Measure('active_fte', 'Active FTE', Measure::UnitQuantity, "COALESCE(SUM(CASE WHEN {$active} THEN hr_employees.fte_ratio END), 0)"),
             ],
+        );
+    }
+
+    private function salesLines(): Dataset
+    {
+        $rate = $this->sql->rate('invoices');
+        $sign = static fn (string $column): string => "(CASE WHEN invoices.invoice_type = 'credit_note' THEN -ABS({$column}) ELSE {$column} END)";
+
+        return new Dataset(
+            key: 'sales_lines',
+            label: 'Sales lines',
+            description: 'Lines of posted sales invoices and credit notes (credit notes subtract), in the accounting currency. Proformas, drafts and void documents are not included.',
+            module: 'invoicing',
+            table: 'invoice_items',
+            joins: [
+                new DatasetJoin('invoices', 'invoices.id = invoice_items.invoice_id', inner: true),
+                new DatasetJoin('contacts', 'contacts.id = invoices.contact_id', softDeletes: false),
+            ],
+            conditions: [
+                'invoices.posted_at IS NOT NULL',
+                "invoices.invoice_type <> 'proforma'",
+                "invoices.status NOT IN ('cancelled', 'void')",
+                $this->sql->convertible('invoices'),
+            ],
+            dimensions: [
+                new Dimension('date', 'Invoice date', Dimension::TypeDate, 'invoices.date', 'invoices'),
+                new Dimension('customer', 'Customer', Dimension::TypeString, self::ContactName, 'contacts'),
+                new Dimension('customer_country', 'Customer country', Dimension::TypeString, 'contacts.country', 'contacts'),
+                new Dimension('invoice_number', 'Invoice number', Dimension::TypeString, 'invoices.invoice_number', 'invoices'),
+                new Dimension('invoice_type', 'Document type', Dimension::TypeString, 'invoices.invoice_type', 'invoices'),
+                new Dimension('description', 'Line description', Dimension::TypeString, 'invoice_items.description'),
+                new Dimension('tax_rate', 'Tax rate', Dimension::TypeNumber, 'invoice_items.tax_rate'),
+                new Dimension('uom', 'Unit of measure', Dimension::TypeString, 'invoice_items.uom'),
+            ],
+            measures: [
+                new Measure('line_total', 'Line total (net)', Measure::UnitCurrency, "SUM({$sign('invoice_items.line_total')} * {$rate})", 'invoices'),
+                new Measure('quantity', 'Quantity', Measure::UnitQuantity, "SUM({$sign('invoice_items.quantity')})", 'invoices'),
+                new Measure('average_unit_price', 'Average unit price', Measure::UnitCurrency, "AVG(invoice_items.unit_price * {$rate})", 'invoices'),
+                new Measure('line_count', 'Lines', Measure::UnitCount, 'COUNT(*)'),
+            ],
+            periodDimension: 'date',
+        );
+    }
+
+    private function purchaseLines(): Dataset
+    {
+        $rate = $this->sql->rate('passive_invoices');
+        $sign = static fn (string $column): string => "(CASE WHEN passive_invoices.document_type = 'TD04' THEN -ABS({$column}) ELSE {$column} END)";
+
+        return new Dataset(
+            key: 'purchase_lines',
+            label: 'Purchase lines',
+            description: 'Lines of supplier invoices posted to the ledger; credit notes (TD04) subtract.',
+            module: 'procurement',
+            table: 'passive_invoice_lines',
+            joins: [
+                new DatasetJoin('passive_invoices', 'passive_invoices.id = passive_invoice_lines.passive_invoice_id', inner: true),
+                new DatasetJoin('contacts', 'contacts.id = passive_invoices.supplier_id', softDeletes: false),
+            ],
+            conditions: [
+                'passive_invoices.gl_journal_entry_id IS NOT NULL',
+                $this->sql->convertible('passive_invoices'),
+            ],
+            dimensions: [
+                new Dimension('date', 'Invoice date', Dimension::TypeDate, 'passive_invoices.date', 'passive_invoices'),
+                new Dimension('supplier', 'Supplier', Dimension::TypeString, self::ContactName, 'contacts'),
+                new Dimension('supplier_country', 'Supplier country', Dimension::TypeString, 'contacts.country', 'contacts'),
+                new Dimension('invoice_number', 'Invoice number', Dimension::TypeString, 'passive_invoices.invoice_number', 'passive_invoices'),
+                new Dimension('description', 'Line description', Dimension::TypeString, 'passive_invoice_lines.description'),
+                new Dimension('tax_rate', 'Tax rate', Dimension::TypeNumber, 'passive_invoice_lines.tax_rate'),
+                new Dimension('uom', 'Unit of measure', Dimension::TypeString, 'passive_invoice_lines.unit_of_measure'),
+            ],
+            measures: [
+                new Measure('line_total', 'Line total (net)', Measure::UnitCurrency, "SUM({$sign('passive_invoice_lines.line_total')} * {$rate})", 'passive_invoices'),
+                new Measure('quantity', 'Quantity', Measure::UnitQuantity, "SUM(COALESCE({$sign('passive_invoice_lines.quantity')}, 0))", 'passive_invoices'),
+                new Measure('average_unit_price', 'Average unit price', Measure::UnitCurrency, "AVG(passive_invoice_lines.unit_price * {$rate})", 'passive_invoices'),
+                new Measure('line_count', 'Lines', Measure::UnitCount, 'COUNT(*)'),
+            ],
+            periodDimension: 'date',
+        );
+    }
+
+    private function inventoryMoves(): Dataset
+    {
+        return new Dataset(
+            key: 'inventory_moves',
+            label: 'Inventory movements',
+            description: 'Stock movements by type, item and day. The valuation of a movement is a cost figure: it is visible only to roles that can write inventory data.',
+            module: 'inventory',
+            table: 'stock_movements',
+            joins: [new DatasetJoin('stock_items', 'stock_items.id = stock_movements.stock_item_id')],
+            conditions: [],
+            dimensions: [
+                new Dimension('executed_at', 'Movement date', Dimension::TypeDate, 'stock_movements.executed_at'),
+                new Dimension('movement_type', 'Movement type', Dimension::TypeString, 'stock_movements.movement_type'),
+                new Dimension('origin_document_type', 'Origin document', Dimension::TypeString, 'stock_movements.origin_document_type'),
+                new Dimension('sku', 'SKU', Dimension::TypeString, 'stock_items.sku', 'stock_items'),
+                new Dimension('item', 'Item', Dimension::TypeString, 'stock_items.name', 'stock_items'),
+                new Dimension('uom', 'Unit of measure', Dimension::TypeString, 'stock_movements.uom'),
+            ],
+            measures: [
+                new Measure('quantity', 'Quantity', Measure::UnitQuantity, 'SUM(stock_movements.quantity)'),
+                new Measure('total_valuation', 'Valuation', Measure::UnitCurrency, 'SUM(stock_movements.total_valuation)', null, 'write'),
+                new Measure('average_unit_cost', 'Average unit cost', Measure::UnitCurrency, 'AVG(stock_movements.unit_cost)', null, 'write'),
+                new Measure('movement_count', 'Movements', Measure::UnitCount, 'COUNT(*)'),
+            ],
+            periodDimension: 'executed_at',
+        );
+    }
+
+    private function timesheets(): Dataset
+    {
+        return new Dataset(
+            key: 'timesheets',
+            label: 'Timesheets',
+            description: 'Time booked on projects. No employee identity is exposed; cost and charge figures are visible only to roles that can write project data.',
+            module: 'projects',
+            table: 'project_timesheets',
+            joins: [new DatasetJoin('projects', 'projects.id = project_timesheets.project_id', softDeletes: false)],
+            conditions: [],
+            dimensions: [
+                new Dimension('work_date', 'Work date', Dimension::TypeDate, 'project_timesheets.work_date'),
+                new Dimension('project', 'Project', Dimension::TypeString, 'projects.name', 'projects'),
+                new Dimension('project_number', 'Project number', Dimension::TypeString, 'projects.project_number', 'projects'),
+                new Dimension('status', 'Status', Dimension::TypeString, 'project_timesheets.status'),
+                new Dimension('role', 'Role', Dimension::TypeString, 'project_timesheets.role'),
+                new Dimension('is_billable', 'Billable', Dimension::TypeBoolean, 'project_timesheets.is_billable'),
+            ],
+            measures: [
+                new Measure('hours', 'Hours', Measure::UnitQuantity, 'SUM(project_timesheets.hours_worked)'),
+                new Measure('overtime_hours', 'Overtime hours', Measure::UnitQuantity, 'SUM(project_timesheets.overtime_hours)'),
+                new Measure('billable_hours', 'Billable hours', Measure::UnitQuantity, 'SUM(CASE WHEN project_timesheets.is_billable THEN project_timesheets.hours_worked ELSE 0 END)'),
+                new Measure('total_cost', 'Cost', Measure::UnitCurrency, 'SUM(project_timesheets.total_cost)', null, 'write'),
+                new Measure('total_charge', 'Charge', Measure::UnitCurrency, 'SUM(project_timesheets.total_charge)', null, 'write'),
+                new Measure('entry_count', 'Entries', Measure::UnitCount, 'COUNT(*)'),
+            ],
+            periodDimension: 'work_date',
         );
     }
 }

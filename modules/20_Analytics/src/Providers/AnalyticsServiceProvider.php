@@ -6,6 +6,7 @@ namespace Modules\Analytics\Providers;
 
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\Analytics\Console\DispatchScheduledReportsCommand;
 use Modules\Analytics\Console\RefreshKpiSnapshotsCommand;
 use Modules\Analytics\Console\RunScheduledExportsCommand;
 use Modules\Analytics\Models\DesignedReport;
@@ -41,7 +42,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Gate::policy(ExportSchedule::class, ExportSchedulePolicy::class);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([RunScheduledExportsCommand::class, RefreshKpiSnapshotsCommand::class]);
+            $this->commands([RunScheduledExportsCommand::class, RefreshKpiSnapshotsCommand::class, DispatchScheduledReportsCommand::class]);
         }
     }
 }

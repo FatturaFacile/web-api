@@ -35,5 +35,20 @@ return [
         'period_dates' => 'from and to are dates (Y-m-d).',
         'period_inverted' => 'The start of the period is after its end.',
         'period_too_long' => 'The period cannot be longer than :days days.',
+        'filter_tree_invalid' => 'The filter expression must be nested groups (and / or) of at most :depth levels.',
+    ],
+    'pivot' => [
+        'layout_invalid' => 'The pivot layout is invalid: rows and columns are lists of dimensions.',
+        'too_many_dimensions' => 'A pivot can group by at most :max dimensions in total (rows and columns).',
+        'formatting_invalid' => 'A conditional formatting rule is invalid.',
+        'chart_invalid' => 'The chart configuration is invalid.',
+        'calculated_invalid' => 'Calculated field error: :detail',
+    ],
+    'schedule' => [
+        'cron_invalid' => 'The cron expression is not valid.',
+        'cron_too_frequent' => 'A report cannot run more often than every 5 minutes.',
+        'timezone_invalid' => 'Unknown time zone.',
+        'channel_invalid' => 'A delivery channel is invalid: :detail',
+        'no_channel' => 'Choose at least one recipient or delivery channel.',
     ],
 ];

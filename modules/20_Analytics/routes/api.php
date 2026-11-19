@@ -32,10 +32,12 @@ Route::prefix('api/v1/analytics')
         Route::get('report-definitions/{id}/run', [ReportDefinitionController::class, 'run'])->whereUuid('id')->name('analytics.report-definitions.run');
         Route::get('report-definitions/{id}/export', [ReportDefinitionController::class, 'export'])->whereUuid('id')->name('analytics.report-definitions.export');
 
+        Route::get('semantic/catalog', [SemanticLayerController::class, 'catalog'])->name('analytics.semantic.catalog');
         Route::get('semantic/datasets', [SemanticLayerController::class, 'index'])->name('analytics.semantic.datasets.index');
         Route::get('semantic/datasets/{dataset}', [SemanticLayerController::class, 'show'])->where('dataset', '[a-z][a-z0-9_]*')->name('analytics.semantic.datasets.show');
         Route::post('designer/run', [SemanticLayerController::class, 'run'])->name('analytics.designer.run');
         Route::post('designer/export', [SemanticLayerController::class, 'export'])->name('analytics.designer.export');
+        Route::post('designer/pivot', [SemanticLayerController::class, 'pivot'])->name('analytics.designer.pivot');
 
         Route::get('designed-reports', [DesignedReportController::class, 'index'])->name('analytics.designed-reports.index');
         Route::post('designed-reports', [DesignedReportController::class, 'store'])->name('analytics.designed-reports.store');
@@ -43,10 +45,14 @@ Route::prefix('api/v1/analytics')
         Route::put('designed-reports/{id}', [DesignedReportController::class, 'update'])->whereUuid('id')->name('analytics.designed-reports.update');
         Route::delete('designed-reports/{id}', [DesignedReportController::class, 'destroy'])->whereUuid('id')->name('analytics.designed-reports.destroy');
         Route::get('designed-reports/{id}/run', [DesignedReportController::class, 'run'])->whereUuid('id')->name('analytics.designed-reports.run');
+        Route::get('designed-reports/{id}/pivot', [DesignedReportController::class, 'pivot'])->whereUuid('id')->name('analytics.designed-reports.pivot');
         Route::get('designed-reports/{id}/export', [DesignedReportController::class, 'export'])->whereUuid('id')->name('analytics.designed-reports.export');
 
         Route::get('export-schedules', [ExportScheduleController::class, 'index'])->name('analytics.export-schedules.index');
         Route::post('export-schedules', [ExportScheduleController::class, 'store'])->name('analytics.export-schedules.store');
+        Route::post('export-schedules/cron-preview', [ExportScheduleController::class, 'cronPreview'])->name('analytics.export-schedules.cron-preview');
+        Route::post('export-schedules/{id}/run', [ExportScheduleController::class, 'run'])->whereUuid('id')->name('analytics.export-schedules.run');
+        Route::get('execution-logs', [ExportScheduleController::class, 'logs'])->name('analytics.execution-logs.index');
         Route::get('export-schedules/{id}', [ExportScheduleController::class, 'show'])->whereUuid('id')->name('analytics.export-schedules.show');
         Route::put('export-schedules/{id}', [ExportScheduleController::class, 'update'])->whereUuid('id')->name('analytics.export-schedules.update');
         Route::delete('export-schedules/{id}', [ExportScheduleController::class, 'destroy'])->whereUuid('id')->name('analytics.export-schedules.destroy');

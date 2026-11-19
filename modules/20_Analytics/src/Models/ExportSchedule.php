@@ -24,8 +24,17 @@ use Illuminate\Support\Carbon;
  * @property string $format
  * @property string $delivery
  * @property list<string> $recipients
+ * @property ?string $name
+ * @property ?string $cron_expression
+ * @property string $timezone
+ * @property ?string $locale
+ * @property list<string> $recipient_user_ids
+ * @property list<string> $external_emails
+ * @property array<string, mixed> $delivery_channels
+ * @property array<string, mixed>|null $secret_config_encrypted
  * @property bool $is_active
  * @property ?Carbon $next_run_on
+ * @property ?Carbon $next_run_at
  * @property ?Carbon $last_run_at
  * @property ?string $last_status
  * @property ?string $last_error
@@ -33,11 +42,13 @@ use Illuminate\Support\Carbon;
 #[UseFactory(ExportScheduleFactory::class)]
 final class ExportSchedule extends BaseEnterpriseModel
 {
-    public const array Frequencies = ['daily', 'weekly', 'monthly'];
+    public const array Frequencies = ['daily', 'weekly', 'monthly', 'cron'];
 
     public const array Deliveries = ['email', 'documents', 'both'];
 
     protected $table = 'analytics_export_schedules';
+
+    protected $hidden = ['secret_config_encrypted'];
 
     /**
      * @return array<string, string>
@@ -48,6 +59,11 @@ final class ExportSchedule extends BaseEnterpriseModel
             'recipients' => 'array',
             'is_active' => 'boolean',
             'next_run_on' => 'date',
+            'next_run_at' => 'datetime',
+            'recipient_user_ids' => 'array',
+            'external_emails' => 'array',
+            'delivery_channels' => 'array',
+            'secret_config_encrypted' => 'encrypted:array',
             'last_run_at' => 'datetime',
             'day_of_week' => 'integer',
             'day_of_month' => 'integer',

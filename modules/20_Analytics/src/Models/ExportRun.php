@@ -27,6 +27,10 @@ use Illuminate\Support\Carbon;
  * @property int $size_bytes
  * @property ?string $document_id
  * @property ?Carbon $expires_at
+ * @property string $status queued, running, completed or failed
+ * @property ?int $duration_ms
+ * @property ?string $error_message
+ * @property ?string $locale
  */
 final class ExportRun extends BaseEnterpriseModel
 {
@@ -37,6 +41,6 @@ final class ExportRun extends BaseEnterpriseModel
      */
     protected function casts(): array
     {
-        return ['truncated' => 'boolean', 'expires_at' => 'datetime', 'row_count' => 'integer', 'size_bytes' => 'integer'];
+        return ['truncated' => 'boolean', 'expires_at' => 'datetime', 'row_count' => 'integer', 'size_bytes' => 'integer', 'duration_ms' => 'integer'];
     }
 }
