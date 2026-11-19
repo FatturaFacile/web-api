@@ -779,6 +779,12 @@ CREATE TABLE "analytics_designed_reports"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "visibility" varchar not null default 'private',
+  "shared_role_ids" text not null default '[]',
+  "pivot" text not null default '{}',
+  "calculated_fields" text not null default '[]',
+  "conditional_formatting" text not null default '[]',
+  "chart_config" text not null default '{}',
   primary key("id")
 );
 
@@ -816,6 +822,10 @@ CREATE TABLE "analytics_export_runs"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "status" varchar not null default 'completed',
+  "duration_ms" integer,
+  "error_message" text,
+  "locale" varchar,
   primary key("id")
 );
 
@@ -857,6 +867,15 @@ CREATE TABLE "analytics_export_schedules"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "name" varchar,
+  "cron_expression" varchar,
+  "timezone" varchar not null default 'Europe/Zurich',
+  "locale" varchar,
+  "recipient_user_ids" text not null default '[]',
+  "external_emails" text not null default '[]',
+  "delivery_channels" text not null default '{}',
+  "secret_config_encrypted" text,
+  "next_run_at" datetime,
   foreign key("designed_report_id") references "analytics_designed_reports"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -6523,6 +6542,9 @@ CREATE TABLE "crm_lead_routing_rules"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "conditions" text,
+  "round_robin_cursor" integer not null default '0',
+  "is_default" tinyint(1) not null default '0',
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -6552,6 +6574,11 @@ CREATE TABLE "crm_lead_scoring_rules"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "code" varchar,
+  "category" varchar,
+  "event_type" varchar,
+  "max_applications" integer,
+  "decay_days" integer,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -6573,6 +6600,14 @@ CREATE TABLE "crm_lead_sources"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "type" varchar not null default 'manual',
+  "api_key_prefix" varchar,
+  "api_key_hash" varchar,
+  "webhook_secret" text,
+  "allowed_origins" text,
+  "field_mapping" text,
+  "default_product_line" varchar,
+  "last_received_at" datetime,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -6612,93 +6647,6 @@ CREATE TABLE "crm_lead_webhook_endpoints"(
 CREATE UNIQUE INDEX "crm_lead_webhook_endpoints_token_unique" on "crm_lead_webhook_endpoints"(
   "token"
 );
-CREATE TABLE "crm_leads"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "lead_source_id" varchar,
-  "campaign_id" varchar,
-  "assigned_user_id" varchar,
-  "first_name" varchar,
-  "last_name" varchar,
-  "company_name" varchar,
-  "title" varchar,
-  "email" varchar,
-  "phone" varchar,
-  "website" varchar,
-  "country" varchar not null default('IT'),
-  "status" varchar not null default('new'),
-  "disqualification_reason" varchar,
-  "score" integer not null default('0'),
-  "rating" varchar not null default('cold'),
-  "estimated_budget" numeric,
-  "converted_at" datetime,
-  "converted_contact_id" varchar,
-  "converted_account_id" varchar,
-  "converted_opportunity_id" varchar,
-  "duplicate_hash" varchar,
-  "tags" text,
-  "custom_fields" text,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "phone_e164" varchar,
-  "vat_number" varchar,
-  "company_normalized" varchar,
-  "industry" varchar,
-  "region" varchar,
-  "product_line" varchar,
-  "company_size" integer,
-  "estimated_revenue" numeric,
-  "email_opens" integer not null default('0'),
-  "catalog_downloads" integer not null default('0'),
-  "site_visits" integer not null default('0'),
-  "score_breakdown" text,
-  "duplicate_of_id" varchar,
-  "assigned_at" datetime,
-  "score_calculated_at" datetime,
-  "processing_restricted_at" datetime,
-  "anonymized_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("converted_account_id") references "crm_accounts"("id") on delete set null on update no action,
-  foreign key("converted_contact_id") references "contacts"("id") on delete set null on update no action,
-  foreign key("campaign_id") references "crm_campaigns"("id") on delete set null on update no action,
-  foreign key("lead_source_id") references "crm_lead_sources"("id") on delete set null on update no action,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
-  primary key("id")
-);
-
-CREATE INDEX "crm_leads_assigned_user_id_index" on "crm_leads"(
-  "assigned_user_id"
-);
-CREATE INDEX "crm_leads_company_normalized_index" on "crm_leads"(
-  "company_normalized"
-);
-CREATE INDEX "crm_leads_converted_opportunity_id_index" on "crm_leads"(
-  "converted_opportunity_id"
-);
-CREATE INDEX "crm_leads_duplicate_hash_index" on "crm_leads"(
-  "duplicate_hash"
-);
-CREATE INDEX "crm_leads_duplicate_of_id_index" on "crm_leads"(
-  "duplicate_of_id"
-);
-CREATE INDEX "crm_leads_email_index" on "crm_leads"("email");
-CREATE INDEX "crm_leads_phone_e164_index" on "crm_leads"("phone_e164");
-CREATE INDEX "crm_leads_score_index" on "crm_leads"("score");
-CREATE INDEX "crm_leads_status_index" on "crm_leads"("status");
-CREATE INDEX "crm_leads_tenant_id_company_name_email_index" on "crm_leads"(
-  "tenant_id",
-  "company_name",
-  "email"
-);
-CREATE INDEX "crm_leads_tenant_id_status_score_index" on "crm_leads"(
-  "tenant_id",
-  "status",
-  "score"
-);
-CREATE INDEX "crm_leads_vat_number_index" on "crm_leads"("vat_number");
 CREATE TABLE "crm_opportunities"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -16063,6 +16011,9 @@ CREATE TABLE "invoice_items"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "natura" varchar,
+  "withholding_applies" tinyint(1) not null default '1',
+  "fund_applies" tinyint(1) not null default '1',
   foreign key("cost_center_id") references "cost_centers"("id") on delete set null on update no action,
   foreign key("invoice_id") references "invoices"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -16202,6 +16153,17 @@ CREATE TABLE "invoices"(
   "updated_by" varchar,
   "deleted_by" varchar,
   "qr_reference" varchar,
+  "total_due" numeric,
+  "withholding_tax_taxable_percent" numeric,
+  "withholding_tax_base" numeric,
+  "withholding_tax_includes_fund" tinyint(1) not null default '0',
+  "fund_natura" varchar,
+  "fund_withholding_applies" tinyint(1) not null default '0',
+  "enasarco_commissions" numeric,
+  "enasarco_taxable" numeric,
+  "stamp_duty_charged_to_customer" tinyint(1) not null default '0',
+  "legal_notices" text,
+  "vat_summary" text,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
   foreign key("quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("delivery_note_id") references "delivery_notes"("id") on delete set null on update no action,
@@ -39168,6 +39130,256 @@ CREATE UNIQUE INDEX "vat_settlement_periods_unique_period" on "vat_settlement_pe
 CREATE INDEX "vat_settlement_periods_vat_settlement_id_index" on "vat_settlement_periods"(
   "vat_settlement_id"
 );
+CREATE TABLE "crm_leads"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lead_source_id" varchar,
+  "campaign_id" varchar,
+  "assigned_user_id" varchar,
+  "first_name" varchar,
+  "last_name" varchar,
+  "company_name" varchar,
+  "title" varchar,
+  "email" varchar,
+  "phone" varchar,
+  "website" varchar,
+  "country" varchar not null default('IT'),
+  "status" varchar not null default('new'),
+  "disqualification_reason" varchar,
+  "score" integer not null default('0'),
+  "rating" varchar not null default('cold'),
+  "estimated_budget" numeric,
+  "converted_at" datetime,
+  "converted_contact_id" varchar,
+  "converted_account_id" varchar,
+  "converted_opportunity_id" varchar,
+  "duplicate_hash" varchar,
+  "tags" text,
+  "custom_fields" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "phone_e164" varchar,
+  "vat_number" varchar,
+  "company_normalized" varchar,
+  "industry" varchar,
+  "region" varchar,
+  "product_line" varchar,
+  "company_size" integer,
+  "estimated_revenue" numeric,
+  "email_opens" integer not null default('0'),
+  "catalog_downloads" integer not null default('0'),
+  "site_visits" integer not null default('0'),
+  "score_breakdown" text,
+  "duplicate_of_id" varchar,
+  "assigned_at" datetime,
+  "score_calculated_at" datetime,
+  "processing_restricted_at" datetime,
+  "anonymized_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "company_name_normalized" varchar,
+  "employee_count" integer,
+  "annual_revenue_estimate" numeric,
+  "state_region" varchar,
+  "external_id" varchar,
+  "scored_at" datetime,
+  "last_activity_at" datetime,
+  "merged_into_lead_id" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  foreign key("lead_source_id") references "crm_lead_sources"("id") on delete set null on update no action,
+  foreign key("campaign_id") references "crm_campaigns"("id") on delete set null on update no action,
+  foreign key("converted_contact_id") references "contacts"("id") on delete set null on update no action,
+  foreign key("converted_account_id") references "crm_accounts"("id") on delete set null on update no action,
+  foreign key("merged_into_lead_id") references "crm_leads"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "crm_leads_assigned_user_id_index" on "crm_leads"(
+  "assigned_user_id"
+);
+CREATE INDEX "crm_leads_company_normalized_index" on "crm_leads"(
+  "company_normalized"
+);
+CREATE INDEX "crm_leads_converted_opportunity_id_index" on "crm_leads"(
+  "converted_opportunity_id"
+);
+CREATE INDEX "crm_leads_duplicate_hash_index" on "crm_leads"(
+  "duplicate_hash"
+);
+CREATE INDEX "crm_leads_duplicate_of_id_index" on "crm_leads"(
+  "duplicate_of_id"
+);
+CREATE INDEX "crm_leads_email_index" on "crm_leads"("email");
+CREATE INDEX "crm_leads_phone_e164_index" on "crm_leads"("phone_e164");
+CREATE INDEX "crm_leads_score_index" on "crm_leads"("score");
+CREATE INDEX "crm_leads_status_index" on "crm_leads"("status");
+CREATE INDEX "crm_leads_tenant_id_company_name_email_index" on "crm_leads"(
+  "tenant_id",
+  "company_name",
+  "email"
+);
+CREATE INDEX "crm_leads_tenant_id_status_score_index" on "crm_leads"(
+  "tenant_id",
+  "status",
+  "score"
+);
+CREATE INDEX "crm_leads_vat_number_index" on "crm_leads"("vat_number");
+CREATE UNIQUE INDEX "crm_leads_tenant_source_external_unique" on "crm_leads"(
+  "tenant_id",
+  "lead_source_id",
+  "external_id"
+);
+CREATE INDEX "crm_lead_sources_api_key_prefix_index" on "crm_lead_sources"(
+  "api_key_prefix"
+);
+CREATE TABLE "crm_lead_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "warm_threshold" integer not null default '40',
+  "hot_threshold" integer not null default '70',
+  "auto_qualify_threshold" integer not null default '80',
+  "dedup_mode" varchar not null default 'notify',
+  "dedup_levenshtein_max" integer not null default '2',
+  "dedup_similarity_min" numeric not null default '0.85',
+  "default_country" varchar not null default 'IT',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "crm_lead_settings_tenant_id_unique" on "crm_lead_settings"(
+  "tenant_id"
+);
+CREATE TABLE "crm_lead_activity_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lead_id" varchar not null,
+  "type" varchar not null,
+  "occurred_at" datetime not null,
+  "metadata" text,
+  "external_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("lead_id") references "crm_leads"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "crm_lead_activity_events_lead_external_unique" on "crm_lead_activity_events"(
+  "lead_id",
+  "external_id"
+);
+CREATE INDEX "crm_lead_activity_events_lookup_index" on "crm_lead_activity_events"(
+  "tenant_id",
+  "lead_id",
+  "type",
+  "occurred_at"
+);
+CREATE TABLE "crm_lead_duplicate_candidates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lead_id" varchar not null,
+  "candidate_lead_id" varchar,
+  "contact_id" varchar,
+  "account_id" varchar,
+  "match_type" varchar not null,
+  "confidence" numeric not null default '1',
+  "status" varchar not null default 'pending',
+  "resolved_by" varchar,
+  "resolved_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("lead_id") references "crm_leads"("id") on delete cascade,
+  foreign key("candidate_lead_id") references "crm_leads"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  foreign key("account_id") references "crm_accounts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "crm_lead_duplicate_candidates_status_index" on "crm_lead_duplicate_candidates"(
+  "tenant_id",
+  "status",
+  "created_at"
+);
+CREATE INDEX "crm_lead_duplicate_candidates_lead_id_status_index" on "crm_lead_duplicate_candidates"(
+  "lead_id",
+  "status"
+);
+CREATE TABLE "enasarco_annual_limits"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "year" integer not null,
+  "rate" numeric not null,
+  "annual_minimum" numeric not null default '0',
+  "annual_maximum_commission" numeric not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "enasarco_annual_limits_tenant_id_year_unique" on "enasarco_annual_limits"(
+  "tenant_id",
+  "year"
+);
+CREATE INDEX "enasarco_annual_limits_year_index" on "enasarco_annual_limits"(
+  "year"
+);
+CREATE TABLE "passive_invoice_withholdings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "passive_invoice_id" varchar not null,
+  "supplier_id" varchar not null,
+  "type" varchar not null,
+  "reason" varchar,
+  "rate" numeric not null default '0',
+  "taxable_amount" numeric,
+  "amount" numeric not null,
+  "withheld_year" integer,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("passive_invoice_id") references "passive_invoices"("id") on delete cascade,
+  foreign key("supplier_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "passive_invoice_withholdings_tenant_id_withheld_year_index" on "passive_invoice_withholdings"(
+  "tenant_id",
+  "withheld_year"
+);
+CREATE INDEX "passive_invoice_withholdings_tenant_id_supplier_id_index" on "passive_invoice_withholdings"(
+  "tenant_id",
+  "supplier_id"
+);
+CREATE INDEX "idx_analytics_schedules_due_at" on "analytics_export_schedules"(
+  "is_active",
+  "next_run_at"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -39536,3 +39748,13 @@ INSERT INTO migrations VALUES(364,'2027_11_25_100000_create_vat_settlement_perio
 INSERT INTO migrations VALUES(365,'2027_12_01_000100_create_esm_maintenance_hour_bank_tables',1);
 INSERT INTO migrations VALUES(366,'2027_12_01_000200_make_customs_tenant_id_nullable',1);
 INSERT INTO migrations VALUES(367,'2027_12_02_000100_complete_audit_and_tenant_columns_on_late_tables',1);
+INSERT INTO migrations VALUES(368,'2027_04_20_194001_add_intake_dedup_and_routing_fields_to_crm_leads_and_sources',2);
+INSERT INTO migrations VALUES(369,'2027_04_20_194002_create_crm_lead_scoring_rules_and_settings_tables',2);
+INSERT INTO migrations VALUES(370,'2027_04_20_194003_create_crm_lead_activity_events_table',2);
+INSERT INTO migrations VALUES(371,'2027_04_20_194004_create_crm_lead_routing_rules_table',2);
+INSERT INTO migrations VALUES(372,'2027_04_20_194005_create_crm_lead_duplicate_candidates_table',2);
+INSERT INTO migrations VALUES(373,'2027_04_20_286001_add_italian_tax_fields_to_invoices_and_items_issue_286',2);
+INSERT INTO migrations VALUES(374,'2027_04_20_286002_create_enasarco_annual_limits_table_issue_286',2);
+INSERT INTO migrations VALUES(375,'2027_04_20_286003_create_passive_invoice_withholdings_table_issue_286',2);
+INSERT INTO migrations VALUES(376,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',2);
+INSERT INTO migrations VALUES(377,'2027_12_10_000100_extend_analytics_reporting_for_pivot_studio',2);

@@ -59,6 +59,7 @@ final readonly class ReportSpec
         public ?int $limit = null,
         public ?array $period = null,
         public string $compare = ReportPeriod::CompareNone,
+        public ?array $filterTree = null,
     ) {}
 
     /**
@@ -111,6 +112,7 @@ final readonly class ReportSpec
         }
 
         $filters = self::parseFilters($input['filters'] ?? [], $dataset, $errors);
+        $filterTree = self::parseFilterTree($input['filter_tree'] ?? null, $dataset, $errors);
         $sort = self::parseSort($input['sort'] ?? [], $dimensions, $measures, $errors);
         $limit = self::parseLimit($input['limit'] ?? null, $maxRows, $errors);
         $period = self::parsePeriod($input['period'] ?? null, $dataset, $maxPeriodDays, $errors);
@@ -129,7 +131,7 @@ final readonly class ReportSpec
             throw ValidationException::withMessages($errors);
         }
 
-        return new self($dataset->key, $dimensions, $measures, $filters, $sort, $limit, $period, (string) $compare);
+        return new self($dataset->key, $dimensions, $measures, $filters, $sort, $limit, $period, (string) $compare, $filterTree);
     }
 
     /**
@@ -145,6 +147,7 @@ final readonly class ReportSpec
             'limit' => $this->limit,
             'period' => $this->period,
             'compare' => $this->compare,
+            'filter_tree' => $this->filterTree,
         ];
     }
 
@@ -199,37 +202,108 @@ final readonly class ReportSpec
         $filters = [];
 
         foreach ($raw as $index => $filter) {
-            $field = is_array($filter) && is_string($filter['field'] ?? null) ? $filter['field'] : null;
-            $measure = $field === null ? null : $dataset->measure($field);
-            $dimension = $field === null ? null : ($measure !== null ? new Dimension($measure->key, $measure->label, Dimension::TypeNumber, '1') : $dataset->dimension($field));
+            $parsed = self::parseCondition($filter, $dataset, "filters.{$index}", $errors, true);
 
-            if ($dimension === null) {
-                $errors["filters.{$index}.field"][] = self::message('analytics_errors.spec.unknown_dimension_or_measure');
-
-                continue;
+            if ($parsed !== null) {
+                $filters[] = $parsed;
             }
-
-            $operator = $filter['operator'] ?? null;
-            $allowed = $measure !== null ? self::MeasureOperators : $dimension->operators();
-
-            if (! is_string($operator) || ! in_array($operator, $allowed, true)) {
-                $errors["filters.{$index}.operator"][] = self::message('analytics_errors.spec.operator_not_allowed');
-
-                continue;
-            }
-
-            $value = self::coerceValue($dimension, $operator, $filter['value'] ?? null);
-
-            if ($value === false) {
-                $errors["filters.{$index}.value"][] = self::message('analytics_errors.spec.invalid_filter_value', ['type' => $dimension->type, 'operator' => $operator]);
-
-                continue;
-            }
-
-            $filters[] = ['field' => $dimension->key, 'operator' => $operator, 'value' => $value];
         }
 
         return $filters;
+    }
+
+    /**
+     * One condition `{field, operator, value}`, or null after recording why it was refused. Measures are accepted only
+     * when `$allowMeasures` (they become HAVING conditions, which cannot sit inside an OR group).
+     *
+     * @param  array<string, list<string>>  $errors
+     * @return array{field: string, operator: string, value: mixed}|null
+     */
+    private static function parseCondition(mixed $filter, Dataset $dataset, string $path, array &$errors, bool $allowMeasures): ?array
+    {
+        $field = is_array($filter) && is_string($filter['field'] ?? null) ? $filter['field'] : null;
+        $measure = $field === null || ! $allowMeasures ? null : $dataset->measure($field);
+        $dimension = $field === null ? null : ($measure !== null ? new Dimension($measure->key, $measure->label, Dimension::TypeNumber, '1') : $dataset->dimension($field));
+
+        if ($dimension === null) {
+            $errors["{$path}.field"][] = self::message('analytics_errors.spec.unknown_dimension_or_measure');
+
+            return null;
+        }
+
+        $operator = $filter['operator'] ?? null;
+        $allowed = $measure !== null ? self::MeasureOperators : $dimension->operators();
+
+        if (! is_string($operator) || ! in_array($operator, $allowed, true)) {
+            $errors["{$path}.operator"][] = self::message('analytics_errors.spec.operator_not_allowed');
+
+            return null;
+        }
+
+        $value = self::coerceValue($dimension, $operator, $filter['value'] ?? null);
+
+        if ($value === false) {
+            $errors["{$path}.value"][] = self::message('analytics_errors.spec.invalid_filter_value', ['type' => $dimension->type, 'operator' => $operator]);
+
+            return null;
+        }
+
+        return ['field' => $dimension->key, 'operator' => $operator, 'value' => $value];
+    }
+
+    public const int MaxFilterTreeDepth = 3;
+
+    /**
+     * The nested filter expression: groups `{logic: and|or, conditions: [...]}` of conditions and groups over dimensions.
+     *
+     * @param  array<string, list<string>>  $errors
+     * @return array<string, mixed>|null
+     */
+    private static function parseFilterTree(mixed $raw, Dataset $dataset, array &$errors): ?array
+    {
+        if ($raw === null || $raw === [] || $raw === '') {
+            return null;
+        }
+
+        $count = 0;
+        $tree = self::parseFilterGroup($raw, $dataset, 'filter_tree', 1, $count, $errors);
+
+        return $tree === null || $tree['conditions'] === [] ? null : $tree;
+    }
+
+    /**
+     * @param  array<string, list<string>>  $errors
+     * @return array{logic: string, conditions: list<array<string, mixed>>}|null
+     */
+    private static function parseFilterGroup(mixed $raw, Dataset $dataset, string $path, int $depth, int &$count, array &$errors): ?array
+    {
+        $logic = is_array($raw) ? strtolower((string) ($raw['logic'] ?? 'and')) : '';
+
+        if (! is_array($raw) || ! in_array($logic, ['and', 'or'], true) || ! is_array($raw['conditions'] ?? null) || ! array_is_list($raw['conditions']) || $depth > self::MaxFilterTreeDepth) {
+            $errors[$path][] = self::message('analytics_errors.spec.filter_tree_invalid', ['depth' => self::MaxFilterTreeDepth]);
+
+            return null;
+        }
+
+        $conditions = [];
+
+        foreach ($raw['conditions'] as $index => $node) {
+            if (++$count > self::MaxFilters) {
+                $errors[$path][] = self::message('analytics_errors.spec.filters_list', ['max' => self::MaxFilters]);
+
+                break;
+            }
+
+            $parsed = is_array($node) && isset($node['conditions'])
+                ? self::parseFilterGroup($node, $dataset, "{$path}.conditions.{$index}", $depth + 1, $count, $errors)
+                : self::parseCondition($node, $dataset, "{$path}.conditions.{$index}", $errors, false);
+
+            if ($parsed !== null && ($parsed['conditions'] ?? true) !== []) {
+                $conditions[] = $parsed;
+            }
+        }
+
+        return ['logic' => $logic, 'conditions' => $conditions];
     }
 
     /**

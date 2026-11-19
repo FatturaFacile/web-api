@@ -37,6 +37,7 @@ final readonly class Dimension
         public string $type,
         public string $sql,
         public ?string $join = null,
+        public ?string $requires = null,
     ) {
         if (preg_match('/^[a-z][a-z0-9_]{0,40}$/', $key) !== 1) {
             throw new InvalidArgumentException("Invalid dimension key [{$key}].");

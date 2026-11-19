@@ -35,5 +35,20 @@ return [
         'period_dates' => 'from und to sind Datumsangaben (Y-m-d).',
         'period_inverted' => 'Der Beginn des Zeitraums liegt nach seinem Ende.',
         'period_too_long' => 'Der Zeitraum darf nicht länger als :days Tage sein.',
+        'filter_tree_invalid' => 'Der Filterausdruck muss aus verschachtelten Gruppen (und / oder) mit höchstens :depth Ebenen bestehen.',
+    ],
+    'pivot' => [
+        'layout_invalid' => 'Das Pivot-Layout ist ungültig: Zeilen und Spalten sind Listen von Dimensionen.',
+        'too_many_dimensions' => 'Eine Pivot kann insgesamt höchstens nach :max Dimensionen gruppieren (Zeilen und Spalten).',
+        'formatting_invalid' => 'Eine Regel der bedingten Formatierung ist ungültig.',
+        'chart_invalid' => 'Die Diagrammkonfiguration ist ungültig.',
+        'calculated_invalid' => 'Fehler im berechneten Feld: :detail',
+    ],
+    'schedule' => [
+        'cron_invalid' => 'Der Cron-Ausdruck ist ungültig.',
+        'cron_too_frequent' => 'Ein Bericht kann nicht häufiger als alle 5 Minuten laufen.',
+        'timezone_invalid' => 'Unbekannte Zeitzone.',
+        'channel_invalid' => 'Ein Zustellkanal ist ungültig: :detail',
+        'no_channel' => 'Wählen Sie mindestens einen Empfänger oder Zustellkanal.',
     ],
 ];

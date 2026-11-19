@@ -21,6 +21,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/telescope": "^5.26",
         "laravel/tinker": "^3.0",
+        "league/flysystem-sftp-v3": "^3.36",
         "onelogin/php-saml": "^4.4",
         "openspout/openspout": "^5.13",
         "picqer/php-barcode-generator": "^3.3",
