@@ -20,9 +20,13 @@ final class DesignedReportPolicy
      */
     public function view(User $user, DesignedReport $report): bool
     {
+        $role = $user->getRoleInTenant((string) app(TenantContext::class)->getTenantId());
+
         return $report->is_shared
+            || $report->visibility === DesignedReport::VisibilityTenantPublic
             || (string) $report->user_id === (string) $user->id
-            || in_array((string) $user->id, array_map('strval', $report->shared_with), true);
+            || in_array((string) $user->id, $report->shared_with, true)
+            || ($report->visibility === DesignedReport::VisibilityRoleShared && $role !== null && in_array($role, $report->shared_role_ids, true));
     }
 
     /**

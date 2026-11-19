@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Analytics\Semantic;
 
+use Closure;
 use InvalidArgumentException;
 
 /**
@@ -71,6 +72,31 @@ final readonly class Dataset
         if ($periodDimension !== null && ($this->dimensions[$periodDimension] ?? null)?->type !== Dimension::TypeDate) {
             throw new InvalidArgumentException("Dataset [{$key}] has no date dimension [{$periodDimension}].");
         }
+    }
+
+    /**
+     * The dataset as one user may see it: fields that require an access level the user lacks are removed, so they cannot
+     * be selected, filtered, sorted or listed, whatever the request says (field-level security).
+     *
+     * @param  Closure(string): bool  $allows  whether the user has the access level a field requires on the module
+     */
+    public function restrictedBy(Closure $allows): self
+    {
+        $visible = static fn (Dimension|Measure $field): bool => $field->requires === null || $allows($field->requires);
+
+        return new self(
+            $this->key,
+            $this->label,
+            $this->description,
+            $this->module,
+            $this->table,
+            array_values($this->joins),
+            $this->conditions,
+            array_values(array_filter($this->dimensions, $visible)),
+            array_values(array_filter($this->measures, $visible)),
+            $this->periodDimension,
+            $this->softDeletes,
+        );
     }
 
     public function dimension(string $key): ?Dimension

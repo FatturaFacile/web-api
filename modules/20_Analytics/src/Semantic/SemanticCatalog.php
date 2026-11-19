@@ -69,12 +69,23 @@ final class SemanticCatalog
     }
 
     /**
+     * The dataset limited to the fields the user may see: a field that requires an access level ('write', for costs and
+     * margins) is removed for roles without it on the module of the dataset.
+     */
+    public function restrict(Dataset $dataset, User $user): Dataset
+    {
+        $tenantId = $this->tenantContext->getTenantId();
+
+        return $dataset->restrictedBy(fn (string $access): bool => $this->gate->allows($user, $tenantId, $dataset->module, $access));
+    }
+
+    /**
      * The datasets the user may use.
      *
      * @return array<string, Dataset>
      */
     public function readableBy(User $user): array
     {
-        return array_filter($this->all(), fn (Dataset $dataset): bool => $this->canRead($dataset, $user));
+        return array_map(fn (Dataset $dataset): Dataset => $this->restrict($dataset, $user), array_filter($this->all(), fn (Dataset $dataset): bool => $this->canRead($dataset, $user)));
     }
 }

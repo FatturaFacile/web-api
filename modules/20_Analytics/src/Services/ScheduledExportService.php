@@ -8,27 +8,28 @@ use App\Models\User;
 use App\Services\Tenancy\TenantClock;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
-use Enterprise\MultiTenant\Services\ModuleAccessGate;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
-use Modules\Analytics\Mail\ScheduledReportMail;
+use Modules\Analytics\Export\RegionalReportFormatter;
 use Modules\Analytics\Models\DesignedReport;
 use Modules\Analytics\Models\ExportRun;
 use Modules\Analytics\Models\ExportSchedule;
-use Modules\Analytics\Semantic\ReportEngine;
-use Modules\Documents\Services\DocumentLibrary;
+use Modules\Analytics\Pivot\DesignedReportPlan;
+use Modules\Analytics\Scheduling\CronSchedule;
+use Modules\Analytics\Scheduling\ReportDeliveryService;
 use RuntimeException;
 use Throwable;
 
 /**
  * Runs the scheduled exports of the active company. A schedule runs with the permissions of its owner at the moment of
- * the run: a user who lost the dataset (or the company) gets a failed run, never the data. Each run is idempotent per
- * day (the next date moves past today whatever the outcome), so running the command twice does not mail twice, and a
- * failure is recorded on the schedule instead of being retried every hour.
+ * the run: a user who lost the dataset (or the company) gets a failed run, never the data.
  *
- * Delivery: an e-mail with a signed link to the stored file, a document in the Documents module, or both.
+ * Two kinds of schedule share the table: the daily, weekly and monthly ones (a date, run once a day by the daily
+ * command; the next date moves past today whatever the outcome, so running the command twice does not mail twice) and
+ * the cron ones (an instant in UTC, claimed by {@see claimDueCron()} every minute before the run is queued, so a slow
+ * run is never queued twice). A failure is recorded on the schedule instead of being retried every hour.
+ *
+ * Delivery goes to the channels of the schedule through {@see ReportDeliveryService}: e-mail, Telegram, the document
+ * library, a signed webhook and SFTP. A pivot report is exported as its matrix.
  */
 final readonly class ScheduledExportService
 {
@@ -36,13 +37,12 @@ final readonly class ScheduledExportService
      * Inject the collaborators.
      */
     public function __construct(
-        private ReportEngine $engine,
         private ReportExporter $exporter,
-        private ReportExportFormatter $formatter,
         private TenantClock $clock,
         private TenantContext $tenantContext,
-        private ModuleAccessGate $gate,
-        private DocumentLibrary $documents,
+        private ReportDeliveryService $delivery,
+        private DesignedReportPlan $plans,
+        private CronSchedule $cron,
     ) {}
 
     /**
@@ -70,7 +70,7 @@ final readonly class ScheduledExportService
     }
 
     /**
-     * Runs every active schedule of the company that is due.
+     * Runs every active dated schedule of the company that is due (the cron ones go through the queue).
      *
      * @return array{succeeded: int, failed: int}
      */
@@ -78,7 +78,7 @@ final readonly class ScheduledExportService
     {
         $today = $this->clock->today();
         $outcome = ['succeeded' => 0, 'failed' => 0];
-        $due = ExportSchedule::query()->where('is_active', true)->whereDate('next_run_on', '<=', $today->toDateString())->get();
+        $due = ExportSchedule::query()->where('is_active', true)->where('frequency', '<>', 'cron')->whereDate('next_run_on', '<=', $today->toDateString())->get();
 
         foreach ($due as $schedule) {
             $this->runSchedule($schedule, $today) ? $outcome['succeeded']++ : $outcome['failed']++;
@@ -88,9 +88,40 @@ final readonly class ScheduledExportService
     }
 
     /**
-     * Runs one schedule now and records the outcome on it.
+     * Moves the next run of every due cron schedule of the company past now and returns them, so each is queued once.
+     *
+     * @return list<ExportSchedule>
      */
-    public function runSchedule(ExportSchedule $schedule, ?CarbonImmutable $today = null): bool
+    public function claimDueCron(?CarbonImmutable $now = null): array
+    {
+        $now ??= CarbonImmutable::now('UTC');
+        $claimed = [];
+
+        foreach (ExportSchedule::query()->where('is_active', true)->where('frequency', 'cron')->where('next_run_at', '<=', $now)->get() as $schedule) {
+            $next = $this->nextCronRun($schedule, $now);
+            $won = ExportSchedule::query()->whereKey($schedule->id)->where('next_run_at', $schedule->next_run_at)->update(['next_run_at' => $next]);
+
+            if ($won === 1) {
+                $claimed[] = $schedule->refresh();
+            }
+        }
+
+        return $claimed;
+    }
+
+    /**
+     * The next instant of a cron schedule after the given one, in UTC.
+     */
+    public function nextCronRun(ExportSchedule $schedule, ?CarbonImmutable $after = null): CarbonImmutable
+    {
+        return $this->cron->nextRunAfter((string) $schedule->cron_expression, (string) $schedule->timezone, $after ?? CarbonImmutable::now('UTC'));
+    }
+
+    /**
+     * Runs one schedule now and records the outcome on it. Dated schedules also move to their next date (`$advance`);
+     * a cron schedule was already moved when it was claimed, and a manual run leaves the calendar alone.
+     */
+    public function runSchedule(ExportSchedule $schedule, ?CarbonImmutable $today = null, bool $advance = true): bool
     {
         $today ??= $this->clock->today();
         $error = null;
@@ -102,12 +133,13 @@ final readonly class ScheduledExportService
             $error = mb_substr($exception->getMessage(), 0, 500);
         }
 
-        $schedule->update([
-            'last_run_at' => now(),
-            'last_status' => $error === null ? 'ok' : 'failed',
-            'last_error' => $error,
-            'next_run_on' => $this->onOrAfter($today->addDay(), $schedule->frequency, $schedule->day_of_week, $schedule->day_of_month)->toDateString(),
-        ]);
+        $changes = ['last_run_at' => now(), 'last_status' => $error === null ? 'ok' : 'failed', 'last_error' => $error];
+
+        if ($advance && $schedule->frequency !== 'cron') {
+            $changes['next_run_on'] = $this->onOrAfter($today->addDay(), $schedule->frequency, $schedule->day_of_week, $schedule->day_of_month)->toDateString();
+        }
+
+        $schedule->update($changes);
 
         return $error === null;
     }
@@ -141,54 +173,54 @@ final readonly class ScheduledExportService
             throw new RuntimeException('The owner of this schedule is no longer a member of the company.');
         }
 
-        $spec = $this->engine->parse($report->dataset, $report->spec, $owner);
-        $wantsDocument = in_array($schedule->delivery, ['documents', 'both'], true);
-
-        if ($wantsDocument && ! $this->gate->allows($owner, $tenantId, 'documents', 'write')) {
-            throw new RuntimeException('The owner of this schedule cannot write documents.');
-        }
-
-        $prepared = $this->exporter->prepare($spec, $owner, $schedule->format, $report, $schedule, store: true);
+        $plan = $this->plans->forReport($report, $owner);
+        $channels = $this->channels($schedule);
+        $locale = $schedule->locale === null ? null : RegionalReportFormatter::normalise($schedule->locale);
+        $language = $locale === null ? (string) ($owner->locale ?: app()->getLocale()) : (new RegionalReportFormatter($locale))->language();
+        $prepared = $plan['pivot'] === null
+            ? $this->exporter->prepare($plan['spec'], $owner, $schedule->format, $report, $schedule, store: true, locale: $locale)
+            : $this->exporter->preparePivot($plan['spec'], $plan['pivot'], $plan['calculated'], $owner, $schedule->format, $report, $schedule, store: true, locale: $locale);
         $run = $prepared['run'];
         $temporary = $this->exporter->store($prepared);
 
         try {
-            if ($wantsDocument) {
-                $this->storeDocument($report, $run, $temporary, $prepared['file_name'], $owner);
-            }
+            $failures = $this->delivery->deliver($this->withChannels($schedule, $channels), $report, $run->refresh(), $temporary, $prepared['file_name'], $prepared['mime'], $owner, $language);
         } finally {
             @unlink($temporary);
         }
 
-        if (in_array($schedule->delivery, ['email', 'both'], true)) {
-            $link = URL::temporarySignedRoute('analytics.exports.download', $run->expires_at, ['run' => $run->id]);
-            $failures = [];
-
-            foreach ($schedule->recipients as $recipient) {
-                try {
-                    Mail::to($recipient)->locale((string) ($owner->locale ?: app()->getLocale()))->send(new ScheduledReportMail($report->name, $link, (string) $run->expires_at?->toDateString(), $run->row_count, $run->truncated));
-                } catch (Throwable $exception) {
-                    report($exception);
-                    $failures[] = $recipient;
-                }
-            }
-
-            if ($failures !== []) {
-                throw new RuntimeException('The e-mail could not be sent to: '.implode(', ', $failures));
-            }
+        if ($failures !== []) {
+            throw new RuntimeException(implode(' | ', $failures));
         }
     }
 
-    private function storeDocument(DesignedReport $report, ExportRun $run, string $path, string $fileName, User $owner): void
+    /**
+     * The channels of the schedule: its own for the new ones, derived from the `delivery` choice for the legacy ones.
+     *
+     * @return array<string, mixed>
+     */
+    private function channels(ExportSchedule $schedule): array
     {
-        $document = $this->documents->create(
-            ['title' => $report->name.' ('.now()->toDateString().')', 'document_type' => 'analytics_export', 'description' => 'Scheduled export of the report "'.$report->name.'"', 'metadata' => ['analytics_export_run_id' => $run->id, 'dataset' => $run->dataset]],
-            new UploadedFile($path, $fileName, $this->formatter->mimeType($run->format), null, true),
-            null,
-            true,
-            [],
-            $owner,
-        );
-        $run->update(['document_id' => $document->id]);
+        $channels = (array) ($schedule->delivery_channels ?? []);
+
+        if ($channels === [] || $schedule->frequency !== 'cron') {
+            $channels['email'] = $channels['email'] ?? in_array($schedule->delivery, ['email', 'both'], true);
+            $channels['dms'] = $channels['dms'] ?? in_array($schedule->delivery, ['documents', 'both'], true);
+        }
+
+        return $channels;
+    }
+
+    /**
+     * @param  array<string, mixed>  $channels
+     */
+    private function withChannels(ExportSchedule $schedule, array $channels): ExportSchedule
+    {
+        $copy = $schedule->replicate();
+        $copy->id = $schedule->id;
+        $copy->delivery_channels = $channels;
+        $copy->secret_config_encrypted = $schedule->secret_config_encrypted;
+
+        return $copy;
     }
 }

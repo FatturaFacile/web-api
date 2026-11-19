@@ -64,7 +64,7 @@ const SCHEDULE_CLEANUPS = [
 ];
 
 const SCHEDULE_NON_CLEANUPS = [
-    'subscriptions:process', 'general-ledger:run-scheduled', 'analytics:refresh-kpi-snapshots', 'analytics:run-scheduled-exports',
+    'subscriptions:process', 'general-ledger:run-scheduled', 'analytics:refresh-kpi-snapshots', 'analytics:run-scheduled-exports', 'analytics:dispatch-scheduled-reports',
     'webhooks:dispatch-overdue', 'invoices:send-reminders', 'ecommerce:sync-orders', 'sdi:poll', 'Enterprise\EventBus\Jobs\RelayOutboxEventsJob',
     'workflow:webhooks', 'workflow:timeouts', 'crm:activity-reminders', 'esm:sla-breaches', 'esm:support-mailboxes', 'esm:contract-renewals',
     'inventory:reorder-rules', 'inventory:valuation', 'procurement:expiring-contracts', 'procurement:supplier-otif', 'hr:expiring-certifications',

@@ -37,7 +37,7 @@ function biRun(array $spec, string $dataset = 'sales', array $extra = []): TestR
 
 test('the catalogue lists only the datasets of modules the caller can read', function (): void {
     $keys = collect($this->getJson('/api/v1/analytics/semantic/datasets')->assertOk()->json('data'))->pluck('key')->all();
-    expect($keys)->toEqualCanonicalizing(['sales', 'purchases', 'inventory', 'ledger', 'projects', 'hr_headcount']);
+    expect($keys)->toEqualCanonicalizing(['sales', 'purchases', 'inventory', 'ledger', 'projects', 'hr_headcount', 'sales_lines', 'purchase_lines', 'inventory_moves', 'timesheets']);
 
     biActAs($this->tenant, 'accountant');
     $keys = collect($this->getJson('/api/v1/analytics/semantic/datasets')->assertOk()->json('data'))->pluck('key')->all();

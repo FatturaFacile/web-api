@@ -29,6 +29,7 @@ final readonly class Measure
         public string $unit,
         public string $sql,
         public ?string $join = null,
+        public ?string $requires = null,
     ) {
         if (preg_match('/^[a-z][a-z0-9_]{0,40}$/', $key) !== 1) {
             throw new InvalidArgumentException("Invalid measure key [{$key}].");
@@ -42,6 +43,15 @@ final readonly class Measure
     /**
      * Decimals of the figure when it is returned.
      */
+    /**
+     * Whether the total of the measure is the sum of its parts (a sum or a plain count), so a native spreadsheet SUM of
+     * the column is a correct total. Averages, distinct counts and ratios are not.
+     */
+    public function isAdditive(): bool
+    {
+        return preg_match('/^\s*(COALESCE\(\s*)?(SUM\(|COUNT\((?!\s*DISTINCT))/i', $this->sql) === 1;
+    }
+
     public function scale(): int
     {
         return match ($this->unit) {

@@ -779,6 +779,12 @@ CREATE TABLE "analytics_designed_reports"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "visibility" varchar not null default 'private',
+  "shared_role_ids" text not null default '[]',
+  "pivot" text not null default '{}',
+  "calculated_fields" text not null default '[]',
+  "conditional_formatting" text not null default '[]',
+  "chart_config" text not null default '{}',
   primary key("id")
 );
 
@@ -816,6 +822,10 @@ CREATE TABLE "analytics_export_runs"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "status" varchar not null default 'completed',
+  "duration_ms" integer,
+  "error_message" text,
+  "locale" varchar,
   primary key("id")
 );
 
@@ -857,6 +867,15 @@ CREATE TABLE "analytics_export_schedules"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "name" varchar,
+  "cron_expression" varchar,
+  "timezone" varchar not null default 'Europe/Zurich',
+  "locale" varchar,
+  "recipient_user_ids" text not null default '[]',
+  "external_emails" text not null default '[]',
+  "delivery_channels" text not null default '{}',
+  "secret_config_encrypted" text,
+  "next_run_at" datetime,
   foreign key("designed_report_id") references "analytics_designed_reports"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -40025,6 +40044,10 @@ CREATE INDEX "controlling_budget_lines_tenant_id_plan_id_index" on "controlling_
 CREATE INDEX "controlling_budget_lines_tenant_id_index" on "controlling_budget_lines"(
   "tenant_id"
 );
+CREATE INDEX "idx_analytics_schedules_due_at" on "analytics_export_schedules"(
+  "is_active",
+  "next_run_at"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -40405,5 +40428,6 @@ INSERT INTO migrations VALUES(376,'2027_12_03_000100_complete_tenant_fks_and_enu
 INSERT INTO migrations VALUES(377,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',2);
 INSERT INTO migrations VALUES(378,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',3);
 INSERT INTO migrations VALUES(379,'2027_12_10_100000_create_controlling_tables',4);
-INSERT INTO migrations VALUES(380,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',5);
-INSERT INTO migrations VALUES(381,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',6);
+INSERT INTO migrations VALUES(380,'2027_12_10_000100_extend_analytics_reporting_for_pivot_studio',5);
+INSERT INTO migrations VALUES(381,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',6);
+INSERT INTO migrations VALUES(382,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',7);
