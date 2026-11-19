@@ -22,6 +22,7 @@ use Modules\SDI\Enums\NaturaIva;
 use Modules\SDI\Enums\RegimeFiscale;
 use Modules\SDI\Enums\TipoDocumento;
 use Modules\SDI\Enums\TipoRitenuta;
+use Modules\SDI\Services\FatturaSemplificataBuilder;
 use Modules\SDI\Services\SdiPreflight;
 
 class FatturaPaBuilderService
@@ -127,6 +128,10 @@ class FatturaPaBuilderService
             throw new InvalidArgumentException('Invoice must belong to a valid tenant.');
         }
 
+        if ($invoice->sdi_simplified) {
+            return (new FatturaSemplificataBuilder($this))->build($invoice, $progressive, $attachments);
+        }
+
         $type = TipoDocumento::ofInvoice($invoice);
 
         $dom = new DOMDocument('1.0', 'UTF-8');
@@ -160,6 +165,10 @@ class FatturaPaBuilderService
 
         $body->appendChild($this->generalData($dom, $invoice, $type));
         $body->appendChild($this->goodsAndServices($dom, $invoice));
+
+        if ($type === TipoDocumento::Td01 && is_array($invoice->sdi_vehicle) && ! empty($invoice->sdi_vehicle['date'])) {
+            $body->appendChild($this->vehicleData($dom, $invoice->sdi_vehicle));
+        }
 
         if (! $type->isSelfInvoice()) {
             $body->appendChild($this->paymentData($dom, $invoice));
@@ -202,6 +211,10 @@ class FatturaPaBuilderService
     public function transmissionFormat(Invoice $invoice): string
     {
         $contact = $invoice->contact;
+
+        if ($invoice->sdi_simplified) {
+            return 'FSM10';
+        }
 
         if (TipoDocumento::ofInvoice($invoice)->isSelfInvoice()) {
             return 'FPR12';
@@ -788,6 +801,20 @@ class FatturaPaBuilderService
         $allegati->appendChild($dom->createElement('Attachment', base64_encode($attachment['content'])));
 
         return $allegati;
+    }
+
+    /**
+     * DatiVeicoli of an intra-EU sale of a vehicle (TD01): first registration date and mileage or hours of use.
+     *
+     * @param  array<string, mixed>  $vehicle
+     */
+    private function vehicleData(DOMDocument $dom, array $vehicle): DOMElement
+    {
+        $element = $dom->createElement('DatiVeicoli');
+        $element->appendChild($dom->createElement('Data', Carbon::parse((string) $vehicle['date'])->format('Y-m-d')));
+        $element->appendChild($dom->createElement('TotalePercorso', htmlspecialchars(substr((string) ($vehicle['mileage'] ?? '0'), 0, 15))));
+
+        return $element;
     }
 
     private function money(mixed $amount): string

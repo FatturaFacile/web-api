@@ -2823,4 +2823,6 @@ return [
     'auto_sign_on_send' => 'firma automatica all\'invio',
     'legal_archiving_enabled' => 'conservazione a norma attiva',
     'sandbox_simulator_enabled' => 'simulatore sandbox attivo',
+    'sdi_simplified' => 'fattura semplificata',
+    'sdi_vehicle' => 'dati del veicolo',
 ];

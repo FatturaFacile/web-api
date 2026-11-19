@@ -16145,6 +16145,8 @@ CREATE TABLE "invoices"(
   "stamp_duty_charged_to_customer" tinyint(1) not null default '0',
   "legal_notices" text,
   "vat_summary" text,
+  "sdi_simplified" tinyint(1) not null default '0',
+  "sdi_vehicle" text,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
   foreign key("quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("delivery_note_id") references "delivery_notes"("id") on delete set null on update no action,
@@ -39852,3 +39854,4 @@ INSERT INTO migrations VALUES(374,'2027_04_20_286002_create_enasarco_annual_limi
 INSERT INTO migrations VALUES(375,'2027_04_20_286003_create_passive_invoice_withholdings_table_issue_286',2);
 INSERT INTO migrations VALUES(376,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',2);
 INSERT INTO migrations VALUES(377,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',2);
+INSERT INTO migrations VALUES(378,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',3);

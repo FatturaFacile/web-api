@@ -2823,4 +2823,6 @@ return [
     'auto_sign_on_send' => 'automatic signature on send',
     'legal_archiving_enabled' => 'legal archiving enabled',
     'sandbox_simulator_enabled' => 'sandbox simulator enabled',
+    'sdi_simplified' => 'simplified invoice',
+    'sdi_vehicle' => 'vehicle data',
 ];

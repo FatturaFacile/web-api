@@ -2823,4 +2823,6 @@ return [
     'auto_sign_on_send' => 'automatische Signatur beim Senden',
     'legal_archiving_enabled' => 'rechtskonforme Archivierung aktiv',
     'sandbox_simulator_enabled' => 'Sandbox-Simulator aktiv',
+    'sdi_simplified' => 'vereinfachte Rechnung',
+    'sdi_vehicle' => 'Fahrzeugdaten',
 ];

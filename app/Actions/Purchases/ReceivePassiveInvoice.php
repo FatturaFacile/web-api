@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use Modules\GeneralLedger\Actions\PostPassiveInvoiceAction;
+use Modules\SDI\Services\FpaEnvelopeRecorder;
 
 class ReceivePassiveInvoice
 {
@@ -25,6 +26,7 @@ class ReceivePassiveInvoice
         private readonly DocumentEventRecorder $events,
         private readonly PostPassiveInvoiceAction $postToLedger,
         private readonly SupplierCostRuleApplier $costRules,
+        private readonly FpaEnvelopeRecorder $envelopes,
     ) {}
 
     /**
@@ -105,6 +107,7 @@ class ReceivePassiveInvoice
 
                 $this->post($invoice, $deferLedgerErrors);
                 $this->events->record($invoice, 'received', ['file_name' => $fileName, 'document_type' => $document['document_type']]);
+                $this->envelopes->recordInbound($invoice, $fileName, $xml);
                 $results[] = ['invoice' => $invoice, 'duplicate' => false];
             }
 

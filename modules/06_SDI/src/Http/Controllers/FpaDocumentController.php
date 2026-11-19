@@ -17,8 +17,8 @@ use Modules\SDI\Enums\SdiNotificationType;
 use Modules\SDI\Http\Requests\SimulateSdiNotificationRequest;
 use Modules\SDI\Models\FpaDocument;
 use Modules\SDI\Models\SdiConfiguration;
-use Modules\SDI\Services\FatturaPaHtmlRenderer;
 use Modules\SDI\Services\FatturaPaSchemaValidator;
+use Modules\SDI\Services\FatturaPaStylesheetRenderer;
 use Modules\SDI\Services\RejectedDocumentResubmissionService;
 use Modules\SDI\Services\SandboxSimulatorService;
 use Modules\SDI\Services\SogeiCongruityValidator;
@@ -38,7 +38,7 @@ final class FpaDocumentController extends Controller
         private readonly SogeiCongruityValidator $sogei,
         private readonly RejectedDocumentResubmissionService $resubmission,
         private readonly SandboxSimulatorService $simulator,
-        private readonly FatturaPaHtmlRenderer $renderer,
+        private readonly FatturaPaStylesheetRenderer $renderer,
     ) {}
 
     #[OA\Get(path: '/api/v1/fpa-documents', operationId: 'listFpaDocuments', summary: 'List electronic invoice envelopes', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['SDI'], responses: [new OA\Response(response: 200, description: 'Envelopes with KPI counters in meta')])]
@@ -92,13 +92,13 @@ final class FpaDocumentController extends Controller
         ], 'Electronic invoice retrieved');
     }
 
-    #[OA\Get(path: '/api/v1/fpa-documents/{id}/render', operationId: 'renderFpaDocument', summary: 'Render an envelope as readable HTML', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['SDI'], responses: [new OA\Response(response: 200, description: 'HTML')])]
-    public function render(string $id): Response
+    #[OA\Get(path: '/api/v1/fpa-documents/{id}/render', operationId: 'renderFpaDocument', summary: 'Render an envelope as readable HTML (style=ministerial|assosoftware)', parameters: [new OA\Parameter(name: 'style', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['ministerial', 'assosoftware']))], security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['SDI'], responses: [new OA\Response(response: 200, description: 'HTML')])]
+    public function render(Request $request, string $id): Response
     {
         $document = FpaDocument::query()->findOrFail($id);
         $xml = $document->xml_storage_path !== null ? (string) Storage::disk('local')->get($document->xml_storage_path) : '';
 
-        return response($this->renderer->render($xml), 200, ['Content-Type' => 'text/html; charset=UTF-8']);
+        return response($this->renderer->render($xml, in_array($request->query('style'), FatturaPaStylesheetRenderer::Styles, true) ? (string) $request->query('style') : 'ministerial'), 200, ['Content-Type' => 'text/html; charset=UTF-8']);
     }
 
     #[OA\Post(path: '/api/v1/fpa-documents/{id}/resubmit', operationId: 'resubmitFpaDocument', summary: 'Create the linked revision of a rejected envelope (5 day window)', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['SDI'], responses: [new OA\Response(response: 201, description: 'Revision created'), new OA\Response(response: 422, description: 'Not rejected or deadline passed')])]
