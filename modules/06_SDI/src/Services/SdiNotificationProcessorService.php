@@ -7,9 +7,11 @@ namespace Modules\SDI\Services;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Modules\SDI\Enums\FpaStatus;
 use Modules\SDI\Enums\SdiNotificationType;
+use Modules\SDI\Events\SdiInvoiceRejected;
 use Modules\SDI\Models\FpaDocument;
 use Modules\SDI\Models\SdiNotification;
 
@@ -60,6 +62,16 @@ final class SdiNotificationProcessorService
 
             try {
                 $this->apply($document, $type, $data);
+
+                if ($type === SdiNotificationType::NS) {
+                    Event::dispatch(new SdiInvoiceRejected(
+                        (string) $document->tenant_id,
+                        (string) $document->id,
+                        $document->invoice_id !== null ? (string) $document->invoice_id : null,
+                        (string) $document->document_number,
+                        $data['errors'],
+                    ));
+                }
             } catch (\DomainException) {
                 // Late or out-of-order receipt (for example an MC after the RC): kept in the history, state unchanged.
             }

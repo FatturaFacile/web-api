@@ -23,8 +23,8 @@ Route::prefix('api/v1/payroll')
         // the answer to the own records of a user without payroll access.
         Route::middleware('privacy.sensitive.log:payroll_payslips')->group(function (): void {
             Route::get('/payslips', [PayslipController::class, 'index'])->name('payslips.index');
-            Route::get('/payslips/{id}', [PayslipController::class, 'show'])->name('payslips.show');
-            Route::get('/payslips/{id}/pdf', [PayslipController::class, 'pdf'])->name('payslips.pdf');
+            Route::get('/payslips/{id}', [PayslipController::class, 'show'])->middleware('audit.access:Payslip,VIEWED')->name('payslips.show');
+            Route::get('/payslips/{id}/pdf', [PayslipController::class, 'pdf'])->middleware('audit.access:Payslip,EXPORTED,pdf')->name('payslips.pdf');
         });
         Route::middleware('privacy.sensitive.log:salary_certificates')->group(function (): void {
             Route::get('/salary-certificates', [SalaryCertificateController::class, 'index'])->name('salary-certificates.index');

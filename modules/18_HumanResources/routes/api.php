@@ -114,9 +114,9 @@ Route::prefix('api/v1/hr')
             Route::delete('/salary-components/{id}', [EmploymentContractController::class, 'destroyComponent'])->name('api.v1.hr.salary-components.destroy');
 
             // Personnel file
-            Route::get('/employees/{id}/documents', [EmployeeDocumentController::class, 'index'])->name('api.v1.hr.employee-documents.index');
+            Route::get('/employees/{id}/documents', [EmployeeDocumentController::class, 'index'])->middleware('audit.access:EmployeeDocument,VIEWED')->name('api.v1.hr.employee-documents.index');
             Route::post('/employees/{id}/documents', [EmployeeDocumentController::class, 'store'])->name('api.v1.hr.employee-documents.store');
-            Route::get('/employee-documents/{id}/download', [EmployeeDocumentController::class, 'download'])->name('api.v1.hr.employee-documents.download');
+            Route::get('/employee-documents/{id}/download', [EmployeeDocumentController::class, 'download'])->middleware('audit.access:EmployeeDocument,EXPORTED,download')->name('api.v1.hr.employee-documents.download');
             Route::delete('/employee-documents/{id}', [EmployeeDocumentController::class, 'destroy'])->name('api.v1.hr.employee-documents.destroy');
 
             // Leave configuration and planning

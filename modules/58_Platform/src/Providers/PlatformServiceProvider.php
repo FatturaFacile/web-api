@@ -11,10 +11,15 @@ use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Modules\Inventory\Events\StockBelowMinimumEvent;
+use Modules\Invoicing\Events\InvoicePaidEvent;
 use Modules\Platform\Console\PruneIdempotencyKeysCommand;
 use Modules\Platform\Listeners\BroadcastUnreadNotifications;
 use Modules\Platform\Listeners\LogNotificationDelivery;
+use Modules\Platform\Listeners\NotifyBusinessEvents;
 use Modules\Platform\Services\NotificationDigestService;
+use Modules\SDI\Events\SdiInvoiceRejected;
+use Modules\Workflow\Events\ApprovalTokenGeneratedEvent;
 
 /**
  * Cross-cutting platform features: idempotent mutating requests, ETag / If-Match optimistic locking (both middleware
@@ -30,6 +35,11 @@ final class PlatformServiceProvider extends ServiceProvider
 
         Event::listen(NotificationSent::class, BroadcastUnreadNotifications::class);
         Event::listen([NotificationSent::class, NotificationFailed::class], LogNotificationDelivery::class);
+
+        Event::listen(InvoicePaidEvent::class, [NotifyBusinessEvents::class, 'handleInvoicePaid']);
+        Event::listen(SdiInvoiceRejected::class, [NotifyBusinessEvents::class, 'handleSdiRejected']);
+        Event::listen(StockBelowMinimumEvent::class, [NotifyBusinessEvents::class, 'handleStockBelowMinimum']);
+        Event::listen(ApprovalTokenGeneratedEvent::class, [NotifyBusinessEvents::class, 'handleApprovalPending']);
 
         // Realtime: clients authorise their private channel with the bearer token (POST /api/v1/broadcasting/auth).
         Broadcast::routes(['prefix' => 'api/v1', 'middleware' => ['auth:sanctum']]);

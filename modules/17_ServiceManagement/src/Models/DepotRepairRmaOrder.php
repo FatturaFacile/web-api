@@ -52,6 +52,7 @@ use Modules\ServiceManagement\Enums\WarrantyStatus;
  * @property string|null $loaner_id
  * @property string|null $ddt_causale_outbound
  * @property string|null $ddt_causale_return
+ * @property string|null $return_delivery_note_id
  * @property bool $is_non_ownership_transfer
  * @property bool $vat_exempt_art15_dpr633
  * @property string|null $repair_outcome

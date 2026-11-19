@@ -57,6 +57,7 @@ final readonly class RmaService implements RmaServiceInterface
         private EquipmentPassportServiceInterface $passportService,
         private RmaNumberGenerator $numberGenerator,
         private TenantContext $tenantContext,
+        private RmaDeliveryNoteService $deliveryNotes,
     ) {}
 
     public function issue(SerializedEquipmentPassport $passport, IssueRmaDTO $dto, ?string $actorUserId = null): array
@@ -451,6 +452,7 @@ final readonly class RmaService implements RmaServiceInterface
                 $rma->vat_exempt_art15_dpr633 = $dto->vatExemptArt15Dpr633;
             }
 
+            $this->deliveryNotes->issueReturnNote($rma);
             $this->transition($rma, RmaStatus::Returned, RmaStatusHistory::ACTOR_USER, $actorUserId, 'Unit returned to customer');
             $this->closeRepairAccountEntries($rma, $returnedAt);
 

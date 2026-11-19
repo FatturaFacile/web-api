@@ -259,7 +259,7 @@ Route::prefix('api/v1/associations')
         Route::get('/privacy/requests/{id}/erasure-preview', [PrivacyController::class, 'erasurePreview'])->name('privacy.requests.erasure-preview');
         Route::post('/privacy/requests/{id}/complete', [PrivacyController::class, 'complete'])->name('privacy.requests.complete');
         Route::post('/privacy/requests/{id}/reject', [PrivacyController::class, 'reject'])->name('privacy.requests.reject');
-        Route::get('/privacy/requests/{id}/export', [PrivacyController::class, 'export'])->name('privacy.requests.export');
+        Route::get('/privacy/requests/{id}/export', [PrivacyController::class, 'export'])->middleware('audit.access:DataSubjectRequest,EXPORTED,dsar')->name('privacy.requests.export');
 
         // Donations, campaigns, 5x1000 and sponsors
         Route::get('/donations', [FundraisingController::class, 'donations'])->name('donations.index');
