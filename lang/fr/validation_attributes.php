@@ -2872,4 +2872,6 @@ return [
     'target_margin_percent' => 'marge cible',
     'sdi_simplified' => 'facture simplifiée',
     'sdi_vehicle' => 'données du véhicule',
+    'sdi_extra' => 'blocs facultatifs FatturaPA',
+    'sdi_data' => 'données FatturaPA de la ligne',
 ];
