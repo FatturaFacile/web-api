@@ -2916,4 +2916,10 @@ return [
     'legal_basis_note' => 'legal basis note',
     'sdi_extra' => 'optional FatturaPA blocks',
     'sdi_data' => 'FatturaPA line data',
+    'auditable_type' => 'entity type',
+    'auditable_id' => 'entity ID',
+    'actor_id' => 'actor ID',
+    'changed_field' => 'changed field',
+    'from_sequence' => 'from sequence',
+    'to_sequence' => 'to sequence',
 ];

@@ -2916,4 +2916,10 @@ return [
     'legal_basis_note' => 'Hinweis zur Rechtsgrundlage',
     'sdi_extra' => 'optionale FatturaPA-Blöcke',
     'sdi_data' => 'FatturaPA-Zeilendaten',
+    'auditable_type' => 'Entitätstyp',
+    'auditable_id' => 'Entitätskennung',
+    'actor_id' => 'Akteurkennung',
+    'changed_field' => 'geändertes Feld',
+    'from_sequence' => 'ab Sequenz',
+    'to_sequence' => 'bis Sequenz',
 ];

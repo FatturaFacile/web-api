@@ -2916,4 +2916,10 @@ return [
     'legal_basis_note' => 'note sur la base juridique',
     'sdi_extra' => 'blocs facultatifs FatturaPA',
     'sdi_data' => 'données FatturaPA de la ligne',
+    'auditable_type' => 'type d\'entité',
+    'auditable_id' => 'identifiant de l\'entité',
+    'actor_id' => 'identifiant de l\'acteur',
+    'changed_field' => 'champ modifié',
+    'from_sequence' => 'à partir de la séquence',
+    'to_sequence' => 'jusqu\'à la séquence',
 ];
