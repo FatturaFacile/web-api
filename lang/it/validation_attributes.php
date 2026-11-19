@@ -2810,4 +2810,9 @@ return [
     'dedup_levenshtein_max' => 'distanza massima di Levenshtein',
     'dedup_similarity_min' => 'similarità minima',
     'default_country' => 'paese predefinito',
+    'pivot' => 'pivot',
+    'calculated_fields' => 'campi calcolati',
+    'conditional_formatting' => 'formattazione condizionale',
+    'chart_config' => 'configurazione del grafico',
+    'shared_role_ids' => 'ruoli condivisi',
 ];
