@@ -45,8 +45,8 @@ final class TariffTableController extends Controller
                 ->when(isset($filters['rate_basis']), static fn ($query) => $query->where('rate_basis', $filters['rate_basis']))
                 ->when(isset($filters['is_active']), static fn ($query) => $query->where('is_active', (bool) $filters['is_active']))
                 ->when(isset($filters['search']), static function ($query) use ($filters): void {
-                    $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], (string) $filters['search']).'%';
-                    $query->where(static fn ($inner) => $inner->where('name', 'like', $term));
+                    $term = '%'.mb_strtolower(str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $filters['search'])).'%';
+                    $query->whereRaw("LOWER(COALESCE(name, '')) LIKE ? ESCAPE '!'", [$term]);
                 })
                 ->orderByDesc('created_at')
                 ->paginate($this->perPage()),

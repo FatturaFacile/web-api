@@ -15,38 +15,80 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('invoices', function (Blueprint $table): void {
-            $table->string('document_type', 4)->nullable();
-            $table->string('vat_nature', 4)->nullable();
-            $table->uuid('source_passive_invoice_id')->nullable()->index();
-            $table->string('linked_document_number', 20)->nullable();
-            $table->date('linked_document_date')->nullable();
-            $table->uuid('declaration_of_intent_id')->nullable()->index();
-            $table->boolean('skip_declaration_of_intent')->default(false);
-            $table->string('withholding_tax_type', 4)->nullable();
-            $table->string('withholding_tax_reason', 2)->nullable();
-            $table->decimal('withholding_tax_base_percent', 5, 2)->nullable();
-            $table->boolean('stamp_duty_charged')->default(true);
-            $table->decimal('fund_vat_rate', 5, 2)->nullable();
-            $table->decimal('fund_vat_amount', 15, 2)->default(0);
-            $table->boolean('fund_subject_to_withholding')->default(false);
-            $table->boolean('enasarco_enabled')->default(false);
-            $table->string('enasarco_agent_type', 20)->nullable();
-            $table->decimal('enasarco_base', 15, 2)->nullable();
-            $table->decimal('enasarco_percent', 5, 2)->nullable();
-            $table->decimal('enasarco_amount', 15, 2)->default(0);
+            if (! Schema::hasColumn('invoices', 'document_type')) {
+                $table->string('document_type', 4)->nullable();
+            }
+            if (! Schema::hasColumn('invoices', 'vat_nature')) {
+                $table->string('vat_nature', 4)->nullable();
+            }
+            if (! Schema::hasColumn('invoices', 'source_passive_invoice_id')) {
+                $table->uuid('source_passive_invoice_id')->nullable()->index();
+            }
+            if (! Schema::hasColumn('invoices', 'linked_document_number')) {
+                $table->string('linked_document_number', 20)->nullable();
+            }
+            if (! Schema::hasColumn('invoices', 'linked_document_date')) {
+                $table->date('linked_document_date')->nullable();
+            }
+            if (! Schema::hasColumn('invoices', 'declaration_of_intent_id')) {
+                $table->uuid('declaration_of_intent_id')->nullable()->index();
+            }
+            if (! Schema::hasColumn('invoices', 'skip_declaration_of_intent')) {
+                $table->boolean('skip_declaration_of_intent')->default(false);
+            }
+            if (! Schema::hasColumn('invoices', 'withholding_tax_type')) {
+                $table->string('withholding_tax_type', 4)->nullable();
+            }
+            if (! Schema::hasColumn('invoices', 'withholding_tax_reason')) {
+                $table->string('withholding_tax_reason', 2)->nullable();
+            }
+            if (! Schema::hasColumn('invoices', 'withholding_tax_base_percent')) {
+                $table->decimal('withholding_tax_base_percent', 5, 2)->nullable();
+            }
+            if (! Schema::hasColumn('invoices', 'stamp_duty_charged')) {
+                $table->boolean('stamp_duty_charged')->default(true);
+            }
+            if (! Schema::hasColumn('invoices', 'fund_vat_rate')) {
+                $table->decimal('fund_vat_rate', 5, 2)->nullable();
+            }
+            if (! Schema::hasColumn('invoices', 'fund_vat_amount')) {
+                $table->decimal('fund_vat_amount', 15, 2)->default(0);
+            }
+            if (! Schema::hasColumn('invoices', 'fund_subject_to_withholding')) {
+                $table->boolean('fund_subject_to_withholding')->default(false);
+            }
+            if (! Schema::hasColumn('invoices', 'enasarco_enabled')) {
+                $table->boolean('enasarco_enabled')->default(false);
+            }
+            if (! Schema::hasColumn('invoices', 'enasarco_agent_type')) {
+                $table->string('enasarco_agent_type', 20)->nullable();
+            }
+            if (! Schema::hasColumn('invoices', 'enasarco_base')) {
+                $table->decimal('enasarco_base', 15, 2)->nullable();
+            }
+            if (! Schema::hasColumn('invoices', 'enasarco_percent')) {
+                $table->decimal('enasarco_percent', 5, 2)->nullable();
+            }
+            if (! Schema::hasColumn('invoices', 'enasarco_amount')) {
+                $table->decimal('enasarco_amount', 15, 2)->default(0);
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('invoices', function (Blueprint $table): void {
-            $table->dropColumn([
+            $columns = array_values(array_filter([
                 'document_type', 'vat_nature', 'source_passive_invoice_id', 'linked_document_number', 'linked_document_date',
                 'declaration_of_intent_id', 'skip_declaration_of_intent', 'withholding_tax_type', 'withholding_tax_reason',
                 'withholding_tax_base_percent', 'stamp_duty_charged', 'fund_vat_rate', 'fund_vat_amount',
                 'fund_subject_to_withholding', 'enasarco_enabled', 'enasarco_agent_type', 'enasarco_base', 'enasarco_percent',
                 'enasarco_amount',
-            ]);
+            ], static fn (string $column): bool => Schema::hasColumn('invoices', $column)));
+
+            if ($columns !== []) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };

@@ -39,6 +39,9 @@ final class GridColumns
     /** @var array<string, list<string>> */
     private static array $columnCache = [];
 
+    /** @var array<string, array<string, bool>> */
+    private static array $booleanCache = [];
+
     private readonly QueryBuilder $base;
 
     private readonly ?Model $model;
@@ -132,15 +135,23 @@ final class GridColumns
     private function resolve(?Model $model, string $table, array $segments): ?GridExpression
     {
         $first = $segments[0];
+        $connection = $this->base->getConnection();
+        $isPostgres = $connection instanceof Connection && $connection->getDriverName() === 'pgsql';
 
         if (count($segments) === 1) {
             if (in_array($first, $this->visibleColumns($model, $table), true)) {
-                return new GridExpression($this->base->getGrammar()->wrap("{$table}.{$first}"), [], true);
+                return new GridExpression(
+                    sql: $this->base->getGrammar()->wrap("{$table}.{$first}"),
+                    bindings: [],
+                    isColumn: true,
+                    isBoolean: $this->isBooleanColumn($table, $first),
+                    isPostgres: $isPostgres,
+                );
             }
             $declared = $model !== null && method_exists($model, 'gridColumns') ? $model->gridColumns() : [];
 
             return isset($declared[$first]) && is_string($declared[$first])
-                ? new GridExpression('('.$declared[$first].')')
+                ? new GridExpression(sql: '('.$declared[$first].')', isPostgres: $isPostgres)
                 : null;
         }
 
@@ -159,7 +170,12 @@ final class GridColumns
         $sub->getQuery()->bindings['select'] = [];
         $sub->selectRaw($inner->sql, $inner->bindings)->limit(1);
 
-        return new GridExpression('('.$sub->toSql().')', $sub->getBindings());
+        return new GridExpression(
+            sql: '('.$sub->toSql().')',
+            bindings: $sub->getBindings(),
+            isBoolean: $inner->isBoolean,
+            isPostgres: $isPostgres,
+        );
     }
 
     /**
@@ -209,6 +225,18 @@ final class GridColumns
         return $model === null ? $columns : array_values(array_diff($columns, $model->getHidden()));
     }
 
+    private function isBooleanColumn(string $table, string $column): bool
+    {
+        $this->tableColumns($table);
+        $connection = $this->base->getConnection();
+
+        if (! $connection instanceof Connection) {
+            return false;
+        }
+
+        return self::$booleanCache[$connection->getName().'.'.$table][$column] ?? false;
+    }
+
     /**
      * @return list<string>
      */
@@ -222,6 +250,25 @@ final class GridColumns
 
         $key = $connection->getName().'.'.$table;
 
-        return self::$columnCache[$key] ??= $connection->getSchemaBuilder()->getColumnListing($table);
+        if (! array_key_exists($key, self::$columnCache)) {
+            $columns = $connection->getSchemaBuilder()->getColumns($table);
+            $names = [];
+            $booleans = [];
+
+            foreach ($columns as $column) {
+                $name = $column['name'];
+                $names[] = $name;
+                $typeName = strtolower($column['type_name']);
+                $type = strtolower($column['type']);
+                if ($typeName === 'bool' || $typeName === 'boolean' || $type === 'boolean') {
+                    $booleans[$name] = true;
+                }
+            }
+
+            self::$columnCache[$key] = $names;
+            self::$booleanCache[$key] = $booleans;
+        }
+
+        return self::$columnCache[$key];
     }
 }

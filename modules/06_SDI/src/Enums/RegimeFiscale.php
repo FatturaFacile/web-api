@@ -36,7 +36,11 @@ enum RegimeFiscale: string
      */
     public static function ofTenant(?Tenant $tenant): self
     {
-        return self::tryFrom((string) ($tenant?->settings['regime_fiscale'] ?? '')) ?? self::Rf01;
+        $configured = $tenant?->settings['preferences']['fiscal']['regime_fiscale']
+            ?? $tenant?->settings['regime_fiscale']
+            ?? '';
+
+        return self::tryFrom((string) $configured) ?? self::Rf01;
     }
 
     public function isForfettario(): bool

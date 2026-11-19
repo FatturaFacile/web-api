@@ -41,13 +41,16 @@ final class CrossDockController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $term = isset($data['search']) ? '%'.str_replace(['%', '_'], ['\\%', '\\_'], (string) $data['search']).'%' : null;
+        $term = isset($data['search']) ? '%'.mb_strtolower(str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $data['search'])).'%' : null;
         $orders = WmsCrossDockOrder::query()
             ->with(['lines.stockItem:id,sku,name'])
             ->where('tenant_id', $this->tenantId())
             ->when(isset($data['warehouse_id']), static fn ($query) => $query->where('warehouse_id', $data['warehouse_id']))
             ->when(isset($data['status']), static fn ($query) => $query->where('status', $data['status']))
-            ->when($term !== null, static fn ($query) => $query->where(static fn ($inner) => $inner->where('number', 'like', $term)->orWhere('inbound_reference', 'like', $term)->orWhere('outbound_reference', 'like', $term)))
+            ->when($term !== null, static fn ($query) => $query->where(static fn ($inner) => $inner
+                ->whereRaw("LOWER(COALESCE(number, '')) LIKE ? ESCAPE '!'", [$term])
+                ->orWhereRaw("LOWER(COALESCE(inbound_reference, '')) LIKE ? ESCAPE '!'", [$term])
+                ->orWhereRaw("LOWER(COALESCE(outbound_reference, '')) LIKE ? ESCAPE '!'", [$term])))
             ->orderByDesc('created_at')
             ->paginate($this->perPage());
 

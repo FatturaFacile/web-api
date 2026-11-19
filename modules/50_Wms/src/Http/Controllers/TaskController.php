@@ -47,8 +47,10 @@ final class TaskController extends Controller
                 ->when(isset($filters['assigned_to']), static fn ($query) => $query->where('assigned_to', $filters['assigned_to']))
                 ->when(isset($filters['wave_id']), static fn ($query) => $query->where('wave_id', $filters['wave_id']))
                 ->when(isset($filters['search']), static function ($query) use ($filters): void {
-                    $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], (string) $filters['search']).'%';
-                    $query->where(static fn ($inner) => $inner->where('reference', 'like', $term)->orWhere('notes', 'like', $term));
+                    $term = '%'.mb_strtolower(str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $filters['search'])).'%';
+                    $query->where(static fn ($inner) => $inner
+                        ->whereRaw("LOWER(COALESCE(reference, '')) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereRaw("LOWER(COALESCE(notes, '')) LIKE ? ESCAPE '!'", [$term]));
                 })
                 ->orderByDesc('created_at')
                 ->paginate($this->perPage()),

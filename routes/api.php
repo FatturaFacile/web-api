@@ -104,6 +104,10 @@ use App\Http\Controllers\Api\V1\SupplierInvoiceController;
 use App\Http\Controllers\Api\V1\SwissQrBillController;
 use App\Http\Controllers\Api\V1\System\BootstrapSupportUserController;
 use App\Http\Controllers\Api\V1\System\TenantBackupController;
+use App\Http\Controllers\Api\V1\Tax\EnasarcoStatusController;
+use App\Http\Controllers\Api\V1\Tax\FiscalPreviewController;
+use App\Http\Controllers\Api\V1\Tax\StampDutyReportController;
+use App\Http\Controllers\Api\V1\Tax\WithholdingReportController;
 use App\Http\Controllers\Api\V1\TenantBrandingController;
 use App\Http\Controllers\Api\V1\TenantPreferencesController;
 use App\Http\Controllers\Api\V1\TimeAttendanceController;
@@ -465,7 +469,9 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('inventory')->name('inventory.')->middleware('module.access:inventory')->group(function (): void {
             Route::get('/products', [InventoryController::class, 'products'])->name('products');
             Route::post('/products', [InventoryController::class, 'storeProduct'])->name('products.store');
-            Route::put('/products/{id}', [InventoryController::class, 'updateProduct'])->name('products.update');
+            Route::get('/products/{id}', [InventoryController::class, 'showProduct'])->whereUuid('id')->name('products.show');
+            Route::put('/products/{id}', [InventoryController::class, 'updateProduct'])->whereUuid('id')->name('products.update');
+            Route::delete('/products/{id}', [InventoryController::class, 'destroyProduct'])->whereUuid('id')->name('products.destroy');
             Route::get('/delivery-notes', [InventoryController::class, 'deliveryNotes'])->name('delivery-notes');
             Route::get('/stock-levels', [StockController::class, 'levels'])->name('stock-levels');
             // Deprecated: no approval and no ledger entry; the successor is the Inventory adjustment flow
@@ -606,6 +612,14 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/vendor-aging', VendorAgingController::class)->name('vendor-aging');
             Route::get('/general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger');
             Route::get('/general-ledger/export', [GeneralLedgerController::class, 'export'])->name('general-ledger.export');
+        });
+
+        // 17b. Italian tax regimes (issue #286): fiscal preview, stamp duty, withholdings, ENASARCO
+        Route::prefix('tax')->name('tax.')->middleware('module.access:invoicing')->group(function (): void {
+            Route::post('/preview', FiscalPreviewController::class)->name('preview');
+            Route::get('/stamp-duty/quarterly', StampDutyReportController::class)->name('stamp-duty.quarterly');
+            Route::get('/withholdings/report', WithholdingReportController::class)->name('withholdings.report');
+            Route::get('/enasarco/status', EnasarcoStatusController::class)->name('enasarco.status');
         });
 
         // 18. Settings & Multi-Tenant Management

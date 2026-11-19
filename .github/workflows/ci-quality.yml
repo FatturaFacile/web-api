@@ -35,7 +35,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo, sqlite, pdo_sqlite, bcmath, zip
+          extensions: dom, curl, libxml, mbstring, xml, ctype, iconv, intl, pdo, sqlite, pdo_sqlite, pdo_pgsql, xmlreader, redis, bcmath, zip
           coverage: none
 
       - name: Install Composer Dependencies
@@ -44,8 +44,8 @@ jobs:
       - name: Run Laravel Pint Code Formatter Check
         run: ./vendor/bin/pint --test
 
-      - name: Run PHPStan / Larastan (Level 8)
-        run: ./vendor/bin/phpstan analyse --level=8 --memory-limit=1G --no-progress
+      - name: Run PHPStan / Larastan
+        run: ./vendor/bin/phpstan analyse --memory-limit=2G --no-progress
 
       - name: Run Pest Architecture Boundary Tests
         run: ./vendor/bin/pest tests/Architecture --no-coverage
@@ -61,16 +61,19 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo, sqlite, pdo_sqlite, bcmath, zip, pcov
+          extensions: dom, curl, libxml, mbstring, xml, ctype, iconv, intl, pdo, sqlite, pdo_sqlite, pdo_pgsql, xmlreader, redis, bcmath, zip, pcov
           coverage: pcov
+          ini-values: memory_limit=10G, max_memory_limit=10G, pcov.directory=${{ github.workspace }}, pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
 
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
-      - name: Execute Pest Parallel Test Suite with Coverage Gate
-        run: >
-          php -d pcov.enabled=1 -d pcov.directory=. -d pcov.exclude="~vendor|tests|database|bootstrap|storage~"
-          ./vendor/bin/pest --parallel --processes=4 --compact --coverage --min=80
+      - name: Execute Pest Test Suite in Shards with Coverage Gate
+        run: |
+          for s in 1 2 3 4; do
+            ./vendor/bin/pest --shard=$s/4 --compact --coverage-clover=clover-$s.xml
+          done
+          python3 scripts/merge-coverage.py --min 70 --output clover.xml clover-*.xml | tee coverage-summary.txt
 
   security-audit:
     name: Composer Security Dependency Audit

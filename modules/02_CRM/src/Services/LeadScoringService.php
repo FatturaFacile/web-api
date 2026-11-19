@@ -8,6 +8,7 @@ use Illuminate\Support\Collection;
 use Modules\CRM\Models\Activity;
 use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\LeadScoringRule;
+use Modules\CRM\Services\Intake\LeadScoringEngine;
 
 /**
  * Lead scoring with an explanation. A tenant that defines active rules is scored only by them (field conditions and
@@ -29,6 +30,7 @@ final class LeadScoringService
     public function evaluate(Lead $lead): array
     {
         $rules = LeadScoringRule::where('tenant_id', $lead->tenant_id)
+            ->whereNull('category')
             ->where('is_active', true)
             ->orderBy('sequence')
             ->get();
@@ -42,6 +44,11 @@ final class LeadScoringService
             'model' => $rules->isEmpty() ? 'default' : 'tenant_rules',
             'breakdown' => $breakdown,
         ];
+    }
+
+    public function compare(mixed $actual, string $operator, mixed $expected): bool
+    {
+        return app(LeadScoringEngine::class)->compare($actual, $operator, $expected);
     }
 
     /**

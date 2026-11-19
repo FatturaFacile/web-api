@@ -44,7 +44,7 @@ final class FreightInvoiceController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $term = isset($data['search']) ? '%'.str_replace(['%', '_'], ['\\%', '\\_'], (string) $data['search']).'%' : null;
+        $term = isset($data['search']) ? '%'.mb_strtolower(str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $data['search'])).'%' : null;
         $invoices = TmsFreightInvoice::query()
             ->with(['carrier:id,code,name', 'lines.transportOrder:id,number'])
             ->where('tenant_id', $this->tenantId())
@@ -53,7 +53,7 @@ final class FreightInvoiceController extends Controller
             ->when(isset($data['dispute_status']), static fn ($query) => $query->where('dispute_status', $data['dispute_status']))
             ->when(isset($data['from']), static fn ($query) => $query->whereDate('invoice_date', '>=', $data['from']))
             ->when(isset($data['to']), static fn ($query) => $query->whereDate('invoice_date', '<=', $data['to']))
-            ->when($term !== null, static fn ($query) => $query->where('invoice_number', 'like', $term))
+            ->when($term !== null, static fn ($query) => $query->whereRaw("LOWER(COALESCE(invoice_number, '')) LIKE ? ESCAPE '!'", [$term]))
             ->orderByDesc('invoice_date')
             ->orderByDesc('created_at')
             ->paginate($this->perPage());

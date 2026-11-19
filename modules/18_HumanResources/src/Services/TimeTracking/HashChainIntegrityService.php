@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\HumanResources\Services\TimeTracking;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * SHA-256 hash chain for the time audit ledger. Each entry includes the hash of its predecessor so
@@ -34,20 +36,44 @@ final class HashChainIntegrityService
      */
     public function computeHash(array $payload, ?string $prevHash): string
     {
+        $occurredAt = (string) ($payload['occurred_at'] ?? '');
+        if ($occurredAt !== '') {
+            try {
+                $occurredAt = CarbonImmutable::parse($occurredAt)->utc()->format('Y-m-d H:i:s');
+            } catch (Throwable) {
+                // Keep raw value when not a valid timestamp string
+            }
+        }
+
         $canonical = [
             'tenant_id' => (string) ($payload['tenant_id'] ?? ''),
             'user_id' => (string) ($payload['user_id'] ?? ''),
             'entity_type' => (string) ($payload['entity_type'] ?? ''),
             'entity_id' => (string) ($payload['entity_id'] ?? ''),
             'action' => (string) ($payload['action'] ?? ''),
-            'before_values' => $payload['before_values'],
-            'after_values' => $payload['after_values'],
+            'before_values' => $this->canonicalize($payload['before_values']),
+            'after_values' => $this->canonicalize($payload['after_values']),
             'actor_id' => (string) ($payload['actor_id'] ?? ''),
-            'occurred_at' => (string) ($payload['occurred_at'] ?? ''),
+            'occurred_at' => $occurredAt,
             'prev_hash' => $prevHash,
         ];
 
         return hash('sha256', json_encode($canonical, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    }
+
+    private function canonicalize(mixed $value): mixed
+    {
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        if (array_is_list($value)) {
+            return array_map($this->canonicalize(...), $value);
+        }
+
+        ksort($value);
+
+        return array_map($this->canonicalize(...), $value);
     }
 
     /**

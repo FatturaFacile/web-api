@@ -26,4 +26,10 @@ parameters:
     parallel:
         maximumNumberOfProcesses: 4
 
+    ignoreErrors:
+        -
+            identifier: larastan.noEnvCallsOutsideOfConfig
+            paths:
+                - modules/*/config/*.php
+
     reportUnmatchedIgnoredErrors: false

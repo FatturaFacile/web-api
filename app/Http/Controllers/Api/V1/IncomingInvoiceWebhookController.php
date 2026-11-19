@@ -11,6 +11,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\EiInboundLog;
 use App\Models\Tenant;
 use App\Services\ItalianSdi\FatturaPaParser;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -88,7 +89,7 @@ class IncomingInvoiceWebhookController extends Controller
         $fingerprint = hash('sha256', $provider.'|incoming|'.$xml);
 
         // Fast-path: duplicate check before locking or parsing
-        $existing = EiInboundLog::where('fingerprint', $fingerprint)->first();
+        $existing = EiInboundLog::withoutGlobalScopes()->where('fingerprint', $fingerprint)->first();
 
         if ($existing !== null) {
             return $this->successResponse(['status' => $existing->status, 'duplicate' => true], __('purchases.messages.webhook_received'));
@@ -112,6 +113,8 @@ class IncomingInvoiceWebhookController extends Controller
         if ($tenant === null) {
             return $this->problemDetailsResponse(__('purchases.unknown_recipient_title'), __('purchases.unknown_recipient'), Response::HTTP_UNPROCESSABLE_ENTITY);
         }
+
+        app(TenantContext::class)->setTenant($tenant);
 
         $lock = Cache::lock("webhook:sdi:incoming:{$fingerprint}", 20);
 

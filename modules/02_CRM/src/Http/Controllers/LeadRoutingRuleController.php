@@ -8,15 +8,25 @@ use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\CRM\Contracts\LeadRoutingServiceInterface;
+use Modules\CRM\Http\Requests\ReorderLeadRoutingRulesRequest;
+use Modules\CRM\Http\Requests\StoreLeadRoutingRuleRequest;
+use Modules\CRM\Http\Resources\LeadRoutingRuleResource;
 use Modules\CRM\Models\LeadRoutingRule;
 use OpenApi\Attributes as OA;
 
 /**
  * CRUD for the automatic lead assignment rules (geographic, product line, company size, round-robin).
+ * Supports both `/api/v1/crm/lead-routing-rules` and `/api/v1/crm/routing-rules` (#194).
  */
 final class LeadRoutingRuleController extends Controller
 {
-    public function __construct(private readonly TenantContext $tenantContext) {}
+    private const array INTAKE_FIELDS = ['name', 'priority', 'strategy', 'assignee_user_ids', 'is_default', 'is_active'];
+
+    public function __construct(
+        private readonly TenantContext $tenantContext,
+        private readonly ?LeadRoutingServiceInterface $routing = null,
+    ) {}
 
     #[OA\Get(
         path: '/api/v1/crm/lead-routing-rules',
@@ -30,8 +40,33 @@ final class LeadRoutingRuleController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function index(): JsonResponse
+    #[OA\Get(
+        path: '/api/v1/crm/routing-rules',
+        operationId: 'listCrmRoutingRules',
+        summary: 'List lead routing rules',
+        tags: ['CRM Lead Routing'],
+        responses: [new OA\Response(response: 200, description: 'Rules')]
+    )]
+    public function index(Request $request): JsonResponse
     {
+        if ($this->isRoutingRulesRoute($request)) {
+            $this->authorize('viewAny', LeadRoutingRule::class);
+
+            $rules = LeadRoutingRule::query()
+                ->where('tenant_id', $this->tenantContext->getTenantId())
+                ->orderBy('priority')
+                ->orderBy('created_at')
+                ->paginate(100);
+
+            return response()->json([
+                'data' => LeadRoutingRuleResource::collection($rules->getCollection()),
+                'meta' => [
+                    'current_page' => $rules->currentPage(),
+                    'total' => $rules->total(),
+                ],
+            ]);
+        }
+
         return response()->json([
             'data' => LeadRoutingRule::where('tenant_id', $this->tenantContext->getTenantId())->orderBy('priority')->get(),
         ]);
@@ -51,11 +86,52 @@ final class LeadRoutingRuleController extends Controller
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
+    #[OA\Post(
+        path: '/api/v1/crm/routing-rules',
+        operationId: 'createCrmRoutingRule',
+        summary: 'Create lead routing rule',
+        tags: ['CRM Lead Routing'],
+        responses: [new OA\Response(response: 201, description: 'Rule created')]
+    )]
     public function store(Request $request): JsonResponse
     {
+        if ($this->isRoutingRulesRoute($request)) {
+            $this->authorize('create', LeadRoutingRule::class);
+            $formRequest = StoreLeadRoutingRuleRequest::createFrom($request);
+            $formRequest->setContainer(app())->setRedirector(app('redirect'))->validateResolved();
+
+            $data = $formRequest->safe()->only(self::INTAKE_FIELDS);
+            $data['conditions'] = $formRequest->conditions();
+            $data['assignee_user_ids'] = array_values((array) ($data['assignee_user_ids'] ?? []));
+
+            $rule = LeadRoutingRule::create(array_merge(
+                ['priority' => 100, 'is_default' => false, 'is_active' => true, 'round_robin_cursor' => 0],
+                $data,
+                ['tenant_id' => $this->tenantContext->getTenantId()],
+            ));
+
+            return (new LeadRoutingRuleResource($rule))->response()->setStatusCode(201);
+        }
+
         $rule = LeadRoutingRule::create(['tenant_id' => $this->tenantContext->getTenantId()] + $this->validated($request));
 
         return response()->json($rule, 201);
+    }
+
+    #[OA\Get(
+        path: '/api/v1/crm/routing-rules/{id}',
+        operationId: 'showCrmRoutingRule',
+        summary: 'Show lead routing rule',
+        tags: ['CRM Lead Routing'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Rule')]
+    )]
+    public function show(string $id): JsonResponse
+    {
+        $rule = LeadRoutingRule::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id);
+        $this->authorize('view', $rule);
+
+        return (new LeadRoutingRuleResource($rule))->response();
     }
 
     #[OA\Put(
@@ -95,9 +171,37 @@ final class LeadRoutingRuleController extends Controller
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
+    #[OA\Put(
+        path: '/api/v1/crm/routing-rules/{id}',
+        operationId: 'updateCrmRoutingRule',
+        summary: 'Update lead routing rule',
+        tags: ['CRM Lead Routing'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Updated rule')]
+    )]
     public function update(Request $request, string $id): JsonResponse
     {
         $rule = LeadRoutingRule::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id);
+
+        if ($this->isRoutingRulesRoute($request)) {
+            $this->authorize('update', $rule);
+            $formRequest = StoreLeadRoutingRuleRequest::createFrom($request);
+            $formRequest->setContainer(app())->setRedirector(app('redirect'))->validateResolved();
+
+            $data = $formRequest->safe()->only(self::INTAKE_FIELDS);
+            if ($request->has('conditions')) {
+                $data['conditions'] = $formRequest->conditions();
+            }
+            if (array_key_exists('assignee_user_ids', $data)) {
+                $data['assignee_user_ids'] = array_values((array) $data['assignee_user_ids']);
+                $data['round_robin_cursor'] = 0;
+            }
+
+            $rule->forceFill($data)->save();
+
+            return (new LeadRoutingRuleResource($rule))->response();
+        }
+
         $rule->update($this->validated($request, false));
 
         return response()->json($rule->fresh());
@@ -119,11 +223,56 @@ final class LeadRoutingRuleController extends Controller
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function destroy(string $id): JsonResponse
+    #[OA\Delete(
+        path: '/api/v1/crm/routing-rules/{id}',
+        operationId: 'deleteCrmRoutingRule',
+        summary: 'Delete lead routing rule',
+        tags: ['CRM Lead Routing'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 204, description: 'Rule deleted')]
+    )]
+    public function destroy(Request $request, string $id): JsonResponse
     {
-        LeadRoutingRule::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id)->delete();
+        $rule = LeadRoutingRule::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id);
+        if ($this->isRoutingRulesRoute($request)) {
+            $this->authorize('delete', $rule);
+        }
+        $rule->delete();
 
         return response()->json(null, 204);
+    }
+
+    #[OA\Post(
+        path: '/api/v1/crm/routing-rules/reorder',
+        operationId: 'reorderCrmRoutingRules',
+        summary: 'Reorder lead routing rules',
+        tags: ['CRM Lead Routing'],
+        responses: [new OA\Response(response: 200, description: 'Rules reordered')]
+    )]
+    public function reorder(ReorderLeadRoutingRulesRequest $request): JsonResponse
+    {
+        $this->authorize('create', LeadRoutingRule::class);
+        $tenantId = (string) $this->tenantContext->getTenantId();
+
+        /** @var list<string> $ids */
+        $ids = array_values(array_map('strval', (array) $request->validated('ids')));
+
+        $known = LeadRoutingRule::query()->where('tenant_id', $tenantId)->whereIn('id', $ids)->count();
+        if ($known !== count($ids)) {
+            return response()->json([
+                'message' => 'One or more routing rules do not exist.',
+                'errors' => ['ids' => ['One or more routing rules do not exist.']],
+            ], 422);
+        }
+
+        ($this->routing ?? app(LeadRoutingServiceInterface::class))->reorder($tenantId, $ids);
+
+        return $this->index($request);
+    }
+
+    private function isRoutingRulesRoute(Request $request): bool
+    {
+        return str_contains($request->path(), 'crm/routing-rules');
     }
 
     /** @return array<string, mixed> */

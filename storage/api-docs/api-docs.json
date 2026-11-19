@@ -13392,6 +13392,85 @@
             }
         },
         "/api/v1/inventory/products/{id}": {
+            "get": {
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "Show product",
+                "description": "Retrieve a single catalog product by UUID.",
+                "operationId": "getInventoryProduct",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
             "put": {
                 "tags": [
                     "Inventory"
@@ -13465,6 +13544,85 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "Delete product",
+                "description": "Delete a catalog product by UUID.",
+                "operationId": "deleteInventoryProduct",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
                                 }
                             }
                         }
@@ -40160,6 +40318,489 @@
                 ]
             }
         },
+        "/api/v1/tax/enasarco/status": {
+            "get": {
+                "tags": [
+                    "Tax"
+                ],
+                "summary": "ENASARCO status",
+                "description": "Year-to-date commissions invoiced to a principal, annual commission ceiling, remaining ceiling, annual minimum and shortfall (minimum minus contributions withheld).",
+                "operationId": "getEnasarcoStatus",
+                "parameters": [
+                    {
+                        "name": "contact_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2026
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "422": {
+                        "description": "Validation error or no ENASARCO rate for the year (code enasarco_rate_not_configured)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/tax/preview": {
+            "post": {
+                "tags": [
+                    "Tax",
+                    "Invoices"
+                ],
+                "summary": "Preview Italian invoice fiscal figures",
+                "description": "Compute cassa, VAT summary, ritenuta, ENASARCO, virtual stamp duty, split payment and amount due of an unsaved Italian invoice. Amounts are decimal strings with two decimals. `fund`, `withholding`, `enasarco` and `stamp_duty_charged_to_customer`: omitted = tenant default, null = disabled.",
+                "operationId": "previewItalianFiscal",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "items"
+                                ],
+                                "properties": {
+                                    "contact_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    },
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "split_payment": {
+                                        "type": "boolean",
+                                        "nullable": true
+                                    },
+                                    "reverse_charge": {
+                                        "type": "boolean",
+                                        "nullable": true
+                                    },
+                                    "vat_payability": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "enum": [
+                                            "I",
+                                            "D",
+                                            "S"
+                                        ]
+                                    },
+                                    "fund": {
+                                        "type": "object",
+                                        "example": {
+                                            "type": "TC22",
+                                            "percent": 4,
+                                            "vat_rate": 22,
+                                            "natura": null,
+                                            "withholding_applies": false
+                                        },
+                                        "nullable": true
+                                    },
+                                    "withholding": {
+                                        "type": "object",
+                                        "example": {
+                                            "type": "RT01",
+                                            "reason": "A",
+                                            "rate": 20,
+                                            "taxable_percent": 100,
+                                            "includes_fund": false
+                                        },
+                                        "nullable": true
+                                    },
+                                    "enasarco": {
+                                        "type": "object",
+                                        "example": {
+                                            "enabled": true,
+                                            "rate": null,
+                                            "reason": "R"
+                                        },
+                                        "nullable": true
+                                    },
+                                    "stamp_duty_charged_to_customer": {
+                                        "type": "boolean",
+                                        "nullable": true
+                                    },
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "quantity",
+                                                "unit_price",
+                                                "tax_rate"
+                                            ],
+                                            "properties": {
+                                                "description": {
+                                                    "type": "string"
+                                                },
+                                                "quantity": {
+                                                    "type": "number",
+                                                    "example": 1
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "example": 1000
+                                                },
+                                                "tax_rate": {
+                                                    "type": "number",
+                                                    "example": 22
+                                                },
+                                                "discount_percentage": {
+                                                    "type": "number",
+                                                    "nullable": true
+                                                },
+                                                "natura": {
+                                                    "type": "string",
+                                                    "example": "N4",
+                                                    "nullable": true
+                                                },
+                                                "withholding_applies": {
+                                                    "type": "boolean",
+                                                    "nullable": true
+                                                },
+                                                "fund_applies": {
+                                                    "type": "boolean",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Fiscal figures calculated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "422": {
+                        "description": "Validation error or incompatible fiscal options (code forfettario_incompatible, enasarco_rate_not_configured, split_payment_incompatible, split_payment_requires_vat)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/tax/stamp-duty/quarterly": {
+            "get": {
+                "tags": [
+                    "Tax"
+                ],
+                "summary": "Quarterly stamp duty report",
+                "description": "Invoices with virtual stamp duty in a quarter (by invoice date, credit notes and pro-forma excluded): count, total, F24 tributo code, due date and deferrable flag. `format=csv` downloads a CSV.",
+                "operationId": "getStampDutyQuarterlyReport",
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2026
+                        }
+                    },
+                    {
+                        "name": "quarter",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1,
+                            "maximum": 4,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "json",
+                                "csv"
+                            ]
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Report retrieved (JSON envelope, or text/csv)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "422": {
+                        "description": "Invalid year or quarter",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/tax/withholdings/report": {
+            "get": {
+                "tags": [
+                    "Tax",
+                    "Purchases"
+                ],
+                "summary": "CU withholding report",
+                "description": "Withholdings (RT01/RT02) of received supplier invoices grouped by supplier and causale, by payment year. Invoices not paid yet are listed in `unpaid_withholdings`. `format=csv` downloads a CSV.",
+                "operationId": "getWithholdingReport",
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2026
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "json",
+                                "csv"
+                            ]
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Report retrieved (JSON envelope, or text/csv)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "422": {
+                        "description": "Invalid year",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
         "/api/v1/tenant/branding": {
             "get": {
                 "tags": [
@@ -40414,7 +41055,7 @@
                     {
                         "name": "group",
                         "in": "path",
-                        "description": "Preference group: invoice, email, sdi, work_orders, company, labels, inventory, banking, accounting, time_tracking, visitors or sales (sales: credit_check_mode block|warn|off, credit_block_overdue_days)",
+                        "description": "Preference group: invoice, email, sdi, work_orders, company, labels, inventory, banking, accounting, time_tracking, visitors, sales or fiscal (sales: credit_check_mode block|warn|off, credit_block_overdue_days)",
                         "required": true,
                         "schema": {
                             "type": "string",
@@ -40430,7 +41071,8 @@
                                 "accounting",
                                 "time_tracking",
                                 "visitors",
-                                "sales"
+                                "sales",
+                                "fiscal"
                             ]
                         }
                     },
@@ -52652,6 +53294,111 @@
                 ]
             }
         },
+        "/api/v1/crm/leads/{id}/events": {
+            "get": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "List lead behavioural events",
+                "operationId": "listCrmLeadEvents",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lead events"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Record lead behavioural event",
+                "description": "Records a behavioural event and re-scores the lead (201). Replaying an external_id returns 200.",
+                "operationId": "storeCrmLeadEvent",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Lead event recorded"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
         "/api/v1/crm/leads": {
             "get": {
                 "tags": [
@@ -53661,6 +54408,121 @@
                 ]
             }
         },
+        "/api/v1/crm/leads/{id}/rescore": {
+            "post": {
+                "tags": [
+                    "CRM Leads"
+                ],
+                "summary": "Re-score lead",
+                "description": "Re-computes score, rating and breakdown with the current rules and thresholds.",
+                "operationId": "rescoreCrmLead",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rescored lead",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CRMLeadResource"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/leads/{id}/route": {
+            "post": {
+                "tags": [
+                    "CRM Leads"
+                ],
+                "summary": "Route lead",
+                "description": "Re-runs the routing rules for the lead (assignee or admins are notified).",
+                "operationId": "routeCrmLead",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Routed lead"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
         "/api/v1/crm/leads/duplicates": {
             "get": {
                 "tags": [
@@ -53742,6 +54604,112 @@
                     }
                 },
                 "deprecated": true,
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/duplicates/{id}/merge": {
+            "post": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Merge lead duplicate candidate",
+                "operationId": "mergeCrmDuplicateCandidate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Duplicate merged"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/duplicates/{id}/dismiss": {
+            "post": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Dismiss lead duplicate candidate",
+                "operationId": "dismissCrmDuplicateCandidate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Duplicate dismissed"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
                 "security": [
                     {
                         "cookieAuth": [],
@@ -54017,6 +54985,247 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/routing-rules": {
+            "get": {
+                "tags": [
+                    "CRM Lead Routing"
+                ],
+                "summary": "List lead routing rules",
+                "operationId": "listCrmRoutingRules",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rules"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "CRM Lead Routing"
+                ],
+                "summary": "Create lead routing rule",
+                "operationId": "createCrmRoutingRule",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Rule created"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/routing-rules/{id}": {
+            "get": {
+                "tags": [
+                    "CRM Lead Routing"
+                ],
+                "summary": "Show lead routing rule",
+                "operationId": "showCrmRoutingRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rule"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "CRM Lead Routing"
+                ],
+                "summary": "Update lead routing rule",
+                "operationId": "updateCrmRoutingRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated rule"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "CRM Lead Routing"
+                ],
+                "summary": "Delete lead routing rule",
+                "operationId": "deleteCrmRoutingRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Rule deleted"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
                     }
                 },
                 "security": [
@@ -54478,6 +55687,50 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/routing-rules/reorder": {
+            "post": {
+                "tags": [
+                    "CRM Lead Routing"
+                ],
+                "summary": "Reorder lead routing rules",
+                "operationId": "reorderCrmRoutingRules",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rules reordered"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
                     }
                 },
                 "security": [
@@ -54995,6 +56248,902 @@
                         "tenantHeader": []
                     }
                 ]
+            }
+        },
+        "/api/v1/crm/scoring-rules": {
+            "get": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "List lead scoring rules",
+                "operationId": "listCrmScoringRules",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Scoring rules"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Create lead scoring rule",
+                "operationId": "createCrmScoringRule",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Scoring rule created"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/scoring-rules/{id}": {
+            "get": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Show lead scoring rule",
+                "operationId": "showCrmScoringRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Scoring rule"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Update lead scoring rule",
+                "operationId": "updateCrmScoringRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Scoring rule updated"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Delete lead scoring rule",
+                "operationId": "deleteCrmScoringRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Scoring rule deleted"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/scoring-rules/preview": {
+            "post": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Preview lead score",
+                "description": "Scores an existing lead (lead_id) or a hypothetical one (lead: {...}) without saving anything.",
+                "operationId": "previewCrmScoringRule",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Score preview"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/lead-settings": {
+            "get": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Show lead settings",
+                "operationId": "showCrmLeadSettings",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lead settings"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Update lead settings",
+                "operationId": "updateCrmLeadSettings",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lead settings updated"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/lead-sources": {
+            "get": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "List lead sources",
+                "operationId": "listCrmLeadSources",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lead sources"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Create lead source",
+                "description": "Creates the source with fresh credentials, returned once as webhook_secret and api_key.",
+                "operationId": "createCrmLeadSource",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Lead source created"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/lead-sources/{id}": {
+            "get": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Show lead source",
+                "operationId": "showCrmLeadSource",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lead source"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Update lead source",
+                "operationId": "updateCrmLeadSource",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lead source updated"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Delete lead source",
+                "operationId": "deleteCrmLeadSource",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Lead source deleted"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/crm/lead-sources/{id}/rotate-secret": {
+            "post": {
+                "tags": [
+                    "CRM"
+                ],
+                "summary": "Rotate lead source secret",
+                "operationId": "rotateCrmLeadSourceSecret",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Secret rotated"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/webhooks/crm/leads/{sourceId}": {
+            "get": {
+                "tags": [
+                    "CRM Lead Webhooks"
+                ],
+                "summary": "Verify CRM lead source webhook subscription",
+                "description": "Meta Lead Ads subscription verification handshake scoped to a LeadSource.",
+                "operationId": "verifyCrmLeadSourceWebhook",
+                "parameters": [
+                    {
+                        "name": "sourceId",
+                        "in": "path",
+                        "description": "UUID of the configured LeadSource",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "hub_mode",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "hub_verify_token",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "hub_challenge",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Challenge echoed back",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized verification request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Lead source not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            },
+            "post": {
+                "tags": [
+                    "CRM Lead Webhooks"
+                ],
+                "summary": "Ingest lead for a CRM lead source",
+                "description": "Public Web-to-Lead endpoint scoped to a configured LeadSource, authenticated per source signature or API key.",
+                "operationId": "ingestCrmLeadSourceWebhook",
+                "parameters": [
+                    {
+                        "name": "sourceId",
+                        "in": "path",
+                        "description": "UUID of the configured LeadSource",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Lead created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Lead merged into an existing record",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized webhook delivery",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Lead source not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/api/v1/webhooks/crm/leads/{sourceId}/events": {
+            "post": {
+                "tags": [
+                    "CRM Lead Webhooks"
+                ],
+                "summary": "Ingest behavioural event for a CRM lead source",
+                "description": "Public behavioural event endpoint scoped to a configured LeadSource.",
+                "operationId": "ingestCrmLeadSourceWebhookEvent",
+                "parameters": [
+                    {
+                        "name": "sourceId",
+                        "in": "path",
+                        "description": "UUID of the configured LeadSource",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Event recorded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Event processed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized webhook delivery",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Lead source or lead not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
             }
         },
         "/api/v1/webhooks/leads/{token}": {
@@ -407399,6 +409548,14 @@
         {
             "name": "Backups",
             "description": "Backups"
+        },
+        {
+            "name": "Tax",
+            "description": "Tax"
+        },
+        {
+            "name": "Purchases",
+            "description": "Purchases"
         },
         {
             "name": "Time & Attendance",

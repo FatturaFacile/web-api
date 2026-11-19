@@ -172,7 +172,7 @@ test('a proportional member is added line by line at its ownership with no minor
         ->and($run['totals']['non_controlling_interests'])->toBe([])
         ->and($run['totals']['trial_balance_is_balanced'])->toBeTrue()
         ->and($run['totals']['balance_sheet_is_balanced'])->toBeTrue()
-        ->and(DB::table('gl_consolidation_run_balances')->where('member_tenant_id', $this->sub->id)->where('account_code', '4000')->value('consolidated_share') + 0)->toBe(40);
+        ->and((float) DB::table('gl_consolidation_run_balances')->where('member_tenant_id', $this->sub->id)->where('account_code', '4000')->value('consolidated_share'))->toBe(40.0);
 });
 
 test('goodwill is computed from the acquisition record with fair value, deferred tax and its charges', function (): void {

@@ -47,6 +47,7 @@ final class TenantSchemaBaseline
         'customs_tariff_numbers',
         'document_status_translations',
         'document_statuses',
+        'enasarco_annual_limits',
         'enasarco_parameters',
         'exchange_rates',
         'expense_categories',

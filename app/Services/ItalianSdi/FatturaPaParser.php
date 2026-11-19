@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\ItalianSdi;
 
+use App\Support\Money;
 use App\Support\Security\SafeXmlLoader;
 use InvalidArgumentException;
 use SimpleXMLElement;
@@ -15,7 +16,7 @@ use SimpleXMLElement;
 class FatturaPaParser
 {
     /**
-     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string, withholdings: list<array{type: string, amount: string, rate: ?string, reason: ?string}>, lines: list<array{line_number: int, description: string, quantity: ?string, unit_of_measure: ?string, unit_price: string, line_total: string, tax_rate: string, vat_nature: ?string}>}>}
+     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string, withholdings: list<array{type: string, amount: string, rate: string, reason: ?string, taxable: string}>, stamp_duty: float, lines: list<array{line_number: int, description: string, quantity: ?string, unit_of_measure: ?string, unit_price: string, line_total: string, tax_rate: string, vat_nature: ?string}>}>}
      */
     public function parse(string $xml): array
     {
@@ -134,18 +135,36 @@ class FatturaPaParser
     }
 
     /**
-     * @return list<array{type: string, amount: string, rate: ?string, reason: ?string}>
+     * @return list<array{type: string, amount: string, rate: string, reason: ?string, taxable: string}>
      */
     private function withholdings(SimpleXMLElement $body): array
     {
+        $flaggedBase = 0;
+
+        foreach ($body->xpath('DatiBeniServizi/DettaglioLinee') ?: [] as $line) {
+            if (strtoupper((string) $this->value($line, 'Ritenuta')) === 'SI') {
+                $flaggedBase += Money::toCents($this->value($line, 'PrezzoTotale') ?? '0');
+            }
+        }
+
+        foreach ($body->xpath('DatiGenerali/DatiGeneraliDocumento/DatiCassaPrevidenziale') ?: [] as $fund) {
+            if (strtoupper((string) $this->value($fund, 'Ritenuta')) === 'SI') {
+                $flaggedBase += Money::toCents($this->value($fund, 'ImportoContributoCassa') ?? '0');
+            }
+        }
+
         $withholdings = [];
 
         foreach ($body->xpath('DatiGenerali/DatiGeneraliDocumento/DatiRitenuta') ?: [] as $block) {
+            $amount = Money::toCents($this->value($block, 'ImportoRitenuta') ?? '0');
+            $rate = Money::toScaled($this->value($block, 'AliquotaRitenuta') ?? '0', 2);
+
             $withholdings[] = [
-                'type' => (string) $this->value($block, 'TipoRitenuta'),
-                'amount' => (string) $this->value($block, 'ImportoRitenuta'),
-                'rate' => $this->value($block, 'AliquotaRitenuta'),
+                'type' => strtoupper($this->value($block, 'TipoRitenuta') ?? 'RT01'),
+                'amount' => Money::fromCents($amount),
+                'rate' => Money::fromScaled($rate, 2),
                 'reason' => $this->value($block, 'CausalePagamento'),
+                'taxable' => Money::fromCents($rate > 0 ? Money::divideRounded($amount * 10000, $rate) : $flaggedBase),
             ];
         }
 

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Contact;
+use App\Models\EiInboundLog;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -71,5 +73,40 @@ describe('Multi-Tenant Isolation & Cross-Tenant Boundary Security', function () 
 
         // Must be forbidden due to lack of write/create permission
         $this->postJson('/api/v1/sales/invoices', ['invoice_type' => 'standard', 'currency' => 'EUR'])->assertForbidden();
+    });
+
+    it('isolates EiInboundLog records across tenants via BelongsToTenant global scope', function () {
+        $tenantA = Tenant::factory()->create();
+        $tenantB = Tenant::factory()->create();
+
+        $tenantContext = app(TenantContext::class);
+
+        $tenantContext->setTenant($tenantA);
+        $logA = EiInboundLog::create([
+            'provider' => 'pec',
+            'event_type' => 'INVOICE_RECEIVED',
+            'fingerprint' => hash('sha256', 'tenant-a-inbound-log'),
+            'status' => 'processed',
+        ]);
+
+        $tenantContext->setTenant($tenantB);
+        $logB = EiInboundLog::create([
+            'provider' => 'pec',
+            'event_type' => 'INVOICE_RECEIVED',
+            'fingerprint' => hash('sha256', 'tenant-b-inbound-log'),
+            'status' => 'processed',
+        ]);
+
+        // Under Tenant A context, only Tenant A's EiInboundLog is visible
+        $tenantContext->setTenant($tenantA);
+        expect(EiInboundLog::query()->pluck('id')->all())->toBe([$logA->id])
+            ->and(EiInboundLog::query()->find($logB->id))->toBeNull();
+
+        // Under Tenant B context, only Tenant B's EiInboundLog is visible
+        $tenantContext->setTenant($tenantB);
+        expect(EiInboundLog::query()->pluck('id')->all())->toBe([$logB->id])
+            ->and(EiInboundLog::query()->find($logA->id))->toBeNull();
+
+        $tenantContext->clear();
     });
 });
