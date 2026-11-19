@@ -30,6 +30,10 @@ return new class extends Migration
             $table->decimal('amount', 15, 2);
             $table->unsignedSmallInteger('withheld_year')->nullable();
             $table->timestamps();
+            $table->softDeletes();
+            $table->uuid('created_by')->nullable();
+            $table->uuid('updated_by')->nullable();
+            $table->uuid('deleted_by')->nullable();
 
             $table->index(['tenant_id', 'withheld_year']);
             $table->index(['tenant_id', 'supplier_id']);
