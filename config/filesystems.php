@@ -38,6 +38,15 @@ return [
             'report' => false,
         ],
 
+        // Local fallback of the WORM archive of the audit trail (read-only files). In production point
+        // AUDIT_WORM_DISK to an S3 compatible disk whose bucket has Object Lock enabled.
+        'audit_worm' => [
+            'driver' => 'local',
+            'root' => env('AUDIT_WORM_ROOT', storage_path('app/audit-worm')),
+            'throw' => true,
+            'report' => false,
+        ],
+
         'private' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Audit\Concerns\HasImmutableAuditTrail;
+use App\Domain\Audit\Contracts\AuditableEntityInterface;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,9 +13,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class BankAccount extends Model
+class BankAccount extends Model implements AuditableEntityInterface
 {
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+    use HasImmutableAuditTrail;
+
+    /** @var list<string> */
+    protected array $auditMask = ['iban', 'qr_iban'];
+
+    protected bool $auditTrackReads = true;
 
     protected $table = 'bank_accounts';
 

@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\AuditLog;
+use App\Models\AuditWormBatch;
+use App\Models\AuditWormBatchEntry;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\CustomsTaricCode;
 use App\Models\FreeTradeAgreement;
@@ -65,6 +68,11 @@ test('concrete domain models use BelongsToTenant trait', function (): void {
      */
     $excludedModels = [
         TenantAccessRequest::class,
+        // Append-only audit trail and its WORM archive: they also hold system level records with a null tenant and are
+        // read by readers that filter tenant_id explicitly (see TenantModelCoverageTest)
+        AuditLog::class,
+        AuditWormBatch::class,
+        AuditWormBatchEntry::class,
         // Global customs reference catalogs shared by every tenant
         CustomsTaricCode::class,
         FreeTradeAgreement::class,

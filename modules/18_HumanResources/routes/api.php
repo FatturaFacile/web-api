@@ -51,7 +51,7 @@ Route::prefix('api/v1/hr')
         Route::middleware('privacy.sensitive.log:hr_employee_records')->group(function (): void {
             Route::get('/employees', [EmployeeController::class, 'index'])->name('api.v1.hr.employees.index');
             Route::post('/employees', [EmployeeController::class, 'store'])->name('api.v1.hr.employees.store');
-            Route::get('/employees/{id}', [EmployeeController::class, 'show'])->name('api.v1.hr.employees.show');
+            Route::get('/employees/{id}', [EmployeeController::class, 'show'])->middleware('audit.access:Employee,VIEWED')->name('api.v1.hr.employees.show');
             Route::put('/employees/{id}', [EmployeeController::class, 'update'])->name('api.v1.hr.employees.update');
             Route::delete('/employees/{id}', [EmployeeController::class, 'destroy'])->name('api.v1.hr.employees.destroy');
             Route::post('/employees/{id}/complete-probation', [EmployeeController::class, 'completeProbation'])->name('api.v1.hr.employees.complete-probation');

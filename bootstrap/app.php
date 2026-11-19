@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Middleware\AuditSensitiveAccess;
 use App\Http\Middleware\EnforceHttps;
 use App\Http\Middleware\EnforceSessionPolicy;
+use App\Http\Middleware\EnsureAuditPermission;
 use App\Http\Middleware\EnsureFeatureFlagEnabled;
 use App\Http\Middleware\EnsureHttpsFrontendRequestsAreStateful;
 use App\Http\Middleware\EnsureMobileDeviceActive;
@@ -84,6 +86,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'privacy.sensitive.log' => LogSensitiveDataReadAccess::class,
             'mobile.device' => EnsureMobileDeviceActive::class,
             'feature' => EnsureFeatureFlagEnabled::class,
+            'audit.access' => AuditSensitiveAccess::class,
+            'audit.permission' => EnsureAuditPermission::class,
         ]);
 
         $middleware->priority([

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Audit\Concerns\HasImmutableAuditTrail;
+use App\Domain\Audit\Contracts\AuditableEntityInterface;
 use App\Models\Pivots\TenantMembership;
 use App\Services\Auth\UserSessions;
 use App\Services\Tenancy\TenantContext;
@@ -25,10 +27,15 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $login_locked_until
  * @property array<string, mixed>|null $ui_preferences
  */
-class User extends Authenticatable
+class User extends Authenticatable implements AuditableEntityInterface
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable, SoftDeletes;
+
+    use HasImmutableAuditTrail;
+
+    /** @var list<string> */
+    protected array $auditExclude = ['two_factor_secret', 'two_factor_recovery_codes', 'two_factor_last_used_step', 'failed_login_attempts', 'login_locked_until'];
 
     public const array UiPreferenceDefaults = ['theme_preference' => 'system', 'ui_density' => 'comfortable', 'reduced_motion' => null];
 

@@ -17,7 +17,10 @@ test('every business table has the six audit columns', function (): void {
         // Secret ballot: a vote carries no user, no timestamp and nothing that could link it to its voter.
         'assoc_ballot_votes',
         // Anonymous engagement survey: a response and its answers do not name or time-stamp who answered.
-        'tl_survey_responses', 'tl_survey_answers'];
+        'tl_survey_responses', 'tl_survey_answers',
+        // Immutable audit trail: records are inserted once and never updated or deleted (database triggers), the actor is
+        // a snapshot inside the record, and the WORM batch tables are written once when a batch is sealed.
+        'audit_logs', 'audit_worm_batches', 'audit_worm_batch_entries'];
     $incomplete = [];
 
     foreach (Schema::getTableListing(schemaQualified: false) as $table) {
