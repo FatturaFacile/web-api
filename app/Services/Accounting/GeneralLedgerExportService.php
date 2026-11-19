@@ -11,6 +11,7 @@ use App\Models\Contact;
 use App\Services\Banking\BankLineLedgerPosting;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
+use Enterprise\MultiTenant\Scopes\TenantScope;
 use Generator;
 use Illuminate\Support\Collection;
 use Modules\GeneralLedger\Models\ChartOfAccount;
@@ -103,9 +104,18 @@ class GeneralLedgerExportService
      *
      * @return Generator<int, LedgerEntry>
      */
-    public function stream(CarbonImmutable $from, CarbonImmutable $to, string $source = self::SOURCE_ALL, ?string $accountCode = null): Generator
+    public function stream(CarbonImmutable $from, CarbonImmutable $to, string $source = self::SOURCE_ALL, ?string $accountCode = null, ?string $tenantId = null): Generator
     {
-        $tenantId = (string) $this->tenantContext->getTenantId();
+        $resolvedTenantId = $tenantId ?? (string) $this->tenantContext->getTenantId();
+
+        return $this->streamForTenant($resolvedTenantId, $from, $to, $source, $accountCode);
+    }
+
+    /**
+     * @return Generator<int, LedgerEntry>
+     */
+    private function streamForTenant(string $tenantId, CarbonImmutable $from, CarbonImmutable $to, string $source, ?string $accountCode): Generator
+    {
         $currency = TenantAccountingCurrency::of($tenantId);
         $position = 0;
 
@@ -245,8 +255,8 @@ class GeneralLedgerExportService
 
         $linesByEntry = $this->linesOf($tenantId, $journal->modelKeys());
         $accounts = $this->accountsOf($tenantId, $linesByEntry->flatten(1)->pluck('account_id')->unique()->values()->all());
-        $contacts = $this->partners($linesByEntry->flatten(1)->pluck('partner_id')->filter()->unique()->values()->all());
-        $categories = $this->bankLineCategories($journal);
+        $contacts = $this->partners($tenantId, $linesByEntry->flatten(1)->pluck('partner_id')->filter()->unique()->values()->all());
+        $categories = $this->bankLineCategories($tenantId, $journal);
 
         return $journal->map(function (JournalEntry $entry) use ($linesByEntry, $accounts, $contacts, $categories, $currency): LedgerEntry {
             /** @var Collection<int, JournalLine> $entryLines */
@@ -355,9 +365,15 @@ class GeneralLedgerExportService
      * @param  array<int, mixed>  $ids
      * @return Collection<string, Contact>
      */
-    private function partners(array $ids): Collection
+    private function partners(string $tenantId, array $ids): Collection
     {
-        return $ids === [] ? collect() : Contact::query()->whereIn('id', $ids)->get()->keyBy(fn (Contact $contact): string => (string) $contact->id);
+        return $ids === []
+            ? collect()
+            : Contact::withoutGlobalScope(TenantScope::class)
+                ->where('tenant_id', $tenantId)
+                ->whereIn('id', $ids)
+                ->get()
+                ->keyBy(fn (Contact $contact): string => (string) $contact->id);
     }
 
     /**
@@ -366,11 +382,17 @@ class GeneralLedgerExportService
      * @param  Collection<int, JournalEntry>  $journal
      * @return Collection<string, string>
      */
-    private function bankLineCategories(Collection $journal): Collection
+    private function bankLineCategories(string $tenantId, Collection $journal): Collection
     {
         $ids = $journal->where('source_document_type', BankLineLedgerPosting::SOURCE)->pluck('source_document_id')->filter()->unique()->values()->all();
 
-        return $ids === [] ? collect() : BankStatementLine::query()->whereIn('id', $ids)->pluck('reconciliation_category', 'id')->map(fn (mixed $category): string => (string) $category);
+        return $ids === []
+            ? collect()
+            : BankStatementLine::withoutGlobalScope(TenantScope::class)
+                ->where('tenant_id', $tenantId)
+                ->whereIn('id', $ids)
+                ->pluck('reconciliation_category', 'id')
+                ->map(fn (mixed $category): string => (string) $category);
     }
 
     private function formatDate(CarbonImmutable $date, string $format): string
