@@ -137995,7 +137995,7 @@
                     "Analytics BI"
                 ],
                 "summary": "Export a designed report",
-                "description": "Runs the report and returns it as CSV, Excel-compatible CSV or xlsx (query `format`), up to the row limit (header `X-Report-Truncated` says whether it was cut). Text cells are neutralised against spreadsheet formula injection. Every export is audit logged.",
+                "description": "Runs the report (a pivot report is exported as its matrix with subtotals and totals) and returns it as CSV, Excel-compatible CSV, xlsx, PDF or JSON (query `format`) in a regional locale (query `locale`), up to the row limit (header `X-Report-Truncated` says whether it was cut). Text cells are neutralised against spreadsheet formula injection. Every export is audit logged.",
                 "operationId": "exportAnalyticsDesignedReport",
                 "parameters": [
                     {
@@ -138003,6 +138003,9 @@
                     },
                     {
                         "$ref": "#/components/parameters/AnaExportFormat"
+                    },
+                    {
+                        "$ref": "#/components/parameters/AnaExportLocale"
                     },
                     {
                         "$ref": "#/components/parameters/XTenantId"
@@ -138025,6 +138028,76 @@
                                 "schema": {
                                     "type": "string",
                                     "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AnaUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AnaForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/AnaNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/AnaUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/analytics/designed-reports/{id}/pivot": {
+            "get": {
+                "tags": [
+                    "Analytics BI"
+                ],
+                "summary": "Run a designed report as a pivot",
+                "description": "Runs the saved definition as a pivot with the permissions of the caller (not of the owner).",
+                "operationId": "pivotAnalyticsDesignedReport",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/AnaDesignedReportId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The pivot matrix",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
@@ -138451,6 +138524,231 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/AnaNotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/analytics/export-schedules/{id}/run": {
+            "post": {
+                "tags": [
+                    "Analytics BI"
+                ],
+                "summary": "Run a scheduled export now",
+                "description": "Queues the generation and delivery of the schedule right away, with the locale, format and channels it has. The calendar is not changed. The outcome appears on the schedule (`last_status`) and in the execution log.",
+                "operationId": "runAnalyticsExportScheduleNow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Queued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AnaUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AnaForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/AnaNotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/analytics/export-schedules/cron-preview": {
+            "post": {
+                "tags": [
+                    "Analytics BI"
+                ],
+                "summary": "Preview a cron expression",
+                "description": "Validates a cron expression (it cannot run more often than every 5 minutes) and returns its next five runs on the wall clock of the time zone.",
+                "operationId": "previewAnalyticsCronExpression",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "cron_expression"
+                                ],
+                                "properties": {
+                                    "cron_expression": {
+                                        "type": "string",
+                                        "example": "0 7 * * 1"
+                                    },
+                                    "timezone": {
+                                        "type": "string",
+                                        "example": "Europe/Zurich"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The next runs",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "next_runs": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AnaUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AnaForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/AnaUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/analytics/execution-logs": {
+            "get": {
+                "tags": [
+                    "Analytics BI"
+                ],
+                "summary": "List report executions",
+                "description": "Status (queued, running, completed, failed), row count, duration and error of the latest report exports. Owners and administrators see all of them, other users their own. Filter by `designed_report_id` or `schedule_id`.",
+                "operationId": "listAnalyticsExecutionLogs",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Executions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AnaUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AnaForbidden"
                     }
                 },
                 "security": [
@@ -139648,6 +139946,152 @@
                                 "schema": {
                                     "type": "string",
                                     "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AnaUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AnaForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/AnaUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/analytics/semantic/catalog": {
+            "get": {
+                "tags": [
+                    "Analytics BI"
+                ],
+                "summary": "Report studio catalog",
+                "description": "The datasets the caller may report on, already limited to the modules they can read and, inside them, to the fields their access level allows (a role without write access never sees costs or margins), plus every option the report studio can offer: operators, granularities, formats, locales, chart types, formatting tokens, formula functions, visibilities and delivery channels.",
+                "operationId": "getAnalyticsSemanticCatalog",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Datasets and options",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "datasets": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/AnalyticsSemanticDataset"
+                                                    }
+                                                },
+                                                "options": {
+                                                    "type": "object",
+                                                    "additionalProperties": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AnaUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AnaForbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/analytics/designer/pivot": {
+            "post": {
+                "tags": [
+                    "Analytics BI"
+                ],
+                "summary": "Run an ad-hoc pivot",
+                "description": "Runs a definition that is not saved as a pivot: multi-level rows and columns, a subtotal after every group of the outer row levels, grand totals, calculated fields, conditional formatting styles and chart series. Every level of totals is its own query, so averages and distinct counts stay correct. Same row limit, timeout and permissions as a report; the row limit applies to each level.",
+                "operationId": "runAnalyticsDesignerPivot",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AnalyticsDesignerRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The pivot matrix",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
@@ -352652,8 +353096,171 @@
                         "enum": [
                             "csv",
                             "excel_csv",
-                            "xlsx"
+                            "xlsx",
+                            "pdf",
+                            "json"
                         ]
+                    },
+                    "locale": {
+                        "description": "Export only: translated headers and regional number, date and delimiter conventions",
+                        "type": "string",
+                        "enum": [
+                            "it-CH",
+                            "de-CH",
+                            "fr-CH",
+                            "it-IT",
+                            "en"
+                        ]
+                    },
+                    "pivot": {
+                        "description": "Pivot layout: rows and columns are lists of dimensions (`key` or `key:granularity`), at most 4 in total; `subtotals` and `grand_totals` switch the totals",
+                        "properties": {
+                            "rows": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "columns": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "subtotals": {
+                                "type": "boolean",
+                                "default": true
+                            },
+                            "grand_totals": {
+                                "type": "boolean",
+                                "default": true
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "calculated_fields": {
+                        "description": "Up to 10 formulas over the selected measures: numbers, measure keys, + - * /, parentheses and ABS, ROUND, COALESCE, NULLIF. Evaluated on the aggregated cells; a zero divisor gives an empty cell",
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "key",
+                                "formula"
+                            ],
+                            "properties": {
+                                "key": {
+                                    "type": "string",
+                                    "example": "margin_pct"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "formula": {
+                                    "type": "string",
+                                    "example": "(revenue - cost) / NULLIF(revenue, 0)"
+                                },
+                                "format": {
+                                    "type": "string",
+                                    "enum": [
+                                        "currency",
+                                        "number",
+                                        "percentage",
+                                        "integer"
+                                    ]
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "conditional_formatting": {
+                        "description": "Up to 20 rules; colors are named tokens",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "target": {
+                                    "type": "string"
+                                },
+                                "operator": {
+                                    "type": "string",
+                                    "enum": [
+                                        "gt",
+                                        "gte",
+                                        "lt",
+                                        "lte",
+                                        "eq",
+                                        "neq",
+                                        "between"
+                                    ]
+                                },
+                                "value": {
+                                    "type": "string"
+                                },
+                                "value2": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "background": {
+                                    "type": "string",
+                                    "enum": [
+                                        "none",
+                                        "red",
+                                        "orange",
+                                        "yellow",
+                                        "green",
+                                        "blue",
+                                        "purple",
+                                        "gray"
+                                    ]
+                                },
+                                "text": {
+                                    "type": "string",
+                                    "enum": [
+                                        "default",
+                                        "white",
+                                        "black",
+                                        "red",
+                                        "green",
+                                        "blue"
+                                    ]
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "chart_config": {
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean"
+                            },
+                            "chartType": {
+                                "type": "string",
+                                "enum": [
+                                    "bar",
+                                    "stacked_bar",
+                                    "line",
+                                    "area",
+                                    "pie",
+                                    "donut",
+                                    "combo"
+                                ]
+                            },
+                            "xAxis": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "series": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "showLegend": {
+                                "type": "boolean"
+                            },
+                            "showDataLabels": {
+                                "type": "boolean"
+                            }
+                        },
+                        "type": "object"
                     }
                 },
                 "type": "object"
@@ -352680,6 +353287,170 @@
                     },
                     "spec": {
                         "$ref": "#/components/schemas/AnalyticsReportSpec"
+                    },
+                    "pivot": {
+                        "description": "Pivot layout: rows and columns are lists of dimensions (`key` or `key:granularity`), at most 4 in total; `subtotals` and `grand_totals` switch the totals",
+                        "properties": {
+                            "rows": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "columns": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "subtotals": {
+                                "type": "boolean",
+                                "default": true
+                            },
+                            "grand_totals": {
+                                "type": "boolean",
+                                "default": true
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "calculated_fields": {
+                        "description": "Up to 10 formulas over the selected measures: numbers, measure keys, + - * /, parentheses and ABS, ROUND, COALESCE, NULLIF. Evaluated on the aggregated cells; a zero divisor gives an empty cell",
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "key",
+                                "formula"
+                            ],
+                            "properties": {
+                                "key": {
+                                    "type": "string",
+                                    "example": "margin_pct"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "formula": {
+                                    "type": "string",
+                                    "example": "(revenue - cost) / NULLIF(revenue, 0)"
+                                },
+                                "format": {
+                                    "type": "string",
+                                    "enum": [
+                                        "currency",
+                                        "number",
+                                        "percentage",
+                                        "integer"
+                                    ]
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "conditional_formatting": {
+                        "description": "Up to 20 rules; colors are named tokens",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "target": {
+                                    "type": "string"
+                                },
+                                "operator": {
+                                    "type": "string",
+                                    "enum": [
+                                        "gt",
+                                        "gte",
+                                        "lt",
+                                        "lte",
+                                        "eq",
+                                        "neq",
+                                        "between"
+                                    ]
+                                },
+                                "value": {
+                                    "type": "string"
+                                },
+                                "value2": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "background": {
+                                    "type": "string",
+                                    "enum": [
+                                        "none",
+                                        "red",
+                                        "orange",
+                                        "yellow",
+                                        "green",
+                                        "blue",
+                                        "purple",
+                                        "gray"
+                                    ]
+                                },
+                                "text": {
+                                    "type": "string",
+                                    "enum": [
+                                        "default",
+                                        "white",
+                                        "black",
+                                        "red",
+                                        "green",
+                                        "blue"
+                                    ]
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "chart_config": {
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean"
+                            },
+                            "chartType": {
+                                "type": "string",
+                                "enum": [
+                                    "bar",
+                                    "stacked_bar",
+                                    "line",
+                                    "area",
+                                    "pie",
+                                    "donut",
+                                    "combo"
+                                ]
+                            },
+                            "xAxis": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "series": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "showLegend": {
+                                "type": "boolean"
+                            },
+                            "showDataLabels": {
+                                "type": "boolean"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "visibility": {
+                        "type": "string",
+                        "enum": [
+                            "private",
+                            "role_shared",
+                            "tenant_public"
+                        ]
+                    },
+                    "shared_role_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     },
                     "is_shared": {
                         "description": "Visible to the whole company",
@@ -352729,7 +353500,174 @@
                     "spec": {
                         "$ref": "#/components/schemas/AnalyticsReportSpec"
                     },
+                    "pivot": {
+                        "description": "Pivot layout: rows and columns are lists of dimensions (`key` or `key:granularity`), at most 4 in total; `subtotals` and `grand_totals` switch the totals",
+                        "properties": {
+                            "rows": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "columns": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "subtotals": {
+                                "type": "boolean",
+                                "default": true
+                            },
+                            "grand_totals": {
+                                "type": "boolean",
+                                "default": true
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "calculated_fields": {
+                        "description": "Up to 10 formulas over the selected measures: numbers, measure keys, + - * /, parentheses and ABS, ROUND, COALESCE, NULLIF. Evaluated on the aggregated cells; a zero divisor gives an empty cell",
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "key",
+                                "formula"
+                            ],
+                            "properties": {
+                                "key": {
+                                    "type": "string",
+                                    "example": "margin_pct"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "formula": {
+                                    "type": "string",
+                                    "example": "(revenue - cost) / NULLIF(revenue, 0)"
+                                },
+                                "format": {
+                                    "type": "string",
+                                    "enum": [
+                                        "currency",
+                                        "number",
+                                        "percentage",
+                                        "integer"
+                                    ]
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "conditional_formatting": {
+                        "description": "Up to 20 rules; colors are named tokens",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "target": {
+                                    "type": "string"
+                                },
+                                "operator": {
+                                    "type": "string",
+                                    "enum": [
+                                        "gt",
+                                        "gte",
+                                        "lt",
+                                        "lte",
+                                        "eq",
+                                        "neq",
+                                        "between"
+                                    ]
+                                },
+                                "value": {
+                                    "type": "string"
+                                },
+                                "value2": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "background": {
+                                    "type": "string",
+                                    "enum": [
+                                        "none",
+                                        "red",
+                                        "orange",
+                                        "yellow",
+                                        "green",
+                                        "blue",
+                                        "purple",
+                                        "gray"
+                                    ]
+                                },
+                                "text": {
+                                    "type": "string",
+                                    "enum": [
+                                        "default",
+                                        "white",
+                                        "black",
+                                        "red",
+                                        "green",
+                                        "blue"
+                                    ]
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "chart_config": {
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean"
+                            },
+                            "chartType": {
+                                "type": "string",
+                                "enum": [
+                                    "bar",
+                                    "stacked_bar",
+                                    "line",
+                                    "area",
+                                    "pie",
+                                    "donut",
+                                    "combo"
+                                ]
+                            },
+                            "xAxis": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "series": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "showLegend": {
+                                "type": "boolean"
+                            },
+                            "showDataLabels": {
+                                "type": "boolean"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "visibility": {
+                        "description": "Private to the owner, shared with the roles of `shared_role_ids`, or visible to the whole company. Overrides `is_shared`",
+                        "type": "string",
+                        "enum": [
+                            "private",
+                            "role_shared",
+                            "tenant_public"
+                        ]
+                    },
+                    "shared_role_ids": {
+                        "description": "Required for `role_shared`",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "is_shared": {
+                        "description": "Same as visibility `tenant_public` when `visibility` is not sent",
                         "type": "boolean",
                         "default": false
                     },
@@ -352759,12 +353697,17 @@
                         "type": "string",
                         "format": "uuid"
                     },
+                    "name": {
+                        "type": "string",
+                        "nullable": true
+                    },
                     "frequency": {
                         "type": "string",
                         "enum": [
                             "daily",
                             "weekly",
-                            "monthly"
+                            "monthly",
+                            "cron"
                         ]
                     },
                     "day_of_week": {
@@ -352777,12 +353720,103 @@
                         "type": "integer",
                         "nullable": true
                     },
+                    "cron_expression": {
+                        "type": "string",
+                        "example": "0 7 * * 1",
+                        "nullable": true
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "example": "Europe/Zurich"
+                    },
+                    "locale": {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                            "it-CH",
+                            "de-CH",
+                            "fr-CH",
+                            "it-IT",
+                            "en"
+                        ]
+                    },
+                    "recipient_user_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "external_emails": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "email"
+                        }
+                    },
+                    "delivery_channels": {
+                        "properties": {
+                            "email": {
+                                "type": "boolean"
+                            },
+                            "telegram_chat_ids": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dms_folder_id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "nullable": true
+                            },
+                            "webhook_url": {
+                                "type": "string",
+                                "format": "uri",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "sftp": {
+                        "description": "Host, port, username and path; the password or key is never returned",
+                        "properties": {
+                            "host": {
+                                "type": "string"
+                            },
+                            "port": {
+                                "type": "integer"
+                            },
+                            "username": {
+                                "type": "string"
+                            },
+                            "path": {
+                                "type": "string"
+                            },
+                            "secret_set": {
+                                "type": "boolean"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "webhook_secret_set": {
+                        "type": "boolean"
+                    },
+                    "next_run_at": {
+                        "description": "Cron schedules: next run, in UTC",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "format": {
                         "type": "string",
                         "enum": [
                             "csv",
                             "excel_csv",
-                            "xlsx"
+                            "xlsx",
+                            "pdf",
+                            "json"
                         ]
                     },
                     "delivery": {
@@ -352829,15 +353863,101 @@
                 "type": "object"
             },
             "AnalyticsSaveExportScheduleRequest": {
+                "description": "Dated kind: `frequency` and `delivery` are required. Cron kind (when `cron_expression` is sent): `frequency` and `delivery` are ignored, at least one recipient or delivery channel is required, the cron may not run more often than every 5 minutes, `webhook_url` must be https and `webhook_secret` is returned once in the creation response",
                 "required": [
-                    "designed_report_id",
-                    "frequency",
-                    "delivery"
+                    "designed_report_id"
                 ],
                 "properties": {
                     "designed_report_id": {
                         "type": "string",
                         "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "cron_expression": {
+                        "type": "string",
+                        "example": "0 7 * * 1"
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "default": "Europe/Zurich"
+                    },
+                    "locale": {
+                        "type": "string",
+                        "default": "en",
+                        "enum": [
+                            "it-CH",
+                            "de-CH",
+                            "fr-CH",
+                            "it-IT",
+                            "en"
+                        ]
+                    },
+                    "recipient_user_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "external_emails": {
+                        "description": "Only when the installation allows external recipients",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "email"
+                        }
+                    },
+                    "delivery_channels": {
+                        "properties": {
+                            "email": {
+                                "type": "boolean"
+                            },
+                            "telegram_chat_ids": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dms_folder_id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "nullable": true
+                            },
+                            "webhook_url": {
+                                "type": "string",
+                                "format": "uri",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "sftp": {
+                        "properties": {
+                            "host": {
+                                "type": "string"
+                            },
+                            "port": {
+                                "type": "integer",
+                                "default": 22
+                            },
+                            "username": {
+                                "type": "string"
+                            },
+                            "password": {
+                                "type": "string"
+                            },
+                            "private_key": {
+                                "type": "string"
+                            },
+                            "path": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
                     },
                     "frequency": {
                         "type": "string",
@@ -352865,7 +353985,9 @@
                         "enum": [
                             "csv",
                             "excel_csv",
-                            "xlsx"
+                            "xlsx",
+                            "pdf",
+                            "json"
                         ]
                     },
                     "delivery": {
@@ -407903,7 +409025,7 @@
             "AnaExportFormat": {
                 "name": "format",
                 "in": "query",
-                "description": "`csv`: comma separated UTF-8. `excel_csv`: semicolons and byte order mark, opens correctly in Excel. `xlsx`: a real Excel workbook (typed cells, bold frozen header, a second sheet `Parameters` with dataset, filters, period and generation time). Same row limit for every format.",
+                "description": "`csv`: comma separated UTF-8. `excel_csv`: semicolons and byte order mark, opens correctly in Excel. `xlsx`: a real Excel workbook (typed cells, bold frozen header, a second sheet `Parameters` with dataset, filters, period and generation time). `pdf`: an executive document with the tenant name, summary figures, the chart snapshot of a pivot and a footer with the filters and the generation time (at most 2000 rows). `json`: metadata, columns, rows and totals. Same row limit for every other format.",
                 "required": false,
                 "schema": {
                     "type": "string",
@@ -407911,7 +409033,25 @@
                     "enum": [
                         "csv",
                         "excel_csv",
-                        "xlsx"
+                        "xlsx",
+                        "pdf",
+                        "json"
+                    ]
+                }
+            },
+            "AnaExportLocale": {
+                "name": "locale",
+                "in": "query",
+                "description": "Regional locale of the file. `it-CH`, `de-CH`, `fr-CH`: apostrophe thousands and dot decimal (1'234.50), dates dd.MM.yyyy, `;` in CSV. `it-IT`: 1.234,50, dd/MM/yyyy, `;`. `en`: 1,234.50, yyyy-MM-dd, `,`. Headers are translated into the language of the locale. Without it the file keeps the stable keys and raw values.",
+                "required": false,
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "it-CH",
+                        "de-CH",
+                        "fr-CH",
+                        "it-IT",
+                        "en"
                     ]
                 }
             },

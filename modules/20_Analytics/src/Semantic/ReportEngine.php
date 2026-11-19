@@ -64,7 +64,7 @@ final readonly class ReportEngine
             throw new AuthorizationException(__('analytics_errors.report.role_cannot_read', ['module' => $dataset->module]));
         }
 
-        return $dataset;
+        return $this->catalog->restrict($dataset, $user);
     }
 
     /**
@@ -255,6 +255,10 @@ final readonly class ReportEngine
             $this->filter($query, $dataset->dimension($filter['field']) ?? throw new \LogicException('Unvalidated filter.'), $filter['operator'], $filter['value']);
         }
 
+        if ($spec->filterTree !== null) {
+            $query->where(fn (Builder $group) => $this->tree($group, $dataset, $spec->filterTree));
+        }
+
         if ($period !== null && $dataset->periodDimension !== null) {
             $query->whereRaw('('.$dataset->dimensions[$dataset->periodDimension]->sql.') BETWEEN ? AND ?', [$period['from'], $period['to']]);
         }
@@ -283,6 +287,30 @@ final readonly class ReportEngine
         }
 
         return $query;
+    }
+
+    /**
+     * Applies a nested filter group: every leaf goes through the same allow-listed, bound conditions as a flat filter.
+     *
+     * @param  array<string, mixed>  $node
+     */
+    private function tree(Builder $query, Dataset $dataset, array $node): void
+    {
+        $or = $node['logic'] === 'or';
+
+        foreach ($node['conditions'] as $condition) {
+            $apply = function (Builder $inner) use ($dataset, $condition): void {
+                if (isset($condition['conditions'])) {
+                    $this->tree($inner, $dataset, $condition);
+
+                    return;
+                }
+
+                $this->filter($inner, $dataset->dimension($condition['field']) ?? throw new \LogicException('Unvalidated filter.'), $condition['operator'], $condition['value']);
+            };
+
+            $or ? $query->orWhere($apply) : $query->where($apply);
+        }
     }
 
     private function join(Builder $query, Dataset $dataset, DatasetJoin $join): void
@@ -498,7 +526,7 @@ final readonly class ReportEngine
 
         foreach ($spec->measures as $key) {
             $measure = $dataset->measures[$key];
-            $columns[] = ['key' => $key, 'label' => $measure->label, 'kind' => 'measure', 'unit' => $measure->unit];
+            $columns[] = ['key' => $key, 'label' => $measure->label, 'kind' => 'measure', 'unit' => $measure->unit, 'additive' => $measure->isAdditive()];
 
             if ($spec->compare !== ReportPeriod::CompareNone) {
                 $columns[] = ['key' => "{$key}__previous", 'label' => $measure->label.' (previous)', 'kind' => 'comparison', 'unit' => $measure->unit];

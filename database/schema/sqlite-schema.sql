@@ -779,6 +779,12 @@ CREATE TABLE "analytics_designed_reports"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "visibility" varchar not null default 'private',
+  "shared_role_ids" text not null default '[]',
+  "pivot" text not null default '{}',
+  "calculated_fields" text not null default '[]',
+  "conditional_formatting" text not null default '[]',
+  "chart_config" text not null default '{}',
   primary key("id")
 );
 
@@ -816,6 +822,10 @@ CREATE TABLE "analytics_export_runs"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "status" varchar not null default 'completed',
+  "duration_ms" integer,
+  "error_message" text,
+  "locale" varchar,
   primary key("id")
 );
 
@@ -857,6 +867,15 @@ CREATE TABLE "analytics_export_schedules"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "name" varchar,
+  "cron_expression" varchar,
+  "timezone" varchar not null default 'Europe/Zurich',
+  "locale" varchar,
+  "recipient_user_ids" text not null default '[]',
+  "external_emails" text not null default '[]',
+  "delivery_channels" text not null default '{}',
+  "secret_config_encrypted" text,
+  "next_run_at" datetime,
   foreign key("designed_report_id") references "analytics_designed_reports"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -15964,6 +15983,7 @@ CREATE TABLE "invoice_items"(
   "natura" varchar,
   "withholding_applies" tinyint(1) not null default '1',
   "fund_applies" tinyint(1) not null default '1',
+  "sdi_data" text,
   foreign key("cost_center_id") references "cost_centers"("id") on delete set null on update no action,
   foreign key("invoice_id") references "invoices"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -16114,6 +16134,9 @@ CREATE TABLE "invoices"(
   "stamp_duty_charged_to_customer" tinyint(1) not null default '0',
   "legal_notices" text,
   "vat_summary" text,
+  "sdi_simplified" tinyint(1) not null default '0',
+  "sdi_vehicle" text,
+  "sdi_extra" text,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
   foreign key("quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("delivery_note_id") references "delivery_notes"("id") on delete set null on update no action,
@@ -39990,6 +40013,10 @@ CREATE INDEX "controlling_budget_lines_tenant_id_plan_id_index" on "controlling_
 CREATE INDEX "controlling_budget_lines_tenant_id_index" on "controlling_budget_lines"(
   "tenant_id"
 );
+CREATE INDEX "idx_analytics_schedules_due_at" on "analytics_export_schedules"(
+  "is_active",
+  "next_run_at"
+);
 CREATE TABLE "audit_logs"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -40065,12 +40092,12 @@ CREATE TABLE "audit_worm_batch_entries"(
   foreign key("batch_id") references "audit_worm_batches"("id") on delete restrict,
   foreign key("audit_log_id") references "audit_logs"("id") on delete restrict
 );
-CREATE UNIQUE INDEX "audit_worm_batch_entries_audit_log_id_unique" on "audit_worm_batch_entries"(
-  "audit_log_id"
-);
 CREATE INDEX "audit_worm_batch_entries_tenant_batch_index" on "audit_worm_batch_entries"(
   "tenant_id",
   "batch_id"
+);
+CREATE UNIQUE INDEX "audit_worm_batch_entries_audit_log_id_unique" on "audit_worm_batch_entries"(
+  "audit_log_id"
 );
 CREATE TRIGGER prevent_audit_log_update BEFORE UPDATE ON audit_logs BEGIN SELECT RAISE(ABORT, 'Audit logs are strictly immutable'); END;
 CREATE TRIGGER prevent_audit_log_delete BEFORE DELETE ON audit_logs BEGIN SELECT RAISE(ABORT, 'Audit logs are strictly immutable'); END;
@@ -40454,4 +40481,7 @@ INSERT INTO migrations VALUES(376,'2027_12_03_000100_complete_tenant_fks_and_enu
 INSERT INTO migrations VALUES(377,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',2);
 INSERT INTO migrations VALUES(378,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',3);
 INSERT INTO migrations VALUES(379,'2027_12_10_100000_create_controlling_tables',4);
-INSERT INTO migrations VALUES(380,'2027_12_11_000100_create_immutable_audit_trail',5);
+INSERT INTO migrations VALUES(380,'2027_12_10_000100_extend_analytics_reporting_for_pivot_studio',5);
+INSERT INTO migrations VALUES(381,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',6);
+INSERT INTO migrations VALUES(382,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',7);
+INSERT INTO migrations VALUES(383,'2027_12_11_000100_create_immutable_audit_trail',8);
