@@ -33,6 +33,9 @@ return new class extends Migration
                 $table->date('valid_to')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
                 $table->unique(['tenant_id', 'code']);
             });
         }
@@ -52,6 +55,9 @@ return new class extends Migration
                 $table->decimal('estimated_cost_budget', 18, 4)->default(0);
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
                 $table->unique(['tenant_id', 'code']);
             });
         }
@@ -68,6 +74,9 @@ return new class extends Migration
                 $table->timestamp('reversed_at')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
                 $table->index(['tenant_id', 'fiscal_year', 'fiscal_month']);
             });
         }
@@ -85,6 +94,9 @@ return new class extends Migration
                 $table->boolean('is_active')->default(true);
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
                 $table->index(['tenant_id', 'step_order']);
             });
         }
@@ -112,6 +124,9 @@ return new class extends Migration
                 $table->foreignUuid('allocation_run_id')->nullable()->constrained('cost_allocation_runs')->nullOnDelete();
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
                 $table->index(['tenant_id', 'fiscal_year', 'fiscal_month']);
                 $table->index(['tenant_id', 'cost_center_id']);
                 $table->index(['tenant_id', 'job_id']);
@@ -150,6 +165,9 @@ return new class extends Migration
                 $table->decimal('full_industrial_margin', 18, 4)->default(0);
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
                 $table->index(['tenant_id', 'posting_date']);
                 $table->index(['tenant_id', 'fiscal_year', 'fiscal_month']);
             });
@@ -172,6 +190,9 @@ return new class extends Migration
                 $table->decimal('cogs_period', 18, 4)->default(0);
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
                 $table->unique(['tenant_id', 'snapshot_date']);
             });
         }
@@ -193,6 +214,9 @@ return new class extends Migration
                 $table->text('notes')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
                 $table->index(['tenant_id', 'fiscal_year', 'plan_type']);
             });
         }
@@ -221,6 +245,9 @@ return new class extends Migration
                 $table->string('distribution_driver', 24)->default('equal_12');
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
                 $table->index(['tenant_id', 'plan_id']);
             });
         }

@@ -24174,6 +24174,18 @@ CREATE TABLE "sales_order_items"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "blanket_agreement_line_id" varchar,
+  "warehouse_id" varchar,
+  "parent_line_id" varchar,
+  "is_backorder" tinyint(1) not null default '0',
+  "backorder_sequence" integer not null default '0',
+  "quantity_cancelled" numeric not null default '0',
+  "requested_date" date,
+  "atp_promised_date" date,
+  "atp_status" varchar,
+  "replenishment_triggered" tinyint(1) not null default '0',
+  "replenishment_reference_type" varchar,
+  "replenishment_reference_id" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("sales_order_id") references "sales_orders"("id") on delete cascade on update no action,
   primary key("id")
@@ -24228,6 +24240,18 @@ CREATE TABLE "sales_orders"(
   "approved_at" datetime,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "order_type" varchar not null default 'standard',
+  "blanket_agreement_id" varchar,
+  "warehouse_id" varchar,
+  "requested_delivery_date" date,
+  "confirmed_delivery_date" date,
+  "credit_block_reason" varchar,
+  "credit_approved_by" varchar,
+  "credit_approved_at" datetime,
+  "credit_override_notes" text,
+  "allocated_percentage" numeric not null default '0',
+  "delivered_percentage" numeric not null default '0',
+  "invoiced_percentage" numeric not null default '0',
   foreign key("quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("contact_id") references "contacts"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -39474,6 +39498,164 @@ CREATE INDEX "sdi_notifications_fpa_document_id_notification_type_index" on "sdi
   "fpa_document_id",
   "notification_type"
 );
+CREATE TABLE "blanket_agreements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "agreement_number" varchar not null,
+  "contact_id" varchar not null,
+  "currency_code" varchar not null default 'EUR',
+  "exchange_rate" numeric not null default '1',
+  "agreement_type" varchar not null,
+  "valid_from" date not null,
+  "valid_to" date not null,
+  "status" varchar not null default 'draft',
+  "total_committed_amount" numeric not null default '0',
+  "total_called_off_amount" numeric not null default '0',
+  "pricing_lock_mode" varchar not null default 'fixed_contract_price',
+  "over_release_tolerance_percent" numeric not null default '0',
+  "payment_terms" varchar,
+  "incoterms" varchar,
+  "notes" text,
+  "renewed_from_id" varchar,
+  "activated_at" datetime,
+  "closed_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "blanket_agreements_tenant_number_unique" on "blanket_agreements"(
+  "tenant_id",
+  "agreement_number"
+);
+CREATE INDEX "blanket_agreements_tenant_id_contact_id_index" on "blanket_agreements"(
+  "tenant_id",
+  "contact_id"
+);
+CREATE INDEX "blanket_agreements_tenant_id_status_valid_to_index" on "blanket_agreements"(
+  "tenant_id",
+  "status",
+  "valid_to"
+);
+CREATE TABLE "blanket_agreement_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "blanket_agreement_id" varchar not null,
+  "line_number" integer not null,
+  "product_id" varchar,
+  "description" varchar not null,
+  "unit_of_measure" varchar not null default 'EA',
+  "target_quantity" numeric not null default '0',
+  "called_off_quantity" numeric not null default '0',
+  "delivered_quantity" numeric not null default '0',
+  "unit_price" numeric not null default '0',
+  "discount_percent" numeric not null default '0',
+  "tax_rate" numeric not null default '0',
+  "target_amount" numeric not null default '0',
+  "called_off_amount" numeric not null default '0',
+  "delivery_schedule" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("blanket_agreement_id") references "blanket_agreements"("id") on delete cascade,
+  foreign key("product_id") references "products"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "blanket_agreement_lines_number_unique" on "blanket_agreement_lines"(
+  "blanket_agreement_id",
+  "line_number"
+);
+CREATE INDEX "blanket_agreement_lines_tenant_id_product_id_index" on "blanket_agreement_lines"(
+  "tenant_id",
+  "product_id"
+);
+CREATE INDEX "sales_orders_tenant_id_order_type_index" on "sales_orders"(
+  "tenant_id",
+  "order_type"
+);
+CREATE INDEX "sales_orders_blanket_agreement_id_index" on "sales_orders"(
+  "blanket_agreement_id"
+);
+CREATE INDEX "sales_order_items_parent_line_id_index" on "sales_order_items"(
+  "parent_line_id"
+);
+CREATE INDEX "sales_order_items_blanket_agreement_line_id_index" on "sales_order_items"(
+  "blanket_agreement_line_id"
+);
+CREATE INDEX "sales_order_items_tenant_id_is_backorder_index" on "sales_order_items"(
+  "tenant_id",
+  "is_backorder"
+);
+CREATE TABLE "sales_order_audit_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "sales_order_id" varchar not null,
+  "sales_order_item_id" varchar,
+  "event" varchar not null,
+  "from_status" varchar,
+  "to_status" varchar,
+  "actor_id" varchar,
+  "payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("sales_order_id") references "sales_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sales_order_audit_logs_order_idx" on "sales_order_audit_logs"(
+  "tenant_id",
+  "sales_order_id",
+  "created_at"
+);
+CREATE TABLE "replenishment_requests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "sales_order_id" varchar not null,
+  "sales_order_item_id" varchar not null,
+  "product_id" varchar,
+  "warehouse_id" varchar,
+  "request_type" varchar not null,
+  "quantity" numeric not null,
+  "needed_by" date,
+  "status" varchar not null default 'open',
+  "target_type" varchar,
+  "target_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("sales_order_id") references "sales_orders"("id") on delete cascade,
+  foreign key("sales_order_item_id") references "sales_order_items"("id") on delete cascade,
+  foreign key("product_id") references "products"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "replenishment_requests_tenant_id_status_index" on "replenishment_requests"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "replenishment_requests_sales_order_item_id_index" on "replenishment_requests"(
+  "sales_order_item_id"
+);
 CREATE TABLE "analytical_cost_centers"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -39488,6 +39670,9 @@ CREATE TABLE "analytical_cost_centers"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -39518,6 +39703,9 @@ CREATE TABLE "analytical_jobs"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("cost_center_id") references "analytical_cost_centers"("id") on delete set null,
   primary key("id")
@@ -39549,6 +39737,9 @@ CREATE TABLE "cost_allocation_runs"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -39573,6 +39764,9 @@ CREATE TABLE "cost_allocation_rules"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("source_cost_center_id") references "analytical_cost_centers"("id") on delete cascade,
   primary key("id")
@@ -39609,6 +39803,9 @@ CREATE TABLE "analytical_ledger_entries"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("cost_center_id") references "analytical_cost_centers"("id") on delete set null,
   foreign key("job_id") references "analytical_jobs"("id") on delete set null,
@@ -39669,6 +39866,9 @@ CREATE TABLE "bi_sales_margin_facts"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("cost_center_id") references "analytical_cost_centers"("id") on delete set null,
   foreign key("job_id") references "analytical_jobs"("id") on delete set null,
@@ -39720,6 +39920,9 @@ CREATE TABLE "bi_financial_snapshots"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -39749,6 +39952,9 @@ CREATE TABLE "controlling_budget_plans"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -39798,6 +40004,9 @@ CREATE TABLE "controlling_budget_lines"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("plan_id") references "controlling_budget_plans"("id") on delete cascade,
   foreign key("cost_center_id") references "analytical_cost_centers"("id") on delete set null,
@@ -40190,4 +40399,5 @@ INSERT INTO migrations VALUES(374,'2027_04_20_286002_create_enasarco_annual_limi
 INSERT INTO migrations VALUES(375,'2027_04_20_286003_create_passive_invoice_withholdings_table_issue_286',2);
 INSERT INTO migrations VALUES(376,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',2);
 INSERT INTO migrations VALUES(377,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',2);
-INSERT INTO migrations VALUES(378,'2027_12_10_100000_create_controlling_tables',3);
+INSERT INTO migrations VALUES(378,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',3);
+INSERT INTO migrations VALUES(379,'2027_12_10_100000_create_controlling_tables',4);
