@@ -22,6 +22,7 @@ use Modules\Communication\Providers\CommunicationServiceProvider;
 use Modules\Configurator\Providers\ConfiguratorServiceProvider;
 use Modules\ConstructionTrades\Providers\ConstructionTradesServiceProvider;
 use Modules\Contracts\Providers\ContractsServiceProvider;
+use Modules\Controlling\Providers\ControllingServiceProvider;
 use Modules\CorporateGroup\Providers\CorporateGroupServiceProvider;
 use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
@@ -133,6 +134,7 @@ return [
     TalentLearningServiceProvider::class,
     PlanningServiceProvider::class,
     BudgetingServiceProvider::class,
+    ControllingServiceProvider::class,
     BusinessIntelligenceServiceProvider::class,
     MarketplaceServiceProvider::class,
     RebatesServiceProvider::class,
