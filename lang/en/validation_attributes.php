@@ -2919,6 +2919,8 @@ return [
     'auditable_type' => 'entity type',
     'auditable_id' => 'entity ID',
     'actor_id' => 'actor ID',
+    'ip_address' => 'IP address',
+
     'changed_field' => 'changed field',
     'from_sequence' => 'from sequence',
     'to_sequence' => 'to sequence',

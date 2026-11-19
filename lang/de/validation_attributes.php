@@ -2919,7 +2919,9 @@ return [
     'auditable_type' => 'Entitätstyp',
     'auditable_id' => 'Entitätskennung',
     'actor_id' => 'Akteurkennung',
+    'ip_address' => 'IP-Adresse',
     'changed_field' => 'geändertes Feld',
     'from_sequence' => 'ab Sequenz',
     'to_sequence' => 'bis Sequenz',
+
 ];

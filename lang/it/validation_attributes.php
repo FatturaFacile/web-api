@@ -2919,7 +2919,9 @@ return [
     'auditable_type' => 'tipo di entità',
     'auditable_id' => 'identificativo dell\'entità',
     'actor_id' => 'identificativo dell\'attore',
+    'ip_address' => 'indirizzo IP',
     'changed_field' => 'campo modificato',
     'from_sequence' => 'dalla sequenza',
     'to_sequence' => 'alla sequenza',
+
 ];

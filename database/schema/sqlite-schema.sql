@@ -40287,6 +40287,7 @@ CREATE INDEX "privacy_retention_run_logs_tenant_id_started_at_index" on "privacy
   "started_at"
 );
 
+
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
 INSERT INTO migrations VALUES(3,'0001_01_01_000002_create_jobs_table',1);
@@ -40671,3 +40672,4 @@ INSERT INTO migrations VALUES(381,'2027_12_10_000200_add_simplified_and_vehicle_
 INSERT INTO migrations VALUES(382,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',7);
 INSERT INTO migrations VALUES(383,'2027_12_11_000100_create_immutable_audit_trail',8);
 INSERT INTO migrations VALUES(384,'2027_12_12_000100_create_privacy_governance_tables',9);
+
