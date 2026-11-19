@@ -396,6 +396,9 @@ test('data, accounts and movements of other tenants never appear', function (): 
 
     expect(collect($other['entries'])->firstWhere('document_number', 'SECRET-INV')['lines'][1]['ledger_account_name'])->toBe('Secret revenue account')
         ->and(glEntry($own['entries'], 'INV-1', 'invoice')['lines'][1]['ledger_account_name'])->toBe('Sales revenue');
+
+    $otherCsv = glApi($this->otherTenant->id)->get('/api/v1/accounting/general-ledger/export?from_date=2026-03-01&to_date=2026-03-31')->assertOk()->streamedContent();
+    expect($otherCsv)->toContain('SECRET-INV')->toContain('Stranger Ltd')->not->toContain('INV-1')->not->toContain('Rossi SRL');
 });
 
 // ---------------------------------------------------------------------------------------------------------------
