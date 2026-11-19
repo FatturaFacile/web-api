@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Models;
 
+use App\Domain\Audit\Concerns\HasImmutableAuditTrail;
+use App\Domain\Audit\Contracts\AuditableEntityInterface;
 use App\Models\Concerns\ProtectsPostedJournalEntry;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Enterprise\MultiTenant\Concerns\BelongsToCompany;
@@ -12,9 +14,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\GeneralLedger\Services\JournalNumberSequence;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 
-final class JournalEntry extends BaseEnterpriseModel
+final class JournalEntry extends BaseEnterpriseModel implements AuditableEntityInterface
 {
     use BelongsToCompany;
+    use HasImmutableAuditTrail;
     use ProtectsPostedJournalEntry;
 
     protected $table = 'journal_entries';

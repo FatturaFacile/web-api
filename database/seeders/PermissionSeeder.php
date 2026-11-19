@@ -59,6 +59,10 @@ class PermissionSeeder extends GlobalDataSeeder
             ['code' => 'companies.consolidation.view', 'label_it' => 'Consultazione Bilancio Consolidato', 'label_en' => 'View Consolidated Reports'],
             ['code' => 'companies.consolidation.run', 'label_it' => 'Esecuzione Consolidamento di Gruppo', 'label_en' => 'Run Group Consolidation'],
             ['code' => 'audit.ledger.view', 'label_it' => 'Consultazione Piste di Audit', 'label_en' => 'Inspect Enterprise Audit Trails'],
+            ['code' => 'audit.view', 'label_it' => 'Consultazione Audit Trail Immutabile', 'label_en' => 'View the Immutable Audit Trail'],
+            ['code' => 'audit.verify', 'label_it' => 'Verifica Integrità Crittografica Audit Trail', 'label_en' => 'Verify Audit Trail Cryptographic Integrity'],
+            ['code' => 'audit.export', 'label_it' => 'Esportazione Bundle Forense Audit Trail', 'label_en' => 'Export the Forensic Audit Bundle'],
+            ['code' => 'audit.worm.manage', 'label_it' => 'Gestione Archivio WORM Audit Trail', 'label_en' => 'Manage the Audit WORM Archive'],
             ['code' => 'hr.payroll.view', 'label_it' => 'Consultazione Paghe Svizzere', 'label_en' => 'View Swiss Payroll'],
             ['code' => 'hr.payroll.manage', 'label_it' => 'Gestione Paghe Svizzere', 'label_en' => 'Manage Swiss Payroll'],
         ];

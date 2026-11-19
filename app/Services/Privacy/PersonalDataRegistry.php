@@ -288,7 +288,7 @@ final class PersonalDataRegistry
             new PersonalDataEntry('tl_survey_answers', [EngagementAnswer::class], 'Engagement survey answers', 'identity', ['text_value'], $erasable, 'Free text answers can contain personal data: erased by retention policy.', [], 'submitted_on'),
             new PersonalDataEntry('weighbridge_vehicles', [WeighbridgeVehicle::class], 'Weighbridge vehicles', 'identity', ['license_plate'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('portal_activity_logs', [PortalActivityLog::class], 'Customer portal activity', 'technical', ['ip_address'], $erasable, 'Access log of the portal: erased with the contact and by retention policy.', ['contact' => 'contact_id'], 'created_at'),
-            new PersonalDataEntry('audit_logs', [AuditLog::class], 'Audit log', 'technical', ['ip_address'], $evidence, $evidenceNote),
+            new PersonalDataEntry('audit_logs', [AuditLog::class], 'Audit log', 'technical', ['ip_address', 'actor_email'], $evidence, $evidenceNote),
             new PersonalDataEntry('preservation_access_logs', [PreservationAccessLog::class], 'Preservation access log', 'technical', ['ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('privacy_sensitive_access_logs', [PrivacySensitiveAccessLog::class], 'Sensitive access log', 'technical', ['ip_address'], $evidence, $evidenceNote, ['user' => 'user_id']),
             new PersonalDataEntry('inventory_audit_entries', [InventoryAuditEntry::class], 'Inventory audit entries', 'technical', ['ip_address'], $evidence, $evidenceNote),
