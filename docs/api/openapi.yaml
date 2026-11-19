@@ -62286,6 +62286,701 @@ paths:
                   - meta
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/fpa-documents:
+    get:
+      operationId: fpa-documents.index
+      tags:
+        - FpaDocument
+      parameters:
+        -
+          name: direction
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - outbound
+              - inbound
+              - null
+        -
+          name: status
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 30
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Electronic invoices retrieved'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        invoice_id:
+                          type: string
+                        parent_fpa_document_id:
+                          type: string
+                        direction:
+                          type: string
+                          enum:
+                            - outbound
+                            - inbound
+                        format_transmission:
+                          type: string
+                        document_type:
+                          type: string
+                        document_number:
+                          type: string
+                        document_date:
+                          type:
+                            - string
+                            - 'null'
+                        sdi_identifier:
+                          type: string
+                        file_name:
+                          type: string
+                        transmission_progressive:
+                          type: string
+                        status:
+                          type: string
+                          enum:
+                            - draft
+                            - validated
+                            - validation_failed
+                            - signed
+                            - queued
+                            - transmitted
+                            - delivered
+                            - undelivered
+                            - rejected
+                            - pa_accepted
+                            - pa_rejected
+                            - deadline_passed
+                            - transmitted_attested
+                            - inbound_received
+                            - inbound_processed
+                        validation_errors:
+                          type: string
+                        transmitted_at:
+                          type:
+                            - string
+                            - 'null'
+                        rejected_at:
+                          type:
+                            - string
+                            - 'null'
+                        resubmission_deadline_at:
+                          type:
+                            - string
+                            - 'null'
+                      required:
+                        - id
+                        - invoice_id
+                        - parent_fpa_document_id
+                        - direction
+                        - format_transmission
+                        - document_type
+                        - document_number
+                        - document_date
+                        - sdi_identifier
+                        - file_name
+                        - transmission_progressive
+                        - status
+                        - validation_errors
+                        - transmitted_at
+                        - rejected_at
+                        - resubmission_deadline_at
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      current_page:
+                        type: integer
+                      last_page:
+                        type: integer
+                      per_page:
+                        type: integer
+                      kpi:
+                        type: object
+                        properties:
+                          ready:
+                            type: integer
+                          transmitted:
+                            type: integer
+                          delivered:
+                            type: integer
+                          undelivered:
+                            type: integer
+                          rejected:
+                            type: integer
+                          inbound_to_process:
+                            type: integer
+                        required:
+                          - ready
+                          - transmitted
+                          - delivered
+                          - undelivered
+                          - rejected
+                          - inbound_to_process
+                    required:
+                      - total
+                      - current_page
+                      - last_page
+                      - per_page
+                      - kpi
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/fpa-documents/{id}':
+    get:
+      operationId: fpa-documents.show
+      tags:
+        - FpaDocument
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Electronic invoice retrieved'
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      invoice_id:
+                        type: string
+                      parent_fpa_document_id:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                          - outbound
+                          - inbound
+                      format_transmission:
+                        type: string
+                      document_type:
+                        type: string
+                      document_number:
+                        type: string
+                      document_date:
+                        type:
+                          - string
+                          - 'null'
+                      sdi_identifier:
+                        type: string
+                      file_name:
+                        type: string
+                      transmission_progressive:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - draft
+                          - validated
+                          - validation_failed
+                          - signed
+                          - queued
+                          - transmitted
+                          - delivered
+                          - undelivered
+                          - rejected
+                          - pa_accepted
+                          - pa_rejected
+                          - deadline_passed
+                          - transmitted_attested
+                          - inbound_received
+                          - inbound_processed
+                      validation_errors:
+                        type: string
+                      transmitted_at:
+                        type:
+                          - string
+                          - 'null'
+                      rejected_at:
+                        type:
+                          - string
+                          - 'null'
+                      resubmission_deadline_at:
+                        type:
+                          - string
+                          - 'null'
+                      notifications:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            type:
+                              type: string
+                              enum:
+                                - NS
+                                - RC
+                                - MC
+                                - NE
+                                - DT
+                                - AT
+                                - MT
+                            outcome_code:
+                              type: string
+                            error_codes:
+                              type: string
+                            received_at:
+                              type:
+                                - string
+                                - 'null'
+                          required:
+                            - id
+                            - type
+                            - outcome_code
+                            - error_codes
+                            - received_at
+                    required:
+                      - id
+                      - invoice_id
+                      - parent_fpa_document_id
+                      - direction
+                      - format_transmission
+                      - document_type
+                      - document_number
+                      - document_date
+                      - sdi_identifier
+                      - file_name
+                      - transmission_progressive
+                      - status
+                      - validation_errors
+                      - transmitted_at
+                      - rejected_at
+                      - resubmission_deadline_at
+                      - notifications
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/fpa-documents/{id}/render':
+    get:
+      operationId: fpa-documents.render
+      tags:
+        - FpaDocument
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            'text/html; charset=UTF-8':
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/fpa-documents/{id}/resubmit':
+    post:
+      operationId: fpa-documents.resubmit
+      tags:
+        - FpaDocument
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Revision created'
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      invoice_id:
+                        type: string
+                      parent_fpa_document_id:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                          - outbound
+                          - inbound
+                      format_transmission:
+                        type: string
+                      document_type:
+                        type: string
+                      document_number:
+                        type: string
+                      document_date:
+                        type:
+                          - string
+                          - 'null'
+                      sdi_identifier:
+                        type: string
+                      file_name:
+                        type: string
+                      transmission_progressive:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - draft
+                          - validated
+                          - validation_failed
+                          - signed
+                          - queued
+                          - transmitted
+                          - delivered
+                          - undelivered
+                          - rejected
+                          - pa_accepted
+                          - pa_rejected
+                          - deadline_passed
+                          - transmitted_attested
+                          - inbound_received
+                          - inbound_processed
+                      validation_errors:
+                        type: string
+                      transmitted_at:
+                        type:
+                          - string
+                          - 'null'
+                      rejected_at:
+                        type:
+                          - string
+                          - 'null'
+                      resubmission_deadline_at:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - id
+                      - invoice_id
+                      - parent_fpa_document_id
+                      - direction
+                      - format_transmission
+                      - document_type
+                      - document_number
+                      - document_date
+                      - sdi_identifier
+                      - file_name
+                      - transmission_progressive
+                      - status
+                      - validation_errors
+                      - transmitted_at
+                      - rejected_at
+                      - resubmission_deadline_at
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: resubmission_not_allowed
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/fpa-documents/{id}/simulate':
+    post:
+      operationId: fpa-documents.simulate
+      tags:
+        - FpaDocument
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulateSdiNotificationRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Receipt applied'
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      invoice_id:
+                        type: string
+                      parent_fpa_document_id:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                          - outbound
+                          - inbound
+                      format_transmission:
+                        type: string
+                      document_type:
+                        type: string
+                      document_number:
+                        type: string
+                      document_date:
+                        type:
+                          - string
+                          - 'null'
+                      sdi_identifier:
+                        type: string
+                      file_name:
+                        type: string
+                      transmission_progressive:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - draft
+                          - validated
+                          - validation_failed
+                          - signed
+                          - queued
+                          - transmitted
+                          - delivered
+                          - undelivered
+                          - rejected
+                          - pa_accepted
+                          - pa_rejected
+                          - deadline_passed
+                          - transmitted_attested
+                          - inbound_received
+                          - inbound_processed
+                      validation_errors:
+                        type: string
+                      transmitted_at:
+                        type:
+                          - string
+                          - 'null'
+                      rejected_at:
+                        type:
+                          - string
+                          - 'null'
+                      resubmission_deadline_at:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - id
+                      - invoice_id
+                      - parent_fpa_document_id
+                      - direction
+                      - format_transmission
+                      - document_type
+                      - document_number
+                      - document_date
+                      - sdi_identifier
+                      - file_name
+                      - transmission_progressive
+                      - status
+                      - validation_errors
+                      - transmitted_at
+                      - rejected_at
+                      - resubmission_deadline_at
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: sandbox_disabled
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'The sandbox simulator is disabled.'
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sdi/invoices/{id}/preflight':
+    post:
+      operationId: sdi.invoices.preflight
+      tags:
+        - FpaDocument
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Pre-flight completed'
+                  data:
+                    type: object
+                    properties:
+                      xml:
+                        type: string
+                      valid:
+                        type: boolean
+                      errors:
+                        type: string
+                      warnings:
+                        type: string
+                    required:
+                      - xml
+                      - valid
+                      - errors
+                      - warnings
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   '/v1/procurement/contracts/{id}/lines':
     get:
       operationId: procurement.contracts.lines.index
@@ -113043,6 +113738,12 @@ paths:
                           company_sites:
                             type: string
                             const: 'Premises of the companies of the group.'
+                          fpa_documents:
+                            type: string
+                            const: 'Electronic invoice envelopes: the recipient PEC is a business mailbox of the customer company, personal data of the parties stays in the contacts and the invoice.'
+                          sdi_configurations:
+                            type: string
+                            const: 'Transmission settings of the company (its own fiscal code and PEC), not data of data subjects.'
                         required:
                           - tenants
                           - bank_accounts
@@ -113067,6 +113768,8 @@ paths:
                           - saml_providers
                           - companies
                           - company_sites
+                          - fpa_documents
+                          - sdi_configurations
                       unregistered_tables:
                         type:
                           - object
@@ -141988,6 +142691,102 @@ paths:
                     const: 'Quarantined SDI message read again'
                   data:
                     $ref: '#/components/schemas/CatalogResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/settings/sdi:
+    get:
+      operationId: sdi.configuration.show
+      tags:
+        - SdiConfiguration
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'SDI settings retrieved'
+                  data:
+                    type: object
+                    properties:
+                      signature_mode:
+                        type: string
+                        enum:
+                          - none
+                          - local_pkcs12
+                          - remote_hsm_provider
+                      has_credentials:
+                        type: boolean
+                      has_certificate:
+                        type: boolean
+                    required:
+                      - signature_mode
+                      - has_credentials
+                      - has_certificate
+                    additionalProperties: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: sdi.configuration.update
+      tags:
+        - SdiConfiguration
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateSdiConfigurationRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'SDI settings saved'
+                  data:
+                    type: object
+                    properties:
+                      signature_mode:
+                        type: string
+                        enum:
+                          - none
+                          - local_pkcs12
+                          - remote_hsm_provider
+                      has_credentials:
+                        type: boolean
+                      has_certificate:
+                        type: boolean
+                    required:
+                      - signature_mode
+                      - has_credentials
+                      - has_certificate
+                    additionalProperties: {}
                   meta:
                     type: string
                 required:
@@ -235896,6 +236695,17 @@ components:
         - uuid
         - event_type
       title: SdiNotificationRequest
+    SdiNotificationType:
+      type: string
+      enum:
+        - NS
+        - RC
+        - MC
+        - NE
+        - DT
+        - AT
+        - MT
+      title: SdiNotificationType
     SecurityPolicyResource:
       type: object
       additionalProperties: {}
@@ -237463,6 +238273,13 @@ components:
         - signed_by
         - signature_base64
       title: SignWorkOrderRequest
+    SignatureMode:
+      type: string
+      enum:
+        - none
+        - local_pkcs12
+        - remote_hsm_provider
+      title: SignatureMode
     SignatureRequestResource:
       type: object
       properties:
@@ -237660,6 +238477,32 @@ components:
         - year
         - month
       title: SimulatePayrollRequest
+    SimulateSdiNotificationRequest:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/SdiNotificationType'
+        outcome:
+          type:
+            - string
+            - 'null'
+          enum:
+            - EC01
+            - EC02
+            - null
+        error_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 10
+        error_description:
+          type:
+            - string
+            - 'null'
+          maxLength: 500
+      required:
+        - type
+      title: SimulateSdiNotificationRequest
     SlottingRecommendationResource:
       type: object
       properties:
@@ -256644,6 +257487,58 @@ components:
       required:
         - channel
       title: UpdateSdiChannelRequest
+    UpdateSdiConfigurationRequest:
+      type: object
+      properties:
+        transmitter_country_code:
+          type: string
+          minLength: 2
+          maxLength: 2
+        transmitter_fiscal_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 28
+        channel_type:
+          type:
+            - string
+            - 'null'
+          enum:
+            - pec
+            - webservice_sdi
+            - intermediary_api
+            - null
+        default_codice_destinatario:
+          type: string
+          pattern: '^([A-Z0-9]{7}|[A-Z0-9]{6}|XXXXXXX)$'
+        pec_address:
+          type:
+            - string
+            - 'null'
+          format: email
+          maxLength: 255
+        signature_mode:
+          $ref: '#/components/schemas/SignatureMode'
+        certificate_reference:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        certificate:
+          type: string
+          format: binary
+          contentMediaType: application/octet-stream
+          description: 'Maximum file size: 512 kilobytes.'
+        certificate_password:
+          type: string
+          maxLength: 255
+        auto_sign_on_send:
+          type: boolean
+        legal_archiving_enabled:
+          type: boolean
+        sandbox_simulator_enabled:
+          type: boolean
+      title: UpdateSdiConfigurationRequest
     UpdateSecurityPolicyRequest:
       type: object
       description: 'The shape of an update of the tenant security policy. Every group is optional: only what is sent changes.'
@@ -261591,6 +262486,9 @@ tags:
     name: Forecast
     description: 'Operations of the Forecast module.'
   -
+    name: FpaDocument
+    description: 'Operations of the FpaDocument module.'
+  -
     name: FrameworkAgreement
     description: 'Operations of the FrameworkAgreement module.'
   -
@@ -262514,6 +263412,9 @@ tags:
   -
     name: SdiChannel
     description: 'Operations of the SdiChannel module.'
+  -
+    name: SdiConfiguration
+    description: 'Operations of the SdiConfiguration module.'
   -
     name: SdiGatewayWebhook
     description: 'Operations of the SdiGatewayWebhook module.'
