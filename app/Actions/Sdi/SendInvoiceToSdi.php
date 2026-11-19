@@ -14,6 +14,7 @@ use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Tenancy\TenantPreferences;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\SDI\Services\FpaEnvelopeRecorder;
 use Modules\SDI\Services\SdiFileNamer;
 use Modules\SDI\Services\SdiPreflight;
 use Throwable;
@@ -40,6 +41,7 @@ class SendInvoiceToSdi
         private readonly TenantPreferences $preferences,
         private readonly SdiFileNamer $fileNames,
         private readonly SdiPreflight $preflight,
+        private readonly FpaEnvelopeRecorder $envelopes,
     ) {}
 
     /**
@@ -109,6 +111,7 @@ class SendInvoiceToSdi
             ]);
 
             $this->events->record($invoice, 'sent_to_sdi', ['sdi_uuid' => $result['uuid'], 'file_name' => $fileName]);
+            $this->envelopes->recordSent($invoice, $fileName, (string) $xml, $format, $result['uuid']);
 
             return $metadata;
         });
@@ -228,5 +231,6 @@ class SendInvoiceToSdi
         ]);
 
         $this->events->record($invoice, 'sdi_send_failed', ['error' => $e->getMessage()]);
+        $this->envelopes->recordFailure($invoice, $fileName, $xml, $format, $e->getMessage());
     }
 }
