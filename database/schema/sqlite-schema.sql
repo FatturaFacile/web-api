@@ -5783,6 +5783,9 @@ CREATE TABLE "contacts"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "portal_consent_at" datetime,
+  "default_incoterm" varchar,
+  "eori_number" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("price_list_id") references "price_lists"("id") on delete set null on update no action,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
@@ -16137,6 +16140,10 @@ CREATE TABLE "invoices"(
   "sdi_simplified" tinyint(1) not null default '0',
   "sdi_vehicle" text,
   "sdi_extra" text,
+  "incoterm" varchar,
+  "incoterm_place" varchar,
+  "freight_amount" numeric,
+  "insurance_amount" numeric,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
   foreign key("quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("delivery_note_id") references "delivery_notes"("id") on delete set null on update no action,
@@ -19909,6 +19916,9 @@ CREATE TABLE "portal_access_tokens"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "otp_hash" varchar,
+  "otp_expires_at" datetime,
+  "otp_attempts" integer not null default '0',
   foreign key("contact_id") references "contacts"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -23190,6 +23200,10 @@ CREATE TABLE "quote_items"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "configuration_snapshot" text,
+  "labor_cost" numeric not null default '0',
+  "is_optional" tinyint(1) not null default '0',
+  "is_selected" tinyint(1) not null default '1',
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("quote_id") references "quotes"("id") on delete cascade on update no action,
   primary key("id")
@@ -23237,6 +23251,10 @@ CREATE TABLE "quotes"(
   "superseded_at" datetime,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "quote_group_uuid" varchar,
+  "is_current_revision" tinyint(1) not null default '1',
+  "revision_notes" text,
+  "allow_optional_selection" tinyint(1) not null default '0',
   foreign key("contact_id") references "contacts"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -24244,6 +24262,8 @@ CREATE TABLE "sales_orders"(
   "allocated_percentage" numeric not null default '0',
   "delivered_percentage" numeric not null default '0',
   "invoiced_percentage" numeric not null default '0',
+  "incoterm" varchar,
+  "incoterm_place" varchar,
   foreign key("quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("contact_id") references "contacts"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -36685,6 +36705,7 @@ CREATE TABLE "tenants"(
   "qrr_prefix" varchar,
   "default_reference_type" varchar not null default 'QRR',
   "qr_bill_perforation" varchar not null default 'DASHED_LINE_WITH_SCISSORS',
+  "eori_number" varchar,
   primary key("id")
 );
 
@@ -40101,6 +40122,145 @@ CREATE UNIQUE INDEX "audit_worm_batch_entries_audit_log_id_unique" on "audit_wor
 );
 CREATE TRIGGER prevent_audit_log_update BEFORE UPDATE ON audit_logs BEGIN SELECT RAISE(ABORT, 'Audit logs are strictly immutable'); END;
 CREATE TRIGGER prevent_audit_log_delete BEFORE DELETE ON audit_logs BEGIN SELECT RAISE(ABORT, 'Audit logs are strictly immutable'); END;
+CREATE INDEX "quotes_quote_group_uuid_index" on "quotes"("quote_group_uuid");
+CREATE TABLE "quote_approval_tiers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "level" integer not null,
+  "name" varchar not null,
+  "approver_role" varchar not null,
+  "max_line_discount_percent" numeric,
+  "max_global_discount_percent" numeric,
+  "min_margin_percent" numeric,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "quote_approval_tiers_tenant_id_level_unique" on "quote_approval_tiers"(
+  "tenant_id",
+  "level"
+);
+CREATE TABLE "quote_approval_requests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "quote_id" varchar not null,
+  "level" integer not null,
+  "required_role" varchar not null,
+  "status" varchar not null default 'pending',
+  "triggers" text,
+  "requested_by" varchar,
+  "approved_by" varchar,
+  "rejected_by" varchar,
+  "decided_at" datetime,
+  "rejection_reason" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("quote_id") references "quotes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "quote_approval_requests_quote_id_level_unique" on "quote_approval_requests"(
+  "quote_id",
+  "level"
+);
+CREATE INDEX "quote_approval_requests_tenant_id_status_index" on "quote_approval_requests"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "quote_approval_requests_status_index" on "quote_approval_requests"(
+  "status"
+);
+CREATE INDEX "quote_approval_requests_requested_by_index" on "quote_approval_requests"(
+  "requested_by"
+);
+CREATE INDEX "quote_approval_requests_approved_by_index" on "quote_approval_requests"(
+  "approved_by"
+);
+CREATE INDEX "quote_approval_requests_rejected_by_index" on "quote_approval_requests"(
+  "rejected_by"
+);
+CREATE TABLE "quote_signature_requests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "quote_id" varchar not null,
+  "token_hash" varchar not null,
+  "locale" varchar not null default 'it',
+  "expires_at" datetime not null,
+  "revoked_at" datetime,
+  "status" varchar not null default 'pending',
+  "signer_name" varchar,
+  "signer_role" varchar,
+  "purchase_order_number" varchar,
+  "signature_type" varchar,
+  "signature_data" text,
+  "selected_optional_item_ids" text,
+  "change_request" text,
+  "ip_address" varchar,
+  "user_agent" text,
+  "payload_hash" varchar,
+  "pdf_hash" varchar,
+  "signed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("quote_id") references "quotes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "quote_signature_requests_tenant_id_quote_id_index" on "quote_signature_requests"(
+  "tenant_id",
+  "quote_id"
+);
+CREATE UNIQUE INDEX "quote_signature_requests_token_hash_unique" on "quote_signature_requests"(
+  "token_hash"
+);
+CREATE INDEX "quote_signature_requests_status_index" on "quote_signature_requests"(
+  "status"
+);
+CREATE TABLE "portal_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "portal_slug" varchar,
+  "custom_domain" varchar,
+  "logo_url" varchar,
+  "favicon_url" varchar,
+  "primary_color" varchar,
+  "secondary_color" varchar,
+  "support_email" varchar,
+  "privacy_policy_url" varchar,
+  "require_otp" tinyint(1) not null default '0',
+  "allow_partial_payments" tinyint(1) not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "portal_settings_tenant_id_unique" on "portal_settings"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "portal_settings_portal_slug_unique" on "portal_settings"(
+  "portal_slug"
+);
+CREATE UNIQUE INDEX "portal_settings_custom_domain_unique" on "portal_settings"(
+  "custom_domain"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -40485,3 +40645,7 @@ INSERT INTO migrations VALUES(380,'2027_12_10_000100_extend_analytics_reporting_
 INSERT INTO migrations VALUES(381,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',6);
 INSERT INTO migrations VALUES(382,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',7);
 INSERT INTO migrations VALUES(383,'2027_12_11_000100_create_immutable_audit_trail',8);
+INSERT INTO migrations VALUES(384,'2027_11_23_100000_create_cpq_lite_quoting_tables',9);
+INSERT INTO migrations VALUES(385,'2027_11_23_100000_create_portal_settings_and_login_challenges',9);
+INSERT INTO migrations VALUES(386,'2027_12_03_000100_add_incoterm_to_invoices_table',9);
+INSERT INTO migrations VALUES(387,'2027_12_03_000200_add_foreign_trade_fields_to_orders_contacts_and_tenants',9);
