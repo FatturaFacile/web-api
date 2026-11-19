@@ -33,6 +33,9 @@ use Modules\Invoicing\Events\SalesQuoteAcceptedEvent;
 use Modules\Invoicing\Events\SalesQuoteApprovedEvent;
 use Modules\Invoicing\Events\SalesQuoteCreatedEvent;
 use Modules\Invoicing\Events\SalesQuoteSubmittedEvent;
+use Modules\Invoicing\Events\ShortageDetectedForProcurementEvent;
+use Modules\Invoicing\Events\ShortageDetectedForProductionEvent;
+use Modules\Invoicing\Listeners\ConvertShortageToDocumentListener;
 use Modules\Invoicing\Listeners\DispatchOutboxOnInvoicingEventListener;
 use Modules\Invoicing\Listeners\ProjectsBillingEventListener;
 use Modules\Invoicing\Listeners\RefreshOrderReservationOnExpiryListener;
@@ -111,6 +114,10 @@ final class InvoicingServiceProvider extends ServiceProvider
 
         // Module 14 Inventory -> a lapsed reservation of an order line updates the order
         Event::listen(StockReservationExpiredEvent::class, [RefreshOrderReservationOnExpiryListener::class, 'handle']);
+
+        // A shortage of a confirmed order becomes a purchase requisition or a production order
+        Event::listen(ShortageDetectedForProcurementEvent::class, [ConvertShortageToDocumentListener::class, 'handle']);
+        Event::listen(ShortageDetectedForProductionEvent::class, [ConvertShortageToDocumentListener::class, 'handle']);
 
         // 4. Invoicing Domain Events -> Transactional Outbox
         Event::listen(SalesQuoteCreatedEvent::class, DispatchOutboxOnInvoicingEventListener::class);

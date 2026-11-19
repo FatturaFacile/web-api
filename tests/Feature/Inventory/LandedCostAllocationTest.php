@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Modules\Inventory\Models\InventoryRevaluation;
 use Modules\Inventory\Models\LandedCostAllocation;
 use Modules\Inventory\Models\LandedCostDocument;
+use Modules\Procurement\Models\PurchaseOrder;
 use Tests\Support\InventoryValuationFixtures as Fx;
 
 uses(RefreshDatabase::class);
@@ -174,4 +176,49 @@ test('creating a landed cost document validates the payload', function (): void 
     ])->assertStatus(422)->assertJsonValidationErrors([
         'document_date', 'cost_type', 'allocation_key', 'currency', 'total_amount', 'receipt_ids',
     ]);
+});
+
+test('landed cost can be allocated to purchase orders: every receipt of the order takes its share (largest remainder, sums to the total)', function (): void {
+    $orderA = PurchaseOrder::factory()->create(['tenant_id' => $this->tenantId]);
+    $orderB = PurchaseOrder::factory()->create(['tenant_id' => $this->tenantId]);
+
+    $receiptA1 = Fx::purchaseReceipt($this->tenantId);
+    $receiptA2 = Fx::purchaseReceipt($this->tenantId);
+    $receiptB = Fx::purchaseReceipt($this->tenantId);
+    $receiptA1->forceFill(['purchase_order_id' => $orderA->id])->save();
+    $receiptA2->forceFill(['purchase_order_id' => $orderA->id])->save();
+    $receiptB->forceFill(['purchase_order_id' => $orderB->id])->save();
+
+    Fx::receive(Fx::item($this->tenantId, 'fifo'), $this->bin, 10, 10.00, (string) $receiptA1->id); // 100
+    Fx::receive(Fx::item($this->tenantId, 'fifo'), $this->bin, 10, 20.00, (string) $receiptA2->id); // 200
+    Fx::receive(Fx::item($this->tenantId, 'fifo'), $this->bin, 10, 30.00, (string) $receiptB->id);  // 300, not part of order A
+
+    $payload = landedCostPayload([], 'value', 100.0);
+    unset($payload['receipt_ids']);
+    $payload['purchase_order_ids'] = [(string) $orderA->id];
+
+    $response = $this->postJson('/api/v1/inventory/landed-costs/preview', $payload)->assertOk()
+        ->assertJsonPath('totals.allocated', '100.00')
+        ->assertJsonPath('totals.difference', '0.00');
+
+    $byReceipt = allocatedByReceipt($response->json('allocations'));
+    // 100 split 100:200 -> 33.33 / 66.67, receipt B untouched.
+    expect($byReceipt)->toHaveCount(2)
+        ->and($byReceipt[(string) $receiptA1->id])->toBe('33.33')
+        ->and($byReceipt[(string) $receiptA2->id])->toBe('66.67');
+
+    $created = $this->postJson('/api/v1/inventory/landed-costs', $payload)->assertCreated();
+    expect(LandedCostDocument::query()->findOrFail($created->json('id'))->receiptIds())->toHaveCount(2);
+});
+
+test('a purchase order with nothing received, or of another tenant, is refused', function (): void {
+    $empty = PurchaseOrder::factory()->create(['tenant_id' => $this->tenantId]);
+    $payload = landedCostPayload([], 'value', 100.0);
+    unset($payload['receipt_ids']);
+
+    $this->postJson('/api/v1/inventory/landed-costs/preview', $payload + ['purchase_order_ids' => [(string) $empty->id]])
+        ->assertStatus(422)->assertJsonValidationErrors('purchase_order_ids');
+
+    $this->postJson('/api/v1/inventory/landed-costs/preview', $payload + ['purchase_order_ids' => [(string) Str::uuid()]])
+        ->assertStatus(422)->assertJsonValidationErrors('purchase_order_ids.0');
 });
