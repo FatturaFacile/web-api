@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Hospitality\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * A group booking: rooms held per room type for a group between a check-in and a check-out date. The rooms nobody picked
@@ -17,6 +18,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $organizer
  * @property ?string $contact_id
  * @property string $status
+ * @property Carbon $check_in_date
+ * @property Carbon $check_out_date
+ * @property Carbon $release_date
  */
 final class GroupBlock extends HospitalityRecord
 {

@@ -172,7 +172,7 @@ test('a proportional member is added line by line at its ownership with no minor
         ->and($run['totals']['non_controlling_interests'])->toBe([])
         ->and($run['totals']['trial_balance_is_balanced'])->toBeTrue()
         ->and($run['totals']['balance_sheet_is_balanced'])->toBeTrue()
-        ->and(DB::table('gl_consolidation_run_balances')->where('member_tenant_id', $this->sub->id)->where('account_code', '4000')->value('consolidated_share') + 0)->toBe(40);
+        ->and((float) DB::table('gl_consolidation_run_balances')->where('member_tenant_id', $this->sub->id)->where('account_code', '4000')->value('consolidated_share'))->toBe(40.0);
 });
 
 test('goodwill is computed from the acquisition record with fair value, deferred tax and its charges', function (): void {
@@ -636,7 +636,7 @@ test('acquisition amounts in a local currency are translated at the acquisition 
     $pk = extChart($k);
 
     foreach ([['2025-04-01', '0.900000'], ['2026-01-01', '1.000000'], ['2026-06-30', '1.100000']] as [$date, $rate]) {
-        ExchangeRate::query()->create(['source' => 'CHF', 'target' => 'EUR', 'rate' => $rate, 'effective_date' => $date]);
+        ExchangeRate::createGlobal(['source' => 'CHF', 'target' => 'EUR', 'rate' => $rate, 'effective_date' => $date]);
     }
 
     extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '300000');

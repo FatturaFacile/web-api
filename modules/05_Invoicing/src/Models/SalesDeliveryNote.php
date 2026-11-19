@@ -10,6 +10,7 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Logistics\Concerns\HasAuditUsers;
 use Modules\Logistics\Enums\TransportReason;
@@ -18,6 +19,11 @@ use Modules\Logistics\Models\DeliveryNoteInvoiceLink;
 /**
  * Canonical Delivery Note (DDT) model. The legacy {@see DeliveryNote} maps to the same
  * `delivery_notes` table and is kept only as a compatibility layer for the legacy API / PDF engine.
+ *
+ * @property Carbon $date
+ * @property string|null $stock_transfer_order_id
+ * @property string|null $origin_warehouse_id
+ * @property string|null $destination_warehouse_id
  */
 class SalesDeliveryNote extends BaseEnterpriseModel
 {
@@ -44,6 +50,9 @@ class SalesDeliveryNote extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<Contact, $this>
+     */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Contact::class, 'contact_id');

@@ -1,13 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Contracts\ExchangeRateProviderInterface;
+use App\Contracts\Fiscal\VatValidationServiceInterface;
 use App\Contracts\FiscalPrinterGateway;
 use App\Contracts\MobilePushGateway;
 use App\Contracts\PdfGenerator;
 use App\Contracts\SdiProvider;
 use App\Contracts\Security\HostResolver;
+use App\Contracts\SwissQrBill\SwissQrBillGeneratorInterface;
+use App\Contracts\SwissQrBill\SwissQrBillParserInterface;
 use App\Listeners\Mobile\NotifyApproversOnStepAssigned;
 use App\Listeners\Mobile\RevokeMobileDevicesOnEmployeeTerminated;
 use App\Models\Appointment;
@@ -38,12 +43,15 @@ use App\Policies\WorkOrderPolicy;
 use App\Services\Dashboard\WidgetRegistry;
 use App\Services\Ecommerce\EcommerceManager;
 use App\Services\ExchangeRate\EuropeanCentralBankProvider;
+use App\Services\Fiscal\ViesVatValidationService;
 use App\Services\Mobile\LogPushGateway;
 use App\Services\Mobile\RelayPushGateway;
 use App\Services\Pdf\DompdfPdfGenerator;
 use App\Services\Retail\LocalFiscalPrinterGateway;
 use App\Services\Security\DnsHostResolver;
 use App\Services\Security\OutboundUrlGuard;
+use App\Services\SwissQrBill\SwissQrBillParserService;
+use App\Services\SwissQrBill\SwissQrBillService;
 use App\Services\Tenancy\DocumentQuotaService;
 use App\Services\Tenancy\TenantContext;
 use App\Support\Auditing\AuditStamper;
@@ -88,9 +96,12 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(TenantContext::class, fn () => new TenantContext);
         $this->app->bind(ExchangeRateProviderInterface::class, EuropeanCentralBankProvider::class);
+        $this->app->bind(VatValidationServiceInterface::class, ViesVatValidationService::class);
         $this->app->bind(SdiProvider::class, TenantSdiProvider::class);
         $this->app->bind(FiscalPrinterGateway::class, LocalFiscalPrinterGateway::class);
         $this->app->bind(PdfGenerator::class, DompdfPdfGenerator::class);
+        $this->app->bind(SwissQrBillGeneratorInterface::class, SwissQrBillService::class);
+        $this->app->bind(SwissQrBillParserInterface::class, SwissQrBillParserService::class);
         $this->app->singleton(EcommerceManager::class);
         $this->app->bind(HostResolver::class, DnsHostResolver::class);
         // The allow-list of outbound hosts is a local development convenience: ignored in every other environment.

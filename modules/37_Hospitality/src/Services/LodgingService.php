@@ -88,7 +88,7 @@ final class LodgingService
 
         $cents = array_sum(array_map(static fn (string $rate): int => (int) round(((float) $rate) * 100), $rates));
 
-        return ['rates' => array_values($rates), 'total' => number_format($cents / 100, 2, '.', ''), 'rate_plan_id' => $ratePlanId];
+        return ['rates' => $rates, 'total' => number_format($cents / 100, 2, '.', ''), 'rate_plan_id' => $ratePlanId];
     }
 
     /**

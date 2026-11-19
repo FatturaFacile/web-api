@@ -22,7 +22,7 @@ final class PerDiemDayResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'day' => $this->day?->toDateString(),
+            'day' => $this->day->toDateString(),
             'hours_away' => $this->hours_away,
             'day_factor' => $this->day_factor,
             'breakfast_provided' => $this->breakfast_provided,

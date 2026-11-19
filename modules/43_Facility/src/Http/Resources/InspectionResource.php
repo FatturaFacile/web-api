@@ -28,7 +28,7 @@ final class InspectionResource extends JsonResource
             'building_id' => $this->building_id,
             'space_id' => $this->space_id,
             'assignee_id' => $this->assignee_id,
-            'due_date' => $this->due_date?->toDateString(),
+            'due_date' => $this->due_date->toDateString(),
             'status' => $this->status,
             'result' => $this->result,
             'checklist' => $this->checklist,

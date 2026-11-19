@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property string $name
+ * @property array<int|string, mixed>|null $skills
+ */
 final class ServiceTechnician extends BaseEnterpriseModel
 {
     protected $table = 'esm_service_technicians';

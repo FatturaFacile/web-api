@@ -108,7 +108,7 @@ final class ClauseLibrary
 
         $version = $clause->versions()->where('version_no', $clause->current_version_no)->first();
 
-        return $version?->body ?? '';
+        return $version->body ?? '';
     }
 
     private function appendVersion(ContractClause $clause, string $body, ?string $changeNote, ?string $userId): ContractClause

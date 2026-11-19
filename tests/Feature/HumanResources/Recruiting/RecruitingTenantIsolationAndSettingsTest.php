@@ -10,10 +10,10 @@ use Illuminate\Support\Str;
 use Modules\HumanResources\Models\CandidateApplication;
 use Modules\HumanResources\Models\JobOffer;
 
-use function Tests\Feature\HumanResources\Recruiting\actAs;
 use function Tests\Feature\HumanResources\Recruiting\careersSettings;
 use function Tests\Feature\HumanResources\Recruiting\publishedOpening;
 use function Tests\Feature\HumanResources\Recruiting\recruiterOfNewTenant;
+use function Tests\Feature\HumanResources\Recruiting\recruitingActAs;
 use function Tests\Feature\HumanResources\Recruiting\useTenant;
 
 require_once __DIR__.'/RecruitingTestSupport.php';
@@ -33,7 +33,7 @@ test('a user of tenant B gets 404 on every recruiting endpoint addressing tenant
     $tenantB = Tenant::factory()->create();
     $userB = User::factory()->create();
     $userB->tenants()->attach($tenantB->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
-    actAs($userB, $tenantB);
+    recruitingActAs($userB, $tenantB);
     $headers = ['X-Tenant-Id' => $tenantB->id];
 
     $requests = [

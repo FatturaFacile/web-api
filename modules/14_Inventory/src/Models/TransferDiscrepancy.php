@@ -6,10 +6,13 @@ namespace Modules\Inventory\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * The part of a transfer line that did not arrive in good condition: shortage (missing) and damage (arrived broken). Its
  * stock stays on the transit bin until a manager decides: write-off, return to origin or carrier claim.
+ *
+ * @property Carbon|null $resolved_at
  */
 final class TransferDiscrepancy extends BaseEnterpriseModel
 {

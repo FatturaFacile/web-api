@@ -7,6 +7,7 @@ namespace Modules\Platform\Services;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 /**
  * The allowlist of record types the recycle bin handles (config `platform.recycle_bin`). A type outside the list can
@@ -37,13 +38,11 @@ final class RecycleBinRegistry
      */
     public function trashed(string $type): Builder
     {
-        /** @var class-string<Model> $class */
         $class = $this->definitions()[$type]['model'];
 
-        /** @var Builder<Model> $query */
-        $query = $class::query()->onlyTrashed();
-
-        return $query;
+        return $class::query()
+            ->withoutGlobalScope(SoftDeletingScope::class)
+            ->whereNotNull((new $class)->qualifyColumn('deleted_at'));
     }
 
     public function find(string $type, string $id): ?Model

@@ -56,7 +56,7 @@ final class DeclarationGenerator
             $groups = [];
 
             foreach ($collected['entries'] as $entry) {
-                $section = $entry['kind'] === SupplyKind::Goods ? 1 : 3;
+                $section = $entry['kind'] === SupplyKind::Goods ? (($entry['correction'] ?? null) !== null ? 2 : 1) : 3;
                 $groups[$section][$this->groupKey($declaration, $section, $entry, $defaults)][] = $entry;
             }
 
@@ -89,6 +89,10 @@ final class DeclarationGenerator
      */
     private function groupKey(IntrastatDeclaration $declaration, int $section, array $entry, array $defaults): string
     {
+        if ($section === 2) {
+            return implode('|', [$entry['correction']['year'], $entry['correction']['month'], $entry['partner_country'], $entry['partner_vat'], $entry['cn8'] ?? $entry['line_key']]);
+        }
+
         if ($section === 1) {
             return implode('|', [
                 $entry['partner_country'],
@@ -122,6 +126,21 @@ final class DeclarationGenerator
             'amount_eur' => IntrastatRounding::euro($this->sum($entries, 'amount_eur')),
             'source_documents' => $documents,
         ];
+
+        if ($section === 2) {
+            // Credit note of an earlier period: INTRA-1 ter carries the corrected period, the sign, the amount, natura A and CN8.
+            $quarterly = $declaration->periodicity === Periodicity::Quarterly;
+
+            return [
+                ...$row,
+                'corrected_month' => $quarterly ? 0 : $first['correction']['month'],
+                'corrected_quarter' => $quarterly ? (int) ceil($first['correction']['month'] / 3) : 0,
+                'corrected_year' => $first['correction']['year'],
+                'sign' => '-',
+                'transaction_nature_a' => $defaults['transaction_nature_a'] ?? null,
+                'cn8_code' => $first['cn8'],
+            ];
+        }
 
         if ($section === 3) {
             $single = count($documents) === 1 ? $documents[0] : null;

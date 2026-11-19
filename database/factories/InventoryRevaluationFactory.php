@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Modules\Inventory\Models\InventoryRevaluation;
@@ -21,7 +22,7 @@ class InventoryRevaluationFactory extends Factory
      */
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? (string) Str::uuid7();
+        $tenantId = (app(TenantContext::class)->getTenantId() ?? Tenant::first()?->id) ?? (string) Str::uuid7();
         $delta = fake()->randomFloat(2, 1, 500);
 
         return [

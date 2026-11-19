@@ -58,10 +58,21 @@ final class TaxIdentifier
     }
 
     /**
-     * The active tenant with exactly this identifier, whichever way it was stored.
+     * The active tenant with exactly this identifier, whichever way it was stored. With a country, only the tenants of
+     * that country are compared, each by the rules of the country (France, Spain, Germany and the US included); without
+     * one the identifier is read as an Italian VAT number or a Swiss UID, as before.
      */
-    public static function findTenant(string $canonical): ?Tenant
+    public static function findTenant(string $canonical, ?string $country = null): ?Tenant
     {
+        if ($country !== null && ! in_array($country, ['IT', 'CH'], true)) {
+            return Tenant::query()
+                ->where('status', 'active')
+                ->where('country', $country)
+                ->orderBy('created_at')
+                ->get()
+                ->first(fn (Tenant $tenant): bool => self::normalize((string) $tenant->vat_number, $country) === $canonical);
+        }
+
         $candidates = str_starts_with($canonical, 'CHE') ? [$canonical] : [$canonical, 'IT'.$canonical];
 
         return Tenant::query()

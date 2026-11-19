@@ -74,6 +74,8 @@ test('the lead list issues the same number of queries for 25 rows as for 1', fun
     };
 
     $makeLead(1);
+    // The first request of the process pays one-off warm-ups (schema column and permission caches): measure the steady state.
+    queriesFor('/api/v1/crm/leads');
     $oneRow = queriesFor('/api/v1/crm/leads');
 
     foreach (range(2, 25) as $number) {
@@ -122,6 +124,8 @@ test('the opportunity list issues the same number of queries for 25 rows as for 
     };
 
     $makeOpportunity(1);
+    // The first request of the process pays one-off warm-ups (schema column and permission caches): measure the steady state.
+    queriesFor('/api/v1/crm/opportunities');
     $oneRow = queriesFor('/api/v1/crm/opportunities');
 
     foreach (range(2, 25) as $number) {

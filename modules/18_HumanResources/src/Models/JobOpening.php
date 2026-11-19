@@ -92,7 +92,7 @@ final class JobOpening extends BaseEnterpriseModel
     {
         return array_values(array_filter(
             (array) ($this->published_languages ?? []),
-            static fn (mixed $locale): bool => is_string($locale) && RecruitingLocale::tryFrom($locale) !== null
+            static fn (string $locale): bool => RecruitingLocale::tryFrom($locale) !== null
         ));
     }
 

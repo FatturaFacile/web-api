@@ -20,7 +20,7 @@ final class QuotePricingService
     public function price(string $tenantId, string $quantity, string $unitPrice, string $extraDiscountPercent = '0', ?string $partnerTierCode = null): array
     {
         $rule = $this->bestRule($tenantId, $quantity, $partnerTierCode);
-        $ruleDiscount = number_format((float) ($rule?->discount_percent ?? 0), 2, '.', '');
+        $ruleDiscount = number_format((float) ($rule->discount_percent ?? 0), 2, '.', '');
         $extra = number_format((float) $extraDiscountPercent, 2, '.', '');
         $total = bccomp(bcadd($ruleDiscount, $extra, 2), '100', 2) > 0 ? '100.00' : bcadd($ruleDiscount, $extra, 2);
         $gross = bcmul($quantity, $unitPrice, 4);

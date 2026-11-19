@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Eloquent model of the communication channel (tenant scoped where it has a tenant_id).
+ *
+ * @property array<string, mixed>|null $credentials
  */
 #[UseFactory(CommunicationChannelFactory::class)]
 class CommunicationChannel extends Model

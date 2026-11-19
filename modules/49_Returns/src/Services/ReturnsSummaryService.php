@@ -117,8 +117,7 @@ final readonly class ReturnsSummaryService
             ->whereBetween('invoices.date', [$from, $to])
             ->whereIn('invoice_items.product_id', $productIds)
             ->groupBy('invoice_items.product_id')
-            ->get(['invoice_items.product_id', DB::raw('SUM(invoice_items.quantity) AS quantity')])
-            ->pluck('quantity', 'product_id');
+            ->pluck(DB::raw('SUM(invoice_items.quantity) AS quantity'), 'invoice_items.product_id');
         $products = DB::table('products')->where('tenant_id', $tenantId)->whereIn('id', $productIds)->get(['id', 'sku', 'name'])->keyBy('id');
 
         return $returned

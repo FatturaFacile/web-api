@@ -9,9 +9,13 @@ use App\Services\Tenancy\TenantContext;
 use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Modules\CRM\Contracts\LeadRoutingServiceInterface;
+use Modules\CRM\Contracts\LeadScoringServiceInterface;
 use Modules\CRM\Contracts\LeadServiceInterface;
 use Modules\CRM\DTOs\ConvertLeadDTO;
 use Modules\CRM\DTOs\CreateLeadDTO;
+use Modules\CRM\Exceptions\LeadAlreadyConvertedException;
 use Modules\CRM\Http\Requests\ConvertLeadRequest;
 use Modules\CRM\Http\Requests\StoreLeadRequest;
 use Modules\CRM\Http\Resources\AccountResource;
@@ -73,7 +77,35 @@ final class LeadController extends Controller
             });
         }
 
-        $leads = $query->orderByDesc('score')->gridPaginate(RequestedPerPage::resolve(25));
+        if ($request->filled('assigned_user_id')) {
+            $query->where('assigned_user_id', (string) $request->query('assigned_user_id'));
+        }
+
+        if ($request->filled('source')) {
+            $source = (string) $request->query('source');
+            $query->whereHas('leadSource', function ($sourceQuery) use ($source): void {
+                $sourceQuery->where(function ($match) use ($source): void {
+                    $match->where('code', $source);
+                    if (Str::isUuid($source)) {
+                        $match->orWhere('id', $source);
+                    }
+                });
+            });
+        }
+
+        if ($request->filled('min_score') && is_numeric($request->query('min_score'))) {
+            $query->where('score', '>=', (int) $request->query('min_score'));
+        }
+
+        $sort = (string) $request->query('sort', '-score');
+        match ($sort) {
+            'score' => $query->orderBy('score'),
+            'created_at' => $query->orderBy('created_at'),
+            '-created_at' => $query->orderByDesc('created_at'),
+            default => $query->orderByDesc('score'),
+        };
+
+        $leads = $query->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => LeadResource::collection($leads),
@@ -106,7 +138,7 @@ final class LeadController extends Controller
     public function store(StoreLeadRequest $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $actorId = (string) ($request->user()?->id ?? 'system');
+        $actorId = (string) ($request->user()->id ?? 'system');
 
         $result = $this->leadService->captureLeadWithOutcome(new CreateLeadDTO(
             tenantId: (string) $tenant->id,
@@ -144,6 +176,24 @@ final class LeadController extends Controller
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/crm/leads/{id}/merge',
+        operationId: 'mergeCrmLead',
+        description: 'Merges a duplicate lead into the primary lead of the path and returns the surviving primary lead.',
+        summary: 'Merge duplicate lead',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the primary lead that survives', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['duplicate_id'], properties: [new OA\Property(property: 'duplicate_id', type: 'string', format: 'uuid')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Merged lead', content: new OA\JsonContent(ref: '#/components/schemas/CRMLeadResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function merge(Request $request, string $id): JsonResponse
     {
         $data = $request->validate(['duplicate_id' => ['required', 'uuid']]);
@@ -152,11 +202,29 @@ final class LeadController extends Controller
         $primary = Lead::where('tenant_id', $tenant->id)->findOrFail($id);
         $duplicate = Lead::where('tenant_id', $tenant->id)->findOrFail($data['duplicate_id']);
 
-        $merged = $this->leadService->mergeLeads($primary, $duplicate, (string) ($request->user()?->id ?? 'system'));
+        $merged = $this->leadService->mergeLeads($primary, $duplicate, (string) ($request->user()->id ?? 'system'));
 
         return response()->json(new LeadResource($merged));
     }
 
+    #[OA\Post(
+        path: '/api/v1/crm/leads/{id}/behavior',
+        operationId: 'recordCrmLeadBehavior',
+        description: 'Registers a behavioural signal (email open, catalog download, site visit) on a lead, incrementing its engagement counters and score.',
+        summary: 'Record lead behaviour',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the lead', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['event'], properties: [new OA\Property(property: 'event', type: 'string', enum: ['email_open', 'catalog_download', 'site_visit']), new OA\Property(property: 'count', type: 'integer', minimum: 1, maximum: 100, default: 1)])),
+        responses: [
+            new OA\Response(response: 200, description: 'Updated lead', content: new OA\JsonContent(ref: '#/components/schemas/CRMLeadResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function behavior(Request $request, string $id): JsonResponse
     {
         $data = $request->validate([
@@ -290,7 +358,7 @@ final class LeadController extends Controller
     {
         $tenant = $this->tenantContext->getTenant();
         $lead = Lead::where('tenant_id', $tenant->id)->findOrFail($id);
-        $actorId = (string) ($request->user()?->id ?? 'system');
+        $actorId = (string) ($request->user()->id ?? 'system');
 
         $qualified = $this->leadService->qualifyLead($lead, $actorId);
 
@@ -324,7 +392,7 @@ final class LeadController extends Controller
 
         $tenant = $this->tenantContext->getTenant();
         $lead = Lead::where('tenant_id', $tenant->id)->findOrFail($id);
-        $actorId = (string) ($request->user()?->id ?? 'system');
+        $actorId = (string) ($request->user()->id ?? 'system');
 
         $disqualified = $this->leadService->disqualifyLead($lead, $request->input('reason'), $actorId);
 
@@ -357,24 +425,24 @@ final class LeadController extends Controller
     {
         $tenant = $this->tenantContext->getTenant();
         $lead = Lead::where('tenant_id', $tenant->id)->findOrFail($id);
-        $actorId = (string) ($request->user()?->id ?? 'system');
+        $actorId = (string) ($request->user()->id ?? 'system');
 
-        if ($lead->status === 'converted') {
-            return response()->json(['message' => "Lead [{$lead->id}] has already been converted."], 409);
+        try {
+            $result = $this->leadService->convertLead($lead, new ConvertLeadDTO(
+                existingAccountId: $request->input('existing_account_id'),
+                newAccountName: $request->input('new_account_name'),
+                accountTier: $request->input('account_tier', 'standard'),
+                contactRole: $request->input('contact_role', 'decision_maker'),
+                createOpportunity: $request->boolean('create_opportunity', true),
+                opportunityName: $request->input('opportunity_name'),
+                opportunityAmount: $request->input('opportunity_amount') ? (float) $request->input('opportunity_amount') : null,
+                expectedCloseDate: $request->input('expected_close_date'),
+                ownerUserId: $request->input('owner_user_id'),
+                existingContactId: $request->input('existing_contact_id')
+            ), $actorId);
+        } catch (LeadAlreadyConvertedException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 409);
         }
-
-        $result = $this->leadService->convertLead($lead, new ConvertLeadDTO(
-            existingAccountId: $request->input('existing_account_id'),
-            newAccountName: $request->input('new_account_name'),
-            accountTier: $request->input('account_tier', 'standard'),
-            contactRole: $request->input('contact_role', 'decision_maker'),
-            createOpportunity: $request->boolean('create_opportunity', true),
-            opportunityName: $request->input('opportunity_name'),
-            opportunityAmount: $request->input('opportunity_amount') ? (float) $request->input('opportunity_amount') : null,
-            expectedCloseDate: $request->input('expected_close_date'),
-            ownerUserId: $request->input('owner_user_id'),
-            existingContactId: $request->input('existing_contact_id')
-        ), $actorId);
 
         return response()->json([
             'account' => new AccountResource($result['account']->load('primaryContact')),
@@ -382,6 +450,58 @@ final class LeadController extends Controller
             'contact' => new ContactMasterDataResource($result['contact']),
             'contact_linked' => $result['contact_linked'],
             'opportunity' => $result['opportunity'] ? new OpportunityResource($result['opportunity']) : null,
+        ]);
+    }
+
+    /**
+     * Re-computes score, rating and breakdown with the current rules and thresholds.
+     */
+    #[OA\Post(
+        path: '/api/v1/crm/leads/{id}/rescore',
+        operationId: 'rescoreCrmLead',
+        summary: 'Re-score lead',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Rescored lead', content: new OA\JsonContent(ref: '#/components/schemas/CRMLeadResource'))]
+    )]
+    public function rescore(string $id): JsonResponse
+    {
+        $tenant = $this->tenantContext->getTenant();
+        $lead = Lead::where('tenant_id', $tenant->id)->findOrFail($id);
+        $this->authorize('update', $lead);
+
+        return (new LeadResource(app(LeadScoringServiceInterface::class)->rescore($lead)))->response();
+    }
+
+    /**
+     * Re-runs the routing rules for the lead (assignee or admins are notified).
+     */
+    #[OA\Post(
+        path: '/api/v1/crm/leads/{id}/route',
+        operationId: 'routeCrmLead',
+        summary: 'Route lead',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Routed lead')]
+    )]
+    public function route(Request $request, string $id): JsonResponse
+    {
+        $tenant = $this->tenantContext->getTenant();
+        $lead = Lead::where('tenant_id', $tenant->id)->findOrFail($id);
+        $this->authorize('update', $lead);
+
+        $actorId = $request->user()?->getAuthIdentifier();
+        $result = app(LeadRoutingServiceInterface::class)->route($lead, $actorId !== null ? (string) $actorId : null);
+
+        return response()->json([
+            'data' => (new LeadResource($lead->fresh() ?? $lead))->resolve($request),
+            'routing' => [
+                'assigned_user_id' => $result->assignedUserId,
+                'rule_id' => $result->ruleId,
+                'default_rule' => $result->usedDefaultRule,
+            ],
         ]);
     }
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\Pivots\AuditedPivot;
+use App\Models\Pivots\TenantMembership;
 use App\Services\Auth\UserSessions;
 use App\Services\Tenancy\TenantContext;
 use Database\Factories\UserFactory;
@@ -23,11 +23,14 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @property int $failed_login_attempts
  * @property Carbon|null $login_locked_until
+ * @property array<string, mixed>|null $ui_preferences
  */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable, SoftDeletes;
+
+    public const array UiPreferenceDefaults = ['theme_preference' => 'system', 'ui_density' => 'comfortable', 'reduced_motion' => null];
 
     protected $fillable = [
         'name',
@@ -96,12 +99,12 @@ class User extends Authenticatable
     /**
      * The tenants the user can act in: a membership suspended by the identity provider (SCIM deactivation) is not one.
      *
-     * @return BelongsToMany<Tenant, $this>
+     * @return BelongsToMany<Tenant, $this, TenantMembership, 'pivot'>
      */
     public function tenants(): BelongsToMany
     {
         return $this->belongsToMany(Tenant::class, 'tenant_user')
-            ->using(AuditedPivot::class)
+            ->using(TenantMembership::class)
             ->withPivot(['id', 'role', 'permissions'])
             ->wherePivotNull('suspended_at')
             ->withTimestamps();
@@ -138,6 +141,33 @@ class User extends Authenticatable
     public function currentTenant(): ?Tenant
     {
         return app(TenantContext::class)->getTenant() ?? $this->tenants()->first();
+    }
+
+    /**
+     * The interface preferences live in the ui_preferences document (see UserPreferencesController), not in columns.
+     */
+    public function getThemePreferenceAttribute(): string
+    {
+        return (string) $this->uiPreference('theme_preference');
+    }
+
+    public function getUiDensityAttribute(): string
+    {
+        return (string) $this->uiPreference('ui_density');
+    }
+
+    public function getReducedMotionAttribute(): ?bool
+    {
+        $value = $this->uiPreference('reduced_motion');
+
+        return $value === null ? null : (bool) $value;
+    }
+
+    private function uiPreference(string $key): mixed
+    {
+        $stored = is_array($this->ui_preferences) ? $this->ui_preferences : [];
+
+        return array_key_exists($key, $stored) ? $stored[$key] : self::UiPreferenceDefaults[$key];
     }
 
     public function getTenantIdAttribute(): ?string

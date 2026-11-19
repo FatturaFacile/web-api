@@ -1,0 +1,7 @@
+# Windsurf Rules
+
+See [AGENTS.md](AGENTS.md) for full project standards and commands:
+- Strict typing (`declare(strict_types=1);`), thin controllers, FormRequests, JsonResources.
+- SQLite `:memory:` for local tests (`php artisan test`). Never require PostgreSQL locally.
+- Migrations/queries must remain dual-compatible with SQLite and PostgreSQL.
+- Verify before completion: `vendor/bin/pint --dirty --format agent`, `vendor/bin/phpstan analyse --memory-limit=2G`, `php artisan test`.

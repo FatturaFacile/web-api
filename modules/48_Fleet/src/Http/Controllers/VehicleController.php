@@ -52,8 +52,12 @@ final class VehicleController extends Controller
                 ->when(isset($filters['fuel_type']), static fn ($query) => $query->where('fuel_type', $filters['fuel_type']))
                 ->when(isset($filters['ownership']), static fn ($query) => $query->where('ownership', $filters['ownership']))
                 ->when(isset($filters['search']), static function ($query) use ($filters): void {
-                    $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], (string) $filters['search']).'%';
-                    $query->where(static fn ($inner) => $inner->where('license_plate', 'like', $term)->orWhere('vin', 'like', $term)->orWhere('make', 'like', $term)->orWhere('model', 'like', $term));
+                    $term = '%'.mb_strtolower(str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $filters['search'])).'%';
+                    $query->where(static fn ($inner) => $inner
+                        ->whereRaw("LOWER(COALESCE(license_plate, '')) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereRaw("LOWER(COALESCE(vin, '')) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereRaw("LOWER(COALESCE(make, '')) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereRaw("LOWER(COALESCE(model, '')) LIKE ? ESCAPE '!'", [$term]));
                 })
                 ->orderBy('license_plate')
                 ->paginate($this->perPage()),

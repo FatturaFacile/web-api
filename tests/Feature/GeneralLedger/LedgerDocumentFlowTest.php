@@ -334,6 +334,8 @@ test('a payment made before its invoice reached the ledger is posted right after
         'currency' => 'EUR', 'total_net' => 100, 'total_tax' => 22, 'total_gross' => 122, 'payment_status' => 'unpaid', 'jurisdiction' => 'IT',
     ]);
     $invoice->items()->create(['description' => 'Old', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 22, 'line_total' => 100]);
+    // Documents of the legacy flow have no creator (that is how the command recognises them); the acting user would otherwise be stamped.
+    $invoice->newQuery()->whereKey($invoice->id)->toBase()->update(['created_by' => null]);
 
     $payment = app(RecordPayment::class)->execute($invoice, ['amount' => '122.00', 'paid_at' => now()->toDateString()]);
 

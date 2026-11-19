@@ -43,6 +43,7 @@ use ValueError;
  *     service_code: string|null,
  *     origin_country: string|null,
  *     origin_province: string|null,
+ *     correction: array{year: int, month: int}|null,
  *     line_key: string,
  *     document: array{type: string, id: string, number: string|null, date: string|null}
  * }
@@ -68,9 +69,11 @@ final class IntrastatSourceCollector
         $result = ['entries' => [], 'skipped' => [], 'unclassified' => [], 'warnings' => []];
 
         $invoices = Invoice::query()
-            ->with(['contact', 'items'])
+            ->with(['contact', 'items', 'relatedInvoice'])
             ->whereDate('date', '>=', $from->toDateString())->whereDate('date', '<=', $to->toDateString())
             ->where('invoice_type', '!=', 'proforma')
+            // Only issued (posted) documents are declared: drafts can still change and are not fiscal documents yet.
+            ->where('status', 'posted')
             ->orderBy('date')
             ->orderBy('invoice_number')
             ->get();
@@ -92,12 +95,20 @@ final class IntrastatSourceCollector
                 continue;
             }
 
-            $document = ['type' => 'invoice', 'id' => (string) $invoice->id, 'number' => $invoice->invoice_number, 'date' => $invoice->date?->toDateString()];
+            $document = ['type' => 'invoice', 'id' => (string) $invoice->id, 'number' => $invoice->invoice_number, 'date' => $invoice->date->toDateString()];
+
+            $correction = null;
 
             if ($invoice->invoice_type === 'credit_note' || $type === TipoDocumento::Td04) {
-                $result['skipped'][] = ['document' => $document, 'reason' => 'credit_note', 'detail' => 'A credit note corrects an earlier period: enter it as a correction row (section 2 or 4).'];
+                $related = $invoice->relatedInvoice?->date;
+                $original = $related !== null ? Carbon::parse((string) $related) : null;
+                $correction = $original !== null && $original->lt($from) ? ['year' => $original->year, 'month' => $original->month] : null;
 
-                continue;
+                if ($correction === null) {
+                    $result['skipped'][] = ['document' => $document, 'reason' => 'credit_note', 'detail' => 'The credit note does not refer to an invoice of an earlier period: enter it as a correction row (section 2 or 4) by hand.'];
+
+                    continue;
+                }
             }
 
             $vatCode = IntrastatCodes::vatCode($invoice->contact?->vat_number, $country);
@@ -130,10 +141,17 @@ final class IntrastatSourceCollector
                     continue;
                 }
 
+                if ($correction !== null && $kind === SupplyKind::Services) {
+                    $result['skipped'][] = ['document' => $document, 'reason' => 'credit_note_services', 'detail' => 'A credit note on services is a change of section 3 (section 4): it needs the protocol of the corrected list, enter it by hand.'];
+
+                    continue;
+                }
+
                 $product = $line['product_id'] !== null ? $products->get($line['product_id']) : null;
 
                 $result['entries'][] = [
                     'kind' => $kind,
+                    'correction' => $correction,
                     'partner_country' => $country,
                     'partner_vat' => $vatCode,
                     'amount_eur' => $isEuro ? $line['amount'] : null,
@@ -180,7 +198,7 @@ final class IntrastatSourceCollector
                 continue;
             }
 
-            $document = ['type' => 'passive_invoice', 'id' => (string) $invoice->id, 'number' => $invoice->invoice_number, 'date' => $invoice->date?->toDateString()];
+            $document = ['type' => 'passive_invoice', 'id' => (string) $invoice->id, 'number' => $invoice->invoice_number, 'date' => $invoice->date->toDateString()];
 
             if ($invoice->document_type === TipoDocumento::Td04->value) {
                 $result['skipped'][] = ['document' => $document, 'reason' => 'credit_note', 'detail' => 'A credit note corrects an earlier period: enter it as a correction row (section 2 or 4).'];
@@ -212,6 +230,7 @@ final class IntrastatSourceCollector
 
             $result['entries'][] = [
                 'kind' => $kind,
+                'correction' => null,
                 'partner_country' => $country,
                 'partner_vat' => IntrastatCodes::vatCode($invoice->supplier?->vat_number, $country),
                 'amount_eur' => $isEuro ? $amount : null,

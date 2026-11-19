@@ -6,6 +6,7 @@ namespace App\Actions\Purchases;
 
 use App\Models\Contact;
 use App\Models\PassiveInvoice;
+use App\Models\PassiveInvoiceWithholding;
 use App\Services\ItalianSdi\FatturaPaParser;
 use App\Services\Purchases\SupplierCostRuleApplier;
 use App\Services\Sales\DocumentEventRecorder;
@@ -80,11 +81,26 @@ class ReceivePassiveInvoice
                     'sdi_file_name' => $fileName,
                     'xml_payload' => $xml,
                     'withholdings' => $document['withholdings'] === [] ? null : $document['withholdings'],
-                    'stamp_duty_amount' => number_format((float) ($document['stamp_duty'] ?? 0), 2, '.', ''),
+                    'stamp_duty_amount' => number_format($document['stamp_duty'], 2, '.', ''),
                     'withholding_tax_amount' => number_format(array_sum(array_map(static fn (array $withholding): float => (float) $withholding['amount'], $document['withholdings'])), 2, '.', ''),
                 ]);
 
                 $invoice->lines()->createMany(array_map(static fn (array $line): array => [...$line, 'tenant_id' => $tenant->id], $document['lines']));
+
+                foreach ($document['withholdings'] as $withholding) {
+                    PassiveInvoiceWithholding::create([
+                        'tenant_id' => $tenant->id,
+                        'passive_invoice_id' => $invoice->id,
+                        'supplier_id' => $supplier->id,
+                        'type' => $withholding['type'] !== '' ? $withholding['type'] : 'RT01',
+                        'reason' => $withholding['reason'] !== null ? substr($withholding['reason'], 0, 2) : null,
+                        'rate' => $withholding['rate'] !== '' ? $withholding['rate'] : '0.00',
+                        'taxable_amount' => $withholding['taxable'],
+                        'amount' => $withholding['amount'] !== '' ? $withholding['amount'] : '0.00',
+                        'withheld_year' => (int) substr((string) $document['date'], 0, 4),
+                    ]);
+                }
+
                 $this->costRules->apply($invoice);
 
                 $this->post($invoice, $deferLedgerErrors);

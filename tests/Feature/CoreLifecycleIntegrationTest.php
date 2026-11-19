@@ -8,6 +8,7 @@ use App\Models\Contact;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Modules\Invoicing\Models\SalesInvoice;
 
 uses(RefreshDatabase::class);
@@ -15,7 +16,8 @@ uses(RefreshDatabase::class);
 describe('Core Endpoints: Invoicing, Payment Reconciliation, and Inventory Flow', function () {
     it('manages invoice lifecycle from draft to finalized payment', function () {
         $tenant = Tenant::factory()->create();
-        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->create();
+        $user->tenants()->attach($tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
         $customer = Contact::factory()->create(['tenant_id' => $tenant->id]);
 
         $invoice = SalesInvoice::factory()->create([

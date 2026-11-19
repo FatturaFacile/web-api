@@ -8,6 +8,7 @@ use App\Models\Appointment;
 use App\Models\AppointmentAttendee;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +23,7 @@ class AppointmentAttendeeFactory extends Factory
      */
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? Tenant::create([
+        $tenantId = (app(TenantContext::class)->getTenantId() ?? Tenant::first()?->id) ?? Tenant::create([
             'name' => fake()->company(),
             'legal_name' => fake()->company(),
             'country' => 'IT',

@@ -18,6 +18,7 @@ use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockQuant;
 use Modules\Procurement\Events\GoodsReceivedEvent;
 use Modules\Procurement\Models\PurchaseOrderLine;
+use Modules\Procurement\Models\SupplierCatalog;
 use Tests\Support\InventoryValuationFixtures as Fx;
 
 uses(RefreshDatabase::class);
@@ -203,11 +204,23 @@ test('valuation snapshot endpoint captures the effective method', function (): v
 });
 
 test('goods receipt listener books a receipt movement linked to the receipt at the PO line price', function (): void {
+    // The receipt also accrues GR/IR in the ledger, which needs an open fiscal period.
+    Fx::fiscalYear($this->tenantId, (int) now()->format('Y'));
     $item = Fx::item($this->tenantId, 'fifo');
     $receipt = Fx::purchaseReceipt($this->tenantId);
+    // The stock item of an order line is the one whose SKU the supplier catalog entry of the line names.
+    $catalog = SupplierCatalog::factory()->create(['tenant_id' => $this->tenantId, 'internal_sku' => $item->sku]);
     $poLine = PurchaseOrderLine::factory()->create([
         'tenant_id' => $this->tenantId,
         'purchase_order_id' => $receipt->purchase_order_id,
+        'supplier_catalog_id' => $catalog->id,
+        'unit_price' => 12.5,
+    ]);
+
+    $orphanLine = PurchaseOrderLine::factory()->create([
+        'tenant_id' => $this->tenantId,
+        'purchase_order_id' => $receipt->purchase_order_id,
+        'supplier_catalog_id' => null,
         'unit_price' => 12.5,
     ]);
 
@@ -217,8 +230,8 @@ test('goods receipt listener books a receipt movement linked to the receipt at t
         purchaseOrderId: (string) $receipt->purchase_order_id,
         supplierDeliveryNoteRef: 'DDT-144',
         receivedLines: [
-            ['purchase_order_line_id' => (string) $poLine->id, 'quantity_received' => 8.0, 'quantity_accepted' => 6.0, 'stock_item_id' => (string) $item->id],
-            ['purchase_order_line_id' => (string) $poLine->id, 'quantity_received' => 3.0, 'quantity_accepted' => 3.0], // no stock item: skipped
+            ['purchase_order_line_id' => (string) $poLine->id, 'quantity_received' => 8.0, 'quantity_accepted' => 6.0, 'unit_cost' => 12.5, 'stock_item_id' => (string) $item->id],
+            ['purchase_order_line_id' => (string) $orphanLine->id, 'quantity_received' => 3.0, 'quantity_accepted' => 3.0, 'unit_cost' => 12.5], // no stock item: skipped
         ],
         tenantId: $this->tenantId,
         companyId: $this->tenantId,

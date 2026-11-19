@@ -167,9 +167,9 @@ final readonly class NaiveTextCvParser implements CvParserInterface
             $output = (string) stream_get_contents($pipes[1]);
             fclose($pipes[1]);
             fclose($pipes[2]);
-            proc_close($process);
+            $exitCode = proc_close($process);
 
-            return $output;
+            return $exitCode === 0 ? $output : '';
         } finally {
             @unlink($path);
         }
@@ -196,7 +196,7 @@ final readonly class NaiveTextCvParser implements CvParserInterface
 
             $current = '';
             foreach ($operators as $operator) {
-                if (isset($operator[3]) && $operator[3] !== '') {
+                if (isset($operator[3])) {
                     if (trim($current) !== '') {
                         $lines[] = trim($current);
                     }

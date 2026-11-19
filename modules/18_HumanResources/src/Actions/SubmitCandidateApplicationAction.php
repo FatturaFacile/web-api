@@ -54,7 +54,7 @@ final readonly class SubmitCandidateApplicationAction
 
         $tenantId = (string) ($this->tenantContext->getTenantId() ?? $opening->tenant_id);
         $stored = $dto->cv !== null ? $this->storeCv($dto->cv, $tenantId) : null;
-        $parsed = $stored !== null && $dto->cv !== null ? $this->parseCv($dto->cv, $stored) : null;
+        $parsed = $stored !== null ? $this->parseCv($dto->cv, $stored) : null;
 
         try {
             $application = DB::transaction(function () use ($dto, $opening, $stored, $parsed): CandidateApplication {

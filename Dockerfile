@@ -55,6 +55,7 @@ COPY --chown=www-data:www-data app/ app/
 COPY --chown=www-data:www-data bootstrap/ bootstrap/
 COPY --chown=www-data:www-data config/ config/
 COPY --chown=www-data:www-data database/ database/
+COPY --chown=www-data:www-data docs/ docs/
 COPY --chown=www-data:www-data lang/ lang/
 COPY --chown=www-data:www-data modules/ modules/
 COPY --chown=www-data:www-data packages/ packages/

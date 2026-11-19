@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\AutomotiveController;
 use App\Http\Controllers\Api\V1\Banking\BankReconciliationRuleController;
 use App\Http\Controllers\Api\V1\Banking\BankStatementController;
+use App\Http\Controllers\Api\V1\Banking\Iso20022Controller;
 use App\Http\Controllers\Api\V1\ConstructionController;
 use App\Http\Controllers\Api\V1\ContactFiscalController;
 use App\Http\Controllers\Api\V1\ContactInsightsController;
@@ -75,6 +76,9 @@ use App\Http\Controllers\Api\V1\PurchaseOrderController;
 use App\Http\Controllers\Api\V1\PurchasesController;
 use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\QuoteRevisionController;
+use App\Http\Controllers\Api\V1\RecurringContracts\PriceIndexRateController;
+use App\Http\Controllers\Api\V1\RecurringContracts\RecurringBillingRunController;
+use App\Http\Controllers\Api\V1\RecurringContracts\RecurringContractController;
 use App\Http\Controllers\Api\V1\RegistrationController;
 use App\Http\Controllers\Api\V1\SalesKpiController;
 use App\Http\Controllers\Api\V1\SalesOrderController;
@@ -97,14 +101,21 @@ use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SupplierCostRuleController;
 use App\Http\Controllers\Api\V1\SupplierInvoiceController;
+use App\Http\Controllers\Api\V1\SwissQrBillController;
 use App\Http\Controllers\Api\V1\System\BootstrapSupportUserController;
 use App\Http\Controllers\Api\V1\System\TenantBackupController;
+use App\Http\Controllers\Api\V1\Tax\EnasarcoStatusController;
+use App\Http\Controllers\Api\V1\Tax\FiscalPreviewController;
+use App\Http\Controllers\Api\V1\Tax\StampDutyReportController;
+use App\Http\Controllers\Api\V1\Tax\WithholdingReportController;
+use App\Http\Controllers\Api\V1\TenantBrandingController;
 use App\Http\Controllers\Api\V1\TenantPreferencesController;
 use App\Http\Controllers\Api\V1\TimeAttendanceController;
 use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\TwoFactorController;
 use App\Http\Controllers\Api\V1\UnitOfMeasureController;
 use App\Http\Controllers\Api\V1\UserPreferencesController;
+use App\Http\Controllers\Api\V1\ViesValidationController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
 use App\Http\Controllers\Portal\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
@@ -235,6 +246,12 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/data', [DashboardBuilderController::class, 'data'])->name('data');
         });
 
+        // EU VAT number validation (VIES) with audit log
+        Route::prefix('fiscal/vies')->name('fiscal.vies.')->middleware('module.access:crm')->group(function (): void {
+            Route::post('/validate', [ViesValidationController::class, 'validate'])->middleware('throttle:60,1')->name('validate');
+            Route::get('/logs', [ViesValidationController::class, 'logs'])->name('logs');
+        });
+
         // 3. CRM & Contacts
         Route::prefix('crm')->name('crm.')->middleware('module.access:crm')->group(function (): void {
             Route::get('/clients', [CrmController::class, 'clients'])->name('clients');
@@ -259,6 +276,12 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 4. Sales, Invoicing & Cross-Border Billing
+        Route::prefix('swiss-qr-bill')->name('swiss-qr-bill.')->middleware('module.access:invoicing')->group(function (): void {
+            Route::post('/generate-pdf', [SwissQrBillController::class, 'generatePdf'])->name('generate-pdf');
+            Route::post('/parse', [SwissQrBillController::class, 'parse'])->name('parse');
+            Route::post('/validate-reference', [SwissQrBillController::class, 'validateReference'])->name('validate-reference');
+        });
+
         Route::prefix('sales')->name('sales.')->middleware('module.access:invoicing')->group(function (): void {
             Route::apiResource('invoices', InvoiceController::class)->parameters(['invoices' => 'id']);
             Route::post('/invoices/{id}/generate-sdi-xml', [InvoiceController::class, 'generateSdiXml'])->name('invoices.generate-sdi-xml');
@@ -319,6 +342,34 @@ Route::prefix('v1')->group(function (): void {
 
             Route::apiResource('delivery-notes', DeliveryNoteController::class)->only(['index', 'show', 'destroy'])->parameters(['delivery-notes' => 'id']);
             Route::post('/delivery-notes/{id}/invoice', [DeliveryNoteController::class, 'createInvoice'])->name('delivery-notes.invoice');
+        });
+
+        // 4.1 Recurring Contracts, Subscriptions & Periodic Billing Engine (Issue #138)
+        Route::middleware('module.access:invoicing')->group(function (): void {
+            // Price index registry (shared / tenant-specific ISTAT FOI & Swiss IPC)
+            Route::get('/price-indices', [PriceIndexRateController::class, 'index'])->name('price-indices.index');
+            Route::post('/price-indices', [PriceIndexRateController::class, 'store'])->name('price-indices.store');
+
+            // Recurring Billing Runs
+            Route::get('/recurring-billing/preview', [RecurringBillingRunController::class, 'preview'])->name('recurring-billing.preview');
+            Route::get('/recurring-billing/runs', [RecurringBillingRunController::class, 'index'])->name('recurring-billing.runs.index');
+            Route::post('/recurring-billing/runs', [RecurringBillingRunController::class, 'store'])->name('recurring-billing.runs.store');
+            Route::get('/recurring-billing/runs/{id}', [RecurringBillingRunController::class, 'show'])->whereUuid('id')->name('recurring-billing.runs.show');
+
+            // Recurring Contracts CRUD & Lifecycle actions
+            Route::get('/recurring-contracts/metrics', [RecurringContractController::class, 'metrics'])->name('recurring-contracts.metrics');
+            Route::post('/recurring-contracts/{id}/activate', [RecurringContractController::class, 'activate'])->whereUuid('id')->name('recurring-contracts.activate');
+            Route::post('/recurring-contracts/{id}/suspend', [RecurringContractController::class, 'suspend'])->whereUuid('id')->name('recurring-contracts.suspend');
+            Route::post('/recurring-contracts/{id}/cancel', [RecurringContractController::class, 'cancel'])->whereUuid('id')->name('recurring-contracts.cancel');
+            Route::post('/recurring-contracts/{id}/renew', [RecurringContractController::class, 'renew'])->whereUuid('id')->name('recurring-contracts.renew');
+            Route::post('/recurring-contracts/{id}/apply-indexation', [RecurringContractController::class, 'applyIndexation'])->whereUuid('id')->name('recurring-contracts.apply-indexation');
+            Route::post('/recurring-contracts/{id}/bill-now', [RecurringContractController::class, 'billNow'])->whereUuid('id')->name('recurring-contracts.bill-now');
+
+            Route::get('/recurring-contracts', [RecurringContractController::class, 'index'])->name('recurring-contracts.index');
+            Route::post('/recurring-contracts', [RecurringContractController::class, 'store'])->name('recurring-contracts.store');
+            Route::get('/recurring-contracts/{id}', [RecurringContractController::class, 'show'])->whereUuid('id')->name('recurring-contracts.show');
+            Route::put('/recurring-contracts/{id}', [RecurringContractController::class, 'update'])->whereUuid('id')->name('recurring-contracts.update');
+            Route::delete('/recurring-contracts/{id}', [RecurringContractController::class, 'destroy'])->whereUuid('id')->name('recurring-contracts.destroy');
         });
 
         // Global customs reference catalogs: readable by every member, written through the customs.manage gate
@@ -418,7 +469,9 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('inventory')->name('inventory.')->middleware('module.access:inventory')->group(function (): void {
             Route::get('/products', [InventoryController::class, 'products'])->name('products');
             Route::post('/products', [InventoryController::class, 'storeProduct'])->name('products.store');
-            Route::put('/products/{id}', [InventoryController::class, 'updateProduct'])->name('products.update');
+            Route::get('/products/{id}', [InventoryController::class, 'showProduct'])->whereUuid('id')->name('products.show');
+            Route::put('/products/{id}', [InventoryController::class, 'updateProduct'])->whereUuid('id')->name('products.update');
+            Route::delete('/products/{id}', [InventoryController::class, 'destroyProduct'])->whereUuid('id')->name('products.destroy');
             Route::get('/delivery-notes', [InventoryController::class, 'deliveryNotes'])->name('delivery-notes');
             Route::get('/stock-levels', [StockController::class, 'levels'])->name('stock-levels');
             // Deprecated: no approval and no ledger entry; the successor is the Inventory adjustment flow
@@ -561,6 +614,14 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/general-ledger/export', [GeneralLedgerController::class, 'export'])->name('general-ledger.export');
         });
 
+        // 17b. Italian tax regimes (issue #286): fiscal preview, stamp duty, withholdings, ENASARCO
+        Route::prefix('tax')->name('tax.')->middleware('module.access:invoicing')->group(function (): void {
+            Route::post('/preview', FiscalPreviewController::class)->name('preview');
+            Route::get('/stamp-duty/quarterly', StampDutyReportController::class)->name('stamp-duty.quarterly');
+            Route::get('/withholdings/report', WithholdingReportController::class)->name('withholdings.report');
+            Route::get('/enasarco/status', EnasarcoStatusController::class)->name('enasarco.status');
+        });
+
         // 18. Settings & Multi-Tenant Management
         // Banking: statement import and reconciliation
         Route::prefix('banking')->name('banking.')->middleware('module.access:treasury')->group(function (): void {
@@ -575,6 +636,12 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/reconciliation-rules', [BankReconciliationRuleController::class, 'store'])->name('reconciliation-rules.store');
             Route::put('/reconciliation-rules/{ruleId}', [BankReconciliationRuleController::class, 'update'])->whereUuid('ruleId')->name('reconciliation-rules.update');
             Route::delete('/reconciliation-rules/{ruleId}', [BankReconciliationRuleController::class, 'destroy'])->whereUuid('ruleId')->name('reconciliation-rules.destroy');
+
+            // ISO 20022: camt.053 / camt.054 import, manual matching queue, pain.001 payment files
+            Route::post('/iso20022/import', [Iso20022Controller::class, 'import'])->name('iso20022.import');
+            Route::post('/iso20022/pain001/export', [Iso20022Controller::class, 'pain001Export'])->name('iso20022.pain001.export');
+            Route::get('/reconciliation/transactions', [Iso20022Controller::class, 'transactions'])->name('reconciliation.transactions');
+            Route::post('/reconciliation/transactions/{lineId}/match', [BankStatementController::class, 'manualMatch'])->whereUuid('lineId')->name('reconciliation.transactions.match');
         });
 
         // System: manual tenant backups
@@ -624,6 +691,10 @@ Route::prefix('v1')->group(function (): void {
 
             Route::post('/receipts/parse', [MobileReceiptController::class, 'parse'])->name('receipts.parse');
         });
+        // Look and feel: the branding of the tenant (every member reads, the system module writes) and the interface
+        // preferences of the user themselves.
+        Route::get('/tenant/branding', [TenantBrandingController::class, 'show'])->name('tenant.branding');
+        Route::patch('/tenant/branding', [TenantBrandingController::class, 'update'])->middleware('module.access:system')->name('tenant.branding.update');
 
         Route::prefix('settings')->name('settings.')->group(function (): void {
             // Every member reads the company profile, its preferences and branches: the clients need them on every page.

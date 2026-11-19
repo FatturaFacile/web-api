@@ -57,7 +57,7 @@ final readonly class DocumentSodService implements DocumentSegregationGuard
         return array_map(static function (string $type) use ($rules): array {
             $rule = $rules->get($type);
 
-            return ['document_type' => $type, 'severity' => $rule?->severity ?? 'block', 'is_active' => $rule?->is_active ?? false, 'configured' => $rule !== null];
+            return ['document_type' => $type, 'severity' => $rule->severity ?? 'block', 'is_active' => $rule->is_active ?? false, 'configured' => $rule !== null];
         }, SegregatedDocument::values());
     }
 

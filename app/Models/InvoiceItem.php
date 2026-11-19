@@ -30,6 +30,9 @@ class InvoiceItem extends Model
         'country_of_origin',
         'origin_type',
         'made_in_label',
+        'natura',
+        'withholding_applies',
+        'fund_applies',
     ];
 
     protected function casts(): array
@@ -40,6 +43,8 @@ class InvoiceItem extends Model
             'tax_rate' => 'decimal:2',
             'discount_percentage' => 'decimal:2',
             'line_total' => 'decimal:2',
+            'withholding_applies' => 'boolean',
+            'fund_applies' => 'boolean',
         ];
     }
 

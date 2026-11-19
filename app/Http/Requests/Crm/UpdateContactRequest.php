@@ -34,7 +34,7 @@ class UpdateContactRequest extends FormRequest
         $current = Contact::find($this->route('id') ?? $this->route('contact'));
 
         return [
-            ...$this->fiscalRules((string) ($this->input('country') ?? $current?->country ?? 'IT'), $current),
+            ...$this->fiscalRules((string) ($this->input('country') ?? $current->country ?? 'IT'), $current),
             'type' => ['sometimes', 'string', 'in:client,customer,supplier,both,lead'],
             'country' => ['sometimes', 'string', 'regex:/^[A-Z]{2}$/'],
             'legal_type' => ['nullable', 'string', 'in:company,person'],

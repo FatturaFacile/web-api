@@ -15,6 +15,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property CustomsOriginType|null $origin_type
+ */
 class Product extends Model
 {
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
@@ -43,6 +46,13 @@ class Product extends Model
         'preferential_agreement_id',
         'eur1_required',
         'origin_rule_notes',
+        'swiss_hs_code',
+        'supplementary_unit',
+        'customs_duty_rate',
+        'net_weight_kg',
+        'gross_weight_kg',
+        'packages_count',
+        'preferential_origin_eligible',
         'track_inventory',
         'is_active',
         'category_id',
@@ -84,6 +94,10 @@ class Product extends Model
             'min_stock' => 'decimal:4',
             'origin_type' => CustomsOriginType::class,
             'eur1_required' => 'boolean',
+            'customs_duty_rate' => 'decimal:4',
+            'net_weight_kg' => 'decimal:3',
+            'gross_weight_kg' => 'decimal:3',
+            'preferential_origin_eligible' => 'boolean',
         ];
     }
 

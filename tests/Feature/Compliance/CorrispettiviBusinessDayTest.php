@@ -106,9 +106,10 @@ test('a Swiss company follows Zurich time and a configured time zone wins over t
 });
 
 test('the clock falls back to the application time zone for other countries', function (): void {
-    $tenant = new Tenant(['country' => 'DE']);
+    $tenant = new Tenant(['country' => 'US']);
 
     expect(app(TenantClock::class)->timezone($tenant))->toBe('UTC')
+        ->and(app(TenantClock::class)->timezone(new Tenant(['country' => 'DE'])))->toBe('Europe/Berlin')
         ->and(app(TenantClock::class)->timezone(new Tenant(['country' => 'it'])))->toBe('Europe/Rome')
         ->and(app(TenantClock::class)->businessDate(new DateTimeImmutable('2027-07-14 22:30:00 UTC'), new Tenant(['country' => 'CH'])))->toBe('2027-07-15');
 });

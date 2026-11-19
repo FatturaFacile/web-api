@@ -8,6 +8,12 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property string|null $inventory_account_id
+ * @property string|null $cogs_account_id
+ * @property string|null $ppv_account_id
+ * @property string|null $landed_cost_clearing_account_id
+ */
 final class StockItemCategory extends BaseEnterpriseModel
 {
     protected $table = 'stock_item_categories';

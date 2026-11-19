@@ -72,7 +72,7 @@ final class SdiTransmissionController extends Controller
             'id' => (string) $metadata->id,
             'invoice_id' => (string) $metadata->invoice_id,
             'invoice_number' => $metadata->invoice?->invoice_number,
-            'invoice_date' => $metadata->invoice?->date?->toDateString(),
+            'invoice_date' => $metadata->invoice?->date->toDateString(),
             'total_gross' => $metadata->invoice?->total_gross,
             'currency' => $metadata->invoice?->currency,
             'sdi_status' => $metadata->sdi_status,

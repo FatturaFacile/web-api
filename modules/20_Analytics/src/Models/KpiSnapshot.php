@@ -30,6 +30,6 @@ final class KpiSnapshot extends BaseEnterpriseModel
      */
     protected function casts(): array
     {
-        return ['snapshot_date' => 'date', 'period_from' => 'date', 'period_to' => 'date', 'details' => 'array', 'computed_at' => 'datetime'];
+        return ['snapshot_date' => 'date:Y-m-d', 'period_from' => 'date:Y-m-d', 'period_to' => 'date:Y-m-d', 'details' => 'array', 'computed_at' => 'datetime'];
     }
 }

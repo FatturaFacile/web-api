@@ -9,6 +9,7 @@ return [
     'created' => ':resource créé avec succès',
     'updated' => ':resource mis à jour avec succès',
     'deleted' => ':resource supprimé avec succès',
+    'customs_origin_evaluated' => 'Origine douanière évaluée avec succès',
 
     'labels' => [
         'product_category' => 'Catégorie d\'article',
@@ -18,6 +19,8 @@ return [
         'payment_term' => 'Condition de paiement',
         'alert' => 'Alerte',
         'loyalty_card' => 'Carte de fidélité',
+        'customs_taric_code' => 'Code douanier',
+        'free_trade_agreement' => 'Accord de libre-échange',
     ],
 
 ];

@@ -11,6 +11,7 @@ use Modules\SDI\Enums\SdiChannel;
 use Modules\SDI\Gateways\AcubeGateway;
 use Modules\SDI\Gateways\InvoicetronicGateway;
 use Modules\SDI\Gateways\LocalGateway;
+use Modules\SDI\Gateways\ManualGateway;
 use Modules\SDI\Gateways\OpenapiGateway;
 use Modules\SDI\Gateways\PecGateway;
 
@@ -40,6 +41,7 @@ final class SdiGatewayManager
             SdiChannel::Openapi => OpenapiGateway::class,
             SdiChannel::Acube => AcubeGateway::class,
             SdiChannel::Invoicetronic => InvoicetronicGateway::class,
+            SdiChannel::Manual => ManualGateway::class,
             SdiChannel::Local => LocalGateway::class,
         });
     }

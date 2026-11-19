@@ -10,10 +10,15 @@ use App\Models\Contact;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\Projects\Models\Project;
 use Modules\Projects\Models\ProjectMilestone;
 
+/**
+ * @property Carbon $date
+ * @property Carbon|null $due_date
+ */
 final class SalesInvoice extends BaseEnterpriseModel
 {
     use HasFiscalAmounts, ProtectsIssuedInvoice;

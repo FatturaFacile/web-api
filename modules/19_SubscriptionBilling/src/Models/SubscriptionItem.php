@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $metric_id
  * @property string|null $legacy_item_id
  * @property array<string, mixed>|null $metadata
+ * @property string $price_factor
  */
 final class SubscriptionItem extends BaseEnterpriseModel
 {

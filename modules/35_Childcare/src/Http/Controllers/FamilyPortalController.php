@@ -100,7 +100,7 @@ final class FamilyPortalController extends Controller
 
         return response()->json(['data' => Invoice::query()->whereIn('id', $invoiceIds)->where('contact_id', $contact->id)->orderByDesc('date')->get()
             ->map(static fn (Invoice $invoice): array => [
-                'id' => $invoice->id, 'invoice_number' => $invoice->invoice_number, 'date' => $invoice->date?->toDateString(), 'currency' => $invoice->currency,
+                'id' => $invoice->id, 'invoice_number' => $invoice->invoice_number, 'date' => $invoice->date->toDateString(), 'currency' => $invoice->currency,
                 'total_gross' => (string) $invoice->total_gross, 'payment_status' => $invoice->payment_status,
             ])->values()]);
     }

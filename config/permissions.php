@@ -45,7 +45,12 @@ return [
             'grants' => ['read' => ['gl.*', 'gl.journals.post'], 'write' => ['gl.*']],
         ],
         'procurement' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'purchasing', 'procurement_manager', 'member']],
-        'inventory' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'warehouse', 'purchasing', 'technician', 'member']],
+        // Valuation management and the inventory book export are granted one by one on the membership (see InventoryPermissionChecker), whatever the role.
+        'inventory' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'warehouse', 'purchasing', 'technician', 'member'],
+            'grants' => ['write' => ['inventory.valuation.manage', 'inventory.valuation.*', 'inventory.book.export', 'inventory.book.*', 'inventory.*']],
+        ],
         'customs' => ['read' => ['owner', 'admin', 'accountant', 'customs', 'warehouse', 'sales'], 'write' => ['owner', 'admin', 'accountant', 'customs']],
         // Managers write too: they are named as approvers of document approval steps and must be able to decide them.
         'documents' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager', 'purchasing', 'procurement_manager', 'service_manager', 'hr', 'member']],
@@ -200,6 +205,13 @@ return [
         'rebates' => [
             'read' => [...$financeReaders, 'sales', 'sales_manager', 'procurement_manager'],
             'write' => [...$finance, 'sales_manager', 'procurement_manager'],
+        ],
+        // Advanced pricing (price lists, cascading discounts, promotions, margin guardrails): finance and sales roles read;
+        // owners, administrators, accountants and sales managers write. Authorizing a below-margin document is further
+        // limited by the policy to owners, administrators and the role of the margin policy.
+        'pricing' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager', 'procurement_manager'],
+            'write' => [...$finance, 'sales_manager'],
         ],
         // Credit risk and collections: finance and sales roles read; owners, administrators, accountants and sales
         // managers score customers, work the cases and request limits. Deciding a credit limit request and writing a

@@ -225,7 +225,7 @@ final readonly class ConfigurationService
 
             $this->storeEvaluation($configuration, $model, $evaluation);
             $configuration->forceFill([
-                'quote_id' => $quote->id,
+                'quote_id' => $quote->getKey(),
                 'converted_at' => now(),
                 'snapshot' => $this->snapshot($model, $configuration, $evaluation, $user),
             ]);

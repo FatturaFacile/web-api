@@ -1,0 +1,34 @@
+# Universal VCS & Editor Caches
+.git/
+.idea/
+.vs/
+.vscode/
+*.log
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+.phpunit.result.cache
+
+# Environment & Secrets (Keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Build & Test Coverage Outputs
+coverage/
+build/
+dist/
+
+# PHP / Laravel
+vendor/
+bootstrap/cache/
+storage/framework/
+storage/logs/
+public/build/
+public/hot
+
+# Node / JS
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

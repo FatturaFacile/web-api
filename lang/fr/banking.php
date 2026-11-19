@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
 
     'messages' => [
+        'pain001_exported' => 'Fichier de paiement généré et validé selon le schéma ISO 20022',
         'imported' => 'Relevé bancaire importé avec succès',
         'listed' => 'Relevés bancaires récupérés avec succès',
         'retrieved' => 'Relevé bancaire récupéré avec succès',
@@ -18,6 +19,7 @@ return [
     ],
 
     'errors' => [
+        'not_iso20022' => 'Le fichier n’est ni un relevé camt.053 ni une notification camt.054 ISO 20022.',
         'duplicate_statement' => 'Ce relevé bancaire a déjà été importé.',
         'line_not_credit' => 'Seules les lignes créditrices peuvent être rapprochées d\'une facture client.',
         'line_already_reconciled' => 'La ligne est déjà rapprochée.',

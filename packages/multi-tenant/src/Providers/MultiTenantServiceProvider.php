@@ -7,6 +7,7 @@ namespace Enterprise\MultiTenant\Providers;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\MultiTenant\Queue\TenantQueueContext;
 use Enterprise\MultiTenant\Scopes\TenantScope;
+use Enterprise\MultiTenant\Services\CompanyContext;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
@@ -24,6 +25,7 @@ final class MultiTenantServiceProvider extends ServiceProvider
 
         $this->app->singleton(TenantScope::class);
         $this->app->singleton(TenantQueueContext::class);
+        $this->app->singleton(CompanyContext::class);
     }
 
     public function boot(): void

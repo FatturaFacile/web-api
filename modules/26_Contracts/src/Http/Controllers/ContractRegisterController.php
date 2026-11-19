@@ -255,8 +255,8 @@ final class ContractRegisterController extends Controller
             $contracts = $contractKind->modelClass()::query()->whereIn('id', $group->pluck('contract_id')->all())->get()->keyBy('id');
             foreach ($group as $alert) {
                 $contract = $contracts->get($alert->contract_id);
-                $alert->setAttribute('contract_number', $contract?->contract_number);
-                $alert->setAttribute('contract_title', $contract?->title);
+                $alert->setAttribute('contract_number', $contract?->getAttribute('contract_number'));
+                $alert->setAttribute('contract_title', $contract?->getAttribute('title'));
             }
         }
     }

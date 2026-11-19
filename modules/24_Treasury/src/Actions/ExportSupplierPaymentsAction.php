@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Treasury\Actions;
 
+use App\Exceptions\Pain001Exception;
 use App\Models\PassiveInvoice;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Str;
@@ -24,8 +25,8 @@ final readonly class ExportSupplierPaymentsAction
     ) {}
 
     /**
-     * @param  array{invoice_ids: list<string>, format: string, execution_date?: ?string, bank_account_id?: ?string}  $data
-     * @return array{batch_id: string, message_id: ?string, format: string, status: string, xml_preview: string}
+     * @param  array{invoice_ids: list<string>, format: string, pain_version?: ?string, execution_date?: ?string, bank_account_id?: ?string}  $data
+     * @return array{batch_id: string, message_id: ?string, format: string, pain_version: string, status: string, xml_preview: string}
      *
      * @throws ValidationException
      */
@@ -48,20 +49,25 @@ final readonly class ExportSupplierPaymentsAction
         $bankAccount = $this->bankAccount($tenantId, $currency, $data['bank_account_id'] ?? null);
         $lines = $invoices->map(fn (PassiveInvoice $invoice): array => $this->line($invoice))->all();
 
-        $batch = $this->paymentFactory->createExportedBatch([
-            'tenant_id' => $tenantId,
-            'company_id' => $tenantId,
-            'bank_account_id' => $bankAccount->id,
-            'execution_date' => $data['execution_date'] ?? now()->addDay()->toDateString(),
-            'currency' => $currency,
-            'format' => $data['format'],
-        ], $lines, $userId, $ipAddress);
+        try {
+            $batch = $this->paymentFactory->createExportedBatch([
+                'tenant_id' => $tenantId,
+                'company_id' => $tenantId,
+                'bank_account_id' => $bankAccount->id,
+                'execution_date' => $data['execution_date'] ?? now()->addDay()->toDateString(),
+                'currency' => $currency,
+                'format' => $data['format'],
+                'pain_version' => $data['pain_version'] ?? '09',
+            ], $lines, $userId, $ipAddress);
+        } catch (Pain001Exception $e) {
+            throw ValidationException::withMessages(['invoice_ids' => $e->getMessage()]);
+        }
 
         return $this->summary($batch, $data['format']);
     }
 
     /**
-     * @return array{batch_id: string, message_id: ?string, format: string, status: string, xml_preview: string}
+     * @return array{batch_id: string, message_id: ?string, format: string, pain_version: string, status: string, xml_preview: string}
      */
     private function summary(PaymentBatch $batch, string $format): array
     {
@@ -69,6 +75,7 @@ final readonly class ExportSupplierPaymentsAction
             'batch_id' => (string) $batch->id,
             'message_id' => $batch->pain001_message_id,
             'format' => $format,
+            'pain_version' => (string) $batch->pain_version,
             'status' => (string) $batch->status,
             'xml_preview' => (string) $batch->pain001_xml,
         ];

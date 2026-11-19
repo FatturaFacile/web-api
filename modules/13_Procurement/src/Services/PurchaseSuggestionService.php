@@ -13,6 +13,7 @@ use Modules\Inventory\Models\StockReorderRule;
 use Modules\Inventory\Services\ProductStockItemResolver;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesOrderItem;
+use Modules\Procurement\Contracts\PurchaseSuggestionHandOffInterface;
 use Modules\Procurement\DTOs\CreatePurchaseOrderDTO;
 use Modules\Procurement\Exceptions\ProcurementRuleViolation;
 use Modules\Procurement\Models\PurchaseOrder;
@@ -27,7 +28,7 @@ use Modules\Procurement\Support\Decimal;
  * Each suggestion gets the cheapest valid supplier offer for the item (the preferred supplier of the rule when it has
  * one), and open suggestions are converted into one draft purchase order per supplier.
  */
-final readonly class PurchaseSuggestionService
+final readonly class PurchaseSuggestionService implements PurchaseSuggestionHandOffInterface
 {
     /** Source of the suggestions made for a sales order line (buy to order, drop-ship). */
     public const string SalesOrderLineSource = 'sales_order_line';
@@ -38,6 +39,21 @@ final readonly class PurchaseSuggestionService
         private InventoryReplenishmentServiceInterface $inventory,
         private ProductStockItemResolver $stockItems,
     ) {}
+
+    /**
+     * @return list<array{id: string, source: string, source_id: string, quantity: string, supplier_id: string|null, status: string}>
+     */
+    public function handOff(string $tenantId): array
+    {
+        return $this->generate($tenantId)->map(static fn (PurchaseSuggestion $suggestion): array => [
+            'id' => (string) $suggestion->id,
+            'source' => (string) $suggestion->source,
+            'source_id' => (string) $suggestion->source_id,
+            'quantity' => (string) $suggestion->quantity,
+            'supplier_id' => $suggestion->supplier_id === null ? null : (string) $suggestion->supplier_id,
+            'status' => (string) $suggestion->status,
+        ])->values()->all();
+    }
 
     /**
      * Generates the missing suggestions of the tenant; returns the new ones.

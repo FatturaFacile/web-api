@@ -29,6 +29,7 @@ final readonly class ParsedStatementLine
         public ?string $description = null,
         public ?string $counterpartName = null,
         public ?string $counterpartIban = null,
+        public ?string $entryReference = null,
     ) {}
 
     public function isCredit(): bool

@@ -150,7 +150,7 @@ final readonly class SupplierSelfService
      * Invoices of the supplier with the status it cares about: received, in approval, approved, on hold, rejected, and the
      * payment status. Approval internals (workflow, cost centre) stay inside.
      *
-     * @return Collection<int, array<string, mixed>>
+     * @return Collection<int, array{id: string, invoice_number: string, document_type: string, date: string, due_date: string|null, total_amount: string, total_paid: string, currency: string, processing_status: string, payment_status: string}>
      */
     public function invoices(Supplier $supplier): Collection
     {
@@ -163,7 +163,7 @@ final readonly class SupplierSelfService
                 'id' => (string) $invoice->id,
                 'invoice_number' => (string) $invoice->invoice_number,
                 'document_type' => $invoice->document_type,
-                'date' => $invoice->date?->toDateString(),
+                'date' => $invoice->date->toDateString(),
                 'due_date' => $invoice->due_date?->toDateString(),
                 'total_amount' => (string) $invoice->total_amount,
                 'total_paid' => (string) ($invoice->total_paid ?? '0.00'),

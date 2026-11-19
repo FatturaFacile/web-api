@@ -7,6 +7,7 @@ namespace Database\Factories;
 use App\Models\Contact;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Modules\Projects\Models\Project;
@@ -20,7 +21,7 @@ class ProjectFactory extends Factory
 
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? (string) Str::uuid7();
+        $tenantId = (app(TenantContext::class)->getTenantId() ?? Tenant::first()?->id) ?? (string) Str::uuid7();
         $contactId = Contact::where('tenant_id', $tenantId)->value('id') ?? Contact::factory()->create(['tenant_id' => $tenantId])->id;
         $userId = User::first()?->id ?? (string) Str::uuid7();
 

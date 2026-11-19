@@ -65,7 +65,7 @@ final class MonthlyBill extends ChildcareRecord
      */
     protected function currency(): Attribute
     {
-        return Attribute::get(fn (): string => $this->invoice?->currency ?? 'EUR');
+        return Attribute::get(fn (): string => $this->invoice->currency ?? 'EUR');
     }
 
     /**

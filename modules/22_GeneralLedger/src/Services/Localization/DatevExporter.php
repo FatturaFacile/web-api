@@ -104,7 +104,7 @@ final class DatevExporter
     }
 
     /**
-     * @param  array{debit: string, credit: string, amount: string}  $pair
+     * @param  array{debit: string, credit: string, amount: string, text: string}  $pair
      * @return list<string>
      */
     private function row(JournalEntry $entry, array $pair, string $currency): array
@@ -123,7 +123,7 @@ final class DatevExporter
             $this->text(mb_substr((string) ($entry->getAttribute('document_number') ?: $entry->entry_number), 0, 36)),
             '',
             '',
-            $this->text(mb_substr((string) ($pair['text'] ?? $entry->description), 0, 60)),
+            $this->text(mb_substr($pair['text'], 0, 60)),
         ];
     }
 
@@ -173,7 +173,7 @@ final class DatevExporter
                 array_shift($debits);
             }
 
-            if (Decimal::isZero(Decimal::round2($credits[0]['amount'] ?? '0'))) {
+            if (Decimal::isZero(Decimal::round2($credits[0]['amount']))) {
                 array_shift($credits);
             }
         }

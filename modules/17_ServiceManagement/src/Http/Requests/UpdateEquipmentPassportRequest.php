@@ -20,6 +20,9 @@ final class UpdateEquipmentPassportRequest extends WarrantyRmaFormRequest
             'contract_warranty_months' => ['sometimes', 'nullable', 'integer', 'between:1,60'],
             'contract_clause_reference' => ['sometimes', 'nullable', 'string', 'max:150'],
             'installed_firmware_version' => ['sometimes', 'nullable', 'string', 'max:60'],
+            'asset_status' => ['sometimes', 'required', 'string', 'in:active,under_repair,decommissioned'],
+            'commissioning_date' => ['sometimes', 'nullable', 'date'],
+            'installation_site' => ['sometimes', 'nullable', 'string', 'max:255'],
             'notes' => ['sometimes', 'nullable', 'string'],
         ];
     }

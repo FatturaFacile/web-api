@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\Pivots\AuditedPivot;
+use App\Models\Pivots\TenantMembership;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property array<string, mixed>|null $settings
+ */
 class Tenant extends Model
 {
     /** @use HasFactory<TenantFactory> */
@@ -34,6 +37,9 @@ class Tenant extends Model
         'default_currency',
         'iban',
         'qr_iban',
+        'qrr_prefix',
+        'default_reference_type',
+        'qr_bill_perforation',
         'sdi_code',
         'pec_email',
         'settings',
@@ -93,12 +99,25 @@ class Tenant extends Model
     }
 
     /**
-     * @return BelongsToMany<User, $this>
+     * The look and feel stored in the settings: brand_primary_color, brand_secondary_color, brand_logo_url, default_theme.
+     *
+     * @return array<string, mixed>
+     */
+    public function branding(): array
+    {
+        $settings = $this->getAttribute('settings');
+        $branding = is_array($settings) ? ($settings['branding'] ?? []) : [];
+
+        return is_array($branding) ? $branding : [];
+    }
+
+    /**
+     * @return BelongsToMany<User, $this, TenantMembership, 'pivot'>
      */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'tenant_user')
-            ->using(AuditedPivot::class)
+            ->using(TenantMembership::class)
             ->withPivot(['id', 'role', 'permissions', 'suspended_at', 'custom_role_id'])
             ->withTimestamps();
     }

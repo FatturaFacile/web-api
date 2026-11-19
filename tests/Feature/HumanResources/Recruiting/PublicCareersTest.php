@@ -137,7 +137,8 @@ test('json and rss feeds list exactly the published openings with escaped conten
         ->and((string) $rss->getContent())->not->toContain($foreign->id);
 
     $foreignFeed = $this->getJson('/api/v1/public/careers/other-company/feed.json');
-    expect(collect($foreignFeed->json('jobs'))->pluck('id')->all())->toBe([$foreign->id]);
+    // One entry per published language, all of them the foreign opening.
+    expect(collect($foreignFeed->json('jobs'))->pluck('id')->unique()->values()->all())->toBe([$foreign->id]);
 });
 
 test('json feed emits one entry per published language when no locale is requested', function () {

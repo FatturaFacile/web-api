@@ -53,7 +53,7 @@ final class DockAppointmentService extends WmsCrudService
             throw ValidationException::withMessages(['status' => [__('wms_errors.dock.not_editable', ['status' => $existing->status])]]);
         }
 
-        $doorId = (string) ($existing?->dock_door_id ?? $data['dock_door_id']);
+        $doorId = (string) ($existing->dock_door_id ?? $data['dock_door_id']);
         $door = WmsDockDoor::query()->where('tenant_id', $tenantId)->findOrFail($doorId);
         $direction = (string) ($data['direction'] ?? $existing?->direction);
         $start = Carbon::parse((string) ($data['starts_at'] ?? $existing?->starts_at));

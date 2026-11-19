@@ -12,10 +12,12 @@ use App\Http\Responses\ApiResponse;
 use App\Models\MobileDeviceSession;
 use App\Models\MobileOfflineCacheManifest;
 use App\Models\User;
+use App\Services\Auth\UserSessions;
 use App\Services\Mobile\DeviceSessionService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class MobileDeviceController extends Controller
@@ -25,6 +27,20 @@ class MobileDeviceController extends Controller
     public function __construct(private readonly DeviceSessionService $devices) {}
 
     /** Register the device the current token is used from (e.g. tokens issued by the classic login). */
+    #[OA\Post(
+        path: '/api/v1/mobile/devices',
+        operationId: 'registerMobileDevice',
+        description: 'Registers the device the current token is used from (for tokens issued by the classic login).',
+        summary: 'Register mobile device',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Mobile'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['device_id', 'platform'], properties: [new OA\Property(property: 'device_id', type: 'string', maxLength: 191), new OA\Property(property: 'device_name', type: 'string', maxLength: 191, nullable: true), new OA\Property(property: 'platform', type: 'string', enum: ['ios', 'android', 'android_rugged_zebra']), new OA\Property(property: 'app_version', type: 'string', maxLength: 30, nullable: true), new OA\Property(property: 'biometric_enrolled', type: 'boolean', nullable: true), new OA\Property(property: 'push_token', type: 'string', nullable: true), new OA\Property(property: 'push_provider', type: 'string', enum: ['fcm', 'apns'], nullable: true)])),
+        responses: [
+            new OA\Response(response: 201, description: 'Device registered', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object'), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -39,13 +55,25 @@ class MobileDeviceController extends Controller
 
         /** @var User $user */
         $user = $request->user();
-        $tokenId = $user->currentAccessToken()?->getKey();
+        $tokenId = UserSessions::currentTokenId($user);
 
         $device = $this->devices->register($user, (string) app(TenantContext::class)->getTenantId(), $data, $tokenId === null ? null : (int) $tokenId);
 
         return $this->successResponse($device, 'Device registered', Response::HTTP_CREATED);
     }
 
+    #[OA\Get(
+        path: '/api/v1/mobile/devices',
+        operationId: 'listMobileDevices',
+        description: 'Devices registered by the authenticated user, most recently active first.',
+        summary: 'List my mobile devices',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Mobile'],
+        responses: [
+            new OA\Response(response: 200, description: 'Device sessions of the user', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -53,6 +81,21 @@ class MobileDeviceController extends Controller
         );
     }
 
+    #[OA\Put(
+        path: '/api/v1/mobile/devices/current/push-token',
+        operationId: 'updateMobileDevicePushToken',
+        description: 'Stores the FCM/APNs push token of the current device.',
+        summary: 'Update push token',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Mobile'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['push_token'], properties: [new OA\Property(property: 'push_token', type: 'string'), new OA\Property(property: 'push_provider', type: 'string', enum: ['fcm', 'apns'], nullable: true), new OA\Property(property: 'app_version', type: 'string', maxLength: 30, nullable: true)])),
+        responses: [
+            new OA\Response(response: 200, description: 'Push token registered', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object'), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 428, description: 'Device not registered', content: new OA\JsonContent(ref: '#/components/schemas/ApiProblemDetailsResponse')),
+        ]
+    )]
     public function updatePushToken(Request $request, RegisterMobileDevicePushTokenAction $action): JsonResponse
     {
         $data = $request->validate([
@@ -72,6 +115,21 @@ class MobileDeviceController extends Controller
         );
     }
 
+    #[OA\Put(
+        path: '/api/v1/mobile/devices/current/biometric',
+        operationId: 'updateMobileDeviceBiometric',
+        description: 'Records whether biometric unlock is enrolled on the current device.',
+        summary: 'Update biometric status',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Mobile'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['biometric_enrolled'], properties: [new OA\Property(property: 'biometric_enrolled', type: 'boolean')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Biometric status updated', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object'), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 428, description: 'Device not registered', content: new OA\JsonContent(ref: '#/components/schemas/ApiProblemDetailsResponse')),
+        ]
+    )]
     public function updateBiometric(Request $request): JsonResponse
     {
         $data = $request->validate(['biometric_enrolled' => ['required', 'boolean']]);
@@ -87,6 +145,21 @@ class MobileDeviceController extends Controller
     }
 
     /** Lost phone: the owner revokes one of their devices; administrators can revoke any device. */
+    #[OA\Delete(
+        path: '/api/v1/mobile/devices/{id}',
+        operationId: 'revokeMobileDevice',
+        description: 'Lost phone: the owner revokes one of their devices; administrators with the manage-mobile-devices ability can revoke any device. A local cache wipe is requested.',
+        summary: 'Revoke mobile device',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Mobile'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the device session', schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Device revoked', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object'), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function revoke(Request $request, string $id): JsonResponse
     {
         $device = MobileDeviceSession::findOrFail($id);
@@ -101,6 +174,20 @@ class MobileDeviceController extends Controller
     }
 
     /** Administrators: list the devices of the tenant (optionally one user). */
+    #[OA\Get(
+        path: '/api/v1/mobile/admin/devices',
+        operationId: 'listMobileAdminDevices',
+        description: 'Administrators: device sessions of the tenant, optionally of one user (paginated, 50 per page).',
+        summary: 'List tenant mobile devices',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Mobile'],
+        parameters: [new OA\Parameter(name: 'user_id', in: 'query', required: false, description: 'Only the devices of this user', schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Paginated device sessions', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object'), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function adminIndex(Request $request): JsonResponse
     {
         $this->authorizeAdmin($request, 'manage-mobile-devices');
@@ -113,6 +200,19 @@ class MobileDeviceController extends Controller
     }
 
     /** Called by a revoked device once its local Drift/SQLite cache has been erased. */
+    #[OA\Post(
+        path: '/api/v1/mobile/devices/current/wipe-ack',
+        operationId: 'acknowledgeMobileDeviceWipe',
+        description: 'Called by a revoked device once its local offline cache has been erased; the device session is closed.',
+        summary: 'Acknowledge remote wipe',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Mobile'],
+        responses: [
+            new OA\Response(response: 200, description: 'Wipe acknowledged', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object', nullable: true), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function wipeAck(Request $request, WipeRevokedMobileDeviceCacheAction $action): JsonResponse
     {
         $device = $this->currentDevice($request);
@@ -125,6 +225,18 @@ class MobileDeviceController extends Controller
         return $this->successResponse(null, 'Wipe acknowledged; session closed');
     }
 
+    #[OA\Get(
+        path: '/api/v1/mobile/devices/current/manifest',
+        operationId: 'getMobileDeviceManifest',
+        description: 'What the current device reports to hold offline, per entity.',
+        summary: 'Get offline cache manifest',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Mobile'],
+        responses: [
+            new OA\Response(response: 200, description: 'Manifest entries', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function manifest(Request $request): JsonResponse
     {
         $device = $this->currentDevice($request);
@@ -133,6 +245,21 @@ class MobileDeviceController extends Controller
     }
 
     /** The app reports what it holds offline so the server can plan incremental syncs. */
+    #[OA\Put(
+        path: '/api/v1/mobile/devices/current/manifest',
+        operationId: 'updateMobileDeviceManifest',
+        description: 'The app reports what it holds offline so the server can plan incremental syncs.',
+        summary: 'Update offline cache manifest',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Mobile'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['entities'], properties: [new OA\Property(property: 'entities', type: 'array', minItems: 1, items: new OA\Items(type: 'object', required: ['entity_name', 'record_count', 'storage_bytes'], properties: [new OA\Property(property: 'entity_name', type: 'string', maxLength: 60), new OA\Property(property: 'last_synced_at', type: 'string', format: 'date-time', nullable: true), new OA\Property(property: 'record_count', type: 'integer', minimum: 0), new OA\Property(property: 'storage_bytes', type: 'integer', minimum: 0)]))])),
+        responses: [
+            new OA\Response(response: 200, description: 'Manifest updated', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 428, description: 'Device not registered', content: new OA\JsonContent(ref: '#/components/schemas/ApiProblemDetailsResponse')),
+        ]
+    )]
     public function updateManifest(Request $request): JsonResponse
     {
         $data = $request->validate([

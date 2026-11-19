@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Associations\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Modules\Associations\Enums\MembershipStatus;
 
 /**
@@ -13,6 +15,7 @@ use Modules\Associations\Enums\MembershipStatus;
  * @property string $id
  * @property MembershipStatus $status
  * @property ?string $card_number
+ * @property Carbon|CarbonImmutable|null $issued_on
  * @property-read Member $member
  * @property-read AssociativeYear $year
  * @property-read MembershipType $membershipType

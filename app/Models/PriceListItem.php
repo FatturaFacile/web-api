@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $tenant_id
+ */
 class PriceListItem extends Model
 {
     use HasFactory, HasUuids, StampsTenantFromParent;
@@ -19,6 +22,9 @@ class PriceListItem extends Model
         'product_id',
         'price',
         'min_quantity',
+        'max_quantity',
+        'discount_cascade',
+        'discount_mode',
         'valid_from',
         'valid_to',
     ];
@@ -27,6 +33,7 @@ class PriceListItem extends Model
     {
         return [
             'min_quantity' => 'decimal:4',
+            'max_quantity' => 'decimal:4',
             'price' => 'decimal:4',
             'valid_from' => 'date',
             'valid_to' => 'date',

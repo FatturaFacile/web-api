@@ -40,15 +40,19 @@ final class DeferredInvoicingService
         }
 
         return DB::transaction(function () use ($deliveryNoteIds, $overrides, $enforceSameMonth): SalesInvoice {
-            $notes = SalesDeliveryNote::query()->with('items')->whereIn('id', $deliveryNoteIds)->lockForUpdate()->get();
+            $notes = SalesDeliveryNote::query()->with('items')->whereIn('id', $deliveryNoteIds)->orderBy('id')->lockForUpdate()->get();
             if ($notes->count() !== count($deliveryNoteIds)) {
                 throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.DELIVERY_NOTES_NOT_FOUND'));
             }
 
             $this->assertCompatible($notes->all(), $enforceSameMonth);
 
+            $sortedNotes = $notes
+                ->sortBy(static fn (SalesDeliveryNote $n): string => sprintf('%s|%s|%s', $n->date->format('Y-m-d'), (string) $n->ddt_number, (string) $n->id))
+                ->values();
+
             $invoiceItems = [];
-            foreach ($notes->sortBy('date') as $note) {
+            foreach ($sortedNotes as $note) {
                 foreach ($note->items as $item) {
                     $remaining = round((float) $item->quantity - (float) $item->invoiced_quantity, 4);
                     if ($remaining <= 0.0) {
@@ -72,14 +76,14 @@ final class DeferredInvoicingService
             }
 
             /** @var SalesDeliveryNote $first */
-            $first = $notes->first();
+            $first = $sortedNotes->first();
             $invoice = $this->invoicing->createInvoice(array_merge([
                 'tenant_id' => (string) $this->tenantContext->getTenantId(),
                 'contact_id' => (string) $first->contact_id,
                 'currency' => $first->currency ?? 'EUR',
                 'delivery_note_id' => $notes->count() === 1 ? (string) $first->id : null,
                 'invoice_type' => 'standard',
-                'notes' => 'Fattura differita - '.$notes->sortBy('date')->map(fn (SalesDeliveryNote $n): string => sprintf('DDT n. %s del %s', $n->ddt_number, $n->date->format('d/m/Y')))->implode('; '),
+                'notes' => 'Fattura differita - '.$sortedNotes->map(fn (SalesDeliveryNote $n): string => sprintf('DDT n. %s del %s', $n->ddt_number, $n->date->format('d/m/Y')))->implode('; '),
                 'created_by' => auth()->id(),
             ], $overrides), $invoiceItems);
 

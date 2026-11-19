@@ -6,7 +6,6 @@ namespace Modules\Inventory\Actions;
 
 use App\Services\Sales\DocumentNumberingService;
 use Illuminate\Support\Facades\DB;
-use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Inventory\Exceptions\StockRuleViolation;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockPickLine;
@@ -16,6 +15,7 @@ use Modules\Inventory\Models\Warehouse;
 use Modules\Inventory\Models\WarehouseBin;
 use Modules\Inventory\Services\PickRouteOptimizer;
 use Modules\Inventory\Services\StockAllocationPlanner;
+use Modules\Inventory\Support\Decimal;
 
 /**
  * Builds a pick list: each request takes its quants in FEFO or FIFO order and holds them, or follows the allocations of

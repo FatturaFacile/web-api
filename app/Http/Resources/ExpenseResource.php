@@ -22,7 +22,7 @@ class ExpenseResource extends JsonResource
             'id' => $this->id,
             'tenant_id' => $this->tenant_id,
             'expense_number' => $this->expense_number,
-            'date' => $this->date?->toDateString(),
+            'date' => $this->date->toDateString(),
             'category_id' => $this->category_id,
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category->id,

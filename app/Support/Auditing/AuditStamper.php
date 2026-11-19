@@ -24,6 +24,8 @@ final class AuditStamper
      */
     private static array $columns = [];
 
+    private static bool $resolvingUser = false;
+
     public static function register(): void
     {
         Event::listen('eloquent.creating: *', static function (string $event, array $payload): void {
@@ -60,7 +62,8 @@ final class AuditStamper
             return;
         }
 
-        if ($creating && self::hasColumn($model, 'created_by') && $model->getAttribute('created_by') === null) {
+        // An explicit created_by (even null, a record made on behalf of nobody) is respected; only an unset one is stamped.
+        if ($creating && ! array_key_exists('created_by', $model->getAttributes()) && self::hasColumn($model, 'created_by')) {
             $model->setAttribute('created_by', $userId);
         }
 
@@ -76,7 +79,7 @@ final class AuditStamper
             return;
         }
 
-        if (! in_array(SoftDeletes::class, class_uses_recursive($model), true) || $model->isForceDeleting()) {
+        if (! in_array(SoftDeletes::class, class_uses_recursive($model), true) || (method_exists($model, 'isForceDeleting') && $model->isForceDeleting())) {
             return;
         }
 
@@ -89,7 +92,19 @@ final class AuditStamper
 
     private static function userId(): ?string
     {
-        $user = Auth::user();
+        // Resolving the user can itself save a model (Sanctum stamps `last_used_at` on the token while the guard is
+        // still resolving), which fires "updating" again: without this guard the two recurse until memory runs out.
+        if (self::$resolvingUser) {
+            return null;
+        }
+
+        self::$resolvingUser = true;
+
+        try {
+            $user = Auth::user();
+        } finally {
+            self::$resolvingUser = false;
+        }
 
         return $user instanceof User ? (string) $user->getKey() : null;
     }

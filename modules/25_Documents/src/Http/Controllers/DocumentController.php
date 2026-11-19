@@ -388,7 +388,12 @@ final class DocumentController extends Controller
     private function matchSearchTerms(Builder $query, string $term): Builder
     {
         foreach (preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
-            $query->whereAny(['dms_documents.title', 'dms_documents.description', 'dms_documents.document_type', 'dms_documents.search_text'], 'like', '%'.addcslashes($word, '%_\\').'%');
+            $needle = '%'.mb_strtolower(str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $word)).'%';
+            $query->where(static fn (Builder $inner): Builder => $inner
+                ->whereRaw("LOWER(dms_documents.title) LIKE ? ESCAPE '!'", [$needle])
+                ->orWhereRaw("LOWER(COALESCE(dms_documents.description, '')) LIKE ? ESCAPE '!'", [$needle])
+                ->orWhereRaw("LOWER(COALESCE(dms_documents.document_type, '')) LIKE ? ESCAPE '!'", [$needle])
+                ->orWhereRaw("LOWER(COALESCE(dms_documents.search_text, '')) LIKE ? ESCAPE '!'", [$needle]));
         }
 
         return $query;

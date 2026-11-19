@@ -25,7 +25,7 @@ beforeEach(function (): void {
     $this->foreignCustomer = Contact::create(['tenant_id' => $this->otherTenant->id, 'company_name' => 'Foreign Buyer', 'email' => 'buyer@example.com', 'type' => 'customer', 'country' => 'IT']);
 });
 
-function kpiInvoice(string $number, string $status, float $gross, float $paid, ?string $tenantId = null): Invoice
+function kpiSummaryInvoice(string $number, string $status, float $gross, float $paid, ?string $tenantId = null): Invoice
 {
     $tenantId ??= test()->tenant->id;
 
@@ -58,7 +58,7 @@ it('returns zero KPIs when there are no invoices', function (): void {
 });
 
 it('counts an unpaid invoice gross as receivable and not as revenue', function (): void {
-    kpiInvoice('U-1', 'unpaid', 122.00, 0);
+    kpiSummaryInvoice('U-1', 'unpaid', 122.00, 0);
 
     $kpis = kpiSummary();
 
@@ -67,7 +67,7 @@ it('counts an unpaid invoice gross as receivable and not as revenue', function (
 });
 
 it('counts the residual of a partially paid invoice as receivable and the collected amount as revenue', function (): void {
-    kpiInvoice('P-1', 'partially_paid', 122.00, 40.00);
+    kpiSummaryInvoice('P-1', 'partially_paid', 122.00, 40.00);
 
     $kpis = kpiSummary();
 
@@ -76,7 +76,7 @@ it('counts the residual of a partially paid invoice as receivable and the collec
 });
 
 it('counts an invoice paid through RecordPayment as revenue only', function (): void {
-    kpiInvoice('F-1', 'paid', 122.00, 122.00);
+    kpiSummaryInvoice('F-1', 'paid', 122.00, 122.00);
 
     $kpis = kpiSummary();
 
@@ -85,7 +85,7 @@ it('counts an invoice paid through RecordPayment as revenue only', function (): 
 });
 
 it('keeps the gross of a legacy paid invoice with no recorded payments in revenue', function (): void {
-    kpiInvoice('L-1', 'paid', 122.00, 0);
+    kpiSummaryInvoice('L-1', 'paid', 122.00, 0);
 
     $kpis = kpiSummary();
 
@@ -94,7 +94,7 @@ it('keeps the gross of a legacy paid invoice with no recorded payments in revenu
 });
 
 it('clamps the receivable of an overpaid partially paid invoice to zero', function (): void {
-    kpiInvoice('O-1', 'partially_paid', 122.00, 150.00);
+    kpiSummaryInvoice('O-1', 'partially_paid', 122.00, 150.00);
 
     $kpis = kpiSummary();
 
@@ -103,9 +103,9 @@ it('clamps the receivable of an overpaid partially paid invoice to zero', functi
 });
 
 it('sums unpaid gross and partial residuals together', function (): void {
-    kpiInvoice('U-1', 'unpaid', 122.00, 0);
-    kpiInvoice('P-1', 'partially_paid', 122.00, 40.00);
-    kpiInvoice('F-1', 'paid', 244.00, 244.00);
+    kpiSummaryInvoice('U-1', 'unpaid', 122.00, 0);
+    kpiSummaryInvoice('P-1', 'partially_paid', 122.00, 40.00);
+    kpiSummaryInvoice('F-1', 'paid', 244.00, 244.00);
 
     $kpis = kpiSummary();
 
@@ -115,10 +115,10 @@ it('sums unpaid gross and partial residuals together', function (): void {
 });
 
 it('ignores invoices of another tenant', function (): void {
-    kpiInvoice('U-1', 'unpaid', 122.00, 0);
-    kpiInvoice('X-1', 'unpaid', 1000.00, 0, test()->otherTenant->id);
-    kpiInvoice('X-2', 'partially_paid', 500.00, 100.00, test()->otherTenant->id);
-    kpiInvoice('X-3', 'paid', 300.00, 300.00, test()->otherTenant->id);
+    kpiSummaryInvoice('U-1', 'unpaid', 122.00, 0);
+    kpiSummaryInvoice('X-1', 'unpaid', 1000.00, 0, test()->otherTenant->id);
+    kpiSummaryInvoice('X-2', 'partially_paid', 500.00, 100.00, test()->otherTenant->id);
+    kpiSummaryInvoice('X-3', 'paid', 300.00, 300.00, test()->otherTenant->id);
 
     $kpis = kpiSummary();
 

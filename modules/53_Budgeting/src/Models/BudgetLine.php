@@ -60,7 +60,7 @@ final class BudgetLine extends BaseEnterpriseModel
 
     protected function recordProtectionViolation(string $operation): ?string
     {
-        $status = $this->version_id === null ? null : BudgetVersion::query()->whereKey($this->version_id)->value('status');
+        $status = BudgetVersion::query()->whereKey($this->version_id)->value('status');
 
         return $status !== null && $status !== BudgetVersion::Draft ? __('budgeting_errors.version.not_draft') : null;
     }

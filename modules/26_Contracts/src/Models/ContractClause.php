@@ -9,6 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A reusable contract clause of the library. The text lives in immutable versions; the current version is the latest one.
+ *
+ * @property string $code
+ * @property string $title
+ * @property string|null $category
+ * @property string $status
+ * @property int $current_version_no
  */
 final class ContractClause extends BaseEnterpriseModel
 {

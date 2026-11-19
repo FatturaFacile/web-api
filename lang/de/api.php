@@ -9,6 +9,7 @@ return [
     'created' => ':resource erfolgreich erstellt',
     'updated' => ':resource erfolgreich aktualisiert',
     'deleted' => ':resource erfolgreich gelöscht',
+    'customs_origin_evaluated' => 'Zollursprung erfolgreich bewertet',
 
     'labels' => [
         'product_category' => 'Artikelkategorie',
@@ -18,6 +19,8 @@ return [
         'payment_term' => 'Zahlungsbedingung',
         'alert' => 'Warnung',
         'loyalty_card' => 'Kundenkarte',
+        'customs_taric_code' => 'Zolltarifnummer',
+        'free_trade_agreement' => 'Freihandelsabkommen',
     ],
 
 ];

@@ -29,6 +29,9 @@ final class SalesQuote extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<Contact, $this>
+     */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Contact::class, 'contact_id');

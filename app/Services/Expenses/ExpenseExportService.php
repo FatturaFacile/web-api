@@ -81,7 +81,7 @@ class ExpenseExportService
 
             fputcsv($handle, CsvFormulaNeutralizer::row([
                 $expense->expense_number,
-                $expense->date?->format('Y-m-d') ?? '',
+                $expense->date->format('Y-m-d'),
                 $expense->category?->code ?? '',
                 $catName,
                 $supplierName,

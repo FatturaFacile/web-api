@@ -2,13 +2,10 @@
 
 declare(strict_types=1);
 
+use Database\Seeders\PayrollReferenceSeeder;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
-use Modules\Payroll\Calculation\Italian\ItalianPayrollParameters;
-use Modules\Payroll\Calculation\Swiss\SwissPayrollParameters;
 
 return new class extends Migration
 {
@@ -158,48 +155,10 @@ return new class extends Migration
         }
     }
 
-    /**
-     * The parameters of the desktop (2026) and the federal minimum family allowances from 2025, which the desktop
-     * creates as editable starting values.
-     */
     private function insertGenericRows(): void
     {
-        $now = now();
-
-        DB::table('payroll_annual_parameters')->insert([
-            [
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => null,
-                'country' => 'CH',
-                'year' => 2026,
-                'parameters' => json_encode((new SwissPayrollParameters)->toArray(), JSON_THROW_ON_ERROR),
-                'legal_reference' => 'SwissPayrollRules, SwissSocialInsuranceParameters (desktop)',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => null,
-                'country' => 'IT',
-                'year' => 2026,
-                'parameters' => json_encode((new ItalianPayrollParameters)->toArray(), JSON_THROW_ON_ERROR),
-                'legal_reference' => 'ItalianPayrollParameters (desktop): Legge di Bilancio 2026, art. 13 TUIR, L. 207/2024, circolare INPS n. 6/2026',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-        ]);
-
-        foreach (['AG', 'AI', 'AR', 'BE', 'BL', 'BS', 'FR', 'GE', 'GL', 'GR', 'JU', 'LU', 'NE', 'NW', 'OW', 'SG', 'SH', 'SO', 'SZ', 'TG', 'TI', 'UR', 'VD', 'VS', 'ZG', 'ZH'] as $canton) {
-            DB::table('payroll_family_allowance_rates')->insert([
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => null,
-                'canton' => $canton,
-                'valid_from' => '2025-01-01',
-                'child_allowance' => '215.00',
-                'education_allowance' => '268.00',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
+        $seeder = new PayrollReferenceSeeder;
+        $seeder->annualParameters();
+        $seeder->familyAllowanceRates();
     }
 };

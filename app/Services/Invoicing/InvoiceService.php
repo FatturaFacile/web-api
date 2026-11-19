@@ -6,6 +6,9 @@ namespace App\Services\Invoicing;
 
 use App\Models\Invoice;
 use App\Models\Product;
+use App\Services\Invoicing\Tax\FiscalInputResolver;
+use App\Services\Invoicing\Tax\FiscalResult;
+use App\Services\Invoicing\Tax\ItalianFiscalCalculator;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +25,22 @@ class InvoiceService
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly InvoicingServiceInterface $invoicing,
+        private readonly ?ItalianFiscalCalculator $fiscalCalculator = null,
+        private readonly ?FiscalInputResolver $fiscalInputResolver = null,
     ) {}
+
+    /**
+     * Fiscal figures for an unsaved Italian invoice payload (used by the preview endpoint).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function previewItalianFiscal(array $data): FiscalResult
+    {
+        $calculator = $this->fiscalCalculator ?? app(ItalianFiscalCalculator::class);
+        $resolver = $this->fiscalInputResolver ?? app(FiscalInputResolver::class);
+
+        return $calculator->calculate($resolver->resolve($data, $this->tenantContext->getTenant()));
+    }
 
     /**
      * Creates (and, unless it is a proforma, issues) a document from the validated payload of the sales API.
@@ -31,13 +49,69 @@ class InvoiceService
      */
     public function createInvoice(array $data): Invoice
     {
+        $data = $this->normalizeNestedFiscalOptions($data);
         $items = array_map(static fn (array $item): array => array_intersect_key($item, array_flip([
             'product_id', 'description', 'quantity', 'unit_price', 'tax_rate', 'discount_percentage', 'revenue_account_id', 'product_charge_type_id',
-            'taric_code', 'country_of_origin', 'origin_type', 'made_in_label',
+            'taric_code', 'country_of_origin', 'origin_type', 'made_in_label', 'natura', 'withholding_applies', 'fund_applies',
         ])), $this->withCustomsSnapshot($data['items'] ?? []));
         unset($data['items'], $data['invoice_number']);
 
         return $this->issue($data, $items);
+    }
+
+    /**
+     * Maps issue #286 nested fiscal payload keys (`fund`, `withholding`, `enasarco`, `stamp_duty_charged_to_customer`)
+     * to the flat header fields expected by the invoicing writer when the frontend submits nested options.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function normalizeNestedFiscalOptions(array $data): array
+    {
+        if (array_key_exists('fund', $data)) {
+            if (is_array($data['fund'])) {
+                $data['fund_enabled'] ??= true;
+                $data['fund_type'] ??= $data['fund']['type'] ?? null;
+                $data['fund_percent'] ??= $data['fund']['percent'] ?? null;
+                $data['fund_vat_rate'] ??= $data['fund']['vat_rate'] ?? null;
+                $data['fund_subject_to_withholding'] ??= (bool) ($data['fund']['withholding_applies'] ?? false);
+            } elseif ($data['fund'] === null) {
+                $data['fund_enabled'] ??= false;
+            }
+            unset($data['fund']);
+        }
+
+        if (array_key_exists('withholding', $data)) {
+            if (is_array($data['withholding'])) {
+                $data['withholding_tax_enabled'] ??= true;
+                $data['withholding_tax_type'] ??= $data['withholding']['type'] ?? null;
+                $data['withholding_tax_reason'] ??= $data['withholding']['reason'] ?? null;
+                $data['withholding_tax_percent'] ??= $data['withholding']['rate'] ?? null;
+                $data['withholding_tax_base_percent'] ??= $data['withholding']['taxable_percent'] ?? 100;
+                if (! empty($data['withholding']['includes_fund'])) {
+                    $data['fund_subject_to_withholding'] = true;
+                }
+            } elseif ($data['withholding'] === null) {
+                $data['withholding_tax_enabled'] ??= false;
+            }
+            unset($data['withholding']);
+        }
+
+        if (array_key_exists('enasarco', $data)) {
+            if (is_array($data['enasarco']) && ! empty($data['enasarco']['enabled'])) {
+                $data['enasarco_enabled'] ??= true;
+            } elseif ($data['enasarco'] === null) {
+                $data['enasarco_enabled'] ??= false;
+            }
+            unset($data['enasarco']);
+        }
+
+        if (array_key_exists('stamp_duty_charged_to_customer', $data)) {
+            $data['stamp_duty_charged'] ??= (bool) $data['stamp_duty_charged_to_customer'];
+            unset($data['stamp_duty_charged_to_customer']);
+        }
+
+        return $data;
     }
 
     /**

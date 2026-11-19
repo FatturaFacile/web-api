@@ -201,6 +201,16 @@ final class VatSettlementService implements VatSettlementServiceInterface
     }
 
     /**
+     * Computes the settlement of a period without storing anything.
+     *
+     * @return array{result: VatReturnResult, snapshot: VatLedgerSnapshot, previous: ?VatSettlement}
+     */
+    public function preview(string $tenantId, VatPeriod $period): array
+    {
+        return $this->compute($tenantId, $period);
+    }
+
+    /**
      * @return array{result: VatReturnResult, snapshot: VatLedgerSnapshot, previous: ?VatSettlement}
      */
     private function compute(string $tenantId, VatPeriod $period): array

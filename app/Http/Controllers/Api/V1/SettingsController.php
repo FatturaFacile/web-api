@@ -15,6 +15,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\Auth\TaxIdentifier;
+use App\Services\SwissQrBill\QrBillGeneratorService;
 use App\Services\Tenancy\TenantContext;
 use App\Services\Tenancy\TenantMembershipService;
 use Closure;
@@ -150,7 +151,17 @@ class SettingsController extends Controller
             'country' => ['sometimes', 'required', 'string', Rule::enum(SupportedCountry::class)],
             'default_currency' => ['nullable', 'string', 'size:3'],
             'iban' => ['nullable', 'string', 'max:34'],
-            'qr_iban' => ['nullable', 'string', 'max:34'],
+            'qr_iban' => [
+                'nullable', 'string', 'max:34',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if (is_string($value) && $value !== '' && ! app(QrBillGeneratorService::class)->isValidQrIban($value)) {
+                        $fail(__('qr_bill.errors.invalid_qr_iban'));
+                    }
+                },
+            ],
+            'qrr_prefix' => ['nullable', 'string', 'regex:/^\d{1,6}$/'],
+            'default_reference_type' => ['nullable', Rule::in(['QRR', 'SCOR', 'NON'])],
+            'qr_bill_perforation' => ['nullable', Rule::in(['NONE', 'DASHED_LINE', 'DASHED_LINE_WITH_SCISSORS'])],
             'sdi_code' => ['nullable', 'string', 'size:7'],
             'pec_email' => ['nullable', 'email'],
             'customs_approved_exporter_number' => ['nullable', 'string', 'max:50'],

@@ -23,7 +23,7 @@ final class MeterReadingResource extends JsonResource
         return [
             'id' => $this->id,
             'meter_id' => $this->meter_id,
-            'read_on' => $this->read_on?->toDateString(),
+            'read_on' => $this->read_on->toDateString(),
             'value' => $this->value,
             'consumption' => $this->consumption,
             'cost' => $this->cost,

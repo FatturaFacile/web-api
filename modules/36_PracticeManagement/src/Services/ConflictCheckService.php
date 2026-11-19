@@ -40,7 +40,7 @@ final class ConflictCheckService
 
         foreach (LegalCase::query()->whereIn('client_id', $contacts)->with('client')->get() as $case) {
             $client = $case->client;
-            $matches[$case->id.'|client'] = $this->match('client', (string) ($client?->company_name ?: trim(($client?->first_name ?? '').' '.($client?->last_name ?? ''))), 'client', $case, (string) $case->client_id);
+            $matches[$case->id.'|client'] = $this->match('client', (string) ($client?->company_name ?: trim(($client->first_name ?? '').' '.($client->last_name ?? ''))), 'client', $case, (string) $case->client_id);
         }
 
         $matches = array_values($matches);

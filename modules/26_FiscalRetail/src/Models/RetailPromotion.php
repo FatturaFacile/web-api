@@ -11,10 +11,15 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * A POS promotion: percentage or fixed amount off the ticket or one product, or buy X get Y free of one product,
  * limited by period, weekdays, time window and minimum subtotal.
+ *
+ * @property Carbon|null $starts_at
+ * @property Carbon|null $ends_at
+ * @property list<int>|null $weekdays
  */
 #[UseFactory(RetailPromotionFactory::class)]
 final class RetailPromotion extends Model

@@ -12,10 +12,10 @@ use Modules\HumanResources\Models\CandidateApplication;
 use Modules\HumanResources\Models\CandidateEmail;
 use Modules\HumanResources\Models\InterviewScorecard;
 
-use function Tests\Feature\HumanResources\Recruiting\actAs;
 use function Tests\Feature\HumanResources\Recruiting\careersSettings;
 use function Tests\Feature\HumanResources\Recruiting\publishedOpening;
 use function Tests\Feature\HumanResources\Recruiting\recruiterOfNewTenant;
+use function Tests\Feature\HumanResources\Recruiting\recruitingActAs;
 use function Tests\Feature\HumanResources\Recruiting\useTenant;
 
 require_once __DIR__.'/RecruitingTestSupport.php';
@@ -141,13 +141,13 @@ test('scorecards of two interviewers are averaged and resubmitting updates inste
 
     $secondInterviewer = User::factory()->create();
     $secondInterviewer->tenants()->attach($tenant->id, ['id' => (string) Str::uuid(), 'role' => 'member']);
-    actAs($secondInterviewer, $tenant);
+    recruitingActAs($secondInterviewer, $tenant);
 
     $this->withHeader('X-Tenant-Id', $tenant->id)->postJson("/api/v1/hr/recruiting/applications/{$application->id}/scorecards", [
         'stage' => 'technical_interview',
         'criteria_scores' => [['criterion' => 'PHP', 'score' => 3]],
         'recommendation' => 'hire',
-    ])->assertCreated()->assertJsonPath('data.overall_score', 3.0);
+    ])->assertCreated()->assertJsonPath('data.overall_score', 3);
 
     $this->withHeader('X-Tenant-Id', $tenant->id)->postJson("/api/v1/hr/recruiting/applications/{$application->id}/scorecards", [
         'stage' => 'technical_interview',

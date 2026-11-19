@@ -28,7 +28,7 @@ final class DisputeResource extends JsonResource
             'disputed_amount' => $this->disputed_amount,
             'reason_code' => $this->reason_code,
             'status' => $this->status,
-            'opened_on' => $this->opened_on?->toDateString(),
+            'opened_on' => $this->opened_on->toDateString(),
             'resolved_on' => $this->resolved_on?->toDateString(),
             'credited_amount' => $this->credited_amount,
             'description' => $this->description,

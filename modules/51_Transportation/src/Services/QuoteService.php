@@ -37,7 +37,7 @@ final class QuoteService extends TransportationCrudService
             $originZone = $data['origin_zone'] ?? $order?->origin_zone;
             $destinationZone = $data['destination_zone'] ?? $order?->destination_zone;
             $shipDate = (string) ($data['ship_date'] ?? $order?->pickup_from?->toDateString() ?? now()->toDateString());
-            $currency = Str::upper((string) ($data['currency'] ?? $order?->currency ?? 'EUR'));
+            $currency = Str::upper((string) ($data['currency'] ?? $order->currency ?? 'EUR'));
 
             $offers = $this->rates->compare($tenantId, $weight, $distance !== null ? (string) $distance : null, $originZone, $destinationZone, $shipDate, $currency);
 

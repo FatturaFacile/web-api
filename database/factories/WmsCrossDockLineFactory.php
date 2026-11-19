@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Modules\Wms\Models\WmsCrossDockLine;
+use Modules\Wms\Models\WmsCrossDockOrder;
 
 /**
  * @extends Factory<WmsCrossDockLine>

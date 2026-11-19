@@ -35,7 +35,7 @@ class DecideTenantAccessRequest
     public function approve(string $requestId, User $admin, ?string $role = null): TenantAccessRequest
     {
         return $this->decide($requestId, function (TenantAccessRequest $request) use ($admin, $role): void {
-            $tenant = $request->tenant ?? TaxIdentifier::findTenant($request->requested_tax_id);
+            $tenant = $request->tenant ?? TaxIdentifier::findTenant(TaxIdentifier::normalize($request->requested_tax_id, $request->requested_country) ?? $request->requested_tax_id, $request->requested_country);
             $isNewTenant = $tenant === null;
             $tenant ??= $this->createTenant($request);
 

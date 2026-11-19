@@ -117,7 +117,7 @@ test('a guest naming a tenant gets only the global translations and lookups', fu
 });
 
 test('lookup labels go to the own tenant and only for lookup items the tenant can see', function (): void {
-    $category = LookupCategory::createGlobal(['code' => 'payment_type', 'name' => 'Payment type']);
+    $category = LookupCategory::createGlobal(['code' => 'hardening_probe', 'name' => 'Hardening probe']);
     $foreignItem = LookupItem::create(['category_id' => $category->id, 'tenant_id' => $this->otherTenant->id, 'code' => 'SECRET', 'is_active' => true]);
     $globalItem = LookupItem::createGlobal(['category_id' => $category->id, 'code' => 'CASH', 'is_active' => true]);
 

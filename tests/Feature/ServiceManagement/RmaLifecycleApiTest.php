@@ -24,6 +24,8 @@ beforeEach(function () {
     $this->tenant = Tenant::factory()->create(['country' => 'CH', 'default_currency' => 'CHF']);
     app(TenantContext::class)->setTenant($this->tenant);
     $this->user = User::factory()->create();
+    $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
+    $this->withHeader('X-Tenant-Id', $this->tenant->id);
     Sanctum::actingAs($this->user);
 
     $this->customer = Contact::factory()->create([

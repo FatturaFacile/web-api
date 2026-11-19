@@ -89,7 +89,7 @@ final class ConsignmentService
                     'residual_qty' => round($residual, 4),
                     'unit_cost' => $unitCost,
                     'fiscal_value' => round($residual * $unitCost, 2),
-                    'ddt_references' => $this->ddtReferences($inPeriod->where('inbound', true)->filter(fn (array $e): bool => $e['document_id'] !== null)),
+                    'ddt_references' => $this->ddtReferences($inPeriod->where('inbound', true)->filter(fn (array $e): bool => $e['document_id'] !== null)->all()),
                 ];
             }
 
@@ -387,10 +387,10 @@ final class ConsignmentService
     }
 
     /**
-     * @param  Collection<int, array{document_type: ?string, document_id: ?string}>  $entries
+     * @param  array<int, array{document_type: ?string, document_id: ?string}>  $entries
      * @return list<string>
      */
-    private function ddtReferences(Collection $entries): array
+    private function ddtReferences(array $entries): array
     {
         $numbers = [];
         foreach ($entries as $entry) {

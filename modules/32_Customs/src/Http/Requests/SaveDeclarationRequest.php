@@ -6,7 +6,9 @@ namespace Modules\Customs\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\Customs\Enums\CustomsRegime;
 use Modules\Customs\Enums\DeclarationType;
+use Modules\Customs\Enums\TransitDocumentType;
 
 /**
  * Field types and sizes come from the e-dec schema v4.0.
@@ -51,6 +53,13 @@ final class SaveDeclarationRequest extends FormRequest
             'incoterms' => ['sometimes', 'nullable', 'string', 'size:3'],
             'invoice_currency_type' => ['sometimes', 'nullable', 'integer', 'between:0,99'],
             'declared_on' => ['sometimes', 'nullable', 'date'],
+            'customs_regime' => ['sometimes', Rule::enum(CustomsRegime::class)],
+            'transit_document_type' => ['sometimes', Rule::enum(TransitDocumentType::class)],
+            'transit_guarantee_reference' => ['sometimes', 'nullable', 'string', 'max:35'],
+            'transit_departure_office' => ['sometimes', 'nullable', 'string', 'max:8'],
+            'transit_destination_office' => ['sometimes', 'nullable', 'string', 'max:8'],
+            'transit_deadline_on' => ['sometimes', 'nullable', 'date'],
+            'border_crossing' => ['sometimes', 'nullable', 'string', 'max:60'],
 
             'items' => ['sometimes', 'array', 'max:999'],
             'items.*.product_id' => ['nullable', 'uuid', CustomsRules::exists('products')],

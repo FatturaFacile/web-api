@@ -44,7 +44,7 @@ final class PlanningCapacityConstraint extends BaseEnterpriseModel
 
     protected function recordProtectionViolation(string $operation): ?string
     {
-        $status = $this->scenario_id === null ? null : PlanningScenario::query()->whereKey($this->scenario_id)->value('status');
+        $status = PlanningScenario::query()->whereKey($this->scenario_id)->value('status');
 
         return $status !== null && $status !== PlanningScenario::Draft ? __('planning_errors.scenario.not_draft') : null;
     }

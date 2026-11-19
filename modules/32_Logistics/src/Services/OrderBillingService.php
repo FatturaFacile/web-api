@@ -51,6 +51,8 @@ final class OrderBillingService
             ->whereDate('date', '<=', $upTo->toDateString())
             ->when($contactId !== null, fn ($q) => $q->where('contact_id', $contactId))
             ->orderBy('date')
+            ->orderBy('ddt_number')
+            ->orderBy('id')
             ->get();
 
         $groups = [];
@@ -84,6 +86,8 @@ final class OrderBillingService
             ->billable()
             ->whereNotNull('contact_id')
             ->orderBy('date')
+            ->orderBy('ddt_number')
+            ->orderBy('id')
             ->get()
             ->each(function (SalesDeliveryNote $note) use (&$groups): void {
                 $key = $note->contact_id.'|'.($note->currency ?? 'EUR');

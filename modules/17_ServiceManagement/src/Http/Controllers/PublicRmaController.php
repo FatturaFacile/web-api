@@ -17,6 +17,7 @@ use Modules\ServiceManagement\Models\DepotRepairRmaOrder;
 use Modules\ServiceManagement\Models\RmaLine;
 use Modules\ServiceManagement\Models\RmaStatusHistory;
 use Modules\ServiceManagement\Services\RmaService;
+use OpenApi\Attributes as OA;
 
 /**
  * Customer-facing, token-authenticated RMA endpoints (no Sanctum). The tenant is resolved from the RMA behind
@@ -42,6 +43,16 @@ final class PublicRmaController extends Controller
         private readonly RmaServiceInterface $rmaService,
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/public/rma/estimates/{token}',
+        operationId: 'showPublicRmaEstimate',
+        description: 'Token-authenticated customer view of the repair estimate; internal costs and lab notes are never exposed. Unknown or expired tokens return 404.',
+        summary: 'Show RMA estimate (public)',
+        security: [],
+        tags: ['Public RMA'],
+        parameters: [new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer estimate token', schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'Estimate', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'rma_number', type: 'string'), new OA\Property(property: 'status', type: 'string'), new OA\Property(property: 'serial_number', type: 'string', nullable: true), new OA\Property(property: 'product_name', type: 'string', nullable: true), new OA\Property(property: 'reported_symptom', type: 'string'), new OA\Property(property: 'diagnosis_summary', type: 'string', nullable: true), new OA\Property(property: 'warranty_status', type: 'string'), new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'labour_total', type: 'string'), new OA\Property(property: 'parts_total', type: 'string'), new OA\Property(property: 'total', type: 'string'), new OA\Property(property: 'currency', type: 'string'), new OA\Property(property: 'decision', type: 'string', nullable: true), new OA\Property(property: 'expires_at', type: 'string', format: 'date-time', nullable: true), new OA\Property(property: 'company_name', type: 'string', nullable: true)])])), new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
+    )]
     public function showEstimate(string $token): JsonResponse
     {
         $rma = $this->rmaService->resolveByEstimateToken($token);
@@ -79,6 +90,17 @@ final class PublicRmaController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/public/rma/estimates/{token}/accept',
+        operationId: 'acceptPublicRmaEstimate',
+        description: 'Customer accepts the estimate through the token link.',
+        summary: 'Accept RMA estimate (public)',
+        security: [],
+        tags: ['Public RMA'],
+        parameters: [new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer estimate token', schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['accepted_by_name'], properties: [new OA\Property(property: 'accepted_by_name', type: 'string')])),
+        responses: [new OA\Response(response: 200, description: 'Estimate approved', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'decision', type: 'string'), new OA\Property(property: 'status', type: 'string')])])), new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')), new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse'))]
+    )]
     public function acceptEstimate(PublicEstimateAcceptRequest $request, string $token): JsonResponse
     {
         $rma = $this->rmaService->resolveByEstimateToken($token);
@@ -97,6 +119,17 @@ final class PublicRmaController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/public/rma/estimates/{token}/decline',
+        operationId: 'declinePublicRmaEstimate',
+        description: 'Customer declines the estimate through the token link; the unit is returned unrepaired.',
+        summary: 'Decline RMA estimate (public)',
+        security: [],
+        tags: ['Public RMA'],
+        parameters: [new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer estimate token', schema: new OA\Schema(type: 'string'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object', required: ['declined_by_name'], properties: [new OA\Property(property: 'declined_by_name', type: 'string'), new OA\Property(property: 'reason', type: 'string', nullable: true)])),
+        responses: [new OA\Response(response: 200, description: 'Estimate declined', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'decision', type: 'string'), new OA\Property(property: 'status', type: 'string')])])), new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')), new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse'))]
+    )]
     public function declineEstimate(PublicEstimateDeclineRequest $request, string $token): JsonResponse
     {
         $rma = $this->rmaService->resolveByEstimateToken($token);
@@ -116,6 +149,16 @@ final class PublicRmaController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: '/api/v1/public/rma/tracking',
+        operationId: 'trackPublicRma',
+        description: 'Token-authenticated customer tracking of the RMA workflow steps.',
+        summary: 'Track RMA (public)',
+        security: [],
+        tags: ['Public RMA'],
+        parameters: [new OA\Parameter(name: 'rma_number', in: 'query', required: true, description: 'RMA number', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'token', in: 'query', required: true, description: 'Customer tracking token', schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'Tracking status', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'rma_number', type: 'string'), new OA\Property(property: 'status', type: 'string'), new OA\Property(property: 'status_label', type: 'string'), new OA\Property(property: 'steps', type: 'array', items: new OA\Items(type: 'object')), new OA\Property(property: 'estimate_pending', type: 'boolean'), new OA\Property(property: 'estimate_url', type: 'string', nullable: true), new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true)])])), new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')), new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse'))]
+    )]
     public function tracking(PublicRmaTrackingRequest $request): JsonResponse
     {
         $rma = $this->rmaService->resolveByTrackingToken(

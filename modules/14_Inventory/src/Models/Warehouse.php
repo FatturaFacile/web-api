@@ -10,6 +10,14 @@ use Modules\Logistics\Concerns\HasAuditUsers;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * @property string|null $manager_user_id
+ * @property bool $is_locked
+ * @property string $warehouse_type
+ * @property string|null $legal_owner_type
+ * @property string|null $linked_partner_id
+ * @property string|null $company_entity_id
+ */
 final class Warehouse extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
     use HasAuditUsers;

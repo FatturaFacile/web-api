@@ -22,8 +22,9 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Mockery\MockInterface;
+use Tests\Support\WithoutSeeding;
 
-uses(RefreshDatabase::class);
+uses(WithoutSeeding::class, RefreshDatabase::class);
 
 // These tests exercise the optional bearer-token mode, which is off by default: they turn it on and ask for it.
 beforeEach(fn () => config(['auth.token_mode.enabled' => true]));
@@ -188,7 +189,7 @@ test('registration validates the input', function (array|Closure $overrides, str
     'weak password' => [['password' => 'weak', 'password_confirmation' => 'weak'], 'password'],
     'password mismatch' => [fn (): array => ['password_confirmation' => registrationPassword().'x'], 'password'],
     'company' => [['company_name' => ''], 'company_name'],
-    'country' => [['country' => 'FR'], 'country'],
+    'country' => [['country' => 'BR'], 'country'],
     'italian vat format' => [['tax_id' => '123'], 'tax_id'],
     'swiss uid on italy' => [['tax_id' => 'CHE-123.456.789'], 'tax_id'],
     'terms' => [['terms_accepted' => false], 'terms_accepted'],

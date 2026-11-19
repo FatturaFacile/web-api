@@ -162,7 +162,7 @@ final class CapacityService
                 }
 
                 $constraint = $constraintByPeriod->get($period);
-                $available = (string) ($constraint?->available_capacity ?? $resource->default_capacity);
+                $available = (string) ($constraint->available_capacity ?? $resource->default_capacity);
                 $isOverloaded = bccomp($load, $available, 3) > 0;
                 $utilization = bccomp($available, '0', 3) > 0 ? bcround(bcmul(bcdiv($load, $available, 8), '100', 8), 1) : null;
 

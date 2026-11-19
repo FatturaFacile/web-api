@@ -92,7 +92,7 @@ test('an order needs lines and a customer of the tenant', function (): void {
     orderApi($world)->postJson('/api/v1/invoicing/orders', orderPayload($world, ['items' => [['description' => 'X', 'quantity' => 0, 'tax_rate' => 22]]]))->assertUnprocessable();
     orderApi($world)->postJson('/api/v1/invoicing/orders', orderPayload($world, ['items' => [['product_id' => (string) $other['product']->id, 'description' => 'X', 'quantity' => 1, 'tax_rate' => 22]]]))->assertUnprocessable();
 
-    expect(SalesOrder::withoutGlobalScopes()->count())->toBe(0);
+    expect(SalesOrder::withoutGlobalScopes()->whereIn('tenant_id', [$world['tenant']->id, $other['tenant']->id])->count())->toBe(0);
 });
 
 test('the list is filtered by status and customer and shows the own tenant only', function (): void {

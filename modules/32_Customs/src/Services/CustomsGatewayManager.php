@@ -8,8 +8,10 @@ use App\Models\Tenant;
 use Modules\Customs\Contracts\CustomsGateway;
 use Modules\Customs\Enums\CustomsChannel;
 use Modules\Customs\Exceptions\CustomsGatewayException;
+use Modules\Customs\Gateways\AidaGateway;
 use Modules\Customs\Gateways\EdecGateway;
 use Modules\Customs\Gateways\LocalCustomsGateway;
+use Modules\Customs\Gateways\PassarGateway;
 use Modules\Customs\Models\CustomsSettings;
 
 /**
@@ -34,6 +36,8 @@ final class CustomsGatewayManager
         return app(match ($channel) {
             CustomsChannel::Edec => EdecGateway::class,
             CustomsChannel::Local => LocalCustomsGateway::class,
+            CustomsChannel::Passar => PassarGateway::class,
+            CustomsChannel::Aida => AidaGateway::class,
         });
     }
 }

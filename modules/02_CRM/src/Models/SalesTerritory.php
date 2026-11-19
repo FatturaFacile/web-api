@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A sales territory: accounts matching its criteria (countries, industries, account tiers) belong to it; the lowest priority number wins when several match. criteria is an object with optional countries, industries and tiers lists.
+ *
+ * @property array{countries?: list<string>, industries?: list<string>, tiers?: list<string>}|null $criteria
  */
 final class SalesTerritory extends BaseEnterpriseModel
 {

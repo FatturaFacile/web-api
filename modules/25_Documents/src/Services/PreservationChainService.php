@@ -39,8 +39,8 @@ final readonly class PreservationChainService
             TransactionLock::acquire('dms-preservation-chain:'.$tenantId);
 
             $last = DmsPreservationChainLink::query()->orderByDesc('sequence')->first();
-            $sequence = $last?->sequence ?? 0;
-            $previousHash = $last?->link_hash ?? self::GenesisHash;
+            $sequence = $last->sequence ?? 0;
+            $previousHash = $last->link_hash ?? self::GenesisHash;
             $chained = DmsPreservationChainLink::query()->pluck('package_id')->map(static fn (mixed $id): string => (string) $id)->all();
             $appended = [];
 

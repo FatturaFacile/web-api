@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Services;
 
-use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Inventory\Exceptions\StockRuleViolation;
 use Modules\Inventory\Models\ProductChargeAssignment;
 use Modules\Inventory\Models\ProductChargeRate;
+use Modules\Inventory\Support\Decimal;
 
 /**
  * Adds the supplementary charges of the products on a document, one separate line per charge and VAT rate. Each line
@@ -58,7 +58,7 @@ final class ProductChargeCalculator
             'product_charge_type_id' => (string) $total['type']->id,
             'description' => (string) $total['type']->name,
             'quantity' => 1.0,
-            'unit_price' => (float) Decimal::round2($total['amount']),
+            'unit_price' => (float) Decimal::round($total['amount'], 2),
             'tax_rate' => $total['tax_rate'],
             'discount_percentage' => 0.0,
             'revenue_account_id' => $total['type']->revenue_account_id,

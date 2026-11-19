@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Enterprise\MultiTenant\Scopes\TenantScope;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\ServiceManagement\Contracts\EquipmentPassportServiceInterface;
 use Modules\ServiceManagement\Contracts\RmaServiceInterface;
@@ -85,7 +86,7 @@ final readonly class RmaService implements RmaServiceInterface
                 'warranty_evaluated_at' => $evaluatedAt,
                 'warranty_basis' => $evaluation->evaluationAt($evaluatedAt),
                 'reported_symptom' => $dto->reportedSymptom,
-                'currency' => (string) ($tenant?->default_currency ?? 'EUR'),
+                'currency' => (string) ($tenant->default_currency ?? 'EUR'),
                 'preauthorized_threshold' => $dto->preauthorizedThreshold ?? (string) config('service-management.rma.default_threshold', '0.00'),
                 'estimate_approval_status' => EstimateApprovalStatus::NotRequired->value,
                 'tracking_token_hash' => $this->hashToken($rawTrackingToken),
@@ -140,7 +141,7 @@ final readonly class RmaService implements RmaServiceInterface
                 'company_id' => $rma->company_id,
                 'rma_order_id' => $rma->id,
                 'loaner_stock_serial_number_id' => $passport?->stock_serial_number_id,
-                'loaner_serial_number' => (string) ($passport?->serial_number ?? $rma->rma_number),
+                'loaner_serial_number' => (string) ($passport->serial_number ?? $rma->rma_number),
                 'loaner_product_id' => $passport?->product_id,
                 'customer_id' => $rma->customer_id,
                 'register_type' => LoanerRegisterType::ContoRiparazione->value,
@@ -444,7 +445,7 @@ final readonly class RmaService implements RmaServiceInterface
             $rma = $this->lockFresh($rma);
             $returnedAt = $dto->returnedAt !== null ? CarbonImmutable::parse($dto->returnedAt) : CarbonImmutable::now();
 
-            $rma->returned_at = $returnedAt;
+            $rma->returned_at = Carbon::instance($returnedAt);
             $rma->ddt_causale_return = $dto->ddtCausaleReturn ?? $this->defaultReturnCausale($rma);
             if ($dto->vatExemptArt15Dpr633 !== null) {
                 $rma->vat_exempt_art15_dpr633 = $dto->vatExemptArt15Dpr633;
@@ -547,7 +548,7 @@ final readonly class RmaService implements RmaServiceInterface
 
         $label = [
             'rma_number' => $rma->rma_number,
-            'serial_number' => (string) ($rma->passport?->serial_number ?? ''),
+            'serial_number' => (string) ($rma->passport->serial_number ?? ''),
             'product_name' => $rma->passport?->product?->name,
             'customer_name' => ContactNameResolver::nameOf($rma->customer),
             'return_address' => $settings['rma']['return_address']
@@ -796,7 +797,7 @@ final readonly class RmaService implements RmaServiceInterface
             ->get()
             ->each(static function (Loaner $entry) use ($at): void {
                 $entry->status = LoanerStatus::Returned->value;
-                $entry->returned_at = $at;
+                $entry->returned_at = Carbon::instance($at);
                 $entry->save();
             });
     }

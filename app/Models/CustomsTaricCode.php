@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Global (non tenant-scoped) catalog of HS / CN / TARIC customs codes.
+ *
+ * @property TaricCodeLevel $level
  */
 class CustomsTaricCode extends Model
 {

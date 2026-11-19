@@ -122,7 +122,7 @@ final readonly class AccountantArchiveBuilder
                 $file = $sdi !== null ? 'issued/'.$this->fileName((string) ($sdi->file_name ?: $invoice->invoice_number)) : null;
 
                 $page[] = [[
-                    'issued', $invoice->invoice_number, $invoice->date?->toDateString(), $this->counterparty($invoice->contact), $invoice->contact?->vat_number,
+                    'issued', $invoice->invoice_number, $invoice->date->toDateString(), $this->counterparty($invoice->contact), $invoice->contact?->vat_number,
                     $invoice->invoice_type, (string) $invoice->total_gross, $invoice->currency, $file, $file !== null ? 'included' : 'xml_missing',
                 ], $file, (string) $sdi?->xml_content];
             }
@@ -147,7 +147,7 @@ final readonly class AccountantArchiveBuilder
                 $file = $invoice->xml_payload !== null ? 'received/'.$this->fileName((string) ($invoice->sdi_file_name ?: $invoice->id)) : null;
 
                 $page[] = [[
-                    'received', $invoice->invoice_number, $invoice->date?->toDateString(), $this->counterparty($invoice->supplier), $invoice->supplier?->vat_number,
+                    'received', $invoice->invoice_number, $invoice->date->toDateString(), $this->counterparty($invoice->supplier), $invoice->supplier?->vat_number,
                     $invoice->document_type, (string) $invoice->total_amount, $invoice->currency, $file, $file !== null ? 'included' : 'xml_missing',
                 ], $file, (string) $invoice->xml_payload];
             }

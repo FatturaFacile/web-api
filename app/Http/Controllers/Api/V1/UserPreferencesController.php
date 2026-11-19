@@ -19,7 +19,7 @@ class UserPreferencesController extends Controller
 {
     use ApiResponse;
 
-    public const array Defaults = ['theme_preference' => 'system', 'ui_density' => 'comfortable', 'reduced_motion' => null];
+    public const array Defaults = User::UiPreferenceDefaults;
 
     #[OA\Get(path: '/api/v1/user/preferences', operationId: 'getUserPreferences', description: 'Theme, density and reduced motion of the signed-in user; the defaults when nothing was saved. A null reduced_motion follows the operating system.', summary: 'Get my interface preferences', security: [['bearerAuth' => []]], tags: ['User'], responses: [
         new OA\Response(response: 200, description: 'Preferences retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),

@@ -6,6 +6,7 @@ namespace Modules\GeneralLedger\Models;
 
 use App\Models\Concerns\ProtectsPostedJournalEntry;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Enterprise\MultiTenant\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\GeneralLedger\Services\JournalNumberSequence;
@@ -13,6 +14,7 @@ use Modules\GeneralLedger\Services\Tax\Decimal;
 
 final class JournalEntry extends BaseEnterpriseModel
 {
+    use BelongsToCompany;
     use ProtectsPostedJournalEntry;
 
     protected $table = 'journal_entries';

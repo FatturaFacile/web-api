@@ -33,7 +33,7 @@ final class SubscriptionResource extends JsonResource
             'plan' => new PlanResource($this->whenLoaded('plan')),
             'plan_name' => $this->whenLoaded('plan', fn (): ?string => $this->plan?->name),
             'customer_name' => $this->whenLoaded('customer', fn (): ?string => $this->customer?->company_name
-                ?: (trim(($this->customer?->first_name ?? '').' '.($this->customer?->last_name ?? '')) ?: null)),
+                ?: (trim(($this->customer->first_name ?? '').' '.($this->customer->last_name ?? '')) ?: null)),
             'status' => $this->status,
             'start_date' => $this->start_date?->toDateString(),
             'trial_end_date' => $this->trial_end_date?->toDateString(),

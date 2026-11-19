@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Pricing\Http\Requests;
+
+use App\Services\Tenancy\TenantContext;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
+
+/**
+ * Shared behaviour of the pricing payloads: access is decided by module.access and the policy, a PUT validates only the
+ * fields it sends and ids must belong to the active company.
+ */
+abstract class PricingFormRequest extends FormRequest
+{
+    protected const string CascadePattern = '/^\s*\d+([.,]\d+)?(\s*\+\s*\d+([.,]\d+)?)*\s*$/';
+
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @param  array<string, array<int, mixed>>  $rules
+     * @return array<string, array<int, mixed>>
+     */
+    protected function forMethod(array $rules): array
+    {
+        return $this->isMethod('PUT') ? array_map(static fn (array $rule): array => ['sometimes', ...$rule], $rules) : $rules;
+    }
+
+    protected function ownRow(string $table): Exists
+    {
+        return Rule::exists($table, 'id')->where('tenant_id', (string) app(TenantContext::class)->getTenantId())->whereNull('deleted_at');
+    }
+
+    protected function ownChild(string $table): Exists
+    {
+        return Rule::exists($table, 'id')->where('tenant_id', (string) app(TenantContext::class)->getTenantId());
+    }
+}

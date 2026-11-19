@@ -29,7 +29,7 @@ final class InspectionTemplateResource extends JsonResource
             'interval_count' => $this->interval_count,
             'checklist' => $this->checklist,
             'assignee_id' => $this->assignee_id,
-            'next_due_date' => $this->next_due_date?->toDateString(),
+            'next_due_date' => $this->next_due_date->toDateString(),
             'lead_days' => $this->lead_days,
             'last_generated_on' => $this->last_generated_on?->toDateString(),
             'is_active' => $this->is_active,

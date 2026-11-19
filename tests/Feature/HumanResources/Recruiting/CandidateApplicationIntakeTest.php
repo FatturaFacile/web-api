@@ -71,7 +71,7 @@ test('public application stores the CV privately, parses it, records consent and
         ->and($application->source)->toBe('careers_page')
         ->and($application->cv_parse_status->value)->toBe('parsed')
         ->and($application->skills)->toContain('PHP', 'Laravel', 'PostgreSQL', 'Docker')
-        ->and($application->extracted_profile['languages'])->toContain(['language' => 'English', 'level' => 'C1'])
+        ->and(collect($application->extracted_profile['languages'])->firstWhere('language', 'English'))->toEqual(['language' => 'English', 'level' => 'C1'])
         ->and($application->cv_storage_key)->toStartWith("tenants/{$tenant->id}/recruiting/cvs/")
         ->and($application->consent_text_version)->toBe('v1')
         ->and($application->privacy_consent_expires_at->toDateString())->toBe($application->consent_given_at->copy()->addMonthsNoOverflow(6)->toDateString())

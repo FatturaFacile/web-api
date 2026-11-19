@@ -28,8 +28,8 @@ final class ActivityResource extends JsonResource
             'action' => $this->action,
             'module_code' => $this->module_code,
             'actor' => $this->actor_user_id === null ? null : ['id' => $this->actor_user_id, 'name' => $this->user?->name],
-            'changed_fields' => array_values(array_map('strval', $changed)),
-            'occurred_at' => $this->event_timestamp?->toIso8601String(),
+            'changed_fields' => array_map('strval', $changed),
+            'occurred_at' => $this->event_timestamp->toIso8601String(),
         ];
     }
 }

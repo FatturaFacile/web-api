@@ -9,6 +9,7 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\Inventory\Models\StockSerialNumber;
@@ -88,6 +89,9 @@ final readonly class EquipmentPassportService implements EquipmentPassportServic
                 'contract_clause_reference' => $dto->contractClauseReference,
                 'installed_firmware_version' => $dto->installedFirmwareVersion,
                 'notes' => $dto->notes,
+                'asset_status' => $dto->assetStatus,
+                'commissioning_date' => $dto->commissioningDate,
+                'installation_site' => $dto->installationSite,
             ]);
 
             foreach ($dto->components as $component) {
@@ -292,7 +296,7 @@ final readonly class EquipmentPassportService implements EquipmentPassportServic
                 $replacement = $removed->replaced_by_component_id !== null ? $byId->get($removed->replaced_by_component_id) : null;
 
                 return [
-                    'rma_order_id' => $replacement?->rma_order_id ?? $removed->rma_order_id,
+                    'rma_order_id' => $replacement !== null ? ($replacement->rma_order_id ?? $removed->rma_order_id) : $removed->rma_order_id,
                     'replaced_component_id' => $removed->id,
                     'new_component_id' => $removed->replaced_by_component_id,
                     'at' => $removed->removed_at?->toIso8601String(),
@@ -317,8 +321,8 @@ final readonly class EquipmentPassportService implements EquipmentPassportServic
         $result = $this->evaluateWarranty($passport);
 
         $passport->warranty_policy_type = $result->policyType->value;
-        $passport->warranty_start_date = $result->startDate;
-        $passport->warranty_expiry_date = $result->expiryDate;
+        $passport->warranty_start_date = Carbon::instance($result->startDate);
+        $passport->warranty_expiry_date = Carbon::instance($result->expiryDate);
         $passport->warranty_source = $result->source;
     }
 

@@ -22,6 +22,7 @@ use Modules\Communication\Providers\CommunicationServiceProvider;
 use Modules\Configurator\Providers\ConfiguratorServiceProvider;
 use Modules\ConstructionTrades\Providers\ConstructionTradesServiceProvider;
 use Modules\Contracts\Providers\ContractsServiceProvider;
+use Modules\CorporateGroup\Providers\CorporateGroupServiceProvider;
 use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
@@ -51,6 +52,7 @@ use Modules\Planning\Providers\PlanningServiceProvider;
 use Modules\Platform\Providers\PlatformServiceProvider;
 use Modules\Plm\Providers\PlmServiceProvider;
 use Modules\PracticeManagement\Providers\PracticeManagementServiceProvider;
+use Modules\Pricing\Providers\PricingServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
 use Modules\Quality\Providers\QualityServiceProvider;
@@ -134,6 +136,7 @@ return [
     BusinessIntelligenceServiceProvider::class,
     MarketplaceServiceProvider::class,
     RebatesServiceProvider::class,
+    PricingServiceProvider::class,
     EventsServiceProvider::class,
     PlmServiceProvider::class,
     PlatformServiceProvider::class,
@@ -142,4 +145,5 @@ return [
     WmsServiceProvider::class,
     TransportationServiceProvider::class,
     LogisticsServiceProvider::class,
+    CorporateGroupServiceProvider::class,
 ];

@@ -14,5 +14,6 @@ build in `~/fatturafacile-dev/inglorious`) with the same-origin dev API.
   app settings in `~/fatturafacile-dev/.env` on the server (template: `env.example`).
 - TLS: certificates `dev.fatturafacile.eu` (dev + dev-api) and `inglorious.fatturafacile.eu` from the production certbot; `edge-dev.conf` is the vhost
   installed in the production nginx `conf.d` as `dev.conf`.
+- Monitoring: Uptime Kuma (`deploy/monitoring/docker-compose.monitoring.yml`, specification in `deploy/monitoring/uptime-monitors.json`) and remote UptimeRobot probes monitor `https://dev.fatturafacile.eu`, `https://dev-api.fatturafacile.eu/up`, `https://dev-api.fatturafacile.eu/api/documentation`, and TLS certificate expiry (21/14/7 days) with Telegram and email notifications.
 
 Manual redeploy on the server: `cd ~/fatturafacile-dev && ./deploy.sh` (optionally `API_TAG=sha-xxxxxxx`).

@@ -85,10 +85,15 @@ enum RmaStatus: string
      */
     public static function boardColumns(): array
     {
-        return array_values(array_filter(
-            self::cases(),
-            static fn (self $status): bool => $status !== self::Cancelled,
-        ));
+        $columns = [];
+
+        foreach (self::cases() as $status) {
+            if ($status !== self::Cancelled) {
+                $columns[] = $status;
+            }
+        }
+
+        return $columns;
     }
 
     /**

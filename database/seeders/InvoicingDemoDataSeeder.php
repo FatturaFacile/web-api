@@ -72,6 +72,21 @@ final class InvoicingDemoDataSeeder extends Seeder
             ]);
         }
 
+        // The order reserves stock in the primary warehouse of the company: the demo company needs one.
+        if (! DB::table('warehouses')->where('tenant_id', $tenantId)->where('is_active', true)->exists()) {
+            DB::table('warehouses')->insert([
+                'id' => (string) Str::uuid7(),
+                'tenant_id' => $tenantId,
+                'code' => 'WH-DEMO',
+                'name' => 'Demo Warehouse',
+                'warehouse_type' => 'standard',
+                'is_primary' => true,
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
         $quoteService = app(SalesQuoteServiceInterface::class);
         $orderService = app(SalesOrderServiceInterface::class);
         $fulfillmentService = app(DeliveryFulfillmentServiceInterface::class);

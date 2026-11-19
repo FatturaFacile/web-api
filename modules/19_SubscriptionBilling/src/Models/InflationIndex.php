@@ -7,9 +7,12 @@ namespace Modules\SubscriptionBilling\Models;
 use Enterprise\Foundation\Concerns\HasUuidV7;
 use Enterprise\MultiTenant\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * Monthly value of an inflation series (ISTAT FOI for Italy, BFS LIK for Switzerland) of a company.
+ *
+ * @property Carbon $reference_month
  */
 final class InflationIndex extends Model
 {

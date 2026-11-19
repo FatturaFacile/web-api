@@ -4,19 +4,25 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Services\Invoicing\Tax\FiscalInput;
+use App\Services\Invoicing\Tax\FiscalLine;
+use App\Services\Invoicing\Tax\ItalianFiscalCalculator;
+use App\Services\SwissQrBill\QrBillGeneratorService;
+
 describe('Fiscal VAT/MWST Calculations & Rounding Rules', function () {
-    it('calculates Italian standard IVA at 22% and applies commercial half-up rounding', function () {
-        $netAmount = 125.45;
-        $vatRate = 22.0;
+    it('calculates Italian standard IVA at 22% and applies commercial half-up rounding via ItalianFiscalCalculator', function () {
+        $calculator = new ItalianFiscalCalculator;
+        $totals = $calculator->calculate(new FiscalInput(
+            lines: [new FiscalLine(quantity: 1, unitPrice: 125.45, taxRate: 22.0)],
+        ))->toArray()['totals'];
 
-        $calculatedVat = round($netAmount * ($vatRate / 100), 2);
-        $totalGross = round($netAmount + $calculatedVat, 2);
-
-        expect($calculatedVat)->toBe(27.60);
-        expect($totalGross)->toBe(153.05);
+        expect((float) $totals['net'])->toBe(125.45)
+            ->and((float) $totals['vat'])->toBe(27.60)
+            ->and((float) $totals['gross'])->toBe(153.05);
     });
 
-    it('calculates Italian reduced rates (10%, 5%, 4%) accurately without drift', function () {
+    it('calculates Italian reduced rates (10%, 5%, 4%) accurately without drift via ItalianFiscalCalculator', function () {
+        $calculator = new ItalianFiscalCalculator;
         $items = [
             ['net' => 45.10, 'rate' => 10.0, 'expected_vat' => 4.51],
             ['net' => 99.99, 'rate' => 5.0,  'expected_vat' => 5.00],
@@ -24,54 +30,35 @@ describe('Fiscal VAT/MWST Calculations & Rounding Rules', function () {
         ];
 
         foreach ($items as $item) {
-            $vat = round($item['net'] * ($item['rate'] / 100), 2);
-            expect($vat)->toBe($item['expected_vat']);
+            $totals = $calculator->calculate(new FiscalInput(
+                lines: [new FiscalLine(quantity: 1, unitPrice: $item['net'], taxRate: $item['rate'])],
+            ))->toArray()['totals'];
+            expect((float) $totals['vat'])->toBe($item['expected_vat']);
         }
     });
 
-    it('calculates Swiss MWST rates (8.1% standard, 2.6% reduced, 3.8% accommodation) according to FTA rules', function () {
-        $netStandard = 1000.00;
-        $standardRate = 8.1;
-        $standardVat = round($netStandard * ($standardRate / 100), 2);
-        expect($standardVat)->toBe(81.00);
+    it('calculates Swiss MWST rates (8.1% standard, 2.6% reduced, 3.8% accommodation) and 0.05 CHF rounding via domain services', function () {
+        $calculator = new ItalianFiscalCalculator;
+        $qrService = new QrBillGeneratorService;
 
-        $netReduced = 250.75;
-        $reducedRate = 2.6;
-        $reducedVat = round($netReduced * ($reducedRate / 100), 2);
-        expect($reducedVat)->toBe(6.52);
+        $standard = $calculator->calculate(new FiscalInput(
+            lines: [new FiscalLine(quantity: 1, unitPrice: 1000.00, taxRate: 8.1)],
+        ))->toArray()['totals'];
+        expect((float) $standard['vat'])->toBe(81.00);
 
-        $netAccom = 420.00;
-        $accomRate = 3.8;
-        $accomVat = round($netAccom * ($accomRate / 100), 2);
-        expect($accomVat)->toBe(15.96);
-    });
+        $reduced = $calculator->calculate(new FiscalInput(
+            lines: [new FiscalLine(quantity: 1, unitPrice: 250.75, taxRate: 2.6)],
+        ))->toArray()['totals'];
+        expect((float) $reduced['vat'])->toBe(6.52);
 
-    it('handles line-level vs document-level aggregation rounding differences correctly', function () {
-        $line1Net = 10.555;
-        $line2Net = 20.444;
-        $rate = 22.0;
+        $accom = $calculator->calculate(new FiscalInput(
+            lines: [new FiscalLine(quantity: 1, unitPrice: 420.00, taxRate: 3.8)],
+        ))->toArray()['totals'];
+        expect((float) $accom['vat'])->toBe(15.96);
 
-        $line1RoundedNet = round($line1Net, 2); // 10.56
-        $line2RoundedNet = round($line2Net, 2); // 20.44
-
-        $line1Vat = round($line1RoundedNet * ($rate / 100), 2); // 2.32
-        $line2Vat = round($line2RoundedNet * ($rate / 100), 2); // 4.50
-        $sumVat = round($line1Vat + $line2Vat, 2); // 6.82
-
-        $totalNet = round($line1RoundedNet + $line2RoundedNet, 2); // 31.00
-        $docVat = round($totalNet * ($rate / 100), 2); // 6.82
-
-        expect($sumVat)->toBe($docVat);
-    });
-
-    it('correctly rounds Swiss Francs cash transactions to the nearest 0.05 CHF (5 Rappen)', function () {
-        $roundToFiveRappen = function (float $amount): float {
-            return round($amount * 20.0) / 20.0;
-        };
-
-        expect($roundToFiveRappen(100.02))->toBe(100.00);
-        expect($roundToFiveRappen(100.03))->toBe(100.05);
-        expect($roundToFiveRappen(100.07))->toBe(100.05);
-        expect($roundToFiveRappen(100.08))->toBe(100.10);
+        expect($qrService->roundChfAmount(100.02))->toBe(100.00)
+            ->and($qrService->roundChfAmount(100.03))->toBe(100.05)
+            ->and($qrService->roundChfAmount(100.07))->toBe(100.05)
+            ->and($qrService->roundChfAmount(100.08))->toBe(100.10);
     });
 });

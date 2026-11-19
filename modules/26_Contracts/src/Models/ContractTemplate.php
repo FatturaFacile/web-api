@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A contract template: ordered clauses of the library plus the declared variables ({key, label, required, default}).
+ *
+ * @property string $name
+ * @property string|null $contract_kind
+ * @property string $status
+ * @property list<array<string, mixed>>|null $variables
  */
 final class ContractTemplate extends BaseEnterpriseModel
 {

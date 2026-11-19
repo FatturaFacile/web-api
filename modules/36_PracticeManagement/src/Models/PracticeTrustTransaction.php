@@ -7,6 +7,7 @@ namespace Modules\PracticeManagement\Models;
 use App\Models\Contact;
 use App\Models\LegalCase;
 use App\Support\Database\Concerns\ProtectsRecords;
+use Carbon\CarbonImmutable;
 use Enterprise\Foundation\Concerns\HasUuidV7;
 use Enterprise\MultiTenant\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $signed_amount
  * @property string $balance_after
  * @property ?string $reverses_id
+ * @property CarbonImmutable $occurred_on
  */
 final class PracticeTrustTransaction extends Model
 {

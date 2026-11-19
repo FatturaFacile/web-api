@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Modules\Procurement\Models\PurchaseOrderLine;
@@ -23,7 +24,7 @@ class PurchaseReturnLineFactory extends Factory
      */
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? Tenant::create([
+        $tenantId = (app(TenantContext::class)->getTenantId() ?? Tenant::first()?->id) ?? Tenant::create([
             'id' => (string) Str::uuid(),
             'name' => fake()->company(),
             'legal_name' => fake()->company(),

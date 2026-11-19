@@ -121,6 +121,26 @@ return [
         'license_plate' => "Plaque d'immatriculation",
         'departure' => 'Départ',
         'receipt' => 'Marchandise reçue en bon état',
+        'carriage_terms' => 'Conditions de transport',
+        'transport_by' => 'Transport organisé par',
+        'carrier_vat' => 'N° de TVA du transporteur',
+        'carrier_uid' => 'UID du transporteur',
+        'incoterms' => 'Incoterms',
+        'net_weight' => 'Poids net (kg)',
+        'volume' => 'Volume (m3)',
+        'sign_sender' => 'Signature de l\'expéditeur',
+        'sign_driver' => 'Signature du conducteur',
+        'sign_carrier' => 'Signature du transporteur',
+        'carriage' => [
+            'free' => 'Franco de port',
+            'collect' => 'Port dû',
+            'free_with_charge' => 'Franco de port avec refacturation',
+        ],
+        'by' => [
+            'sender' => 'Expéditeur',
+            'recipient' => 'Destinataire',
+            'carrier' => 'Transporteur',
+        ],
     ],
 
     'work_order' => [

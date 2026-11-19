@@ -29,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $deferred_revenue_account_id
  * @property bool $is_active
  * @property Carbon|null $created_at
+ * @property string $renewal_price_increase_percent
  */
 final class SubscriptionPlan extends BaseEnterpriseModel
 {

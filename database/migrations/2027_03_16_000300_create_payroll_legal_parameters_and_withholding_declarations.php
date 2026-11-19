@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use Database\Seeders\PayrollReferenceSeeder;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -93,84 +93,8 @@ return new class extends Migration
         Schema::dropIfExists('payroll_legal_parameters');
     }
 
-    /**
-     * Each row states the document it was read from. Dates and figures are copied from those documents.
-     */
     private function insertGenericRows(): void
     {
-        $rows = [
-            [
-                'topic' => 'frontier_italy',
-                'year' => 2024,
-                'source' => 'Foglio informativo e FAQ AFC/GR/TI/VS, Nuovo accordo tra la Svizzera e l\'Italia sull\'imposizione dei lavoratori frontalieri, v. 31.10.2023 (accordo del 23.12.2020, in vigore dal 17.7.2023, applicato dal 1.1.2024): definizione art. 2 lett. b, FAQ 2.4, 2.6, 2.7, 3.1, 3.4, 5.1, 5.2.',
-                'parameters' => [
-                    'first_application' => '2024-01-01',
-                    'transitional_from' => '2018-12-31',
-                    'transitional_to' => '2023-07-17',
-                    'border_cantons' => ['GR', 'TI', 'VS'],
-                    'old_regime_tariffs' => ['A', 'B', 'C', 'H'],
-                    'new_regime_tariffs' => ['R', 'S', 'T', 'U'],
-                    'swiss_share_percent' => '80',
-                    'maximum_nights_away_per_year' => 45,
-                ],
-            ],
-            [
-                'topic' => 'short_time_work',
-                'year' => 2025,
-                'source' => 'SECO, Kurzarbeitsentschädigung, Information für Arbeitgeber, Ausgabe 2025 (716.400), domande 8, 10, 13, 16, 17, 21; AVIG SR 837.0. Salario massimo assicurato: Cantone di Lucerna (WAS), pagina Schlechtwetterentschädigung. Il Consiglio federale può estendere temporaneamente la durata massima: verificare su arbeit.swiss.',
-                'parameters' => [
-                    'compensation_percent' => '80',
-                    'minimum_loss_percent' => '10',
-                    'waiting_days_per_period' => '1',
-                    'maximum_periods' => 12,
-                    'framework_months' => 24,
-                    'high_loss_percent' => '85',
-                    'high_loss_maximum_periods' => 4,
-                    'claim_deadline_months' => 3,
-                    'notice_days' => 10,
-                    'urgent_notice_days' => 3,
-                    'maximum_insured_monthly_salary' => '12350',
-                ],
-            ],
-            [
-                'topic' => 'bad_weather',
-                'year' => 2025,
-                'source' => 'Cantone di Lucerna (WAS), pagina Schlechtwetterentschädigung; AVIG art. 42 ss. Giorni di attesa non impostati: la fonte li indica in 2-3 giorni per periodo senza la regola per scegliere, va letto il testo vigente dell\'OADI.',
-                'parameters' => [
-                    'compensation_percent' => '80',
-                    'waiting_days_per_period' => null,
-                    'maximum_periods' => 6,
-                    'framework_months' => 24,
-                    'claim_deadline_months' => 3,
-                    'report_by_day_of_next_month' => 5,
-                    'maximum_insured_monthly_salary' => '12350',
-                ],
-            ],
-            [
-                'topic' => 'withholding_tax_statement',
-                'year' => 2021,
-                'source' => 'Cantone Ticino, Direttiva cantonale in ambito imposte alla fonte 2021 v. 1.1 (provvigione di riscossione, trasmissione entro il 31 gennaio); Conferenza svizzera delle imposte, Nota ELM-QST v. 5.0 del 4.12.2020, cap. 2.3 e 10 (conteggio mensile, chiusura trimestrale in IFonte).',
-                'parameters' => [
-                    'collection_commission_percent' => ['paper' => '1', 'electronic' => '2'],
-                    'annual_statement_due' => '01-31',
-                    'closing_period_by_canton' => ['TI' => 'quarterly'],
-                ],
-            ],
-        ];
-
-        $now = now();
-
-        foreach ($rows as $row) {
-            DB::table('payroll_legal_parameters')->insert([
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => null,
-                'topic' => $row['topic'],
-                'year' => $row['year'],
-                'parameters' => json_encode($row['parameters'], JSON_THROW_ON_ERROR),
-                'source' => $row['source'],
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
+        (new PayrollReferenceSeeder)->legalParameters();
     }
 };

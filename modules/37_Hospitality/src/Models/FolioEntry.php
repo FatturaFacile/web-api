@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Hospitality\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * A line of the guest folio: a charge (room, city tax, extras, restaurant) or a payment. Voided lines stay for the audit trail.
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $unit_amount
  * @property string $amount
  * @property string|null $payment_method
+ * @property Carbon $posted_on
  */
 final class FolioEntry extends HospitalityRecord
 {

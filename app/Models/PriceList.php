@@ -26,6 +26,10 @@ class PriceList extends Model
         'valid_to',
         'parent_price_list_id',
         'price_adjustment_percent',
+        'code',
+        'channel',
+        'rounding_mode',
+        'priority',
     ];
 
     protected function casts(): array

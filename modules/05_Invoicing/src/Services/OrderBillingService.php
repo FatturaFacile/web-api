@@ -216,6 +216,8 @@ final class OrderBillingService
             ->whereDate('date', '<=', $upToDate)
             ->when($contactId !== null, static fn ($query) => $query->where('contact_id', $contactId))
             ->orderBy('date')
+            ->orderBy('ddt_number')
+            ->orderBy('id')
             ->get()
             ->reject(fn (SalesDeliveryNote $note): bool => $this->lines->deliveryNoteBilled($note));
 

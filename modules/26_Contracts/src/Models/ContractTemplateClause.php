@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * A clause placed in a template at a position, optionally left out when assembling.
+ *
+ * @property string $template_id
+ * @property string $clause_id
+ * @property int $position
+ * @property bool $is_optional
  */
 final class ContractTemplateClause extends BaseEnterpriseModel
 {

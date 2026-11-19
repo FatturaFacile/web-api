@@ -14,8 +14,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Modules\Invoicing\Models\DeclarationOfIntent;
 
+/**
+ * @property Carbon $date
+ * @property Carbon|null $due_date
+ */
 class Invoice extends Model
 {
     use BelongsToTenant, HasFactory, HasFiscalAmounts, HasUuids, ProtectsIssuedInvoice, SoftDeletes;
@@ -23,6 +28,7 @@ class Invoice extends Model
     protected $fillable = [
         'contact_id',
         'invoice_type',
+        'qr_reference',
         'sdi_excluded',
         'invoice_number',
         'date',
@@ -81,6 +87,17 @@ class Invoice extends Model
         'enasarco_base',
         'enasarco_percent',
         'enasarco_amount',
+        'enasarco_commissions',
+        'enasarco_taxable',
+        'total_due',
+        'withholding_tax_taxable_percent',
+        'withholding_tax_base',
+        'withholding_tax_includes_fund',
+        'fund_natura',
+        'fund_withholding_applies',
+        'stamp_duty_charged_to_customer',
+        'legal_notices',
+        'vat_summary',
         'free_trade_agreement_id',
         'origin_declaration_text',
         'duty_exemption_eligible',
@@ -136,6 +153,16 @@ class Invoice extends Model
             'enasarco_base' => 'decimal:2',
             'enasarco_percent' => 'decimal:2',
             'enasarco_amount' => 'decimal:2',
+            'enasarco_commissions' => 'decimal:2',
+            'enasarco_taxable' => 'decimal:2',
+            'total_due' => 'decimal:2',
+            'withholding_tax_taxable_percent' => 'decimal:2',
+            'withholding_tax_base' => 'decimal:2',
+            'withholding_tax_includes_fund' => 'boolean',
+            'fund_withholding_applies' => 'boolean',
+            'stamp_duty_charged_to_customer' => 'boolean',
+            'legal_notices' => 'array',
+            'vat_summary' => 'array',
         ];
     }
 

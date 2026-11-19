@@ -231,7 +231,7 @@ final readonly class DocumentApprovalService
      */
     private function writeSteps(DmsApprovalTemplate $template, array $steps): void
     {
-        foreach (array_values($steps) as $index => $step) {
+        foreach ($steps as $index => $step) {
             DmsApprovalTemplateStep::create([
                 'tenant_id' => $template->tenant_id,
                 'template_id' => $template->id,

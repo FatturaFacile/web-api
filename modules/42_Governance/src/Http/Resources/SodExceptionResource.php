@@ -30,7 +30,7 @@ final class SodExceptionResource extends JsonResource
             'justification' => $this->justification,
             'approved_by' => $this->approved_by,
             'approver' => app(GovernanceMembers::class)->reference($this->approved_by),
-            'expires_at' => $this->expires_at?->toDateString(),
+            'expires_at' => $this->expires_at->toDateString(),
             'status' => $this->isActive() ? 'active' : ($this->status === 'revoked' ? 'revoked' : 'expired'),
             'revoked_at' => $this->revoked_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),

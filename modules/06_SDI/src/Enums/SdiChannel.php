@@ -13,6 +13,7 @@ enum SdiChannel: string
     case Openapi = 'openapi';
     case Acube = 'acube';
     case Invoicetronic = 'invoicetronic';
+    case Manual = 'manual';
     case Local = 'local';
 
     /**

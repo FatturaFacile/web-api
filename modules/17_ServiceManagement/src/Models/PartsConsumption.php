@@ -8,6 +8,10 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $unit_price
+ * @property array<string, mixed>|null $metadata
+ */
 final class PartsConsumption extends BaseEnterpriseModel
 {
     protected $table = 'esm_parts_consumptions';
@@ -18,6 +22,8 @@ final class PartsConsumption extends BaseEnterpriseModel
             'quantity' => 'decimal:4',
             'unit_cost' => 'decimal:2',
             'total_cost' => 'decimal:2',
+            'unit_price' => 'decimal:2',
+            'is_covered_by_warranty_or_contract' => 'boolean',
             'serial_numbers' => 'array',
             'metadata' => 'array',
         ];
@@ -68,17 +74,18 @@ final class PartsConsumption extends BaseEnterpriseModel
     protected function unitPrice(): Attribute
     {
         return Attribute::make(
+            // The price lives in the real `unit_price` column; rows written before it existed keep it in the metadata.
             get: function ($value, $attributes) {
-                $meta = json_decode($attributes['metadata'] ?? '{}', true) ?: [];
+                $stored = (float) ($attributes['unit_price'] ?? 0.0);
 
-                return (float) ($meta['unit_price'] ?? 0.0);
+                if ($stored === 0.0) {
+                    $meta = json_decode($attributes['metadata'] ?? '{}', true) ?: [];
+                    $stored = (float) ($meta['unit_price'] ?? 0.0);
+                }
+
+                return number_format($stored, 2, '.', '');
             },
-            set: function ($value, $attributes) {
-                $meta = json_decode($attributes['metadata'] ?? '{}', true) ?: [];
-                $meta['unit_price'] = (float) $value;
-
-                return ['metadata' => json_encode($meta)];
-            }
+            set: fn ($value) => ['unit_price' => $value]
         );
     }
 

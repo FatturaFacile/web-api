@@ -116,7 +116,7 @@ final class EloquentHrDirectory implements HrDirectory
         return new DirectoryEmployee(
             (string) $employee->id,
             (string) $employee->full_name,
-            $employee->employee_number !== null ? (string) $employee->employee_number : null,
+            (string) $employee->employee_number,
             $employee->position_id !== null ? (string) $employee->position_id : null,
             $employee->position?->title,
             $employee->department_id !== null ? (string) $employee->department_id : null,

@@ -323,8 +323,8 @@ final readonly class ConfigurableModelService
             'name' => (string) $rule->name,
             'type' => (string) $rule->type,
             'match' => (string) ($rule->match ?: 'all'),
-            'conditions' => array_values($rule->conditions ?? []),
-            'target_options' => array_values($rule->target_options ?? []),
+            'conditions' => $rule->conditions ?? [],
+            'target_options' => $rule->target_options ?? [],
         ];
     }
 

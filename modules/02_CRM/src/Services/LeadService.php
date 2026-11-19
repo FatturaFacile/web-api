@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Modules\CRM\Contracts\LeadDeduplicationServiceInterface;
 use Modules\CRM\Contracts\LeadServiceInterface;
 use Modules\CRM\DTOs\ConvertLeadDTO;
 use Modules\CRM\DTOs\CreateLeadDTO;
@@ -21,6 +22,7 @@ use Modules\CRM\Events\LeadConvertedEvent;
 use Modules\CRM\Events\LeadCreatedEvent;
 use Modules\CRM\Events\LeadQualifiedEvent;
 use Modules\CRM\Events\LeadRejectedEvent;
+use Modules\CRM\Exceptions\LeadAlreadyConvertedException;
 use Modules\CRM\Models\Account;
 use Modules\CRM\Models\ContactRole;
 use Modules\CRM\Models\Lead;
@@ -107,7 +109,7 @@ final readonly class LeadService implements LeadServiceInterface
             $lead->fill([
                 'score' => $evaluation['score'],
                 'rating' => $evaluation['rating'],
-                'score_breakdown' => $evaluation['breakdown'],
+                'score_breakdown' => ['model' => $evaluation['model'], 'items' => $evaluation['breakdown']],
                 'score_calculated_at' => now(),
             ])->save();
 
@@ -175,7 +177,8 @@ final readonly class LeadService implements LeadServiceInterface
         $lead->update([
             'score' => $evaluation['score'],
             'rating' => $evaluation['rating'],
-            'score_breakdown' => $evaluation['breakdown'],
+            'score_breakdown' => ['model' => $evaluation['model'], 'items' => $evaluation['breakdown']],
+            'score_calculated_at' => now(),
         ]);
 
         return $lead;
@@ -384,16 +387,42 @@ final readonly class LeadService implements LeadServiceInterface
             $lockedLead = Lead::where('id', $lead->id)->lockForUpdate()->firstOrFail();
 
             if ($lockedLead->status === 'converted') {
-                throw new InvalidArgumentException("Lead [{$lead->id}] has already been converted.");
+                throw LeadAlreadyConvertedException::forLead((string) $lead->id);
+            }
+
+            if ($lockedLead->merged_into_lead_id !== null) {
+                throw LeadAlreadyConvertedException::mergedInto((string) $lockedLead->id, (string) $lockedLead->merged_into_lead_id);
             }
 
             $tenantId = (string) $lockedLead->tenant_id;
             $ownerId = $dto->ownerUserId ?? $lockedLead->assigned_user_id ?? $actorUserId;
+            $intakeDedup = app()->bound(LeadDeduplicationServiceInterface::class)
+                ? app(LeadDeduplicationServiceInterface::class)
+                : null;
 
-            // 1. Resolve or Create Account
+            // 1. Resolve the party master contact first: explicit choice, else unique contact matcher, else VAT/email dedup.
+            $contactLinked = true;
+            if (! empty($dto->existingContactId)) {
+                $contact = Contact::where('tenant_id', $tenantId)->findOrFail($dto->existingContactId);
+            } else {
+                $customFields = is_array($lockedLead->custom_fields) ? $lockedLead->custom_fields : [];
+                $contact = $this->contactMatcher->findUnique(
+                    $tenantId,
+                    $lockedLead->vat_number ?? (isset($customFields['vat_number']) ? (string) $customFields['vat_number'] : null),
+                    isset($customFields['fiscal_code']) ? (string) $customFields['fiscal_code'] : null,
+                    $lockedLead->email,
+                ) ?? $intakeDedup?->findContactForLead($lockedLead);
+            }
+
+            // 2. Resolve or Create Account
+            $account = null;
             if (! empty($dto->existingAccountId)) {
                 $account = Account::where('tenant_id', $tenantId)->findOrFail($dto->existingAccountId);
-            } else {
+            } elseif (empty($dto->newAccountName)) {
+                $account = $intakeDedup?->findAccountForLead($lockedLead);
+            }
+
+            if ($account === null) {
                 $accountName = $dto->newAccountName ?: ($lockedLead->company_name ?: $lockedLead->full_name);
                 $account = Account::create([
                     'id' => (string) Str::uuid7(),
@@ -402,28 +431,15 @@ final readonly class LeadService implements LeadServiceInterface
                     'account_number' => 'ACC-'.strtoupper(Str::random(6)),
                     'tier' => $dto->accountTier ?? 'standard',
                     'status' => 'active',
-                    'annual_revenue' => $lockedLead->estimated_budget,
+                    'industry' => $lockedLead->industry,
+                    'employee_count' => $lockedLead->employee_count ?? $lockedLead->company_size,
+                    'annual_revenue' => $lockedLead->annual_revenue_estimate ?? $lockedLead->estimated_revenue ?? $lockedLead->estimated_budget,
                     'website' => $lockedLead->website,
                     'owner_user_id' => $ownerId,
                     'customer_health_index' => 100.00,
                     'churn_risk' => 'low',
                     'lifecycle_stage' => 'prospect',
                 ]);
-            }
-
-            // 2. Link the party master: the chosen contact, else the single contact with the lead's email or VAT
-            //    number, else a new one. A second record of an existing customer is never created by a conversion.
-            $contactLinked = true;
-            if (! empty($dto->existingContactId)) {
-                $contact = Contact::where('tenant_id', $tenantId)->findOrFail($dto->existingContactId);
-            } else {
-                $customFields = is_array($lockedLead->custom_fields) ? $lockedLead->custom_fields : [];
-                $contact = $this->contactMatcher->findUnique(
-                    $tenantId,
-                    isset($customFields['vat_number']) ? (string) $customFields['vat_number'] : null,
-                    isset($customFields['fiscal_code']) ? (string) $customFields['fiscal_code'] : null,
-                    $lockedLead->email,
-                );
             }
 
             if ($contact === null) {
@@ -438,7 +454,18 @@ final readonly class LeadService implements LeadServiceInterface
                     'last_name' => $lockedLead->last_name,
                     'email' => $lockedLead->email,
                     'phone' => $lockedLead->phone,
+                    'vat_number' => $lockedLead->vat_number,
                 ]);
+            } else {
+                $blanks = array_filter([
+                    'vat_number' => empty($contact->vat_number) ? $lockedLead->vat_number : null,
+                    'phone' => empty($contact->phone) ? $lockedLead->phone : null,
+                    'email' => empty($contact->email) ? $lockedLead->email : null,
+                ], static fn (mixed $value): bool => $value !== null && $value !== '');
+
+                if ($blanks !== []) {
+                    $contact->update($blanks);
+                }
             }
 
             // 3. Link Contact to Account (once)

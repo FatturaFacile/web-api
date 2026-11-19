@@ -76,6 +76,11 @@ final class RecycleBinController extends Controller
     public function restore(string $type, string $id): JsonResponse
     {
         $record = $this->resolve($type, $id);
+
+        if (! method_exists($record, 'restore')) {
+            abort(404);
+        }
+
         $record->restore();
 
         $this->audit->record('RECYCLE_BIN_RESTORE', $record, null, ['type' => $type, 'id' => $id], 'PLATFORM');

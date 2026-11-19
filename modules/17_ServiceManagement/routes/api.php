@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\ServiceManagement\Http\Controllers\AgentToolsController;
 use Modules\ServiceManagement\Http\Controllers\EquipmentPassportController;
+use Modules\ServiceManagement\Http\Controllers\FieldServiceManagementController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskAutomationController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskNotificationController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskReportController;
@@ -12,6 +13,7 @@ use Modules\ServiceManagement\Http\Controllers\HelpdeskTicketController;
 use Modules\ServiceManagement\Http\Controllers\ITSMController;
 use Modules\ServiceManagement\Http\Controllers\KnowledgeBaseController;
 use Modules\ServiceManagement\Http\Controllers\LoanerController;
+use Modules\ServiceManagement\Http\Controllers\MaintenanceContractController;
 use Modules\ServiceManagement\Http\Controllers\PortalCsatController;
 use Modules\ServiceManagement\Http\Controllers\PortalHelpdeskController;
 use Modules\ServiceManagement\Http\Controllers\PortalKnowledgeBaseController;
@@ -170,6 +172,15 @@ Route::prefix('api/v1/esm')
         Route::get('/service-contracts/{serviceContract}', [ServiceContractController::class, 'show'])->name('api.v1.esm.service-contracts.show');
         Route::post('/csat', [ServiceContractController::class, 'submitCsat'])->name('api.v1.esm.csat.store');
 
+        // Recurring maintenance contracts, hour bank and installed base history (GH-197)
+        Route::post('/service-contracts', [MaintenanceContractController::class, 'store'])->name('api.v1.esm.service-contracts.store');
+        Route::put('/service-contracts/{serviceContract}', [MaintenanceContractController::class, 'update'])->name('api.v1.esm.service-contracts.update')->whereUuid('serviceContract');
+        Route::get('/service-contracts/{serviceContract}/ledger', [MaintenanceContractController::class, 'ledger'])->name('api.v1.esm.service-contracts.ledger')->whereUuid('serviceContract');
+        Route::post('/service-contracts/{serviceContract}/hours/top-up', [MaintenanceContractController::class, 'topUp'])->name('api.v1.esm.service-contracts.top-up')->whereUuid('serviceContract');
+        Route::post('/service-contracts/{serviceContract}/hours/adjust', [MaintenanceContractController::class, 'adjust'])->name('api.v1.esm.service-contracts.adjust')->whereUuid('serviceContract');
+        Route::post('/service-contracts/{serviceContract}/residual-report', [MaintenanceContractController::class, 'sendReport'])->name('api.v1.esm.service-contracts.residual-report')->whereUuid('serviceContract');
+        Route::get('/equipment-passports/{passport}/history', [MaintenanceContractController::class, 'assetHistory'])->name('api.v1.esm.equipment-passports.history')->whereUuid('passport');
+
         // Warranty: Serialized Equipment Passports (GH-396)
         Route::get('/equipment-passports', [EquipmentPassportController::class, 'index'])->name('api.v1.esm.equipment-passports.index');
         Route::post('/equipment-passports', [EquipmentPassportController::class, 'store'])->name('api.v1.esm.equipment-passports.store');
@@ -208,6 +219,31 @@ Route::prefix('api/v1/esm')
         Route::get('/vendor-claims/{vendorClaim}', [VendorClaimController::class, 'show'])->name('api.v1.esm.vendor-claims.show')->whereUuid('vendorClaim');
         Route::patch('/vendor-claims/{vendorClaim}', [VendorClaimController::class, 'update'])->name('api.v1.esm.vendor-claims.update')->whereUuid('vendorClaim');
         Route::post('/vendor-claims/{vendorClaim}/transition', [VendorClaimController::class, 'transition'])->name('api.v1.esm.vendor-claims.transition')->whereUuid('vendorClaim');
+    });
+
+// Field Service Management (GH-196/197/202): dispatcher board, maintenance contracts, preventive engine, service reports, mobile sync.
+Route::prefix('api/v1/fsm')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:service'])
+    ->group(function (): void {
+        Route::get('/board', [FieldServiceManagementController::class, 'board'])->name('api.v1.fsm.board');
+        Route::get('/work-orders', [FieldServiceManagementController::class, 'indexWorkOrders'])->name('api.v1.fsm.work-orders.index');
+        Route::post('/work-orders', [FieldServiceManagementController::class, 'storeWorkOrder'])->name('api.v1.fsm.work-orders.store');
+        Route::get('/work-orders/{workOrder}', [FieldServiceManagementController::class, 'showWorkOrder'])->name('api.v1.fsm.work-orders.show')->whereUuid('workOrder');
+        Route::post('/work-orders/{workOrder}/dispatch', [FieldServiceManagementController::class, 'dispatch'])->name('api.v1.fsm.work-orders.dispatch')->whereUuid('workOrder');
+        Route::post('/work-orders/{workOrder}/status', [FieldServiceManagementController::class, 'advanceStatus'])->name('api.v1.fsm.work-orders.status')->whereUuid('workOrder');
+        Route::post('/work-orders/{workOrder}/parts', [FieldServiceManagementController::class, 'recordPart'])->name('api.v1.fsm.work-orders.parts')->whereUuid('workOrder');
+        Route::post('/work-orders/{workOrder}/service-report', [FieldServiceManagementController::class, 'signReport'])->name('api.v1.fsm.work-orders.service-report')->whereUuid('workOrder');
+        Route::get('/service-reports/{report}/pdf', [FieldServiceManagementController::class, 'pdf'])->name('api.v1.fsm.service-reports.pdf')->whereUuid('report');
+        Route::post('/service-reports/{report}/invoice', [FieldServiceManagementController::class, 'invoice'])->name('api.v1.fsm.service-reports.invoice')->whereUuid('report');
+        Route::get('/technicians/{technician}/offline-bundle', [FieldServiceManagementController::class, 'offlineBundle'])->name('api.v1.fsm.technicians.offline-bundle')->whereUuid('technician');
+        Route::post('/mobile-sync', [FieldServiceManagementController::class, 'mobileSync'])->name('api.v1.fsm.mobile-sync');
+        Route::get('/equipment', [FieldServiceManagementController::class, 'equipment'])->name('api.v1.fsm.equipment.index');
+        Route::get('/equipment/{equipment}/service-history', [FieldServiceManagementController::class, 'equipmentHistory'])->name('api.v1.fsm.equipment.history')->whereUuid('equipment');
+        Route::patch('/equipment/{equipment}/meters', [FieldServiceManagementController::class, 'updateMeters'])->name('api.v1.fsm.equipment.meters')->whereUuid('equipment');
+        Route::get('/maintenance-contracts', [FieldServiceManagementController::class, 'contracts'])->name('api.v1.fsm.contracts.index');
+        Route::post('/maintenance-contracts', [FieldServiceManagementController::class, 'storeContract'])->name('api.v1.fsm.contracts.store');
+        Route::patch('/maintenance-contracts/{contract}', [FieldServiceManagementController::class, 'updateContract'])->name('api.v1.fsm.contracts.update')->whereUuid('contract');
+        Route::post('/preventive-maintenance/run', [FieldServiceManagementController::class, 'runPreventive'])->name('api.v1.fsm.preventive.run');
     });
 
 // Public, token-authenticated RMA endpoints (GH-396): no Sanctum, tenant resolved from the RMA behind the token.

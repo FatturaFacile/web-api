@@ -146,7 +146,7 @@ final class DocumentController extends Controller
         $requirement = DocumentRequirement::query()->findOrFail($request->validated('requirement_id'));
         $onboarding = SupplierOnboarding::query()->where('supplier_id', $supplier->id)->first();
 
-        $submission = $this->documents->submit($supplier, $requirement, $request->validated(), $request->file('file'), 'internal', $this->userId(), $onboarding?->id, (string) ($onboarding?->country ?? $requirement->country ?? 'IT'));
+        $submission = $this->documents->submit($supplier, $requirement, $request->validated(), $request->file('file'), 'internal', $this->userId(), $onboarding?->id, (string) ($onboarding->country ?? $requirement->country ?? 'IT'));
 
         return (new DocumentSubmissionResource($submission->load(['requirement', 'supplier'])))->response()->setStatusCode(201);
     }

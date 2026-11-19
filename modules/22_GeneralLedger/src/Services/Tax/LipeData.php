@@ -26,5 +26,9 @@ final readonly class LipeData
         public string $previousCredit = '0',
         public string $interest = '0',
         public string $payable = '0',
+        public string $previousYearCredit = '0',
+        public string $euAutoPayments = '0',
+        public string $taxCredits = '0',
+        public string $advance = '0',
     ) {}
 }

@@ -23,7 +23,7 @@ trait ValidatesUploadContentLength
      */
     protected function validateUploadContentLength(): void
     {
-        $contentLength = (int) ($this->server('CONTENT_LENGTH') ?: $this->header('Content-Length', 0));
+        $contentLength = (int) ($this->server('CONTENT_LENGTH') ?: $this->header('Content-Length', '0'));
         $maxBytes = $this->maxContentLengthBytes();
 
         if ($contentLength > $maxBytes) {
@@ -36,8 +36,6 @@ trait ValidatesUploadContentLength
      */
     protected function maxContentLengthBytes(): int
     {
-        return property_exists($this, 'maxContentLengthBytes')
-            ? $this->maxContentLengthBytes
-            : 20 * 1024 * 1024;
+        return 20 * 1024 * 1024;
     }
 }

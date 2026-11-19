@@ -23,7 +23,7 @@ class PosSessionReport
         return [
             'session_id' => $session->id,
             'status' => $session->status,
-            'opened_at' => $session->opened_at?->toIso8601String(),
+            'opened_at' => $session->opened_at->toIso8601String(),
             'closed_at' => $session->closed_at?->toIso8601String(),
             'sales_count' => $completed->count(),
             'refunds_count' => $refunded->count(),

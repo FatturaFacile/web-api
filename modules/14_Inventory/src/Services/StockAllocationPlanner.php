@@ -7,12 +7,12 @@ namespace Modules\Inventory\Services;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Inventory\Enums\PickingStrategy;
 use Modules\Inventory\Exceptions\StockRuleViolation;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockQuant;
 use Modules\Inventory\Models\Warehouse;
+use Modules\Inventory\Support\Decimal;
 
 /**
  * Decides which quants may serve a request and in which order. A quant is out of reach when its bin is locked, it
@@ -102,7 +102,7 @@ final class StockAllocationPlanner
      */
     public function take(Collection $quants, string $quantity): array
     {
-        $remaining = Decimal::normalize($quantity);
+        $remaining = Decimal::of($quantity);
         $allocations = [];
 
         foreach ($quants as $quant) {
@@ -111,7 +111,7 @@ final class StockAllocationPlanner
             }
 
             $available = self::available($quant);
-            $share = Decimal::compare($available, $remaining) < 0 ? $available : $remaining;
+            $share = Decimal::comp($available, $remaining) < 0 ? $available : $remaining;
 
             if (Decimal::isPositive($share)) {
                 $allocations[] = ['quant' => $quant, 'quantity' => $share];

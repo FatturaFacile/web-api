@@ -6,7 +6,11 @@ namespace Modules\HumanResources\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\HumanResources\Models\Timesheet;
 
+/**
+ * @mixin Timesheet
+ */
 final class TimesheetResource extends JsonResource
 {
     public function toArray(Request $request): array
@@ -17,7 +21,7 @@ final class TimesheetResource extends JsonResource
             'employee_id' => $this->employee_id,
             'employee_name' => $this->whenLoaded('employee', fn () => $this->employee?->full_name),
             'project_id' => $this->project_id,
-            'work_date' => $this->work_date?->format('Y-m-d'),
+            'work_date' => $this->work_date->format('Y-m-d'),
             'regular_hours' => (float) $this->regular_hours,
             'overtime_hours' => (float) $this->overtime_hours,
             'total_hours' => (float) $this->total_hours,

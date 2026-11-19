@@ -293,7 +293,7 @@ final class TimeToPayrollTransferService
         $baseAnnual = (float) ($employee->base_annual_salary ?? ($contract !== null ? ($contract->base_annual_salary ?? 0) : 0));
         $weeklyHours = (float) ($payrollProfile !== null && $payrollProfile->weekly_hours > 0 ? $payrollProfile->weekly_hours : ($contract !== null && $contract->weekly_hours > 0 ? $contract->weekly_hours : 42.0));
 
-        if ($baseAnnual > 0 && $weeklyHours > 0) {
+        if ($baseAnnual > 0) {
             return round($baseAnnual / ($weeklyHours * 52), 4);
         }
 

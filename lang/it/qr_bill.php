@@ -7,6 +7,7 @@ return [
     'additional_message' => 'Fattura :number',
 
     'errors' => [
+        'invalid_qr_iban' => 'Il QR-IBAN non è valido: deve essere un IBAN svizzero o del Liechtenstein con identificativo istituto tra 30000 e 31999.',
         'missing_tenant' => "La fattura non ha un'azienda emittente.",
         'invalid_currency' => 'La QR-fattura svizzera supporta solo fatture in CHF ed EUR.',
         'invalid_amount' => "Non c'è alcun importo residuo da pagare.",
@@ -18,7 +19,15 @@ return [
         'validation_failed' => 'I dati della QR-fattura non rispettano la specifica SIX.',
     ],
 
+    'parse_errors' => [
+        'qr_not_found' => "Il file non contiene una QR-fattura svizzera leggibile. Carica un PDF o un'immagine in cui il codice QR è una bitmap.",
+        'invalid_payload' => 'Il contenuto non è una QR-fattura svizzera (SPC).',
+        'unsupported_file' => 'File non supportato o vuoto.',
+    ],
+
     'messages' => [
+        'parsed' => 'QR-fattura svizzera letta correttamente',
+        'reference_checked' => 'Riferimento verificato',
         'retrieved' => 'QR-fattura svizzera generata con successo',
     ],
 

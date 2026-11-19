@@ -129,8 +129,8 @@ graph TD
 | Layer | Component | Version / Specification |
 |---|---|---|
 | **Framework** | Laravel | `^13.17` (Laravel 13) |
-| **Databases** | PostgreSQL | `16+` (Production / CI / Full Test Suite) |
-| | SQLite | Supported for rapid local development |
+| **Databases** | SQLite | Default for Local Development & Automated Tests (`DB_FOREIGN_KEYS=true`) |
+| | PostgreSQL | `16+` (Strictly Production & CI Pipelines) |
 | | MySQL / MariaDB | Dialect supported via `SqlDialect` abstraction |
 | **Authentication** | Laravel Sanctum | `^4.0` |
 | **Permissions** | Spatie Laravel Permission | `^8.3` |
@@ -202,7 +202,7 @@ graph TD
 
 You can set up the backend using local PHP or Docker.
 
-### Option A: Local PHP with SQLite (Fastest Start)
+### Local Development with SQLite (Default & Mandatory)
 
 1. **Clone the repository and install dependencies**:
    ```bash
@@ -216,7 +216,7 @@ You can set up the backend using local PHP or Docker.
    cp .env.example .env
    php artisan key:generate
    ```
-   *(SQLite is the default connection in `.env.example`: `DB_CONNECTION=sqlite`).*
+   *(SQLite is the default connection in `.env.example`: `DB_CONNECTION=sqlite`, `DB_FOREIGN_KEYS=true`).*
 
 3. **Initialize SQLite database**:
    ```bash
@@ -225,49 +225,18 @@ You can set up the backend using local PHP or Docker.
 
 4. **Run database migrations and seed system catalogs**:
    ```bash
-   php artisan migrate
-   php artisan erp:bootstrap
+   php artisan migrate:fresh --seed
    ```
    *Tip: Use `php artisan erp:bootstrap --without-demo` if you want a clean installation without sample transactional records.*
 
 ---
 
-### Option B: Local PHP with PostgreSQL & Mailpit (Recommended)
+### Local Supporting Services (Mailpit)
 
-1. **Install dependencies and copy environment**:
-   ```bash
-   composer install
-   cp .env.example .env
-   php artisan key:generate
-   ```
-
-2. **Update `.env` database and mail configuration**:
-   ```dotenv
-   DB_CONNECTION=pgsql
-   DB_HOST=127.0.0.1
-   DB_PORT=5432
-   DB_DATABASE=fatturafacile
-   DB_USERNAME=postgres
-   DB_PASSWORD=postgres
-
-   QUEUE_CONNECTION=database
-   CACHE_STORE=database
-
-   MAIL_MAILER=smtp
-   MAIL_HOST=127.0.0.1
-   MAIL_PORT=1025
-   ```
-
-3. **Start local supporting containers (PostgreSQL 16 & Mailpit)**:
-   ```bash
-   docker compose -f docker-compose.local.yml up -d --wait
-   ```
-
-4. **Run migrations and bootstrap the platform**:
-   ```bash
-   php artisan migrate
-   php artisan erp:bootstrap
-   ```
+For local email testing without external credentials:
+```bash
+docker compose -f docker-compose.local.yml up -d mailpit
+```
 
 ---
 
@@ -458,7 +427,29 @@ All requests to protected endpoints require `Authorization: Bearer <token>` and 
 
 ---
 
-## 10. License
+## 10. Availability & TLS Certificate Monitoring (Uptime Kuma + UptimeRobot)
+
+FatturaFacile uses a **hybrid two-tier availability monitoring architecture** (`deploy/monitoring/`):
+
+1. **Uptime Kuma on the VPS (`deploy/monitoring/docker-compose.monitoring.yml`)**:
+   - Self-hosted instance (`louislam/uptime-kuma:1`) bound to `127.0.0.1:3001` behind the reverse proxy.
+   - Executes 60-second probes against:
+     - Public website (`https://www.fatturafacile.eu`)
+     - Production & staging web apps (`https://app.fatturafacile.eu`, `https://dev.fatturafacile.eu`)
+     - API liveness (`/up`) and readiness (`/api/v1/health/ready`) endpoints (`https://api.fatturafacile.eu/up`, `https://dev-api.fatturafacile.eu/up`)
+     - Interactive OpenAPI documentation (`https://dev-api.fatturafacile.eu/api/documentation`)
+   - Enforces **TLS certificate expiration alerts** at 21, 14, and 7 days before expiry, dispatching instant notifications via **Telegram Bot** and **SMTP Email**.
+   - Importable monitor specification: `deploy/monitoring/uptime-monitors.json`.
+   - Start command on the VPS:
+     ```bash
+     docker compose -f deploy/monitoring/docker-compose.monitoring.yml up -d
+     ```
+2. **UptimeRobot Remote External Probes**:
+   - External 5-minute HTTPS monitors check `https://www.fatturafacile.eu`, `https://app.fatturafacile.eu`, `https://api.fatturafacile.eu/up`, and `https://dev-api.fatturafacile.eu/up` from outside the VPS network so that full host or network outages are alerted even if the VPS itself goes offline.
+
+---
+
+## 11. License
 
 This project is open-source software licensed under the **[MIT License](LICENSE)**.
 

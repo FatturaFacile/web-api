@@ -35,7 +35,7 @@ class ClosePosSession
                 'cash_difference' => round($closingCash - $expected, 2),
             ]);
 
-            app(SessionReportService::class)->z($session->refresh(), $session->user_id !== null ? (string) $session->user_id : null);
+            app(SessionReportService::class)->z($session->refresh(), (string) $session->user_id);
 
             return $session;
         });

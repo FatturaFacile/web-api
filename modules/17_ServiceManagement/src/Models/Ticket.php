@@ -15,6 +15,10 @@ use Modules\ServiceManagement\Enums\TicketStatus;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * @property Carbon|null $resolved_at
+ * @property Carbon|null $closed_at
+ */
 final class Ticket extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
     protected $table = 'esm_tickets';

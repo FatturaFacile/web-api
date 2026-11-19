@@ -105,7 +105,8 @@ final class DmsDocument extends BaseEnterpriseModel
      */
     public function latestVersion(): HasOne
     {
-        return $this->hasOne(DmsDocumentVersion::class, 'document_id')->ofMany('version_number', 'max');
+        return $this->hasOne(DmsDocumentVersion::class, 'document_id')
+            ->whereRaw('dms_document_versions.id = (SELECT v.id FROM dms_document_versions v WHERE v.document_id = dms_document_versions.document_id AND v.deleted_at IS NULL ORDER BY v.version_number DESC, CAST(v.id AS TEXT) DESC LIMIT 1)');
     }
 
     /**
@@ -129,7 +130,7 @@ final class DmsDocument extends BaseEnterpriseModel
     }
 
     /**
-     * @return BelongsToMany<DmsTag, $this>
+     * @return BelongsToMany<DmsTag, $this, AuditedPivot, 'pivot'>
      */
     public function tags(): BelongsToMany
     {

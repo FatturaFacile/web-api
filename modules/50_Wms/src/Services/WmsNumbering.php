@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Wms\Services;
 
 use App\Support\Database\TransactionLock;
-use Illuminate\Database\Eloquent\Model;
+use Enterprise\Foundation\Models\BaseEnterpriseModel;
 
 /**
  * Document numbers of the WMS (WV-2027-0001 for waves, CD-2027-0001 for cross-dock orders): one sequence per company,
@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 final class WmsNumbering
 {
     /**
-     * @param  class-string<Model>  $model
+     * @param  class-string<BaseEnterpriseModel>  $model
      */
     public function next(string $model, string $column, string $prefix, string $tenantId): string
     {

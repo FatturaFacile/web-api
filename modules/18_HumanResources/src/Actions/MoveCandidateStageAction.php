@@ -66,7 +66,7 @@ final readonly class MoveCandidateStageAction
 
             $application->stage = $to;
             $application->stage_entered_at = now();
-            $application->rejection_reason_code = $to === ApplicationStage::Rejected ? $dto->rejectionReasonCode?->value : null;
+            $application->rejection_reason_code = $to === ApplicationStage::Rejected ? $dto->rejectionReasonCode->value : null;
             $application->rejection_note = $to === ApplicationStage::Rejected ? $dto->rejectionNote : null;
             $application->board_position = $this->recruitment->nextBoardPosition((string) $application->job_opening_id, $to);
             $application->save();

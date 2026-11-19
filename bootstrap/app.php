@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnforceHttps;
 use App\Http\Middleware\EnforceSessionPolicy;
+use App\Http\Middleware\EnsureFeatureFlagEnabled;
 use App\Http\Middleware\EnsureHttpsFrontendRequestsAreStateful;
 use App\Http\Middleware\EnsureMobileDeviceActive;
 use App\Http\Middleware\EnsurePlatformAdmin;
@@ -82,6 +83,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'normalize.tenant' => NormalizeTenantInput::class,
             'privacy.sensitive.log' => LogSensitiveDataReadAccess::class,
             'mobile.device' => EnsureMobileDeviceActive::class,
+            'feature' => EnsureFeatureFlagEnabled::class,
         ]);
 
         $middleware->priority([

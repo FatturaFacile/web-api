@@ -131,7 +131,7 @@ final class FolioInvoicingService
             'unit_amount' => (string) $entry->unit_amount,
             'amount' => (string) $entry->amount,
             'payment_method' => $entry->payment_method,
-            'posted_on' => $entry->posted_on?->toDateString(),
+            'posted_on' => $entry->posted_on->toDateString(),
         ];
     }
 }

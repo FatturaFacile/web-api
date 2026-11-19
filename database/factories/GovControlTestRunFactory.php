@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Modules\Governance\Models\GovControl;
 use Modules\Governance\Models\GovControlTestRun;
 
 /**

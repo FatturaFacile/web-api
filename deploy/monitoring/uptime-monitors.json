@@ -1,0 +1,138 @@
+{
+  "version": "1.23.13",
+  "strategy": "hybrid-kuma-uptimerobot",
+  "description": "FatturaFacile availability and TLS certificate expiry monitoring specification (Issue #310): self-hosted Uptime Kuma on the VPS for internal & endpoint health probes combined with remote UptimeRobot monitors to detect full VPS outages.",
+  "notificationList": [
+    {
+      "id": 1,
+      "name": "FatturaFacile Ops Telegram",
+      "type": "telegram",
+      "isDefault": true,
+      "applyExisting": true
+    },
+    {
+      "id": 2,
+      "name": "FatturaFacile Ops Email",
+      "type": "smtp",
+      "isDefault": true,
+      "applyExisting": true
+    }
+  ],
+  "monitorList": [
+    {
+      "name": "Production Public Website (fatturafacile.eu)",
+      "type": "http",
+      "url": "https://www.fatturafacile.eu",
+      "method": "GET",
+      "interval": 60,
+      "retryInterval": 30,
+      "maxretries": 3,
+      "expiryNotification": true,
+      "tlsExpiryThresholdDays": [21, 14, 7],
+      "accepted_statuscodes": ["200-299"]
+    },
+    {
+      "name": "Production Web Frontend App (app.fatturafacile.eu)",
+      "type": "http",
+      "url": "https://app.fatturafacile.eu",
+      "method": "GET",
+      "interval": 60,
+      "retryInterval": 30,
+      "maxretries": 3,
+      "expiryNotification": true,
+      "tlsExpiryThresholdDays": [21, 14, 7],
+      "accepted_statuscodes": ["200-299"]
+    },
+    {
+      "name": "Production API Liveness Probe (/up)",
+      "type": "http",
+      "url": "https://api.fatturafacile.eu/up",
+      "method": "GET",
+      "interval": 60,
+      "retryInterval": 20,
+      "maxretries": 2,
+      "expiryNotification": true,
+      "tlsExpiryThresholdDays": [21, 14, 7],
+      "accepted_statuscodes": ["200"]
+    },
+    {
+      "name": "Production API Readiness Probe (/api/v1/health/ready)",
+      "type": "keyword",
+      "url": "https://api.fatturafacile.eu/api/v1/health/ready",
+      "method": "GET",
+      "keyword": "ready",
+      "interval": 60,
+      "retryInterval": 30,
+      "maxretries": 2,
+      "expiryNotification": true,
+      "tlsExpiryThresholdDays": [21, 14, 7],
+      "accepted_statuscodes": ["200"]
+    },
+    {
+      "name": "Staging / Dev Frontend & Demo (dev.fatturafacile.eu)",
+      "type": "http",
+      "url": "https://dev.fatturafacile.eu",
+      "method": "GET",
+      "interval": 120,
+      "retryInterval": 60,
+      "maxretries": 3,
+      "expiryNotification": true,
+      "tlsExpiryThresholdDays": [21, 14, 7],
+      "accepted_statuscodes": ["200-299"]
+    },
+    {
+      "name": "Staging / Dev API Liveness Probe (dev-api.fatturafacile.eu/up)",
+      "type": "http",
+      "url": "https://dev-api.fatturafacile.eu/up",
+      "method": "GET",
+      "interval": 120,
+      "retryInterval": 30,
+      "maxretries": 2,
+      "expiryNotification": true,
+      "tlsExpiryThresholdDays": [21, 14, 7],
+      "accepted_statuscodes": ["200"]
+    },
+    {
+      "name": "Staging / Dev API OpenAPI Documentation (/api/documentation)",
+      "type": "http",
+      "url": "https://dev-api.fatturafacile.eu/api/documentation",
+      "method": "GET",
+      "interval": 300,
+      "retryInterval": 60,
+      "maxretries": 2,
+      "expiryNotification": true,
+      "tlsExpiryThresholdDays": [21, 14, 7],
+      "accepted_statuscodes": ["200"]
+    }
+  ],
+  "uptimeRobotExternalMonitors": [
+    {
+      "friendlyName": "FatturaFacile Prod API (/up)",
+      "url": "https://api.fatturafacile.eu/up",
+      "type": "HTTP(s)",
+      "intervalSeconds": 300,
+      "sslExpirationReminderDays": [14, 7, 1]
+    },
+    {
+      "friendlyName": "FatturaFacile Prod Web App",
+      "url": "https://app.fatturafacile.eu",
+      "type": "HTTP(s)",
+      "intervalSeconds": 300,
+      "sslExpirationReminderDays": [14, 7, 1]
+    },
+    {
+      "friendlyName": "FatturaFacile Dev API (/up)",
+      "url": "https://dev-api.fatturafacile.eu/up",
+      "type": "HTTP(s)",
+      "intervalSeconds": 300,
+      "sslExpirationReminderDays": [14, 7, 1]
+    },
+    {
+      "friendlyName": "FatturaFacile Public Website",
+      "url": "https://www.fatturafacile.eu",
+      "type": "HTTP(s)",
+      "intervalSeconds": 300,
+      "sslExpirationReminderDays": [14, 7, 1]
+    }
+  ]
+}

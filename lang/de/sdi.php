@@ -16,6 +16,7 @@ return [
         'bulk_sent' => 'Sammelversand an SDI verarbeitet',
         'self_invoice_created' => 'Eigenrechnung ausgestellt',
         'logs' => 'SDI-Protokolle erfolgreich abgerufen',
+        'generated' => 'FatturaPA-Datei erzeugt und geprüft',
         'notification_received' => 'Meldung empfangen',
         'channel_updated' => 'SDI-Kanal aktualisiert',
         'poll_queued' => 'Lesen des SDI-Kanals eingereiht',
@@ -64,6 +65,8 @@ return [
         'declaration_in_use' => 'Eine bereits in Dokumenten verwendete Absichtserklärung kann nicht gelöscht werden.',
         'not_a_self_invoice_source' => ':type kann nicht aus einer erhaltenen Rechnung erstellt werden.',
         'self_invoice_exists' => 'Für diese erhaltene Rechnung existiert bereits ein :type.',
+        'integration_supply_kind_required' => 'Geben Sie an, ob es sich um Waren oder Dienstleistungen handelt.',
+        'integration_not_due' => 'Für diese Lieferantenrechnung ist keine Integration fällig.',
     ],
     'preflight' => [
         'tenant_vat' => 'Die MWST-Nummer der Firma fehlt.',

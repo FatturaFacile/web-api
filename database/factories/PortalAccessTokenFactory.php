@@ -7,6 +7,7 @@ namespace Database\Factories;
 use App\Models\Contact;
 use App\Models\PortalAccessToken;
 use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,7 +22,7 @@ class PortalAccessTokenFactory extends Factory
      */
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? Tenant::create([
+        $tenantId = (app(TenantContext::class)->getTenantId() ?? Tenant::first()?->id) ?? Tenant::create([
             'name' => fake()->company(),
             'legal_name' => fake()->company(),
             'country' => 'IT',

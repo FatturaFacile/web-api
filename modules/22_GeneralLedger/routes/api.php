@@ -31,6 +31,7 @@ use Modules\GeneralLedger\Http\Controllers\TaxSettlementController;
 use Modules\GeneralLedger\Http\Controllers\Us1099Controller;
 use Modules\GeneralLedger\Http\Controllers\UsTaxController;
 use Modules\GeneralLedger\Http\Controllers\UsTaxExemptionCertificateController;
+use Modules\GeneralLedger\Http\Controllers\VatPeriodSettlementController;
 use Modules\GeneralLedger\Http\Controllers\VatRegisterController;
 use Modules\GeneralLedger\Http\Controllers\VatTaxSettingController;
 use Modules\GeneralLedger\Http\Controllers\WithholdingSettlementController;
@@ -211,4 +212,15 @@ Route::prefix('api/v1/general-ledger')
         Route::post('letterings', [JournalLetteringController::class, 'store']);
         Route::delete('letterings/{code}', [JournalLetteringController::class, 'destroy'])->where('code', '[A-Z]{2,}');
         Route::get('vat-registers/{type}', [VatRegisterController::class, 'show'])->whereIn('type', ['sales', 'purchases']);
+    });
+
+Route::prefix('api/v1/vat/settlements')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:ledger'])
+    ->group(function (): void {
+        Route::get('/', [VatPeriodSettlementController::class, 'index'])->name('vat.settlements.index');
+        Route::post('preview', [VatPeriodSettlementController::class, 'preview'])->name('vat.settlements.preview');
+        Route::post('/', [VatPeriodSettlementController::class, 'store'])->name('vat.settlements.store');
+        Route::get('{settlement}', [VatPeriodSettlementController::class, 'show'])->whereUuid('settlement')->name('vat.settlements.show');
+        Route::get('{settlement}/export-xml', [VatPeriodSettlementController::class, 'exportXml'])->whereUuid('settlement')->name('vat.settlements.export-xml');
+        Route::get('{settlement}/export-pdf', [VatPeriodSettlementController::class, 'exportPdf'])->whereUuid('settlement')->name('vat.settlements.export-pdf');
     });

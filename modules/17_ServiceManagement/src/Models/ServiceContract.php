@@ -7,7 +7,9 @@ namespace Modules\ServiceManagement\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
@@ -16,6 +18,17 @@ use Modules\Workflow\Models\WorkflowInstance;
  * A service contract of a customer. The annual value is a decimal string, never a float.
  *
  * @property string $annual_value
+ * @property string $included_hours
+ * @property string $consumed_hours
+ * @property string|null $sla_response_hours
+ * @property int $low_balance_threshold_percent
+ * @property Carbon $start_date
+ * @property array<string, mixed>|null $preventive_frequency_rule
+ * @property Carbon|null $end_date
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $last_residual_report_at
+ * @property Carbon|null $low_balance_notified_at
  */
 final class ServiceContract extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
@@ -53,6 +66,15 @@ final class ServiceContract extends BaseEnterpriseModel implements LockableByWor
             'terms' => 'array',
             'entitlements' => 'array',
             'metadata' => 'array',
+            'included_hours' => 'decimal:2',
+            'consumed_hours' => 'decimal:2',
+            'sla_response_hours' => 'decimal:2',
+            'low_balance_threshold_percent' => 'integer',
+            'last_residual_report_at' => 'datetime',
+            'low_balance_notified_at' => 'datetime',
+            'preventive_frequency_rule' => 'array',
+            'callout_fee_amount' => 'decimal:2',
+            'hourly_labor_rate' => 'decimal:2',
         ];
     }
 
@@ -122,6 +144,40 @@ final class ServiceContract extends BaseEnterpriseModel implements LockableByWor
                 return ['terms' => json_encode($terms)];
             }
         );
+    }
+
+    public function remainingHours(): string
+    {
+        return bcsub((string) $this->getAttribute('included_hours'), (string) $this->getAttribute('consumed_hours'), 2);
+    }
+
+    public function isLowBalance(): bool
+    {
+        if (bccomp((string) $this->getAttribute('included_hours'), '0', 2) <= 0) {
+            return false;
+        }
+
+        $threshold = bcdiv(bcmul((string) $this->getAttribute('included_hours'), (string) $this->low_balance_threshold_percent, 4), '100', 2);
+
+        return bccomp($this->remainingHours(), $threshold, 2) <= 0;
+    }
+
+    /**
+     * @return BelongsToMany<SerializedEquipmentPassport, $this>
+     */
+    public function assets(): BelongsToMany
+    {
+        return $this->belongsToMany(SerializedEquipmentPassport::class, 'esm_service_contract_assets', 'service_contract_id', 'equipment_passport_id')
+            ->withPivot(['id', 'tenant_id'])
+            ->withTimestamps();
+    }
+
+    /**
+     * @return HasMany<ContractHourTransaction, $this>
+     */
+    public function hourTransactions(): HasMany
+    {
+        return $this->hasMany(ContractHourTransaction::class, 'service_contract_id')->orderBy('occurred_at')->orderBy('created_at');
     }
 
     public function supportPlan(): BelongsTo

@@ -6,9 +6,12 @@ namespace Modules\Contracts\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Contracts\Models\ContractAlert;
 
 /**
  * API representation of the contract alert.
+ *
+ * @mixin ContractAlert
  */
 final class ContractAlertResource extends JsonResource
 {
@@ -22,7 +25,7 @@ final class ContractAlertResource extends JsonResource
             'contract_kind' => $this->contract_kind,
             'contract_id' => (string) $this->contract_id,
             'alert_type' => $this->alert_type,
-            'due_on' => $this->due_on?->toDateString(),
+            'due_on' => $this->due_on->toDateString(),
             'status' => $this->status,
             'is_acknowledged' => $this->status === 'acknowledged',
             'contract_number' => $this->contract_number ?? null,
