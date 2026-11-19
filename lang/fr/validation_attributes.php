@@ -2870,4 +2870,6 @@ return [
     'estimated_cost_budget' => 'budget de coût estimé',
     'job_id' => 'affaire',
     'target_margin_percent' => 'marge cible',
+    'sdi_simplified' => 'facture simplifiée',
+    'sdi_vehicle' => 'données du véhicule',
 ];
