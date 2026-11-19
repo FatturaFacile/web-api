@@ -34,11 +34,12 @@ final class PersonalDataAnonymizer
     }
 
     /**
-     * @param  Closure(Builder): void  $scope  narrows the rows of the table (tenant, subject, age...)
+     * @param  Closure(Builder): mixed  $scope  narrows the rows of the table (tenant, subject, age...)
      * @param  list<string>|null  $onlyColumns  anonymise only these personal columns (null: all of the entry)
+     * @param  (Closure(string, string, array{type: string, nullable: bool, length: int|null}): ?string)|null  $neutralizer  replacement value of (column, row id, column meta); null keeps the default neutral values
      * @return array{rows: int, columns: list<string>, skipped_columns: list<string>}
      */
-    public function anonymize(PersonalDataEntry $entry, Closure $scope, ?array $onlyColumns = null): array
+    public function anonymize(PersonalDataEntry $entry, Closure $scope, ?array $onlyColumns = null, ?Closure $neutralizer = null): array
     {
         $targets = $this->targets($entry, $onlyColumns);
         $skipped = $targets['skipped'];
@@ -61,7 +62,7 @@ final class PersonalDataAnonymizer
         $rows = 0;
         $query = DB::table($entry->table);
         $scope($query);
-        $query->chunkById(200, function ($chunk) use ($entry, $targets, $stamp, $model, &$rows): void {
+        $query->chunkById(200, function ($chunk) use ($entry, $targets, $stamp, $model, $neutralizer, &$rows): void {
             foreach ($chunk as $row) {
                 $values = [];
                 foreach ($targets as $name => $meta) {
@@ -70,7 +71,7 @@ final class PersonalDataAnonymizer
                         continue;
                     }
 
-                    $neutral = $this->neutralValue($name, $meta, (string) $row->id);
+                    $neutral = $neutralizer !== null ? $neutralizer($name, (string) $row->id, $meta) : $this->neutralValue($name, $meta, (string) $row->id);
                     if ($this->plain($model, $name, $current) === $neutral) {
                         continue;
                     }
@@ -94,10 +95,10 @@ final class PersonalDataAnonymizer
      * Ids of the rows of the scope that still hold personal data (at least one personal column is neither empty nor
      * already neutral), judged on the decrypted values. Keeps retention runs idempotent.
      *
-     * @param  Closure(Builder): void  $scope
+     * @param  Closure(Builder): mixed  $scope
      * @return list<string>
      */
-    public function pendingIds(PersonalDataEntry $entry, Closure $scope, ?int $limit = null): array
+    public function pendingIds(PersonalDataEntry $entry, Closure $scope, ?int $limit = null, ?Closure $neutralizer = null): array
     {
         $targets = $this->targets($entry, null)['targets'];
         $model = $this->modelOf($entry);
@@ -105,11 +106,12 @@ final class PersonalDataAnonymizer
 
         $query = DB::table($entry->table);
         $scope($query);
-        $query->chunkById(200, function ($chunk) use ($targets, $model, $limit, &$ids): bool {
+        $query->chunkById(200, function ($chunk) use ($targets, $model, $limit, $neutralizer, &$ids): bool {
             foreach ($chunk as $row) {
                 foreach ($targets as $name => $meta) {
                     $current = $row->{$name} ?? null;
-                    if ($current !== null && $this->plain($model, $name, $current) !== $this->neutralValue($name, $meta, (string) $row->id)) {
+                    $neutral = $neutralizer !== null ? $neutralizer($name, (string) $row->id, $meta) : $this->neutralValue($name, $meta, (string) $row->id);
+                    if ($current !== null && $this->plain($model, $name, $current) !== $neutral) {
                         $ids[] = (string) $row->id;
 
                         break;

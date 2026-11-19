@@ -18,7 +18,9 @@ use App\Models\EmployeeProfile;
 use App\Models\Invoice;
 use App\Models\InvoiceQrBillData;
 use App\Models\PortalActivityLog;
+use App\Models\Privacy\ConsentLedgerEntry;
 use App\Models\Privacy\PrivacySensitiveAccessLog;
+use App\Models\Privacy\PrivacySubjectRequestDsar;
 use App\Models\PurchaseOrder;
 use App\Models\QuoteSignatureRequest;
 use App\Models\SalesOrder;
@@ -297,6 +299,8 @@ final class PersonalDataRegistry
             new PersonalDataEntry('approval_decisions', [ApprovalDecision::class], 'Approval decisions', 'technical', ['ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('workflow_audit_entries', [WorkflowAuditEntry::class], 'Workflow audit entries', 'technical', ['ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('crm_consents', [Consent::class], 'CRM consents', 'contact', ['ip_address'], $evidence, 'Consent history is the proof required by art. 7(1) GDPR: kept; the IP address is pseudonymised on erasure.', ['contact' => 'contact_id', 'lead' => 'lead_id']),
+            new PersonalDataEntry('privacy_dsar_requests', [PrivacySubjectRequestDsar::class], 'Data subject requests (governance)', 'identity', ['subject_email', 'subject_full_name'], $evidence, 'Proof of the handling of a request (art. 5(2) GDPR): kept, never rewritten.'),
+            new PersonalDataEntry('privacy_consent_ledger', [ConsentLedgerEntry::class], 'Consent ledger', 'technical', ['ip_address'], $evidence, 'Tamper-evident proof of consent (art. 7(1) GDPR): kept, never rewritten; the subject is stored as a hash.'),
             new PersonalDataEntry('crm_leads', [Lead::class], 'CRM leads', 'identity', ['first_name', 'last_name', 'email', 'phone', 'phone_e164', 'company_name'], $erasable, 'Erased on request; a lead converted to a contact is erased through the contact.', ['lead' => 'id'], 'updated_at'),
             new PersonalDataEntry('suppliers', [Supplier::class], 'Suppliers', 'identity', ['fiscal_code'], $fiscal, $commercialNote),
             new PersonalDataEntry('supplier_contacts', [SupplierContact::class], 'Supplier contact persons', 'contact', ['name', 'email', 'phone'], $erasable, $operationalNote, [], 'updated_at'),
