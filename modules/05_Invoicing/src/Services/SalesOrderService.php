@@ -130,6 +130,10 @@ final class SalesOrderService implements SalesOrderServiceInterface
             'discount_policy_id' => $data['discount_policy_id'] ?? null,
             'sales_rep_id' => $data['sales_rep_id'] ?? null,
             'order_number' => $orderNumber,
+            'order_type' => $data['order_type'] ?? 'standard',
+            'blanket_agreement_id' => $data['blanket_agreement_id'] ?? null,
+            'warehouse_id' => $data['warehouse_id'] ?? null,
+            'requested_delivery_date' => $data['requested_delivery_date'] ?? null,
             'date' => $date->toDateString(),
             'due_date' => $data['due_date'] ?? $date->addDays(30)->toDateString(),
             'currency' => $data['currency'] ?? 'EUR',
@@ -153,26 +157,7 @@ final class SalesOrderService implements SalesOrderServiceInterface
 
         $actualOrderId = (string) $order->id;
 
-        foreach ($calculatedItems as $item) {
-            SalesOrderItem::create([
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => $tenantId,
-                'sales_order_id' => $actualOrderId,
-                'product_id' => $item['product_id'] ?? null,
-                'description' => $item['description'] ?? 'Product item',
-                'quantity' => $item['quantity'],
-                'quantity_reserved' => '0',
-                'quantity_delivered' => '0',
-                'quantity_invoiced' => '0',
-                'unit_price' => $item['unit_price'],
-                'tax_rate' => $item['tax_rate'],
-                'discount_percentage' => $item['discount_percentage'],
-                'line_total' => $item['line_total'],
-                'cost_price' => DocumentTotalsCalculator::decimal($item['cost_price'] ?? '0'),
-                'uom' => $item['uom'] ?? 'EA',
-                'notes' => $item['notes'] ?? null,
-            ]);
-        }
+        $this->insertItems($actualOrderId, $tenantId, $calculatedItems);
 
         if (! empty($data['customer_agreement_id'])) {
             $agreement = CustomerAgreement::query()->whereKey($data['customer_agreement_id'])->lockForUpdate()->first();
@@ -193,6 +178,72 @@ final class SalesOrderService implements SalesOrderServiceInterface
         ));
 
         return $order->load('items');
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $calculatedItems
+     */
+    private function insertItems(string $actualOrderId, string $tenantId, array $calculatedItems): void
+    {
+        foreach ($calculatedItems as $item) {
+            SalesOrderItem::create([
+                'id' => (string) Str::uuid7(),
+                'tenant_id' => $tenantId,
+                'sales_order_id' => $actualOrderId,
+                'product_id' => $item['product_id'] ?? null,
+                'blanket_agreement_line_id' => $item['blanket_agreement_line_id'] ?? null,
+                'warehouse_id' => $item['warehouse_id'] ?? null,
+                'requested_date' => $item['requested_date'] ?? null,
+                'description' => $item['description'] ?? 'Product item',
+                'quantity' => $item['quantity'],
+                'quantity_reserved' => '0',
+                'quantity_delivered' => '0',
+                'quantity_invoiced' => '0',
+                'unit_price' => $item['unit_price'],
+                'tax_rate' => $item['tax_rate'],
+                'discount_percentage' => $item['discount_percentage'],
+                'line_total' => $item['line_total'],
+                'cost_price' => DocumentTotalsCalculator::decimal($item['cost_price'] ?? '0'),
+                'uom' => $item['uom'] ?? 'EA',
+                'notes' => $item['notes'] ?? null,
+            ]);
+        }
+    }
+
+    /**
+     * Rewrites a draft order: header fields, lines, prices and totals. Only a draft can be rewritten; the number stays.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    public function replaceDraft(SalesOrder $order, array $data, array $items): SalesOrder
+    {
+        return DB::transaction(function () use ($order, $data, $items): SalesOrder {
+            $locked = SalesOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->status !== SalesOrderStatus::Draft->value) {
+                throw ValidationException::withMessages(['status' => __('sales.order_not_draft')]);
+            }
+
+            $date = CarbonImmutable::parse((string) ($data['date'] ?? $locked->getRawOriginal('date')));
+            $data += ['contact_id' => (string) $locked->contact_id, 'tenant_id' => (string) $locked->tenant_id];
+            $calculated = $this->priceLines($data, $items, $date);
+            $totals = (new DocumentTotalsCalculator)->calculateDecimal($calculated);
+
+            foreach ($totals['items'] as $index => $line) {
+                $calculated[$index] = array_merge($calculated[$index], $line);
+            }
+
+            SalesOrderItem::query()->where('sales_order_id', (string) $locked->id)->delete();
+            $this->insertItems((string) $locked->id, (string) $locked->tenant_id, $calculated);
+
+            $locked->update(array_merge(
+                array_intersect_key($data, array_flip(['due_date', 'currency', 'payment_terms', 'shipping_method', 'shipping_address', 'billing_address', 'notes', 'order_type', 'warehouse_id', 'requested_delivery_date', 'price_list_id', 'discount_policy_id', 'sales_rep_id'])),
+                ['date' => $date->toDateString(), 'subtotal' => $totals['subtotal'], 'discount_amount' => $totals['discount_total'], 'total_net' => $totals['total_net'], 'total_tax' => $totals['total_tax'], 'total_gross' => $totals['total_gross']]
+            ));
+
+            return $locked->load('items');
+        });
     }
 
     /**
@@ -224,6 +275,7 @@ final class SalesOrderService implements SalesOrderServiceInterface
                     reason: $creditResult['reason'] ?? __('sales.credit_customer_on_hold'),
                     userId: $userId
                 );
+                app(CustomerCreditControlService::class)->recordBlock($locked, $userId);
             } else {
                 $locked->update([
                     'status' => SalesOrderStatus::Confirmed->value,
@@ -332,6 +384,7 @@ final class SalesOrderService implements SalesOrderServiceInterface
             $locked->load('items');
 
             $this->reservations()->release($locked);
+            app(BlanketAgreementService::class)->restoreBalance($locked);
 
             $locked->update([
                 'status' => SalesOrderStatus::Cancelled->value,

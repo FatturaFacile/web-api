@@ -111,6 +111,7 @@
             "Modules\\Marketplace\\": "modules/57_Marketplace/src/",
             "Modules\\Platform\\": "modules/58_Platform/src/",
             "Modules\\Collaboration\\": "modules/59_Collaboration/src/",
+            "Modules\\Controlling\\": "modules/64_Controlling/src/",
             "Modules\\Rebates\\": "modules/60_Rebates/src/",
             "Modules\\Pricing\\": "modules/63_Pricing/src/",
             "Modules\\Events\\": "modules/61_Events/src/",

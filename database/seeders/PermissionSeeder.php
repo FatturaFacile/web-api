@@ -28,6 +28,7 @@ class PermissionSeeder extends GlobalDataSeeder
             ['code' => 'crm.view', 'label_it' => 'Visualizzazione CRM', 'label_en' => 'View CRM Records'],
             ['code' => 'crm.manage', 'label_it' => 'Gestione Completa CRM', 'label_en' => 'Full CRM Management'],
             ['code' => 'sales.orders.create', 'label_it' => 'Creazione Ordini Vendita', 'label_en' => 'Create Sales Orders'],
+            ['code' => 'sales_orders.approve_credit', 'label_it' => 'Sblocco Ordini Bloccati per Fido', 'label_en' => 'Release Orders Blocked by Credit'],
             ['code' => 'invoicing.issue', 'label_it' => 'Emissione Fatture Attive', 'label_en' => 'Issue Sales Invoices'],
             ['code' => 'procurement.po.approve', 'label_it' => 'Approvazione Ordini Acquisto', 'label_en' => 'Approve Purchase Orders'],
             ['code' => 'inventory.movements.post', 'label_it' => 'Registrazione Movimenti Magazzino', 'label_en' => 'Post Stock Movements'],

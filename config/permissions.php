@@ -165,6 +165,14 @@ return [
             'read' => $anyMember,
             'write' => ['owner', 'admin', 'accountant', 'production', 'procurement_manager', 'sales_manager', 'member'],
         ],
+        // Controlling (analytical cost accounting, margin control, working capital KPIs, budgets with rolling forecast):
+        // finance, sales management and production read; owners, administrators and accountants keep cost centers, jobs,
+        // allocation rules and plans. Running allocations needs controlling.allocations.run (owners, administrators and
+        // accountants have it) and approving or locking a plan budgeting.approve, both reserved by the policy.
+        'controlling' => [
+            'read' => [...$financeReaders, 'sales_manager', 'production', 'procurement_manager'],
+            'write' => [...$finance, 'production'],
+        ],
         // Sales and operations planning (S&OP): every member reads; planners, production, purchasing and finance staff keep
         // the scenarios, plan lines and capacity data. Approving, rejecting, locking and publishing a plan are reserved by
         // the policy to owners, administrators and members granted planning.approve.

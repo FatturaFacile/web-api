@@ -58,6 +58,7 @@ const SCHEDULE_CLEANUPS = [
     'inventory:expire-lots' => 'status change only',
     'inventory:expire-reservations' => 'status change only',
     'contracts:deadlines' => 'status change only',
+    'sdi:expire-pa-deadlines' => 'status change only',
     'document-trust:verify-preservation' => 'verification only, disposal is manual',
     'Enterprise\EventBus\Jobs\MaintainOutboxLifecycleJob' => 'outbox archive copies (open question)',
 ];
