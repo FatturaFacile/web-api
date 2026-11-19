@@ -1,0 +1,2 @@
+# ZAP baseline rules: id<TAB>action (IGNORE|WARN|FAIL)<TAB>comment. Everything not listed keeps ZAP default (WARN).
+10096	IGNORE	Timestamp disclosure in the JSON API is not sensitive

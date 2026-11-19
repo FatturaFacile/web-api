@@ -11,6 +11,8 @@ use App\Http\Resources\TenantBackupResource;
 use App\Http\Responses\ApiResponse;
 use App\Jobs\GenerateTenantBackupJob;
 use App\Models\TenantBackup;
+use App\Services\Backup\BackupArchiveEncryptor;
+use App\Services\Backup\BackupStatusService;
 use App\Services\Backup\TenantBackupService;
 use App\Services\Backup\TenantRestoreService;
 use App\Services\Tenancy\TenantContext;
@@ -103,31 +105,7 @@ class TenantBackupController extends Controller
     )]
     public function status(): JsonResponse
     {
-        $lastCompleted = TenantBackup::query()->where('status', TenantBackup::COMPLETED)->latest('completed_at')->first();
-        $lastFailed = TenantBackup::query()->where('status', TenantBackup::FAILED)->latest()->first();
-        $rpoHours = (int) config('backup.rpo_hours', 24);
-        $ageHours = $lastCompleted?->completed_at !== null ? (int) floor($lastCompleted->completed_at->diffInHours(now(), true)) : null;
-
-        $state = match (true) {
-            $lastCompleted === null => $lastFailed !== null ? 'failing' : 'never',
-            $ageHours > $rpoHours => 'stale',
-            $lastFailed !== null && $lastFailed->created_at > $lastCompleted->completed_at => 'failing',
-            default => 'ok',
-        };
-
-        return $this->successResponse([
-            'state' => $state,
-            'last_completed_at' => $lastCompleted?->completed_at?->toIso8601String(),
-            'last_completed_size_bytes' => $lastCompleted?->file_size_bytes,
-            'age_hours' => $ageHours,
-            'last_failed_at' => $lastFailed?->created_at?->toIso8601String(),
-            'last_error' => $lastFailed?->error_message,
-            'pending' => TenantBackup::query()->whereIn('status', [TenantBackup::PENDING, TenantBackup::PROCESSING])->count(),
-            'completed_count' => TenantBackup::query()->where('status', TenantBackup::COMPLETED)->count(),
-            'rpo_hours' => $rpoHours,
-            'rto_minutes' => (int) config('backup.rto_minutes', 240),
-            'retention' => (int) config('backup.retention', 7),
-        ], __('backup.messages.retrieved'));
+        return $this->successResponse(app(BackupStatusService::class)->forTenant(), __('backup.messages.retrieved'));
     }
 
     #[OA\Get(
@@ -183,7 +161,22 @@ class TenantBackupController extends Controller
             return $this->problemDetailsResponse(__('backup.problem_titles.download'), __('backup.errors.file_missing'), Response::HTTP_NOT_FOUND);
         }
 
-        return Storage::disk($backup->disk)->download($backup->storagePath(), 'backup-'.$backup->completed_at->format('Ymd-His').'.zip');
+        $name = 'backup-'.$backup->completed_at->format('Ymd-His').'.zip';
+
+        // The archive is encrypted at rest: the download is the plain, restorable ZIP.
+        return response()->streamDownload(function () use ($backup): void {
+            $encrypted = (string) tempnam(sys_get_temp_dir(), 'backup-dl-');
+            $plain = (string) tempnam(sys_get_temp_dir(), 'backup-dl-plain-');
+
+            try {
+                file_put_contents($encrypted, Storage::disk($backup->disk)->readStream($backup->storagePath()));
+                app(BackupArchiveEncryptor::class)->decrypt($encrypted, $plain);
+                readfile($plain);
+            } finally {
+                @unlink($encrypted);
+                @unlink($plain);
+            }
+        }, $name, ['Content-Type' => 'application/zip']);
     }
 
     /**

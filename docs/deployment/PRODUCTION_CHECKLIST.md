@@ -75,7 +75,9 @@ Scheduled tasks (`php artisan schedule:list`):
 
 | Task                      | When                                                               |
 |---------------------------|--------------------------------------------------------------------|
-| `tenants:backup --all`    | daily 02:00 (retention: the 7 latest completed backups per tenant) |
+| `tenants:backup --all`    | daily 02:00, or hourly with `BACKUP_SCHEDULE=hourly`; archives encrypted at rest (retention: the 7 latest completed backups per tenant) |
+| `tenants:restore-drill`  | weekly, Sunday 04:00 (verifies the latest backup of a sample tenant restores, decrypting it into a scratch file; read-only) |
+| `tenants:backup-check`   | hourly (critical log on `BACKUP_ALERT_CHANNEL` when a tenant backup is stale or failing against `BACKUP_RPO_HOURS`) |
 | `subscriptions:process`   | daily 02:00                                                        |
 | `invoices:send-reminders` | daily 08:00                                                        |
 | `ecommerce:sync-orders`   | every 15 minutes                                                   |
