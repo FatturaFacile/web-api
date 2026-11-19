@@ -32,6 +32,8 @@ class ContactResource extends JsonResource
             'vat_number' => $this->vat_number,
             'fiscal_code' => $this->fiscal_code,
             'uid_number' => $this->uid_number,
+            'eori_number' => $this->eori_number,
+            'default_incoterm' => $this->default_incoterm,
             'sdi_code' => $this->sdi_code,
             'pec' => $this->pec,
             'document_language' => $this->document_language,

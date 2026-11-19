@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Customs\Http\Requests;
 
+use App\Enums\Incoterm;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -33,7 +34,7 @@ final class SaveDossierRequest extends FormRequest
             'status' => [$this->isMethod('post') ? 'prohibited' : 'sometimes', Rule::enum(DossierStatus::class)],
             'origin_country' => ['sometimes', 'nullable', ...CustomsRules::country()],
             'destination_country' => ['sometimes', 'nullable', ...CustomsRules::country()],
-            'incoterms' => ['sometimes', 'nullable', 'string', 'size:3'],
+            'incoterms' => ['sometimes', 'nullable', Rule::enum(Incoterm::class)],
             'gross_weight_kg' => ['sometimes', 'numeric', 'min:0'],
             'volume_m3' => ['sometimes', 'numeric', 'min:0'],
             'packages' => ['sometimes', 'integer', 'min:0'],

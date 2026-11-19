@@ -26,6 +26,7 @@ final class ValidFiscalIdentifier implements ValidationRule
             'it_fiscal_code' => FiscalIdentifiers::isValidItalianFiscalCode($value),
             'ch_uid' => FiscalIdentifiers::isValidSwissUid($value),
             'sdi_code' => FiscalIdentifiers::isValidSdiCode($value),
+            'eori' => FiscalIdentifiers::isValidEori($value),
             default => false,
         };
 
@@ -34,6 +35,7 @@ final class ValidFiscalIdentifier implements ValidationRule
                 'it_vat' => 'Italian VAT number (Partita IVA).',
                 'it_fiscal_code' => 'Italian fiscal code (Codice Fiscale).',
                 'ch_uid' => 'Swiss UID (CHE-xxx.xxx.xxx).',
+                'eori' => 'EORI number (e.g. IT12345678901, CHE123456788).',
                 default => 'SDI recipient code (7 alphanumeric characters).',
             });
         }

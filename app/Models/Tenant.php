@@ -33,6 +33,7 @@ class Tenant extends Model
         'fiscal_code',
         'vat_number',
         'uid_number',
+        'eori_number',
         'country',
         'default_currency',
         'iban',

@@ -46,6 +46,7 @@ Route::prefix('api/v1/customs')
         Route::get('/declarations/{id}/message', [DeclarationController::class, 'message'])->name('declarations.message');
         Route::get('/declarations/{id}/pdf', [DeclarationController::class, 'pdf'])->name('declarations.pdf');
         Route::get('/declarations/{id}/pro-forma', [TradeComplianceController::class, 'proForma'])->name('declarations.pro-forma');
+        Route::get('/declarations/{id}/packing-list', [TradeComplianceController::class, 'packingList'])->name('declarations.packing-list');
         Route::get('/declarations/{id}/transit-sheet', [TradeComplianceController::class, 'transitSheet'])->name('declarations.transit-sheet');
         Route::post('/declarations/{id}/mrn', [TradeComplianceController::class, 'assignMrn'])->name('declarations.mrn');
         Route::post('/declarations/{id}/invoices', [TradeComplianceController::class, 'linkInvoices'])->name('declarations.invoices.link');

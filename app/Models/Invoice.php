@@ -111,6 +111,10 @@ class Invoice extends Model implements AuditableEntityInterface
         'free_trade_agreement_id',
         'origin_declaration_text',
         'duty_exemption_eligible',
+        'incoterm',
+        'incoterm_place',
+        'freight_amount',
+        'insurance_amount',
     ];
 
     /**

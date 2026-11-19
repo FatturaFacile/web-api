@@ -40,6 +40,8 @@ final class SalesOrderResource extends JsonResource
             'billing_status' => $this->billing_status,
             'payment_terms' => $this->payment_terms,
             'shipping_method' => $this->shipping_method,
+            'incoterm' => $this->incoterm,
+            'incoterm_place' => $this->incoterm_place,
             'notes' => $this->notes,
             'contact' => $this->whenLoaded('customer', fn (): ?array => $this->customer === null ? null : [
                 'id' => $this->customer->id,

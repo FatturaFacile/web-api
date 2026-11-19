@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Http\Requests;
 
+use App\Enums\Incoterm;
 use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * A new purchase order. The number comes from the gapless series of the company; a line without a price takes the
@@ -40,7 +42,7 @@ final class StorePurchaseOrderRequest extends FormRequest
             'department_id' => ['nullable', 'uuid'],
             'branch_id' => ['nullable', 'uuid'],
             'payment_terms_code' => ['nullable', 'string', 'max:50'],
-            'incoterms' => ['nullable', 'string', 'max:10'],
+            'incoterms' => ['nullable', Rule::enum(Incoterm::class)],
             'shipping_address' => ['nullable', 'array'],
             'notes' => ['nullable', 'string', 'max:2000'],
             ...self::lineRules('required'),

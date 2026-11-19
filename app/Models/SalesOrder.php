@@ -34,6 +34,8 @@ class SalesOrder extends Model
         'total_gross',
         'status',
         'notes',
+        'incoterm',
+        'incoterm_place',
     ];
 
     protected function casts(): array

@@ -14,6 +14,7 @@ use App\Models\PassiveInvoice;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Rules\ValidFiscalIdentifier;
 use App\Services\Auth\TaxIdentifier;
 use App\Services\SwissQrBill\QrBillGeneratorService;
 use App\Services\Tenancy\TenantContext;
@@ -95,6 +96,7 @@ class SettingsController extends Controller
                     new OA\Property(property: 'fiscal_code', type: 'string', maxLength: 16, nullable: true, example: 'RSSMRA85M01H501Q'),
                     new OA\Property(property: 'vat_number', type: 'string', maxLength: 30, nullable: true, example: 'CHE-123.456.789'),
                     new OA\Property(property: 'uid_number', type: 'string', maxLength: 20, nullable: true, example: 'CHE123456789'),
+                    new OA\Property(property: 'eori_number', type: 'string', maxLength: 17, nullable: true, example: 'IT12345678901'),
                     new OA\Property(property: 'country', description: 'Company country (SupportedCountry). Cannot change once invoices or journal entries exist.', type: 'string', enum: ['IT', 'CH', 'FR', 'ES', 'DE', 'US'], example: 'FR'),
                     new OA\Property(property: 'default_currency', type: 'string', maxLength: 3, nullable: true, example: 'CHF'),
                     new OA\Property(property: 'iban', type: 'string', maxLength: 34, nullable: true, example: 'CH9300000000000000000'),
@@ -166,6 +168,7 @@ class SettingsController extends Controller
             'pec_email' => ['nullable', 'email'],
             'customs_approved_exporter_number' => ['nullable', 'string', 'max:50'],
             'rex_exporter_number' => ['nullable', 'string', 'max:50'],
+            'eori_number' => ['nullable', 'string', 'max:17', new ValidFiscalIdentifier('eori')],
             'settings' => ['nullable', 'array'],
             'settings.regime_fiscale' => ['nullable', Rule::enum(RegimeFiscale::class)],
             'settings.enasarco_agent_type' => ['nullable', Rule::in(EnasarcoParameter::AGENT_TYPES)],

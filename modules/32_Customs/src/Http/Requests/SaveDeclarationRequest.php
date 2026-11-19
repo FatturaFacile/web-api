@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Customs\Http\Requests;
 
+use App\Enums\Incoterm;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Customs\Enums\CustomsRegime;
@@ -50,7 +51,7 @@ final class SaveDeclarationRequest extends FormRequest
             'transport_in_container' => ['sometimes', 'boolean'],
             'container_numbers' => ['sometimes', 'nullable', 'array', 'max:99'],
             'container_numbers.*' => ['string', 'between:1,17'],
-            'incoterms' => ['sometimes', 'nullable', 'string', 'size:3'],
+            'incoterms' => ['sometimes', 'nullable', Rule::enum(Incoterm::class)],
             'invoice_currency_type' => ['sometimes', 'nullable', 'integer', 'between:0,99'],
             'declared_on' => ['sometimes', 'nullable', 'date'],
             'customs_regime' => ['sometimes', Rule::enum(CustomsRegime::class)],

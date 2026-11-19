@@ -149,6 +149,8 @@ final class SalesOrderService implements SalesOrderServiceInterface
             'billing_status' => 'unbilled',
             'payment_terms' => $data['payment_terms'] ?? null,
             'shipping_method' => $data['shipping_method'] ?? null,
+            'incoterm' => $data['incoterm'] ?? null,
+            'incoterm_place' => $data['incoterm_place'] ?? null,
             'shipping_address' => $data['shipping_address'] ?? null,
             'billing_address' => $data['billing_address'] ?? null,
             'notes' => $data['notes'] ?? null,

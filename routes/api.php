@@ -39,6 +39,7 @@ use App\Http\Controllers\Api\V1\Ecommerce\EcommerceWebhookController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FieldServiceController;
 use App\Http\Controllers\Api\V1\FleetRentalController;
+use App\Http\Controllers\Api\V1\ForeignTradeController;
 use App\Http\Controllers\Api\V1\FreeTradeAgreementController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\HrController;
@@ -337,6 +338,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/invoices/{id}/generate-qr-bill', [InvoiceController::class, 'generateQrBill'])->middleware('deprecated:/api/v1/sales/invoices/{id}/qr-bill')->name('invoices.generate-qr-bill');
             Route::get('/invoices/{id}/download-qr-bill', [InvoiceController::class, 'downloadQrBill'])->middleware(['deprecated:/api/v1/sales/invoices/{id}/qr-bill', 'audit.access:Invoice,EXPORTED,swiss-qr-bill'])->name('invoices.download-qr-bill');
             Route::get('/invoices/{id}/qr-bill', [InvoiceQrBillController::class, 'show'])->middleware('audit.access:Invoice,EXPORTED,swiss-qr-bill')->name('invoices.qr-bill');
+            Route::get('/invoices/{id}/cross-border-readiness', [ForeignTradeController::class, 'readiness'])->name('invoices.cross-border-readiness');
             Route::post('/invoices/{id}/evaluate-customs-origin', [InvoiceCustomsOriginController::class, 'evaluate'])->name('invoices.evaluate-customs-origin');
             Route::get('/invoices/{id}/payments', [InvoicePaymentController::class, 'index'])->name('invoices.payments.index');
             Route::post('/invoices/{id}/payments', [InvoicePaymentController::class, 'store'])->name('invoices.payments.store');
@@ -445,6 +447,11 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('catalog')->name('catalog.')->group(function (): void {
             Route::apiResource('customs-taric-codes', CustomsTaricCodeController::class)->parameters(['customs-taric-codes' => 'id']);
             Route::apiResource('free-trade-agreements', FreeTradeAgreementController::class)->parameters(['free-trade-agreements' => 'id']);
+        });
+
+        Route::prefix('foreign-trade')->name('foreign-trade.')->middleware('module.access:customs')->group(function (): void {
+            Route::post('/customs-value', [ForeignTradeController::class, 'customsValue'])->name('customs-value');
+            Route::post('/vat-regime', [ForeignTradeController::class, 'vatRegime'])->name('vat-regime');
         });
 
         // 4b. Catalog, Price Lists & Payment Terms

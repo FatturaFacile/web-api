@@ -62,6 +62,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'billing_status'),
         new OA\Property(property: 'payment_terms'),
         new OA\Property(property: 'shipping_method'),
+        new OA\Property(property: 'incoterm', type: 'string', nullable: true),
+        new OA\Property(property: 'incoterm_place', type: 'string', nullable: true),
         new OA\Property(property: 'notes', type: 'string'),
         new OA\Property(property: 'items'),
         new OA\Property(property: 'holds'),

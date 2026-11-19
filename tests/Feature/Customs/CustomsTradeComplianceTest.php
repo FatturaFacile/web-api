@@ -158,7 +158,7 @@ test('the pro-forma invoice is bilingual, carries tariff data and the preferenti
     expect($html)->toContain('Fattura commerciale / pro-forma per la dogana', 'Handels- / Proforma-Rechnung', 'CHE123456789', 'DAP', '2201.1000', '2204.2100', $invoice->invoice_number)
         ->and($html)->toContain('125.500', '110.250', '1300.50', 'Dichiarazione di origine preferenziale', 'Präferenzursprungserklärung');
 
-    $this->get("/api/v1/customs/declarations/{$id}/pro-forma?language=it_fr")->assertUnprocessable();
+    $this->get("/api/v1/customs/declarations/{$id}/pro-forma?language=it_es")->assertUnprocessable();
 });
 
 test('the pro-forma has no origin clause when no invoice is linked', function (): void {
@@ -181,10 +181,14 @@ test('an accepted export lacks its proof until the export decision is archived, 
         ->and($missing[0]['invoices'][0]['invoice_number'])->toBe($invoice->invoice_number);
     $this->getJson("/api/v1/customs/declarations/{$id}/export-proof")->assertJsonPath('data.has_proof', false);
 
+    $this->getJson("/api/v1/customs/declarations/{$id}")->assertJsonPath('data.workflow_stage', 'cleared');
+    expect($this->getJson('/api/v1/customs/trade-compliance/dashboard')->json('data.by_stage.cleared'))->toBe(1);
+
     $this->postJson("/api/v1/customs/declarations/{$id}/mrn", ['mrn' => '26CHEI000000000001'])->assertOk();
     $decision = customsArchive($this->tenant, customsDutyDecisionXml(type: 'taxationDecisionExport'));
 
     expect($decision->declaration_id)->toBe($id);
+    $this->getJson("/api/v1/customs/declarations/{$id}")->assertJsonPath('data.workflow_stage', 'archived_evv');
     $this->getJson("/api/v1/customs/declarations/{$id}/export-proof")->assertJsonPath('data.has_proof', true)->assertJsonPath('data.decision.mrn', '26CHEI000000000001');
     expect($this->getJson('/api/v1/customs/trade-compliance/dashboard')->json('data.missing_evv'))->toBe([])
         ->and(app(ExportProofService::class)->hasProof($invoice))->toBeTrue();
@@ -252,4 +256,37 @@ test('customs declarations of one company are not counted on the dashboard of an
 
     expect($this->getJson('/api/v1/customs/trade-compliance/dashboard')->assertOk()->json('data.by_direction'))->toBe([])
         ->and(CustomsDeclaration::withoutGlobalScopes()->count())->toBe(1);
+});
+
+test('the pro-forma can be rendered in French and falls back to the incoterm of the linked invoice', function (): void {
+    customsHtmlPdf();
+    $invoice = customsPreferentialInvoice($this->consignee);
+    $invoice->update(['incoterm' => 'FCA', 'incoterm_place' => 'Lugano']);
+    $id = $this->postJson('/api/v1/customs/declarations', customsExportPayload($this->consignee, ['incoterms' => null]))->json('data.id');
+    $this->postJson("/api/v1/customs/declarations/{$id}/invoices", ['invoice_ids' => [$invoice->id]])->assertOk();
+
+    $html = $this->get("/api/v1/customs/declarations/{$id}/pro-forma?language=it_fr")->assertOk()->getContent();
+
+    expect($html)->toContain('Facture commerciale / pro forma pour la douane', 'FCA Lugano', 'ch_export_art_23_ltva');
+});
+
+test('the packing list shows packages, weights, incoterm and MRN in the chosen languages', function (): void {
+    customsHtmlPdf();
+    $id = $this->postJson('/api/v1/customs/declarations', customsExportPayload($this->consignee))->json('data.id');
+    $this->postJson("/api/v1/customs/declarations/{$id}/mrn", ['mrn' => '26CHEI000000000001'])->assertOk();
+
+    $html = $this->get("/api/v1/customs/declarations/{$id}/packing-list?language=it_de")->assertOk()->getContent();
+
+    expect($html)->toContain('Packliste', 'Packing list / lista di colli', '26CHEI000000000001', 'DAP', 'Totale / Total');
+    $this->get("/api/v1/customs/declarations/{$id}/packing-list?language=it_fr")->assertOk();
+    $this->get("/api/v1/customs/declarations/{$id}/packing-list?language=xx")->assertUnprocessable();
+});
+
+test('a packing list of a declaration of another company is not found', function (): void {
+    customsHtmlPdf();
+    $id = $this->postJson('/api/v1/customs/declarations', customsExportPayload($this->consignee))->json('data.id');
+    $other = customsTenant();
+    customsApi(customsMember($other), $other);
+
+    $this->get("/api/v1/customs/declarations/{$id}/packing-list")->assertNotFound();
 });

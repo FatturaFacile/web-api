@@ -182,6 +182,10 @@ final class InvoicingService implements InvoicingServiceInterface
             'free_trade_agreement_id' => $data['free_trade_agreement_id'] ?? null,
             'origin_declaration_text' => $data['origin_declaration_text'] ?? null,
             'duty_exemption_eligible' => (bool) ($data['duty_exemption_eligible'] ?? false),
+            'incoterm' => $data['incoterm'] ?? null,
+            'incoterm_place' => $data['incoterm_place'] ?? null,
+            'freight_amount' => $data['freight_amount'] ?? null,
+            'insurance_amount' => $data['insurance_amount'] ?? null,
             'created_by' => ! empty($data['created_by']) && Str::isUuid((string) $data['created_by']) ? (string) $data['created_by'] : null,
             ...array_filter(Arr::only($data, self::LINK_FIELDS), static fn (mixed $value): bool => $value !== null),
             ...Arr::only($data, InvoiceFiscalService::INPUT_FIELDS),
@@ -335,6 +339,8 @@ final class InvoicingService implements InvoicingServiceInterface
             'tenant_id' => $tenantId,
             'contact_id' => (string) $order->contact_id,
             'sales_order_id' => (string) $order->id,
+            'incoterm' => $order->incoterm,
+            'incoterm_place' => $order->incoterm_place,
             'quote_id' => $overrides['quote_id'] ?? null,
         ]);
 

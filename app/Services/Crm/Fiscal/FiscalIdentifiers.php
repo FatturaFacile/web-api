@@ -128,6 +128,30 @@ final class FiscalIdentifiers
     }
 
     /**
+     * EORI number: ISO country code plus up to 15 alphanumeric characters. A Swiss EORI is "CHE" plus the nine UID
+     * digits (the UID check digit applies), an Italian one is "IT" plus the 11-digit VAT number or the 16-character
+     * fiscal code.
+     */
+    public static function isValidEori(string $value): bool
+    {
+        $eori = strtoupper(preg_replace('/[\s.\-]/', '', $value) ?? '');
+
+        if (! preg_match('/^[A-Z]{2}[A-Z0-9]{1,15}$/', $eori)) {
+            return false;
+        }
+
+        if (str_starts_with($eori, 'CHE')) {
+            return preg_match('/^CHE\d{9}$/', $eori) === 1 && self::isValidSwissUid($eori);
+        }
+
+        if (str_starts_with($eori, 'IT')) {
+            return preg_match('/^IT(\d{11}|[A-Z0-9]{16})$/', $eori) === 1;
+        }
+
+        return true;
+    }
+
+    /**
      * SDI recipient code: 7 alphanumeric characters ("0000000" for PEC delivery, "XXXXXXX" for foreign customers).
      */
     public static function isValidSdiCode(string $value): bool

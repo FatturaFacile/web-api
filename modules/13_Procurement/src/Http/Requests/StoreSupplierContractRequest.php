@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Http\Requests;
 
+use App\Enums\Incoterm;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class StoreSupplierContractRequest extends FormRequest
 {
@@ -14,7 +16,7 @@ final class StoreSupplierContractRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
@@ -29,7 +31,7 @@ final class StoreSupplierContractRequest extends FormRequest
             'total_committed_amount' => ['nullable', 'numeric', 'gte:0'],
             'consumed_amount' => ['nullable', 'numeric', 'gte:0'],
             'payment_terms_code' => ['nullable', 'string', 'max:50'],
-            'incoterms' => ['nullable', 'string', 'max:10'],
+            'incoterms' => ['nullable', Rule::enum(Incoterm::class)],
         ];
     }
 }

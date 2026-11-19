@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Concerns;
 
+use App\Enums\Incoterm;
 use App\Models\Contact;
 use App\Models\ContactAddress;
 use App\Rules\ValidFiscalIdentifier;
@@ -67,6 +68,8 @@ trait ValidatesContactFiscalData
             'vat_number' => $vat,
             'fiscal_code' => ['nullable', 'string', 'max:16', ...($country === 'IT' ? [new ValidFiscalIdentifier('it_fiscal_code')] : [])],
             'uid_number' => ['nullable', 'string', 'max:20', new ValidFiscalIdentifier('ch_uid')],
+            'eori_number' => ['nullable', 'string', 'max:17', new ValidFiscalIdentifier('eori')],
+            'default_incoterm' => ['nullable', Rule::enum(Incoterm::class)],
             'sdi_code' => ['nullable', 'string', 'size:7', new ValidFiscalIdentifier('sdi_code')],
             'pec' => ['nullable', 'email'],
             'parent_id' => ['nullable', 'uuid', $this->parentRule($current)],

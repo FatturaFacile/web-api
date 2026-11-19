@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Invoicing;
 
+use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\Product;
+use App\Services\ForeignTrade\CrossBorderReadinessValidator;
 use App\Services\Invoicing\Tax\FiscalInputResolver;
 use App\Services\Invoicing\Tax\FiscalResult;
 use App\Services\Invoicing\Tax\ItalianFiscalCalculator;
@@ -25,6 +27,7 @@ class InvoiceService
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly InvoicingServiceInterface $invoicing,
+        private readonly CrossBorderReadinessValidator $crossBorder,
         private readonly ?ItalianFiscalCalculator $fiscalCalculator = null,
         private readonly ?FiscalInputResolver $fiscalInputResolver = null,
     ) {}
@@ -134,6 +137,14 @@ class InvoiceService
                 $header[$field] ??= null;
             }
 
+            if (empty($header['incoterm']) && ! empty($header['contact_id'])) {
+                $header['incoterm'] = Contact::withoutGlobalScopes()->whereKey($header['contact_id'])->value('default_incoterm');
+            }
+
+            if (($header['invoice_type'] ?? 'standard') !== 'proforma' && config('foreign_trade.enforce_readiness', true) && $this->isGoodsSale($header)) {
+                $this->crossBorder->assertReady($header, $lines);
+            }
+
             $userId = (string) (Auth::id() ?? 'system');
             $created = ($header['invoice_type'] ?? 'standard') === 'proforma'
                 ? $this->invoicing->createInvoice($header, $lines)
@@ -166,5 +177,17 @@ class InvoiceService
                 'made_in_label' => $item['made_in_label'] ?? $product?->made_in_label,
             ];
         }, $items);
+    }
+
+    /**
+     * Self-invoices, integrations and own-use communications (TD16-TD21, TD27, TD28) document purchases or no supply at
+     * all: customs data is only required on sales of goods.
+     *
+     * @param  array<string, mixed>  $header
+     */
+    private function isGoodsSale(array $header): bool
+    {
+        return empty($header['source_passive_invoice_id'])
+            && ! in_array($header['document_type'] ?? null, ['TD16', 'TD17', 'TD18', 'TD19', 'TD20', 'TD21', 'TD27', 'TD28'], true);
     }
 }

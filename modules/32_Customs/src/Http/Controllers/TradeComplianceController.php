@@ -146,9 +146,9 @@ final class TradeComplianceController extends CustomsController
     /**
      * Bilingual customs invoice.
      */
-    #[OA\Get(path: '/api/v1/customs/declarations/{id}/pro-forma', operationId: 'customsDeclarationProForma', description: 'The bilingual commercial / pro-forma invoice for customs: Italian with English (it_en) or German (it_de), with tariff codes, origin, weights, packages and, when eligible, the preferential origin text.', summary: 'Customs pro-forma invoice PDF', security: [['bearerAuth' => []]], tags: ['Customs'], parameters: [
+    #[OA\Get(path: '/api/v1/customs/declarations/{id}/pro-forma', operationId: 'customsDeclarationProForma', description: 'The bilingual commercial / pro-forma invoice for customs: Italian with English (it_en), German (it_de) or French (it_fr), with tariff codes, origin, weights, packages and, when eligible, the preferential origin text.', summary: 'Customs pro-forma invoice PDF', security: [['bearerAuth' => []]], tags: ['Customs'], parameters: [
         new OA\Parameter(ref: '#/components/parameters/CustomsRecordId'),
-        new OA\Parameter(name: 'language', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['it_en', 'it_de'])),
+        new OA\Parameter(name: 'language', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['it_en', 'it_de', 'it_fr'])),
     ], responses: [
         new OA\Response(response: 200, description: 'PDF', content: new OA\MediaType(mediaType: 'application/pdf', schema: new OA\Schema(type: 'string', format: 'binary'))),
         new OA\Response(ref: '#/components/responses/CustomsUnauthenticated', response: 401),
@@ -169,7 +169,7 @@ final class TradeComplianceController extends CustomsController
      */
     #[OA\Get(path: '/api/v1/customs/declarations/{id}/transit-sheet', operationId: 'customsDeclarationTransitSheet', description: 'The T1 / T2 transit tracking sheet: guarantee, offices, time limit and discharge status.', summary: 'Transit tracking sheet PDF', security: [['bearerAuth' => []]], tags: ['Customs'], parameters: [
         new OA\Parameter(ref: '#/components/parameters/CustomsRecordId'),
-        new OA\Parameter(name: 'language', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['it_en', 'it_de'])),
+        new OA\Parameter(name: 'language', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['it_en', 'it_de', 'it_fr'])),
     ], responses: [
         new OA\Response(response: 200, description: 'PDF', content: new OA\MediaType(mediaType: 'application/pdf', schema: new OA\Schema(type: 'string', format: 'binary'))),
         new OA\Response(ref: '#/components/responses/CustomsUnauthenticated', response: 401),
@@ -184,6 +184,27 @@ final class TradeComplianceController extends CustomsController
         $pair = (string) $request->validated('language', 'it_en');
 
         return $this->fileResponse($this->documents->renderTransitSheet($declaration, $this->tenant(), $pair), $declaration->trader_declaration_number.'-transit.pdf', 'application/pdf');
+    }
+
+    /**
+     * Packing list.
+     */
+    #[OA\Get(path: '/api/v1/customs/declarations/{id}/packing-list', operationId: 'customsDeclarationPackingList', description: 'The multilingual packing list of a declaration: packages, net and gross weight per line, Incoterm, MRN and EORI / UID of the parties.', summary: 'Packing list PDF', security: [['bearerAuth' => []]], tags: ['Customs'], parameters: [
+        new OA\Parameter(ref: '#/components/parameters/CustomsRecordId'),
+        new OA\Parameter(name: 'language', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['it_en', 'it_de', 'it_fr'])),
+    ], responses: [
+        new OA\Response(response: 200, description: 'PDF', content: new OA\MediaType(mediaType: 'application/pdf', schema: new OA\Schema(type: 'string', format: 'binary'))),
+        new OA\Response(ref: '#/components/responses/CustomsUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/CustomsForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/CustomsNotFound', response: 404),
+    ])]
+    public function packingList(CustomsDocumentRequest $request, string $id): Response
+    {
+        $declaration = $this->find($id);
+        $this->authorize('view', $declaration);
+        $pair = (string) $request->validated('language', 'it_en');
+
+        return $this->fileResponse($this->documents->renderPackingList($declaration, $this->tenant(), $pair), $declaration->trader_declaration_number.'-packing-list.pdf', 'application/pdf');
     }
 
     private function find(string $id): CustomsDeclaration

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\CustomsOriginType;
+use App\Enums\Incoterm;
 use App\Http\Requests\Concerns\ValidatesItalianFiscalFields;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
@@ -69,6 +70,10 @@ class StoreInvoiceRequest extends FormRequest
             'free_trade_agreement_id' => ['nullable', 'uuid', Rule::exists('free_trade_agreements', 'id')],
             'origin_declaration_text' => ['nullable', 'string', 'max:2000'],
             'duty_exemption_eligible' => ['nullable', 'boolean'],
+            'incoterm' => ['nullable', Rule::enum(Incoterm::class)],
+            'incoterm_place' => ['nullable', 'string', 'max:100'],
+            'freight_amount' => ['nullable', 'numeric', 'min:0'],
+            'insurance_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

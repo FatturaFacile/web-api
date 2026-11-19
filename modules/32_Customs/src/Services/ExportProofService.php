@@ -6,6 +6,7 @@ namespace Modules\Customs\Services;
 
 use App\Models\Invoice;
 use Modules\Customs\Enums\AssessmentDocumentType;
+use Modules\Customs\Enums\CustomsWorkflowStage;
 use Modules\Customs\Enums\DeclarationStatus;
 use Modules\Customs\Enums\DeclarationType;
 use Modules\Customs\Exceptions\CustomsException;
@@ -115,10 +116,21 @@ final class ExportProofService
     }
 
     /**
+     * The workflow stage of a declaration: draft, declared, cleared or archived with its assessment decision (eVV).
+     */
+    public function stageFor(CustomsDeclaration $declaration): ?CustomsWorkflowStage
+    {
+        $hasDecision = $declaration->status === DeclarationStatus::Accepted
+            && CustomsAssessmentDecision::query()->where('declaration_id', $declaration->id)->exists();
+
+        return CustomsWorkflowStage::resolve($declaration->status, $hasDecision);
+    }
+
+    /**
      * The numbers of the dashboard: declarations by direction, regime and status, the transit that ran out of time and
      * the exports still without proof.
      *
-     * @return array{by_direction: array<string, int>, by_regime: array<string, int>, by_status: array<string, int>, transit_overdue: int, missing_evv: list<array<string, mixed>>}
+     * @return array{by_direction: array<string, int>, by_regime: array<string, int>, by_status: array<string, int>, by_stage: array<string, int>, transit_overdue: int, missing_evv: list<array<string, mixed>>}
      */
     public function dashboard(): array
     {
@@ -133,6 +145,7 @@ final class ExportProofService
             'by_direction' => $count('declaration_type'),
             'by_regime' => $count('customs_regime'),
             'by_status' => $count('status'),
+            'by_stage' => $this->countByStage(),
             'transit_overdue' => CustomsDeclaration::query()
                 ->where('transit_document_type', '!=', 'none')
                 ->whereNull('transit_discharged_at')
@@ -140,5 +153,23 @@ final class ExportProofService
                 ->count(),
             'missing_evv' => $this->missingProof(),
         ];
+    }
+
+    /**
+     * @return array<string, int> declarations per workflow stage (cancelled ones are left out)
+     */
+    private function countByStage(): array
+    {
+        $withDecision = CustomsAssessmentDecision::query()->whereNotNull('declaration_id')->pluck('declaration_id')->all();
+        $stages = array_fill_keys(array_column(CustomsWorkflowStage::cases(), 'value'), 0);
+
+        foreach (CustomsDeclaration::query()->get(['id', 'status']) as $declaration) {
+            $stage = CustomsWorkflowStage::resolve($declaration->status, in_array($declaration->id, $withDecision, true));
+            if ($stage !== null) {
+                $stages[$stage->value]++;
+            }
+        }
+
+        return $stages;
     }
 }

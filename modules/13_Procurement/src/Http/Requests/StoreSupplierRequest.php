@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Http\Requests;
 
+use App\Enums\Incoterm;
 use App\Http\Requests\Concerns\TenantScopedRules;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
@@ -32,7 +33,7 @@ final class StoreSupplierRequest extends FormRequest
             'contact_id' => ['nullable', 'uuid', $this->tenantOwns('contacts')],
             'currency' => ['nullable', 'string', 'size:3'],
             'payment_terms_code' => ['nullable', 'string', 'max:50'],
-            'incoterms' => ['nullable', 'string', 'max:10'],
+            'incoterms' => ['nullable', Rule::enum(Incoterm::class)],
             'credit_limit' => ['nullable', 'numeric', 'gte:0'],
             'rating' => ['nullable', 'string', 'in:A,B,C,D'],
             'is_approved_vendor' => ['nullable', 'boolean'],

@@ -353,7 +353,7 @@ it('snapshots product customs data on invoice lines and keeps it after the produ
     $contact = Contact::create(['tenant_id' => $ctx->tenant->id, 'company_name' => 'Importer', 'type' => 'customer', 'country' => 'CH']);
     $product = Product::create([
         'tenant_id' => $ctx->tenant->id, 'sku' => 'WATCH-1', 'name' => 'Watch', 'sale_price' => 100, 'tax_rate' => 22,
-        'taric_code' => '91012100', 'country_of_origin' => 'IT', 'origin_type' => 'preferential',
+        'taric_code' => '91012100', 'country_of_origin' => 'IT', 'origin_type' => 'preferential', 'net_weight_kg' => 0.2,
     ]);
 
     $response = $this->withHeaders($headers)->postJson('/api/v1/sales/invoices', [
@@ -363,6 +363,7 @@ it('snapshots product customs data on invoice lines and keeps it after the produ
         'date' => now()->toDateString(),
         'currency' => 'EUR',
         'jurisdiction' => 'IT',
+        'incoterm' => 'DAP',
         'items' => [['product_id' => $product->id, 'description' => 'Watch', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 22]],
     ])->assertCreated();
 
@@ -373,4 +374,34 @@ it('snapshots product customs data on invoice lines and keeps it after the produ
         ->and($item->country_of_origin)->toBe('IT')
         ->and($item->origin_type)->toBe('preferential')
         ->and($item->made_in_label)->toBe('Made in Italy');
+});
+
+// --- Cross-border readiness guard ----------------------------------------------
+
+it('blocks issuing an export invoice without Incoterm and net weight, and reports readiness', function (): void {
+    $ctx = customsProductApi();
+    $headers = ['X-Tenant-Id' => $ctx->tenant->id];
+    fiscalCalendar($ctx->tenant, (int) now()->year);
+    $contact = Contact::create(['tenant_id' => $ctx->tenant->id, 'company_name' => 'Importer', 'type' => 'customer', 'country' => 'CH']);
+    $product = Product::create(['tenant_id' => $ctx->tenant->id, 'sku' => 'NW-1', 'name' => 'Watch', 'sale_price' => 100, 'tax_rate' => 22, 'taric_code' => '91012100', 'country_of_origin' => 'IT']);
+    $payload = [
+        'contact_id' => $contact->id, 'invoice_type' => 'standard', 'invoice_number' => 'INV-GUARD-1', 'date' => now()->toDateString(), 'currency' => 'EUR', 'jurisdiction' => 'IT',
+        'items' => [['product_id' => $product->id, 'description' => 'Watch', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 22]],
+    ];
+
+    $this->withHeaders($headers)->postJson('/api/v1/sales/invoices', $payload)->assertUnprocessable()->assertJsonValidationErrors(['incoterm', 'items.0.net_weight_missing']);
+
+    $product->update(['net_weight_kg' => 0.2]);
+    $id = $this->withHeaders($headers)->postJson('/api/v1/sales/invoices', [...$payload, 'incoterm' => 'FCA'])->assertCreated()->json('data.id');
+
+    $this->withHeaders($headers)->getJson("/api/v1/sales/invoices/{$id}/cross-border-readiness")->assertOk()->assertJsonPath('data.ready', true)->assertJsonPath('data.regime.regime', 'it_export_art_8_dpr_633_72');
+});
+
+it('computes customs value and VAT regime through the foreign trade API', function (): void {
+    $ctx = customsProductApi();
+    $headers = ['X-Tenant-Id' => $ctx->tenant->id];
+
+    $this->withHeaders($headers)->postJson('/api/v1/foreign-trade/customs-value', ['incoterm' => 'EXW', 'goods_value' => 1000, 'freight' => 80, 'insurance' => 20])->assertOk()->assertJsonPath('data.customs_value', 1100);
+    $this->withHeaders($headers)->postJson('/api/v1/foreign-trade/customs-value', ['incoterm' => 'XXX', 'goods_value' => 1])->assertUnprocessable();
+    $this->withHeaders($headers)->postJson('/api/v1/foreign-trade/vat-regime', ['tenant_country' => 'CH', 'counterparty_country' => 'IT'])->assertOk()->assertJsonPath('data.regime', 'ch_export_art_23_ltva');
 });

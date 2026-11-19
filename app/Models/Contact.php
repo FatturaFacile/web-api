@@ -46,6 +46,8 @@ class Contact extends Model implements AuditableEntityInterface
         'vat_number',
         'fiscal_code',
         'uid_number',
+        'eori_number',
+        'default_incoterm',
         'sdi_code',
         'pec',
         'iban',

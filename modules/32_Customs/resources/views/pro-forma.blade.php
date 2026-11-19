@@ -32,9 +32,15 @@
         </tr>
         <tr>
             <th>{{ $labels['incoterms'][0] }} / {{ $labels['incoterms'][1] }}</th>
-            <td>{{ $declaration->incoterms ?? '-' }}</td>
+            <td>{{ $incoterm ?? '-' }}</td>
             <th>{{ $labels['mrn'][0] }}</th>
             <td>{{ $declaration->mrn ?? '-' }}</td>
+        </tr>
+        <tr>
+            <th>{{ $labels['customs_value'][0] }} / {{ $labels['customs_value'][1] }}</th>
+            <td>{{ $customsValue ?? '-' }} {{ $currency }}</td>
+            <th>{{ $labels['regime'][0] }} / {{ $labels['regime'][1] }}</th>
+            <td>{{ $vatRegime ?? '-' }}</td>
         </tr>
     </table>
 

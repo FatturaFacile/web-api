@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Http\Requests;
 
+use App\Enums\Incoterm;
 use App\Http\Requests\Concerns\TenantScopedRules;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
@@ -37,6 +38,8 @@ final class CreateSalesOrderRequest extends FormRequest
             'currency' => ['nullable', 'string', 'size:3'],
             'payment_terms' => ['nullable', 'string', 'max:50'],
             'shipping_method' => ['nullable', 'string', 'max:50'],
+            'incoterm' => ['nullable', Rule::enum(Incoterm::class)],
+            'incoterm_place' => ['nullable', 'string', 'max:100'],
             'shipping_address' => ['nullable', 'string'],
             'billing_address' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],

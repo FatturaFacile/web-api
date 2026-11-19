@@ -62,6 +62,10 @@ class InvoiceResource extends JsonResource
             'free_trade_agreement_id' => $this->free_trade_agreement_id,
             'origin_declaration_text' => $this->origin_declaration_text,
             'duty_exemption_eligible' => (bool) $this->duty_exemption_eligible,
+            'incoterm' => $this->incoterm,
+            'incoterm_place' => $this->incoterm_place,
+            'freight_amount' => $this->freight_amount,
+            'insurance_amount' => $this->insurance_amount,
             'items' => InvoiceItemResource::collection($this->whenLoaded('items')),
             'sdi_metadata' => $this->whenLoaded('sdiMetadata', fn () => [
                 'transmission_format' => $this->sdiMetadata->transmission_format,
