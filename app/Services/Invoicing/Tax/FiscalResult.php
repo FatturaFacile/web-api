@@ -143,6 +143,6 @@ final readonly class FiscalResult
      */
     public function withholdingIncludesFund(): bool
     {
-        return ($this->input->withholding?->includesFund ?? false) || ($this->input->fund?->withholdingApplies ?? false);
+        return ($this->input->withholding !== null && $this->input->withholding->includesFund) || ($this->input->fund !== null && $this->input->fund->withholdingApplies);
     }
 }

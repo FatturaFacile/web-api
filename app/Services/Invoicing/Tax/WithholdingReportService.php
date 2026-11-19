@@ -48,11 +48,11 @@ class WithholdingReportService
             $sign = $invoice->document_type === 'TD04' ? -1 : 1;
 
             if ($paidYear === null) {
-                if ((int) ($withholding->withheld_year ?? $invoice->date?->year) === $year) {
+                if ((int) ($withholding->withheld_year ?? $invoice->date->year) === $year) {
                     $unpaid[] = [
                         'passive_invoice_id' => (string) $invoice->id,
                         'invoice_number' => (string) $invoice->invoice_number,
-                        'date' => (string) $invoice->date?->toDateString(),
+                        'date' => (string) $invoice->date->toDateString(),
                         'supplier_id' => (string) $withholding->supplier_id,
                         'name' => $this->name($withholding->supplier),
                         'reason' => $withholding->reason,
@@ -166,7 +166,7 @@ class WithholdingReportService
 
         $lastPayment = $invoice->payments
             ->where('type', 'payment')
-            ->sortByDesc(fn ($payment): string => (string) $payment->paid_at?->toDateString())
+            ->sortByDesc(fn ($payment): string => (string) $payment->paid_at->toDateString())
             ->first();
 
         return $lastPayment?->paid_at?->year;

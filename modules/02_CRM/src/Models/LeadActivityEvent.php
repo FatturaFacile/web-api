@@ -6,7 +6,14 @@ namespace Modules\CRM\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $occurred_at
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 final class LeadActivityEvent extends BaseEnterpriseModel
 {
     public const array TYPES = [

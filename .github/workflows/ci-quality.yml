@@ -44,8 +44,8 @@ jobs:
       - name: Run Laravel Pint Code Formatter Check
         run: ./vendor/bin/pint --test
 
-      - name: Run PHPStan / Larastan (Level 8)
-        run: ./vendor/bin/phpstan analyse --level=8 --memory-limit=1G --no-progress
+      - name: Run PHPStan / Larastan
+        run: ./vendor/bin/phpstan analyse --memory-limit=2G --no-progress
 
       - name: Run Pest Architecture Boundary Tests
         run: ./vendor/bin/pest tests/Architecture --no-coverage
@@ -63,6 +63,7 @@ jobs:
           php-version: '8.5'
           extensions: mbstring, xml, ctype, iconv, intl, pdo, sqlite, pdo_sqlite, bcmath, zip, pcov
           coverage: pcov
+          ini-values: memory_limit=4G
 
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-interaction --no-progress

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Architecture;
 
+use App\Actions\Customs\EvaluateCustomsOriginAction;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AutomotiveController;
@@ -29,10 +30,7 @@ use App\Services\Accounting\LegacyLedgerBridge;
 use App\Services\Appointments\AppointmentSchedulingService;
 use App\Services\Attendance\AttendanceComplianceService;
 use App\Services\Banking\BankReconciliationService;
-use App\Services\Crm\ContactOverviewService;
-use App\Services\Customs\CustomsComplianceService;
-use App\Services\Intrastat\IntrastatDeclarationService;
-use App\Services\Inventory\InventoryValuationService;
+use App\Services\Crm\ContactInsights;
 use App\Services\Invoicing\InvoiceService;
 use App\Services\Sales\SalesPriceEngine;
 
@@ -85,14 +83,14 @@ final class ModuleConsolidationRegistry
                 'canonical_namespace' => 'Modules\\CRM',
                 'legacy_classes' => [
                     CrmController::class,
-                    ContactOverviewService::class,
+                    ContactInsights::class,
                 ],
             ],
             'customs' => [
                 'canonical_namespace' => 'Modules\\Customs',
                 'legacy_classes' => [
                     CustomsTaricCodeController::class,
-                    CustomsComplianceService::class,
+                    EvaluateCustomsOriginAction::class,
                 ],
             ],
             'ecommerce' => [
@@ -123,15 +121,12 @@ final class ModuleConsolidationRegistry
             ],
             'intrastat' => [
                 'canonical_namespace' => 'Modules\\Tax',
-                'legacy_classes' => [
-                    IntrastatDeclarationService::class,
-                ],
+                'legacy_classes' => [],
             ],
             'inventory' => [
                 'canonical_namespace' => 'Modules\\Inventory',
                 'legacy_classes' => [
                     InventoryController::class,
-                    InventoryValuationService::class,
                 ],
             ],
             'invoicing' => [

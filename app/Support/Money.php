@@ -154,12 +154,22 @@ final class Money
      */
     private static function multiply(int $left, int $right): int
     {
-        $product = $left * $right;
+        if ($left === 0 || $right === 0) {
+            return 0;
+        }
 
-        if (! is_int($product)) {
+        if ($left === 1) {
+            return $right;
+        }
+
+        if ($right === 1) {
+            return $left;
+        }
+
+        if ($left === PHP_INT_MIN || $right === PHP_INT_MIN || abs($right) > intdiv(PHP_INT_MAX, abs($left))) {
             throw new OverflowException('Amount is too large.');
         }
 
-        return $product;
+        return $left * $right;
     }
 }

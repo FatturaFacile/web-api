@@ -43,7 +43,7 @@ class StampDutyReportService
             $rows[] = [
                 'id' => (string) $invoice->id,
                 'number' => (string) $invoice->invoice_number,
-                'date' => (string) $invoice->date?->toDateString(),
+                'date' => (string) $invoice->date->toDateString(),
                 'customer' => $contact === null ? '' : (string) ($contact->company_name ?: trim($contact->first_name.' '.$contact->last_name)),
                 'amount' => Money::fromCents($amount),
             ];

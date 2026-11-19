@@ -282,7 +282,7 @@ final readonly class LeadDeduplicationEngine implements LeadDeduplicationService
 
         foreach ($accounts as $account) {
             $contactMatch = $matches['contact:'.$account->contact_id] ?? null;
-            $matches['account:'.$account->id] = new DuplicateMatch('account', (string) $account->id, $contactMatch?->matchType ?? 'email', 1.0);
+            $matches['account:'.$account->id] = new DuplicateMatch('account', (string) $account->id, $contactMatch !== null ? $contactMatch->matchType : 'email', 1.0);
         }
     }
 

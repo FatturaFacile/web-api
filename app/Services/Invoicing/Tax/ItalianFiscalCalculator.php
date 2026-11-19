@@ -272,7 +272,7 @@ class ItalianFiscalCalculator
             return [0, 0];
         }
 
-        $includesFund = $settings->includesFund || ($input->fund?->withholdingApplies ?? false);
+        $includesFund = $settings->includesFund || ($input->fund !== null && $input->fund->withholdingApplies);
         $eligible = array_sum(array_column(array_filter($lines, fn (array $line): bool => $line['withholding']), 'net'));
         $base = Money::percentOf($eligible + ($includesFund ? $fund : 0), $settings->taxablePercent);
 

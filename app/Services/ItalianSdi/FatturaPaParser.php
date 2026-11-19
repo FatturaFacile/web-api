@@ -16,7 +16,7 @@ use SimpleXMLElement;
 class FatturaPaParser
 {
     /**
-     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string, withholdings: list<array{type: string, amount: string, rate: ?string, reason: ?string}>, lines: list<array{line_number: int, description: string, quantity: ?string, unit_of_measure: ?string, unit_price: string, line_total: string, tax_rate: string, vat_nature: ?string}>}>}
+     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string, withholdings: list<array{type: string, amount: string, rate: string, reason: ?string, taxable: string}>, stamp_duty: float, lines: list<array{line_number: int, description: string, quantity: ?string, unit_of_measure: ?string, unit_price: string, line_total: string, tax_rate: string, vat_nature: ?string}>}>}
      */
     public function parse(string $xml): array
     {

@@ -17,6 +17,8 @@ use Modules\CRM\Contracts\LeadNormalizerInterface;
  *
  * @property array<string, mixed>|list<array<string, mixed>>|null $score_breakdown
  * @property array<string, mixed>|null $custom_fields
+ * @property array<int, string>|null $tags
+ * @property string|null $rating
  * @property Carbon|null $score_calculated_at
  * @property Carbon|null $scored_at
  * @property Carbon|null $last_activity_at
