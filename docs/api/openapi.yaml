@@ -3889,6 +3889,393 @@ paths:
                 type: object
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/controlling/allocation-rules:
+    get:
+      operationId: v1.controlling.allocation-rules.index
+      tags:
+        - Allocation
+      responses:
+        '200':
+          description: 'Paginated set of `AllocationRuleResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AllocationRuleResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type: string
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                      last_page:
+                        type: string
+                      links:
+                        type: object
+                        additionalProperties: {}
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                      per_page:
+                        type: integer
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.controlling.allocation-rules.store
+      tags:
+        - Allocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationRuleRequest'
+      responses:
+        '201':
+          description: '`AllocationRuleResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AllocationRuleResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/controlling/allocation-rules/{id}':
+    put:
+      operationId: v1.controlling.allocation-rules.update
+      tags:
+        - Allocation
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationRuleRequest'
+      responses:
+        '200':
+          description: '`AllocationRuleResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AllocationRuleResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.controlling.allocation-rules.destroy
+      tags:
+        - Allocation
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/controlling/allocations:
+    get:
+      operationId: v1.controlling.allocations.index
+      tags:
+        - Allocation
+      responses:
+        '200':
+          description: 'Paginated set of `AllocationRunResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AllocationRunResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type: string
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                      last_page:
+                        type: string
+                      links:
+                        type: object
+                        additionalProperties: {}
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                      per_page:
+                        type: integer
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/controlling/allocations/preview:
+    post:
+      operationId: v1.controlling.allocations.preview
+      tags:
+        - Allocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationPeriodRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      transfers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            rule_id:
+                              type: string
+                            step_order:
+                              type: string
+                            source_cost_center_id:
+                              type: string
+                            recipient_type:
+                              type: string
+                            recipient_id:
+                              type: string
+                            driver_type:
+                              type: string
+                            driver_weight:
+                              type: string
+                            amount:
+                              type: string
+                          required:
+                            - rule_id
+                            - step_order
+                            - source_cost_center_id
+                            - recipient_type
+                            - recipient_id
+                            - driver_type
+                            - driver_weight
+                            - amount
+                      skipped:
+                        type: array
+                        items:
+                          anyOf:
+                            -
+                              type: object
+                              properties:
+                                rule_id:
+                                  type: string
+                                reason:
+                                  type: string
+                                  const: empty_pool
+                              required:
+                                - rule_id
+                                - reason
+                            -
+                              type: object
+                              properties:
+                                rule_id:
+                                  type: string
+                                reason:
+                                  type: string
+                                  const: no_driver_weight
+                              required:
+                                - rule_id
+                                - reason
+                      total_allocated:
+                        type: string
+                    required:
+                      - transfers
+                      - skipped
+                      - total_allocated
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/controlling/allocations/execute:
+    post:
+      operationId: v1.controlling.allocations.execute
+      tags:
+        - Allocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationPeriodRequest'
+      responses:
+        '201':
+          description: '`AllocationRunResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AllocationRunResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/controlling/allocations/{runId}/reverse':
+    post:
+      operationId: v1.controlling.allocations.reverse
+      tags:
+        - Allocation
+      parameters:
+        -
+          name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`AllocationRunResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AllocationRunResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   '/v1/planning/scenarios/{id}/balance':
     get:
       operationId: v1.planning.scenarios.balance
@@ -4133,6 +4520,203 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/controlling/analytical-ledger:
+    get:
+      operationId: v1.controlling.ledger.index
+      tags:
+        - AnalyticalLedger
+      parameters:
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: fiscal_year
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+        -
+          name: fiscal_month
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 12
+        -
+          name: cost_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: job_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: nature_type
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - revenue
+              - direct_material
+              - direct_labor
+              - variable_overhead
+              - fixed_overhead
+              - opex
+              - null
+        -
+          name: source_type
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - sales_invoice
+              - credit_note
+              - purchase_invoice
+              - payroll
+              - timesheet
+              - inventory_issue
+              - manual_analytical
+              - overhead_allocation
+              - null
+        -
+          name: allocation_run_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+      responses:
+        '200':
+          description: 'Paginated set of `LedgerEntryResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LedgerEntryResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type: string
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                      last_page:
+                        type: string
+                      links:
+                        type: object
+                        additionalProperties: {}
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                      per_page:
+                        type: integer
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.controlling.ledger.store
+      tags:
+        - AnalyticalLedger
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LedgerEntryRequest'
+      responses:
+        '201':
+          description: '`LedgerEntryResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/LedgerEntryResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/analytics/due-calendar:
     get:
       operationId: analytics.due-calendar
@@ -13964,6 +14548,444 @@ paths:
                 type: object
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/budgets:
+    get:
+      operationId: v1.budgets.index
+      tags:
+        - Budget
+      parameters:
+        -
+          name: fiscal_year
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+        -
+          name: plan_type
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - annual_budget
+              - rolling_forecast
+              - what_if_scenario
+              - null
+        -
+          name: status
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - draft
+              - submitted
+              - approved
+              - locked
+              - archived
+              - null
+      responses:
+        '200':
+          description: 'Paginated set of `BudgetPlanResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BudgetPlanResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type: string
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                      last_page:
+                        type: string
+                      links:
+                        type: object
+                        additionalProperties: {}
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                      per_page:
+                        type: integer
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.budgets.store
+      tags:
+        - Budget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetPlanRequest'
+      responses:
+        '201':
+          description: '`BudgetPlanResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BudgetPlanResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/budgets/seed-from-prior-year:
+    post:
+      operationId: v1.budgets.seed
+      tags:
+        - Budget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetSeedRequest'
+      responses:
+        '201':
+          description: '`BudgetPlanResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BudgetPlanResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/budgets/{id}':
+    get:
+      operationId: v1.budgets.show
+      tags:
+        - Budget
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`BudgetPlanResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BudgetPlanResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: v1.budgets.update
+      tags:
+        - Budget
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetPlanRequest'
+      responses:
+        '200':
+          description: '`BudgetPlanResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BudgetPlanResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.budgets.destroy
+      tags:
+        - Budget
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/budgets/{id}/clone':
+    post:
+      operationId: v1.budgets.clone
+      tags:
+        - Budget
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetCloneRequest'
+      responses:
+        '201':
+          description: '`BudgetPlanResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BudgetPlanResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/budgets/{id}/submit':
+    post:
+      operationId: v1.budgets.submit
+      tags:
+        - Budget
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`BudgetPlanResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BudgetPlanResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/budgets/{id}/approve':
+    post:
+      operationId: v1.budgets.approve
+      tags:
+        - Budget
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`BudgetPlanResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BudgetPlanResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/budgets/{id}/lock':
+    post:
+      operationId: v1.budgets.lock
+      tags:
+        - Budget
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`BudgetPlanResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BudgetPlanResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/budgets/{id}/lines/bulk':
+    put:
+      operationId: v1.budgets.lines.bulk
+      tags:
+        - Budget
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`BudgetPlanResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BudgetPlanResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/budgets/{id}/generate-rolling-forecast':
+    post:
+      operationId: v1.budgets.rolling-forecast
+      tags:
+        - Budget
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollingForecastRequest'
+      responses:
+        '201':
+          description: '`BudgetPlanResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BudgetPlanResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/talent-learning/compensation/pools:
     get:
       operationId: v1.talent-learning.compensation.pools.index
@@ -32865,6 +33887,232 @@ paths:
                   - meta
         '422':
           $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/controlling/cost-centers:
+    get:
+      operationId: v1.controlling.cost-centers.index
+      tags:
+        - CostCenter
+      parameters:
+        -
+          name: fiscal_year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+        -
+          name: from_month
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 12
+        -
+          name: to_month
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: 'Paginated set of `CostCenterResource`'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  -
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CostCenterResource'
+                      links:
+                        type: object
+                        properties:
+                          first:
+                            type: string
+                          last:
+                            type: string
+                          prev:
+                            type:
+                              - string
+                              - 'null'
+                          next:
+                            type: string
+                        required:
+                          - first
+                          - last
+                          - prev
+                          - next
+                      meta:
+                        type: object
+                        properties:
+                          current_page:
+                            type: integer
+                          from:
+                            type:
+                              - integer
+                              - 'null'
+                          last_page:
+                            type: string
+                          links:
+                            type: object
+                            additionalProperties: {}
+                          path:
+                            type:
+                              - string
+                              - 'null'
+                          per_page:
+                            type: integer
+                          to:
+                            type:
+                              - integer
+                              - 'null'
+                          total:
+                            type: string
+                        required:
+                          - current_page
+                          - from
+                          - last_page
+                          - links
+                          - path
+                          - per_page
+                          - to
+                          - total
+                    required:
+                      - data
+                      - links
+                      - meta
+                  -
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items: {}
+                    required:
+                      - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.controlling.cost-centers.store
+      tags:
+        - CostCenter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CostCenterRequest'
+      responses:
+        '201':
+          description: '`CostCenterResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CostCenterResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/controlling/cost-centers/{id}':
+    get:
+      operationId: v1.controlling.cost-centers.show
+      tags:
+        - CostCenter
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`CostCenterResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CostCenterResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: v1.controlling.cost-centers.update
+      tags:
+        - CostCenter
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CostCenterRequest'
+      responses:
+        '200':
+          description: '`CostCenterResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CostCenterResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.controlling.cost-centers.destroy
+      tags:
+        - CostCenter
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   /v1/general-ledger/fr/ca3:
@@ -52688,8 +53936,8 @@ paths:
       operationId: v1.hr.contracts.update
       description: |-
         ⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):
-          [FormRequestRulesEvaluator] SQLSTATE[HY000]: General error: 1 no such table: hr_employment_contracts (Connection: sqlite, Database: :memory:, SQL: select "start_date" from "hr_employment_contracts" where "hr_employment_contracts"."id" =  and (1 = 0) and "hr_employment_contracts"."deleted_at" is null limit 1) (at C:\dev\fattura-facile\wt-sales-orders\vendor\laravel\framework\src\Illuminate\Database\Connection.php:864)
-          [NodeRulesEvaluator] Only arrays and Traversables can be unpacked, null given (at C:\dev\fattura-facile\wt-sales-orders\vendor\dedoc\scramble\src\Support\OperationExtensions\RulesEvaluator\NodeRulesEvaluator.php:221)
+          [FormRequestRulesEvaluator] SQLSTATE[HY000]: General error: 1 no such table: hr_employment_contracts (Connection: sqlite, Database: /home/runner/work/web-api/web-api/database/database.sqlite, SQL: select "start_date" from "hr_employment_contracts" where "hr_employment_contracts"."id" =  and (1 = 0) and "hr_employment_contracts"."deleted_at" is null limit 1) (at /home/runner/work/web-api/web-api/vendor/laravel/framework/src/Illuminate/Database/Connection.php:864)
+          [NodeRulesEvaluator] Only arrays and Traversables can be unpacked, null given (at /home/runner/work/web-api/web-api/vendor/dedoc/scramble/src/Support/OperationExtensions/RulesEvaluator/NodeRulesEvaluator.php:221)
       summary: 'Change the descriptive data of the active contract'
       tags:
         - EmploymentContract
@@ -60078,6 +61326,197 @@ paths:
                   - meta
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/analytics/financial-kpis:
+    get:
+      operationId: v1.analytics.financial-kpis
+      tags:
+        - FinancialKpi
+      parameters:
+        -
+          name: as_of
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: months
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 36
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      as_of:
+                        type:
+                          - string
+                          - 'null'
+                      current: {}
+                      previous: {}
+                      deltas:
+                        type:
+                          - object
+                          - 'null'
+                        additionalProperties:
+                          type: string
+                      countback_dso:
+                        type:
+                          - string
+                          - 'null'
+                      history:
+                        anyOf:
+                          -
+                            type: array
+                            items: {}
+                          -
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                snapshot_date:
+                                  type: string
+                                fiscal_year:
+                                  type: integer
+                                fiscal_month:
+                                  type: integer
+                                days_in_period:
+                                  type: integer
+                                accounts_receivable:
+                                  type: string
+                                accounts_payable:
+                                  type: string
+                                inventory:
+                                  type: string
+                                cash:
+                                  type: string
+                                overdue_receivables:
+                                  type: string
+                                overdue_receivables_percent:
+                                  type: string
+                                dso:
+                                  type: string
+                                dpo:
+                                  type: string
+                                dio:
+                                  type: string
+                                inventory_turnover:
+                                  type: string
+                                ccn:
+                                  type: string
+                                ccc:
+                                  type: string
+                                warnings:
+                                  type: array
+                                  items:
+                                    type: string
+                                  minItems: 0
+                                  maxItems: 0
+                              required:
+                                - snapshot_date
+                                - fiscal_year
+                                - fiscal_month
+                                - days_in_period
+                                - accounts_receivable
+                                - accounts_payable
+                                - inventory
+                                - cash
+                                - overdue_receivables
+                                - overdue_receivables_percent
+                                - dso
+                                - dpo
+                                - dio
+                                - inventory_turnover
+                                - ccn
+                                - ccc
+                                - warnings
+                      formulas:
+                        type: object
+                        properties:
+                          dso:
+                            type: string
+                            const: 'Average accounts receivable / credit sales in the period x days in the period'
+                          dpo:
+                            type: string
+                            const: 'Average accounts payable / credit purchases in the period x days in the period'
+                          ccn:
+                            type: string
+                            const: 'Inventory + accounts receivable - accounts payable'
+                          inventory_turnover:
+                            type: string
+                            const: 'COGS in the period / average inventory valuation'
+                          dio:
+                            type: string
+                            const: 'Average inventory valuation / COGS in the period x days in the period'
+                          ccc:
+                            type: string
+                            const: 'DIO + DSO - DPO'
+                        required:
+                          - dso
+                          - dpo
+                          - ccn
+                          - inventory_turnover
+                          - dio
+                          - ccc
+                    required:
+                      - as_of
+                      - current
+                      - previous
+                      - deltas
+                      - countback_dso
+                      - history
+                      - formulas
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/analytics/financial-kpis/snapshots:
+    post:
+      operationId: v1.analytics.financial-kpis.snapshots
+      summary: 'Store the snapshot of a date: computed from the receivables, payables, stock and bank, or entered manually'
+      tags:
+        - FinancialKpi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnapshotRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: {}
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/general-ledger/financial-statements/trial-balance:
     get:
       operationId: financialStatement.trialBalance
@@ -75934,6 +77373,307 @@ paths:
                   - data
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/controlling/jobs:
+    get:
+      operationId: v1.controlling.jobs.index
+      tags:
+        - Job
+      parameters:
+        -
+          name: status
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - planned
+              - in_progress
+              - completed
+              - closed
+              - null
+        -
+          name: cost_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+      responses:
+        '200':
+          description: 'Paginated set of `JobResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/JobResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type: string
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                      last_page:
+                        type: string
+                      links:
+                        type: object
+                        additionalProperties: {}
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                      per_page:
+                        type: integer
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                      total:
+                        type: string
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.controlling.jobs.store
+      tags:
+        - Job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobRequest'
+      responses:
+        '201':
+          description: '`JobResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JobResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/controlling/jobs/{id}':
+    get:
+      operationId: v1.controlling.jobs.show
+      tags:
+        - Job
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`JobResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JobResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: v1.controlling.jobs.update
+      tags:
+        - Job
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobRequest'
+      responses:
+        '200':
+          description: '`JobResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/JobResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.controlling.jobs.destroy
+      tags:
+        - Job
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/controlling/jobs/{id}/pnl':
+    get:
+      operationId: v1.controlling.jobs.pnl
+      tags:
+        - Job
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      job_id:
+                        type: string
+                      code:
+                        type: string
+                      name:
+                        type: string
+                      status:
+                        type: string
+                      contract_value:
+                        type: string
+                      invoiced_to_date:
+                        type: string
+                      open_to_invoice:
+                        type: string
+                      direct_material:
+                        type: string
+                      direct_labor:
+                        type: string
+                      other_direct_costs:
+                        type: string
+                      allocated_overheads:
+                        type: string
+                      actual_cost:
+                        type: string
+                      estimated_cost_budget:
+                        type: string
+                      cost_consumed_percent:
+                        type: string
+                      open_commitments:
+                        type: string
+                      labor_hours:
+                        type: string
+                      actual_margin:
+                        type: string
+                      estimated_margin:
+                        type: string
+                      projected_final_margin:
+                        type: string
+                      completion_percent:
+                        type: string
+                    required:
+                      - job_id
+                      - code
+                      - name
+                      - status
+                      - contract_value
+                      - invoiced_to_date
+                      - open_to_invoice
+                      - direct_material
+                      - direct_labor
+                      - other_direct_costs
+                      - allocated_overheads
+                      - actual_cost
+                      - estimated_cost_budget
+                      - cost_consumed_percent
+                      - open_commitments
+                      - labor_hours
+                      - actual_margin
+                      - estimated_margin
+                      - projected_final_margin
+                      - completion_percent
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   '/v1/hr/recruiting/applications/{id}/offer':
     get:
       operationId: v1.hr.recruiting.applications.offer.show
@@ -88260,6 +90000,1436 @@ paths:
                       type: string
                 required:
                   - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/analytics/margins/summary:
+    get:
+      operationId: v1.analytics.margins.summary
+      tags:
+        - Margin
+      parameters:
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: margin_tier
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - gross
+              - commercial
+              - full_industrial
+              - null
+        -
+          name: compare_mode
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - none
+              - prior_period
+              - prior_year
+              - active_budget
+              - rolling_forecast
+              - null
+        -
+          name: product_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: product_family_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: customer_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: country_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            minLength: 2
+            maxLength: 2
+        -
+          name: region_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 16
+        -
+          name: province_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 16
+        -
+          name: sales_agent_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: production_department_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: cost_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: job_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: row_dimension
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: col_dimension
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: measure
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - net_revenue
+              - gross_margin
+              - commercial_margin
+              - full_industrial_margin
+              - margin_percent
+              - null
+        -
+          name: sort
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 40
+        -
+          name: direction
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - asc
+              - desc
+              - null
+        -
+          name: page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 500
+        -
+          name: format
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - csv
+              - xlsx
+              - null
+        -
+          name: drill_path
+          in: query
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                dimension:
+                  type: string
+                  enum:
+                    - product
+                    - product_family
+                    - customer
+                    - geography
+                    - agent
+                    - production_department
+                    - cost_center
+                    - job
+                value:
+                  type: string
+                  maxLength: 64
+              required:
+                - dimension
+                - value
+          x-deepObject-style: qs
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/analytics/margins/explore:
+    get:
+      operationId: v1.analytics.margins.explore
+      tags:
+        - Margin
+      parameters:
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: margin_tier
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - gross
+              - commercial
+              - full_industrial
+              - null
+        -
+          name: compare_mode
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - none
+              - prior_period
+              - prior_year
+              - active_budget
+              - rolling_forecast
+              - null
+        -
+          name: product_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: product_family_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: customer_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: country_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            minLength: 2
+            maxLength: 2
+        -
+          name: region_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 16
+        -
+          name: province_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 16
+        -
+          name: sales_agent_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: production_department_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: cost_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: job_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: row_dimension
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: col_dimension
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: measure
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - net_revenue
+              - gross_margin
+              - commercial_margin
+              - full_industrial_margin
+              - margin_percent
+              - null
+        -
+          name: sort
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 40
+        -
+          name: direction
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - asc
+              - desc
+              - null
+        -
+          name: page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 500
+        -
+          name: format
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - csv
+              - xlsx
+              - null
+        -
+          name: drill_path
+          in: query
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                dimension:
+                  type: string
+                  enum:
+                    - product
+                    - product_family
+                    - customer
+                    - geography
+                    - agent
+                    - production_department
+                    - cost_center
+                    - job
+                value:
+                  type: string
+                  maxLength: 64
+              required:
+                - dimension
+                - value
+          x-deepObject-style: qs
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/analytics/margins/matrix:
+    get:
+      operationId: v1.analytics.margins.matrix
+      tags:
+        - Margin
+      parameters:
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: margin_tier
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - gross
+              - commercial
+              - full_industrial
+              - null
+        -
+          name: compare_mode
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - none
+              - prior_period
+              - prior_year
+              - active_budget
+              - rolling_forecast
+              - null
+        -
+          name: product_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: product_family_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: customer_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: country_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            minLength: 2
+            maxLength: 2
+        -
+          name: region_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 16
+        -
+          name: province_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 16
+        -
+          name: sales_agent_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: production_department_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: cost_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: job_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: row_dimension
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: col_dimension
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: measure
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - net_revenue
+              - gross_margin
+              - commercial_margin
+              - full_industrial_margin
+              - margin_percent
+              - null
+        -
+          name: sort
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 40
+        -
+          name: direction
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - asc
+              - desc
+              - null
+        -
+          name: page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 500
+        -
+          name: format
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - csv
+              - xlsx
+              - null
+        -
+          name: drill_path
+          in: query
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                dimension:
+                  type: string
+                  enum:
+                    - product
+                    - product_family
+                    - customer
+                    - geography
+                    - agent
+                    - production_department
+                    - cost_center
+                    - job
+                value:
+                  type: string
+                  maxLength: 64
+              required:
+                - dimension
+                - value
+          x-deepObject-style: qs
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/analytics/margins/pareto:
+    get:
+      operationId: v1.analytics.margins.pareto
+      tags:
+        - Margin
+      parameters:
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: margin_tier
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - gross
+              - commercial
+              - full_industrial
+              - null
+        -
+          name: compare_mode
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - none
+              - prior_period
+              - prior_year
+              - active_budget
+              - rolling_forecast
+              - null
+        -
+          name: product_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: product_family_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: customer_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: country_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            minLength: 2
+            maxLength: 2
+        -
+          name: region_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 16
+        -
+          name: province_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 16
+        -
+          name: sales_agent_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: production_department_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: cost_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: job_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: row_dimension
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: col_dimension
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: measure
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - net_revenue
+              - gross_margin
+              - commercial_margin
+              - full_industrial_margin
+              - margin_percent
+              - null
+        -
+          name: sort
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 40
+        -
+          name: direction
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - asc
+              - desc
+              - null
+        -
+          name: page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 500
+        -
+          name: format
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - csv
+              - xlsx
+              - null
+        -
+          name: drill_path
+          in: query
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                dimension:
+                  type: string
+                  enum:
+                    - product
+                    - product_family
+                    - customer
+                    - geography
+                    - agent
+                    - production_department
+                    - cost_center
+                    - job
+                value:
+                  type: string
+                  maxLength: 64
+              required:
+                - dimension
+                - value
+          x-deepObject-style: qs
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/analytics/margins/export:
+    get:
+      operationId: v1.analytics.margins.export
+      tags:
+        - Margin
+      parameters:
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: margin_tier
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - gross
+              - commercial
+              - full_industrial
+              - null
+        -
+          name: compare_mode
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - none
+              - prior_period
+              - prior_year
+              - active_budget
+              - rolling_forecast
+              - null
+        -
+          name: product_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: product_family_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: customer_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: country_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            minLength: 2
+            maxLength: 2
+        -
+          name: region_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 16
+        -
+          name: province_code
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 16
+        -
+          name: sales_agent_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: production_department_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: cost_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: job_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: row_dimension
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: col_dimension
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - product
+              - product_family
+              - customer
+              - geography
+              - agent
+              - production_department
+              - cost_center
+              - job
+              - null
+        -
+          name: measure
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - net_revenue
+              - gross_margin
+              - commercial_margin
+              - full_industrial_margin
+              - margin_percent
+              - null
+        -
+          name: sort
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 40
+        -
+          name: direction
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - asc
+              - desc
+              - null
+        -
+          name: page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 500
+        -
+          name: format
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - csv
+              - xlsx
+              - null
+        -
+          name: drill_path
+          in: query
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                dimension:
+                  type: string
+                  enum:
+                    - product
+                    - product_family
+                    - customer
+                    - geography
+                    - agent
+                    - production_department
+                    - cost_center
+                    - job
+                value:
+                  type: string
+                  maxLength: 64
+              required:
+                - dimension
+                - value
+          x-deepObject-style: qs
+      responses:
+        '200':
+          description: ''
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            'text/csv; charset=UTF-8':
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              example: 'attachment; filename=.xlsx'
+            Transfer-Encoding:
+              schema:
+                type: string
+                enum:
+                  - chunked
         '403':
           $ref: '#/components/responses/AuthorizationException'
         '401':
@@ -180466,6 +183636,175 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/analytics/variance:
+    get:
+      operationId: v1.analytics.variance
+      tags:
+        - Variance
+      parameters:
+        -
+          name: budget_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: forecast_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - nature
+              - cost_center
+              - job
+              - product_family
+              - customer
+              - agent
+              - department
+              - geography
+              - null
+        -
+          name: period_mode
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - monthly
+              - ytd
+              - full_year_eac
+              - null
+        -
+          name: month
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 12
+        -
+          name: fiscal_year
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 2000
+            maximum: 2100
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/analytics/variance/waterfall:
+    get:
+      operationId: v1.analytics.variance.waterfall
+      tags:
+        - Variance
+      parameters:
+        -
+          name: budget_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: forecast_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - nature
+              - cost_center
+              - job
+              - product_family
+              - customer
+              - agent
+              - department
+              - geography
+              - null
+        -
+          name: period_mode
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - monthly
+              - ytd
+              - full_year_eac
+              - null
+        -
+          name: month
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 12
+        -
+          name: fiscal_year
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 2000
+            maximum: 2100
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/vat/settlements:
     get:
       operationId: vat.settlements.index
@@ -190856,6 +194195,145 @@ components:
         - source_type
         - source_id
       title: AllocateStockReservationRequest
+    AllocationPeriodRequest:
+      type: object
+      description: 'Validation of the AllocationPeriodRequest payload; every reference is limited to the active company.'
+      properties:
+        fiscal_year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+        fiscal_month:
+          type: integer
+          minimum: 1
+          maximum: 12
+      required:
+        - fiscal_year
+        - fiscal_month
+      title: AllocationPeriodRequest
+    AllocationRuleRequest:
+      type: object
+      description: 'Validation of the AllocationRuleRequest payload; every reference is limited to the active company.'
+      properties:
+        name:
+          type: string
+          maxLength: 160
+        source_cost_center_id:
+          type: string
+          format: uuid
+        driver_type:
+          type: string
+          enum:
+            - fixed_percentage
+            - direct_revenue_share
+            - direct_labor_hours
+            - direct_cogs_share
+            - machine_hours
+            - headcount
+            - square_meters
+        step_order:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 99
+        recipients:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum:
+                  - cost_center
+                  - job
+              id:
+                type: string
+                format: uuid
+              weight:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+            required:
+              - type
+              - id
+          minItems: 1
+        is_active:
+          type: boolean
+      required:
+        - name
+        - source_cost_center_id
+        - driver_type
+        - recipients
+      title: AllocationRuleRequest
+    AllocationRuleResource:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        source_cost_center_id:
+          type: string
+        driver_type:
+          type: string
+        step_order:
+          type: integer
+        recipients:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              id:
+                type: string
+              weight:
+                type:
+                  - number
+                  - string
+                  - 'null'
+        is_active:
+          type: string
+      required:
+        - id
+        - name
+        - source_cost_center_id
+        - driver_type
+        - step_order
+        - recipients
+        - is_active
+      title: AllocationRuleResource
+    AllocationRunResource:
+      type: object
+      properties:
+        id:
+          type: string
+        fiscal_year:
+          type: integer
+        fiscal_month:
+          type: integer
+        status:
+          type: string
+        total_allocated_amount:
+          type: string
+        executed_by:
+          type: string
+        executed_at:
+          type: string
+        reversed_at:
+          type: string
+      required:
+        - id
+        - fiscal_year
+        - fiscal_month
+        - status
+        - total_allocated_amount
+        - executed_by
+        - executed_at
+        - reversed_at
+      title: AllocationRunResource
     AnswerCsatSurveyRequest:
       type: object
       properties:
@@ -194849,6 +198327,134 @@ components:
         - occurrences
         - created_at
       title: BookingSeriesResource
+    BudgetCloneRequest:
+      type: object
+      description: 'Validation of the BudgetCloneRequest payload; every reference is limited to the active company.'
+      properties:
+        code:
+          type: string
+          maxLength: 40
+        name:
+          type: string
+          maxLength: 160
+        uplift_percent:
+          type:
+            - number
+            - 'null'
+          minimum: -100
+          maximum: 1000
+        plan_type:
+          type:
+            - string
+            - 'null'
+          enum:
+            - annual_budget
+            - rolling_forecast
+            - what_if_scenario
+            - null
+      required:
+        - code
+        - name
+      title: BudgetCloneRequest
+    BudgetPlanRequest:
+      type: object
+      description: 'Validation of the BudgetPlanRequest payload; every reference is limited to the active company.'
+      properties:
+        code:
+          type: string
+          maxLength: 40
+        name:
+          type: string
+          maxLength: 160
+        fiscal_year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+        plan_type:
+          type:
+            - string
+            - 'null'
+          enum:
+            - annual_budget
+            - rolling_forecast
+            - what_if_scenario
+            - null
+        currency_code:
+          type:
+            - string
+            - 'null'
+          minLength: 3
+          maxLength: 3
+        cutoff_month:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 12
+        notes:
+          type:
+            - string
+            - 'null'
+      required:
+        - code
+        - name
+        - fiscal_year
+      title: BudgetPlanRequest
+    BudgetPlanResource:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        fiscal_year:
+          type: integer
+        plan_type:
+          type: string
+        version_number:
+          type: integer
+        parent_plan_id:
+          type: string
+        cutoff_month:
+          type:
+            - integer
+            - 'null'
+        status:
+          type: string
+        currency_code:
+          type: string
+        approved_by:
+          type: string
+        approved_at:
+          type: string
+        notes:
+          type:
+            - string
+            - 'null'
+        lines:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        lines_count:
+          type: integer
+      required:
+        - id
+        - code
+        - name
+        - fiscal_year
+        - plan_type
+        - version_number
+        - parent_plan_id
+        - cutoff_month
+        - status
+        - currency_code
+        - approved_by
+        - approved_at
+        - notes
+      title: BudgetPlanResource
     BudgetPoolRequest:
       type: object
       description: 'A budget pool of a cycle. The cycle is fixed once the pool is created.'
@@ -194915,6 +198521,31 @@ components:
         - created_at
         - updated_at
       title: BudgetPoolResource
+    BudgetSeedRequest:
+      type: object
+      description: 'Validation of the BudgetSeedRequest payload; every reference is limited to the active company.'
+      properties:
+        code:
+          type: string
+          maxLength: 40
+        name:
+          type: string
+          maxLength: 160
+        fiscal_year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+        uplift_percent:
+          type:
+            - number
+            - 'null'
+          minimum: -100
+          maximum: 1000
+      required:
+        - code
+        - name
+        - fiscal_year
+      title: BudgetSeedRequest
     BuildingRequest:
       type: object
       description: 'A building of the register.'
@@ -200523,6 +204154,85 @@ components:
       required:
         - reason
       title: CorrectTimeEventRequest
+    CostCenterRequest:
+      type: object
+      description: 'Validation of the CostCenterRequest payload; every reference is limited to the active company.'
+      properties:
+        parent_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        code:
+          type: string
+          maxLength: 40
+        name:
+          type: string
+          maxLength: 160
+        center_type:
+          type: string
+          enum:
+            - production
+            - commercial
+            - administrative
+            - auxiliary_service
+            - profit_center
+        responsible_user_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        is_active:
+          type: boolean
+        valid_from:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        valid_to:
+          type:
+            - string
+            - 'null'
+          format: date-time
+      required:
+        - code
+        - name
+        - center_type
+      title: CostCenterRequest
+    CostCenterResource:
+      type: object
+      properties:
+        id:
+          type: string
+        parent_id:
+          type:
+            - string
+            - 'null'
+        code:
+          type: string
+        name:
+          type: string
+        center_type:
+          type: string
+        responsible_user_id:
+          type: string
+        is_active:
+          type: string
+        valid_from:
+          type: string
+        valid_to:
+          type: string
+      required:
+        - id
+        - parent_id
+        - code
+        - name
+        - center_type
+        - responsible_user_id
+        - is_active
+        - valid_from
+        - valid_to
+      title: CostCenterResource
     CourseKind:
       type: string
       enum:
@@ -211837,6 +215547,101 @@ components:
       required:
         - lines
       title: IssueMaterialsRequest
+    JobRequest:
+      type: object
+      description: 'Validation of the JobRequest payload; every reference is limited to the active company.'
+      properties:
+        code:
+          type: string
+          maxLength: 40
+        name:
+          type: string
+          maxLength: 160
+        customer_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        sales_order_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        cost_center_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        status:
+          type: string
+          enum:
+            - planned
+            - in_progress
+            - completed
+            - closed
+        start_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        end_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        contract_value:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+        estimated_cost_budget:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+      required:
+        - code
+        - name
+        - status
+      title: JobRequest
+    JobResource:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        customer_id:
+          type: string
+        sales_order_id:
+          type: string
+        cost_center_id:
+          type: string
+        status:
+          type: string
+        start_date:
+          type: string
+        end_date:
+          type: string
+        contract_value:
+          type: string
+        estimated_cost_budget:
+          type: string
+      required:
+        - id
+        - code
+        - name
+        - customer_id
+        - sales_order_id
+        - cost_center_id
+        - status
+        - start_date
+        - end_date
+        - contract_value
+        - estimated_cost_budget
+      title: JobResource
     JournalEntryResource:
       type: object
       properties:
@@ -213944,6 +217749,144 @@ components:
         - approved_by
         - approved_at
       title: LedgerBudgetResource
+    LedgerEntryRequest:
+      type: object
+      description: 'Validation of the LedgerEntryRequest payload; every reference is limited to the active company.'
+      properties:
+        posting_date:
+          type: string
+          format: date-time
+        account_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 40
+        nature_type:
+          type: string
+          enum:
+            - revenue
+            - direct_material
+            - direct_labor
+            - variable_overhead
+            - fixed_overhead
+            - opex
+        cost_center_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        job_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        product_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        product_family_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        customer_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        sales_agent_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        amount:
+          type: number
+          minimum: -99999999999999
+          maximum: 99999999999999
+        quantity:
+          type:
+            - number
+            - 'null'
+        description:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+      required:
+        - posting_date
+        - nature_type
+        - amount
+      title: LedgerEntryRequest
+    LedgerEntryResource:
+      type: object
+      properties:
+        id:
+          type: string
+        posting_date:
+          type: string
+          format: date-time
+        fiscal_year:
+          type: integer
+        fiscal_month:
+          type: integer
+        source_type:
+          type: string
+        source_id:
+          type: string
+        account_code:
+          type: string
+        nature_type:
+          type: string
+        cost_center_id:
+          type:
+            - string
+            - 'null'
+        job_id:
+          type:
+            - string
+            - 'null'
+        product_id:
+          type: string
+        product_family_id:
+          type: string
+        customer_id:
+          type: string
+        sales_agent_id:
+          type: string
+        amount:
+          type: string
+        quantity:
+          type: string
+        description:
+          type:
+            - string
+            - 'null'
+        is_allocated:
+          type: string
+        allocation_run_id:
+          type: string
+      required:
+        - id
+        - posting_date
+        - fiscal_year
+        - fiscal_month
+        - source_type
+        - source_id
+        - account_code
+        - nature_type
+        - cost_center_id
+        - job_id
+        - product_id
+        - product_family_id
+        - customer_id
+        - sales_agent_id
+        - amount
+        - quantity
+        - description
+        - is_allocated
+        - allocation_run_id
+      title: LedgerEntryResource
     LegRequest:
       type: object
       description: 'A leg of the itinerary: flight, train, car or hotel stay with its booking and booked cost.'
@@ -230666,6 +234609,38 @@ components:
         - created_at
         - updated_at
       title: RmaResource
+    RollingForecastRequest:
+      type: object
+      description: 'Validation of the RollingForecastRequest payload; every reference is limited to the active company.'
+      properties:
+        cutoff_month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        method:
+          type:
+            - string
+            - 'null'
+          enum:
+            - run_rate
+            - budget
+            - null
+        code:
+          type:
+            - string
+            - 'null'
+          maxLength: 40
+        overrides:
+          type:
+            - array
+            - 'null'
+          items:
+            type: array
+            items:
+              type: number
+      required:
+        - cutoff_month
+      title: RollingForecastRequest
     RotateLeadSourceSecretRequest:
       type: object
       properties:
@@ -233290,6 +237265,7 @@ components:
               - sustainability
               - facility
               - budgeting
+              - controlling
               - planning
               - fleet
               - business_intelligence
@@ -240250,6 +244226,50 @@ components:
         - created_at
         - updated_at
       title: SlottingRuleResource
+    SnapshotRequest:
+      type: object
+      description: 'Validation of the SnapshotRequest payload; every reference is limited to the active company.'
+      properties:
+        snapshot_date:
+          type: string
+          format: date-time
+        mode:
+          type:
+            - string
+            - 'null'
+          enum:
+            - compute
+            - manual
+            - null
+        accounts_receivable_balance:
+          type: number
+        overdue_receivables_balance:
+          type:
+            - number
+            - 'null'
+        accounts_payable_balance:
+          type: number
+        inventory_valuation_balance:
+          type: number
+        cash_and_bank_balance:
+          type:
+            - number
+            - 'null'
+        credit_sales_period:
+          type:
+            - number
+            - 'null'
+        credit_purchases_period:
+          type:
+            - number
+            - 'null'
+        cogs_period:
+          type:
+            - number
+            - 'null'
+      required:
+        - snapshot_date
+      title: SnapshotRequest
     SnapshotResource:
       type: object
       properties:
@@ -263815,8 +267835,14 @@ tags:
     name: Alert
     description: 'Operations of the Alert module.'
   -
+    name: Allocation
+    description: 'Operations of the Allocation module.'
+  -
     name: Analysis
     description: 'Operations of the Analysis module.'
+  -
+    name: AnalyticalLedger
+    description: 'Operations of the AnalyticalLedger module.'
   -
     name: Analytics
     description: 'Operations of the Analytics module.'
@@ -263928,6 +267954,9 @@ tags:
   -
     name: Broadcast
     description: 'Operations of the Broadcast module.'
+  -
+    name: Budget
+    description: 'Operations of the Budget module.'
   -
     name: BudgetPool
     description: 'Operations of the BudgetPool module.'
@@ -264099,6 +268128,9 @@ tags:
   -
     name: Corrispettivi
     description: 'Operations of the Corrispettivi module.'
+  -
+    name: CostCenter
+    description: 'Operations of the CostCenter module.'
   -
     name: CountryVatReturn
     description: 'Operations of the CountryVatReturn module.'
@@ -264343,6 +268375,9 @@ tags:
     name: FinancialAnalysis
     description: 'Operations of the FinancialAnalysis module.'
   -
+    name: FinancialKpi
+    description: 'Operations of the FinancialKpi module.'
+  -
     name: FinancialStatement
     description: 'Operations of the FinancialStatement module.'
   -
@@ -264523,6 +268558,9 @@ tags:
     name: Item
     description: 'Operations of the Item module.'
   -
+    name: Job
+    description: 'Operations of the Job module.'
+  -
     name: JobOffer
     description: 'Operations of the JobOffer module.'
   -
@@ -264669,6 +268707,9 @@ tags:
   -
     name: ManufacturingSettings
     description: 'Operations of the ManufacturingSettings module.'
+  -
+    name: Margin
+    description: 'Operations of the Margin module.'
   -
     name: MarginApproval
     description: 'Operations of the MarginApproval module.'
