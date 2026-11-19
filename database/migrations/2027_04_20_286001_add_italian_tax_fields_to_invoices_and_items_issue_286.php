@@ -51,7 +51,7 @@ return new class extends Migration
                 $table->decimal('enasarco_taxable', 15, 2)->nullable();
             }
             if (! Schema::hasColumn('invoices', 'enasarco_amount')) {
-                $table->decimal('enasarco_amount', 15, 2)->nullable();
+                $table->decimal('enasarco_amount', 15, 2)->default(0);
             }
             if (! Schema::hasColumn('invoices', 'stamp_duty_charged_to_customer')) {
                 $table->boolean('stamp_duty_charged_to_customer')->default(false);
