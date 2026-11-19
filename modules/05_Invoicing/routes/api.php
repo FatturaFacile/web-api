@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Invoicing\Http\Controllers\BillingPlanController;
+use Modules\Invoicing\Http\Controllers\BlanketAgreementController;
 use Modules\Invoicing\Http\Controllers\CreditNoteController;
 use Modules\Invoicing\Http\Controllers\CustomerCreditController;
 use Modules\Invoicing\Http\Controllers\CustomerLedgerController;
@@ -13,6 +14,7 @@ use Modules\Invoicing\Http\Controllers\DeliveryNoteController;
 use Modules\Invoicing\Http\Controllers\InvoiceController;
 use Modules\Invoicing\Http\Controllers\OrderBillingController;
 use Modules\Invoicing\Http\Controllers\SalesOrderController;
+use Modules\Invoicing\Http\Controllers\SalesOrderWorkspaceController;
 use Modules\Invoicing\Http\Controllers\SalesQuoteController;
 use Modules\Invoicing\Http\Controllers\SalesReportController;
 
@@ -91,4 +93,31 @@ Route::prefix('api/v1/invoicing')->middleware(['api', 'auth:sanctum', 'tenant', 
     // Accounts Receivable Ledger & Aging
     Route::get('customer-ledger/{customerId}/statement', [CustomerLedgerController::class, 'statement'])->name('invoicing.customer-ledger.statement');
     Route::get('customer-ledger/{customerId}/aging', [CustomerLedgerController::class, 'aging'])->name('invoicing.customer-ledger.aging');
+});
+
+// Sales orders workspace (GH-137): ATP/CTP, credit release, backorders and blanket agreements (call-off contracts).
+Route::prefix('api/v1')->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:invoicing'])->group(function (): void {
+    Route::get('blanket-agreements', [BlanketAgreementController::class, 'index'])->name('blanket-agreements.index');
+    Route::post('blanket-agreements', [BlanketAgreementController::class, 'store'])->name('blanket-agreements.store');
+    Route::get('blanket-agreements/{id}', [BlanketAgreementController::class, 'show'])->whereUuid('id')->name('blanket-agreements.show');
+    Route::put('blanket-agreements/{id}', [BlanketAgreementController::class, 'update'])->whereUuid('id')->name('blanket-agreements.update');
+    Route::post('blanket-agreements/{id}/activate', [BlanketAgreementController::class, 'activate'])->whereUuid('id')->name('blanket-agreements.activate');
+    Route::post('blanket-agreements/{id}/suspend', [BlanketAgreementController::class, 'suspend'])->whereUuid('id')->name('blanket-agreements.suspend');
+    Route::post('blanket-agreements/{id}/close', [BlanketAgreementController::class, 'close'])->whereUuid('id')->name('blanket-agreements.close');
+    Route::post('blanket-agreements/{id}/renew', [BlanketAgreementController::class, 'renew'])->whereUuid('id')->name('blanket-agreements.renew');
+    Route::post('blanket-agreements/{id}/call-off', [BlanketAgreementController::class, 'callOff'])->whereUuid('id')->name('blanket-agreements.call-off');
+
+    Route::get('sales-orders', [SalesOrderWorkspaceController::class, 'index'])->name('sales-orders.index');
+    Route::post('sales-orders', [SalesOrderWorkspaceController::class, 'store'])->name('sales-orders.store');
+    Route::get('sales-orders/backorders', [SalesOrderWorkspaceController::class, 'backorders'])->name('sales-orders.backorders');
+    Route::post('sales-orders/atp-check', [SalesOrderWorkspaceController::class, 'atpCheck'])->name('sales-orders.atp-check');
+    Route::get('sales-orders/{id}', [SalesOrderWorkspaceController::class, 'show'])->whereUuid('id')->name('sales-orders.show');
+    Route::put('sales-orders/{id}', [SalesOrderWorkspaceController::class, 'update'])->whereUuid('id')->name('sales-orders.update');
+    Route::delete('sales-orders/{id}', [SalesOrderWorkspaceController::class, 'destroy'])->whereUuid('id')->name('sales-orders.destroy');
+    Route::post('sales-orders/{id}/confirm', [SalesOrderWorkspaceController::class, 'confirm'])->whereUuid('id')->name('sales-orders.confirm');
+    Route::post('sales-orders/{id}/credit-release', [SalesOrderWorkspaceController::class, 'creditRelease'])->whereUuid('id')->name('sales-orders.credit-release');
+    Route::post('sales-orders/{id}/generate-replenishment', [SalesOrderWorkspaceController::class, 'generateReplenishment'])->whereUuid('id')->name('sales-orders.generate-replenishment');
+    Route::post('sales-orders/{id}/reevaluate-atp', [SalesOrderWorkspaceController::class, 'reevaluateAtp'])->whereUuid('id')->name('sales-orders.reevaluate-atp');
+    Route::post('sales-orders/{id}/create-ddt', [SalesOrderWorkspaceController::class, 'createDdt'])->whereUuid('id')->name('sales-orders.create-ddt');
+    Route::post('sales-orders/{id}/cancel', [SalesOrderWorkspaceController::class, 'cancel'])->whereUuid('id')->name('sales-orders.cancel');
 });

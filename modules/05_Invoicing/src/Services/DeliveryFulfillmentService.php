@@ -272,6 +272,8 @@ final class DeliveryFulfillmentService implements DeliveryFulfillmentServiceInte
             'fulfillment_status' => $allFulfilled ? 'fulfilled' : ($anyDelivered ? 'partial' : 'unfulfilled'),
             'status' => $orderStatus->value,
         ]);
+
+        app(SalesOrderFulfillmentService::class)->refreshProgress($order);
     }
 
     /**
