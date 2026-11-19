@@ -9376,6 +9376,482 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  /v1/audit-logs:
+    get:
+      operationId: audit-logs.index
+      tags:
+        - AuditLog
+      parameters:
+        -
+          name: 'event_type[]'
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - CREATED
+                - UPDATED
+                - DELETED
+                - RESTORED
+                - VIEWED
+                - EXPORTED
+                - LOGIN_SUCCESS
+                - LOGIN_FAILED
+                - PERMISSION_CHANGED
+                - WORM_SEALED
+                - AUDIT_LOG_INSPECTED
+        -
+          name: auditable_type
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 255
+        -
+          name: auditable_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 255
+        -
+          name: actor_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 255
+        -
+          name: ip_address
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 45
+        -
+          name: changed_field
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 255
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Audit trail'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      per_page:
+                        type: integer
+                      total:
+                        type: string
+                      last_page:
+                        type: string
+                      last_verification: {}
+                    required:
+                      - current_page
+                      - per_page
+                      - total
+                      - last_page
+                      - last_verification
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+  /v1/audit-logs/export:
+    get:
+      operationId: audit-logs.export
+      tags:
+        - AuditLog
+      parameters:
+        -
+          name: 'event_type[]'
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - CREATED
+                - UPDATED
+                - DELETED
+                - RESTORED
+                - VIEWED
+                - EXPORTED
+                - LOGIN_SUCCESS
+                - LOGIN_FAILED
+                - PERMISSION_CHANGED
+                - WORM_SEALED
+                - AUDIT_LOG_INSPECTED
+        -
+          name: auditable_type
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 255
+        -
+          name: auditable_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 255
+        -
+          name: actor_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 255
+        -
+          name: ip_address
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 45
+        -
+          name: changed_field
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 255
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: ''
+          content:
+            application/x-ndjson:
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+            X-Audit-Bundle-SHA256:
+              schema:
+                type: string
+            X-Audit-Bundle-Signature:
+              schema:
+                type: string
+            Access-Control-Expose-Headers:
+              schema:
+                type: string
+                const: 'X-Audit-Bundle-SHA256, X-Audit-Bundle-Signature, Content-Disposition'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+  /v1/audit-logs/verify-integrity:
+    post:
+      operationId: audit-logs.verify
+      tags:
+        - AuditLog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyAuditIntegrityRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    enum:
+                      - 'The audit chain is intact'
+                      - 'The audit chain is broken'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+  /v1/audit-logs/worm-batches:
+    get:
+      operationId: audit-logs.worm-batches.index
+      tags:
+        - AuditLog
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'WORM batches'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/audit-logs/worm-batches/seal:
+    post:
+      operationId: audit-logs.worm-batches.seal
+      tags:
+        - AuditLog
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    enum:
+                      - 'Nothing to seal'
+                      - 'Audit records sealed'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+  '/v1/audit-logs/entity/{type}/{id}':
+    get:
+      operationId: audit-logs.entity
+      tags:
+        - AuditLog
+      parameters:
+        -
+          name: type
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Audit timeline'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/audit-logs/{id}':
+    get:
+      operationId: audit-logs.show
+      tags:
+        - AuditLog
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Audit record'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: 'Not Found'
+                  status:
+                    type: integer
+                    const: 404
+                  detail:
+                    type: string
+                    const: 'The audit record does not exist.'
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/governance/audit-plans:
     get:
       operationId: v1.governance.audit-plans.index
@@ -238597,6 +239073,7 @@ components:
               - treasury
               - workflow_design
               - system
+              - audit_trail
               - ledger
               - procurement
               - inventory
@@ -266743,6 +267220,20 @@ components:
       required:
         - credential
       title: VerifyAccessRequest
+    VerifyAuditIntegrityRequest:
+      type: object
+      properties:
+        from_sequence:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+        to_sequence:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+      title: VerifyAuditIntegrityRequest
     VersionCopyRequest:
       type: object
       description: 'A draft copy of a version, as a new budget or as a forecast.'
@@ -269335,6 +269826,9 @@ tags:
   -
     name: Audit
     description: 'Operations of the Audit module.'
+  -
+    name: AuditLog
+    description: 'Operations of the AuditLog module.'
   -
     name: AuditPlan
     description: 'Operations of the AuditPlan module.'
