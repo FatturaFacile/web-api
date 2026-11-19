@@ -57,7 +57,7 @@ final readonly class PaymentLinkService
         }
 
         if ($paymentMethod !== null && ! in_array($paymentMethod, $this->allowedMethods($settings, $gateway), true)) {
-            throw ValidationException::withMessages(['payment_method' => __('sales.payment_method_not_supported')]);
+            throw ValidationException::withMessages(['payment_method' => 'PORTAL.PAYMENT_METHOD_NOT_SUPPORTED']);
         }
 
         $link = PaymentLink::create([

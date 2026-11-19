@@ -4185,6 +4185,7 @@ final class ItalianFrontendTranslations
             'PORTAL.ORIGIN_COUNTRY' => 'Codice Paese Partenza (ISO 2)',
             'PORTAL.PACKAGES' => 'Colli / Pacchi',
             'PORTAL.PAID' => 'Saldato (€)',
+            'PORTAL.PAYMENT_METHOD_NOT_SUPPORTED' => 'Questo metodo di pagamento non è disponibile per questa fattura.',
             'PORTAL.PAYMENT_STATUS' => 'Stato Pagamento',
             'PORTAL.PENDING_QUOTES' => 'Preventivi in Attesa',
             'PORTAL.PENDING_REVIEW' => 'In Attesa di Riscontro',

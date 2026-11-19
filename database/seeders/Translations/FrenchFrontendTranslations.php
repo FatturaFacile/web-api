@@ -4185,6 +4185,7 @@ final class FrenchFrontendTranslations
             'PORTAL.ORIGIN_COUNTRY' => 'Code Pays Origine',
             'PORTAL.PACKAGES' => 'Colis',
             'PORTAL.PAID' => 'Payé (€)',
+            'PORTAL.PAYMENT_METHOD_NOT_SUPPORTED' => 'Ce moyen de paiement n\'est pas disponible pour cette facture.',
             'PORTAL.PAYMENT_STATUS' => 'Statut du Paiement',
             'PORTAL.PENDING_QUOTES' => 'Devis en Attente',
             'PORTAL.PENDING_REVIEW' => 'En Attente de Décision',

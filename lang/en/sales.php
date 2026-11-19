@@ -129,7 +129,6 @@ return [
     'document_template_invalid_logo' => 'The logo must be a PNG or JPEG image of at most 512 KB.',
     'payment_link_not_payable' => 'This invoice has nothing to collect by payment link.',
     'payment_link_already_open' => 'The invoice already has an open payment link: cancel it before creating another.',
-    'payment_method_not_supported' => 'This payment method is not available for this invoice.',
     'payment_link_not_open' => 'Only an open payment link can be cancelled.',
     'api_key_not_rotatable' => 'A revoked or expired API key cannot be rotated: create a new one.',
     'api_key_scope_not_held' => 'You no longer hold the scope :scope, so the key cannot be rotated by you.',
