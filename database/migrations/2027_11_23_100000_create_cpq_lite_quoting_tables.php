@@ -74,7 +74,7 @@ return new class extends Migration
 
         Schema::create('quote_approval_tiers', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->unsignedSmallInteger('level');
             $table->string('name', 100);
             $table->string('approver_role', 50);
@@ -82,15 +82,14 @@ return new class extends Migration
             $table->decimal('max_global_discount_percent', 5, 2)->nullable();
             $table->decimal('min_margin_percent', 6, 2)->nullable();
             $table->boolean('is_active')->default(true);
-            $table->timestamps();
-            $table->softDeletes();
+            $this->auditColumns($table);
 
             $table->unique(['tenant_id', 'level']);
         });
 
         Schema::create('quote_approval_requests', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('quote_id')->constrained('quotes')->cascadeOnDelete();
             $table->unsignedSmallInteger('level');
             $table->string('required_role', 50);
@@ -101,7 +100,7 @@ return new class extends Migration
             $table->foreignUuid('rejected_by')->nullable()->index();
             $table->timestamp('decided_at')->nullable();
             $table->text('rejection_reason')->nullable();
-            $table->timestamps();
+            $this->auditColumns($table);
 
             $table->unique(['quote_id', 'level']);
             $table->index(['tenant_id', 'status']);
@@ -109,7 +108,7 @@ return new class extends Migration
 
         Schema::create('quote_signature_requests', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('quote_id')->constrained('quotes')->cascadeOnDelete();
             $table->string('token_hash', 64)->unique();
             $table->string('locale', 5)->default('it');
@@ -128,8 +127,7 @@ return new class extends Migration
             $table->string('payload_hash', 64)->nullable();
             $table->string('pdf_hash', 64)->nullable();
             $table->timestamp('signed_at')->nullable();
-            $table->foreignUuid('created_by')->nullable();
-            $table->timestamps();
+            $this->auditColumns($table);
 
             $table->index(['tenant_id', 'quote_id']);
         });
@@ -156,5 +154,17 @@ return new class extends Migration
                 }
             }
         });
+    }
+
+    /**
+     * The six audit columns every business table carries (see AuditColumnsTest).
+     */
+    private function auditColumns(Blueprint $table): void
+    {
+        $table->timestamps();
+        $table->softDeletes();
+        $table->uuid('created_by')->nullable();
+        $table->uuid('updated_by')->nullable();
+        $table->uuid('deleted_by')->nullable();
     }
 };

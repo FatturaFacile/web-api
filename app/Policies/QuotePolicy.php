@@ -65,14 +65,14 @@ class QuotePolicy
      *
      * @var list<string>
      */
-    public const array CostVisibleRoles = ['owner', 'admin', 'sales_manager', 'sales_director', 'accountant'];
+    public const array CostVisibleRoles = ['owner', 'admin', 'sales_manager', 'accountant'];
 
     /**
      * Roles that may decide an approval request; the level check happens in the evaluator against the pending request.
      *
      * @var list<string>
      */
-    public const array ApproverRoles = ['owner', 'admin', 'sales_manager', 'sales_director'];
+    public const array ApproverRoles = ['owner', 'admin', 'sales_manager'];
 
     /**
      * Roles that configure the approval tiers of the company.

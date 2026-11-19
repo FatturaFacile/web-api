@@ -12,6 +12,7 @@ use App\Http\Resources\Cpq\QuoteSignatureRequestResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Quote;
 use App\Models\Tenant;
+use App\Models\Translation;
 use App\Services\Pdf\DocumentPdfService;
 use App\Services\Sales\Cpq\QuoteSignatureService;
 use App\Services\Tenancy\TenantContext;
@@ -52,7 +53,7 @@ class PublicQuoteSignatureController extends Controller
 
         return $this->successResponse([
             'locale' => $request->locale,
-            'expires_at' => $request->expires_at?->toIso8601String(),
+            'expires_at' => $request->expires_at->toIso8601String(),
             'quote' => new PublicQuoteResource($quote),
         ]);
     }
@@ -72,7 +73,9 @@ class PublicQuoteSignatureController extends Controller
     {
         $request = $this->signatures->resolve($token);
         $quote = Quote::query()->withoutGlobalScopes()->whereKey($request->quote_id)->firstOrFail();
-        $rendered = $this->pdf->render($quote, ['locale' => $request->locale]);
+        $chosen = request()->query('locale');
+        $locale = is_string($chosen) && in_array($chosen, Translation::SUPPORTED_LOCALES, true) ? $chosen : $request->locale;
+        $rendered = $this->pdf->render($quote, ['locale' => $locale]);
 
         return response($rendered->content, HttpResponse::HTTP_OK, [
             'Content-Type' => 'application/pdf',

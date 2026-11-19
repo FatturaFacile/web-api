@@ -9,9 +9,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * The decision one approval level has to take on a quote, with its audit trail.
+ *
+ * @property array<int, array<string, string>>|null $triggers
+ * @property Carbon|null $decided_at
  */
 class QuoteApprovalRequest extends Model
 {

@@ -104,6 +104,7 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/export-downloads',
         // Account-less pages: the secret token of the link (stored hashed) or the careers slug is the credential and selects the tenant, throttled by IP.
         'api/v1/public/contract-signing',
+        'api/v1/public/quote-signatures',
         'api/v1/public/careers',
         'api/v1/public/rma',
         // Supplier portal: authenticated by the personal X-Supplier-Token header (AuthenticateSupplierPortal), which selects the tenant.

@@ -23,7 +23,7 @@ class QuoteSignatureRequestResource extends JsonResource
             'quote_id' => $this->quote_id,
             'locale' => $this->locale,
             'status' => $this->status,
-            'expires_at' => $this->expires_at?->toIso8601String(),
+            'expires_at' => $this->expires_at->toIso8601String(),
             'signer_name' => $this->signer_name,
             'signer_role' => $this->signer_role,
             'purchase_order_number' => $this->purchase_order_number,

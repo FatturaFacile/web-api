@@ -9,10 +9,16 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * A time-limited tokenized link through which a customer reviews, signs or asks changes to a quote. Only the SHA-256 of
  * the token is stored.
+ *
+ * @property Carbon $expires_at
+ * @property Carbon|null $revoked_at
+ * @property Carbon|null $signed_at
+ * @property list<string>|null $selected_optional_item_ids
  */
 class QuoteSignatureRequest extends Model
 {

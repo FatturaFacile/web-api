@@ -23,7 +23,7 @@ class PublicQuoteResource extends JsonResource
     {
         return [
             'quote_number' => $this->quote_number,
-            'date' => $this->date?->toDateString(),
+            'date' => $this->date->toDateString(),
             'valid_until' => $this->valid_until?->toDateString(),
             'currency' => $this->currency,
             'status' => $this->status,

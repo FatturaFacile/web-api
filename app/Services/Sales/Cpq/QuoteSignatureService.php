@@ -58,7 +58,7 @@ final readonly class QuoteSignatureService
             'created_by' => $userId,
         ]);
 
-        $this->events->record($quote, 'signature_link_created', ['signature_request_id' => $request->id, 'expires_at' => $request->expires_at?->toIso8601String()]);
+        $this->events->record($quote, 'signature_link_created', ['signature_request_id' => $request->id, 'expires_at' => $request->expires_at->toIso8601String()]);
 
         return ['token' => $token, 'request' => $request];
     }
@@ -84,7 +84,7 @@ final readonly class QuoteSignatureService
             throw ValidationException::withMessages(['token' => __('sales.cpq.link_used')]);
         }
 
-        if ($request->expires_at === null || $request->expires_at->isPast()) {
+        if ($request->expires_at->isPast()) {
             throw ValidationException::withMessages(['token' => __('sales.cpq.link_expired')]);
         }
 
@@ -218,7 +218,7 @@ final readonly class QuoteSignatureService
             'quote_number' => $quote->quote_number,
             'contact_id' => $quote->contact_id,
             'currency' => $quote->currency,
-            'date' => $quote->date?->toDateString(),
+            'date' => $quote->date->toDateString(),
             'valid_until' => $quote->valid_until?->toDateString(),
             'total_net' => (string) $quote->total_net,
             'total_tax' => (string) $quote->total_tax,
@@ -260,9 +260,7 @@ final readonly class QuoteSignatureService
     {
         $binary = PngSignature::decode($signature);
 
-        if ($binary === null || ! str_starts_with($binary, 'PNG
-
-')) {
+        if ($binary === null || ! str_starts_with($binary, "\x89PNG\r\n\x1a\n")) {
             throw ValidationException::withMessages(['signature_data' => __('sales.cpq.signature_invalid')]);
         }
     }

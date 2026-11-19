@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property array<string, mixed>|null $configuration_snapshot
+ */
 class QuoteItem extends Model
 {
     use HasFactory, HasUuids, StampsTenantFromParent;
