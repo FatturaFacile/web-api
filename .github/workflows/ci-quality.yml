@@ -51,7 +51,7 @@ jobs:
         run: ./vendor/bin/pest tests/Architecture --no-coverage
 
   backend-tests:
-    name: Backend Pest Tests & Coverage Gate (>=80%)
+    name: Backend Pest Tests & Coverage Gate (>=70%)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Codebase

@@ -309,10 +309,10 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/contacts/{id}/statistics', [ContactInsightsController::class, 'statistics'])->name('contacts.statistics');
             Route::get('/contacts/{id}/statement', [ContactInsightsController::class, 'statement'])->name('contacts.statement');
             Route::post('/contacts/{id}/statement/email', [ContactInsightsController::class, 'emailStatement'])->name('contacts.statement.email');
-            Route::apiResource('contacts', CrmController::class)->parameters(['contacts' => 'id']);
+            Route::apiResource('contacts', CrmController::class)->parameters(['contacts' => 'id'])->middlewareFor('show', 'audit.access:Contact,VIEWED');
             Route::post('/fiscal/lookup', [ContactFiscalController::class, 'lookup'])->name('fiscal.lookup');
             Route::post('/contacts/{id}/fiscal/verify', [ContactFiscalController::class, 'verify'])->name('contacts.fiscal.verify');
-            Route::get('/contacts/{id}/overview', [ContactInsightsController::class, 'overview'])->name('contacts.overview');
+            Route::get('/contacts/{id}/overview', [ContactInsightsController::class, 'overview'])->middleware('audit.access:Contact,VIEWED')->name('contacts.overview');
             Route::get('/contacts/{id}/hierarchy', [ContactRegistryController::class, 'hierarchy'])->name('contacts.hierarchy');
             Route::get('/contacts/{id}/persons', [ContactRegistryController::class, 'persons'])->name('contacts.persons.index');
             Route::post('/contacts/{id}/persons', [ContactRegistryController::class, 'storePerson'])->name('contacts.persons.store');
