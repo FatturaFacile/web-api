@@ -7,9 +7,11 @@ namespace Database\Seeders;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
+use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
+use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
@@ -48,6 +50,8 @@ class FrontendTranslationSeeder extends Seeder
 
         return $base
             + HrAtsFrontendTranslations::all($locale)
+            + LeadFrontendTranslations::all($locale)
+            + GapViewsFrontendTranslations::all($locale)
             + MainFrontendTranslations::all($locale)
             + PrivacyGovernanceFrontendTranslations::all($locale)
             + ReleaseAuditFrontendTranslations::all($locale)
