@@ -74,8 +74,8 @@ class ItalianFiscalCalculator
 
         // 5. Virtual stamp duty on the amounts without VAT.
         $stampDutyBase = $this->stampDutyBase($lines, $fund, $fundNatura);
-        $stampDutyApplied = $stampDutyBase > Money::toCents((string) config('italian_tax.stamp_duty.threshold', '77.47'));
-        $stampDuty = $stampDutyApplied ? Money::toCents((string) config('italian_tax.stamp_duty.amount', '2.00')) : 0;
+        $stampDutyApplied = FiscalRules::stampDutyDue($stampDutyBase);
+        $stampDuty = $stampDutyApplied ? FiscalRules::stampDutyAmountCents() : 0;
         $stampDutyCharged = $stampDutyApplied && $input->stampDutyChargedToCustomer;
 
         $gross = $net + $fund + $vat + ($stampDutyCharged ? $stampDuty : 0);
@@ -292,10 +292,10 @@ class ItalianFiscalCalculator
         }
 
         $commissions = array_sum(array_column(array_filter($lines, fn (array $line): bool => $line['withholding']), 'net'));
-        $remainingCap = max(0, Money::toCents($settings->annualMaximumCommission) - Money::toCents($settings->ytdCommissions));
-        $taxable = max(0, min($commissions, $remainingCap));
+        $taxable = FiscalRules::enasarcoTaxable($commissions, Money::toCents($settings->annualMaximumCommission), Money::toCents($settings->ytdCommissions));
+        $contribution = FiscalRules::enasarcoContribution($taxable, $settings->rate, Money::toCents($settings->annualMinimumContribution), Money::toCents($settings->ytdContribution));
 
-        return [$commissions, $taxable, Money::percentOf($taxable, $settings->rate)];
+        return [$commissions, $taxable, $contribution];
     }
 
     /**
@@ -305,16 +305,15 @@ class ItalianFiscalCalculator
      */
     private function stampDutyBase(array $lines, int $fund, ?string $fundNatura): int
     {
-        $codes = (array) config('italian_tax.stamp_duty.natura_codes', []);
         $base = 0;
 
         foreach ($lines as $line) {
-            if ($line['natura'] !== null && in_array($line['natura'], $codes, true)) {
+            if (FiscalRules::isStampDutyNatura($line['natura'])) {
                 $base += $line['net'];
             }
         }
 
-        if ($fundNatura !== null && in_array($fundNatura, $codes, true)) {
+        if (FiscalRules::isStampDutyNatura($fundNatura)) {
             $base += $fund;
         }
 

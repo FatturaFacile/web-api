@@ -10502,6 +10502,7 @@ CREATE TABLE "enasarco_parameters"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "minimum_contribution" numeric not null default '0',
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -40839,3 +40840,4 @@ INSERT INTO migrations VALUES(385,'2027_12_10_100000_create_controlling_tables',
 INSERT INTO migrations VALUES(386,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',1);
 INSERT INTO migrations VALUES(387,'2027_12_11_000100_create_immutable_audit_trail',1);
 INSERT INTO migrations VALUES(388,'2027_12_12_000100_create_privacy_governance_tables',1);
+INSERT INTO migrations VALUES(389,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',2);

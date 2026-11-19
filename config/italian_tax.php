@@ -49,7 +49,7 @@ return [
         'threshold' => '77.47',
         'amount' => '2.00',
         // Natura codes whose lines count towards the threshold.
-        'natura_codes' => ['N1', 'N2.1', 'N2.2', 'N3.1', 'N3.2', 'N3.3', 'N3.4', 'N3.5', 'N3.6', 'N4'],
+        'natura_codes' => ['N1', 'N2', 'N2.1', 'N2.2', 'N3', 'N3.1', 'N3.2', 'N3.3', 'N3.4', 'N3.5', 'N3.6', 'N4'],
         // Default payer when the tenant has no preference: "customer" (re-charged, included in the total) or "issuer".
         'default_charge_mode' => 'customer',
         // Quarterly F24 payment of the e-invoice stamp duty (verify before release).

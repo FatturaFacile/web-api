@@ -19,7 +19,7 @@ final class EnasarcoParameter extends Model
 
     public const array AGENT_TYPES = ['single_mandate', 'multi_mandate'];
 
-    protected $fillable = ['tenant_id', 'year', 'agent_type', 'rate_percent', 'agent_share_percent', 'annual_ceiling', 'source'];
+    protected $fillable = ['tenant_id', 'year', 'agent_type', 'rate_percent', 'agent_share_percent', 'annual_ceiling', 'minimum_contribution', 'source'];
 
     protected function casts(): array
     {
@@ -28,6 +28,7 @@ final class EnasarcoParameter extends Model
             'rate_percent' => 'decimal:2',
             'agent_share_percent' => 'decimal:2',
             'annual_ceiling' => 'decimal:2',
+            'minimum_contribution' => 'decimal:2',
         ];
     }
 

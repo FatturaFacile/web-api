@@ -64,6 +64,55 @@ final class InvoiceInstallmentService
     }
 
     /**
+     * A credit note takes the credited amount off the schedule of its invoice, newest due date first: the latest
+     * installments shrink or are cancelled until the credited amount is absorbed, and the due date of the invoice
+     * follows the last installment left. Total or partial, the schedule keeps summing to what the customer still owes.
+     * An invoice without stored installments has nothing to reduce.
+     */
+    public function reduceForCreditNote(SalesInvoice $original, SalesInvoice $creditNote): void
+    {
+        $remaining = Decimal::round2((string) $creditNote->total_gross);
+
+        if (! Decimal::isPositive($remaining)) {
+            return;
+        }
+
+        $installments = InvoiceInstallment::withoutGlobalScope(TenantScope::class)
+            ->where('invoice_id', $original->id)
+            ->orderByDesc('due_date')
+            ->orderByDesc('sequence')
+            ->get();
+
+        if ($installments->isEmpty()) {
+            return;
+        }
+
+        foreach ($installments as $installment) {
+            if (! Decimal::isPositive($remaining)) {
+                break;
+            }
+
+            $amount = Decimal::round2((string) $installment->amount);
+            $taken = Decimal::compare($remaining, $amount) >= 0 ? $amount : $remaining;
+            $left = Decimal::sub($amount, $taken);
+            $remaining = Decimal::sub($remaining, $taken);
+
+            if (Decimal::isPositive($left)) {
+                $installment->amount = $left;
+                $installment->save();
+            } else {
+                $installment->delete();
+            }
+        }
+
+        $last = InvoiceInstallment::withoutGlobalScope(TenantScope::class)->where('invoice_id', $original->id)->orderByDesc('due_date')->orderByDesc('sequence')->first();
+
+        if ($last !== null) {
+            SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($original->id)->update(['due_date' => $last->due_date->toDateString()]);
+        }
+    }
+
+    /**
      * The installments of a document with what is paid and open on each, earliest first. A document without stored
      * installments has one: its due date for its amount due.
      *
