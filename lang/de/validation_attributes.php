@@ -2964,4 +2964,13 @@ return [
     'require_otp' => 'Einmalcode verlangen',
     'allow_partial_payments' => 'Teilzahlungen erlauben',
 
+    'document_category' => 'Dokumentkategorie',
+    'period_from' => 'Zeitraum von',
+    'period_to' => 'Zeitraum bis',
+    'preservation_officer_name' => 'Name des Archivverantwortlichen',
+    'preservation_officer_tax_code' => 'Steuernummer des Archivverantwortlichen',
+    'tsa_url' => 'URL der Zeitstempelstelle',
+    'tsa_credentials' => 'Zugangsdaten der Zeitstempelstelle',
+    'auto_seal_frequency' => 'Versiegelungsintervall',
+    'default_retention_years' => 'Aufbewahrungsjahre',
 ];

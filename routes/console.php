@@ -194,3 +194,7 @@ Schedule::command('esm:loaners:scan-overdue')->dailyAt('07:30')->withoutOverlapp
 // GitHub Issue #138: Recurring Contracts & Periodic Billing Engine
 Schedule::command('billing:process-recurring')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
 Schedule::command('audit:archive-worm')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
+
+// Digital preservation (AgID conservazione / GeBüV): collect, seal, time-stamp and dispatch; then re-verify the vault.
+Schedule::command('fatturafacile:preservation:run')->dailyAt('03:00')->withoutOverlapping()->onOneServer();
+Schedule::command('fatturafacile:preservation:verify')->weeklyOn(0, '04:00')->withoutOverlapping()->onOneServer();

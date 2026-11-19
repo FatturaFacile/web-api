@@ -28,6 +28,7 @@ use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
+use Modules\DigitalPreservation\Providers\DigitalPreservationServiceProvider;
 use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
@@ -148,4 +149,5 @@ return [
     TransportationServiceProvider::class,
     LogisticsServiceProvider::class,
     CorporateGroupServiceProvider::class,
+    DigitalPreservationServiceProvider::class,
 ];

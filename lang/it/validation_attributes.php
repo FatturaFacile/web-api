@@ -2964,4 +2964,13 @@ return [
     'require_otp' => 'richiedi codice monouso',
     'allow_partial_payments' => 'consenti pagamenti parziali',
 
+    'document_category' => 'categoria documentale',
+    'period_from' => 'periodo dal',
+    'period_to' => 'periodo al',
+    'preservation_officer_name' => 'responsabile della conservazione',
+    'preservation_officer_tax_code' => 'codice fiscale del responsabile',
+    'tsa_url' => 'URL della marca temporale',
+    'tsa_credentials' => 'credenziali della marca temporale',
+    'auto_seal_frequency' => 'frequenza di sigillatura',
+    'default_retention_years' => 'anni di conservazione',
 ];

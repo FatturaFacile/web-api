@@ -20,7 +20,9 @@ test('every business table has the six audit columns', function (): void {
         'tl_survey_responses', 'tl_survey_answers',
         // Immutable audit trail: records are inserted once and never updated or deleted (database triggers), the actor is
         // a snapshot inside the record, and the WORM batch tables are written once when a batch is sealed.
-        'audit_logs', 'audit_worm_batches', 'audit_worm_batch_entries'];
+        'audit_logs', 'audit_worm_batches', 'audit_worm_batch_entries',
+        // Preservation audit trail: append-only and hash-chained, so it carries no update or delete stamps.
+        'preservation_audit_logs'];
     $incomplete = [];
 
     foreach (Schema::getTableListing(schemaQualified: false) as $table) {

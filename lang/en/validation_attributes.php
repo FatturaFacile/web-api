@@ -2964,4 +2964,13 @@ return [
     'support_email' => 'support email',
     'require_otp' => 'require one-time code',
     'allow_partial_payments' => 'allow partial payments',
+    'document_category' => 'document category',
+    'period_from' => 'period from',
+    'period_to' => 'period to',
+    'preservation_officer_name' => 'preservation officer name',
+    'preservation_officer_tax_code' => 'preservation officer tax code',
+    'tsa_url' => 'time-stamp authority URL',
+    'tsa_credentials' => 'time-stamp credentials',
+    'auto_seal_frequency' => 'sealing frequency',
+    'default_retention_years' => 'retention years',
 ];

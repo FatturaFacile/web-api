@@ -40450,6 +40450,167 @@ CREATE INDEX "privacy_retention_run_logs_tenant_id_started_at_index" on "privacy
   "tenant_id",
   "started_at"
 );
+CREATE TABLE "preservation_configurations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "jurisdiction" varchar not null default 'DUAL',
+  "provider" varchar not null default 'local_worm',
+  "credentials" text,
+  "preservation_officer_name" varchar,
+  "preservation_officer_tax_code" varchar,
+  "tsa_url" varchar,
+  "tsa_credentials" text,
+  "auto_seal_frequency" varchar not null default 'monthly',
+  "default_retention_years" integer not null default '10',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "preservation_configurations_tenant_id_unique" on "preservation_configurations"(
+  "tenant_id"
+);
+CREATE TABLE "preservation_batches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "batch_number" varchar not null,
+  "jurisdiction" varchar not null,
+  "status" varchar not null default 'draft',
+  "document_category" varchar not null,
+  "period_from" date not null,
+  "period_to" date not null,
+  "item_count" integer not null default '0',
+  "total_size_bytes" integer not null default '0',
+  "pdv_xml_path" varchar,
+  "pda_archive_path" varchar,
+  "pdv_sha256" varchar,
+  "pda_sha256" varchar,
+  "merkle_root_sha256" varchar,
+  "previous_batch_sha256" varchar,
+  "rfc3161_token_path" varchar,
+  "rfc3161_gen_time" datetime,
+  "rfc3161_provider" varchar,
+  "rfc3161_qualified" tinyint(1) not null default '0',
+  "external_conservator_id" varchar,
+  "rdv_receipt_path" varchar,
+  "retention_until" date,
+  "sealed_by" varchar,
+  "sealed_at" datetime,
+  "dispatched_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "preservation_batches_tenant_id_batch_number_unique" on "preservation_batches"(
+  "tenant_id",
+  "batch_number"
+);
+CREATE INDEX "preservation_batches_tenant_id_status_index" on "preservation_batches"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "preservation_batches_tenant_id_document_category_index" on "preservation_batches"(
+  "tenant_id",
+  "document_category"
+);
+CREATE TABLE "preservation_batch_items"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "preservation_batch_id" varchar not null,
+  "sequence" integer not null default '1',
+  "preservable_type" varchar not null,
+  "preservable_id" varchar not null,
+  "document_uuid" varchar not null,
+  "document_type" varchar not null,
+  "document_number" varchar,
+  "document_date" date,
+  "counterparty_name" varchar,
+  "counterparty_tax_id" varchar,
+  "original_filename" varchar not null,
+  "archived_filename" varchar not null,
+  "archive_path" varchar not null,
+  "mime_type" varchar not null,
+  "is_pdfa_compliant" tinyint(1) not null default '0',
+  "pdfa_conformance_level" varchar,
+  "file_size_bytes" integer not null default '0',
+  "sha256_hash" varchar not null,
+  "metadata_json" text,
+  "retention_until" date,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("preservation_batch_id") references "preservation_batches"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "preservation_batch_items_preservation_batch_id_sequence_unique" on "preservation_batch_items"(
+  "preservation_batch_id",
+  "sequence"
+);
+CREATE INDEX "pbi_preservable_idx" on "preservation_batch_items"(
+  "tenant_id",
+  "preservable_type",
+  "preservable_id"
+);
+CREATE INDEX "preservation_batch_items_tenant_id_document_number_index" on "preservation_batch_items"(
+  "tenant_id",
+  "document_number"
+);
+CREATE INDEX "preservation_batch_items_tenant_id_sha256_hash_index" on "preservation_batch_items"(
+  "tenant_id",
+  "sha256_hash"
+);
+CREATE INDEX "preservation_batch_items_tenant_id_counterparty_tax_id_index" on "preservation_batch_items"(
+  "tenant_id",
+  "counterparty_tax_id"
+);
+CREATE TABLE "preservation_audit_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "sequence" integer not null,
+  "preservation_batch_id" varchar,
+  "preservation_item_id" varchar,
+  "actor_id" varchar,
+  "action" varchar not null,
+  "details_json" text,
+  "sha256_snapshot" varchar,
+  "previous_log_sha256" varchar,
+  "entry_sha256" varchar not null,
+  "ip_address" varchar,
+  "user_agent" varchar,
+  "created_at" datetime not null,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "preservation_audit_logs_tenant_id_sequence_unique" on "preservation_audit_logs"(
+  "tenant_id",
+  "sequence"
+);
+CREATE INDEX "preservation_audit_logs_tenant_id_action_index" on "preservation_audit_logs"(
+  "tenant_id",
+  "action"
+);
+CREATE INDEX "preservation_audit_logs_tenant_id_preservation_batch_id_index" on "preservation_audit_logs"(
+  "tenant_id",
+  "preservation_batch_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -40839,3 +41000,4 @@ INSERT INTO migrations VALUES(385,'2027_12_10_100000_create_controlling_tables',
 INSERT INTO migrations VALUES(386,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',1);
 INSERT INTO migrations VALUES(387,'2027_12_11_000100_create_immutable_audit_trail',1);
 INSERT INTO migrations VALUES(388,'2027_12_12_000100_create_privacy_governance_tables',1);
+INSERT INTO migrations VALUES(389,'2027_12_13_000100_create_digital_preservation_tables',2);
