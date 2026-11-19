@@ -26,6 +26,10 @@ return new class extends Migration
             $table->decimal('annual_minimum', 15, 2)->default(0);
             $table->decimal('annual_maximum_commission', 15, 2);
             $table->timestamps();
+            $table->softDeletes();
+            $table->uuid('created_by')->nullable();
+            $table->uuid('updated_by')->nullable();
+            $table->uuid('deleted_by')->nullable();
 
             $table->unique(['tenant_id', 'year']);
             $table->index('year');
