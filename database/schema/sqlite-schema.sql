@@ -39357,6 +39357,123 @@ CREATE INDEX "passive_invoice_withholdings_tenant_id_supplier_id_index" on "pass
   "tenant_id",
   "supplier_id"
 );
+CREATE TABLE "sdi_configurations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "transmitter_country_code" varchar not null default 'IT',
+  "transmitter_fiscal_code" varchar,
+  "progressivo_invio_counter" integer not null default '0',
+  "channel_type" varchar,
+  "encrypted_credentials" text,
+  "default_codice_destinatario" varchar not null default '0000000',
+  "pec_address" varchar,
+  "signature_mode" varchar not null default 'none',
+  "encrypted_certificate" text,
+  "certificate_reference" varchar,
+  "auto_sign_on_send" tinyint(1) not null default '0',
+  "legal_archiving_enabled" tinyint(1) not null default '0',
+  "sandbox_simulator_enabled" tinyint(1) not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sdi_configurations_tenant_id_unique" on "sdi_configurations"(
+  "tenant_id"
+);
+CREATE TABLE "fpa_documents"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "invoice_id" varchar,
+  "passive_invoice_id" varchar,
+  "parent_fpa_document_id" varchar,
+  "direction" varchar not null,
+  "format_transmission" varchar not null,
+  "document_type" varchar not null,
+  "document_number" varchar,
+  "document_date" date,
+  "sdi_identifier" varchar,
+  "file_name" varchar,
+  "transmission_progressive" varchar,
+  "recipient_code" varchar,
+  "recipient_pec" varchar,
+  "status" varchar not null default 'draft',
+  "xml_storage_path" varchar,
+  "signed_storage_path" varchar,
+  "sha256_hash" varchar,
+  "validation_errors" text,
+  "transmitted_at" datetime,
+  "rejected_at" datetime,
+  "resubmission_deadline_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("invoice_id") references "invoices"("id") on delete set null,
+  foreign key("passive_invoice_id") references "passive_invoices"("id") on delete set null,
+  foreign key("parent_fpa_document_id") references "fpa_documents"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fpa_documents_tenant_id_sdi_identifier_unique" on "fpa_documents"(
+  "tenant_id",
+  "sdi_identifier"
+);
+CREATE INDEX "fpa_documents_tenant_id_status_index" on "fpa_documents"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "fpa_documents_tenant_id_direction_index" on "fpa_documents"(
+  "tenant_id",
+  "direction"
+);
+CREATE INDEX "fpa_documents_invoice_id_index" on "fpa_documents"(
+  "invoice_id"
+);
+CREATE INDEX "fpa_documents_tenant_id_document_number_document_date_index" on "fpa_documents"(
+  "tenant_id",
+  "document_number",
+  "document_date"
+);
+CREATE TABLE "sdi_notifications"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "fpa_document_id" varchar not null,
+  "notification_type" varchar not null,
+  "sdi_identifier" varchar,
+  "sdi_message_id" varchar,
+  "outcome_code" varchar,
+  "error_codes" text,
+  "raw_xml_path" varchar,
+  "received_at" datetime,
+  "processed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("fpa_document_id") references "fpa_documents"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sdi_notifications_tenant_id_fpa_document_id_index" on "sdi_notifications"(
+  "tenant_id",
+  "fpa_document_id"
+);
+CREATE INDEX "sdi_notifications_fpa_document_id_notification_type_index" on "sdi_notifications"(
+  "fpa_document_id",
+  "notification_type"
+);
 CREATE TABLE "analytical_cost_centers"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -40072,4 +40189,5 @@ INSERT INTO migrations VALUES(373,'2027_04_20_286001_add_italian_tax_fields_to_i
 INSERT INTO migrations VALUES(374,'2027_04_20_286002_create_enasarco_annual_limits_table_issue_286',2);
 INSERT INTO migrations VALUES(375,'2027_04_20_286003_create_passive_invoice_withholdings_table_issue_286',2);
 INSERT INTO migrations VALUES(376,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',2);
-INSERT INTO migrations VALUES(377,'2027_12_10_100000_create_controlling_tables',2);
+INSERT INTO migrations VALUES(377,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',2);
+INSERT INTO migrations VALUES(378,'2027_12_10_100000_create_controlling_tables',3);

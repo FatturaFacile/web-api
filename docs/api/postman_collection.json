@@ -13729,7 +13729,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -13844,7 +13844,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -15176,7 +15176,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
+                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -15236,7 +15236,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
+                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -97593,6 +97593,287 @@
             ]
         },
         {
+            "name": "Fpa Documents",
+            "item": [
+                {
+                    "name": "GET /v1/fpa-documents",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/fpa-documents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fpa-documents"
+                            ],
+                            "query": [
+                                {
+                                    "key": "direction",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/fpa-documents/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/fpa-documents/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fpa-documents",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/fpa-documents/:id/render",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/fpa-documents/:id/render",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fpa-documents",
+                                ":id",
+                                "render"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/fpa-documents/:id/resubmit",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/fpa-documents/:id/resubmit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fpa-documents",
+                                ":id",
+                                "resubmit"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/fpa-documents/:id/simulate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/fpa-documents/:id/simulate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fpa-documents",
+                                ":id",
+                                "simulate"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"type\": \"NS\",\n    \"outcome\": \"EC01\",\n    \"error_code\": \"string\",\n    \"error_description\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "Fsm",
             "item": [
                 {
@@ -117899,10 +118180,6 @@
                             {
                                 "key": "X-Tenant-Id",
                                 "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -117926,18 +118203,9 @@
                                 }
                             ]
                         },
-                        "description": "Change the descriptive data of the active contract",
+                        "description": "⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):\n  [FormRequestRulesEvaluator] SQLSTATE[HY000]: General error: 1 no such table: hr_employment_contracts (Connection: sqlite, Database: /home/runner/work/web-api/web-api/database/database.sqlite, SQL: select \"start_date\" from \"hr_employment_contracts\" where \"hr_employment_contracts\".\"id\" =  and (1 = 0) and \"hr_employment_contracts\".\"deleted_at\" is null limit 1) (at /home/runner/work/web-api/web-api/vendor/laravel/framework/src/Illuminate/Database/Connection.php:864)\n  [NodeRulesEvaluator] Only arrays and Traversables can be unpacked, null given (at /home/runner/work/web-api/web-api/vendor/dedoc/scramble/src/Support/OperationExtensions/RulesEvaluator/NodeRulesEvaluator.php:221)",
                         "auth": {
                             "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"job_title\": \"string\",\n    \"end_date\": \"2026-01-31\",\n    \"probation_end_date\": \"2026-01-31\",\n    \"collective_agreement\": \"string\",\n    \"collective_agreement_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"collective_agreement_level_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"level_code\": \"string\",\n    \"terms\": [\n        \"string\"\n    ],\n    \"notes\": \"string\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
                         }
                     }
                 },
@@ -182832,6 +183100,60 @@
             "name": "Sdi",
             "item": [
                 {
+                    "name": "POST /v1/sdi/invoices/:id/preflight",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sdi/invoices/:id/preflight",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sdi",
+                                "invoices",
+                                ":id",
+                                "preflight"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "Transmit the invoice to SDI through the configured provider",
                     "request": {
                         "method": "POST",
@@ -187910,6 +188232,159 @@
                         "description": "Read a quarantined message again",
                         "auth": {
                             "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/settings/sdi",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/sdi",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "sdi"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/settings/sdi",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/sdi",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "sdi"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "transmitter_country_code",
+                                    "type": "text",
+                                    "value": "string"
+                                },
+                                {
+                                    "key": "transmitter_fiscal_code",
+                                    "type": "text",
+                                    "value": "string"
+                                },
+                                {
+                                    "key": "channel_type",
+                                    "type": "text",
+                                    "value": "pec"
+                                },
+                                {
+                                    "key": "default_codice_destinatario",
+                                    "type": "text",
+                                    "value": "string"
+                                },
+                                {
+                                    "key": "pec_address",
+                                    "type": "text",
+                                    "value": "user@example.com"
+                                },
+                                {
+                                    "key": "signature_mode",
+                                    "type": "text",
+                                    "value": "none"
+                                },
+                                {
+                                    "key": "certificate_reference",
+                                    "type": "text",
+                                    "value": "string"
+                                },
+                                {
+                                    "key": "certificate",
+                                    "type": "file",
+                                    "src": []
+                                },
+                                {
+                                    "key": "certificate_password",
+                                    "type": "text",
+                                    "value": "string"
+                                },
+                                {
+                                    "key": "auto_sign_on_send",
+                                    "type": "text",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "legal_archiving_enabled",
+                                    "type": "text",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "sandbox_simulator_enabled",
+                                    "type": "text",
+                                    "value": ""
+                                }
+                            ]
                         }
                     }
                 },
