@@ -291,6 +291,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'rate_percent', type: 'string'),
         new OA\Property(property: 'agent_share_percent', type: 'string'),
         new OA\Property(property: 'annual_ceiling', type: 'string'),
+        new OA\Property(property: 'minimum_contribution', type: 'string'),
         new OA\Property(property: 'source', type: 'string'),
     ]
 )]
