@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class PreservationItemController extends PreservationApiController
 {
-    #[OA\Get(path: '/api/v1/preservation/items', operationId: 'searchPreservationItems', description: 'Compliance search over the preserved documents by UUID, number, counterparty, tax id, hash, date range, category and jurisdiction.', summary: 'Search preserved documents', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Digital Preservation'], parameters: [
+    #[OA\Get(path: '/api/v1/preservation/items', operationId: 'searchDigitalPreservationItems', description: 'Compliance search over the preserved documents by UUID, number, counterparty, tax id, hash, date range, category and jurisdiction.', summary: 'Search preserved documents', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Digital Preservation'], parameters: [
         new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
         new OA\Parameter(name: 'sha256', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
         new OA\Parameter(name: 'date_from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
