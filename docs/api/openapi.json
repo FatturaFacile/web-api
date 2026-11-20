@@ -69411,6 +69411,198 @@
                 }
             }
         },
+        "/v1/forecasting/demand/forecasts": {
+            "get": {
+                "operationId": "forecasting.demand.index",
+                "tags": [
+                    "DemandForecast"
+                ],
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "warehouse_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/forecasting/demand/generate": {
+            "post": {
+                "operationId": "forecasting.demand.generate",
+                "tags": [
+                    "DemandForecast"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerateDemandForecastRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/forecasting/demand/accuracy": {
+            "get": {
+                "operationId": "forecasting.demand.accuracy",
+                "tags": [
+                    "DemandForecast"
+                ],
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "warehouse_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/forecasting/demand/apply-reorder-rules": {
+            "post": {
+                "operationId": "forecasting.demand.apply-reorder-rules",
+                "tags": [
+                    "DemandForecast"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ApplyReorderRulesRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/eam/assets/{id}/depreciation-schedules": {
             "get": {
                 "operationId": "eam.assets.depreciation_schedules",
@@ -136687,6 +136879,96 @@
                 }
             }
         },
+        "/v1/forecasting/liquidity/simulate": {
+            "post": {
+                "operationId": "forecasting.liquidity.simulate",
+                "tags": [
+                    "LiquidityForecast"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SimulateLiquidityRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/forecasting/liquidity/confidence-bands": {
+            "get": {
+                "operationId": "forecasting.liquidity.confidence-bands",
+                "tags": [
+                    "LiquidityForecast"
+                ],
+                "parameters": [
+                    {
+                        "name": "run_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "horizon_days",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "enum": [
+                                "91",
+                                "365",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/esm/rma-orders/{rmaOrder}/loaners": {
             "post": {
                 "operationId": "v1.esm.rma-orders.loaners.store",
@@ -162844,6 +163126,64 @@
                     }
                 },
                 "security": []
+            }
+        },
+        "/v1/forecasting/payment-models": {
+            "get": {
+                "operationId": "forecasting.payment-models.index",
+                "tags": [
+                    "PaymentModel"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/forecasting/payment-models/train": {
+            "post": {
+                "operationId": "forecasting.payment-models.train",
+                "tags": [
+                    "PaymentModel"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TrainPaymentModelsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
             }
         },
         "/v1/treasury/payment-proposals": {
@@ -303215,6 +303555,28 @@
                 ],
                 "title": "ApplyCreditNoteRequest"
             },
+            "ApplyReorderRulesRequest": {
+                "type": "object",
+                "properties": {
+                    "forecast_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 200
+                    },
+                    "product_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 200
+                    }
+                },
+                "title": "ApplyReorderRulesRequest"
+            },
             "AppointmentAttendeeResource": {
                 "type": "object",
                 "properties": {
@@ -328272,6 +328634,40 @@
                     "period"
                 ],
                 "title": "GenerateDeclarationRequest"
+            },
+            "GenerateDemandForecastRequest": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "warehouse_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "periods_ahead": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 12
+                    },
+                    "service_level": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    }
+                },
+                "title": "GenerateDemandForecastRequest"
             },
             "GenerateForecastRequest": {
                 "type": "object",
@@ -363316,6 +363712,8 @@
                                 "communication",
                                 "document_trust",
                                 "digital_preservation",
+                                "forecasting",
+                                "forecasting_wms",
                                 "integrations",
                                 "payment_links",
                                 "associations",
@@ -372578,6 +372976,68 @@
                     "year"
                 ],
                 "title": "SimulateHiringRequest"
+            },
+            "SimulateLiquidityRequest": {
+                "type": "object",
+                "properties": {
+                    "horizon_days": {
+                        "type": "integer",
+                        "enum": [
+                            "91",
+                            "365"
+                        ]
+                    },
+                    "preview": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "what_if": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "global_customer_delay_shift_days": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": -60,
+                                "maximum": 90
+                            },
+                            "revenue_growth_percentage": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": -100,
+                                "maximum": 300
+                            },
+                            "supplier_payment_extension_days": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 90
+                            },
+                            "interest_rate_delta": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 25
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "horizon_days"
+                ],
+                "title": "SimulateLiquidityRequest"
             },
             "SimulatePayrollRequest": {
                 "type": "object",
@@ -394156,6 +394616,28 @@
                 "additionalProperties": {},
                 "title": "TradesResource"
             },
+            "TrainPaymentModelsRequest": {
+                "type": "object",
+                "properties": {
+                    "half_life_days": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 7,
+                        "maximum": 365
+                    },
+                    "lookback_months": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 6,
+                        "maximum": 60
+                    }
+                },
+                "title": "TrainPaymentModelsRequest"
+            },
             "TrainingCourse": {
                 "type": "array",
                 "items": {
@@ -406303,6 +406785,10 @@
             "description": "Operations of the DeliveryNote module."
         },
         {
+            "name": "DemandForecast",
+            "description": "Operations of the DemandForecast module."
+        },
+        {
             "name": "Depreciation",
             "description": "Operations of the Depreciation module."
         },
@@ -407209,6 +407695,10 @@
         {
             "name": "PaymentLinkWebhook",
             "description": "Operations of the PaymentLinkWebhook module."
+        },
+        {
+            "name": "PaymentModel",
+            "description": "Operations of the PaymentModel module."
         },
         {
             "name": "PaymentProposal",
