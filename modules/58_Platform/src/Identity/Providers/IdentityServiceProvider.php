@@ -6,14 +6,19 @@ namespace Modules\Platform\Identity\Providers;
 
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Modules\Platform\Identity\Application\EffectivePermissionResolver;
+use Modules\Platform\Identity\Application\FieldPolicyResolver;
+use Modules\Platform\Identity\Application\Passkeys\PasskeyAuthenticator;
 use Modules\Platform\Identity\Application\PermissionRegistry;
 use Modules\Platform\Identity\Console\SyncPermissionsCommand;
 use Modules\Platform\Identity\Domain\Enums\SystemRole as R;
 use Modules\Platform\Identity\Domain\Services\AuthorizationEvaluator;
 use Modules\Platform\Identity\Domain\ValueObjects\PermissionKey;
+use Modules\Platform\Identity\Infrastructure\WebAuthn\WebAuthnLibAuthenticator;
+use Modules\Platform\Identity\Listeners\RecordSecurityEvent;
 
 /**
  * Wires the IAM engine into Laravel: permission-key abilities (`<module>.<resource>.<action>`) are decided by the
@@ -31,6 +36,8 @@ final class IdentityServiceProvider extends ServiceProvider
         });
         $this->app->singleton(EffectivePermissionResolver::class);
         $this->app->singleton(AuthorizationEvaluator::class);
+        $this->app->singleton(FieldPolicyResolver::class);
+        $this->app->bind(PasskeyAuthenticator::class, WebAuthnLibAuthenticator::class);
     }
 
     public function boot(): void
@@ -56,6 +63,8 @@ final class IdentityServiceProvider extends ServiceProvider
                 $context,
             );
         });
+
+        Event::listen(RecordSecurityEvent::events(), [RecordSecurityEvent::class, 'handle']);
 
         if ($this->app->runningInConsole()) {
             $this->commands([SyncPermissionsCommand::class]);

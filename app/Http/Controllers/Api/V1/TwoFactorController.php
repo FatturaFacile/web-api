@@ -14,11 +14,15 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\Security\TenantSecurityPolicies;
 use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Auth\UserSessions;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Modules\Platform\Identity\Domain\Events\MfaDisabled;
+use Modules\Platform\Identity\Domain\Events\MfaEnabled;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -133,6 +137,7 @@ class TwoFactorController extends Controller
         }
 
         $this->audit->record(RegistrationAudit::TWO_FACTOR_ENABLED, (string) $user->id);
+        $this->announce($user, MfaEnabled::class);
         // Accesses opened with the password alone end: from now on every login needs the second factor.
         $this->revokeOtherAccesses($request, $user);
 
@@ -206,6 +211,18 @@ class TwoFactorController extends Controller
             return $this->notEnabledResponse();
         }
 
+        if (config('iam.mandatory_mfa') === true && $this->holdsMandatoryMfaRole($user)) {
+            $response = $this->problemDetailsResponse(
+                title: 'Two-factor cannot be turned off',
+                detail: 'Owners and administrators must keep two-factor authentication on.',
+                status: Response::HTTP_FORBIDDEN,
+                type: AuthProblem::MfaCannotBeDisabled->value,
+            );
+            $response->setData([...(array) $response->getData(true), 'code' => AuthProblem::MfaCannotBeDisabled->code()]);
+
+            return $response;
+        }
+
         if ($this->twoFactor->verifyCode($user, $request->validated('code'), $request->validated('recovery_code')) === null) {
             return $this->problemDetailsResponse(
                 title: __('two_factor.errors.code_invalid_title'),
@@ -217,6 +234,7 @@ class TwoFactorController extends Controller
 
         $this->twoFactor->disable($user);
         $this->audit->record(RegistrationAudit::TWO_FACTOR_DISABLED, (string) $user->id);
+        $this->announce($user, MfaDisabled::class);
         $this->revokeOtherAccesses($request, $user);
 
         return $this->successResponse(data: $this->statusOf($user), message: __('two_factor.messages.disabled'));
@@ -367,6 +385,26 @@ class TwoFactorController extends Controller
                 'two_factor_enabled' => $this->twoFactor->isEnabled($member),
             ])->values(),
         ];
+    }
+
+    private function holdsMandatoryMfaRole(User $user): bool
+    {
+        $policies = app(TenantSecurityPolicies::class);
+
+        return DB::table('tenant_user')->where('user_id', $user->id)->whereNull('suspended_at')->pluck('role')
+            ->contains(fn (mixed $role): bool => $policies->mandatoryFor(is_string($role) ? $role : null));
+    }
+
+    /**
+     * @param  class-string<MfaEnabled|MfaDisabled>  $event
+     */
+    private function announce(User $user, string $event): void
+    {
+        $tenantId = $this->tenantContext->getTenantId() ?? $user->tenants()->value('tenants.id');
+
+        if (is_string($tenantId)) {
+            event(new $event($tenantId, (string) $user->id, 'totp', (string) $user->id));
+        }
     }
 
     private function activeTenant(): Tenant

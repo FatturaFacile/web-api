@@ -12,6 +12,9 @@ use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Platform\Identity\Domain\Enums\SystemRole;
+use Modules\Platform\Identity\Domain\Events\RoleAssigned;
+use Modules\Platform\Identity\Domain\Events\RoleCreated;
+use Modules\Platform\Identity\Domain\Events\RoleUpdated;
 use Modules\Platform\Identity\Domain\Exceptions\PrivilegeEscalationException;
 use Modules\Platform\Identity\Domain\Services\PrivilegeEscalationGuard;
 use Modules\Platform\Identity\Domain\ValueObjects\AbacCondition;
@@ -47,7 +50,7 @@ final class RoleService
                 'is_system' => false,
             ]);
             $this->writePermissions($role, $tenantId, $permissions);
-            $this->audit->record('access.role.created', $tenantId, Role::class, $role->id, null, ['key' => $role->key, 'permissions' => $permissions]);
+            event(new RoleCreated($tenantId, (string) auth()->id(), (string) $role->id, (string) auth()->id()));
             $this->resolver->bump($tenantId);
 
             return $role;
@@ -75,7 +78,7 @@ final class RoleService
                 $this->writePermissions($role, $tenantId, $permissions);
             }
 
-            $this->audit->record('access.role.updated', $tenantId, Role::class, $role->id, $before, ['name' => $role->name, 'permissions' => $permissions]);
+            event(new RoleUpdated($tenantId, (string) auth()->id(), (string) $role->id, (string) auth()->id()));
             $this->resolver->bump($tenantId);
 
             return $role->refresh();
@@ -204,7 +207,7 @@ final class RoleService
             foreach (array_unique($roleIds) as $roleId) {
                 RoleAssignment::create(['tenant_id' => $tenantId, 'user_id' => $target->id, 'role_id' => $roleId, 'company_id' => $companyId]);
             }
-            $this->audit->record('access.role.assigned', $tenantId, User::class, (string) $target->id, null, ['roles' => $roleIds, 'company_id' => $companyId]);
+            event(new RoleAssigned($tenantId, (string) $target->id, implode(',', $roleIds), (string) auth()->id()));
             $this->resolver->bump($tenantId);
         });
     }

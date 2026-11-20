@@ -185,6 +185,11 @@ function writeRoutesWithoutModule(): array
         'PUT api/v1/settings/roles/{role}/abac-rules' => 'can:settings.roles.update',
         'PUT api/v1/settings/roles/{role}/field-policies' => 'can:settings.roles.update',
         'PUT api/v1/settings/users/{user}/roles' => 'can:settings.users.update',
+        'POST api/v1/settings/users/{user}/revoke-sessions' => 'can:settings.users.update',
+        // Passkeys belong to the signed-in user, who manages their own.
+        'POST api/v1/auth/passkeys/options' => 'own passkeys',
+        'POST api/v1/auth/passkeys' => 'own passkeys',
+        'DELETE api/v1/auth/passkeys/{id}' => 'own passkeys',
     ];
 }
 

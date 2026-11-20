@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\Platform\Identity\Infrastructure\Models;
 
-use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\TracksAuditUsers;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 /**
+ * A registered passkey. It belongs to the user, who can hold memberships in several tenants (tenant_id is the tenant
+ * active at registration, informational only).
+ *
  * A registered passkey. `sign_count` only grows: a lower or equal counter on login means a cloned authenticator.
  *
  * @property string $id
@@ -26,7 +28,7 @@ use Illuminate\Support\Carbon;
  */
 final class WebAuthnCredential extends Model
 {
-    use BelongsToTenant, HasUuids, TracksAuditUsers;
+    use HasUuids, TracksAuditUsers;
 
     protected $table = 'webauthn_credentials';
 
