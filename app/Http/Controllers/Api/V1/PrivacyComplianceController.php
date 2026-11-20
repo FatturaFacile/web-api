@@ -299,7 +299,7 @@ final class PrivacyComplianceController extends Controller
 
     #[OA\Get(
         path: '/api/v1/settings/privacy/breaches',
-        operationId: 'listPrivacyBreaches',
+        operationId: 'listSettingsPrivacyBreaches',
         description: 'Register of personal data breaches of the active company, most recently discovered first, with the 72-hour notification deadline and the notification status.',
         summary: 'List personal data breaches',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],

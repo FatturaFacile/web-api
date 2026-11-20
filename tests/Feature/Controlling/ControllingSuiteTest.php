@@ -150,8 +150,9 @@ test('budgets: seed from prior year, workflow, bulk edits, rolling forecast and 
 
     $forecast = $this->postJson("/api/v1/budgets/{$plan['id']}/generate-rolling-forecast", ['cutoff_month' => 8])->assertCreated()->json('data');
     expect($forecast['plan_type'])->toBe('rolling_forecast')->and($forecast['cutoff_month'])->toBe(8);
-    $closedMonth = collect($forecast['lines'])->firstWhere('nature_type', 'revenue');
-    expect(Decimal::cmp($closedMonth['month_01'], 0))->toBeGreaterThan(0);
+    // The order of the lines is not guaranteed (PostgreSQL returns them differently): take a revenue line with actuals in a closed month.
+    $closedMonth = collect($forecast['lines'])->first(fn (array $l): bool => $l['nature_type'] === 'revenue' && Decimal::cmp($l['month_01'], 0) > 0);
+    expect($closedMonth)->not->toBeNull();
     $this->putJson("/api/v1/budgets/{$forecast['id']}/lines/bulk", ['lines' => [['id' => $closedMonth['id'], 'month_01' => 1]]])->assertUnprocessable();
 
     foreach (['ytd', 'monthly', 'full_year_eac'] as $mode) {
