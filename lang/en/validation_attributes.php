@@ -2974,4 +2974,12 @@ return [
     'tsa_credentials' => 'time-stamp credentials',
     'auto_seal_frequency' => 'sealing frequency',
     'default_retention_years' => 'retention years',
+    'role_ids' => 'roles',
+    'company_id' => 'company',
+    'ceremony_id' => 'ceremony id',
+    'response' => 'response',
+    'effect' => 'effect',
+    'attribute' => 'attribute',
+    'policies' => 'field policies',
+    'resource' => 'resource',
 ];

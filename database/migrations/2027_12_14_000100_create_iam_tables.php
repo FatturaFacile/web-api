@@ -38,19 +38,23 @@ return new class extends Migration
             $table->timestamps();
             $table->uuid('created_by')->nullable();
             $table->uuid('updated_by')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->uuid('deleted_by')->nullable();
             $table->unique(['role_id', 'permission']);
             $table->index(['tenant_id', 'permission']);
         });
 
         Schema::create('role_assignments', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignUuid('role_id')->constrained('roles')->cascadeOnDelete();
             $table->uuid('company_id')->nullable();
             $table->timestamps();
             $table->uuid('created_by')->nullable();
             $table->uuid('updated_by')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->uuid('deleted_by')->nullable();
             $table->index(['tenant_id', 'user_id', 'company_id']);
             $table->index(['tenant_id', 'role_id']);
         });
@@ -65,6 +69,8 @@ return new class extends Migration
             $table->timestamps();
             $table->uuid('created_by')->nullable();
             $table->uuid('updated_by')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->uuid('deleted_by')->nullable();
             $table->index(['tenant_id', 'role_id']);
         });
 
@@ -79,6 +85,8 @@ return new class extends Migration
             $table->timestamps();
             $table->uuid('created_by')->nullable();
             $table->uuid('updated_by')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->uuid('deleted_by')->nullable();
             $table->unique(['role_id', 'resource', 'field']);
             $table->index(['tenant_id', 'resource']);
         });
@@ -97,6 +105,8 @@ return new class extends Migration
             $table->timestamps();
             $table->uuid('created_by')->nullable();
             $table->uuid('updated_by')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->uuid('deleted_by')->nullable();
             $table->index(['tenant_id', 'user_id']);
         });
     }

@@ -2974,4 +2974,12 @@ return [
     'tsa_credentials' => 'Zugangsdaten der Zeitstempelstelle',
     'auto_seal_frequency' => 'Versiegelungsintervall',
     'default_retention_years' => 'Aufbewahrungsjahre',
+    'role_ids' => 'Rollen',
+    'company_id' => 'Firma',
+    'ceremony_id' => 'Zeremonie-ID',
+    'response' => 'Antwort',
+    'effect' => 'Wirkung',
+    'attribute' => 'Attribut',
+    'policies' => 'Feldrichtlinien',
+    'resource' => 'Ressource',
 ];

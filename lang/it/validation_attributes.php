@@ -2974,4 +2974,12 @@ return [
     'tsa_credentials' => 'credenziali della marca temporale',
     'auto_seal_frequency' => 'frequenza di sigillatura',
     'default_retention_years' => 'anni di conservazione',
+    'role_ids' => 'ruoli',
+    'company_id' => 'azienda',
+    'ceremony_id' => 'identificativo della cerimonia',
+    'response' => 'risposta',
+    'effect' => 'effetto',
+    'attribute' => 'attributo',
+    'policies' => 'politiche dei campi',
+    'resource' => 'risorsa',
 ];

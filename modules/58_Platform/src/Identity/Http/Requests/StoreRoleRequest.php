@@ -24,7 +24,7 @@ final class StoreRoleRequest extends FormRequest
         return [
             'name' => [$required, 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'permissions' => [$required, 'array'],
+            'permissions' => [$this->isMethod('POST') ? 'present' : 'sometimes', 'array'],
             'permissions.*' => ['string', 'max:120'],
         ];
     }

@@ -40645,6 +40645,8 @@ CREATE TABLE "role_permissions"(
   "updated_at" datetime,
   "created_by" varchar,
   "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("role_id") references "roles"("id") on delete cascade,
   primary key("id")
@@ -40660,7 +40662,7 @@ CREATE INDEX "role_permissions_tenant_id_permission_index" on "role_permissions"
 );
 CREATE TABLE "role_assignments"(
   "id" varchar not null,
-  "tenant_id" varchar not null,
+  "tenant_id" varchar,
   "user_id" varchar not null,
   "role_id" varchar not null,
   "company_id" varchar,
@@ -40668,6 +40670,8 @@ CREATE TABLE "role_assignments"(
   "updated_at" datetime,
   "created_by" varchar,
   "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("user_id") references "users"("id") on delete cascade,
   foreign key("role_id") references "roles"("id") on delete cascade,
@@ -40694,6 +40698,8 @@ CREATE TABLE "abac_rules"(
   "updated_at" datetime,
   "created_by" varchar,
   "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("role_id") references "roles"("id") on delete cascade,
   primary key("id")
@@ -40715,6 +40721,8 @@ CREATE TABLE "field_policies"(
   "updated_at" datetime,
   "created_by" varchar,
   "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("role_id") references "roles"("id") on delete cascade,
   primary key("id")
@@ -40744,6 +40752,8 @@ CREATE TABLE "webauthn_credentials"(
   "updated_at" datetime,
   "created_by" varchar,
   "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("user_id") references "users"("id") on delete cascade,
   primary key("id")

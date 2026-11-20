@@ -20,7 +20,6 @@ use App\Services\Auth\UserSessions;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Modules\Platform\Identity\Domain\Events\MfaDisabled;
 use Modules\Platform\Identity\Domain\Events\MfaEnabled;
 use OpenApi\Attributes as OA;
@@ -391,8 +390,9 @@ class TwoFactorController extends Controller
     {
         $policies = app(TenantSecurityPolicies::class);
 
-        return DB::table('tenant_user')->where('user_id', $user->id)->whereNull('suspended_at')->pluck('role')
-            ->contains(fn (mixed $role): bool => $policies->mandatoryFor(is_string($role) ? $role : null));
+        return $user->tenants()->get()->contains(
+            fn (Tenant $tenant): bool => $policies->mandatoryFor(data_get($tenant->getRelations()['pivot'] ?? null, 'role')),
+        );
     }
 
     /**

@@ -2974,4 +2974,12 @@ return [
     'tsa_credentials' => 'identifiants d\'horodatage',
     'auto_seal_frequency' => 'fréquence de scellement',
     'default_retention_years' => 'années de conservation',
+    'role_ids' => 'rôles',
+    'company_id' => 'entreprise',
+    'ceremony_id' => 'identifiant de la cérémonie',
+    'response' => 'réponse',
+    'effect' => 'effet',
+    'attribute' => 'attribut',
+    'policies' => 'politiques de champs',
+    'resource' => 'ressource',
 ];

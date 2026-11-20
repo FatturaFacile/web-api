@@ -43,7 +43,8 @@ final class IdentityServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::before(function (mixed $user, string $ability, array $arguments = []): ?bool {
-            if (! $user instanceof User || ! PermissionKey::isValid($ability)) {
+            // Abilities a module defines itself (Gate::define) keep their own rule: this engine decides only the ones nobody else defines.
+            if (! $user instanceof User || ! PermissionKey::isValid($ability) || Gate::has($ability)) {
                 return null;
             }
 
