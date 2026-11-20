@@ -154749,6 +154749,48 @@
                     }
                 },
                 {
+                    "name": "The companies the signed-in user can switch to (drives the mobile tenant switcher)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/mobile/tenants",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "mobile",
+                                "tenants"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "The companies the signed-in user can switch to (drives the mobile tenant switcher)",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "GET /v1/mobile/work-sites",
                     "request": {
                         "method": "GET",
@@ -169604,6 +169646,751 @@
                                 "trust-ledger",
                                 ":id",
                                 "reconcile"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Preservation",
+            "item": [
+                {
+                    "name": "GET /v1/preservation/audit-logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/audit-logs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "audit-logs"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/preservation/batches",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/batches",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "batches"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/preservation/batches",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/batches",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "batches"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"document_category\": \"active_invoices\",\n    \"period_from\": \"2026-01-31T12:00:00+00:00\",\n    \"period_to\": \"2026-01-31T12:00:00+00:00\",\n    \"jurisdiction\": \"IT\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/preservation/batches/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/batches/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "batches",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/preservation/batches/:id/seal",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/batches/:id/seal",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "batches",
+                                ":id",
+                                "seal"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/preservation/batches/:id/dispatch",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/batches/:id/dispatch",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "batches",
+                                ":id",
+                                "dispatch"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/preservation/batches/:id/verify",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/batches/:id/verify",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "batches",
+                                ":id",
+                                "verify"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/preservation/batches/:id/export-pdd",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/batches/:id/export-pdd",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "batches",
+                                ":id",
+                                "export-pdd"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/preservation/configuration",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/configuration",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "configuration"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/preservation/configuration",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/configuration",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "configuration"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"jurisdiction\": \"IT\",\n    \"provider\": \"local_worm\",\n    \"credentials\": [\n        \"string\"\n    ],\n    \"preservation_officer_name\": \"string\",\n    \"preservation_officer_tax_code\": \"string\",\n    \"tsa_url\": \"https://example.com\",\n    \"tsa_credentials\": [\n        \"string\"\n    ],\n    \"auto_seal_frequency\": \"daily\",\n    \"default_retention_years\": 1,\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/preservation/configuration/test-connection",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/configuration/test-connection",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "configuration",
+                                "test-connection"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/preservation/dashboard",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/dashboard",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "dashboard"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/preservation/items",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/items",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "items"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/preservation/items/:id/verify",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/items/:id/verify",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "items",
+                                ":id",
+                                "verify"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/preservation/items/:id/export-pdd",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/preservation/items/:id/export-pdd",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "preservation",
+                                "items",
+                                ":id",
+                                "export-pdd"
                             ],
                             "query": [],
                             "variable": [
