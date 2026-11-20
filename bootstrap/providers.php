@@ -23,6 +23,7 @@ use Modules\Configurator\Providers\ConfiguratorServiceProvider;
 use Modules\ConstructionTrades\Providers\ConstructionTradesServiceProvider;
 use Modules\Contracts\Providers\ContractsServiceProvider;
 use Modules\Controlling\Providers\ControllingServiceProvider;
+use Modules\Copilot\Providers\CopilotServiceProvider;
 use Modules\CorporateGroup\Providers\CorporateGroupServiceProvider;
 use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
@@ -114,6 +115,7 @@ return [
     DocumentsServiceProvider::class,
     ContractsServiceProvider::class,
     AssistantServiceProvider::class,
+    CopilotServiceProvider::class,
     EDocumentNetworksServiceProvider::class,
     WorkspaceSyncServiceProvider::class,
     WorkshopServiceProvider::class,

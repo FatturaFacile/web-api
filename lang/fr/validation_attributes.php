@@ -2985,4 +2985,12 @@ return [
     'interest_rate_delta' => 'variation du taux d\'intérêt',
     'half_life_days' => 'demi-vie en jours',
     'lookback_months' => 'mois d\'historique',
+    'context_route' => 'écran de départ',
+    'context_entity_type' => 'type de l\'enregistrement ouvert',
+    'context_entity_id' => 'identifiant de l\'enregistrement ouvert',
+    'section_ref' => 'référence de la section',
+    'context' => 'contexte',
+    'route' => 'écran',
+    'entity_type' => 'type d\'enregistrement',
+    'entity_id' => 'identifiant de l\'enregistrement',
 ];

@@ -2985,4 +2985,12 @@ return [
     'interest_rate_delta' => 'variazione del tasso di interesse',
     'half_life_days' => 'emivita in giorni',
     'lookback_months' => 'mesi di storico',
+    'context_route' => 'schermata di partenza',
+    'context_entity_type' => 'tipo di record aperto',
+    'context_entity_id' => 'identificativo del record aperto',
+    'section_ref' => 'riferimento della sezione',
+    'context' => 'contesto',
+    'route' => 'schermata',
+    'entity_type' => 'tipo di record',
+    'entity_id' => 'identificativo del record',
 ];

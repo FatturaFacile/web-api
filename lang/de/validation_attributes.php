@@ -2985,4 +2985,12 @@ return [
     'interest_rate_delta' => 'Zinssatzänderung',
     'half_life_days' => 'Halbwertszeit in Tagen',
     'lookback_months' => 'Monate der Historie',
+    'context_route' => 'Ausgangsbildschirm',
+    'context_entity_type' => 'Typ des geöffneten Datensatzes',
+    'context_entity_id' => 'Kennung des geöffneten Datensatzes',
+    'section_ref' => 'Abschnittsverweis',
+    'context' => 'Kontext',
+    'route' => 'Bildschirm',
+    'entity_type' => 'Datensatztyp',
+    'entity_id' => 'Datensatzkennung',
 ];

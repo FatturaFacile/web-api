@@ -66,6 +66,8 @@ return [
         'documents' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager', 'purchasing', 'procurement_manager', 'service_manager', 'hr', 'member']],
         'contracts' => ['read' => $contractManagers, 'write' => $contractManagers],
         'assistant' => ['read' => $anyMember, 'write' => $anyMember],
+        // The Copilot answers and stages actions only within the permissions of the caller on each module it touches.
+        'copilot' => ['read' => $anyMember, 'write' => $anyMember],
         'edocument_networks' => ['read' => $finance, 'write' => $finance],
         'workspace' => ['read' => $anyMember, 'write' => $anyMember],
         'hr' => ['read' => ['owner', 'admin', 'hr', 'payroll'], 'write' => ['owner', 'admin', 'hr', 'payroll']],

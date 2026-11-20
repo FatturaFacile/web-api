@@ -40615,6 +40615,115 @@ CREATE INDEX "preservation_audit_logs_tenant_id_preservation_batch_id_index" on 
   "tenant_id",
   "preservation_batch_id"
 );
+CREATE TABLE "copilot_conversations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar not null,
+  "title" varchar not null,
+  "locale" varchar not null default 'en',
+  "context_route" varchar,
+  "context_entity_type" varchar,
+  "context_entity_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "copilot_conversations_tenant_id_user_id_updated_at_index" on "copilot_conversations"(
+  "tenant_id",
+  "user_id",
+  "updated_at"
+);
+CREATE TABLE "copilot_messages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "conversation_id" varchar not null,
+  "role" varchar not null,
+  "content_markdown" text not null default '',
+  "citations_json" text,
+  "visualization_json" text,
+  "proposed_action_json" text,
+  "action_status" varchar,
+  "token_usage_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("conversation_id") references "copilot_conversations"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "copilot_messages_tenant_id_conversation_id_created_at_index" on "copilot_messages"(
+  "tenant_id",
+  "conversation_id",
+  "created_at"
+);
+CREATE INDEX "copilot_messages_tenant_id_action_status_index" on "copilot_messages"(
+  "tenant_id",
+  "action_status"
+);
+CREATE TABLE "copilot_knowledge_chunks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source_type" varchar not null,
+  "jurisdiction" varchar not null,
+  "locale" varchar not null,
+  "document_title" varchar not null,
+  "section_ref" varchar,
+  "content_text" text not null,
+  "embedding_vector" text,
+  "metadata_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "copilot_knowledge_chunks_tenant_id_jurisdiction_locale_index" on "copilot_knowledge_chunks"(
+  "tenant_id",
+  "jurisdiction",
+  "locale"
+);
+CREATE INDEX "copilot_knowledge_chunks_tenant_id_source_type_index" on "copilot_knowledge_chunks"(
+  "tenant_id",
+  "source_type"
+);
+CREATE TABLE "copilot_usages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar,
+  "conversation_id" varchar,
+  "provider" varchar not null,
+  "model" varchar,
+  "prompt_tokens" integer not null default '0',
+  "completion_tokens" integer not null default '0',
+  "total_tokens" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "copilot_usages_tenant_id_created_at_index" on "copilot_usages"(
+  "tenant_id",
+  "created_at"
+);
 CREATE TABLE "customer_payment_behavior_models"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -41126,4 +41235,5 @@ INSERT INTO migrations VALUES(389,'2027_12_13_000100_add_payment_method_to_payme
 INSERT INTO migrations VALUES(390,'2027_12_13_000100_create_digital_preservation_tables',3);
 INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',3);
 INSERT INTO migrations VALUES(392,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',4);
-INSERT INTO migrations VALUES(393,'2027_12_14_000100_create_ai_forecasting_tables',5);
+INSERT INTO migrations VALUES(393,'2027_12_14_000100_create_copilot_tables',5);
+INSERT INTO migrations VALUES(394,'2027_12_14_000100_create_ai_forecasting_tables',6);
