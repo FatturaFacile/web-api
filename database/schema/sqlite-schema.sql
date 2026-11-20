@@ -40842,6 +40842,215 @@ CREATE INDEX "sdf_tenant_period_index" on "sku_demand_forecasts"(
   "tenant_id",
   "forecast_period_start"
 );
+CREATE TABLE "academy_learning_tracks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "difficulty" varchar not null,
+  "sort_order" integer not null default '0',
+  "translations_json" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_learning_tracks_tenant_id_code_unique" on "academy_learning_tracks"(
+  "tenant_id",
+  "code"
+);
+CREATE TABLE "academy_interactive_missions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "track_id" varchar not null,
+  "code" varchar not null,
+  "difficulty" varchar not null,
+  "sequence" integer not null default '1',
+  "xp_reward" integer not null default '0',
+  "badge_code" varchar,
+  "verification_rule_json" text not null,
+  "tour_steps_json" text,
+  "translations_json" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("track_id") references "academy_learning_tracks"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_interactive_missions_tenant_id_code_unique" on "academy_interactive_missions"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "academy_interactive_missions_track_id_sequence_index" on "academy_interactive_missions"(
+  "track_id",
+  "sequence"
+);
+CREATE TABLE "academy_contextual_help_articles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "route_pattern" varchar not null,
+  "locale" varchar not null,
+  "title" varchar not null,
+  "body_markdown" text not null,
+  "field_tooltips_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_help_route_locale_unique" on "academy_contextual_help_articles"(
+  "tenant_id",
+  "route_pattern",
+  "locale"
+);
+CREATE TABLE "academy_user_progress"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar not null,
+  "track_id" varchar not null,
+  "mission_id" varchar not null,
+  "status" varchar not null default 'started',
+  "xp_awarded" integer not null default '0',
+  "badge_code" varchar,
+  "started_at" datetime,
+  "completed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("track_id") references "academy_learning_tracks"("id") on delete cascade,
+  foreign key("mission_id") references "academy_interactive_missions"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_user_progress_tenant_id_user_id_mission_id_unique" on "academy_user_progress"(
+  "tenant_id",
+  "user_id",
+  "mission_id"
+);
+CREATE INDEX "academy_user_progress_tenant_id_status_index" on "academy_user_progress"(
+  "tenant_id",
+  "status"
+);
+CREATE TABLE "academy_certificates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar not null,
+  "track_id" varchar not null,
+  "certificate_code" varchar not null,
+  "holder_name" varchar not null,
+  "total_xp" integer not null default '0',
+  "issued_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("track_id") references "academy_learning_tracks"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_certificates_tenant_id_user_id_track_id_unique" on "academy_certificates"(
+  "tenant_id",
+  "user_id",
+  "track_id"
+);
+CREATE UNIQUE INDEX "academy_certificates_certificate_code_unique" on "academy_certificates"(
+  "certificate_code"
+);
+CREATE TABLE "academy_classroom_cohorts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "teacher_id" varchar not null,
+  "name" varchar not null,
+  "join_code" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "academy_classroom_cohorts_tenant_id_teacher_id_index" on "academy_classroom_cohorts"(
+  "tenant_id",
+  "teacher_id"
+);
+CREATE UNIQUE INDEX "academy_classroom_cohorts_join_code_unique" on "academy_classroom_cohorts"(
+  "join_code"
+);
+CREATE TABLE "academy_classroom_enrollments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "cohort_id" varchar not null,
+  "user_id" varchar not null,
+  "enrolled_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("cohort_id") references "academy_classroom_cohorts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_classroom_enrollments_cohort_id_user_id_unique" on "academy_classroom_enrollments"(
+  "cohort_id",
+  "user_id"
+);
+CREATE INDEX "academy_classroom_enrollments_tenant_id_cohort_id_index" on "academy_classroom_enrollments"(
+  "tenant_id",
+  "cohort_id"
+);
+CREATE TABLE "academy_classroom_assignments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "cohort_id" varchar not null,
+  "track_id" varchar not null,
+  "due_date" date,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("cohort_id") references "academy_classroom_cohorts"("id") on delete cascade,
+  foreign key("track_id") references "academy_learning_tracks"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_classroom_assignments_cohort_id_track_id_unique" on "academy_classroom_assignments"(
+  "cohort_id",
+  "track_id"
+);
+CREATE INDEX "academy_classroom_assignments_tenant_id_cohort_id_index" on "academy_classroom_assignments"(
+  "tenant_id",
+  "cohort_id"
+);
 CREATE TABLE "document_extraction_jobs"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -41336,4 +41545,5 @@ INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_minimum_contribution_to
 INSERT INTO migrations VALUES(392,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',4);
 INSERT INTO migrations VALUES(393,'2027_12_14_000100_create_copilot_tables',5);
 INSERT INTO migrations VALUES(394,'2027_12_14_000100_create_ai_forecasting_tables',6);
-INSERT INTO migrations VALUES(395,'2027_12_15_000100_create_ocr_extraction_tables',7);
+INSERT INTO migrations VALUES(395,'2027_12_15_000100_create_academy_tables',7);
+INSERT INTO migrations VALUES(396,'2027_12_15_000100_create_ocr_extraction_tables',8);

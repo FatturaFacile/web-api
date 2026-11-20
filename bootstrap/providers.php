@@ -10,6 +10,7 @@ use Enterprise\FeatureFlags\Providers\FeatureFlagsServiceProvider;
 use Enterprise\Foundation\Providers\EnterpriseFoundationServiceProvider;
 use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
+use Modules\Academy\Providers\AcademyServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
@@ -117,6 +118,7 @@ return [
     ContractsServiceProvider::class,
     AssistantServiceProvider::class,
     CopilotServiceProvider::class,
+    AcademyServiceProvider::class,
     EDocumentNetworksServiceProvider::class,
     WorkspaceSyncServiceProvider::class,
     WorkshopServiceProvider::class,

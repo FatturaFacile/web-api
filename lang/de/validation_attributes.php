@@ -3019,4 +3019,6 @@ return [
     'net_amount' => 'Nettobetrag',
     'source_line_index' => 'Ursprungszeile',
     'qr_reference' => 'Zahlungsreferenz',
+    'track_ids' => 'Lernpfade',
+    'join_code' => 'Beitrittscode',
 ];

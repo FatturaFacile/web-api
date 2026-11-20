@@ -3019,4 +3019,6 @@ return [
     'net_amount' => 'net amount',
     'source_line_index' => 'source line',
     'qr_reference' => 'payment reference',
+    'track_ids' => 'learning tracks',
+    'join_code' => 'join code',
 ];

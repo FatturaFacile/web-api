@@ -21,12 +21,11 @@ use Ramsey\Uuid\Uuid;
  * SKUs: SKU-001 seasonal with a 12% yearly trend and a 14 day lead time (sigma 3.5), SKU-002 flat 120 a month with a 21 day
  * lead time (sigma 9), SKU-003 with seeded forecasts of the last three closed months next to their actual sales.
  *
- * The demo user of each tenant is forecast.ch@mod094.test / forecast.it@mod094.test with the password below.
+ * The demo user of each tenant is forecast.ch@mod094.test / forecast.it@mod094.test. Their password is random on every run and is not stored anywhere:
+ * the API, the tests and forecasting:verify-e2e authenticate directly (no password login).
  */
 final class AiForecastingDemoSeeder extends Seeder
 {
-    public const string DemoPassword = 'Mod094-demo-pass';
-
     private const string UuidNamespace = '7a1c5e0e-0940-4a94-9f6d-3b0a0d1e0940';
 
     /** Order of the deviations of the flat SKU-002 demand: 24 values, mean 0, sample standard deviation about 10. */
@@ -103,7 +102,7 @@ final class AiForecastingDemoSeeder extends Seeder
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        $user = User::query()->updateOrCreate(['email' => $profile['email']], ['name' => 'Forecast demo '.$key, 'password' => self::DemoPassword, 'locale' => 'en']);
+        $user = User::query()->updateOrCreate(['email' => $profile['email']], ['name' => 'Forecast demo '.$key, 'password' => Str::password(32), 'locale' => 'en']);
         $user->tenants()->syncWithoutDetaching([$tenantId => ['id' => (string) Str::uuid(), 'role' => 'owner']]);
 
         $customers = $this->seedCustomers($profile, $tenantId);

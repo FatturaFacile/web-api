@@ -3019,4 +3019,6 @@ return [
     'net_amount' => 'montant net',
     'source_line_index' => 'ligne d\'origine',
     'qr_reference' => 'référence de paiement',
+    'track_ids' => 'parcours de formation',
+    'join_code' => 'code d\'accès',
 ];

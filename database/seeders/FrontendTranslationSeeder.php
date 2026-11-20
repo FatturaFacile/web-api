@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
+use Database\Seeders\Translations\CopilotFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
@@ -58,6 +59,7 @@ class FrontendTranslationSeeder extends Seeder
             + HrAtsFrontendTranslations::all($locale)
             + LeadFrontendTranslations::all($locale)
             + Customer360FrontendTranslations::all($locale)
+            + CopilotFrontendTranslations::all($locale)
             + GapViewsFrontendTranslations::all($locale)
             + MainFrontendTranslations::all($locale)
             + PrivacyGovernanceFrontendTranslations::all($locale)

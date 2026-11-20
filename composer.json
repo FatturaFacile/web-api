@@ -87,6 +87,7 @@
             "Modules\\Contracts\\": "modules/26_Contracts/src/",
             "Modules\\Assistant\\": "modules/27_Assistant/src/",
             "Modules\\Copilot\\": "modules/62_Copilot/src/",
+            "Modules\\Academy\\": "modules/66_Academy/src/",
             "Modules\\EDocumentNetworks\\": "modules/28_EDocumentNetworks/src/",
             "Modules\\WorkspaceSync\\": "modules/29_WorkspaceSync/src/",
             "Modules\\Workshop\\": "modules/33_Workshop/src/",

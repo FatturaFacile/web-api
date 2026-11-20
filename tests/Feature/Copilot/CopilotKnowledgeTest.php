@@ -37,7 +37,7 @@ test('the regulatory seeder is idempotent and covers the four languages and both
     $chunks = app(TenantContext::class)->runAsGlobal(static fn () => CopilotKnowledgeChunk::query()->whereNull('tenant_id')->get());
 
     expect($chunks->pluck('locale')->unique()->sort()->values()->all())->toBe(['de', 'en', 'fr', 'it'])
-        ->and($chunks->pluck('jurisdiction')->unique()->sort()->values()->all())->toBe(['CH', 'IT'])
+        ->and($chunks->pluck('jurisdiction')->unique()->sort()->values()->all())->toBe(['CH', 'GLOBAL', 'IT'])
         ->and($chunks->every(fn (CopilotKnowledgeChunk $chunk): bool => is_array($chunk->embedding_vector) && $chunk->embedding_vector !== []))->toBeTrue();
 });
 
