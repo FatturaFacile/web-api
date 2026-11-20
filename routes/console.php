@@ -64,7 +64,16 @@ Artisan::command('inspire', function () {
 
 // Every entry runs on one server only and never overlaps itself: both use atomic locks of the default cache store
 // (database or redis, shared by every server; see docs/deployment/PRODUCTION_CHECKLIST.md).
-Schedule::command('tenants:backup --all')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
+// Backups: daily (default) or hourly, from config/backup.php. A weekly restore drill proves the archives restore, and the
+// hourly check alerts when a tenant's backup is stale or failing against the RPO.
+$backupSchedule = Schedule::command('tenants:backup --all')->withoutOverlapping()->onOneServer();
+config('backup.schedule.frequency') === 'hourly' ? $backupSchedule->hourly() : $backupSchedule->dailyAt((string) config('backup.schedule.daily_at', '02:00'));
+if (config('backup.schedule.drill_enabled', true)) {
+    Schedule::command('tenants:restore-drill')->weeklyOn(0, '04:00')->withoutOverlapping()->onOneServer();
+}
+if (config('backup.schedule.check_hourly', true)) {
+    Schedule::command('tenants:backup-check')->hourly()->withoutOverlapping()->onOneServer();
+}
 Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
 // Recurring journals and automatic reversals (accruals, deferrals, FX revaluations) due, per tenant business day.
 Schedule::command('general-ledger:run-scheduled')->dailyAt('02:30')->withoutOverlapping()->onOneServer();

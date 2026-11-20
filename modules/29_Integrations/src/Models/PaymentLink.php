@@ -14,7 +14,7 @@ class PaymentLink extends Model
 {
     use BelongsToTenant, HasUuids;
 
-    protected $fillable = ['tenant_id', 'invoice_id', 'provider', 'provider_reference', 'url', 'amount', 'currency', 'status', 'payment_id', 'paid_at', 'review_reason'];
+    protected $fillable = ['tenant_id', 'invoice_id', 'provider', 'payment_method', 'provider_reference', 'url', 'amount', 'currency', 'status', 'payment_id', 'paid_at', 'review_reason'];
 
     protected function casts(): array
     {

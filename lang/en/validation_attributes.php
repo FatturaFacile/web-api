@@ -1409,6 +1409,7 @@ return [
     'punch_type' => 'punch type',
     'punches' => 'punches',
     'purchase_order_id' => 'purchase order',
+    'purchase_order_ids' => 'purchase orders',
     'purchase_order_line_id' => 'purchase order line',
     'purchase_price' => 'purchase price',
     'purchase_receipt_id' => 'purchase receipt',

@@ -293,7 +293,7 @@ final readonly class PivotService
         }
 
         foreach ($calculatedFields as $field) {
-            $values[] = ['key' => $field['key'], 'label' => $field['label'], 'unit' => 'number', 'format' => $field['format'], 'calculated' => true];
+            $values[] = ['key' => $field['key'], 'label' => $field['label'], 'unit' => 'number', 'format' => $field['format'], 'calculated' => true, 'formula' => $field['formula']];
         }
 
         return $values;

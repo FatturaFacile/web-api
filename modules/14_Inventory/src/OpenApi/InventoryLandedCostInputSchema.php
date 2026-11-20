@@ -9,7 +9,7 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     schema: 'InventoryLandedCostInput',
     title: 'Landed Cost Document Input',
-    required: ['document_date', 'cost_type', 'allocation_key', 'currency', 'total_amount', 'receipt_ids']
+    required: ['document_date', 'cost_type', 'allocation_key', 'currency', 'total_amount']
 )]
 class InventoryLandedCostInputSchema
 {
@@ -39,4 +39,7 @@ class InventoryLandedCostInputSchema
 
     #[OA\Property(type: 'array', items: new OA\Items(type: 'string', format: 'uuid'))]
     public array $receipt_ids;
+
+    #[OA\Property(type: 'array', description: 'Alternative to receipt_ids: allocate to everything received against these purchase orders', items: new OA\Items(type: 'string', format: 'uuid'))]
+    public array $purchase_order_ids;
 }

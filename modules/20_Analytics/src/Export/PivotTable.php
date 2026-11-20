@@ -41,13 +41,13 @@ final class PivotTable
 
         foreach ($pivot['column_headers'] as $header) {
             foreach ($pivot['values'] as $value) {
-                $columns[] = ['key' => "c{$header['index']}_{$value['key']}", 'label' => $valueLabels[$value['key']].' · '.$header['label'], 'kind' => 'measure', 'unit' => self::Units[$value['format']] ?? 'quantity'];
+                $columns[] = ['key' => "c{$header['index']}_{$value['key']}", 'label' => $valueLabels[$value['key']].' · '.$header['label'], 'kind' => 'measure', 'unit' => self::Units[$value['format']] ?? 'quantity'] + self::calc($value, "c{$header['index']}_");
             }
         }
 
         if ($pivot['has_total_column'] || $pivot['column_headers'] === []) {
             foreach ($pivot['values'] as $value) {
-                $columns[] = ['key' => "t_{$value['key']}", 'label' => $valueLabels[$value['key']].($pivot['has_total_column'] ? ' · '.trans('analytics.export.total', [], $language) : ''), 'kind' => 'measure', 'unit' => self::Units[$value['format']] ?? 'quantity'];
+                $columns[] = ['key' => "t_{$value['key']}", 'label' => $valueLabels[$value['key']].($pivot['has_total_column'] ? ' · '.trans('analytics.export.total', [], $language) : ''), 'kind' => 'measure', 'unit' => self::Units[$value['format']] ?? 'quantity'] + self::calc($value, 't_');
             }
         }
 
@@ -83,5 +83,17 @@ final class PivotTable
         }
 
         return ['columns' => $columns, 'rows' => $rows];
+    }
+
+    /**
+     * A calculated value keeps its formula and the prefix of the columns it reads (`c0_`, `t_`), so the workbook writer can
+     * turn it into a native formula over the cells of the same row and column group.
+     *
+     * @param  array<string, mixed>  $value
+     * @return array<string, mixed>
+     */
+    private static function calc(array $value, string $prefix): array
+    {
+        return empty($value['calculated']) || ! isset($value['formula']) ? [] : ['calc' => ['formula' => (string) $value['formula'], 'prefix' => $prefix]];
     }
 }

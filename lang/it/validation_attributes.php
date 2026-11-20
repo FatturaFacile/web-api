@@ -1409,6 +1409,7 @@ return [
     'punch_type' => 'tipo di timbratura',
     'punches' => 'timbrature',
     'purchase_order_id' => 'ordine d\'acquisto',
+    'purchase_order_ids' => 'ordini d\'acquisto',
     'purchase_order_line_id' => 'riga dell\'ordine d\'acquisto',
     'purchase_price' => 'prezzo d\'acquisto',
     'purchase_receipt_id' => 'ricevimento merci d\'acquisto',

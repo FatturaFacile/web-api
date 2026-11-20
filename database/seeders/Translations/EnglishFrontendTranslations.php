@@ -4185,6 +4185,7 @@ final class EnglishFrontendTranslations
             'PORTAL.ORIGIN_COUNTRY' => 'Origin Country ISO Code',
             'PORTAL.PACKAGES' => 'Packages',
             'PORTAL.PAID' => 'Paid (€)',
+            'PORTAL.PAYMENT_METHOD_NOT_SUPPORTED' => 'This payment method is not available for this invoice.',
             'PORTAL.PAYMENT_STATUS' => 'Payment Status',
             'PORTAL.PENDING_QUOTES' => 'Pending Quotes',
             'PORTAL.PENDING_REVIEW' => 'Pending Review',

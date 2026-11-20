@@ -16,6 +16,7 @@ use Modules\Integrations\Models\PaymentGatewaySetting;
 use Modules\Integrations\Models\PaymentLink;
 use Modules\Integrations\Services\PaymentGatewayResolver;
 use Modules\Integrations\Services\PaymentLinkService;
+use Modules\Integrations\Support\PaymentMethods;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -94,6 +95,8 @@ final class PaymentLinkController extends Controller
             'credentials' => ['nullable', 'array'],
             'credentials.secret_key' => ['nullable', 'string', 'max:255'],
             'credentials.webhook_secret' => ['nullable', 'string', 'max:255'],
+            'allowed_payment_methods' => ['nullable', 'array'],
+            'allowed_payment_methods.*' => ['string', Rule::in(PaymentMethods::all())],
         ]);
 
         $settings = PaymentGatewaySetting::firstOrNew(['tenant_id' => $tenantContext->getTenantId()]);
@@ -101,6 +104,10 @@ final class PaymentLinkController extends Controller
 
         if (array_key_exists('credentials', $data)) {
             $settings->credentials = $data['credentials'];
+        }
+
+        if (array_key_exists('allowed_payment_methods', $data)) {
+            $settings->allowed_payment_methods = $data['allowed_payment_methods'];
         }
 
         $settings->save();
