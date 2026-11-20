@@ -139,6 +139,8 @@ class DatabaseSeeder extends Seeder
             ManufacturingDemoDataSeeder::class,
             NewerModulesReferenceSeeder::class,
             EnterpriseDemoMasterSeeder::class,
+            AcademyLearningContentSeeder::class,
+            AcademyContextualHelpSeeder::class,
         ]);
     }
 }

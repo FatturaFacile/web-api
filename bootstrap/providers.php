@@ -10,6 +10,7 @@ use Enterprise\FeatureFlags\Providers\FeatureFlagsServiceProvider;
 use Enterprise\Foundation\Providers\EnterpriseFoundationServiceProvider;
 use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
+use Modules\Academy\Providers\AcademyServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
@@ -23,6 +24,7 @@ use Modules\Configurator\Providers\ConfiguratorServiceProvider;
 use Modules\ConstructionTrades\Providers\ConstructionTradesServiceProvider;
 use Modules\Contracts\Providers\ContractsServiceProvider;
 use Modules\Controlling\Providers\ControllingServiceProvider;
+use Modules\Copilot\Providers\CopilotServiceProvider;
 use Modules\CorporateGroup\Providers\CorporateGroupServiceProvider;
 use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
@@ -36,6 +38,7 @@ use Modules\Events\Providers\EventsServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\Fleet\Providers\FleetServiceProvider;
+use Modules\Forecasting\Providers\ForecastingServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Governance\Providers\GovernanceServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
@@ -114,6 +117,8 @@ return [
     DocumentsServiceProvider::class,
     ContractsServiceProvider::class,
     AssistantServiceProvider::class,
+    CopilotServiceProvider::class,
+    AcademyServiceProvider::class,
     EDocumentNetworksServiceProvider::class,
     WorkspaceSyncServiceProvider::class,
     WorkshopServiceProvider::class,
@@ -152,4 +157,5 @@ return [
     LogisticsServiceProvider::class,
     CorporateGroupServiceProvider::class,
     DigitalPreservationServiceProvider::class,
+    ForecastingServiceProvider::class,
 ];

@@ -20,6 +20,1048 @@
         }
     ],
     "paths": {
+        "/v1/academy/certificates/verify/{certificateCode}": {
+            "get": {
+                "operationId": "academy.certificates.verify",
+                "tags": [
+                    "AcademyCertificate"
+                ],
+                "parameters": [
+                    {
+                        "name": "certificateCode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "it-CH",
+                                "de-CH",
+                                "fr-CH",
+                                "en",
+                                "it-IT",
+                                "it",
+                                "de",
+                                "fr",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AcademyArrayResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Not found"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 404
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Certificate not found."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/academy/tracks/{trackId}/certificate": {
+            "get": {
+                "operationId": "academy.certificates.download",
+                "tags": [
+                    "AcademyCertificate"
+                ],
+                "parameters": [
+                    {
+                        "name": "trackId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "it-CH",
+                                "de-CH",
+                                "fr-CH",
+                                "en",
+                                "it-IT",
+                                "it",
+                                "de",
+                                "fr",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/academy/classroom/cohorts": {
+            "post": {
+                "operationId": "academy.classroom.cohorts.store",
+                "tags": [
+                    "AcademyClassroom"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateClassroomCohortRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Cohort created"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ClassroomCohortResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/academy/classroom/join": {
+            "post": {
+                "operationId": "academy.classroom.join",
+                "tags": [
+                    "AcademyClassroom"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JoinClassroomRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Enrolled"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "cohort_id": {
+                                                    "type": "string"
+                                                },
+                                                "enrolled_at": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "cohort_id",
+                                                "enrolled_at"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/academy/classroom/cohorts/{cohortId}/dashboard": {
+            "get": {
+                "operationId": "academy.classroom.dashboard",
+                "tags": [
+                    "AcademyClassroom"
+                ],
+                "parameters": [
+                    {
+                        "name": "cohortId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AcademyArrayResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Forbidden"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 403
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Only the teacher of the cohort can see its dashboard."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/academy/contextual-help": {
+            "get": {
+                "operationId": "academy.contextual-help",
+                "tags": [
+                    "AcademyLearning"
+                ],
+                "parameters": [
+                    {
+                        "name": "route",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "it-CH",
+                                "de-CH",
+                                "fr-CH",
+                                "en",
+                                "it-IT",
+                                "it",
+                                "de",
+                                "fr",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ContextualHelpResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Not found"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 404
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "There is no help article for this route."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/academy/tracks": {
+            "get": {
+                "operationId": "academy.tracks.index",
+                "tags": [
+                    "AcademyLearning"
+                ],
+                "parameters": [
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "it-CH",
+                                "de-CH",
+                                "fr-CH",
+                                "en",
+                                "it-IT",
+                                "it",
+                                "de",
+                                "fr",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "code": {
+                                                        "type": "string"
+                                                    },
+                                                    "difficulty": {
+                                                        "type": "string"
+                                                    },
+                                                    "title": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    },
+                                                    "missions_total": {
+                                                        "type": "integer"
+                                                    },
+                                                    "missions_completed": {
+                                                        "type": "integer",
+                                                        "const": 0
+                                                    },
+                                                    "completion_percent": {
+                                                        "type": "integer"
+                                                    },
+                                                    "xp_earned": {
+                                                        "type": "integer",
+                                                        "const": 0
+                                                    },
+                                                    "certificate_code": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "missions": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "string"
+                                                                },
+                                                                "code": {
+                                                                    "type": "string"
+                                                                },
+                                                                "sequence": {
+                                                                    "type": "string"
+                                                                },
+                                                                "difficulty": {
+                                                                    "type": "string"
+                                                                },
+                                                                "title": {
+                                                                    "type": "string"
+                                                                },
+                                                                "description": {
+                                                                    "type": "string"
+                                                                },
+                                                                "xp_reward": {
+                                                                    "type": "string"
+                                                                },
+                                                                "badge_code": {
+                                                                    "type": "string"
+                                                                },
+                                                                "requires_sandbox": {
+                                                                    "type": "string"
+                                                                },
+                                                                "status": {
+                                                                    "anyOf": [
+                                                                        {
+                                                                            "type": "string"
+                                                                        },
+                                                                        {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "not_started"
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "tour_steps": {
+                                                                    "type": "array",
+                                                                    "items": {}
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "id",
+                                                                "code",
+                                                                "sequence",
+                                                                "difficulty",
+                                                                "title",
+                                                                "description",
+                                                                "xp_reward",
+                                                                "badge_code",
+                                                                "requires_sandbox",
+                                                                "status",
+                                                                "tour_steps"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "code",
+                                                    "difficulty",
+                                                    "title",
+                                                    "description",
+                                                    "missions_total",
+                                                    "missions_completed",
+                                                    "completion_percent",
+                                                    "xp_earned",
+                                                    "certificate_code",
+                                                    "missions"
+                                                ]
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/academy/tracks/{trackId}": {
+            "get": {
+                "operationId": "academy.tracks.show",
+                "tags": [
+                    "AcademyLearning"
+                ],
+                "parameters": [
+                    {
+                        "name": "trackId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "it-CH",
+                                "de-CH",
+                                "fr-CH",
+                                "en",
+                                "it-IT",
+                                "it",
+                                "de",
+                                "fr",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Not found"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 404
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Learning track not found."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/academy/progress": {
+            "get": {
+                "operationId": "academy.progress",
+                "tags": [
+                    "AcademyLearning"
+                ],
+                "parameters": [
+                    {
+                        "name": "locale",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "it-CH",
+                                "de-CH",
+                                "fr-CH",
+                                "en",
+                                "it-IT",
+                                "it",
+                                "de",
+                                "fr",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AcademyArrayResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/academy/missions/{missionId}/start": {
+            "post": {
+                "operationId": "academy.missions.start",
+                "tags": [
+                    "AcademyLearning"
+                ],
+                "parameters": [
+                    {
+                        "name": "missionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AcademyLocaleRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mission started"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/MissionProgressResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/academy/missions/{missionId}/verify-step": {
+            "post": {
+                "operationId": "academy.missions.verify-step",
+                "tags": [
+                    "AcademyLearning"
+                ],
+                "parameters": [
+                    {
+                        "name": "missionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AcademyLocaleRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/MissionProgressResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/associations/access-devices": {
             "get": {
                 "operationId": "v1.associations.access-devices.index",
@@ -51990,6 +53032,802 @@
                 }
             }
         },
+        "/v1/copilot/actions/{messageId}/confirm": {
+            "post": {
+                "operationId": "copilot.actions.confirm",
+                "tags": [
+                    "CopilotAction"
+                ],
+                "parameters": [
+                    {
+                        "name": "messageId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfirmCopilotActionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Action executed"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/CopilotMessageResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "Access denied",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/copilot/actions/{messageId}/reject": {
+            "post": {
+                "operationId": "copilot.actions.reject",
+                "tags": [
+                    "CopilotAction"
+                ],
+                "parameters": [
+                    {
+                        "name": "messageId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RejectCopilotActionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Action rejected"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/CopilotMessageResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/copilot/audit-logs": {
+            "get": {
+                "operationId": "copilot.audit-logs",
+                "tags": [
+                    "CopilotAdmin"
+                ],
+                "parameters": [
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "prompt",
+                                "action_proposed",
+                                "action_confirmed",
+                                "action_executed",
+                                "action_failed",
+                                "action_rejected",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 5,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Copilot audit trail"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CopilotAuditLogResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "last_page",
+                                                "per_page",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/copilot/knowledge": {
+            "post": {
+                "operationId": "copilot.knowledge.index",
+                "tags": [
+                    "CopilotAdmin"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IndexCopilotKnowledgeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Knowledge indexed"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "chunks": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "chunks"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/copilot/conversations": {
+            "get": {
+                "operationId": "copilot.conversations.index",
+                "tags": [
+                    "CopilotConversation"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CopilotConversationResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "copilot.conversations.store",
+                "tags": [
+                    "CopilotConversation"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateCopilotConversationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Conversation started"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/CopilotConversationResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/copilot/conversations/{id}": {
+            "get": {
+                "operationId": "copilot.conversations.show",
+                "tags": [
+                    "CopilotConversation"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/CopilotConversationResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "messages"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "copilot.conversations.destroy",
+                "tags": [
+                    "CopilotConversation"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Conversation deleted"
+                                        },
+                                        "data": {
+                                            "type": "null"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/copilot/conversations/{id}/messages": {
+            "post": {
+                "operationId": "copilot.messages.store",
+                "tags": [
+                    "CopilotMessage"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SendCopilotMessageRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/CopilotMessageResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            },
+                            "text/event-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Transfer-Encoding": {
+                                "schema": {
+                                    "type": "string",
+                                    "enum": [
+                                        "chunked"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Language model unavailable"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 502
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "The language model provider could not answer. Try again later."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "External AI not allowed"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 403
+                                        },
+                                        "detail": {
+                                            "type": "string"
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/fiscal-retail/corrispettivi/daily/{date}": {
             "get": {
                 "operationId": "fiscal-retail.corrispettivi.daily",
@@ -66855,7 +68693,8 @@
                                             "customer_consignment",
                                             "customer_consignment_return",
                                             "vendor_consignment_return",
-                                            "return_from_customer"
+                                            "return_from_customer",
+                                            "repair_return"
                                         ]
                                     },
                                     "items": {
@@ -68610,6 +70449,198 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/forecasting/demand/forecasts": {
+            "get": {
+                "operationId": "forecasting.demand.index",
+                "tags": [
+                    "DemandForecast"
+                ],
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "warehouse_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/forecasting/demand/generate": {
+            "post": {
+                "operationId": "forecasting.demand.generate",
+                "tags": [
+                    "DemandForecast"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerateDemandForecastRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/forecasting/demand/accuracy": {
+            "get": {
+                "operationId": "forecasting.demand.accuracy",
+                "tags": [
+                    "DemandForecast"
+                ],
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "warehouse_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/forecasting/demand/apply-reorder-rules": {
+            "post": {
+                "operationId": "forecasting.demand.apply-reorder-rules",
+                "tags": [
+                    "DemandForecast"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ApplyReorderRulesRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -135890,6 +137921,96 @@
                 }
             }
         },
+        "/v1/forecasting/liquidity/simulate": {
+            "post": {
+                "operationId": "forecasting.liquidity.simulate",
+                "tags": [
+                    "LiquidityForecast"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SimulateLiquidityRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/forecasting/liquidity/confidence-bands": {
+            "get": {
+                "operationId": "forecasting.liquidity.confidence-bands",
+                "tags": [
+                    "LiquidityForecast"
+                ],
+                "parameters": [
+                    {
+                        "name": "run_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "horizon_days",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "enum": [
+                                "91",
+                                "365",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/esm/rma-orders/{rmaOrder}/loaners": {
             "post": {
                 "operationId": "v1.esm.rma-orders.loaners.store",
@@ -154246,10 +156367,22 @@
                                                 {
                                                     "type": "string",
                                                     "const": "customer_overdue_total"
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "const": "open_invoices_total"
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "const": "low_stock_items_count"
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "const": "sdi_rejected_count"
                                                 }
                                             ],
-                                            "minItems": 1,
-                                            "maxItems": 1,
+                                            "minItems": 4,
+                                            "maxItems": 4,
                                             "items": {}
                                         }
                                     },
@@ -162035,6 +164168,64 @@
                     }
                 },
                 "security": []
+            }
+        },
+        "/v1/forecasting/payment-models": {
+            "get": {
+                "operationId": "forecasting.payment-models.index",
+                "tags": [
+                    "PaymentModel"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/forecasting/payment-models/train": {
+            "post": {
+                "operationId": "forecasting.payment-models.train",
+                "tags": [
+                    "PaymentModel"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TrainPaymentModelsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
             }
         },
         "/v1/treasury/payment-proposals": {
@@ -300172,6 +302363,35 @@
     },
     "components": {
         "schemas": {
+            "AcademyArrayResource": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "AcademyArrayResource"
+            },
+            "AcademyLocaleRequest": {
+                "type": "object",
+                "description": "Request with only the optional language of the answer: used by the mission and progress endpoints.",
+                "properties": {
+                    "locale": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "it-CH",
+                            "de-CH",
+                            "fr-CH",
+                            "en",
+                            "it-IT",
+                            "it",
+                            "de",
+                            "fr",
+                            null
+                        ]
+                    }
+                },
+                "title": "AcademyLocaleRequest"
+            },
             "AcceptDocumentRequest": {
                 "type": "object",
                 "description": "Acceptance of a supplier document, optionally completing the data read from the file.",
@@ -302405,6 +304625,28 @@
                     "amount"
                 ],
                 "title": "ApplyCreditNoteRequest"
+            },
+            "ApplyReorderRulesRequest": {
+                "type": "object",
+                "properties": {
+                    "forecast_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 200
+                    },
+                    "product_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 200
+                    }
+                },
+                "title": "ApplyReorderRulesRequest"
             },
             "AppointmentAttendeeResource": {
                 "type": "object",
@@ -310892,6 +313134,37 @@
                 },
                 "title": "ClaimAcceptRequest"
             },
+            "ClassroomCohortResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "join_code": {
+                        "type": "string"
+                    },
+                    "teacher_id": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "join_code",
+                    "teacher_id",
+                    "created_at"
+                ],
+                "title": "ClassroomCohortResource"
+            },
             "ClauseResource": {
                 "type": "object",
                 "properties": {
@@ -312827,6 +315100,23 @@
                 ],
                 "title": "ConfigureRequest"
             },
+            "ConfirmCopilotActionRequest": {
+                "type": "object",
+                "description": "Validates the confirmation of a staged action: optional overrides of the fields the card declared editable.",
+                "properties": {
+                    "overrides": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        },
+                        "maxItems": 60
+                    }
+                },
+                "title": "ConfirmCopilotActionRequest"
+            },
             "ConfirmExtractionRequest": {
                 "type": "object",
                 "description": "Validates the input of the confirm extraction operation (authorization is decided by module.access).",
@@ -314105,6 +316395,38 @@
                     "updated_at"
                 ],
                 "title": "ContactResource"
+            },
+            "ContextualHelpResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "route_pattern": {
+                        "type": "string"
+                    },
+                    "locale": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "body_markdown": {
+                        "type": "string"
+                    },
+                    "field_tooltips": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "route_pattern",
+                    "locale",
+                    "title",
+                    "body_markdown",
+                    "field_tooltips"
+                ],
+                "title": "ContextualHelpResource"
             },
             "ContractAlertResource": {
                 "type": "object",
@@ -315453,6 +317775,185 @@
                 },
                 "title": "ConvertToDeliveryNoteRequest"
             },
+            "CopilotAuditLogResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "action": {
+                        "type": "string"
+                    },
+                    "actor_user_id": {
+                        "type": "string"
+                    },
+                    "resource_type": {
+                        "type": "string"
+                    },
+                    "resource_id": {
+                        "type": "string"
+                    },
+                    "details": {},
+                    "event_timestamp": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "action",
+                    "actor_user_id",
+                    "resource_type",
+                    "resource_id",
+                    "details",
+                    "event_timestamp"
+                ],
+                "title": "CopilotAuditLogResource"
+            },
+            "CopilotConversationResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "locale": {
+                        "type": "string"
+                    },
+                    "context_route": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "context_entity_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "context_entity_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "messages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CopilotMessageResource"
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "title",
+                    "locale",
+                    "context_route",
+                    "context_entity_type",
+                    "context_entity_id",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "CopilotConversationResource"
+            },
+            "CopilotMessageResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "conversation_id": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "user",
+                            "assistant",
+                            "tool_call",
+                            "tool_result"
+                        ]
+                    },
+                    "content_markdown": {
+                        "type": "string"
+                    },
+                    "citations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
+                    },
+                    "visualization": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "additionalProperties": {}
+                    },
+                    "proposed_action": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "additionalProperties": {}
+                    },
+                    "action_status": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "pending",
+                            "confirmed",
+                            "rejected",
+                            "executed",
+                            "failed",
+                            null
+                        ]
+                    },
+                    "token_usage": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "additionalProperties": {}
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "conversation_id",
+                    "role",
+                    "content_markdown",
+                    "citations",
+                    "visualization",
+                    "proposed_action",
+                    "action_status",
+                    "token_usage",
+                    "created_at"
+                ],
+                "title": "CopilotMessageResource"
+            },
             "CorrectTimeEventRequest": {
                 "type": "object",
                 "properties": {
@@ -315890,6 +318391,88 @@
                     "components"
                 ],
                 "title": "CreateBomRequest"
+            },
+            "CreateClassroomCohortRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 160
+                    },
+                    "track_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 20
+                    },
+                    "due_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "title": "CreateClassroomCohortRequest"
+            },
+            "CreateCopilotConversationRequest": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 160
+                    },
+                    "locale": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "it",
+                            "de",
+                            "fr",
+                            "en",
+                            "it-CH",
+                            "de-CH",
+                            "fr-CH",
+                            "it-IT",
+                            null
+                        ]
+                    },
+                    "context_route": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "context_entity_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 80
+                    },
+                    "context_entity_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 64
+                    }
+                },
+                "title": "CreateCopilotConversationRequest"
             },
             "CreateDdtRequest": {
                 "type": "object",
@@ -327217,6 +329800,40 @@
                 ],
                 "title": "GenerateDeclarationRequest"
             },
+            "GenerateDemandForecastRequest": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "warehouse_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "periods_ahead": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 12
+                    },
+                    "service_level": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    }
+                },
+                "title": "GenerateDemandForecastRequest"
+            },
             "GenerateForecastRequest": {
                 "type": "object",
                 "properties": {
@@ -328839,6 +331456,63 @@
                     "CIF"
                 ],
                 "title": "Incoterm"
+            },
+            "IndexCopilotKnowledgeRequest": {
+                "type": "object",
+                "properties": {
+                    "documents": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "type": "string",
+                                    "maxLength": 200
+                                },
+                                "section_ref": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 120
+                                },
+                                "content": {
+                                    "type": "string",
+                                    "maxLength": 200000
+                                },
+                                "jurisdiction": {
+                                    "type": "string",
+                                    "enum": [
+                                        "CH",
+                                        "IT",
+                                        "GLOBAL"
+                                    ]
+                                },
+                                "locale": {
+                                    "type": "string",
+                                    "enum": [
+                                        "it",
+                                        "de",
+                                        "fr",
+                                        "en"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "title",
+                                "content",
+                                "jurisdiction",
+                                "locale"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 50
+                    }
+                },
+                "required": [
+                    "documents"
+                ],
+                "title": "IndexCopilotKnowledgeRequest"
             },
             "InitiateOpenBankingPaymentRequest": {
                 "type": "object",
@@ -331541,6 +334215,20 @@
                     "estimated_cost_budget"
                 ],
                 "title": "JobResource"
+            },
+            "JoinClassroomRequest": {
+                "type": "object",
+                "properties": {
+                    "join_code": {
+                        "type": "string",
+                        "minLength": 4,
+                        "maxLength": 12
+                    }
+                },
+                "required": [
+                    "join_code"
+                ],
+                "title": "JoinClassroomRequest"
             },
             "JournalEntryResource": {
                 "type": "object",
@@ -339268,6 +341956,55 @@
                     "notes"
                 ],
                 "title": "MileageRateResource"
+            },
+            "MissionProgressResource": {
+                "type": "object",
+                "properties": {
+                    "mission_id": {
+                        "type": "string"
+                    },
+                    "track_id": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "completed": {
+                        "type": "boolean"
+                    },
+                    "xp_awarded": {
+                        "type": "integer"
+                    },
+                    "badge_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "started_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "completed_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "mission_id",
+                    "track_id",
+                    "status",
+                    "completed",
+                    "xp_awarded",
+                    "badge_code",
+                    "started_at",
+                    "completed_at"
+                ],
+                "title": "MissionProgressResource"
             },
             "MissionReportRequest": {
                 "type": "object",
@@ -354582,6 +357319,19 @@
                 "maxItems": 0,
                 "title": "RegistryAssignment"
             },
+            "RejectCopilotActionRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    }
+                },
+                "title": "RejectCopilotActionRequest"
+            },
             "RejectDocumentRequest": {
                 "type": "object",
                 "description": "Rejection of a supplier document with the reason the supplier sees.",
@@ -357853,6 +360603,12 @@
                                     "null"
                                 ]
                             },
+                            "return_delivery_note_id": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
                             "is_non_ownership_transfer": {
                                 "type": "boolean"
                             },
@@ -357863,6 +360619,7 @@
                         "required": [
                             "causale_outbound",
                             "causale_return",
+                            "return_delivery_note_id",
                             "is_non_ownership_transfer",
                             "vat_exempt_art15_dpr633"
                         ]
@@ -362169,6 +364926,8 @@
                                 "documents",
                                 "contracts",
                                 "assistant",
+                                "copilot",
+                                "academy",
                                 "edocument_networks",
                                 "workspace",
                                 "hr",
@@ -362182,6 +364941,8 @@
                                 "communication",
                                 "document_trust",
                                 "digital_preservation",
+                                "forecasting",
+                                "forecasting_wms",
                                 "integrations",
                                 "payment_links",
                                 "associations",
@@ -369031,6 +371792,66 @@
                 ],
                 "title": "SellVehicleRequest"
             },
+            "SendCopilotMessageRequest": {
+                "type": "object",
+                "description": "Validates a prompt sent to the Copilot (access is decided by module.access:copilot; the conversation is checked to be the\ncaller's own by the controller).",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "maxLength": 4000
+                    },
+                    "locale": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "it",
+                            "de",
+                            "fr",
+                            "en",
+                            "it-CH",
+                            "de-CH",
+                            "fr-CH",
+                            "it-IT",
+                            null
+                        ]
+                    },
+                    "context": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "route": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 255
+                            },
+                            "entity_type": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 80
+                            },
+                            "entity_id": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 64
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "prompt"
+                ],
+                "title": "SendCopilotMessageRequest"
+            },
             "SendDocumentEmailRequest": {
                 "type": "object",
                 "properties": {
@@ -371384,6 +374205,68 @@
                     "year"
                 ],
                 "title": "SimulateHiringRequest"
+            },
+            "SimulateLiquidityRequest": {
+                "type": "object",
+                "properties": {
+                    "horizon_days": {
+                        "type": "integer",
+                        "enum": [
+                            "91",
+                            "365"
+                        ]
+                    },
+                    "preview": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "what_if": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "global_customer_delay_shift_days": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": -60,
+                                "maximum": 90
+                            },
+                            "revenue_growth_percentage": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": -100,
+                                "maximum": 300
+                            },
+                            "supplier_payment_extension_days": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 90
+                            },
+                            "interest_rate_delta": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 25
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "horizon_days"
+                ],
+                "title": "SimulateLiquidityRequest"
             },
             "SimulatePayrollRequest": {
                 "type": "object",
@@ -392962,6 +395845,28 @@
                 "additionalProperties": {},
                 "title": "TradesResource"
             },
+            "TrainPaymentModelsRequest": {
+                "type": "object",
+                "properties": {
+                    "half_life_days": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 7,
+                        "maximum": 365
+                    },
+                    "lookback_months": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 6,
+                        "maximum": 60
+                    }
+                },
+                "title": "TrainPaymentModelsRequest"
+            },
             "TrainingCourse": {
                 "type": "array",
                 "items": {
@@ -404513,6 +407418,18 @@
     ],
     "tags": [
         {
+            "name": "AcademyCertificate",
+            "description": "Operations of the AcademyCertificate module."
+        },
+        {
+            "name": "AcademyClassroom",
+            "description": "Operations of the AcademyClassroom module."
+        },
+        {
+            "name": "AcademyLearning",
+            "description": "Operations of the AcademyLearning module."
+        },
+        {
             "name": "AccessAdmin",
             "description": "Operations of the AccessAdmin module."
         },
@@ -404981,6 +407898,22 @@
             "description": "Operations of the Conversation module."
         },
         {
+            "name": "CopilotAction",
+            "description": "Operations of the CopilotAction module."
+        },
+        {
+            "name": "CopilotAdmin",
+            "description": "Operations of the CopilotAdmin module."
+        },
+        {
+            "name": "CopilotConversation",
+            "description": "Operations of the CopilotConversation module."
+        },
+        {
+            "name": "CopilotMessage",
+            "description": "Operations of the CopilotMessage module."
+        },
+        {
             "name": "Corrispettivi",
             "description": "Operations of the Corrispettivi module."
         },
@@ -405091,6 +408024,10 @@
         {
             "name": "DeliveryNote",
             "description": "Operations of the DeliveryNote module."
+        },
+        {
+            "name": "DemandForecast",
+            "description": "Operations of the DemandForecast module."
         },
         {
             "name": "Depreciation",
@@ -405999,6 +408936,10 @@
         {
             "name": "PaymentLinkWebhook",
             "description": "Operations of the PaymentLinkWebhook module."
+        },
+        {
+            "name": "PaymentModel",
+            "description": "Operations of the PaymentModel module."
         },
         {
             "name": "PaymentProposal",

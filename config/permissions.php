@@ -66,6 +66,10 @@ return [
         'documents' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager', 'purchasing', 'procurement_manager', 'service_manager', 'hr', 'member']],
         'contracts' => ['read' => $contractManagers, 'write' => $contractManagers],
         'assistant' => ['read' => $anyMember, 'write' => $anyMember],
+        // The Copilot answers and stages actions only within the permissions of the caller on each module it touches.
+        'copilot' => ['read' => $anyMember, 'write' => $anyMember],
+        // The Academy is open to every member: learning content and the own progress; teachers are the members that create cohorts.
+        'academy' => ['read' => $anyMember, 'write' => $anyMember],
         'edocument_networks' => ['read' => $finance, 'write' => $finance],
         'workspace' => ['read' => $anyMember, 'write' => $anyMember],
         'hr' => ['read' => ['owner', 'admin', 'hr', 'payroll'], 'write' => ['owner', 'admin', 'hr', 'payroll']],
@@ -88,6 +92,18 @@ return [
         'communication' => ['read' => $financeReaders, 'write' => ['owner', 'admin', 'accountant', 'sales']],
         'document_trust' => ['read' => $financeReaders, 'write' => $finance],
         'digital_preservation' => ['read' => $financeReaders, 'write' => $finance],
+        // AI cash flow and demand forecasting (Mod 094). forecasting.view reads, forecasting.simulate trains and simulates; the
+        // one-click apply of reorder thresholds to the warehouse and planning data is its own module (forecasting.apply_wms).
+        'forecasting' => [
+            'read' => [...$financeReaders, 'warehouse', 'purchasing', 'procurement_manager', 'sales_manager'],
+            'write' => $finance,
+            'grants' => ['read' => ['forecasting.view', 'forecasting.simulate', 'forecasting.*'], 'write' => ['forecasting.simulate', 'forecasting.*']],
+        ],
+        'forecasting_wms' => [
+            'read' => $managers,
+            'write' => ['owner', 'admin', 'warehouse', 'purchasing', 'procurement_manager'],
+            'grants' => ['write' => ['forecasting.apply_wms', 'forecasting.*']],
+        ],
         'integrations' => ['read' => $managers, 'write' => $managers],
         'payment_links' => ['read' => $financeReaders, 'write' => ['owner', 'admin', 'accountant', 'sales']],
         // Personal data of members, minors included: closed to ordinary members. The accountant writes fees and payments

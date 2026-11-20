@@ -40615,6 +40615,442 @@ CREATE INDEX "preservation_audit_logs_tenant_id_preservation_batch_id_index" on 
   "tenant_id",
   "preservation_batch_id"
 );
+CREATE TABLE "copilot_conversations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar not null,
+  "title" varchar not null,
+  "locale" varchar not null default 'en',
+  "context_route" varchar,
+  "context_entity_type" varchar,
+  "context_entity_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "copilot_conversations_tenant_id_user_id_updated_at_index" on "copilot_conversations"(
+  "tenant_id",
+  "user_id",
+  "updated_at"
+);
+CREATE TABLE "copilot_messages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "conversation_id" varchar not null,
+  "role" varchar not null,
+  "content_markdown" text not null default '',
+  "citations_json" text,
+  "visualization_json" text,
+  "proposed_action_json" text,
+  "action_status" varchar,
+  "token_usage_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("conversation_id") references "copilot_conversations"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "copilot_messages_tenant_id_conversation_id_created_at_index" on "copilot_messages"(
+  "tenant_id",
+  "conversation_id",
+  "created_at"
+);
+CREATE INDEX "copilot_messages_tenant_id_action_status_index" on "copilot_messages"(
+  "tenant_id",
+  "action_status"
+);
+CREATE TABLE "copilot_knowledge_chunks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source_type" varchar not null,
+  "jurisdiction" varchar not null,
+  "locale" varchar not null,
+  "document_title" varchar not null,
+  "section_ref" varchar,
+  "content_text" text not null,
+  "embedding_vector" text,
+  "metadata_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "copilot_knowledge_chunks_tenant_id_jurisdiction_locale_index" on "copilot_knowledge_chunks"(
+  "tenant_id",
+  "jurisdiction",
+  "locale"
+);
+CREATE INDEX "copilot_knowledge_chunks_tenant_id_source_type_index" on "copilot_knowledge_chunks"(
+  "tenant_id",
+  "source_type"
+);
+CREATE TABLE "copilot_usages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar,
+  "conversation_id" varchar,
+  "provider" varchar not null,
+  "model" varchar,
+  "prompt_tokens" integer not null default '0',
+  "completion_tokens" integer not null default '0',
+  "total_tokens" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "copilot_usages_tenant_id_created_at_index" on "copilot_usages"(
+  "tenant_id",
+  "created_at"
+);
+CREATE TABLE "customer_payment_behavior_models"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "sample_size" integer not null default '0',
+  "average_days_late" numeric not null default '0',
+  "std_dev_days_late" numeric not null default '0',
+  "on_time_payment_probability" numeric not null default '1',
+  "predicted_collection_date_offset_days" integer not null default '0',
+  "payment_risk_tier" varchar not null default 'low',
+  "last_trained_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpbm_tenant_customer_unique" on "customer_payment_behavior_models"(
+  "tenant_id",
+  "customer_id"
+);
+CREATE TABLE "invoice_expected_collections"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "invoice_id" varchar not null,
+  "customer_id" varchar not null,
+  "due_date" date not null,
+  "expected_collection_date" date not null,
+  "earliest_collection_date" date not null,
+  "latest_collection_date" date not null,
+  "open_amount" numeric not null default '0',
+  "calculated_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "iec_tenant_invoice_unique" on "invoice_expected_collections"(
+  "tenant_id",
+  "invoice_id"
+);
+CREATE INDEX "iec_tenant_customer_index" on "invoice_expected_collections"(
+  "tenant_id",
+  "customer_id"
+);
+CREATE INDEX "iec_tenant_expected_index" on "invoice_expected_collections"(
+  "tenant_id",
+  "expected_collection_date"
+);
+CREATE TABLE "ai_liquidity_forecast_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "generated_at" datetime not null,
+  "horizon_days" integer not null,
+  "currency" varchar not null default 'EUR',
+  "starting_cash_balance" numeric not null default '0',
+  "daily_projections_json" text not null,
+  "key_drivers_json" text not null,
+  "what_if_parameters_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "alfr_tenant_generated_index" on "ai_liquidity_forecast_runs"(
+  "tenant_id",
+  "generated_at"
+);
+CREATE TABLE "sku_demand_forecasts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "product_id" varchar not null,
+  "warehouse_id" varchar not null,
+  "forecast_period_start" date not null,
+  "forecast_period_end" date not null,
+  "predicted_demand_qty" numeric not null default '0',
+  "confidence_lower_bound" numeric not null default '0',
+  "confidence_upper_bound" numeric not null default '0',
+  "recommended_reorder_point" numeric not null default '0',
+  "recommended_safety_stock" numeric not null default '0',
+  "seasonality_index" numeric not null default '1',
+  "supplier_lead_time_avg_days" numeric not null default '0',
+  "supplier_lead_time_std_dev_days" numeric not null default '0',
+  "model" varchar not null default 'mean',
+  "applied_to_wms_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sdf_tenant_product_warehouse_index" on "sku_demand_forecasts"(
+  "tenant_id",
+  "product_id",
+  "warehouse_id"
+);
+CREATE INDEX "sdf_tenant_period_index" on "sku_demand_forecasts"(
+  "tenant_id",
+  "forecast_period_start"
+);
+CREATE TABLE "academy_learning_tracks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "difficulty" varchar not null,
+  "sort_order" integer not null default '0',
+  "translations_json" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_learning_tracks_tenant_id_code_unique" on "academy_learning_tracks"(
+  "tenant_id",
+  "code"
+);
+CREATE TABLE "academy_interactive_missions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "track_id" varchar not null,
+  "code" varchar not null,
+  "difficulty" varchar not null,
+  "sequence" integer not null default '1',
+  "xp_reward" integer not null default '0',
+  "badge_code" varchar,
+  "verification_rule_json" text not null,
+  "tour_steps_json" text,
+  "translations_json" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("track_id") references "academy_learning_tracks"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_interactive_missions_tenant_id_code_unique" on "academy_interactive_missions"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "academy_interactive_missions_track_id_sequence_index" on "academy_interactive_missions"(
+  "track_id",
+  "sequence"
+);
+CREATE TABLE "academy_contextual_help_articles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "route_pattern" varchar not null,
+  "locale" varchar not null,
+  "title" varchar not null,
+  "body_markdown" text not null,
+  "field_tooltips_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_help_route_locale_unique" on "academy_contextual_help_articles"(
+  "tenant_id",
+  "route_pattern",
+  "locale"
+);
+CREATE TABLE "academy_user_progress"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar not null,
+  "track_id" varchar not null,
+  "mission_id" varchar not null,
+  "status" varchar not null default 'started',
+  "xp_awarded" integer not null default '0',
+  "badge_code" varchar,
+  "started_at" datetime,
+  "completed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("track_id") references "academy_learning_tracks"("id") on delete cascade,
+  foreign key("mission_id") references "academy_interactive_missions"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_user_progress_tenant_id_user_id_mission_id_unique" on "academy_user_progress"(
+  "tenant_id",
+  "user_id",
+  "mission_id"
+);
+CREATE INDEX "academy_user_progress_tenant_id_status_index" on "academy_user_progress"(
+  "tenant_id",
+  "status"
+);
+CREATE TABLE "academy_certificates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar not null,
+  "track_id" varchar not null,
+  "certificate_code" varchar not null,
+  "holder_name" varchar not null,
+  "total_xp" integer not null default '0',
+  "issued_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("track_id") references "academy_learning_tracks"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_certificates_tenant_id_user_id_track_id_unique" on "academy_certificates"(
+  "tenant_id",
+  "user_id",
+  "track_id"
+);
+CREATE UNIQUE INDEX "academy_certificates_certificate_code_unique" on "academy_certificates"(
+  "certificate_code"
+);
+CREATE TABLE "academy_classroom_cohorts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "teacher_id" varchar not null,
+  "name" varchar not null,
+  "join_code" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "academy_classroom_cohorts_tenant_id_teacher_id_index" on "academy_classroom_cohorts"(
+  "tenant_id",
+  "teacher_id"
+);
+CREATE UNIQUE INDEX "academy_classroom_cohorts_join_code_unique" on "academy_classroom_cohorts"(
+  "join_code"
+);
+CREATE TABLE "academy_classroom_enrollments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "cohort_id" varchar not null,
+  "user_id" varchar not null,
+  "enrolled_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("cohort_id") references "academy_classroom_cohorts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_classroom_enrollments_cohort_id_user_id_unique" on "academy_classroom_enrollments"(
+  "cohort_id",
+  "user_id"
+);
+CREATE INDEX "academy_classroom_enrollments_tenant_id_cohort_id_index" on "academy_classroom_enrollments"(
+  "tenant_id",
+  "cohort_id"
+);
+CREATE TABLE "academy_classroom_assignments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "cohort_id" varchar not null,
+  "track_id" varchar not null,
+  "due_date" date,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("cohort_id") references "academy_classroom_cohorts"("id") on delete cascade,
+  foreign key("track_id") references "academy_learning_tracks"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "academy_classroom_assignments_cohort_id_track_id_unique" on "academy_classroom_assignments"(
+  "cohort_id",
+  "track_id"
+);
+CREATE INDEX "academy_classroom_assignments_tenant_id_cohort_id_index" on "academy_classroom_assignments"(
+  "tenant_id",
+  "cohort_id"
+);
 CREATE TABLE "roles"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -41159,4 +41595,7 @@ INSERT INTO migrations VALUES(389,'2027_12_13_000100_add_payment_method_to_payme
 INSERT INTO migrations VALUES(390,'2027_12_13_000100_create_digital_preservation_tables',3);
 INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',3);
 INSERT INTO migrations VALUES(392,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',4);
-INSERT INTO migrations VALUES(393,'2027_12_14_000100_create_iam_tables',5);
+INSERT INTO migrations VALUES(393,'2027_12_14_000100_create_copilot_tables',5);
+INSERT INTO migrations VALUES(394,'2027_12_14_000100_create_ai_forecasting_tables',6);
+INSERT INTO migrations VALUES(395,'2027_12_15_000100_create_academy_tables',7);
+INSERT INTO migrations VALUES(396,'2027_12_14_000100_create_iam_tables',8);
