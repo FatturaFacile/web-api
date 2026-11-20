@@ -92,6 +92,18 @@ return [
         'communication' => ['read' => $financeReaders, 'write' => ['owner', 'admin', 'accountant', 'sales']],
         'document_trust' => ['read' => $financeReaders, 'write' => $finance],
         'digital_preservation' => ['read' => $financeReaders, 'write' => $finance],
+        // AI cash flow and demand forecasting (Mod 094). forecasting.view reads, forecasting.simulate trains and simulates; the
+        // one-click apply of reorder thresholds to the warehouse and planning data is its own module (forecasting.apply_wms).
+        'forecasting' => [
+            'read' => [...$financeReaders, 'warehouse', 'purchasing', 'procurement_manager', 'sales_manager'],
+            'write' => $finance,
+            'grants' => ['read' => ['forecasting.view', 'forecasting.simulate', 'forecasting.*'], 'write' => ['forecasting.simulate', 'forecasting.*']],
+        ],
+        'forecasting_wms' => [
+            'read' => $managers,
+            'write' => ['owner', 'admin', 'warehouse', 'purchasing', 'procurement_manager'],
+            'grants' => ['write' => ['forecasting.apply_wms', 'forecasting.*']],
+        ],
         'integrations' => ['read' => $managers, 'write' => $managers],
         'payment_links' => ['read' => $financeReaders, 'write' => ['owner', 'admin', 'accountant', 'sales']],
         // Personal data of members, minors included: closed to ordinary members. The accountant writes fees and payments

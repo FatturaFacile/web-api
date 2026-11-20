@@ -41,6 +41,7 @@ return [
         'marketplace' => env('FEATURE_MODULE_MARKETPLACE'),
         'document_trust' => env('FEATURE_MODULE_DOCUMENT_TRUST'),
         'digital_preservation' => env('FEATURE_MODULE_DIGITAL_PRESERVATION'),
+        'forecasting' => env('FEATURE_MODULE_FORECASTING'),
         'leases' => env('FEATURE_MODULE_LEASES'),
         'retail' => env('FEATURE_MODULE_RETAIL'),
         'hospitality' => env('FEATURE_MODULE_HOSPITALITY'),

@@ -40724,6 +40724,124 @@ CREATE INDEX "copilot_usages_tenant_id_created_at_index" on "copilot_usages"(
   "tenant_id",
   "created_at"
 );
+CREATE TABLE "customer_payment_behavior_models"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "sample_size" integer not null default '0',
+  "average_days_late" numeric not null default '0',
+  "std_dev_days_late" numeric not null default '0',
+  "on_time_payment_probability" numeric not null default '1',
+  "predicted_collection_date_offset_days" integer not null default '0',
+  "payment_risk_tier" varchar not null default 'low',
+  "last_trained_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpbm_tenant_customer_unique" on "customer_payment_behavior_models"(
+  "tenant_id",
+  "customer_id"
+);
+CREATE TABLE "invoice_expected_collections"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "invoice_id" varchar not null,
+  "customer_id" varchar not null,
+  "due_date" date not null,
+  "expected_collection_date" date not null,
+  "earliest_collection_date" date not null,
+  "latest_collection_date" date not null,
+  "open_amount" numeric not null default '0',
+  "calculated_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "iec_tenant_invoice_unique" on "invoice_expected_collections"(
+  "tenant_id",
+  "invoice_id"
+);
+CREATE INDEX "iec_tenant_customer_index" on "invoice_expected_collections"(
+  "tenant_id",
+  "customer_id"
+);
+CREATE INDEX "iec_tenant_expected_index" on "invoice_expected_collections"(
+  "tenant_id",
+  "expected_collection_date"
+);
+CREATE TABLE "ai_liquidity_forecast_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "generated_at" datetime not null,
+  "horizon_days" integer not null,
+  "currency" varchar not null default 'EUR',
+  "starting_cash_balance" numeric not null default '0',
+  "daily_projections_json" text not null,
+  "key_drivers_json" text not null,
+  "what_if_parameters_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "alfr_tenant_generated_index" on "ai_liquidity_forecast_runs"(
+  "tenant_id",
+  "generated_at"
+);
+CREATE TABLE "sku_demand_forecasts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "product_id" varchar not null,
+  "warehouse_id" varchar not null,
+  "forecast_period_start" date not null,
+  "forecast_period_end" date not null,
+  "predicted_demand_qty" numeric not null default '0',
+  "confidence_lower_bound" numeric not null default '0',
+  "confidence_upper_bound" numeric not null default '0',
+  "recommended_reorder_point" numeric not null default '0',
+  "recommended_safety_stock" numeric not null default '0',
+  "seasonality_index" numeric not null default '1',
+  "supplier_lead_time_avg_days" numeric not null default '0',
+  "supplier_lead_time_std_dev_days" numeric not null default '0',
+  "model" varchar not null default 'mean',
+  "applied_to_wms_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sdf_tenant_product_warehouse_index" on "sku_demand_forecasts"(
+  "tenant_id",
+  "product_id",
+  "warehouse_id"
+);
+CREATE INDEX "sdf_tenant_period_index" on "sku_demand_forecasts"(
+  "tenant_id",
+  "forecast_period_start"
+);
 CREATE TABLE "academy_learning_tracks"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -41327,4 +41445,5 @@ INSERT INTO migrations VALUES(390,'2027_12_13_000100_create_digital_preservation
 INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',3);
 INSERT INTO migrations VALUES(392,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',4);
 INSERT INTO migrations VALUES(393,'2027_12_14_000100_create_copilot_tables',5);
-INSERT INTO migrations VALUES(394,'2027_12_15_000100_create_academy_tables',6);
+INSERT INTO migrations VALUES(394,'2027_12_14_000100_create_ai_forecasting_tables',6);
+INSERT INTO migrations VALUES(395,'2027_12_15_000100_create_academy_tables',7);
