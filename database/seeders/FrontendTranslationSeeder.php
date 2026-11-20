@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
+use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
@@ -13,6 +14,7 @@ use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
+use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
@@ -52,12 +54,15 @@ class FrontendTranslationSeeder extends Seeder
         return $base
             + HrAtsFrontendTranslations::all($locale)
             + LeadFrontendTranslations::all($locale)
+            + Customer360FrontendTranslations::all($locale)
             + GapViewsFrontendTranslations::all($locale)
             + MainFrontendTranslations::all($locale)
             + PrivacyGovernanceFrontendTranslations::all($locale)
             + ReleaseAuditFrontendTranslations::all($locale)
             + AuditTrailFrontendTranslations::all($locale)
-            + PreservationFrontendTranslations::all($locale);
+            + PreservationFrontendTranslations::all($locale)
+            + MobileFrontendTranslations::all($locale);
+
     }
 
     /**

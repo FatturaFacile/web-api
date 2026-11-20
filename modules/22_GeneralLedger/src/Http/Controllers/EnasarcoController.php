@@ -75,6 +75,7 @@ final class EnasarcoController extends Controller
             new OA\Property(property: 'rate_percent', description: 'Total contribution rate.', type: 'number'),
             new OA\Property(property: 'agent_share_percent', description: 'Share of the rate charged to the agent.', type: 'number'),
             new OA\Property(property: 'annual_ceiling', description: 'Commissions subject to the contribution per year and principal.', type: 'number'),
+            new OA\Property(property: 'minimum_contribution', description: 'Annual minimum contribution; 0 when the year has none.', type: 'number'),
             new OA\Property(property: 'source', description: 'Where the figures come from.', type: 'string', maxLength: 255),
         ])),
         tags: ['General Ledger Tax Settlements'],
@@ -95,6 +96,7 @@ final class EnasarcoController extends Controller
             'rate_percent' => ['required', 'numeric', 'gt:0', 'max:100'],
             'agent_share_percent' => ['required', 'numeric', 'gt:0', 'max:100'],
             'annual_ceiling' => ['required', 'numeric', 'gt:0'],
+            'minimum_contribution' => ['sometimes', 'numeric', 'min:0'],
             'source' => ['required', 'string', 'max:255'],
         ]);
 

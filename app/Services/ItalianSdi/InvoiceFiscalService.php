@@ -6,8 +6,10 @@ namespace App\Services\ItalianSdi;
 
 use App\Models\Contact;
 use App\Models\Tenant;
+use App\Services\Invoicing\Tax\FiscalRules;
 use App\Services\Sales\VatSummaryCalculator;
 use App\Support\Database\TransactionLock;
+use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Support\Facades\Date;
@@ -66,7 +68,7 @@ final class InvoiceFiscalService
         $hasDeclaration = ! $regime->isForfettario() && $this->applyDeclaration($invoice, $atIssue);
 
         if (! $hasDeclaration && ! $regime->isForfettario() && ! $invoice->fund_enabled && ! $invoice->withholding_tax_enabled
-            && ! $invoice->enasarco_enabled && ! $invoice->stamp_duty_applied) {
+            && ! $invoice->enasarco_enabled && ! $invoice->stamp_duty_applied && ! $this->hasStampDutyNature($invoice, $tenant)) {
             return;
         }
 
@@ -97,7 +99,7 @@ final class InvoiceFiscalService
 
         $this->applyWithholding($invoice, $net, $fund);
         $this->applyEnasarco($invoice, $tenant, $net);
-        $this->applyStampDuty($invoice, $vatFree, $regime->isForfettario() || $hasDeclaration);
+        $this->applyStampDuty($invoice, $vatFree, $regime->isForfettario() || $hasDeclaration || $this->hasStampDutyNature($invoice, $tenant));
 
         $gross = Decimal::add(Decimal::add($net, $fund), $tax);
 
@@ -329,9 +331,24 @@ final class InvoiceFiscalService
         $base = Decimal::compare($net, $room) > 0 ? $room : $net;
         $agentRate = $this->percentOf((string) $parameter->rate_percent, (string) $parameter->agent_share_percent);
 
+        $alreadyContributed = (string) (SalesInvoice::withoutGlobalScope(TenantScope::class)
+            ->where('tenant_id', $invoice->tenant_id)
+            ->where('contact_id', $invoice->contact_id)
+            ->where('enasarco_enabled', true)
+            ->where('status', 'posted')
+            ->whereKeyNot($invoice->id)
+            ->whereYear('date', $year)
+            ->selectRaw("COALESCE(SUM(CASE WHEN invoice_type = 'credit_note' THEN -enasarco_amount ELSE enasarco_amount END), 0) AS contributed")
+            ->value('contributed') ?? '0');
+
         $invoice->enasarco_base = Decimal::round2($base);
         $invoice->enasarco_percent = $agentRate;
-        $invoice->enasarco_amount = $this->percentOf($base, $agentRate);
+        $invoice->enasarco_amount = Money::fromCents(FiscalRules::enasarcoContribution(
+            Money::toCents($base),
+            $agentRate,
+            Money::toCents((string) ($parameter->minimum_contribution ?? '0')),
+            Money::toCents($alreadyContributed),
+        ));
     }
 
     /**
@@ -364,9 +381,21 @@ final class InvoiceFiscalService
             || ($creditNote->fund_enabled && ($original === null || ! $original->fund_enabled));
     }
 
+    /**
+     * Lines without VAT under an exempt, non-taxable or out-of-scope nature (N1-N4) are subject to the stamp duty above
+     * the threshold, whatever the regime of the company. The nature is the one of the document, or the default the
+     * company states for its zero-rate lines.
+     */
+    private function hasStampDutyNature(SalesInvoice $invoice, ?Tenant $tenant): bool
+    {
+        $nature = $invoice->vat_nature ?? ($tenant?->settings['sdi_zero_rate_nature'] ?? null);
+
+        return FiscalRules::isStampDutyNatura($nature !== null ? (string) $nature : null);
+    }
+
     private function applyStampDuty(SalesInvoice $invoice, string $vatFree, bool $isAutomatic): void
     {
-        $isAboveThreshold = Decimal::compare($vatFree, (string) config('fiscal_it.stamp_duty.threshold')) > 0;
+        $isAboveThreshold = FiscalRules::stampDutyDue(Money::toCents($vatFree));
 
         if ($isAutomatic && $isAboveThreshold) {
             $invoice->stamp_duty_applied = true;

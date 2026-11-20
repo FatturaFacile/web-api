@@ -993,6 +993,8 @@ final class InvoicingService implements InvoicingServiceInterface
         $creditNote->total_paid = $creditNote->total_gross;
         $creditNote->save();
 
+        $this->installments->reduceForCreditNote($originalInvoice, $creditNote);
+
         $this->completeCreditNote($creditNote, $originalInvoice, $items, (string) ($data['created_by'] ?? 'system'));
 
         return $creditNote->load('items');

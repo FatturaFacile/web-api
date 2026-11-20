@@ -12,9 +12,17 @@ use App\Models\PassiveInvoice;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Invoicing\InvoiceService;
+use App\Services\Invoicing\Tax\EnasarcoSettings;
+use App\Services\Invoicing\Tax\FiscalInput;
+use App\Services\Invoicing\Tax\FiscalLine;
+use App\Services\Invoicing\Tax\FiscalRules;
+use App\Services\Invoicing\Tax\FundSettings;
+use App\Services\Invoicing\Tax\ItalianFiscalCalculator;
+use App\Services\Invoicing\Tax\WithholdingSettings;
 use App\Services\ItalianSdi\FatturaPaBuilderService;
 use App\Services\Pdf\DocumentPdfService;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
@@ -181,11 +189,11 @@ test('a fund without type or rate is refused', function (): void {
 
 // ------------------------------------------------------------ Enasarco
 
-function enasarcoParameters(string $ceiling = '40000'): void
+function enasarcoParameters(string $ceiling = '40000', string $minimum = '0'): void
 {
     EnasarcoParameter::create([
         'tenant_id' => test()->tenant->id, 'year' => 2027, 'agent_type' => 'multi_mandate', 'rate_percent' => 10,
-        'agent_share_percent' => 50, 'annual_ceiling' => $ceiling, 'source' => 'Test figures, not the real ones',
+        'agent_share_percent' => 50, 'annual_ceiling' => $ceiling, 'minimum_contribution' => $minimum, 'source' => 'Test figures, not the real ones',
     ]);
 }
 
@@ -553,4 +561,75 @@ test('the language of a contact is validated', function (): void {
     $this->withHeaders(['X-Tenant-ID' => $this->tenant->id])
         ->postJson('/api/v1/crm/contacts', ['type' => 'customer', 'country' => 'IT', 'company_name' => 'X', 'document_language' => 'xx'])
         ->assertUnprocessable()->assertJsonValidationErrors('document_language');
+});
+
+// ------------------------------------------------------------ Issue 286: Enasarco minimum, bollo on exempt lines, parity
+
+test('the Enasarco minimum raises a contribution below it, leaves one between minimum and ceiling, and stops above the ceiling', function (): void {
+    enasarcoParameters('1500', '60');
+    $agent = ['enasarco_enabled' => true, 'enasarco_agent_type' => 'multi_mandate'];
+
+    $below = issueInvoice($agent);
+    $between = issueInvoice($agent);
+    $above = issueInvoice($agent);
+
+    expect((string) $below->enasarco_amount)->toBe('60.00')
+        ->and((string) $between->enasarco_base)->toBe('500.00')
+        ->and((string) $between->enasarco_amount)->toBe('25.00')
+        ->and((string) $above->enasarco_amount)->toBe('0.00');
+});
+
+test('an Enasarco contribution already above the minimum is left as computed', function (): void {
+    enasarcoParameters('40000', '30');
+
+    expect((string) issueInvoice(['enasarco_enabled' => true, 'enasarco_agent_type' => 'multi_mandate'])->enasarco_amount)->toBe('50.00');
+});
+
+test('the natures N1 to N4 take the stamp duty above 77.47, whatever the regime', function (string $nature, float $amount, bool $applied): void {
+    $invoice = issueInvoice(['vat_nature' => $nature], unitPrice: $amount, rate: 0);
+
+    expect((bool) $invoice->stamp_duty_applied)->toBe($applied);
+})->with([
+    'N4 at the threshold' => ['N4', 77.47, false],
+    'N4 a cent above' => ['N4', 77.48, true],
+    'N1 well above' => ['N1', 500.0, true],
+    'N2.1 above' => ['N2.1', 100.0, true],
+    'N3.2 above' => ['N3.2', 100.0, true],
+    'N5 is not one of them' => ['N5', 500.0, false],
+]);
+
+test('a taxed invoice never takes the stamp duty', function (): void {
+    expect((bool) issueInvoice(unitPrice: 500, rate: 22)->stamp_duty_applied)->toBeFalse();
+});
+
+test('the document calculator and the emission service agree on withholding, fund, Enasarco and stamp duty', function (): void {
+    enasarcoParameters('40000', '0');
+
+    $invoice = issueInvoice([
+        'vat_nature' => 'N4', 'fund_enabled' => true, 'fund_type' => 'TC22', 'fund_percent' => 4, 'fund_vat_rate' => 0,
+        'withholding_tax_enabled' => true, 'withholding_tax_percent' => 20, 'fund_subject_to_withholding' => true,
+        'enasarco_enabled' => true, 'enasarco_agent_type' => 'multi_mandate',
+    ], unitPrice: 1000, rate: 0);
+
+    $result = (new ItalianFiscalCalculator)->calculate(new FiscalInput(
+        lines: [new FiscalLine('1', '1000', '0', '0', 'N4')],
+        fund: new FundSettings('TC22', 4, 0, 'N4', true),
+        withholding: new WithholdingSettings('RT01', 'A', 20, 100, true),
+        enasarco: new EnasarcoSettings('5.00', '40000.00'),
+    ));
+
+    expect(Money::toCents((string) $invoice->fund_amount))->toBe($result->fund)
+        ->and(Money::toCents((string) $invoice->withholding_tax_amount))->toBe($result->withholding)
+        ->and(Money::toCents((string) $invoice->enasarco_amount))->toBe($result->enasarco)
+        ->and((bool) $invoice->stamp_duty_applied)->toBe($result->stampDutyApplied)
+        ->and(Money::toCents((string) $invoice->stamp_duty_amount))->toBe($result->stampDuty);
+});
+
+test('the shared rules apply the Enasarco minimum, the ceiling and the stamp duty threshold in cents', function (): void {
+    expect(FiscalRules::enasarcoContribution(100000, '5.00', 6000, 0))->toBe(6000)
+        ->and(FiscalRules::enasarcoContribution(100000, '5.00', 3000, 0))->toBe(5000)
+        ->and(FiscalRules::enasarcoContribution(0, '5.00', 6000, 0))->toBe(0)
+        ->and(FiscalRules::enasarcoTaxable(100000, 150000, 100000))->toBe(50000)
+        ->and(FiscalRules::stampDutyDue(7747))->toBeFalse()
+        ->and(FiscalRules::stampDutyDue(7748))->toBeTrue();
 });

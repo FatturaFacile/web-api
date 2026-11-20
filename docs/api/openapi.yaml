@@ -46346,8 +46346,6 @@ paths:
                   - message
                   - data
                   - meta
-        '403':
-          $ref: '#/components/responses/AuthorizationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/analytics/designed-reports/{id}/run':
@@ -46395,7 +46393,8 @@ paths:
                     type: string
                     const: 'Report calculated'
                   data:
-                    type: string
+                    type: object
+                    additionalProperties: {}
                   meta:
                     type: string
                 required:
@@ -46479,12 +46478,15 @@ paths:
                                   type: string
                                 calculated:
                                   type: boolean
+                                formula:
+                                  type: string
                               required:
                                 - key
                                 - label
                                 - unit
                                 - format
                                 - calculated
+                                - formula
                       column_headers:
                         type: array
                         items: {}
@@ -56090,6 +56092,9 @@ paths:
                   maximum: 100
                 annual_ceiling:
                   type: number
+                minimum_contribution:
+                  type: number
+                  minimum: 0
                 source:
                   type: string
                   maxLength: 255
@@ -67274,6 +67279,149 @@ paths:
                   message:
                     type: string
                     const: 'Revision created'
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      invoice_id:
+                        type: string
+                      parent_fpa_document_id:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                          - outbound
+                          - inbound
+                      format_transmission:
+                        type: string
+                      document_type:
+                        type: string
+                      document_number:
+                        type: string
+                      document_date:
+                        type:
+                          - string
+                          - 'null'
+                      sdi_identifier:
+                        type: string
+                      file_name:
+                        type: string
+                      transmission_progressive:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - draft
+                          - validated
+                          - validation_failed
+                          - signed
+                          - queued
+                          - transmitted
+                          - delivered
+                          - undelivered
+                          - rejected
+                          - pa_accepted
+                          - pa_rejected
+                          - deadline_passed
+                          - transmitted_attested
+                          - inbound_received
+                          - inbound_processed
+                      validation_errors:
+                        type: string
+                      transmitted_at:
+                        type:
+                          - string
+                          - 'null'
+                      rejected_at:
+                        type:
+                          - string
+                          - 'null'
+                      resubmission_deadline_at:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - id
+                      - invoice_id
+                      - parent_fpa_document_id
+                      - direction
+                      - format_transmission
+                      - document_type
+                      - document_number
+                      - document_date
+                      - sdi_identifier
+                      - file_name
+                      - transmission_progressive
+                      - status
+                      - validation_errors
+                      - transmitted_at
+                      - rejected_at
+                      - resubmission_deadline_at
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: resubmission_not_allowed
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/fpa-documents/{id}/resubmit-and-send':
+    post:
+      operationId: fpa-documents.resubmit-and-send
+      tags:
+        - FpaDocument
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Invoice resubmitted'
                   data:
                     type: object
                     properties:
@@ -107624,6 +107772,18 @@ paths:
                         - string
                         - 'null'
                       maxLength: 255
+                allowed_payment_methods:
+                  type:
+                    - array
+                    - 'null'
+                  items:
+                    type: string
+                    enum:
+                      - card
+                      - twint
+                      - sepa
+                      - paypal
+                      - qr
               required:
                 - provider
       responses:
@@ -114271,6 +114431,11 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorePortalCheckoutRequest'
       responses:
         '201':
           description: ''
@@ -114291,6 +114456,8 @@ paths:
                         type: string
                       provider:
                         type: string
+                      payment_method:
+                        type: string
                       amount:
                         type: string
                       currency:
@@ -114300,6 +114467,7 @@ paths:
                     required:
                       - invoice_id
                       - provider
+                      - payment_method
                       - amount
                       - currency
                       - url
@@ -154630,7 +154798,8 @@ paths:
                     type: string
                     const: 'Report calculated'
                   data:
-                    type: string
+                    type: object
+                    additionalProperties: {}
                   meta:
                     type: string
                 required:
@@ -154638,10 +154807,10 @@ paths:
                   - message
                   - data
                   - meta
-        '422':
-          $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/analytics/designer/export:
     post:
       operationId: analytics.designer.export
@@ -154743,12 +154912,15 @@ paths:
                                   type: string
                                 calculated:
                                   type: boolean
+                                formula:
+                                  type: string
                               required:
                                 - key
                                 - label
                                 - unit
                                 - format
                                 - calculated
+                                - formula
                       column_headers:
                         type: array
                         items: {}
@@ -178934,59 +179106,7 @@ paths:
                     type: string
                     const: 'Backup retrieved successfully'
                   data:
-                    type: object
-                    properties:
-                      state:
-                        type: string
-                        enum:
-                          - failing
-                          - never
-                          - stale
-                          - ok
-                      last_completed_at:
-                        type:
-                          - string
-                          - 'null'
-                      last_completed_size_bytes:
-                        type:
-                          - string
-                          - 'null'
-                      age_hours:
-                        type:
-                          - integer
-                          - 'null'
-                      last_failed_at:
-                        type:
-                          - string
-                          - 'null'
-                      last_error:
-                        type:
-                          - string
-                          - 'null'
-                      pending:
-                        type: integer
-                        minimum: 0
-                      completed_count:
-                        type: integer
-                        minimum: 0
-                      rpo_hours:
-                        type: integer
-                      rto_minutes:
-                        type: integer
-                      retention:
-                        type: integer
-                    required:
-                      - state
-                      - last_completed_at
-                      - last_completed_size_bytes
-                      - age_hours
-                      - last_failed_at
-                      - last_error
-                      - pending
-                      - completed_count
-                      - rpo_hours
-                      - rto_minutes
-                      - retention
+                    type: string
                   meta:
                     type: string
                 required:
@@ -258233,13 +258353,19 @@ components:
             format: uuid
           minItems: 1
           uniqueItems: true
+        purchase_order_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+          uniqueItems: true
       required:
         - document_date
         - cost_type
         - allocation_key
         - currency
         - total_amount
-        - receipt_ids
       title: StoreLandedCostDocumentRequest
     StoreLandedCostRequest:
       type: object
@@ -259388,6 +259514,21 @@ components:
       required:
         - title
       title: StorePeriodCloseTaskRequest
+    StorePortalCheckoutRequest:
+      type: object
+      properties:
+        payment_method:
+          type:
+            - string
+            - 'null'
+          enum:
+            - card
+            - twint
+            - sepa
+            - paypal
+            - qr
+            - null
+      title: StorePortalCheckoutRequest
     StorePortalTicketRequest:
       type: object
       properties:
