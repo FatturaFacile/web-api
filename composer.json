@@ -78,6 +78,7 @@
             "Modules\\Integrations\\": "modules/29_Integrations/src/",
             "Modules\\DocumentTrust\\": "modules/32_DocumentTrust/src/",
             "Modules\\DigitalPreservation\\": "modules/65_DigitalPreservation/src/",
+            "Modules\\Forecasting\\": "modules/66_Forecasting/src/",
             "Modules\\Payroll\\": "modules/18_Payroll/src/",
             "Modules\\Associations\\": "modules/31_Associations/src/",
             "Modules\\Customs\\": "modules/32_Customs/src/",

@@ -36,6 +36,7 @@ use Modules\Events\Providers\EventsServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\Fleet\Providers\FleetServiceProvider;
+use Modules\Forecasting\Providers\ForecastingServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Governance\Providers\GovernanceServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
@@ -150,4 +151,5 @@ return [
     LogisticsServiceProvider::class,
     CorporateGroupServiceProvider::class,
     DigitalPreservationServiceProvider::class,
+    ForecastingServiceProvider::class,
 ];
