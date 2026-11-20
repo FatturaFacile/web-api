@@ -10,6 +10,7 @@ use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 /**
  * Help for one ERP screen in one language, with the tooltips of its fields (field key => text).
  *
+ * @property string $id
  * @property string $route_pattern
  * @property string $locale
  * @property string $title
