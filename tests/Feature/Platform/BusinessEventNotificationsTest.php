@@ -49,7 +49,7 @@ it('notifies owners of low stock', function (): void {
 it('notifies only the authorised approver of a pending approval', function (): void {
     $approver = biUser($this->tenant, 'member');
 
-    Event::dispatch(new ApprovalTokenGeneratedEvent('tok-1', 'step-1', 'approve', '/approvals/tok-1', (string) $approver->id, (string) $this->tenant->id, ''));
+    Event::dispatch(new ApprovalTokenGeneratedEvent($tokenId = (string) Str::uuid(), (string) Str::uuid(), 'approve', '/approvals/'.$tokenId, (string) $approver->id, (string) $this->tenant->id, ''));
 
     expect($approver->notifications()->count())->toBe(1)
         ->and($this->owner->notifications()->count())->toBe(0);

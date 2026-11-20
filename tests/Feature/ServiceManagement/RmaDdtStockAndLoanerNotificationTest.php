@@ -90,7 +90,7 @@ test('completing a repair takes the consumed spare parts out of stock, once', fu
 
 test('an overdue loaner is notified to the tenant administrators through the dispatcher', function (): void {
     Event::dispatch(new LoanerOverdueEvent(
-        loanerId: 'l-1', rmaOrderId: 'r-1', loanerSerialNumber: 'LN-77', customerId: (string) $this->customer->id,
+        loanerId: (string) Str::uuid(), rmaOrderId: (string) Str::uuid(), loanerSerialNumber: 'LN-77', customerId: (string) $this->customer->id,
         daysOutstanding: 9, tenantId: (string) $this->tenant->id, companyId: '',
     ));
 
