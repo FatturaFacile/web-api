@@ -103615,6 +103615,59 @@
                     }
                 },
                 {
+                    "name": "POST /v1/fpa-documents/:id/resubmit-and-send",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/fpa-documents/:id/resubmit-and-send",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fpa-documents",
+                                ":id",
+                                "resubmit-and-send"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "POST /v1/fpa-documents/:id/simulate",
                     "request": {
                         "method": "POST",
@@ -108390,7 +108443,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"year\": 1,\n    \"agent_type\": \"single_mandate\",\n    \"rate_percent\": 1.5,\n    \"agent_share_percent\": 1.5,\n    \"annual_ceiling\": 1.5,\n    \"source\": \"string\"\n}",
+                            "raw": "{\n    \"year\": 1,\n    \"agent_type\": \"single_mandate\",\n    \"rate_percent\": 1.5,\n    \"agent_share_percent\": 1.5,\n    \"annual_ceiling\": 1.5,\n    \"minimum_contribution\": 1.5,\n    \"source\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
