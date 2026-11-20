@@ -11,6 +11,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
 use Modules\Invoicing\Models\DiscountPolicy;
+use Modules\Pricing\Models\CustomerSpecialPrice;
+use Modules\Pricing\Models\MarginPolicy;
 
 uses(RefreshDatabase::class);
 
@@ -123,14 +125,15 @@ test('minimum quantity and minimum order amount decide whether a promotion appli
         ->and($both['discount_percentage'])->toBe('10.00');
 });
 
-test('percentages add up but never go above 100', function (): void {
+test('percentages cascade on the price left by the previous ones', function (): void {
     pricingPolicy(['value' => 70, 'auto_apply' => true, 'priority' => 1]);
     pricingPolicy(['value' => 60, 'auto_apply' => true, 'priority' => 2]);
 
     $line = $this->service->determineLinePrice((string) $this->product->id, '1', null, null, null, '2026-03-01');
 
-    expect($line['discount_percentage'])->toBe('100.00')
-        ->and($line['net_unit_price'])->toBe('0.0000');
+    // 100 less 70% = 30; 30 less 60% = 12 (a sum of 130% would wrongly give 0).
+    expect($line['discount_percentage'])->toBe('88.00')
+        ->and($line['net_unit_price'])->toBe('12.0000');
 });
 
 test('a fixed discount larger than the price leaves a price of zero, not a negative one', function (): void {
@@ -167,4 +170,40 @@ test('discounts reduce the net of the lines before the VAT', function (): void {
         ->and($totals['net_total'])->toBe(230.0)
         ->and($totals['tax_total'])->toBe(44.6)
         ->and($totals['gross_total'])->toBe(274.6);
+});
+
+test('the price of a line comes from the Pricing engine: cascade of the list item, rounding of the list', function (): void {
+    $list = PriceList::create(['name' => 'CHF-like', 'currency' => 'EUR', 'is_active' => true, 'is_default' => true, 'rounding_mode' => 'SWISS_005']);
+    $list->items()->create(['product_id' => $this->product->id, 'price' => 19.99, 'min_quantity' => 1, 'discount_cascade' => '10+5']);
+
+    $line = $this->service->determineLinePrice((string) $this->product->id, '1', null, null, null, '2026-03-01');
+
+    // 19.99 less 10% = 17.991; less 5% = 17.09145; Swiss 0.05 rounding -> 17.10.
+    expect($line['catalogue_price'])->toBe('19.9900')
+        ->and($line['list_price'])->toBe('17.1000')
+        ->and($line['rounding_mode'])->toBe('SWISS_005')
+        ->and($line['net_unit_price'])->toBe('17.1000');
+});
+
+test('a special price of the customer wins over the price lists', function (): void {
+    pricingList();
+    CustomerSpecialPrice::create(['tenant_id' => $this->tenant->id, 'customer_id' => $this->customer->id, 'product_id' => $this->product->id, 'currency' => 'EUR', 'fixed_price' => 25]);
+
+    $line = $this->service->determineLinePrice((string) $this->product->id, '1', (string) $this->customer->id, null, null, '2026-03-01');
+
+    expect($line['price_source'])->toBe('customer_special_price')
+        ->and($line['net_unit_price'])->toBe('25.0000');
+});
+
+test('the margin guardrail judges the final net price of the line', function (): void {
+    MarginPolicy::create(['tenant_id' => $this->tenant->id, 'scope' => 'GLOBAL', 'min_margin_percent' => 30, 'cost_basis' => 'LAST_PURCHASE_COST', 'block_on_violation' => true]);
+    $policy = pricingPolicy(['value' => 50]);
+
+    $ok = $this->service->determineLinePrice((string) $this->product->id, '1', null, null, null, '2026-03-01');
+    $blocked = $this->service->determineLinePrice((string) $this->product->id, '1', null, null, (string) $policy->id, '2026-03-01');
+
+    // cost 60: at 100 the margin is 40%; at 50 it is (50-60)/50 = -20%, below the 30% minimum.
+    expect($ok['margin']['status'])->toBe('OK')
+        ->and($blocked['margin']['status'])->toBe('BLOCKED')
+        ->and($blocked['margin']['margin_percent'])->toBe('-20.00');
 });

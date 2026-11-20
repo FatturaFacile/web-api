@@ -10,9 +10,6 @@ use OpenApi\Attributes as OA;
  * Operations, shared responses and tag of the controlling, margin analytics and budget endpoints.
  */
 #[OA\Tag(name: 'Controlling', description: 'Analytical cost accounting, overhead allocation, margin control, working capital KPIs, budgets, rolling forecast and variance analysis')]
-#[OA\Response(response: 'ControllingUnauthenticated', description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
-#[OA\Response(response: 'ControllingForbidden', description: 'The role of the user does not allow this', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
-#[OA\Response(response: 'ControllingUnprocessable', description: 'Validation error or business rule violation', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse'))]
 #[OA\Get(path: '/api/v1/controlling/cost-centers', operationId: 'listControllingCostCenters', summary: 'List cost centers (flat) or the rollup tree with view=tree and fiscal_year', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Controlling'], responses: [
     new OA\Response(response: 200, description: 'Done', content: new OA\JsonContent(type: 'object')),
     new OA\Response(ref: '#/components/responses/ControllingUnauthenticated', response: 401),

@@ -1409,6 +1409,7 @@ return [
     'punch_type' => 'Stempelart',
     'punches' => 'Stempelungen',
     'purchase_order_id' => 'Bestellung',
+    'purchase_order_ids' => 'Bestellungen',
     'purchase_order_line_id' => 'Bestellposition',
     'purchase_price' => 'Einkaufspreis',
     'purchase_receipt_id' => 'Wareneingang',

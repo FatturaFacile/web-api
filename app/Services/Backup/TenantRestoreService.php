@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Throwable;
 use ZipArchive;
 
@@ -82,6 +83,24 @@ class TenantRestoreService
         try {
             file_put_contents($temporary, $source);
             fclose($source);
+
+            // Encrypted archives are opened first; plain ZIPs made before encryption existed pass through unchanged.
+            $encryptor = app(BackupArchiveEncryptor::class);
+
+            if ($encryptor->isEncrypted($temporary)) {
+                $plain = (string) tempnam(sys_get_temp_dir(), 'tenant-restore-plain-');
+
+                try {
+                    $encryptor->decrypt($temporary, $plain);
+                } catch (RuntimeException) {
+                    @unlink($plain);
+
+                    throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::UNREADABLE_ARCHIVE);
+                }
+
+                @unlink($temporary);
+                $temporary = $plain;
+            }
 
             return $this->restoreArchive($temporary, $tenant);
         } finally {

@@ -178,3 +178,27 @@ test('exports stream 100000 rows to csv and xlsx without holding them in memory'
             ->and($growth)->toBeLessThan($limit, "{$format} peaked {$growth} bytes above the start");
     }
 });
+
+test('a pivot export writes calculated measures as native formulas over the cells of the row, with the value as fallback', function (): void {
+    $body = [
+        'dataset' => 'sales',
+        'spec' => biSpec([], ['net_amount', 'document_count']),
+        'pivot' => ['rows' => ['customer'], 'columns' => []],
+        'calculated_fields' => [
+            ['key' => 'per_document', 'label' => 'Per document', 'formula' => 'net_amount / NULLIF(document_count, 0)', 'format' => 'currency'],
+            ['key' => 'unknown_input', 'label' => 'Unknown', 'formula' => 'net_amount * 2', 'format' => 'currency'],
+        ],
+        'format' => 'xlsx',
+        'locale' => 'it-IT',
+    ];
+
+    $sheets = biReadXlsx(test()->postJson('/api/v1/analytics/designer/export', $body)->assertOk()->streamedContent());
+    $rows = $sheets[array_key_first($sheets)];
+
+    // customer, net_amount, document_count, per_document, unknown_input
+    expect((string) $rows[1][3])->toContain('IFERROR(')->toContain('B2')->toContain('C2')->toContain('NA()')
+        ->and((string) $rows[2][3])->toContain('B3')
+        ->and((string) $rows[1][4])->toContain('B2*2')
+        // no formula at the grand total: the pivot columns are never summed over their own totals
+        ->and(collect($rows)->flatten()->filter(fn ($cell): bool => is_string($cell) && str_contains($cell, 'SUM('))->all())->toBe([]);
+});

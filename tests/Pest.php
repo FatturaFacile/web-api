@@ -97,6 +97,17 @@ function spaHeaders(): array
  *
  * @return array{tenant: Tenant, user: User}
  */
+/**
+ * Switches an audit immutability trigger off to simulate tampering at the storage level: SQLite has one trigger per
+ * statement kind, PostgreSQL a single row-level trigger for UPDATE and DELETE (the change is rolled back with the test).
+ */
+function dropAuditTrigger(string $sqliteTrigger): void
+{
+    DB::unprepared(DB::getDriverName() === 'pgsql'
+        ? 'ALTER TABLE audit_logs DISABLE TRIGGER trg_prevent_audit_log_mutation'
+        : "DROP TRIGGER {$sqliteTrigger}");
+}
+
 function tfrTenant(string $name = 'Logistics Tenant', string $role = 'owner', ?array $permissions = null): array
 {
     $tenant = Tenant::create([
