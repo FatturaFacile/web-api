@@ -87,6 +87,7 @@ test('ATP is immediate with stock, partial with a shortage and counts confirmed 
 });
 
 test('CTP date comes from the lead time of a manufactured product when supply does not cover', function (): void {
+    $this->travelTo(now()->setTime(12, 0)); // a run across midnight must not shift the expected date by a day
     Schema::disableForeignKeyConstraints();
     DB::table('mfg_items')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenantId, 'item_code' => 'FG-1', 'name' => 'Pump Unit', 'item_type' => 'finished_good', 'product_id' => (string) $this->product->id, 'default_bom_id' => (string) Str::uuid7(), 'lead_time_days' => 7, 'is_active' => true, 'procurement_type' => 'make']);
     Schema::enableForeignKeyConstraints();
