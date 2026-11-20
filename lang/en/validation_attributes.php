@@ -2982,4 +2982,6 @@ return [
     'route' => 'screen',
     'entity_type' => 'record type',
     'entity_id' => 'record identifier',
+    'track_ids' => 'learning tracks',
+    'join_code' => 'join code',
 ];

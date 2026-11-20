@@ -2982,4 +2982,6 @@ return [
     'route' => 'schermata',
     'entity_type' => 'tipo di record',
     'entity_id' => 'identificativo del record',
+    'track_ids' => 'percorsi formativi',
+    'join_code' => 'codice di accesso',
 ];

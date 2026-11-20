@@ -68,6 +68,8 @@ return [
         'assistant' => ['read' => $anyMember, 'write' => $anyMember],
         // The Copilot answers and stages actions only within the permissions of the caller on each module it touches.
         'copilot' => ['read' => $anyMember, 'write' => $anyMember],
+        // The Academy is open to every member: learning content and the own progress; teachers are the members that create cohorts.
+        'academy' => ['read' => $anyMember, 'write' => $anyMember],
         'edocument_networks' => ['read' => $finance, 'write' => $finance],
         'workspace' => ['read' => $anyMember, 'write' => $anyMember],
         'hr' => ['read' => ['owner', 'admin', 'hr', 'payroll'], 'write' => ['owner', 'admin', 'hr', 'payroll']],

@@ -2982,4 +2982,6 @@ return [
     'route' => 'écran',
     'entity_type' => 'type d\'enregistrement',
     'entity_id' => 'identifiant de l\'enregistrement',
+    'track_ids' => 'parcours de formation',
+    'join_code' => 'code d\'accès',
 ];

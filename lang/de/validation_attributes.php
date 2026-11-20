@@ -2982,4 +2982,6 @@ return [
     'route' => 'Bildschirm',
     'entity_type' => 'Datensatztyp',
     'entity_id' => 'Datensatzkennung',
+    'track_ids' => 'Lernpfade',
+    'join_code' => 'Beitrittscode',
 ];
