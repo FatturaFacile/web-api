@@ -41051,6 +41051,105 @@ CREATE INDEX "academy_classroom_assignments_tenant_id_cohort_id_index" on "acade
   "tenant_id",
   "cohort_id"
 );
+CREATE TABLE "document_extraction_jobs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dms_document_id" varchar not null,
+  "source_channel" varchar not null,
+  "document_category" varchar not null,
+  "extraction_method" varchar,
+  "ocr_provider_used" varchar,
+  "overall_confidence_score" numeric not null default '0',
+  "llm_tokens_used" integer not null default '0',
+  "extracted_payload_json" text,
+  "bounding_boxes_json" text,
+  "review_draft_json" text,
+  "vendor_id" varchar,
+  "matched_purchase_order_ids_json" text,
+  "matched_goods_receipt_ids_json" text,
+  "status" varchar not null,
+  "failure_reason" text,
+  "requested_by_user_id" varchar,
+  "confirmed_by_user_id" varchar,
+  "confirmed_at" datetime,
+  "resulting_entity_type" varchar,
+  "resulting_entity_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("dms_document_id") references "dms_documents"("id") on delete cascade,
+  foreign key("vendor_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "dej_tenant_status_index" on "document_extraction_jobs"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "dej_tenant_document_index" on "document_extraction_jobs"(
+  "tenant_id",
+  "dms_document_id"
+);
+CREATE TABLE "vendor_coding_prediction_models"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "vendor_id" varchar not null,
+  "line_description_pattern" varchar not null,
+  "suggested_gl_account_id" varchar not null,
+  "suggested_vat_code_id" varchar not null,
+  "suggested_cost_center_id" varchar,
+  "historical_hit_count" integer not null default '1',
+  "correction_count" integer not null default '0',
+  "accuracy_rate" numeric not null default '100',
+  "last_used_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("vendor_id") references "contacts"("id") on delete cascade,
+  foreign key("suggested_gl_account_id") references "chart_of_accounts"("id") on delete cascade,
+  foreign key("suggested_vat_code_id") references "vat_codes"("id") on delete cascade,
+  foreign key("suggested_cost_center_id") references "cost_centers"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "vcpm_tenant_vendor_pattern_unique" on "vendor_coding_prediction_models"(
+  "tenant_id",
+  "vendor_id",
+  "line_description_pattern"
+);
+CREATE TABLE "tenant_ocr_configurations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "primary_provider" varchar not null default 'ollama_local',
+  "fallback_provider" varchar,
+  "provider_settings_encrypted" text,
+  "auto_confirm_confidence_threshold" numeric not null default '98',
+  "auto_confirm_enabled" tinyint(1) not null default '0',
+  "dedicated_inbox_alias" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "tenant_ocr_configurations_tenant_id_unique" on "tenant_ocr_configurations"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "tenant_ocr_configurations_dedicated_inbox_alias_unique" on "tenant_ocr_configurations"(
+  "dedicated_inbox_alias"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -41447,3 +41546,4 @@ INSERT INTO migrations VALUES(392,'2027_12_13_000100_add_return_delivery_note_to
 INSERT INTO migrations VALUES(393,'2027_12_14_000100_create_copilot_tables',5);
 INSERT INTO migrations VALUES(394,'2027_12_14_000100_create_ai_forecasting_tables',6);
 INSERT INTO migrations VALUES(395,'2027_12_15_000100_create_academy_tables',7);
+INSERT INTO migrations VALUES(396,'2027_12_15_000100_create_ocr_extraction_tables',8);
