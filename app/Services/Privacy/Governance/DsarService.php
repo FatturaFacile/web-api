@@ -12,6 +12,7 @@ use App\Enums\Privacy\DsarStatus;
 use App\Models\Privacy\PrivacySubjectRequestDsar;
 use App\Models\Tenant;
 use App\Services\Privacy\PrivacyAudit;
+use App\Support\Database\TransactionLock;
 use Carbon\CarbonImmutable;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Support\Facades\DB;
@@ -39,8 +40,9 @@ final readonly class DsarService
 
         $dsar = DB::transaction(function () use ($tenantId, $data, $receivedAt): PrivacySubjectRequestDsar {
             $year = $receivedAt->year;
+            TransactionLock::acquire('dsar-number:'.$tenantId.':'.$year);
             $count = PrivacySubjectRequestDsar::withoutGlobalScope(TenantScope::class)
-                ->where('tenant_id', $tenantId)->where('request_number', 'like', "DSAR-{$year}-%")->lockForUpdate()->count();
+                ->where('tenant_id', $tenantId)->where('request_number', 'like', "DSAR-{$year}-%")->count();
 
             return PrivacySubjectRequestDsar::withoutGlobalScope(TenantScope::class)->create([
                 'tenant_id' => $tenantId,

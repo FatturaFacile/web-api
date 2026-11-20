@@ -8,6 +8,7 @@ use App\Enums\Privacy\BreachIncidentStatus;
 use App\Enums\Privacy\BreachJurisdiction;
 use App\Models\Privacy\DataBreachIncident;
 use App\Services\Privacy\PrivacyAudit;
+use App\Support\Database\TransactionLock;
 use Carbon\CarbonImmutable;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Support\Collection;
@@ -27,8 +28,9 @@ final readonly class BreachIncidentService
     {
         $detected = CarbonImmutable::parse($data['detected_at'] ?? now());
         $incident = DB::transaction(function () use ($tenantId, $data, $detected): DataBreachIncident {
+            TransactionLock::acquire('breach-incident-code:'.$tenantId.':'.$detected->year);
             $count = DataBreachIncident::withoutGlobalScope(TenantScope::class)->where('tenant_id', $tenantId)
-                ->where('incident_code', 'like', "BRE-{$detected->year}-%")->lockForUpdate()->count();
+                ->where('incident_code', 'like', "BRE-{$detected->year}-%")->count();
 
             return DataBreachIncident::withoutGlobalScope(TenantScope::class)->create($data + [
                 'tenant_id' => $tenantId,
