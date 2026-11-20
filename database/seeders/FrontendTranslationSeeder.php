@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
+use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
@@ -51,6 +52,7 @@ class FrontendTranslationSeeder extends Seeder
         return $base
             + HrAtsFrontendTranslations::all($locale)
             + LeadFrontendTranslations::all($locale)
+            + Customer360FrontendTranslations::all($locale)
             + GapViewsFrontendTranslations::all($locale)
             + MainFrontendTranslations::all($locale)
             + PrivacyGovernanceFrontendTranslations::all($locale)
