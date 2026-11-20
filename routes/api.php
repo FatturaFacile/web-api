@@ -62,6 +62,7 @@ use App\Http\Controllers\Api\V1\Mobile\MobileDeviceController;
 use App\Http\Controllers\Api\V1\Mobile\MobilePayslipController;
 use App\Http\Controllers\Api\V1\Mobile\MobileReceiptController;
 use App\Http\Controllers\Api\V1\Mobile\MobileSyncController;
+use App\Http\Controllers\Api\V1\Mobile\MobileTenantController;
 use App\Http\Controllers\Api\V1\Mobile\MobileWorkforceController;
 use App\Http\Controllers\Api\V1\PasswordChangeController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
@@ -735,6 +736,7 @@ Route::prefix('v1')->group(function (): void {
         // Mobile companion app (Flutter iOS / Android). Offline writes are replayed safely through the platform `Idempotency-Key` middleware.
         Route::prefix('mobile')->name('mobile.')->group(function (): void {
             Route::get('/bootstrap', MobileBootstrapController::class)->name('bootstrap');
+            Route::get('/tenants', MobileTenantController::class)->name('tenants.index');
 
             Route::get('/devices', [MobileDeviceController::class, 'index'])->name('devices.index');
             Route::post('/devices', [MobileDeviceController::class, 'register'])->name('devices.register');

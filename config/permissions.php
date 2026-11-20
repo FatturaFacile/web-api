@@ -87,6 +87,7 @@ return [
         'analytics' => ['read' => $financeReaders, 'write' => $finance],
         'communication' => ['read' => $financeReaders, 'write' => ['owner', 'admin', 'accountant', 'sales']],
         'document_trust' => ['read' => $financeReaders, 'write' => $finance],
+        'digital_preservation' => ['read' => $financeReaders, 'write' => $finance],
         'integrations' => ['read' => $managers, 'write' => $managers],
         'payment_links' => ['read' => $financeReaders, 'write' => ['owner', 'admin', 'accountant', 'sales']],
         // Personal data of members, minors included: closed to ordinary members. The accountant writes fees and payments
