@@ -100725,6 +100725,63 @@ paths:
           $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/mobile/tenants:
+    get:
+      operationId: mobile.tenants.index
+      summary: 'The companies the signed-in user can switch to (drives the mobile tenant switcher)'
+      tags:
+        - MobileTenant
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Tenants retrieved'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tenant_id:
+                          type: string
+                        tenant_name:
+                          type: string
+                        role:
+                          type:
+                            - string
+                            - 'null'
+                        suspended:
+                          type: boolean
+                        permissions:
+                          type: array
+                          items: {}
+                        modules:
+                          type: object
+                          additionalProperties:
+                            type: string
+                      required:
+                        - tenant_id
+                        - tenant_name
+                        - role
+                        - suspended
+                        - permissions
+                        - modules
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/mobile/work-sites:
     get:
       operationId: mobile.work-sites.index
@@ -117464,6 +117521,464 @@ paths:
           $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/preservation/audit-logs:
+    get:
+      operationId: preservation.audit-logs.index
+      tags:
+        - PreservationAuditLog
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: OK
+                  data:
+                    type: string
+                  meta:
+                    type: array
+                    items: {}
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/preservation/batches:
+    get:
+      operationId: preservation.batches.index
+      tags:
+        - PreservationBatch
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: OK
+                  data:
+                    type: string
+                  meta:
+                    type: array
+                    items: {}
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: preservation.batches.store
+      tags:
+        - PreservationBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePreservationBatchRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/preservation/batches/{id}':
+    get:
+      operationId: preservation.batches.show
+      tags:
+        - PreservationBatch
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/preservation/batches/{id}/seal':
+    post:
+      operationId: preservation.batches.seal
+      tags:
+        - PreservationBatch
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/preservation/batches/{id}/dispatch':
+    post:
+      operationId: preservation.batches.dispatch
+      tags:
+        - PreservationBatch
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/preservation/batches/{id}/verify':
+    post:
+      operationId: preservation.batches.verify
+      tags:
+        - PreservationBatch
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    anyOf:
+                      -
+                        type: object
+                        properties:
+                          ok:
+                            type: boolean
+                          checked_files:
+                            type: integer
+                          failures:
+                            type: array
+                            items:
+                              anyOf:
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      enum:
+                                        - file_missing
+                                        - file_hash_mismatch
+                                    reference:
+                                      type: string
+                                    expected:
+                                      type: string
+                                    actual:
+                                      type:
+                                        - string
+                                        - 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: merkle_root_mismatch
+                                    reference:
+                                      type: string
+                                    expected:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    actual:
+                                      type: string
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: pdv_hash_mismatch
+                                    reference:
+                                      type: string
+                                    expected:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    actual:
+                                      type:
+                                        - string
+                                        - 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: pda_hash_mismatch
+                                    reference:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    expected:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    actual:
+                                      type:
+                                        - string
+                                        - 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: chain_link_mismatch
+                                    reference:
+                                      type: string
+                                    expected:
+                                      type: string
+                                    actual:
+                                      type: 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: timestamp_invalid
+                                    reference:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    expected:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    actual:
+                                      type: 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: audit_chain_broken
+                                    reference:
+                                      type: string
+                                    expected:
+                                      type: 'null'
+                                    actual:
+                                      type: 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                          chain:
+                            type: object
+                            properties:
+                              ok:
+                                type: boolean
+                            required:
+                              - ok
+                          timestamp:
+                            type: object
+                            properties:
+                              valid:
+                                type: boolean
+                            required:
+                              - valid
+                          audit_chain:
+                            type: object
+                            properties:
+                              ok:
+                                type: boolean
+                            required:
+                              - ok
+                          verified_at:
+                            type: string
+                        required:
+                          - ok
+                          - checked_files
+                          - failures
+                          - chain
+                          - timestamp
+                          - audit_chain
+                          - verified_at
+                      -
+                        type: object
+                        properties:
+                          ok:
+                            type: boolean
+                          expected:
+                            type: string
+                          actual:
+                            type:
+                              - string
+                              - 'null'
+                        required:
+                          - ok
+                          - expected
+                          - actual
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/preservation/batches/{id}/export-pdd':
+    get:
+      operationId: preservation.batches.export
+      tags:
+        - PreservationBatch
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              required: true
+              schema:
+                type: string
+              example: 'attachment; filename=.zip'
+        '422':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: 'Preservation Rule Violation'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/dms/preservation-chain:
     get:
       operationId: dms.preservation-chain.index
@@ -117696,6 +118211,201 @@ paths:
                     description: 'Error overview.'
                 required:
                   - message
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/preservation/configuration:
+    get:
+      operationId: preservation.configuration.show
+      tags:
+        - PreservationConfiguration
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: preservation.configuration.update
+      tags:
+        - PreservationConfiguration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePreservationConfigurationRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Configuration saved'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/preservation/configuration/test-connection:
+    post:
+      operationId: preservation.configuration.test
+      tags:
+        - PreservationConfiguration
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                      message:
+                        type: string
+                        enum:
+                          - 'Connection successful.'
+                          - 'The conservator could not be reached or refused the credentials.'
+                      provider:
+                        type: string
+                        enum:
+                          - local_worm
+                          - aruba_pec
+                          - infocert
+                          - namirial
+                          - zucchetti
+                    required:
+                      - ok
+                      - message
+                      - provider
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/preservation/dashboard:
+    get:
+      operationId: preservation.dashboard
+      tags:
+        - PreservationDashboard
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      preserved_documents:
+                        type: integer
+                        minimum: 0
+                      worm_size_bytes:
+                        type: integer
+                      last_sealed_batch:
+                        type:
+                          - object
+                          - 'null'
+                        properties:
+                          id:
+                            type: string
+                          batch_number:
+                            type: string
+                          sealed_at:
+                            type:
+                              - string
+                              - 'null'
+                        required:
+                          - id
+                          - batch_number
+                          - sealed_at
+                      chain_status:
+                        type: string
+                        enum:
+                          - alert
+                          - empty
+                          - verified
+                      pending_unpreserved_documents:
+                        type: integer
+                        const: 0
+                      retention_years: {}
+                      batches_by_status:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                      last_verification_at:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - preserved_documents
+                      - worm_size_bytes
+                      - last_sealed_batch
+                      - chain_status
+                      - pending_unpreserved_documents
+                      - retention_years
+                      - batches_by_status
+                      - last_verification_at
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
         '401':
           $ref: '#/components/responses/AuthenticationException'
   /v1/document-trust/preservation-disposal-candidates:
@@ -118187,6 +118897,328 @@ paths:
                   - message
                   - data
                   - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/preservation/items:
+    get:
+      operationId: preservation.items.index
+      tags:
+        - PreservationItem
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: OK
+                  data:
+                    type: string
+                  meta:
+                    type: array
+                    items: {}
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/preservation/items/{id}/verify':
+    post:
+      operationId: preservation.items.verify
+      tags:
+        - PreservationItem
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    anyOf:
+                      -
+                        type: object
+                        properties:
+                          ok:
+                            type: boolean
+                          checked_files:
+                            type: integer
+                          failures:
+                            type: array
+                            items:
+                              anyOf:
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      enum:
+                                        - file_missing
+                                        - file_hash_mismatch
+                                    reference:
+                                      type: string
+                                    expected:
+                                      type: string
+                                    actual:
+                                      type:
+                                        - string
+                                        - 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: merkle_root_mismatch
+                                    reference:
+                                      type: string
+                                    expected:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    actual:
+                                      type: string
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: pdv_hash_mismatch
+                                    reference:
+                                      type: string
+                                    expected:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    actual:
+                                      type:
+                                        - string
+                                        - 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: pda_hash_mismatch
+                                    reference:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    expected:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    actual:
+                                      type:
+                                        - string
+                                        - 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: chain_link_mismatch
+                                    reference:
+                                      type: string
+                                    expected:
+                                      type: string
+                                    actual:
+                                      type: 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: timestamp_invalid
+                                    reference:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    expected:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    actual:
+                                      type: 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                                -
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: audit_chain_broken
+                                    reference:
+                                      type: string
+                                    expected:
+                                      type: 'null'
+                                    actual:
+                                      type: 'null'
+                                  required:
+                                    - type
+                                    - reference
+                                    - expected
+                                    - actual
+                          chain:
+                            type: object
+                            properties:
+                              ok:
+                                type: boolean
+                            required:
+                              - ok
+                          timestamp:
+                            type: object
+                            properties:
+                              valid:
+                                type: boolean
+                            required:
+                              - valid
+                          audit_chain:
+                            type: object
+                            properties:
+                              ok:
+                                type: boolean
+                            required:
+                              - ok
+                          verified_at:
+                            type: string
+                        required:
+                          - ok
+                          - checked_files
+                          - failures
+                          - chain
+                          - timestamp
+                          - audit_chain
+                          - verified_at
+                      -
+                        type: object
+                        properties:
+                          ok:
+                            type: boolean
+                          expected:
+                            type: string
+                          actual:
+                            type:
+                              - string
+                              - 'null'
+                        required:
+                          - ok
+                          - expected
+                          - actual
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/preservation/items/{id}/export-pdd':
+    get:
+      operationId: preservation.items.export
+      tags:
+        - PreservationItem
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              required: true
+              schema:
+                type: string
+              example: 'attachment; filename=.zip'
+        '422':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: 'Preservation Rule Violation'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
         '403':
           $ref: '#/components/responses/AuthorizationException'
         '401':
@@ -203368,6 +204400,15 @@ components:
       required:
         - strategy
       title: AutoAssignTicketRequest
+    AutoSealFrequency:
+      type: string
+      description: |
+        How often the scheduler seals a new batch for a tenant.
+      enum:
+        - daily
+        - weekly
+        - monthly
+      title: AutoSealFrequency
     AwardRfqRequest:
       type: object
       description: 'The winning quote of a request for quotation.'
@@ -212053,6 +213094,28 @@ components:
         - billing_interval
         - base_price
       title: CreatePlanRequest
+    CreatePreservationBatchRequest:
+      type: object
+      properties:
+        document_category:
+          $ref: '#/components/schemas/DocumentCategory'
+        period_from:
+          type: string
+          format: date-time
+        period_to:
+          type: string
+          format: date-time
+        jurisdiction:
+          anyOf:
+            -
+              $ref: '#/components/schemas/JurisdictionMode'
+            -
+              type: 'null'
+      required:
+        - document_category
+        - period_from
+        - period_to
+      title: CreatePreservationBatchRequest
     CreateProductVariantRequest:
       type: object
       description: |-
@@ -215179,6 +216242,18 @@ components:
         - created_at
         - updated_at
       title: DockDoorResource
+    DocumentCategory:
+      type: string
+      description: |
+        Category of the documents of a batch, mapped to the AgID `TipologiaDocumentale`.
+      enum:
+        - active_invoices
+        - passive_invoices
+        - sdi_notifications
+        - accounting_ledgers
+        - tax_documents
+        - analog_dematerialized
+      title: DocumentCategory
     DocumentMode:
       type: string
       description: |
@@ -222524,6 +223599,15 @@ components:
     JsonResource:
       type: string
       title: JsonResource
+    JurisdictionMode:
+      type: string
+      description: |
+        Legal framework a preservation batch complies with.
+      enum:
+        - IT
+        - CH
+        - DUAL
+      title: JurisdictionMode
     KioskCheckInRequest:
       type: object
       description: |-
@@ -233588,6 +234672,17 @@ components:
         - disposed_at
         - last_verification
       title: PreservationPackageResource
+    PreservationProvider:
+      type: string
+      description: |
+        Where a sealed submission package is sent.
+      enum:
+        - local_worm
+        - aruba_pec
+        - infocert
+        - namirial
+        - zucchetti
+      title: PreservationProvider
     PreservationVerificationResource:
       type: object
       properties:
@@ -244602,6 +245697,7 @@ components:
               - analytics
               - communication
               - document_trust
+              - digital_preservation
               - integrations
               - payment_links
               - associations
@@ -269958,6 +271054,56 @@ components:
         allow_partial_payments:
           type: boolean
       title: UpdatePortalSettingRequest
+    UpdatePreservationConfigurationRequest:
+      type: object
+      properties:
+        jurisdiction:
+          $ref: '#/components/schemas/JurisdictionMode'
+        provider:
+          $ref: '#/components/schemas/PreservationProvider'
+        credentials:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+        preservation_officer_name:
+          type:
+            - string
+            - 'null'
+          maxLength: 200
+        preservation_officer_tax_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 32
+        tsa_url:
+          type:
+            - string
+            - 'null'
+          format: uri
+          maxLength: 500
+        tsa_credentials:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+        auto_seal_frequency:
+          $ref: '#/components/schemas/AutoSealFrequency'
+        default_retention_years:
+          type: integer
+          minimum: 10
+          maximum: 50
+        is_active:
+          type: boolean
+      required:
+        - jurisdiction
+        - provider
+        - auto_seal_frequency
+        - default_retention_years
+        - is_active
+      title: UpdatePreservationConfigurationRequest
     UpdateProcurementSettingsRequest:
       type: object
       description: 'Tolerances of the company for receipts and invoice matching.'
@@ -276626,6 +277772,9 @@ tags:
     name: MobileSync
     description: 'Operations of the MobileSync module.'
   -
+    name: MobileTenant
+    description: 'Operations of the MobileTenant module.'
+  -
     name: MobileWorkforce
     description: 'Operations of the MobileWorkforce module.'
   -
@@ -276833,11 +277982,26 @@ tags:
     name: Preservation
     description: 'Operations of the Preservation module.'
   -
+    name: PreservationAuditLog
+    description: 'Operations of the PreservationAuditLog module.'
+  -
+    name: PreservationBatch
+    description: 'Operations of the PreservationBatch module.'
+  -
     name: PreservationChain
     description: 'Operations of the PreservationChain module.'
   -
+    name: PreservationConfiguration
+    description: 'Operations of the PreservationConfiguration module.'
+  -
+    name: PreservationDashboard
+    description: 'Operations of the PreservationDashboard module.'
+  -
     name: PreservationDisposal
     description: 'Operations of the PreservationDisposal module.'
+  -
+    name: PreservationItem
+    description: 'Operations of the PreservationItem module.'
   -
     name: PreservationSeal
     description: 'Operations of the PreservationSeal module.'
