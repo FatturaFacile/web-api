@@ -112946,6 +112946,124 @@
                 "security": []
             }
         },
+        "/v1/webhooks/inbound-email": {
+            "post": {
+                "operationId": "ocr-inbox.inbound-email",
+                "tags": [
+                    "InboundEmailWebhook"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InboundEmailRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Attachments queued"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "accepted": {
+                                                    "type": "integer"
+                                                },
+                                                "job_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "skipped": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "accepted",
+                                                "job_ids",
+                                                "skipped"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Not Found"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 404
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "No mailbox matches the recipient."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
         "/v1/fleet/incidents": {
             "get": {
                 "operationId": "v1.fleet.incidents.index",
@@ -157251,6 +157369,484 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ocr-inbox/capture": {
+            "post": {
+                "operationId": "ocr-inbox.capture",
+                "tags": [
+                    "OcrCapture"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CaptureDocumentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ocr-inbox/configuration": {
+            "get": {
+                "operationId": "ocr-inbox.configuration.show",
+                "tags": [
+                    "OcrConfiguration"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "ocr-inbox.configuration.update",
+                "tags": [
+                    "OcrConfiguration"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateOcrConfigurationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ocr-inbox": {
+            "get": {
+                "operationId": "ocr-inbox.index",
+                "tags": [
+                    "OcrInbox"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "queued",
+                                "processing",
+                                "ready_for_review",
+                                "failed",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "job_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ocr-inbox/documents": {
+            "post": {
+                "operationId": "ocr-inbox.enqueue",
+                "tags": [
+                    "OcrInbox"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EnqueueExtractionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ocr-inbox/{id}": {
+            "get": {
+                "operationId": "ocr-inbox.show",
+                "tags": [
+                    "OcrInbox"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/ocr-inbox/{id}/draft": {
+            "put": {
+                "operationId": "ocr-inbox.draft",
+                "tags": [
+                    "OcrInbox"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReviewedDocumentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ocr-inbox/{id}/confirm": {
+            "post": {
+                "operationId": "ocr-inbox.confirm",
+                "tags": [
+                    "OcrInbox"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReviewedDocumentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ocr-inbox/{id}/reject": {
+            "post": {
+                "operationId": "ocr-inbox.reject",
+                "tags": [
+                    "OcrInbox"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RejectExtractionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ocr-inbox/{id}/rerun": {
+            "post": {
+                "operationId": "ocr-inbox.rerun",
+                "tags": [
+                    "OcrInbox"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ocr-inbox-downloads/{job}": {
+            "get": {
+                "operationId": "ocr-inbox.source",
+                "tags": [
+                    "OcrSource"
+                ],
+                "parameters": [
+                    {
+                        "name": "job",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Transfer-Encoding": {
+                                "required": true,
+                                "schema": {
+                                    "type": "string",
+                                    "enum": [
+                                        "chunked"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "examples": [
+                                                ""
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -311623,6 +312219,61 @@
                 },
                 "title": "CapitalizeAssetRequest"
             },
+            "CaptureDocumentRequest": {
+                "type": "object",
+                "description": "Capture of the mobile app: either one `file` (photo or PDF) or the `pages` of one receipt or delivery note in order,\nplus the metadata of the capture. `client_reference` is the idempotency key of the app's offline queue.",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 15360 kilobytes."
+                    },
+                    "pages": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "binary",
+                            "contentMediaType": "application/octet-stream",
+                            "description": "Maximum file size: 15360 kilobytes."
+                        },
+                        "minItems": 1,
+                        "maxItems": 20
+                    },
+                    "document_category": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Modules.OcrExtraction.Domain.Enums.DocumentCategory"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "client_reference": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "captured_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "device": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    }
+                },
+                "title": "CaptureDocumentRequest"
+            },
             "CarrierRequest": {
                 "type": "object",
                 "description": "Payload to create or change a carrier.",
@@ -325971,6 +326622,29 @@
                 ],
                 "title": "EndAssignmentRequest"
             },
+            "EnqueueExtractionRequest": {
+                "type": "object",
+                "properties": {
+                    "dms_document_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "document_category": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Modules.OcrExtraction.Domain.Enums.DocumentCategory"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "dms_document_id"
+                ],
+                "title": "EnqueueExtractionRequest"
+            },
             "EnrollAutomationRequest": {
                 "type": "object",
                 "description": "Enrols exactly one contact or one lead in a sequence.",
@@ -331199,6 +331873,68 @@
                     }
                 },
                 "title": "ImportWithholdingTaxTariffsRequest"
+            },
+            "InboundEmailRequest": {
+                "type": "object",
+                "description": "Parsed inbound message of the mail gateway. The HMAC signature of the raw body was verified before this runs.",
+                "properties": {
+                    "to": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "from": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "subject": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    },
+                    "message_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "attachments": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "filename": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                },
+                                "content_type": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 100
+                                },
+                                "content_base64": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "filename",
+                                "content_base64"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 20
+                    }
+                },
+                "required": [
+                    "to",
+                    "message_id",
+                    "attachments"
+                ],
+                "title": "InboundEmailRequest"
             },
             "InboundMessageRequest": {
                 "type": "object",
@@ -343477,6 +344213,17 @@
                 ],
                 "title": "Modules.Manufacturing.Http.Requests.ReasonRequest"
             },
+            "Modules.OcrExtraction.Domain.Enums.DocumentCategory": {
+                "type": "string",
+                "description": "Kind of business document an extraction job turns into once the accountant confirms it.\n",
+                "enum": [
+                    "vendor_invoice",
+                    "expense_receipt",
+                    "transport_ddt",
+                    "vendor_quote"
+                ],
+                "title": "Modules.OcrExtraction.Domain.Enums.DocumentCategory"
+            },
             "Modules.Platform.Http.Requests.UpdateNotificationPreferencesRequest": {
                 "type": "object",
                 "description": "Contract of PUT /api/v1/platform/notifications/preferences (mirrored by the frontend).",
@@ -345504,6 +346251,19 @@
                     "finished_at"
                 ],
                 "title": "OcrJobResource"
+            },
+            "OcrProviderType": {
+                "type": "string",
+                "description": "Engine that reads unstructured documents. Local engines keep the file on the tenant's infrastructure (Swiss nLPD, EU GDPR); cloud engines need the tenant's explicit consent to external AI providers.\n",
+                "enum": [
+                    "ollama_local",
+                    "layoutlmv3_local",
+                    "tesseract_local",
+                    "gemini_cloud",
+                    "openai_cloud",
+                    "azure_document_intelligence"
+                ],
+                "title": "OcrProviderType"
             },
             "OnboardingActionRequest": {
                 "type": "object",
@@ -357346,6 +358106,19 @@
                 ],
                 "title": "RejectDocumentRequest"
             },
+            "RejectExtractionRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "reason"
+                ],
+                "title": "RejectExtractionRequest"
+            },
             "RejectJournalEntryRequest": {
                 "type": "object",
                 "description": "The reason of a rejected journal, kept for the audit trail.",
@@ -359338,6 +360111,232 @@
                     "reason"
                 ],
                 "title": "ReversePaymentRequest"
+            },
+            "ReviewedDocumentRequest": {
+                "type": "object",
+                "description": "The reviewed document of the workbench: header, lines with their coding, and the purchase orders and receipts linked.\nThe business rules (periods, VAT jurisdiction, totals, match tolerance) are checked by the confirm handler.",
+                "properties": {
+                    "category": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Modules.OcrExtraction.Domain.Enums.DocumentCategory"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "vendor_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "header": {
+                        "type": "object",
+                        "properties": {
+                            "number": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 100
+                            },
+                            "issue_date": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "due_date": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "format": "date-time"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "minLength": 3,
+                                "maxLength": 3
+                            },
+                            "qr_reference": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 50
+                            }
+                        },
+                        "required": [
+                            "issue_date",
+                            "currency"
+                        ]
+                    },
+                    "totals": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "net": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "vat": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "gross": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            }
+                        }
+                    },
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "description": {
+                                    "type": "string",
+                                    "maxLength": 500
+                                },
+                                "quantity": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ]
+                                },
+                                "unit_price": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ]
+                                },
+                                "net_amount": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ]
+                                },
+                                "vat_rate": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 100
+                                },
+                                "gl_account_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "uuid"
+                                },
+                                "vat_code_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "uuid"
+                                },
+                                "cost_center_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "uuid"
+                                },
+                                "purchase_order_line_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "uuid"
+                                },
+                                "rfq_line_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "uuid"
+                                },
+                                "source_line_index": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 0
+                                }
+                            },
+                            "required": [
+                                "description"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 500
+                    },
+                    "purchase_order_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "goods_receipt_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "match_override_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    },
+                    "expense_category_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "rfq_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "warehouse_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    }
+                },
+                "required": [
+                    "header",
+                    "lines"
+                ],
+                "title": "ReviewedDocumentRequest"
             },
             "ReviseBomRequest": {
                 "type": "object",
@@ -364942,6 +365941,9 @@
                                 "document_trust",
                                 "digital_preservation",
                                 "forecasting",
+                                "ocr_inbox",
+                                "ocr_capture",
+                                "ocr_settings",
                                 "forecasting_wms",
                                 "integrations",
                                 "payment_links",
@@ -399299,6 +400301,84 @@
                 },
                 "title": "UpdateNotificationSettingsRequest"
             },
+            "UpdateOcrConfigurationRequest": {
+                "type": "object",
+                "description": "Engine choice of the tenant. Endpoints must be http(s) URLs; the Azure endpoint must be an Azure host, so a tenant cannot\npoint the server at an arbitrary address with a cloud API key attached.",
+                "properties": {
+                    "primary_provider": {
+                        "$ref": "#/components/schemas/OcrProviderType"
+                    },
+                    "fallback_provider": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/OcrProviderType"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "provider_settings": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "endpoint": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "uri",
+                                    "maxLength": 255
+                                },
+                                "model": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 100
+                                },
+                                "api_key": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 500
+                                },
+                                "languages": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "pattern": "^[a-z+_]+$",
+                                    "maxLength": 50
+                                }
+                            }
+                        }
+                    },
+                    "auto_confirm_confidence_threshold": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 50,
+                        "maximum": 100
+                    },
+                    "auto_confirm_enabled": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "primary_provider"
+                ],
+                "title": "UpdateOcrConfigurationRequest"
+            },
             "UpdateOpportunityStageRequest": {
                 "type": "object",
                 "properties": {
@@ -408848,6 +409928,22 @@
         {
             "name": "Obligation",
             "description": "Operations of the Obligation module."
+        },
+        {
+            "name": "OcrCapture",
+            "description": "Operations of the OcrCapture module."
+        },
+        {
+            "name": "OcrConfiguration",
+            "description": "Operations of the OcrConfiguration module."
+        },
+        {
+            "name": "OcrInbox",
+            "description": "Operations of the OcrInbox module."
+        },
+        {
+            "name": "OcrSource",
+            "description": "Operations of the OcrSource module."
         },
         {
             "name": "Offboarding",
