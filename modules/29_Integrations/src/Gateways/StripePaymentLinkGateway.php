@@ -12,6 +12,7 @@ use Modules\Integrations\DTOs\PaymentEvent;
 use Modules\Integrations\DTOs\PaymentLinkCreated;
 use Modules\Integrations\DTOs\PaymentLinkRequest;
 use Modules\Integrations\Exceptions\PaymentGatewayException;
+use Modules\Integrations\Support\PaymentMethods;
 
 /**
  * Stripe Checkout Sessions (https://docs.stripe.com/api/checkout/sessions/create): the customer pays on the page hosted
@@ -26,12 +27,29 @@ final class StripePaymentLinkGateway implements PaymentLinkGateway
         return 'stripe';
     }
 
+    public function supportedMethods(): array
+    {
+        return array_keys(PaymentMethods::StripeTypes);
+    }
+
     public function createLink(PaymentLinkRequest $request, array $credentials): PaymentLinkCreated
     {
         $secretKey = $credentials['secret_key'] ?? throw new PaymentGatewayException('The Stripe secret key is not configured.');
 
+        $methodTypes = [];
+
+        if ($request->paymentMethod !== null) {
+            $mapping = PaymentMethods::StripeTypes[$request->paymentMethod] ?? null;
+
+            if ($mapping === null || ! in_array(strtoupper($request->currency), $mapping['currencies'], true)) {
+                throw new PaymentGatewayException("Stripe cannot take [{$request->paymentMethod}] in {$request->currency}.");
+            }
+
+            $methodTypes = ['payment_method_types' => [$mapping['type']]];
+        }
+
         try {
-            $response = Http::timeout(20)->asForm()->withBasicAuth($secretKey, '')->post('https://api.stripe.com/v1/checkout/sessions', [
+            $response = Http::timeout(20)->asForm()->withBasicAuth($secretKey, '')->post('https://api.stripe.com/v1/checkout/sessions', $methodTypes + [
                 'mode' => 'payment',
                 'client_reference_id' => $request->reference,
                 'success_url' => url('/payment-link/completed'),

@@ -10,6 +10,7 @@ use Modules\Integrations\DTOs\PaymentEvent;
 use Modules\Integrations\DTOs\PaymentLinkCreated;
 use Modules\Integrations\DTOs\PaymentLinkRequest;
 use Modules\Integrations\Exceptions\PaymentGatewayException;
+use Modules\Integrations\Support\PaymentMethods;
 
 /**
  * Stand-in without a provider: the link points nowhere real and a payment arrives as a webhook whose raw JSON body is
@@ -24,6 +25,11 @@ final class LocalPaymentLinkGateway implements PaymentLinkGateway
     public function name(): string
     {
         return 'local';
+    }
+
+    public function supportedMethods(): array
+    {
+        return PaymentMethods::all();
     }
 
     public function createLink(PaymentLinkRequest $request, array $credentials): PaymentLinkCreated
