@@ -45,6 +45,7 @@ use Modules\DigitalPreservation\Domain\Exceptions\PreservationImmutableException
  * @property ?string $sealed_by
  * @property ?Carbon $sealed_at
  * @property ?Carbon $dispatched_at
+ * @property ?Carbon $created_at
  */
 class PreservationBatch extends Model
 {
