@@ -21,7 +21,7 @@ Route::post('/data-subject-requests/{id}/start', [PrivacyOperationsController::c
 Route::post('/data-subject-requests/{id}/complete', [PrivacyOperationsController::class, 'complete'])->whereUuid('id')->name('dsr.complete');
 Route::post('/data-subject-requests/{id}/reject', [PrivacyOperationsController::class, 'reject'])->whereUuid('id')->name('dsr.reject');
 Route::post('/data-subject-requests/{id}/extend', [PrivacyOperationsController::class, 'extend'])->whereUuid('id')->name('dsr.extend');
-Route::get('/data-subject-requests/{id}/export', [PrivacyOperationsController::class, 'export'])->whereUuid('id')->name('dsr.export');
+Route::get('/data-subject-requests/{id}/export', [PrivacyOperationsController::class, 'export'])->whereUuid('id')->middleware('audit.access:DataSubjectRequest,EXPORTED,dsar')->name('dsr.export');
 
 Route::get('/data-map', [PrivacyOperationsController::class, 'dataMap'])->name('data-map');
 

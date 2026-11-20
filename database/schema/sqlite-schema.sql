@@ -11421,6 +11421,7 @@ CREATE TABLE "esm_rma_orders"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "return_delivery_note_id" varchar,
   foreign key("equipment_passport_id") references "esm_equipment_passports"("id") on delete restrict on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -41006,4 +41007,4 @@ INSERT INTO migrations VALUES(388,'2027_12_12_000100_create_privacy_governance_t
 INSERT INTO migrations VALUES(389,'2027_12_13_000100_add_payment_method_to_payment_links',2);
 INSERT INTO migrations VALUES(390,'2027_12_13_000100_create_digital_preservation_tables',3);
 INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',3);
-
+INSERT INTO migrations VALUES(392,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',4);

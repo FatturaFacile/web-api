@@ -29,10 +29,10 @@ Route::prefix('api/v1/treasury')
         Route::get('balances', [TreasuryBalanceController::class, 'balances'])->name('treasury.balances');
         Route::get('bank-accounts/{id}/balances', [TreasuryBalanceController::class, 'history'])->whereUuid('id')->name('treasury.bank-accounts.balances');
         Route::post('bank-accounts/{id}/charges', [TreasuryMovementController::class, 'charge'])->whereUuid('id')->name('treasury.bank-accounts.charges');
-        Route::apiResource('bank-accounts', BankAccountController::class);
+        Route::apiResource('bank-accounts', BankAccountController::class)->middlewareFor('show', 'audit.access:BankAccount,VIEWED,,bank_account');
 
         // Internal transfers and treasury bank movements
-        Route::get('movements', [TreasuryMovementController::class, 'index'])->name('treasury.movements.index');
+        Route::get('movements', [TreasuryMovementController::class, 'index'])->middleware('audit.access:BankTransaction,VIEWED')->name('treasury.movements.index');
         Route::post('transfers', [TreasuryMovementController::class, 'transfer'])->name('treasury.transfers.store');
 
         // Cash registers (prima nota cassa) and daily closing

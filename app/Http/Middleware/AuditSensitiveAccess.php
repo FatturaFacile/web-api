@@ -58,7 +58,7 @@ final class AuditSensitiveAccess
         $context = array_filter([
             'method' => $request->method(),
             'query' => $this->query($request),
-            'format' => $format ?? $request->query('format'),
+            'format' => ($format !== null && $format !== '') ? $format : $request->query('format'),
             'status' => $response->getStatusCode(),
         ], static fn (mixed $value): bool => $value !== null && $value !== []);
 

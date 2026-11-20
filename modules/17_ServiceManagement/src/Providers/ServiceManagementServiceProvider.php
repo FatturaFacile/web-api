@@ -64,6 +64,7 @@ use Modules\ServiceManagement\Listeners\ContractHoursListener;
 use Modules\ServiceManagement\Listeners\CRMCustomerServiceListener;
 use Modules\ServiceManagement\Listeners\DispatchOutboxOnESMEventListener;
 use Modules\ServiceManagement\Listeners\HRAvailabilityListener;
+use Modules\ServiceManagement\Listeners\NotifyLoanerOverdueListener;
 use Modules\ServiceManagement\Listeners\ProjectESMListener;
 use Modules\ServiceManagement\Listeners\RmaAccountingAndInventoryListener;
 use Modules\ServiceManagement\Listeners\SendCsatSurveyListener;
@@ -219,5 +220,6 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         Event::listen(WorkflowInstanceRejectedEvent::class, [WorkflowApprovalESMListener::class, 'handleWorkflowRejected']);
         Event::listen(RmaWarrantyCostChargedEvent::class, [RmaAccountingAndInventoryListener::class, 'handleWarrantyCostCharged']);
         Event::listen(RmaCompletedEvent::class, [RmaAccountingAndInventoryListener::class, 'handleRmaCompleted']);
+        Event::listen(LoanerOverdueEvent::class, NotifyLoanerOverdueListener::class);
     }
 }

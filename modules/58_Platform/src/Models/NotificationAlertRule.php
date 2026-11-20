@@ -25,7 +25,7 @@ final class NotificationAlertRule extends Model
 {
     use BelongsToTenant, HasUuids;
 
-    public const METRICS = ['customer_overdue_total'];
+    public const METRICS = ['customer_overdue_total', 'open_invoices_total', 'low_stock_items_count', 'sdi_rejected_count'];
 
     protected $table = 'notification_alert_rules';
 

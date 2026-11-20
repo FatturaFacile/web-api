@@ -62,6 +62,7 @@ final class RmaOrderResource extends JsonResource
             'ddt' => [
                 'causale_outbound' => $this->ddt_causale_outbound,
                 'causale_return' => $this->ddt_causale_return,
+                'return_delivery_note_id' => $this->return_delivery_note_id,
                 'is_non_ownership_transfer' => (bool) $this->is_non_ownership_transfer,
                 'vat_exempt_art15_dpr633' => (bool) $this->vat_exempt_art15_dpr633,
             ],

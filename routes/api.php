@@ -507,7 +507,7 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('purchases')->name('purchases.')->middleware('module.access:procurement')->group(function (): void {
             Route::get('/requests', [PurchasesController::class, 'requests'])->name('requests');
             Route::get('/orders', [PurchasesController::class, 'orders'])->name('orders');
-            Route::get('/passive-invoices', [PurchasesController::class, 'passiveInvoices'])->name('passive-invoices');
+            Route::get('/passive-invoices', [PurchasesController::class, 'passiveInvoices'])->middleware('audit.access:PassiveInvoice,VIEWED')->name('passive-invoices');
             Route::post('/passive-invoices/import-sdi', [PurchasesController::class, 'importSdi'])->middleware('deprecated:/api/v1/purchases/passive-invoices/receive-xml')->name('passive-invoices.import-sdi');
             Route::post('/passive-invoices/scan-qr-bill', [PurchasesController::class, 'scanQrBill'])->name('passive-invoices.scan-qr-bill');
             // Paying suppliers moves money: the treasury roles too.
@@ -843,7 +843,7 @@ Route::prefix('v1')->group(function (): void {
                         ->whereUuid('id')
                         ->name('dsr.execute-erasure');
                     Route::get('/portability/{subjectType}/{subjectId}', [PrivacyComplianceController::class, 'exportSubjectDossier'])
-                        ->middleware('privacy.sensitive.log:gdpr_exports')
+                        ->middleware(['privacy.sensitive.log:gdpr_exports', 'audit.access:DataSubjectDossier,EXPORTED,portability,subjectId'])
                         ->whereUuid('subjectId')
                         ->name('portability.export');
                     Route::get('/breaches', [PrivacyComplianceController::class, 'breaches'])->name('breaches.index');

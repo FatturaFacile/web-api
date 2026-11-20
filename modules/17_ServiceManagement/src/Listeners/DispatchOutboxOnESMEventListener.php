@@ -5,24 +5,15 @@ declare(strict_types=1);
 namespace Modules\ServiceManagement\Listeners;
 
 use Enterprise\EventBus\Contracts\DomainEventInterface;
-use Enterprise\EventBus\Models\TransactionalOutbox;
-use Illuminate\Support\Str;
+use Enterprise\EventBus\Services\TransactionalOutboxService;
 
 final readonly class DispatchOutboxOnESMEventListener
 {
+    public function __construct(private TransactionalOutboxService $outbox) {}
+
     public function handle(DomainEventInterface $event): void
     {
-        TransactionalOutbox::create([
-            'id' => (string) Str::uuid7(),
-            'tenant_id' => $event->getTenantId(),
-            'company_id' => $event->getCompanyId(),
-            'event_type' => $event->getEventName(),
-            'aggregate_type' => $event->getAggregateType(),
-            'aggregate_id' => $event->getAggregateId(),
-            'payload_json' => $event->toPayload(),
-            'status' => 'pending',
-            'retry_count' => 0,
-            'occurred_at' => now(),
-        ]);
+        // The service falls back to the active tenant when an event carries an empty or non-uuid tenant / company id.
+        $this->outbox->record($event);
     }
 }
