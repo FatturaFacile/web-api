@@ -117,6 +117,17 @@ test('PKCE authorize rejects plain method and bad credentials', function (): voi
     ])->assertStatus(401);
 });
 
+test('mobile tenant list returns only the tenants the user belongs to', function (): void {
+    Tenant::create(['name' => 'Foreign Tenant', 'legal_name' => 'Foreign SA', 'country' => 'CH', 'default_currency' => 'CHF']);
+    [$token] = ($this->mobileLogin)();
+
+    $response = ($this->api)($token)->getJson('/api/v1/mobile/tenants')->assertOk();
+
+    expect($response->json('data'))->toHaveCount(1)
+        ->and($response->json('data.0.tenant_id'))->toBe($this->tenant->id)
+        ->and($response->json('data.0.tenant_name'))->toBe('Mobile Tenant');
+});
+
 test('bootstrap payload returns workspaces, badges and sync plan', function (): void {
     [$token] = ($this->mobileLogin)();
 
