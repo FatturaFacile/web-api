@@ -10502,6 +10502,7 @@ CREATE TABLE "enasarco_parameters"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "minimum_contribution" numeric not null default '0',
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -40843,4 +40844,5 @@ INSERT INTO migrations VALUES(386,'2027_12_11_000100_add_sdi_optional_blocks_to_
 INSERT INTO migrations VALUES(387,'2027_12_11_000100_create_immutable_audit_trail',1);
 INSERT INTO migrations VALUES(388,'2027_12_12_000100_create_privacy_governance_tables',1);
 INSERT INTO migrations VALUES(389,'2027_12_13_000100_add_payment_method_to_payment_links',2);
-INSERT INTO migrations VALUES(390,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',3);
+INSERT INTO migrations VALUES(390,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',3);
+INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',4);

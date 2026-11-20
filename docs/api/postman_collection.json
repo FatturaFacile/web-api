@@ -133451,7 +133451,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"provider\": \"local\",\n    \"credentials\": {\n        \"secret_key\": \"string\",\n        \"webhook_secret\": \"string\"\n    }\n}",
+                            "raw": "{\n    \"provider\": \"local\",\n    \"credentials\": {\n        \"secret_key\": \"string\",\n        \"webhook_secret\": \"string\"\n    },\n    \"allowed_payment_methods\": [\n        \"card\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -137265,7 +137265,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"cost_type\": \"freight\",\n    \"allocation_key\": \"value\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"total_amount\": 1.5,\n    \"supplier_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"notes\": \"string\",\n    \"receipt_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"cost_type\": \"freight\",\n    \"allocation_key\": \"value\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"total_amount\": 1.5,\n    \"supplier_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"notes\": \"string\",\n    \"receipt_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"purchase_order_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -137325,7 +137325,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"cost_type\": \"freight\",\n    \"allocation_key\": \"value\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"total_amount\": 1.5,\n    \"supplier_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"notes\": \"string\",\n    \"receipt_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"cost_type\": \"freight\",\n    \"allocation_key\": \"value\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"total_amount\": 1.5,\n    \"supplier_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"notes\": \"string\",\n    \"receipt_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"purchase_order_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -166125,6 +166125,10 @@
                             {
                                 "key": "X-XSRF-TOKEN",
                                 "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -166152,6 +166156,15 @@
                         "description": "",
                         "auth": {
                             "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"payment_method\": \"card\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     }
                 },

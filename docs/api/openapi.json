@@ -69259,9 +69259,6 @@
                             }
                         }
                     },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
-                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -69325,7 +69322,8 @@
                                             "const": "Report calculated"
                                         },
                                         "data": {
-                                            "type": "string"
+                                            "type": "object",
+                                            "additionalProperties": {}
                                         },
                                         "meta": {
                                             "type": "string"
@@ -69442,6 +69440,9 @@
                                                                     },
                                                                     "calculated": {
                                                                         "type": "boolean"
+                                                                    },
+                                                                    "formula": {
+                                                                        "type": "string"
                                                                     }
                                                                 },
                                                                 "required": [
@@ -69449,7 +69450,8 @@
                                                                     "label",
                                                                     "unit",
                                                                     "format",
-                                                                    "calculated"
+                                                                    "calculated",
+                                                                    "formula"
                                                                 ]
                                                             }
                                                         ]
@@ -161360,6 +161362,22 @@
                                                 "maxLength": 255
                                             }
                                         }
+                                    },
+                                    "allowed_payment_methods": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "card",
+                                                "twint",
+                                                "sepa",
+                                                "paypal",
+                                                "qr"
+                                            ]
+                                        }
                                     }
                                 },
                                 "required": [
@@ -171171,6 +171189,15 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StorePortalCheckoutRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
                         "description": "",
@@ -171195,6 +171222,9 @@
                                                 "provider": {
                                                     "type": "string"
                                                 },
+                                                "payment_method": {
+                                                    "type": "string"
+                                                },
                                                 "amount": {
                                                     "type": "string"
                                                 },
@@ -171208,6 +171238,7 @@
                                             "required": [
                                                 "invoice_id",
                                                 "provider",
+                                                "payment_method",
                                                 "amount",
                                                 "currency",
                                                 "url"
@@ -231852,7 +231883,8 @@
                                             "const": "Report calculated"
                                         },
                                         "data": {
-                                            "type": "string"
+                                            "type": "object",
+                                            "additionalProperties": {}
                                         },
                                         "meta": {
                                             "type": "string"
@@ -231868,11 +231900,11 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -232017,6 +232049,9 @@
                                                                     },
                                                                     "calculated": {
                                                                         "type": "boolean"
+                                                                    },
+                                                                    "formula": {
+                                                                        "type": "string"
                                                                     }
                                                                 },
                                                                 "required": [
@@ -232024,7 +232059,8 @@
                                                                     "label",
                                                                     "unit",
                                                                     "format",
-                                                                    "calculated"
+                                                                    "calculated",
+                                                                    "formula"
                                                                 ]
                                                             }
                                                         ]
@@ -268045,78 +268081,7 @@
                                             "const": "Backup retrieved successfully"
                                         },
                                         "data": {
-                                            "type": "object",
-                                            "properties": {
-                                                "state": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "failing",
-                                                        "never",
-                                                        "stale",
-                                                        "ok"
-                                                    ]
-                                                },
-                                                "last_completed_at": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
-                                                },
-                                                "last_completed_size_bytes": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
-                                                },
-                                                "age_hours": {
-                                                    "type": [
-                                                        "integer",
-                                                        "null"
-                                                    ]
-                                                },
-                                                "last_failed_at": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
-                                                },
-                                                "last_error": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
-                                                },
-                                                "pending": {
-                                                    "type": "integer",
-                                                    "minimum": 0
-                                                },
-                                                "completed_count": {
-                                                    "type": "integer",
-                                                    "minimum": 0
-                                                },
-                                                "rpo_hours": {
-                                                    "type": "integer"
-                                                },
-                                                "rto_minutes": {
-                                                    "type": "integer"
-                                                },
-                                                "retention": {
-                                                    "type": "integer"
-                                                }
-                                            },
-                                            "required": [
-                                                "state",
-                                                "last_completed_at",
-                                                "last_completed_size_bytes",
-                                                "age_hours",
-                                                "last_failed_at",
-                                                "last_error",
-                                                "pending",
-                                                "completed_count",
-                                                "rpo_hours",
-                                                "rto_minutes",
-                                                "retention"
-                                            ]
+                                            "type": "string"
                                         },
                                         "meta": {
                                             "type": "string"
@@ -379052,6 +379017,15 @@
                         },
                         "minItems": 1,
                         "uniqueItems": true
+                    },
+                    "purchase_order_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true
                     }
                 },
                 "required": [
@@ -379059,8 +379033,7 @@
                     "cost_type",
                     "allocation_key",
                     "currency",
-                    "total_amount",
-                    "receipt_ids"
+                    "total_amount"
                 ],
                 "title": "StoreLandedCostDocumentRequest"
             },
@@ -380637,6 +380610,26 @@
                     "title"
                 ],
                 "title": "StorePeriodCloseTaskRequest"
+            },
+            "StorePortalCheckoutRequest": {
+                "type": "object",
+                "properties": {
+                    "payment_method": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "card",
+                            "twint",
+                            "sepa",
+                            "paypal",
+                            "qr",
+                            null
+                        ]
+                    }
+                },
+                "title": "StorePortalCheckoutRequest"
             },
             "StorePortalTicketRequest": {
                 "type": "object",

@@ -15,5 +15,7 @@ final readonly class EnasarcoSettings
         public string $annualMaximumCommission,
         public string $ytdCommissions = '0.00',
         public string $reason = 'R',
+        public string $annualMinimumContribution = '0.00',
+        public string $ytdContribution = '0.00',
     ) {}
 }
