@@ -55575,6 +55575,547 @@
             ]
         },
         {
+            "name": "Copilot",
+            "item": [
+                {
+                    "name": "POST /v1/copilot/actions/:messageId/confirm",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/copilot/actions/:messageId/confirm",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "copilot",
+                                "actions",
+                                ":messageId",
+                                "confirm"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "messageId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"overrides\": [\n        \"string\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/copilot/actions/:messageId/reject",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/copilot/actions/:messageId/reject",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "copilot",
+                                "actions",
+                                ":messageId",
+                                "reject"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "messageId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/copilot/audit-logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/copilot/audit-logs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "copilot",
+                                "audit-logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "action",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "user_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/copilot/knowledge",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/copilot/knowledge",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "copilot",
+                                "knowledge"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"documents\": [\n        {\n            \"title\": \"string\",\n            \"section_ref\": \"string\",\n            \"content\": \"string\",\n            \"jurisdiction\": \"CH\",\n            \"locale\": \"it\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/copilot/conversations",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/copilot/conversations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "copilot",
+                                "conversations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/copilot/conversations",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/copilot/conversations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "copilot",
+                                "conversations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"string\",\n    \"locale\": \"it\",\n    \"context_route\": \"string\",\n    \"context_entity_type\": \"string\",\n    \"context_entity_id\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/copilot/conversations/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/copilot/conversations/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "copilot",
+                                "conversations",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /v1/copilot/conversations/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/copilot/conversations/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "copilot",
+                                "conversations",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/copilot/conversations/:id/messages",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/copilot/conversations/:id/messages",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "copilot",
+                                "conversations",
+                                ":id",
+                                "messages"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"prompt\": \"string\",\n    \"locale\": \"it\",\n    \"context\": {\n        \"route\": \"string\",\n        \"entity_type\": \"string\",\n        \"entity_id\": \"string\"\n    }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "Corporate Group",
             "item": [
                 {
@@ -235994,547 +236535,6 @@
                         "description": "List own items",
                         "auth": {
                             "type": "noauth"
-                        }
-                    }
-                }
-            ]
-        },
-        {
-            "name": "Copilot",
-            "item": [
-                {
-                    "name": "POST /v1/copilot/actions/:messageId/confirm",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/copilot/actions/:messageId/confirm",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "copilot",
-                                "actions",
-                                ":messageId",
-                                "confirm"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "messageId",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"overrides\": [\n        \"string\"\n    ]\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "POST /v1/copilot/actions/:messageId/reject",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/copilot/actions/:messageId/reject",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "copilot",
-                                "actions",
-                                ":messageId",
-                                "reject"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "messageId",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"reason\": \"string\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "GET /v1/copilot/audit-logs",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/copilot/audit-logs",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "copilot",
-                                "audit-logs"
-                            ],
-                            "query": [
-                                {
-                                    "key": "action",
-                                    "value": "",
-                                    "disabled": true,
-                                    "description": ""
-                                },
-                                {
-                                    "key": "user_id",
-                                    "value": "",
-                                    "disabled": true,
-                                    "description": ""
-                                },
-                                {
-                                    "key": "from",
-                                    "value": "",
-                                    "disabled": true,
-                                    "description": ""
-                                },
-                                {
-                                    "key": "to",
-                                    "value": "",
-                                    "disabled": true,
-                                    "description": ""
-                                },
-                                {
-                                    "key": "per_page",
-                                    "value": "",
-                                    "disabled": true,
-                                    "description": ""
-                                }
-                            ],
-                            "variable": []
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    }
-                },
-                {
-                    "name": "POST /v1/copilot/knowledge",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/copilot/knowledge",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "copilot",
-                                "knowledge"
-                            ],
-                            "query": [],
-                            "variable": []
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"documents\": [\n        {\n            \"title\": \"string\",\n            \"section_ref\": \"string\",\n            \"content\": \"string\",\n            \"jurisdiction\": \"CH\",\n            \"locale\": \"it\"\n        }\n    ]\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "GET /v1/copilot/conversations",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/copilot/conversations",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "copilot",
-                                "conversations"
-                            ],
-                            "query": [],
-                            "variable": []
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    }
-                },
-                {
-                    "name": "POST /v1/copilot/conversations",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/copilot/conversations",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "copilot",
-                                "conversations"
-                            ],
-                            "query": [],
-                            "variable": []
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"title\": \"string\",\n    \"locale\": \"it\",\n    \"context_route\": \"string\",\n    \"context_entity_type\": \"string\",\n    \"context_entity_id\": \"string\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "GET /v1/copilot/conversations/:id",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/copilot/conversations/:id",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "copilot",
-                                "conversations",
-                                ":id"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "id",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    }
-                },
-                {
-                    "name": "DELETE /v1/copilot/conversations/:id",
-                    "request": {
-                        "method": "DELETE",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/copilot/conversations/:id",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "copilot",
-                                "conversations",
-                                ":id"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "id",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    }
-                },
-                {
-                    "name": "POST /v1/copilot/conversations/:id/messages",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/copilot/conversations/:id/messages",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "copilot",
-                                "conversations",
-                                ":id",
-                                "messages"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "id",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"prompt\": \"string\",\n    \"locale\": \"it\",\n    \"context\": {\n        \"route\": \"string\",\n        \"entity_type\": \"string\",\n        \"entity_id\": \"string\"\n    }\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
                         }
                     }
                 }
