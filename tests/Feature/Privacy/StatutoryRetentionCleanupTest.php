@@ -38,6 +38,8 @@ uses(RefreshDatabase::class);
  */
 const SCHEDULE_CLEANUPS = [
     'tenants:backup' => 'backups: rotation only, archives are copies (open question)',
+    'tenants:restore-drill' => 'restore drill: read-only verification of the latest archive, deletes nothing',
+    'tenants:backup-check' => 'backup alerting: read-only check of backup age, deletes nothing',
     'auth:prune-unverified-users' => 'unverified accounts, no statutory record',
     'sanctum:prune-expired' => 'expired tokens',
     'model:prune' => 'password reset tokens',

@@ -16,12 +16,17 @@ use App\Services\Portal\PortalTokenService;
 use App\Services\Tenancy\TenantContext;
 use App\Support\Portal\CarrierTrackingUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\Integrations\Gateways\LocalPaymentLinkGateway;
+use Modules\Integrations\Models\PaymentGatewaySetting;
+use Modules\Integrations\Models\PaymentLink;
 
 uses(RefreshDatabase::class);
 
@@ -386,5 +391,73 @@ describe('portal settings API', function (): void {
         $this->putJson('/api/v1/crm/portal-settings', ['portal_slug' => 'taken'], ['X-Tenant-Id' => $this->tenant->id])->assertStatus(422)->assertJsonValidationErrors('portal_slug');
         $this->putJson('/api/v1/crm/portal-settings', ['portal_slug' => 'solar-ch', 'primary_color' => '#112233', 'require_otp' => true], ['X-Tenant-Id' => $this->tenant->id])->assertOk()->assertJsonPath('data.require_otp', true);
         $this->putJson('/api/v1/crm/portal-settings', ['primary_color' => 'red'], ['X-Tenant-Id' => $this->tenant->id])->assertStatus(422);
+    });
+});
+
+describe('payment checkout method and end-to-end booking', function (): void {
+    beforeEach(function (): void {
+        $this->gateway = fn (string $provider, array $extra = []) => PaymentGatewaySetting::create(['tenant_id' => $this->tenant->id, 'provider' => $provider, 'credentials' => ['secret_key' => 'sk_test_1', 'webhook_secret' => 'whsec_test'], ...$extra]);
+    });
+
+    it('sends the chosen method to Stripe as payment_method_types and stores it on the link', function (): void {
+        ($this->gateway)('stripe');
+        Http::fake(['api.stripe.com/*' => Http::response(['id' => 'cs_test_1', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_1'])]);
+        $invoice = ($this->makeInvoice)($this->customer, 'INV-1');
+
+        $this->withToken(portalSessionFor($this->customer))->postJson("/api/v1/portal/invoices/{$invoice->id}/checkout", ['payment_method' => 'twint'])
+            ->assertCreated()
+            ->assertJsonPath('data.payment_method', 'twint');
+
+        Http::assertSent(fn (HttpRequest $request): bool => $request['payment_method_types'] === ['twint']);
+        expect(PaymentLink::where('invoice_id', $invoice->id)->value('payment_method'))->toBe('twint');
+    });
+
+    it('rejects an unknown method with 422', function (): void {
+        $invoice = ($this->makeInvoice)($this->customer, 'INV-1');
+
+        $this->withToken(portalSessionFor($this->customer))->postJson("/api/v1/portal/invoices/{$invoice->id}/checkout", ['payment_method' => 'bitcoin'])
+            ->assertStatus(422)->assertJsonValidationErrors('payment_method');
+    });
+
+    it('rejects a method Stripe cannot take, one the tenant disallows, and one the currency does not allow', function (): void {
+        ($this->gateway)('stripe', ['allowed_payment_methods' => ['card', 'twint']]);
+        Http::fake();
+        $invoice = ($this->makeInvoice)($this->customer, 'INV-1');
+        $session = portalSessionFor($this->customer);
+
+        foreach (['qr', 'paypal', 'sepa'] as $method) {
+            $this->withToken($session)->postJson("/api/v1/portal/invoices/{$invoice->id}/checkout", ['payment_method' => $method])->assertStatus(422);
+        }
+
+        Http::assertNothingSent();
+        expect(PaymentLink::where('invoice_id', $invoice->id)->where('status', 'open')->count())->toBe(0);
+    });
+
+    it('replaces the open page when the payer picks another method', function (): void {
+        ($this->gateway)('local');
+        $invoice = ($this->makeInvoice)($this->customer, 'INV-1');
+        $session = portalSessionFor($this->customer);
+
+        $this->withToken($session)->postJson("/api/v1/portal/invoices/{$invoice->id}/checkout", ['payment_method' => 'card'])->assertCreated();
+        $this->withToken($session)->postJson("/api/v1/portal/invoices/{$invoice->id}/checkout", ['payment_method' => 'twint'])->assertCreated()->assertJsonPath('data.payment_method', 'twint');
+
+        expect(PaymentLink::where('invoice_id', $invoice->id)->where('status', 'open')->count())->toBe(1)
+            ->and(PaymentLink::where('invoice_id', $invoice->id)->where('status', 'cancelled')->count())->toBe(1);
+    });
+
+    it('books the payment from the signed webhook and the invoice becomes paid', function (): void {
+        ($this->gateway)('local');
+        $invoice = ($this->makeInvoice)($this->customer, 'INV-1');
+
+        $this->withToken(portalSessionFor($this->customer))->postJson("/api/v1/portal/invoices/{$invoice->id}/checkout", ['payment_method' => 'card'])->assertCreated();
+        $link = PaymentLink::where('invoice_id', $invoice->id)->firstOrFail();
+
+        $payload = (string) json_encode(['reference' => $link->provider_reference, 'amount' => '864.80', 'currency' => 'CHF', 'event_id' => 'evt_portal_1']);
+        $signature = LocalPaymentLinkGateway::sign($payload, 'whsec_test');
+
+        $this->call('POST', "/api/v1/webhooks/payment-links/{$this->tenant->id}", [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_LOCAL_SIGNATURE' => $signature], $payload)->assertSuccessful();
+
+        expect($link->fresh()->status)->toBe('paid')
+            ->and($invoice->fresh()->payment_status)->toBe('paid');
     });
 });

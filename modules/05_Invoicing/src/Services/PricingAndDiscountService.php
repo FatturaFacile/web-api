@@ -13,8 +13,11 @@ use App\Services\Sales\SalesPriceEngine;
 use App\Services\Sales\VatSummaryCalculator;
 use App\Services\Tenancy\TenantClock;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
+use Modules\Pricing\Services\MarginGuardrail;
+use Modules\Pricing\Services\PriceResolutionEngine;
 
 /**
  * Prices and totals of the sales documents of the invoicing module. The price of a line comes from the price
@@ -28,6 +31,8 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
         private readonly VatSummaryCalculator $vat = new VatSummaryCalculator,
         private readonly ?SalesPriceEngine $engine = null,
         private readonly ?TenantClock $clock = null,
+        private readonly ?PriceResolutionEngine $resolution = null,
+        private readonly ?MarginGuardrail $guardrail = null,
     ) {}
 
     /**
@@ -48,7 +53,7 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
             return ['unit_price' => 0.0, 'discount_percentage' => 0.0, 'discount_amount' => 0.0, 'final_price' => 0.0];
         }
 
-        $price = $this->engine()->determine($product, null, DocumentTotalsCalculator::decimal($quantity), $this->today((string) $product->tenant_id), $priceListId, $discountPolicyId, $customerGroupId);
+        $price = $this->price($product, null, DocumentTotalsCalculator::decimal($quantity), $this->today((string) $product->tenant_id), $priceListId, $discountPolicyId, $customerGroupId);
         $discountPerUnit = Decimal::sub($price['list_price'], $price['net_unit_price']);
 
         return [
@@ -71,7 +76,46 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
         $contact = $contactId !== null ? Contact::query()->find($contactId) : null;
         $day = $date !== null ? CarbonImmutable::parse($date) : $this->today((string) $product->tenant_id);
 
-        return $this->engine()->determine($product, $contact, $quantity, $day, $priceListId, $discountPolicyId, null, $orderAmount);
+        return $this->price($product, $contact, $quantity, $day, $priceListId, $discountPolicyId, null, $orderAmount);
+    }
+
+    /**
+     * The base of the line comes from the Pricing module (special price of the customer, price lists, cascading discounts of
+     * the list item, rounding of the list, promotions); the discount policy named on the document and the auto-apply
+     * policies of the sales cycle then cascade on that price. The margin guardrail judges the final net price.
+     *
+     * The response keeps the keys of the sales cycle: `list_price` is the price the Pricing engine offers (after its cascade,
+     * rounding and promotions), `catalogue_price` the one before them, `margin` the guardrail verdict, `pricing` the trace.
+     *
+     * @return array<string, mixed>
+     */
+    private function price(Product $product, ?Contact $contact, string $quantity, CarbonInterface $day, ?string $priceListId, ?string $discountPolicyId, ?string $customerGroupId, ?string $orderAmount = null): array
+    {
+        $currency = strtoupper((string) (Tenant::query()->whereKey($product->tenant_id)->value('default_currency') ?? 'EUR'));
+        $resolution = $this->resolution ?? app(PriceResolutionEngine::class);
+
+        $resolved = $resolution->resolve($contact, $currency, 'DEFAULT', $day, [['product_id' => (string) $product->id, 'quantity' => $quantity]], $priceListId);
+        $line = $resolved['lines'][0];
+
+        $price = $this->engine()->determine(
+            $product, $contact, $quantity, $day, $priceListId, $discountPolicyId, $customerGroupId, $orderAmount,
+            [bcadd((string) $line['effective_unit_price'], '0', 4), (string) $line['price_source'], $line['price_list_id']],
+        );
+
+        $margin = ($this->guardrail ?? app(MarginGuardrail::class))->evaluate($product, $price['net_unit_price'], $line['price_list_id']);
+
+        return $price + [
+            'catalogue_price' => $line['base_price'],
+            'rounding_mode' => $line['rounding_mode'],
+            'applied_promotions' => $resolved['applied_promotions'],
+            'margin' => [
+                'status' => $margin['status'],
+                'margin_percent' => $margin['margin_percent'],
+                'threshold_percent' => $margin['threshold_percent'],
+                'requires_approval_role' => $margin['requires_approval_role'],
+            ],
+            'pricing' => $line['trace'],
+        ];
     }
 
     /**

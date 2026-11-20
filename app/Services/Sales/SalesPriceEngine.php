@@ -27,7 +27,7 @@ use Modules\Invoicing\Models\DiscountPolicyRule;
  *    the customer or the customer group, each adding its own discount. A promotion that is not stackable applies only
  *    when it is the first one to apply, and then stops the others.
  *
- * Percentages add up (capped at 100). Fixed discounts are amounts per unit and lower the unit price; the percentage then
+ * Percentages cascade (each applies to the price left by the previous ones). Fixed discounts are amounts per unit and lower the unit price; the percentage then
  * applies to the lowered price. All amounts are decimal strings: the unit price with 4 decimals, the percentage with 2,
  * as the document lines store them.
  */
@@ -36,6 +36,7 @@ final readonly class SalesPriceEngine
     public function __construct(private PriceResolver $prices) {}
 
     /**
+     * @param  array{0: string, 1: string, 2: ?string}|null  $base  a list price already determined (price, source, list id), e.g. by the Pricing module
      * @return array{
      *     list_price: string,
      *     price_source: string,
@@ -56,10 +57,12 @@ final readonly class SalesPriceEngine
         ?string $discountPolicyId = null,
         ?string $customerGroupId = null,
         ?string $orderAmount = null,
+        ?array $base = null,
     ): array {
-        [$listPrice, $source, $listId] = $this->listPrice($product, $contact, $quantity, $date, $priceListId);
+        [$listPrice, $source, $listId] = $base ?? $this->listPrice($product, $contact, $quantity, $date, $priceListId);
 
         $percentage = '0';
+        $remaining = '1';
         $fixed = '0';
         $applied = [];
 
@@ -75,7 +78,8 @@ final readonly class SalesPriceEngine
                 continue;
             }
 
-            $percentage = Decimal::add($percentage, $contribution[0]);
+            // Percentages cascade (each applies to the price left by the previous ones), they are not added up.
+            $remaining = bcmul($remaining, bcsub('1', bcdiv(min($contribution[0], '100'), '100', 8), 8), 8);
             $fixed = Decimal::add($fixed, $contribution[1]);
             $applied[] = [
                 'discount_policy_id' => (string) $policy->id,
@@ -92,9 +96,7 @@ final readonly class SalesPriceEngine
             }
         }
 
-        if (Decimal::compare($percentage, '100') > 0) {
-            $percentage = '100';
-        }
+        $percentage = bcmul(bcsub('1', $remaining, 8), '100', 8);
 
         $unitPrice = Decimal::sub($listPrice, $fixed);
 
@@ -104,7 +106,7 @@ final readonly class SalesPriceEngine
 
         $unitPrice = bcadd($unitPrice, '0', 4);
         $percentage = bcadd($percentage, '0', 2);
-        $net = Decimal::mul($unitPrice, Decimal::sub('1', Decimal::div($percentage, '100')));
+        $net = Decimal::mul($unitPrice, $remaining);
 
         return [
             'list_price' => bcadd($listPrice, '0', 4),

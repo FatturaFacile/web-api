@@ -73,7 +73,7 @@ class TenantBackupService
      */
     public const int FORMAT_VERSION = 3;
 
-    public function __construct(private readonly BackupArchiveSigner $signer) {}
+    public function __construct(private readonly BackupArchiveSigner $signer, private readonly ?BackupArchiveEncryptor $encryptor = null) {}
 
     /**
      * Register a pending backup for the tenant.
@@ -130,6 +130,14 @@ ailed when the snapshot could not be built.
         try {
             $tenant = Tenant::withTrashed()->findOrFail($backup->tenant_id);
             $archive = $this->buildArchive($tenant, $temporary);
+
+            $encryptor = $this->encryptor ?? app(BackupArchiveEncryptor::class);
+
+            if ($encryptor->enabled()) {
+                $encrypted = $this->temporaryFile($temporary);
+                $encryptor->encrypt($archive, $encrypted);
+                $archive = $encrypted;
+            }
 
             $stream = fopen($archive, 'rb');
             Storage::disk($backup->disk)->put($backup->storagePath(), $stream);

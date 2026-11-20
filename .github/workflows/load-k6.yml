@@ -1,0 +1,70 @@
+name: Weekly Load Test (k6)
+
+# Runs tests/Load/critical-flows.k6.js against the local compose stack (deploy/local: published image, nginx TLS front,
+# PostgreSQL). Not part of the PR gate: it takes minutes and measures latency SLAs (p95 < 300 ms, errors < 1%).
+
+on:
+  schedule:
+    - cron: '0 3 * * 1' # Mondays 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: load-k6
+  cancel-in-progress: false
+
+jobs:
+  k6:
+    name: k6 critical flows against the compose stack
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v7
+
+      - name: Start the compose stack
+        run: |
+          cp deploy/local/env.example deploy/local/.env
+          docker compose -f deploy/local/compose.yaml up -d --wait
+          docker compose -f deploy/local/compose.yaml exec -T app php artisan migrate --force
+          docker compose -f deploy/local/compose.yaml exec -T app php artisan erp:bootstrap
+
+      - name: Wait for the API (HTTPS, self-signed certificate)
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsSk https://localhost:8080/up > /dev/null; then
+              echo "API ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -f deploy/local/compose.yaml logs --tail=100
+          exit 1
+
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run k6 critical flows
+        env:
+          API_BASE_URL: https://localhost:8080
+          K6_INSECURE_SKIP_TLS_VERIFY: 'true'
+        run: k6 run --summary-export=k6-summary.json tests/Load/critical-flows.k6.js
+
+      - name: Upload k6 summary
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: k6-summary
+          path: k6-summary.json
+          retention-days: 30
+
+      - name: Compose logs on failure
+        if: failure()
+        run: docker compose -f deploy/local/compose.yaml logs --tail=200
+
+      - name: Stop the compose stack
+        if: always()
+        run: docker compose -f deploy/local/compose.yaml down -v

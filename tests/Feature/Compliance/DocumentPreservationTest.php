@@ -8,6 +8,7 @@ use App\Models\InvoiceSdiMetadata;
 use App\Models\PassiveInvoice;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -194,13 +195,14 @@ test('the verification history and the access log cannot be rewritten through th
         ->and(fn () => $log->delete())->toThrow(PreservationImmutableException::class);
 });
 
-test('deleting a tenant still cascades to its closed packages', function (): void {
+test('a tenant with an immutable audit trail cannot be deleted, so its closed packages stay', function (): void {
     closedInvoicePackage($this->tenant);
     $other = Tenant::create(['name' => 'Beta', 'legal_name' => 'Beta Srl', 'vat_number' => '00000000000', 'country' => 'IT', 'default_currency' => 'EUR']);
 
-    DB::table('tenants')->where('id', $this->tenant->id)->delete();
-
-    expect(DB::table('preservation_packages')->count())->toBe(0)->and($other->exists)->toBeTrue();
+    // The audit trail is kept for years and audit_logs.tenant_id is ON DELETE RESTRICT: the tenant is refused as a whole.
+    expect(fn () => DB::transaction(fn () => DB::table('tenants')->where('id', $this->tenant->id)->delete()))->toThrow(QueryException::class)
+        ->and(DB::table('preservation_packages')->count())->toBe(1)
+        ->and($other->exists)->toBeTrue();
 });
 
 test('a library document in a closed package cannot be changed, versioned, deleted or purged by retention', function (): void {

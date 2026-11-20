@@ -14,6 +14,7 @@ use Modules\SDI\Services\DigitalSignatureService;
 use Modules\SDI\Services\P7mExtractor;
 use Modules\SDI\Services\ProgressivoInvioGenerator;
 use Modules\SDI\Services\RejectedDocumentResubmissionService;
+use Modules\SDI\Services\SdiFileNamer;
 use Modules\SDI\Services\SdiNotificationProcessorService;
 use Modules\SDI\Services\SogeiCongruityValidator;
 use Modules\SDI\Signature\LocalPkcs12SignatureProvider;
@@ -86,6 +87,16 @@ test('progressivo invio is base 36 and never repeats', function (): void {
     expect($generator->next($tenant)['progressive'])->toBe('00001')
         ->and($generator->next($tenant)['file_name'])->toBe('IT00811720580_00002.xml')
         ->and($generator->encode(60466175))->toBe('ZZZZZ');
+});
+
+test('first transmission and resubmission share one progressive sequence', function (): void {
+    $tenant = fpaTenant();
+
+    $first = app(SdiFileNamer::class)->next($tenant);
+    $second = app(ProgressivoInvioGenerator::class)->next($tenant);
+    $third = app(SdiFileNamer::class)->next($tenant);
+
+    expect([$first['progressive'], $second['progressive'], $third['progressive']])->toBe(['00001', '00002', '00003']);
 });
 
 test('a rejected document opens a five day window and a linked resubmission', function (): void {

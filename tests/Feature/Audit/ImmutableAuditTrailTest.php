@@ -112,9 +112,10 @@ test('the canonical json sorts keys recursively', function (): void {
 test('the database triggers refuse UPDATE and DELETE of an audit record', function (): void {
     auditInvoice($this->tenant->id);
 
-    expect(fn () => DB::statement("UPDATE audit_logs SET actor_email = 'tampered@evil.com'"))
+    // Each refused statement runs in its own savepoint: PostgreSQL aborts the whole transaction after an error.
+    expect(fn () => DB::transaction(fn () => DB::statement("UPDATE audit_logs SET actor_email = 'tampered@evil.com'")))
         ->toThrow(QueryException::class, 'Audit logs are strictly immutable');
-    expect(fn () => DB::statement('DELETE FROM audit_logs'))
+    expect(fn () => DB::transaction(fn () => DB::statement('DELETE FROM audit_logs')))
         ->toThrow(QueryException::class, 'Audit logs are strictly immutable');
 
     $log = AuditLog::query()->firstOrFail();
@@ -132,7 +133,7 @@ test('tampering with a record is detected and pinned to its sequence number', fu
 
     expect($handler->handle(new VerifyAuditChainQuery($this->tenant->id))->isValid)->toBeTrue();
 
-    DB::unprepared('DROP TRIGGER prevent_audit_log_update');
+    dropAuditTrigger('prevent_audit_log_update');
     DB::table('audit_logs')->where('id', $target->id)->update(['changed_fields' => json_encode(['total_gross'])]);
 
     $certificate = $handler->handle(new VerifyAuditChainQuery($this->tenant->id));
@@ -152,7 +153,7 @@ test('a deleted record is detected as a sequence gap', function (): void {
     $invoice->update(['payment_status' => 'paid']);
     $invoice->update(['payment_status' => 'unpaid']);
 
-    DB::unprepared('DROP TRIGGER prevent_audit_log_delete');
+    dropAuditTrigger('prevent_audit_log_delete');
     DB::table('audit_logs')->where('tenant_id', $this->tenant->id)->where('sequence_number', 2)->delete();
 
     $certificate = app(VerifyAuditChainHandler::class)->handle(new VerifyAuditChainQuery($this->tenant->id));
@@ -165,7 +166,7 @@ test('a deleted record is detected as a sequence gap', function (): void {
 test('a forged signature is detected', function (): void {
     auditInvoice($this->tenant->id);
 
-    DB::unprepared('DROP TRIGGER prevent_audit_log_update');
+    dropAuditTrigger('prevent_audit_log_update');
     DB::table('audit_logs')->where('tenant_id', $this->tenant->id)->where('sequence_number', 1)->update(['hmac_signature' => str_repeat('a', 64)]);
 
     $certificate = app(VerifyAuditChainHandler::class)->handle(new VerifyAuditChainQuery($this->tenant->id));

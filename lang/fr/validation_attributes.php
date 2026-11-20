@@ -1409,6 +1409,7 @@ return [
     'punch_type' => 'type de pointage',
     'punches' => 'pointages',
     'purchase_order_id' => 'bon de commande',
+    'purchase_order_ids' => 'bons de commande',
     'purchase_order_line_id' => 'ligne du bon de commande',
     'purchase_price' => 'prix d\'achat',
     'purchase_receipt_id' => 'réception d\'achat',

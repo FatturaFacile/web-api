@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\SDI\Services;
 
 use App\Models\Tenant;
-use Illuminate\Support\Facades\DB;
 use Modules\SDI\Models\SdiConfiguration;
 
 /**
@@ -21,20 +20,11 @@ final class ProgressivoInvioGenerator
      */
     public function next(Tenant $tenant, string $extension = 'xml'): array
     {
-        $configuration = DB::transaction(function () use ($tenant): SdiConfiguration {
-            $row = SdiConfiguration::withoutGlobalScopes()->where('tenant_id', $tenant->id)->lockForUpdate()->first()
-                ?? SdiConfiguration::withoutGlobalScopes()->create(['tenant_id' => $tenant->id]);
+        $sequence = new SdiProgressiveSequence;
+        $counter = $sequence->next($tenant);
+        $configuration = SdiConfiguration::withoutGlobalScopes()->where('tenant_id', $tenant->id)->firstOrFail();
 
-            if ($row->progressivo_invio_counter >= self::Maximum) {
-                throw new \OverflowException('ProgressivoInvio sequence exhausted.');
-            }
-
-            $row->increment('progressivo_invio_counter');
-
-            return $row->refresh();
-        });
-
-        $progressive = $this->encode((int) $configuration->progressivo_invio_counter);
+        $progressive = $sequence->encode($counter);
         $country = $configuration->transmitter_country_code ?: 'IT';
         $code = $configuration->transmitter_fiscal_code ?: (preg_replace('/\D/', '', (string) $tenant->vat_number) ?: strtoupper((string) $tenant->fiscal_code));
 

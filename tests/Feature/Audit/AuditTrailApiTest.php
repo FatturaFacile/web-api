@@ -143,6 +143,14 @@ test('reading an invoice logs one VIEWED record, debounced per user, and a secon
     expect($views())->toHaveCount(3);
 });
 
+test('reading a contact record logs a VIEWED record', function (): void {
+    $contact = Contact::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->firstOrFail();
+
+    auditAs($this->owner)->getJson('/api/v1/crm/contacts/'.$contact->id)->assertOk();
+
+    expect(AuditLog::query()->where('event_type', 'VIEWED')->where('auditable_id', $contact->id)->count())->toBe(1);
+});
+
 test('an export route records an EXPORTED event with its format', function (): void {
     Route::middleware(['auth:sanctum', 'tenant'])->get('/api/v1/_audit-probe/{id}', fn () => response('pdf-bytes'))->middleware('audit.access:Invoice,EXPORTED,pdf');
 
@@ -167,7 +175,7 @@ test('the verify endpoint returns a signed certificate and the list exposes the 
 });
 
 test('the verify endpoint reports a tampered chain', function (): void {
-    DB::unprepared('DROP TRIGGER prevent_audit_log_update');
+    dropAuditTrigger('prevent_audit_log_update');
     DB::table('audit_logs')->where('tenant_id', $this->tenant->id)->where('sequence_number', 2)->update(['actor_email' => 'evil@example.com']);
 
     $response = auditAs($this->owner)->postJson('/api/v1/audit-logs/verify-integrity')->assertOk();
