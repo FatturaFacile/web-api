@@ -32,6 +32,7 @@ final class TenantSchemaBaseline
         'contact_category_translations',
         'contact_type_translations',
         'contact_types',
+        'copilot_knowledge_chunks',
         'countries',
         'country_translations',
         'ct_price_items',

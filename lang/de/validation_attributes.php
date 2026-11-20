@@ -2974,4 +2974,12 @@ return [
     'tsa_credentials' => 'Zugangsdaten der Zeitstempelstelle',
     'auto_seal_frequency' => 'Versiegelungsintervall',
     'default_retention_years' => 'Aufbewahrungsjahre',
+    'context_route' => 'Ausgangsbildschirm',
+    'context_entity_type' => 'Typ des geöffneten Datensatzes',
+    'context_entity_id' => 'Kennung des geöffneten Datensatzes',
+    'section_ref' => 'Abschnittsverweis',
+    'context' => 'Kontext',
+    'route' => 'Bildschirm',
+    'entity_type' => 'Datensatztyp',
+    'entity_id' => 'Datensatzkennung',
 ];

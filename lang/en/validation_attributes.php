@@ -2974,4 +2974,12 @@ return [
     'tsa_credentials' => 'time-stamp credentials',
     'auto_seal_frequency' => 'sealing frequency',
     'default_retention_years' => 'retention years',
+    'context_route' => 'starting screen',
+    'context_entity_type' => 'type of the open record',
+    'context_entity_id' => 'identifier of the open record',
+    'section_ref' => 'section reference',
+    'context' => 'context',
+    'route' => 'screen',
+    'entity_type' => 'record type',
+    'entity_id' => 'record identifier',
 ];

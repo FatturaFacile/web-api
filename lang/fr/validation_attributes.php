@@ -2974,4 +2974,12 @@ return [
     'tsa_credentials' => 'identifiants d\'horodatage',
     'auto_seal_frequency' => 'fréquence de scellement',
     'default_retention_years' => 'années de conservation',
+    'context_route' => 'écran de départ',
+    'context_entity_type' => 'type de l\'enregistrement ouvert',
+    'context_entity_id' => 'identifiant de l\'enregistrement ouvert',
+    'section_ref' => 'référence de la section',
+    'context' => 'contexte',
+    'route' => 'écran',
+    'entity_type' => 'type d\'enregistrement',
+    'entity_id' => 'identifiant de l\'enregistrement',
 ];

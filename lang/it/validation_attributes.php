@@ -2974,4 +2974,12 @@ return [
     'tsa_credentials' => 'credenziali della marca temporale',
     'auto_seal_frequency' => 'frequenza di sigillatura',
     'default_retention_years' => 'anni di conservazione',
+    'context_route' => 'schermata di partenza',
+    'context_entity_type' => 'tipo di record aperto',
+    'context_entity_id' => 'identificativo del record aperto',
+    'section_ref' => 'riferimento della sezione',
+    'context' => 'contesto',
+    'route' => 'schermata',
+    'entity_type' => 'tipo di record',
+    'entity_id' => 'identificativo del record',
 ];
