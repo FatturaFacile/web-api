@@ -78,6 +78,8 @@ class EnasarcoService
             annualMaximumCommission: $limits['annual_maximum_commission'],
             ytdCommissions: Money::fromCents($this->ytdCommissionsCents($contactId, $year)),
             reason: $reason ?? (string) config('italian_tax.enasarco.default_reason', 'R'),
+            annualMinimumContribution: $limits['annual_minimum'],
+            ytdContribution: Money::fromCents($this->ytdContributionsCents($contactId, $year)),
         );
     }
 

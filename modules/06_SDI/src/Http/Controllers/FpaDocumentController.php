@@ -115,6 +115,20 @@ final class FpaDocumentController extends Controller
         return $this->successResponse($this->present($revision), 'Revision created', Response::HTTP_CREATED);
     }
 
+    #[OA\Post(path: '/api/v1/fpa-documents/{id}/resubmit-and-send', operationId: 'resubmitAndSendFpaDocument', summary: 'Send the corrected invoice of a rejected envelope again (5 day window)', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['SDI'], responses: [new OA\Response(response: 201, description: 'Invoice sent again, envelope linked to the rejected one'), new OA\Response(response: 422, description: 'Not rejected, deadline passed or invoice not sendable')])]
+    public function resubmitAndSend(string $id): JsonResponse
+    {
+        $document = FpaDocument::query()->findOrFail($id);
+
+        try {
+            $revision = $this->resubmission->resubmit($document);
+        } catch (\DomainException $e) {
+            return $this->problemDetailsResponse(title: 'resubmission_not_allowed', detail: $e->getMessage(), status: Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        return $this->successResponse($this->present($revision), 'Invoice resubmitted', Response::HTTP_CREATED);
+    }
+
     #[OA\Post(path: '/api/v1/fpa-documents/{id}/simulate', operationId: 'simulateFpaNotification', summary: 'Sandbox: simulate an SDI receipt', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['SDI'], responses: [new OA\Response(response: 200, description: 'Receipt applied'), new OA\Response(response: 403, description: 'Sandbox disabled')])]
     public function simulate(SimulateSdiNotificationRequest $request, string $id): JsonResponse
     {

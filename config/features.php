@@ -40,6 +40,7 @@ return [
         'business_intelligence' => env('FEATURE_MODULE_BUSINESS_INTELLIGENCE'),
         'marketplace' => env('FEATURE_MODULE_MARKETPLACE'),
         'document_trust' => env('FEATURE_MODULE_DOCUMENT_TRUST'),
+        'digital_preservation' => env('FEATURE_MODULE_DIGITAL_PRESERVATION'),
         'leases' => env('FEATURE_MODULE_LEASES'),
         'retail' => env('FEATURE_MODULE_RETAIL'),
         'hospitality' => env('FEATURE_MODULE_HOSPITALITY'),

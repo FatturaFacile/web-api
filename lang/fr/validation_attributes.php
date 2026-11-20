@@ -2965,4 +2965,13 @@ return [
     'require_otp' => 'exiger un code à usage unique',
     'allow_partial_payments' => 'autoriser les paiements partiels',
 
+    'document_category' => 'catégorie de document',
+    'period_from' => 'période du',
+    'period_to' => 'période au',
+    'preservation_officer_name' => 'nom du responsable de la conservation',
+    'preservation_officer_tax_code' => 'code fiscal du responsable',
+    'tsa_url' => 'URL de l\'autorité d\'horodatage',
+    'tsa_credentials' => 'identifiants d\'horodatage',
+    'auto_seal_frequency' => 'fréquence de scellement',
+    'default_retention_years' => 'années de conservation',
 ];

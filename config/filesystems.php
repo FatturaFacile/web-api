@@ -47,6 +47,15 @@ return [
             'report' => false,
         ],
 
+        // Write-once vault of the digital preservation module. In production point PRESERVATION_WORM_ROOT to an S3
+        // compatible disk whose bucket has Object Lock enabled.
+        'preservation_worm' => [
+            'driver' => 'local',
+            'root' => env('PRESERVATION_WORM_ROOT', storage_path('app/preservation-worm')),
+            'throw' => true,
+            'report' => false,
+        ],
+
         'private' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
