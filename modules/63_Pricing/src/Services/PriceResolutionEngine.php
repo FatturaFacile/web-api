@@ -36,6 +36,8 @@ final class PriceResolutionEngine
 
     public const string TierBase = 'base_price';
 
+    public const string TierDocumentList = 'document_price_list';
+
     public function __construct(
         private readonly PromotionEvaluator $promotions,
         private readonly MarginGuardrail $guardrail,
@@ -45,13 +47,13 @@ final class PriceResolutionEngine
      * @param  list<array{product_id: string, quantity: numeric-string|int|float, manual_discount_cascade?: ?string}>  $lines
      * @return array{currency: string, channel: string, date: string, lines: list<array<string, mixed>>, gifts: list<array<string, mixed>>, applied_promotions: list<array<string, mixed>>, document_discount: string, subtotal: string, total: string, margin: array<string, mixed>}
      */
-    public function resolve(?Contact $customer, string $currency, string $channel, CarbonInterface $date, array $lines): array
+    public function resolve(?Contact $customer, string $currency, string $channel, CarbonInterface $date, array $lines, ?string $priceListId = null): array
     {
         $lists = $this->activeLists($currency, $date);
         $priced = [];
 
         foreach ($lines as $index => $line) {
-            $priced[] = $this->priceLine($index, $line, $customer, $currency, $channel, $date, $lists);
+            $priced[] = $this->priceLine($index, $line, $customer, $currency, $channel, $date, $lists, $priceListId);
         }
 
         $promotionResult = $this->promotions->evaluate(array_map(static fn (array $line): array => [
@@ -114,13 +116,13 @@ final class PriceResolutionEngine
      * @param  Collection<int, PriceList>  $lists
      * @return array<string, mixed>
      */
-    private function priceLine(int $index, array $line, ?Contact $customer, string $currency, string $channel, CarbonInterface $date, Collection $lists): array
+    private function priceLine(int $index, array $line, ?Contact $customer, string $currency, string $channel, CarbonInterface $date, Collection $lists, ?string $priceListId = null): array
     {
         $product = Product::query()->findOrFail($line['product_id']);
         $quantity = bcadd((string) $line['quantity'], '0', 4);
         $trace = [];
 
-        [$base, $tier, $list, $item, $special] = $this->basePrice($product, $customer, $currency, $channel, $date, $quantity, $lists, $trace);
+        [$base, $tier, $list, $item, $special] = $this->basePrice($product, $customer, $currency, $channel, $date, $quantity, $lists, $trace, $priceListId);
 
         $cascade = DiscountCascade::parse($special->discount_cascade ?? $item?->discount_cascade, (string) ($special->discount_mode ?? $item->discount_mode ?? DiscountCascade::Multiplicative));
         $afterList = $cascade->apply($base);
@@ -170,7 +172,7 @@ final class PriceResolutionEngine
      * @param  list<array<string, mixed>>  $trace
      * @return array{0: string, 1: string, 2: ?PriceList, 3: ?PriceListItem, 4: ?CustomerSpecialPrice}
      */
-    private function basePrice(Product $product, ?Contact $customer, string $currency, string $channel, CarbonInterface $date, string $quantity, Collection $lists, array &$trace): array
+    private function basePrice(Product $product, ?Contact $customer, string $currency, string $channel, CarbonInterface $date, string $quantity, Collection $lists, array &$trace, ?string $priceListId = null): array
     {
         $special = $customer === null ? null : $this->specialPrice($customer, $product, $currency, $date);
 
@@ -181,6 +183,10 @@ final class PriceResolutionEngine
         }
 
         $candidates = [];
+
+        if ($priceListId !== null) {
+            $candidates[] = [self::TierDocumentList, $lists->firstWhere('id', $priceListId)];
+        }
 
         if ($customer?->price_list_id !== null) {
             $candidates[] = [self::TierCustomerList, $lists->firstWhere('id', $customer->price_list_id)];

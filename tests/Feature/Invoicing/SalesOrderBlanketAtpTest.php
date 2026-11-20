@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Contact;
 use App\Models\Product;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\Inventory\StockService;
 use App\Services\Tenancy\TenantContext;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Modules\Invoicing\Actions\ConvertReplenishmentRequestAction;
 use Modules\Invoicing\Contracts\CustomerCreditServiceInterface;
 use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
 use Modules\Invoicing\Models\BlanketAgreement;
@@ -22,6 +24,10 @@ use Modules\Invoicing\Services\AtpCtpCalculationService;
 use Modules\Invoicing\Services\BlanketAgreementService;
 use Modules\Invoicing\Services\CustomerCreditControlService;
 use Modules\Invoicing\Services\SalesOrderFulfillmentService;
+use Modules\Manufacturing\Contracts\ProductionPlanningServiceInterface;
+use Modules\Manufacturing\DTOs\CreateProductionOrderDTO;
+use Modules\Manufacturing\Models\MfgProductionOrder;
+use Modules\Procurement\Models\PurchaseRequisition;
 
 uses(RefreshDatabase::class);
 
@@ -228,4 +234,64 @@ test('a shortage on confirmation is pegged to a purchase requisition request, or
     $second = $this->fulfillment->confirm(($this->order)(5.0, ['warehouse_id' => (string) $this->warehouse->id]), 'sales-rep');
     $made = ReplenishmentRequest::query()->where('sales_order_item_id', (string) $second->items->first()->id)->firstOrFail();
     expect($made->request_type)->toBe('production_order');
+});
+
+test('a shortage on confirmation creates one draft purchase requisition, linked to the request, and a second run creates none', function (): void {
+    $user = User::create(['name' => 'Planner', 'email' => 'planner@replenish.test', 'password' => bcrypt('secret123'), 'locale' => 'en']);
+
+    ($this->stock)(2.0);
+    $order = $this->fulfillment->confirm(($this->order)(5.0, ['warehouse_id' => (string) $this->warehouse->id]), (string) $user->id);
+    $request = ReplenishmentRequest::query()->where('sales_order_item_id', (string) $order->items->first()->id)->firstOrFail();
+
+    expect($request->status)->toBe('converted')
+        ->and($request->target_type)->toBe('purchase_requisition');
+
+    $requisition = PurchaseRequisition::query()->findOrFail($request->target_id);
+    expect($requisition->tenant_id)->toBe($this->tenantId)
+        ->and($requisition->status)->toBe('draft')
+        ->and((float) $requisition->lines->first()->quantity_requested)->toBe(3.0);
+
+    $again = app(ConvertReplenishmentRequestAction::class)->execute((string) $request->id, $this->tenantId);
+
+    expect($again)->toBeNull()
+        ->and(PurchaseRequisition::query()->count())->toBe(1);
+});
+
+test('a request of another tenant is never converted', function (): void {
+    $user = User::create(['name' => 'Planner', 'email' => 'planner2@replenish.test', 'password' => bcrypt('secret123'), 'locale' => 'en']);
+    ($this->stock)(0.0);
+    $order = $this->fulfillment->confirm(($this->order)(2.0, ['warehouse_id' => (string) $this->warehouse->id]), (string) $user->id);
+    $request = ReplenishmentRequest::query()->where('sales_order_item_id', (string) $order->items->first()->id)->firstOrFail();
+    $request->forceFill(['status' => 'open', 'target_type' => null, 'target_id' => null])->save();
+
+    expect(app(ConvertReplenishmentRequestAction::class)->execute((string) $request->id, (string) Str::uuid7()))->toBeNull()
+        ->and($request->fresh()->status)->toBe('open');
+});
+
+test('a shortage of a made product becomes a production order, or stays open when it cannot be planned', function (): void {
+    Schema::disableForeignKeyConstraints();
+    DB::table('mfg_items')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenantId, 'item_code' => 'FG-3', 'name' => 'Pump Unit', 'item_type' => 'finished_good', 'product_id' => (string) $this->product->id, 'is_active' => true, 'procurement_type' => 'make']);
+    Schema::enableForeignKeyConstraints();
+
+    // No released BOM: the planner refuses and the request stays open for the planners.
+    $order = $this->fulfillment->confirm(($this->order)(4.0, ['warehouse_id' => (string) $this->warehouse->id]), 'sales-rep');
+    $request = ReplenishmentRequest::query()->where('sales_order_item_id', (string) $order->items->first()->id)->firstOrFail();
+    expect($request->request_type)->toBe('production_order')
+        ->and($request->status)->toBe('open')
+        ->and($request->target_id)->toBeNull();
+
+    $productionOrderId = (string) Str::uuid7();
+    $planner = Mockery::mock(ProductionPlanningServiceInterface::class);
+    $planner->shouldReceive('planOrder')->once()->withArgs(fn (CreateProductionOrderDTO $dto): bool => $dto->tenantId === $this->tenantId
+        && $dto->targetQuantity === '4.0000' && $dto->salesOrderId === (string) $order->id)
+        ->andReturn(new MfgProductionOrder(['id' => $productionOrderId]));
+    app()->instance(ProductionPlanningServiceInterface::class, $planner);
+
+    $document = app(ConvertReplenishmentRequestAction::class)->execute((string) $request->id, $this->tenantId);
+    $request->refresh();
+
+    expect($document)->not->toBeNull()
+        ->and($request->status)->toBe('converted')
+        ->and($request->target_type)->toBe('production_order')
+        ->and($request->target_id)->toBe($productionOrderId);
 });
