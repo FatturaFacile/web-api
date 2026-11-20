@@ -407,7 +407,7 @@ final class PrivacyOperationsController extends Controller
 
     #[OA\Get(
         path: '/api/v1/settings/privacy/retention-runs',
-        operationId: 'listPrivacyRetentionRuns',
+        operationId: 'listPrivacyOperationsRetentionRuns',
         description: 'Log of the executions and dry runs of the retention policies, newest first (latest 200).',
         summary: 'List retention runs',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],

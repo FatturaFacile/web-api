@@ -200,7 +200,7 @@ test('a tenant with an immutable audit trail cannot be deleted, so its closed pa
     $other = Tenant::create(['name' => 'Beta', 'legal_name' => 'Beta Srl', 'vat_number' => '00000000000', 'country' => 'IT', 'default_currency' => 'EUR']);
 
     // The audit trail is kept for years and audit_logs.tenant_id is ON DELETE RESTRICT: the tenant is refused as a whole.
-    expect(fn () => DB::table('tenants')->where('id', $this->tenant->id)->delete())->toThrow(QueryException::class)
+    expect(fn () => DB::transaction(fn () => DB::table('tenants')->where('id', $this->tenant->id)->delete()))->toThrow(QueryException::class)
         ->and(DB::table('preservation_packages')->count())->toBe(1)
         ->and($other->exists)->toBeTrue();
 });
