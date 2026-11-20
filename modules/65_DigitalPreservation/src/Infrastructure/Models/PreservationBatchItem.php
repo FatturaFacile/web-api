@@ -37,6 +37,7 @@ use Modules\DigitalPreservation\Domain\Exceptions\PreservationImmutableException
  * @property string $sha256_hash
  * @property array<string, mixed>|null $metadata_json
  * @property ?Carbon $retention_until
+ * @property ?Carbon $created_at
  */
 class PreservationBatchItem extends Model
 {
