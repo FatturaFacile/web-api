@@ -102,6 +102,8 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/sdi/webhook',
         // Stored export download: authenticated by the signature of the URL (signed, expiring), see the `signed` middleware of the DataExport module.
         'api/v1/export-downloads',
+        // Source file of an AI Inbox job for the review viewer: authenticated by the signature of the URL (signed, expiring), see OcrExtraction\OcrPipelineTest.
+        'api/v1/ocr-inbox-downloads',
         // Account-less pages: the secret token of the link (stored hashed) or the careers slug is the credential and selects the tenant, throttled by IP.
         'api/v1/public/contract-signing',
         'api/v1/public/quote-signatures',

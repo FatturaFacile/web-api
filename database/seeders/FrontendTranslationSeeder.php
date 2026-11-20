@@ -17,6 +17,7 @@ use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
 use Database\Seeders\Translations\MobileFeatureTranslations;
 use Database\Seeders\Translations\MobileFrontendTranslations;
+use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
@@ -64,6 +65,7 @@ class FrontendTranslationSeeder extends Seeder
             + AuditTrailFrontendTranslations::all($locale)
             + PreservationFrontendTranslations::all($locale)
             + AiForecastingFrontendTranslations::all($locale)
+            + OcrInboxFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)
             + MobileFeatureTranslations::all($locale);
     }
