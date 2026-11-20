@@ -40615,6 +40615,147 @@ CREATE INDEX "preservation_audit_logs_tenant_id_preservation_batch_id_index" on 
   "tenant_id",
   "preservation_batch_id"
 );
+CREATE TABLE "roles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "key" varchar not null,
+  "name" varchar not null,
+  "description" text,
+  "is_system" tinyint(1) not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "roles_tenant_id_key_unique" on "roles"(
+  "tenant_id",
+  "key"
+);
+CREATE TABLE "role_permissions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "role_id" varchar not null,
+  "permission" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "role_permissions_role_id_permission_unique" on "role_permissions"(
+  "role_id",
+  "permission"
+);
+CREATE INDEX "role_permissions_tenant_id_permission_index" on "role_permissions"(
+  "tenant_id",
+  "permission"
+);
+CREATE TABLE "role_assignments"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "user_id" varchar not null,
+  "role_id" varchar not null,
+  "company_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("user_id") references "users"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "role_assignments_tenant_id_user_id_company_id_index" on "role_assignments"(
+  "tenant_id",
+  "user_id",
+  "company_id"
+);
+CREATE INDEX "role_assignments_tenant_id_role_id_index" on "role_assignments"(
+  "tenant_id",
+  "role_id"
+);
+CREATE TABLE "abac_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "role_id" varchar not null,
+  "permission" varchar not null,
+  "effect" varchar not null default 'deny',
+  "conditions" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "abac_rules_tenant_id_role_id_index" on "abac_rules"(
+  "tenant_id",
+  "role_id"
+);
+CREATE TABLE "field_policies"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "role_id" varchar not null,
+  "resource" varchar not null,
+  "field" varchar not null,
+  "visibility" varchar not null default 'masked',
+  "kind" varchar not null default 'amount',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "field_policies_role_id_resource_field_unique" on "field_policies"(
+  "role_id",
+  "resource",
+  "field"
+);
+CREATE INDEX "field_policies_tenant_id_resource_index" on "field_policies"(
+  "tenant_id",
+  "resource"
+);
+CREATE TABLE "webauthn_credentials"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar not null,
+  "name" varchar not null,
+  "credential_id" varchar not null,
+  "public_key" text not null,
+  "sign_count" integer not null default '0',
+  "aaguid" varchar,
+  "last_used_at" datetime,
+  "revoked_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("user_id") references "users"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "webauthn_credentials_tenant_id_user_id_index" on "webauthn_credentials"(
+  "tenant_id",
+  "user_id"
+);
+CREATE UNIQUE INDEX "webauthn_credentials_credential_id_unique" on "webauthn_credentials"(
+  "credential_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -41008,3 +41149,4 @@ INSERT INTO migrations VALUES(389,'2027_12_13_000100_add_payment_method_to_payme
 INSERT INTO migrations VALUES(390,'2027_12_13_000100_create_digital_preservation_tables',3);
 INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',3);
 INSERT INTO migrations VALUES(392,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',4);
+INSERT INTO migrations VALUES(393,'2027_12_14_000100_create_iam_tables',5);
