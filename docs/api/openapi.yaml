@@ -46346,8 +46346,6 @@ paths:
                   - message
                   - data
                   - meta
-        '403':
-          $ref: '#/components/responses/AuthorizationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/analytics/designed-reports/{id}/run':
@@ -46395,7 +46393,8 @@ paths:
                     type: string
                     const: 'Report calculated'
                   data:
-                    type: string
+                    type: object
+                    additionalProperties: {}
                   meta:
                     type: string
                 required:
@@ -46479,12 +46478,15 @@ paths:
                                   type: string
                                 calculated:
                                   type: boolean
+                                formula:
+                                  type: string
                               required:
                                 - key
                                 - label
                                 - unit
                                 - format
                                 - calculated
+                                - formula
                       column_headers:
                         type: array
                         items: {}
@@ -107624,6 +107626,18 @@ paths:
                         - string
                         - 'null'
                       maxLength: 255
+                allowed_payment_methods:
+                  type:
+                    - array
+                    - 'null'
+                  items:
+                    type: string
+                    enum:
+                      - card
+                      - twint
+                      - sepa
+                      - paypal
+                      - qr
               required:
                 - provider
       responses:
@@ -114271,6 +114285,11 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorePortalCheckoutRequest'
       responses:
         '201':
           description: ''
@@ -114291,6 +114310,8 @@ paths:
                         type: string
                       provider:
                         type: string
+                      payment_method:
+                        type: string
                       amount:
                         type: string
                       currency:
@@ -114300,6 +114321,7 @@ paths:
                     required:
                       - invoice_id
                       - provider
+                      - payment_method
                       - amount
                       - currency
                       - url
@@ -154630,7 +154652,8 @@ paths:
                     type: string
                     const: 'Report calculated'
                   data:
-                    type: string
+                    type: object
+                    additionalProperties: {}
                   meta:
                     type: string
                 required:
@@ -154638,10 +154661,10 @@ paths:
                   - message
                   - data
                   - meta
-        '422':
-          $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/analytics/designer/export:
     post:
       operationId: analytics.designer.export
@@ -154743,12 +154766,15 @@ paths:
                                   type: string
                                 calculated:
                                   type: boolean
+                                formula:
+                                  type: string
                               required:
                                 - key
                                 - label
                                 - unit
                                 - format
                                 - calculated
+                                - formula
                       column_headers:
                         type: array
                         items: {}
@@ -178934,59 +178960,7 @@ paths:
                     type: string
                     const: 'Backup retrieved successfully'
                   data:
-                    type: object
-                    properties:
-                      state:
-                        type: string
-                        enum:
-                          - failing
-                          - never
-                          - stale
-                          - ok
-                      last_completed_at:
-                        type:
-                          - string
-                          - 'null'
-                      last_completed_size_bytes:
-                        type:
-                          - string
-                          - 'null'
-                      age_hours:
-                        type:
-                          - integer
-                          - 'null'
-                      last_failed_at:
-                        type:
-                          - string
-                          - 'null'
-                      last_error:
-                        type:
-                          - string
-                          - 'null'
-                      pending:
-                        type: integer
-                        minimum: 0
-                      completed_count:
-                        type: integer
-                        minimum: 0
-                      rpo_hours:
-                        type: integer
-                      rto_minutes:
-                        type: integer
-                      retention:
-                        type: integer
-                    required:
-                      - state
-                      - last_completed_at
-                      - last_completed_size_bytes
-                      - age_hours
-                      - last_failed_at
-                      - last_error
-                      - pending
-                      - completed_count
-                      - rpo_hours
-                      - rto_minutes
-                      - retention
+                    type: string
                   meta:
                     type: string
                 required:
@@ -258233,13 +258207,19 @@ components:
             format: uuid
           minItems: 1
           uniqueItems: true
+        purchase_order_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+          uniqueItems: true
       required:
         - document_date
         - cost_type
         - allocation_key
         - currency
         - total_amount
-        - receipt_ids
       title: StoreLandedCostDocumentRequest
     StoreLandedCostRequest:
       type: object
@@ -259388,6 +259368,21 @@ components:
       required:
         - title
       title: StorePeriodCloseTaskRequest
+    StorePortalCheckoutRequest:
+      type: object
+      properties:
+        payment_method:
+          type:
+            - string
+            - 'null'
+          enum:
+            - card
+            - twint
+            - sepa
+            - paypal
+            - qr
+            - null
+      title: StorePortalCheckoutRequest
     StorePortalTicketRequest:
       type: object
       properties:
