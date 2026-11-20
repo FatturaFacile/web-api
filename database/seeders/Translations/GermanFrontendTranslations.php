@@ -4185,6 +4185,7 @@ final class GermanFrontendTranslations
             'PORTAL.ORIGIN_COUNTRY' => 'Ursprungsland-Code',
             'PORTAL.PACKAGES' => 'Packstücke',
             'PORTAL.PAID' => 'Bezahlt (€)',
+            'PORTAL.PAYMENT_METHOD_NOT_SUPPORTED' => 'Diese Zahlungsart ist für diese Rechnung nicht verfügbar.',
             'PORTAL.PAYMENT_STATUS' => 'Zahlungsstatus',
             'PORTAL.PENDING_QUOTES' => 'Offene Angebote',
             'PORTAL.PENDING_REVIEW' => 'In Prüfung',

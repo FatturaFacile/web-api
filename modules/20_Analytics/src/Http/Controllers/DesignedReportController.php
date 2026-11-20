@@ -11,15 +11,18 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Modules\Analytics\Application\Commands\CreateOrUpdateSavedReportCommand;
 use Modules\Analytics\Application\Commands\CreateOrUpdateSavedReportHandler;
+use Modules\Analytics\Application\Commands\DeleteSavedReportCommand;
+use Modules\Analytics\Application\Commands\DeleteSavedReportHandler;
 use Modules\Analytics\Application\Queries\ExecuteAdHocPivotHandler;
 use Modules\Analytics\Application\Queries\ExecuteAdHocPivotQuery;
 use Modules\Analytics\Application\Queries\ExportReportStreamHandler;
 use Modules\Analytics\Application\Queries\ExportReportStreamQuery;
+use Modules\Analytics\Application\Queries\RunReportHandler;
+use Modules\Analytics\Application\Queries\RunReportQuery;
 use Modules\Analytics\Export\RegionalReportFormatter;
 use Modules\Analytics\Http\Requests\SaveDesignedReportRequest;
 use Modules\Analytics\Http\Resources\DesignedReportResource;
 use Modules\Analytics\Models\DesignedReport;
-use Modules\Analytics\Semantic\ReportEngine;
 use Modules\Analytics\Services\ReportExportFormatter;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -36,8 +39,9 @@ final class DesignedReportController extends Controller
      * Inject the collaborators.
      */
     public function __construct(
-        private readonly ReportEngine $engine,
         private readonly CreateOrUpdateSavedReportHandler $saver,
+        private readonly DeleteSavedReportHandler $deleter,
+        private readonly RunReportHandler $runner,
         private readonly ExportReportStreamHandler $exports,
         private readonly ExecuteAdHocPivotHandler $pivots,
     ) {}
@@ -160,9 +164,7 @@ final class DesignedReportController extends Controller
     public function destroy(Request $request, string $id): JsonResponse
     {
         $report = $this->find($request, $id);
-        $this->authorize('manage', $report);
-        $report->schedules()->delete();
-        $report->delete();
+        $this->deleter->handle(new DeleteSavedReportCommand($report));
 
         return $this->successResponse(null, 'Designed report deleted');
     }
@@ -190,9 +192,8 @@ final class DesignedReportController extends Controller
     {
         $request->validate(['page' => ['nullable', 'integer', 'min:1', 'max:100000'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:'.(int) config('analytics.reporting.max_per_page', 500)]]);
         $report = $this->find($request, $id);
-        $spec = $this->engine->parse($report->dataset, $report->spec, $request->user());
 
-        return $this->successResponse($this->engine->run($spec, $request->user(), (int) $request->query('page', 1), (int) $request->query('per_page', 50)), 'Report calculated');
+        return $this->successResponse($this->runner->handle(new RunReportQuery($request->user(), $report->dataset, $report->spec, (int) $request->query('page', 1), (int) $request->query('per_page', 50))), 'Report calculated');
     }
 
     /**

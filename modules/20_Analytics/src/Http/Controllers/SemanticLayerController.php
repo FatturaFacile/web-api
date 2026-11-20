@@ -14,6 +14,8 @@ use Modules\Analytics\Application\Queries\ExportReportStreamHandler;
 use Modules\Analytics\Application\Queries\ExportReportStreamQuery;
 use Modules\Analytics\Application\Queries\GetSemanticLayerCatalogHandler;
 use Modules\Analytics\Application\Queries\GetSemanticLayerCatalogQuery;
+use Modules\Analytics\Application\Queries\RunReportHandler;
+use Modules\Analytics\Application\Queries\RunReportQuery;
 use Modules\Analytics\Http\Requests\DesignerRequest;
 use Modules\Analytics\Semantic\ReportEngine;
 use Modules\Analytics\Semantic\SemanticCatalog;
@@ -35,6 +37,7 @@ final class SemanticLayerController extends Controller
     public function __construct(
         private readonly SemanticCatalog $catalog,
         private readonly ReportEngine $engine,
+        private readonly RunReportHandler $runner,
         private readonly ExportReportStreamHandler $exports,
         private readonly ExecuteAdHocPivotHandler $pivots,
         private readonly GetSemanticLayerCatalogHandler $catalogHandler,
@@ -107,9 +110,7 @@ final class SemanticLayerController extends Controller
     )]
     public function run(DesignerRequest $request): JsonResponse
     {
-        $spec = $this->engine->parse((string) $request->input('dataset'), (array) $request->input('spec'), $request->user(), 'spec.');
-
-        return $this->successResponse($this->engine->run($spec, $request->user(), (int) $request->input('page', 1), (int) $request->input('per_page', 50)), 'Report calculated');
+        return $this->successResponse($this->runner->handle(new RunReportQuery($request->user(), (string) $request->input('dataset'), (array) $request->input('spec'), (int) $request->input('page', 1), (int) $request->input('per_page', 50), 'spec.')), 'Report calculated');
     }
 
     /**

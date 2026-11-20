@@ -20,6 +20,13 @@ interface PaymentLinkGateway
     public function name(): string;
 
     /**
+     * The payment methods (see PaymentMethods) this driver can open a page for.
+     *
+     * @return list<string>
+     */
+    public function supportedMethods(): array;
+
+    /**
      * Asks the provider for a hosted payment page. No card data ever reaches this application.
      *
      * @param  array<string, string>  $credentials

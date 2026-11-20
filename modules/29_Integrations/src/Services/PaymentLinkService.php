@@ -36,7 +36,7 @@ final readonly class PaymentLinkService
     /**
      * @throws ValidationException when the invoice has nothing to collect or the provider refuses
      */
-    public function create(Invoice $invoice): PaymentLink
+    public function create(Invoice $invoice, ?string $paymentMethod = null): PaymentLink
     {
         $amount = bcadd($invoice->outstandingAmount(), '0', 2);
 
@@ -56,9 +56,14 @@ final readonly class PaymentLinkService
             throw ValidationException::withMessages(['gateway' => $e->getMessage()]);
         }
 
+        if ($paymentMethod !== null && ! in_array($paymentMethod, $this->allowedMethods($settings, $gateway), true)) {
+            throw ValidationException::withMessages(['payment_method' => 'PORTAL.PAYMENT_METHOD_NOT_SUPPORTED']);
+        }
+
         $link = PaymentLink::create([
             'invoice_id' => $invoice->id,
             'provider' => $gateway->name(),
+            'payment_method' => $paymentMethod,
             'amount' => $amount,
             'currency' => $invoice->currency,
             'status' => 'pending',
@@ -70,6 +75,7 @@ final readonly class PaymentLinkService
                 amount: $amount,
                 currency: (string) $invoice->currency,
                 description: __('sales.payment_link_description', ['number' => $invoice->invoice_number]),
+                paymentMethod: $paymentMethod,
             ), $settings->credentials ?? []);
         } catch (PaymentGatewayException $e) {
             $link->update(['status' => 'failed']);
@@ -163,6 +169,19 @@ final readonly class PaymentLinkService
         }
 
         $link->update(['status' => 'paid', 'payment_id' => $payment->id, 'paid_at' => now()]);
+    }
+
+    /**
+     * The methods the tenant allows (all of the driver's when it set no list), never more than the driver supports.
+     *
+     * @return list<string>
+     */
+    private function allowedMethods(?PaymentGatewaySetting $settings, PaymentLinkGateway $gateway): array
+    {
+        $supported = $gateway->supportedMethods();
+        $tenantList = $settings?->allowed_payment_methods;
+
+        return is_array($tenantList) ? array_values(array_intersect($supported, $tenantList)) : $supported;
     }
 
     private function settings(): ?PaymentGatewaySetting
