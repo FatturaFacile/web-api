@@ -42,7 +42,7 @@ final readonly class RequisitionNotificationAdapter implements RequisitionNotifi
         }
 
         $requester = User::query()->find($requisition->effectiveRequesterId());
-        $requesterName = $requester?->name ?? 'User';
+        $requesterName = $requester !== null ? $requester->name : 'User';
         $costCenterLabel = $this->resolveCostCenterLabel($requisition);
         $deliveryDate = $requisition->requested_delivery_date?->toDateString()
             ?? $requisition->required_by_date?->toDateString()
@@ -60,7 +60,7 @@ final readonly class RequisitionNotificationAdapter implements RequisitionNotifi
 
             $locale = $this->resolveLocale($approver, (string) $requisition->tenant_id);
 
-            if ($approver->email !== null && $approver->email !== '') {
+            if ($approver->email !== '') {
                 Mail::to($approver->email)->queue(new RequisitionApprovalRequestedMail(
                     requisitionId: (string) $requisition->id,
                     requisitionNumber: (string) $requisition->requisition_number,
@@ -127,7 +127,7 @@ final readonly class RequisitionNotificationAdapter implements RequisitionNotifi
         $locale = $this->resolveLocale($requester, (string) $requisition->tenant_id);
         $costCenterLabel = $this->resolveBudgetCostCenterLabel($requisition, $budgetCheck);
 
-        if ($requester->email !== null && $requester->email !== '') {
+        if ($requester->email !== '') {
             Mail::to($requester->email)->queue(new RequisitionBudgetBlockedMail(
                 requisitionId: (string) $requisition->id,
                 requisitionNumber: (string) $requisition->requisition_number,
@@ -173,7 +173,7 @@ final readonly class RequisitionNotificationAdapter implements RequisitionNotifi
         $locale = $this->resolveLocale($requester, (string) $requisition->tenant_id);
         $costCenterLabel = $this->resolveBudgetCostCenterLabel($requisition, $budgetCheck);
 
-        if ($requester->email !== null && $requester->email !== '') {
+        if ($requester->email !== '') {
             Mail::to($requester->email)->queue(new RequisitionBudgetWarningMail(
                 requisitionId: (string) $requisition->id,
                 requisitionNumber: (string) $requisition->requisition_number,
@@ -218,7 +218,7 @@ final readonly class RequisitionNotificationAdapter implements RequisitionNotifi
 
         $locale = $this->resolveLocale($requester, (string) $requisition->tenant_id);
 
-        if ($requester->email !== null && $requester->email !== '') {
+        if ($requester->email !== '') {
             Mail::to($requester->email)->queue(new RequisitionApprovedMail(
                 requisitionId: (string) $requisition->id,
                 requisitionNumber: (string) $requisition->requisition_number,
@@ -262,7 +262,7 @@ final readonly class RequisitionNotificationAdapter implements RequisitionNotifi
 
         $locale = $this->resolveLocale($requester, (string) $requisition->tenant_id);
 
-        if ($requester->email !== null && $requester->email !== '') {
+        if ($requester->email !== '') {
             Mail::to($requester->email)->queue(new RequisitionRejectedMail(
                 requisitionId: (string) $requisition->id,
                 requisitionNumber: (string) $requisition->requisition_number,

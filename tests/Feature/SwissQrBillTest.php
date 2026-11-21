@@ -19,10 +19,10 @@ use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
-const QR_IBAN = 'CH4431999123000889012';
-const STANDARD_IBAN = 'CH9300762011623852957';
-const QR_REFERENCE = '210000000003139471430009017';
-const SCOR_REFERENCE = 'RF18 5390 0754 7034';
+const SQB_QR_IBAN = 'CH4431999123000889012';
+const SQB_STANDARD_IBAN = 'CH9300762011623852957';
+const SQB_QR_REFERENCE = '210000000003139471430009017';
+const SQB_SCOR_REFERENCE = 'RF18 5390 0754 7034';
 
 beforeEach(function (): void {
     $this->travelTo('2026-03-15 10:00:00');
@@ -33,8 +33,8 @@ beforeEach(function (): void {
         'vat_number' => 'CHE-123.456.789',
         'country' => 'CH',
         'default_currency' => 'CHF',
-        'iban' => STANDARD_IBAN,
-        'qr_iban' => QR_IBAN,
+        'iban' => SQB_STANDARD_IBAN,
+        'qr_iban' => SQB_QR_IBAN,
         'settings' => ['preferences' => ['company' => ['street' => 'Bahnhofstrasse', 'house_number' => '1', 'postal_code' => '6900', 'city' => 'Lugano', 'country' => 'CH']]],
     ]);
 
@@ -68,7 +68,7 @@ function spcLines(string $payload): array
 function qrData(array $attributes): void
 {
     InvoiceQrBillData::updateOrCreate(['invoice_id' => test()->invoice->id], array_merge([
-        'qr_iban' => QR_IBAN, 'scor_reference' => '', 'creditor_info' => [], 'debtor_info' => [],
+        'qr_iban' => SQB_QR_IBAN, 'scor_reference' => '', 'creditor_info' => [], 'debtor_info' => [],
     ], $attributes));
     test()->invoice->unsetRelation('qrBillData');
 }
@@ -113,7 +113,7 @@ test('a QR-IBAN invoice gets a derived 27-digit QR reference with a valid modulo
     $bill = qrService()->generate($this->invoice);
 
     expect($bill->referenceType)->toBe('QRR')
-        ->and($bill->iban)->toBe(QR_IBAN)
+        ->and($bill->iban)->toBe(SQB_QR_IBAN)
         ->and($bill->reference)->toMatch('/^\d{27}$/')
         ->and($bill->reference)->toBe('000000000000000000202600013')
         ->and(app(QrBillGeneratorService::class)->validateScorReference($bill->reference))->toBeTrue()
@@ -123,7 +123,7 @@ test('a QR-IBAN invoice gets a derived 27-digit QR reference with a valid modulo
     expect($lines[0])->toBe('SPC')
         ->and($lines[1])->toBe('0200')
         ->and($lines[2])->toBe('1')
-        ->and($lines[3])->toBe(QR_IBAN)
+        ->and($lines[3])->toBe(SQB_QR_IBAN)
         ->and($lines[5])->toBe('FatturaFacile Switzerland AG')
         ->and($lines[18])->toBe('1949.75')
         ->and($lines[19])->toBe('CHF')
@@ -133,11 +133,11 @@ test('a QR-IBAN invoice gets a derived 27-digit QR reference with a valid modulo
 });
 
 test('a stored valid QR reference is used as is and printed in five digit blocks', function (): void {
-    qrData(['scor_reference' => QR_REFERENCE]);
+    qrData(['scor_reference' => SQB_QR_REFERENCE]);
 
     $bill = qrService()->generate($this->invoice);
 
-    expect($bill->referenceType)->toBe('QRR')->and($bill->reference)->toBe(QR_REFERENCE)->and($bill->formattedReference)->toBe('21 00000 00003 13947 14300 09017');
+    expect($bill->referenceType)->toBe('QRR')->and($bill->reference)->toBe(SQB_QR_REFERENCE)->and($bill->formattedReference)->toBe('21 00000 00003 13947 14300 09017');
 });
 
 test('the QR code is returned as SPC payload, SVG and PNG data URI', function (): void {
@@ -169,17 +169,17 @@ test('EUR invoices are supported', function (): void {
 // ------------------------------------------------------------ Standard IBAN + SCOR / NON
 
 test('a stored ISO 11649 creditor reference is combined with the standard IBAN', function (): void {
-    qrData(['scor_reference' => SCOR_REFERENCE]); // tenant has both a QR-IBAN and a standard IBAN
+    qrData(['scor_reference' => SQB_SCOR_REFERENCE]); // tenant has both a QR-IBAN and a standard IBAN
 
     $bill = qrService()->generate($this->invoice);
 
     expect($bill->referenceType)->toBe('SCOR')
-        ->and($bill->iban)->toBe(STANDARD_IBAN)
+        ->and($bill->iban)->toBe(SQB_STANDARD_IBAN)
         ->and($bill->reference)->toBe('RF18539007547034')
         ->and($bill->formattedReference)->toBe('RF18 5390 0754 7034');
 
     $lines = spcLines($bill->payload);
-    expect($lines[3])->toBe(STANDARD_IBAN)->and($lines[27])->toBe('SCOR')->and($lines[28])->toBe('RF18539007547034');
+    expect($lines[3])->toBe(SQB_STANDARD_IBAN)->and($lines[27])->toBe('SCOR')->and($lines[28])->toBe('RF18539007547034');
 });
 
 test('a standard IBAN without reference produces a NON bill that still names the invoice', function (): void {
@@ -188,7 +188,7 @@ test('a standard IBAN without reference produces a NON bill that still names the
     $bill = qrService()->generate($this->invoice);
 
     expect($bill->referenceType)->toBe('NON')
-        ->and($bill->iban)->toBe(STANDARD_IBAN)
+        ->and($bill->iban)->toBe(SQB_STANDARD_IBAN)
         ->and($bill->reference)->toBeNull()
         ->and($bill->formattedReference)->toBeNull()
         ->and($bill->message)->toBe('Invoice INV-2026-0001');
@@ -244,11 +244,11 @@ test('invalid or missing data raises a typed exception with a machine readable r
     'nothing to pay' => ['invalid_amount', fn () => test()->invoice->update(['total_paid' => 1949.75])],
     'QR reference without QR-IBAN' => ['reference_mismatch', function (): void {
         setTenant(['qr_iban' => null]);
-        qrData(['qr_iban' => STANDARD_IBAN, 'scor_reference' => QR_REFERENCE]); // the column is NOT NULL; here it holds a standard IBAN
+        qrData(['qr_iban' => SQB_STANDARD_IBAN, 'scor_reference' => SQB_QR_REFERENCE]); // the column is NOT NULL; here it holds a standard IBAN
     }],
     'creditor reference without standard IBAN' => ['reference_mismatch', function (): void {
         setTenant(['iban' => null]);
-        qrData(['scor_reference' => SCOR_REFERENCE]);
+        qrData(['scor_reference' => SQB_SCOR_REFERENCE]);
     }],
     'wrong modulo 10 check digit' => ['invalid_reference', fn () => qrData(['scor_reference' => '210000000003139471430009018'])],
     'garbage reference' => ['invalid_reference', fn () => qrData(['scor_reference' => 'ABC'])],

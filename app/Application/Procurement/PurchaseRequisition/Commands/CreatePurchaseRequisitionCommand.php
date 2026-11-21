@@ -10,7 +10,7 @@ namespace App\Application\Procurement\PurchaseRequisition\Commands;
 final readonly class CreatePurchaseRequisitionCommand
 {
     /**
-     * @param  list<array{item_type?: string, catalog_item_id?: ?string, description?: string, quantity: string|int|float, unit_of_measure?: string, estimated_unit_price?: string|int|float, cost_center_id?: ?string, project_id?: ?string}>  $lines
+     * @param  list<array{item_type?: string, catalog_item_id?: ?string, description?: string, quantity: string|int|float, unit_of_measure?: string, estimated_unit_price?: string|int|float|null, cost_center_id?: ?string, project_id?: ?string}>  $lines
      */
     public function __construct(
         public string $tenantId,

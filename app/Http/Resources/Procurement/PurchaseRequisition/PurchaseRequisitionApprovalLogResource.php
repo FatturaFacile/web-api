@@ -37,7 +37,7 @@ final class PurchaseRequisitionApprovalLogResource extends JsonResource
             'ip_address' => $log->ip_address,
             'user_agent' => $log->user_agent,
             'metadata' => $log->metadata,
-            'acted_at' => $log->acted_at->toIso8601String(),
+            'acted_at' => $log->acted_at?->toIso8601String(),
         ];
     }
 }

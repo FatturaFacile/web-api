@@ -39,6 +39,7 @@ class SessionController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
+    #[OA\Get(path: '/api/v1/profile/sessions', operationId: 'listProfileSessions', description: 'The active sessions and tokens of the signed-in user.', summary: 'List my sessions', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Identity'], responses: [new OA\Response(response: 200, description: 'OK')])]
     public function index(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -108,6 +109,7 @@ class SessionController extends Controller
     }
 
     /** Revokes one open access of the signed-in user by its id alone, whichever kind it is (token or browser session). */
+    #[OA\Delete(path: '/api/v1/profile/sessions/{id}', operationId: 'revokeProfileSession', description: 'Signs out one session or token of the signed-in user.', summary: 'Revoke one of my sessions', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Identity'], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'OK')])]
     public function destroyAny(Request $request, string $id): JsonResponse
     {
         /** @var User $user */

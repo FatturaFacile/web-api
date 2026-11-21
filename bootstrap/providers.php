@@ -46,11 +46,13 @@ use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Governance\Providers\GovernanceServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
 use Modules\Hospitality\Providers\HospitalityServiceProvider;
+use Modules\Hse\Providers\HseServiceProvider;
 use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
 use Modules\Integrations\Providers\IntegrationsServiceProvider;
 use Modules\Intrastat\Providers\IntrastatServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
+use Modules\ItalianPayroll\Providers\ItalianPayrollServiceProvider;
 use Modules\KpiDashboards\Providers\KpiDashboardsServiceProvider;
 use Modules\LeaseAccounting\Providers\LeaseAccountingServiceProvider;
 use Modules\Logistics\Providers\LogisticsServiceProvider;
@@ -168,8 +170,10 @@ return [
     OcrExtractionServiceProvider::class,
     AnalyticsDssServiceProvider::class,
     KpiDashboardsServiceProvider::class,
+    ItalianPayrollServiceProvider::class,
     QuotingServiceProvider::class,
     SwissFiscalServiceProvider::class,
     AiCognitiveServiceProvider::class,
+    HseServiceProvider::class,
     DataResidencyServiceProvider::class,
 ];

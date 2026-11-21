@@ -30,7 +30,7 @@ use Modules\Workflow\Models\WorkflowInstance;
  * @property string|null $project_id
  * @property string $requisition_number
  * @property string $title
- * @property string $requestor_user_id
+ * @property string|null $requestor_user_id
  * @property string|null $requester_user_id
  * @property string $urgency
  * @property Carbon|null $required_by_date
@@ -83,8 +83,7 @@ final class PurchaseRequisition extends BaseEnterpriseModel implements Auditable
             } elseif ($requisition->required_by_date !== null) {
                 $requisition->requested_delivery_date = $requisition->required_by_date;
             } else {
-                $defaultDate = now()->addDays(14)->toDateString();
-                $requisition->required_by_date = $defaultDate;
+                $requisition->required_by_date = now()->addDays(14);
             }
 
             $title = trim((string) ($requisition->title ?? ''));

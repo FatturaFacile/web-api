@@ -286,6 +286,7 @@ class AuthController extends Controller
             new OA\Response(response: 429, description: 'Too many attempts', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
+    #[OA\Post(path: '/api/v1/auth/2fa/challenge', operationId: 'completeTwoFactorChallenge', description: 'Exchanges the challenge token and a TOTP or recovery code for the session of the user.', summary: 'Complete the second-factor challenge', tags: ['Identity'], responses: [new OA\Response(response: 200, description: 'OK')])]
     public function twoFactorChallenge(TwoFactorChallengeRequest $request): JsonResponse
     {
         $validated = $request->validated();

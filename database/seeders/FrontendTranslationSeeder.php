@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
+use Database\Seeders\Translations\BomManagementFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
 use Database\Seeders\Translations\CpqQuotesFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
@@ -17,6 +18,7 @@ use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
+use Database\Seeders\Translations\HseFrontendTranslations;
 use Database\Seeders\Translations\IdentityFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
@@ -80,8 +82,10 @@ class FrontendTranslationSeeder extends Seeder
             + IdentityFrontendTranslations::all($locale)
             + AiForecastingFrontendTranslations::all($locale)
             + OcrInboxFrontendTranslations::all($locale)
+            + BomManagementFrontendTranslations::all($locale)
             + ExecutiveDssFrontendTranslations::all($locale)
             + KpiDashboardsFrontendTranslations::all($locale)
+            + HseFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)
             + CpqQuotesFrontendTranslations::all($locale)
             + DataSovereigntyFrontendTranslations::all($locale)

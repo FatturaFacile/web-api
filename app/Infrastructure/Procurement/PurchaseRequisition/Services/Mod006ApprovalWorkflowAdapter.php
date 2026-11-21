@@ -356,9 +356,7 @@ final readonly class Mod006ApprovalWorkflowAdapter implements ApprovalWorkflowGa
         }
 
         /** @var WorkflowInstance|null $instance */
-        $instance = WorkflowInstance::query()
-            ->with(['steps.decisions.user'])
-            ->find($requisition->workflow_instance_id);
+        $instance = WorkflowInstance::query()->find($requisition->workflow_instance_id);
 
         if ($instance === null) {
             return [];
@@ -368,14 +366,32 @@ final readonly class Mod006ApprovalWorkflowAdapter implements ApprovalWorkflowGa
             ? $instance->context_snapshot['approval_chain']
             : [];
 
-        $stepsByLevel = $instance->steps->keyBy('tier_level');
+        $steps = WorkflowInstanceStep::query()
+            ->where('workflow_instance_id', $instance->id)
+            ->orderBy('tier_level')
+            ->get();
+
+        $decisionsByStepId = ApprovalDecision::query()
+            ->whereIn('workflow_instance_step_id', $steps->pluck('id'))
+            ->get()
+            ->keyBy('workflow_instance_step_id');
+
+        $deciderIds = $decisionsByStepId->pluck('user_id')->filter()->unique()->values()->all();
+        $deciderNames = $deciderIds !== []
+            ? User::query()->whereIn('id', $deciderIds)->pluck('name', 'id')
+            : collect();
+
+        $resolveDeciderName = static fn (?ApprovalDecision $decision): ?string => $decision !== null && $decision->user_id !== null
+            ? $deciderNames->get((string) $decision->user_id)
+            : null;
+
+        $stepsByLevel = $steps->keyBy('tier_level');
         $result = [];
 
         foreach ($chain as $tier) {
             $level = (int) ($tier['level'] ?? 1);
-            /** @var WorkflowInstanceStep|null $step */
             $step = $stepsByLevel->get($level);
-            $decision = $step?->decisions->first();
+            $decision = $step !== null ? $decisionsByStepId->get((string) $step->id) : null;
 
             $result[] = [
                 'level' => $level,
@@ -389,14 +405,14 @@ final readonly class Mod006ApprovalWorkflowAdapter implements ApprovalWorkflowGa
                 'due_at' => $step?->due_at?->toIso8601String(),
                 'completed_at' => $step?->completed_at?->toIso8601String(),
                 'decided_by_user_id' => $decision?->user_id,
-                'decided_by_name' => $decision?->user?->name,
+                'decided_by_name' => $resolveDeciderName($decision),
                 'comment' => $decision?->comment,
             ];
         }
 
         if ($result === []) {
-            foreach ($instance->steps->sortBy('tier_level') as $step) {
-                $decision = $step->decisions->first();
+            foreach ($steps as $step) {
+                $decision = $decisionsByStepId->get((string) $step->id);
                 $result[] = [
                     'level' => (int) $step->tier_level,
                     'label' => 'Level '.$step->tier_level,
@@ -409,7 +425,7 @@ final readonly class Mod006ApprovalWorkflowAdapter implements ApprovalWorkflowGa
                     'due_at' => $step->due_at?->toIso8601String(),
                     'completed_at' => $step->completed_at?->toIso8601String(),
                     'decided_by_user_id' => $decision?->user_id,
-                    'decided_by_name' => $decision?->user?->name,
+                    'decided_by_name' => $resolveDeciderName($decision),
                     'comment' => $decision?->comment,
                 ];
             }
@@ -999,7 +1015,10 @@ final readonly class Mod006ApprovalWorkflowAdapter implements ApprovalWorkflowGa
             ->first();
 
         if ($definition !== null) {
-            $approvalNode = $definition->nodes()->where('node_type', 'approval')->first();
+            $approvalNode = WorkflowNode::query()
+                ->where('workflow_definition_id', $definition->id)
+                ->where('node_type', 'approval')
+                ->first();
             if ($approvalNode !== null) {
                 return [$definition, $approvalNode];
             }

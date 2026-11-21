@@ -26,12 +26,12 @@ use Modules\Projects\Models\Project;
  * @property string|null $supplier_catalog_id
  * @property string $description
  * @property string|null $quantity
- * @property string $quantity_requested
+ * @property string|null $quantity_requested
  * @property string|null $unit_of_measure
  * @property string $uom
  * @property string $estimated_unit_price
  * @property string|null $estimated_line_total
- * @property string $estimated_total_price
+ * @property string|null $estimated_total_price
  * @property string|null $cost_center_id
  * @property string|null $project_id
  * @property string $converted_quantity

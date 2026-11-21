@@ -26,7 +26,7 @@ final readonly class RequisitionLineWriteSupport
     /**
      * Resolves and persists line items for a requisition, returning the aggregated total estimated amount.
      *
-     * @param  list<array{item_type?: string, catalog_item_id?: ?string, description?: string, quantity: string|int|float, unit_of_measure?: string, estimated_unit_price?: string|int|float, cost_center_id?: ?string, project_id?: ?string}>  $linesPayload
+     * @param  list<array{item_type?: string, catalog_item_id?: ?string, description?: string, quantity: string|int|float, unit_of_measure?: string, estimated_unit_price?: string|int|float|null, cost_center_id?: ?string, project_id?: ?string}>  $linesPayload
      */
     public function replaceLines(PurchaseRequisition $requisition, array $linesPayload): string
     {
@@ -34,7 +34,7 @@ final readonly class RequisitionLineWriteSupport
         $preparedSummaryLines = [];
         $lineAttributes = [];
 
-        foreach (array_values($linesPayload) as $index => $line) {
+        foreach ($linesPayload as $index => $line) {
             $lineNumber = $index + 1;
             $catalogItemId = isset($line['catalog_item_id']) && trim((string) $line['catalog_item_id']) !== ''
                 ? trim((string) $line['catalog_item_id'])

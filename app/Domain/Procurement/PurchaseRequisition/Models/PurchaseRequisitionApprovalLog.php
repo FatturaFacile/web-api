@@ -26,7 +26,7 @@ use LogicException;
  * @property string|null $ip_address
  * @property string|null $user_agent
  * @property array<string, mixed>|null $metadata
- * @property CarbonImmutable $acted_at
+ * @property CarbonImmutable|null $acted_at
  * @property CarbonImmutable|null $created_at
  * @property-read PurchaseRequisition|null $requisition
  * @property-read User|null $approver
