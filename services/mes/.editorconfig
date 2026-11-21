@@ -1,0 +1,28 @@
+# services/mes — scoped to this solution (root = true so the repo's PHP/JS settings do not leak in).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,csproj,props,slnx,sql}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_new_line_before_open_brace = all
+csharp_style_var_for_built_in_types = true:suggestion
+dotnet_sort_system_directives_first = true
+dotnet_style_qualification_for_field = false:warning
+dotnet_diagnostic.CS8600.severity = error
+dotnet_diagnostic.CS8602.severity = error
+dotnet_diagnostic.CS8603.severity = error
+dotnet_diagnostic.CS8604.severity = error
+dotnet_diagnostic.IDE0161.severity = warning
