@@ -42162,6 +42162,308 @@ CREATE INDEX "cpq_comments_tenant_id_quote_id_index" on "cpq_comments"(
   "tenant_id",
   "quote_id"
 );
+CREATE TABLE "dim_date"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "date_key" integer not null,
+  "date" date not null,
+  "year" integer not null,
+  "quarter" integer not null,
+  "month" integer not null,
+  "week" integer not null,
+  "day_of_week" integer not null,
+  "is_weekend" tinyint(1) not null default '0',
+  "is_ch_holiday" tinyint(1) not null default '0',
+  "is_it_holiday" tinyint(1) not null default '0',
+  "working_days" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dim_date_tenant_key_unique" on "dim_date"(
+  "tenant_id",
+  "date_key"
+);
+CREATE TABLE "dim_legal_entity"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar not null,
+  "name" varchar not null,
+  "base_currency" varchar not null,
+  "country" varchar,
+  "region" varchar,
+  "parent_legal_entity_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dim_le_tenant_entity_unique" on "dim_legal_entity"(
+  "tenant_id",
+  "legal_entity_id"
+);
+CREATE TABLE "dim_counterparty"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contact_id" varchar not null,
+  "name" varchar not null,
+  "kind" varchar not null,
+  "country" varchar,
+  "industry_code" varchar,
+  "industry_code_system" varchar,
+  "payment_terms_days" integer not null default '30',
+  "cohort" varchar,
+  "credit_tier" varchar not null default 'B',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dim_cp_tenant_contact_unique" on "dim_counterparty"(
+  "tenant_id",
+  "contact_id"
+);
+CREATE TABLE "dim_product_service"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "product_id" varchar not null,
+  "sku" varchar,
+  "name" varchar not null,
+  "category" varchar,
+  "abc_class" varchar,
+  "xyz_class" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dim_ps_tenant_product_unique" on "dim_product_service"(
+  "tenant_id",
+  "product_id"
+);
+CREATE TABLE "dim_cost_center"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "cost_center_id" varchar not null,
+  "code" varchar,
+  "name" varchar not null,
+  "kind" varchar not null default 'department',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dim_cc_tenant_center_unique" on "dim_cost_center"(
+  "tenant_id",
+  "cost_center_id"
+);
+CREATE TABLE "fact_financial_transactions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "journal_line_id" varchar not null,
+  "journal_entry_id" varchar not null,
+  "date_key" integer not null,
+  "posting_date" date not null,
+  "account_id" varchar not null,
+  "account_code" varchar,
+  "category" varchar not null,
+  "cost_center_id" varchar,
+  "counterparty_id" varchar,
+  "product_id" varchar,
+  "project_id" varchar,
+  "channel" varchar,
+  "transaction_currency" varchar not null,
+  "amount_transaction" numeric not null default '0',
+  "functional_currency" varchar not null,
+  "amount_functional" numeric not null default '0',
+  "amount_chf" numeric,
+  "amount_eur" numeric,
+  "fx_rate_chf" numeric,
+  "fx_rate_eur" numeric,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fft_tenant_line_unique" on "fact_financial_transactions"(
+  "tenant_id",
+  "journal_line_id"
+);
+CREATE INDEX "fft_scope_date_category_index" on "fact_financial_transactions"(
+  "tenant_id",
+  "legal_entity_id",
+  "date_key",
+  "category"
+);
+CREATE INDEX "fft_counterparty_index" on "fact_financial_transactions"(
+  "tenant_id",
+  "counterparty_id",
+  "category"
+);
+CREATE INDEX "fft_entry_index" on "fact_financial_transactions"(
+  "tenant_id",
+  "journal_entry_id"
+);
+CREATE TABLE "fact_commercial_velocity"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "invoice_id" varchar not null,
+  "counterparty_id" varchar,
+  "quote_id" varchar,
+  "channel" varchar not null default 'direct',
+  "issue_date_key" integer not null,
+  "issue_date" date not null,
+  "due_date" date,
+  "paid_date" date,
+  "currency" varchar not null,
+  "amount_net" numeric not null default '0',
+  "amount_gross" numeric not null default '0',
+  "amount_paid" numeric not null default '0',
+  "amount_open" numeric not null default '0',
+  "amount_net_chf" numeric,
+  "amount_net_eur" numeric,
+  "amount_open_chf" numeric,
+  "amount_open_eur" numeric,
+  "discount_amount" numeric not null default '0',
+  "days_to_pay" integer,
+  "quote_to_cash_days" integer,
+  "payment_status" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fcv_tenant_invoice_unique" on "fact_commercial_velocity"(
+  "tenant_id",
+  "invoice_id"
+);
+CREATE INDEX "fcv_scope_date_index" on "fact_commercial_velocity"(
+  "tenant_id",
+  "legal_entity_id",
+  "issue_date_key"
+);
+CREATE TABLE "fact_operational_efficiency"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "source_type" varchar not null,
+  "source_id" varchar not null,
+  "date_key" integer not null,
+  "work_date" date not null,
+  "project_id" varchar,
+  "user_id" varchar,
+  "product_id" varchar,
+  "billable_hours" numeric not null default '0',
+  "non_billable_hours" numeric not null default '0',
+  "labour_cost" numeric not null default '0',
+  "labour_charge" numeric not null default '0',
+  "quantity_out" numeric not null default '0',
+  "value_out" numeric not null default '0',
+  "unit_cost" numeric,
+  "standard_unit_cost" numeric,
+  "unit_cost_variance" numeric,
+  "fulfillment_lead_days" integer,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "foe_tenant_source_unique" on "fact_operational_efficiency"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "foe_scope_date_index" on "fact_operational_efficiency"(
+  "tenant_id",
+  "legal_entity_id",
+  "date_key"
+);
+CREATE TABLE "agg_executive_daily_snapshots"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "date_key" integer not null,
+  "snapshot_date" date not null,
+  "revenue_chf" numeric not null default '0',
+  "revenue_eur" numeric not null default '0',
+  "cogs_chf" numeric not null default '0',
+  "cogs_eur" numeric not null default '0',
+  "opex_chf" numeric not null default '0',
+  "opex_eur" numeric not null default '0',
+  "depreciation_chf" numeric not null default '0',
+  "depreciation_eur" numeric not null default '0',
+  "cash_movement_chf" numeric not null default '0',
+  "cash_movement_eur" numeric not null default '0',
+  "receivable_movement_chf" numeric not null default '0',
+  "receivable_movement_eur" numeric not null default '0',
+  "payable_movement_chf" numeric not null default '0',
+  "payable_movement_eur" numeric not null default '0',
+  "inventory_movement_chf" numeric not null default '0',
+  "inventory_movement_eur" numeric not null default '0',
+  "functional_checksum" numeric not null default '0',
+  "transaction_count" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "aeds_scope_date_unique" on "agg_executive_daily_snapshots"(
+  "tenant_id",
+  "legal_entity_id",
+  "date_key"
+);
+CREATE INDEX "aeds_tenant_date_index" on "agg_executive_daily_snapshots"(
+  "tenant_id",
+  "date_key"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -42566,3 +42868,4 @@ INSERT INTO migrations VALUES(400,'2027_12_16_000100_create_ai_cognitive_tables'
 INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_kpi_dashboard_tables',13);
 INSERT INTO migrations VALUES(402,'2027_12_17_000100_create_data_residency_tables',14);
 INSERT INTO migrations VALUES(403,'2027_12_17_000100_create_cpq_quote_tables',15);
+INSERT INTO migrations VALUES(404,'2027_12_16_000100_create_analytics_dss_tables',16);
