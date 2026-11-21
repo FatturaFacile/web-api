@@ -52,6 +52,7 @@ use Modules\LeaseAccounting\Providers\LeaseAccountingServiceProvider;
 use Modules\Logistics\Providers\LogisticsServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\Marketplace\Providers\MarketplaceServiceProvider;
+use Modules\OcrExtraction\Providers\OcrExtractionServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
 use Modules\Planning\Providers\PlanningServiceProvider;
 use Modules\Platform\Identity\Providers\IdentityServiceProvider;
@@ -158,4 +159,5 @@ return [
     CorporateGroupServiceProvider::class,
     DigitalPreservationServiceProvider::class,
     ForecastingServiceProvider::class,
+    OcrExtractionServiceProvider::class,
 ];

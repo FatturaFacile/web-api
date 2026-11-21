@@ -99,6 +99,15 @@ return [
             'write' => $finance,
             'grants' => ['read' => ['forecasting.view', 'forecasting.simulate', 'forecasting.*'], 'write' => ['forecasting.simulate', 'forecasting.*']],
         ],
+        // AI Inbox and OCR extraction (Mod 092). ocr_inbox: the finance team reviews and confirms extracted documents;
+        // ocr_capture: every member may send a receipt photo from the app; ocr_settings: owners and admins choose the OCR engine.
+        'ocr_inbox' => [
+            'read' => [...$financeReaders, 'purchasing', 'procurement_manager'],
+            'write' => $finance,
+            'grants' => ['read' => ['ocr_inbox.view', 'ocr_inbox.*'], 'write' => ['ocr_inbox.review', 'ocr_inbox.*']],
+        ],
+        'ocr_capture' => ['read' => $anyMember, 'write' => $anyMember],
+        'ocr_settings' => ['read' => $managers, 'write' => $managers],
         'forecasting_wms' => [
             'read' => $managers,
             'write' => ['owner', 'admin', 'warehouse', 'purchasing', 'procurement_manager'],

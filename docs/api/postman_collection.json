@@ -156827,6 +156827,670 @@
             ]
         },
         {
+            "name": "Ocr Inbox",
+            "item": [
+                {
+                    "name": "POST /v1/ocr-inbox/capture",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ocr-inbox/capture",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ocr-inbox",
+                                "capture"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": []
+                                },
+                                {
+                                    "key": "pages",
+                                    "type": "text",
+                                    "value": "[\"string\"]"
+                                },
+                                {
+                                    "key": "document_category",
+                                    "type": "text",
+                                    "value": "vendor_invoice"
+                                },
+                                {
+                                    "key": "client_reference",
+                                    "type": "text",
+                                    "value": "string"
+                                },
+                                {
+                                    "key": "captured_at",
+                                    "type": "text",
+                                    "value": "2026-01-31T12:00:00+00:00"
+                                },
+                                {
+                                    "key": "device",
+                                    "type": "text",
+                                    "value": "string"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/ocr-inbox/configuration",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ocr-inbox/configuration",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ocr-inbox",
+                                "configuration"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/ocr-inbox/configuration",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ocr-inbox/configuration",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ocr-inbox",
+                                "configuration"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"primary_provider\": \"ollama_local\",\n    \"fallback_provider\": \"ollama_local\",\n    \"provider_settings\": [\n        {\n            \"endpoint\": \"https://example.com\",\n            \"model\": \"string\",\n            \"api_key\": \"string\",\n            \"languages\": \"string\"\n        }\n    ],\n    \"auto_confirm_confidence_threshold\": 1.5,\n    \"auto_confirm_enabled\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/ocr-inbox",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ocr-inbox",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ocr-inbox"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "job_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ocr-inbox/documents",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ocr-inbox/documents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ocr-inbox",
+                                "documents"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"dms_document_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"document_category\": \"vendor_invoice\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/ocr-inbox/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ocr-inbox/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ocr-inbox",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/ocr-inbox/:id/draft",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ocr-inbox/:id/draft",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ocr-inbox",
+                                ":id",
+                                "draft"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"category\": \"vendor_invoice\",\n    \"vendor_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"header\": {\n        \"number\": \"string\",\n        \"issue_date\": \"2026-01-31T12:00:00+00:00\",\n        \"due_date\": \"2026-01-31T12:00:00+00:00\",\n        \"currency\": \"string\",\n        \"qr_reference\": \"string\"\n    },\n    \"totals\": {\n        \"net\": 1.5,\n        \"vat\": 1.5,\n        \"gross\": 1.5\n    },\n    \"lines\": [\n        {\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"net_amount\": 1.5,\n            \"vat_rate\": 1.5,\n            \"gl_account_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"vat_code_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"cost_center_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"purchase_order_line_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"rfq_line_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"source_line_index\": 1\n        }\n    ],\n    \"purchase_order_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"goods_receipt_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"match_override_reason\": \"string\",\n    \"expense_category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"rfq_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ocr-inbox/:id/confirm",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ocr-inbox/:id/confirm",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ocr-inbox",
+                                ":id",
+                                "confirm"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"category\": \"vendor_invoice\",\n    \"vendor_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"header\": {\n        \"number\": \"string\",\n        \"issue_date\": \"2026-01-31T12:00:00+00:00\",\n        \"due_date\": \"2026-01-31T12:00:00+00:00\",\n        \"currency\": \"string\",\n        \"qr_reference\": \"string\"\n    },\n    \"totals\": {\n        \"net\": 1.5,\n        \"vat\": 1.5,\n        \"gross\": 1.5\n    },\n    \"lines\": [\n        {\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"net_amount\": 1.5,\n            \"vat_rate\": 1.5,\n            \"gl_account_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"vat_code_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"cost_center_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"purchase_order_line_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"rfq_line_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"source_line_index\": 1\n        }\n    ],\n    \"purchase_order_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"goods_receipt_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"match_override_reason\": \"string\",\n    \"expense_category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"rfq_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ocr-inbox/:id/reject",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ocr-inbox/:id/reject",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ocr-inbox",
+                                ":id",
+                                "reject"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ocr-inbox/:id/rerun",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ocr-inbox/:id/rerun",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ocr-inbox",
+                                ":id",
+                                "rerun"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Ocr Inbox Downloads",
+            "item": [
+                {
+                    "name": "GET /v1/ocr-inbox-downloads/:job",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ocr-inbox-downloads/:job",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ocr-inbox-downloads",
+                                ":job"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "job",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "Payment Links",
             "item": [
                 {
@@ -226916,6 +227580,61 @@
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"from\": \"user@example.com\",\n    \"from_name\": \"string\",\n    \"subject\": \"string\",\n    \"text\": \"string\",\n    \"received_at\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/webhooks/inbound-email",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/webhooks/inbound-email",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "webhooks",
+                                "inbound-email"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"to\": \"string\",\n    \"from\": \"string\",\n    \"subject\": \"string\",\n    \"message_id\": \"string\",\n    \"attachments\": [\n        {\n            \"filename\": \"string\",\n            \"content_type\": \"string\",\n            \"content_base64\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
