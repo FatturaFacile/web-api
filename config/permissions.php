@@ -117,6 +117,17 @@ return [
             'grants' => ['read' => ['kpi.*'], 'write' => ['kpi.*']],
         ],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
+        // AI Services & Cognitive Automation Layer (Mod 093). ai_copilot (ai.copilot.use): every member asks the copilot and drafts
+        // messages, each answer limited to what the caller may read; ai_review (ai.suggestions.review): the finance and sales teams
+        // work the review queue and the insights; ai_admin (ai.admin.configure): owners and admins set up providers and policies and
+        // read the usage and audit trail.
+        'ai_copilot' => ['read' => $anyMember, 'write' => $anyMember, 'grants' => ['read' => ['ai.copilot.use', 'ai.*'], 'write' => ['ai.copilot.use', 'ai.*']]],
+        'ai_review' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager', 'purchasing', 'procurement_manager', 'warehouse'],
+            'write' => [...$finance, 'sales', 'sales_manager', 'purchasing', 'procurement_manager'],
+            'grants' => ['read' => ['ai.suggestions.view', 'ai.suggestions.review', 'ai.*'], 'write' => ['ai.suggestions.review', 'ai.*']],
+        ],
+        'ai_admin' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['ai.admin.configure', 'ai.*'], 'write' => ['ai.admin.configure', 'ai.*']]],
         'forecasting_wms' => [
             'read' => $managers,
             'write' => ['owner', 'admin', 'warehouse', 'purchasing', 'procurement_manager'],

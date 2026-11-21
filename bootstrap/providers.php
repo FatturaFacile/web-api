@@ -11,6 +11,7 @@ use Enterprise\Foundation\Providers\EnterpriseFoundationServiceProvider;
 use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Academy\Providers\AcademyServiceProvider;
+use Modules\AiCognitive\Providers\AiCognitiveServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
@@ -56,6 +57,7 @@ use Modules\Marketplace\Providers\MarketplaceServiceProvider;
 use Modules\OcrExtraction\Providers\OcrExtractionServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
 use Modules\Planning\Providers\PlanningServiceProvider;
+use Modules\Platform\Identity\Providers\IdentityServiceProvider;
 use Modules\Platform\Providers\PlatformServiceProvider;
 use Modules\Plm\Providers\PlmServiceProvider;
 use Modules\PracticeManagement\Providers\PracticeManagementServiceProvider;
@@ -150,6 +152,7 @@ return [
     EventsServiceProvider::class,
     PlmServiceProvider::class,
     PlatformServiceProvider::class,
+    IdentityServiceProvider::class,
     CollaborationServiceProvider::class,
     ReturnsServiceProvider::class,
     WmsServiceProvider::class,
@@ -160,4 +163,5 @@ return [
     ForecastingServiceProvider::class,
     OcrExtractionServiceProvider::class,
     KpiDashboardsServiceProvider::class,
+    AiCognitiveServiceProvider::class,
 ];

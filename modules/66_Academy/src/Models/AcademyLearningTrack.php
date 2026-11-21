@@ -13,6 +13,7 @@ use Modules\Academy\Domain\Enums\DifficultyLevel;
 /**
  * A learning track of the shared catalogue (tenant_id null). The texts are a map locale => {title, description}.
  *
+ * @property string $id
  * @property string $code
  * @property DifficultyLevel $difficulty
  * @property int $sort_order

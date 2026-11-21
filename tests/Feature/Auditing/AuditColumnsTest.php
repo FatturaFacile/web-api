@@ -22,7 +22,9 @@ test('every business table has the six audit columns', function (): void {
         // a snapshot inside the record, and the WORM batch tables are written once when a batch is sealed.
         'audit_logs', 'audit_worm_batches', 'audit_worm_batch_entries',
         // Preservation audit trail: append-only and hash-chained, so it carries no update or delete stamps.
-        'preservation_audit_logs'];
+        'preservation_audit_logs',
+        // AI audit trail: append-only and hash-chained (the model refuses updates and deletes), so it carries no update or delete stamps.
+        'ai_audit_trails'];
     $incomplete = [];
 
     foreach (Schema::getTableListing(schemaQualified: false) as $table) {

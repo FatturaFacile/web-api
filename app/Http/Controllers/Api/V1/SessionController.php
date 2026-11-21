@@ -107,6 +107,27 @@ class SessionController extends Controller
         return $this->successResponse(data: $revoked, message: __('sessions.messages.others_revoked'));
     }
 
+    /** Revokes one open access of the signed-in user by its id alone, whichever kind it is (token or browser session). */
+    public function destroyAny(Request $request, string $id): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        foreach (['token', 'session'] as $kind) {
+            if ($this->sessions->revoke($user, $kind, $id)) {
+                $this->audit->record(RegistrationAudit::SESSION_REVOKED, (string) $user->id, ['kind' => $kind]);
+
+                return $this->successResponse(message: __('sessions.messages.revoked'));
+            }
+        }
+
+        return $this->problemDetailsResponse(
+            title: __('sessions.errors.not_found_title'),
+            detail: __('sessions.errors.not_found_detail'),
+            status: Response::HTTP_NOT_FOUND,
+        );
+    }
+
     private function currentTokenId(User $user): ?string
     {
         return UserSessions::currentTokenId($user);

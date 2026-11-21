@@ -32,6 +32,7 @@ uses(RefreshDatabase::class);
 function unscopedModelsWithTenantColumn(): array
 {
     return [
+        'Modules\Platform\Identity\Infrastructure\Models\WebAuthnCredential' => 'A passkey belongs to the user, who can hold memberships in several tenants; read and revoked by user id.',
         'Modules\Platform\Models\NotificationDelivery' => 'Per-user omnichannel notification data, addressed to a central user account and read by user id.',
         'Modules\Platform\Models\NotificationDevice' => 'Per-user omnichannel notification data, addressed to a central user account and read by user id.',
         'Modules\Platform\Models\NotificationDigestItem' => 'Per-user omnichannel notification data, addressed to a central user account and read by user id.',

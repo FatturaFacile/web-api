@@ -16,7 +16,7 @@ final class AccessAudit
 {
     public const string Module = 'ACCESS';
 
-    public const array Types = ['access.member', 'access.role', 'access.team', 'access.delegation', 'access.invitation', 'access.import', 'access.plan'];
+    public const array Types = ['access.member', 'access.role', 'access.team', 'access.delegation', 'access.invitation', 'access.import', 'access.plan', 'access.security'];
 
     public function __construct(private readonly AuditLedgerInterface $ledger) {}
 

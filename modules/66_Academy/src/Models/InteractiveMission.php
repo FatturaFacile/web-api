@@ -15,6 +15,7 @@ use Modules\Academy\Domain\ValueObjects\VerificationRuleSpec;
 /**
  * A hands-on mission of a track, completed by doing something in a sandbox tenant.
  *
+ * @property string $id
  * @property string $track_id
  * @property string $code
  * @property DifficultyLevel $difficulty
