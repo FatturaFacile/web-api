@@ -24,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $effective_from
  * @property Carbon|null $effective_to
  * @property string|null $notes
+ * @property string|null $bom_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, MfgOperation> $operations

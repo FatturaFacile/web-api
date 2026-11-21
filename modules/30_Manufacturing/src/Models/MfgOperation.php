@@ -6,6 +6,7 @@ namespace Modules\Manufacturing\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\Manufacturing\Support\Money;
 
@@ -33,6 +34,14 @@ use Modules\Manufacturing\Support\Money;
  * @property string|null $subcontractor_contact_id
  * @property string $subcontract_unit_cost
  * @property string|null $quality_plan_id
+ * @property string $operation_type
+ * @property string $post_operation_wait_minutes
+ * @property string $move_time_minutes
+ * @property string|null $overlap_transfer_batch_qty
+ * @property int $required_operators
+ * @property list<string>|null $alternate_work_center_ids
+ * @property string|null $linked_quality_control_point_id
+ * @property string|null $work_instruction_doc_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read MfgWorkCenter|null $workCenter
@@ -45,17 +54,30 @@ final class MfgOperation extends BaseEnterpriseModel
     {
         return [
             'sequence' => 'integer',
-            'setup_time_minutes' => 'decimal:2',
-            'run_time_minutes_per_unit' => 'decimal:2',
+            'setup_time_minutes' => 'decimal:3',
+            'run_time_minutes_per_unit' => 'decimal:5',
             'labor_time_minutes_per_unit' => 'decimal:2',
-            'queue_time_minutes' => 'decimal:2',
+            'queue_time_minutes' => 'decimal:3',
             'wait_time_minutes' => 'decimal:2',
             'teardown_time_minutes' => 'decimal:2',
             'standard_labor_rate' => 'decimal:4',
             'standard_machine_rate' => 'decimal:4',
             'is_subcontracted' => 'boolean',
             'subcontract_unit_cost' => 'decimal:4',
+            'post_operation_wait_minutes' => 'decimal:3',
+            'move_time_minutes' => 'decimal:3',
+            'overlap_transfer_batch_qty' => 'decimal:4',
+            'required_operators' => 'integer',
+            'alternate_work_center_ids' => 'array',
         ];
+    }
+
+    /**
+     * @return HasMany<MfgRoutingStepBomComponent, $this>
+     */
+    public function bomComponents(): HasMany
+    {
+        return $this->hasMany(MfgRoutingStepBomComponent::class, 'operation_id');
     }
 
     /**

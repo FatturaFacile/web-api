@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Modules\Manufacturing\Services;
 
 use Carbon\CarbonImmutable;
+use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Modules\Manufacturing\Contracts\RoutingServiceInterface;
 use Modules\Manufacturing\DTOs\CreateRoutingDTO;
+use Modules\Manufacturing\Events\ProductionRoutingDefinedEvent;
 use Modules\Manufacturing\Exceptions\ManufacturingOperationException;
 use Modules\Manufacturing\Models\MfgItem;
 use Modules\Manufacturing\Models\MfgOperation;
 use Modules\Manufacturing\Models\MfgRouting;
-use Modules\Manufacturing\Models\MfgWorkCenter;
+use Modules\Manufacturing\Services\ProductionEngineering\RoutingOperationWriter;
 use Modules\Manufacturing\Support\Money;
 
 /**
@@ -22,6 +24,8 @@ use Modules\Manufacturing\Support\Money;
  */
 final readonly class RoutingService implements RoutingServiceInterface
 {
+    public function __construct(private RoutingOperationWriter $writer, private EventDispatcher $dispatcher) {}
+
     /**
      * {@inheritDoc}
      */
@@ -53,43 +57,17 @@ final readonly class RoutingService implements RoutingServiceInterface
                 'effective_from' => $dto->effectiveFrom,
                 'effective_to' => $dto->effectiveTo,
                 'notes' => $dto->notes,
+                'bom_id' => $dto->bomId,
             ]);
 
-            $sequence = 10;
-            foreach ($dto->operations as $operation) {
-                $workCenter = MfgWorkCenter::query()->where('tenant_id', $dto->tenantId)->findOrFail($operation['work_center_id']);
-                $subcontracted = (bool) ($operation['is_subcontracted'] ?? false);
-
-                MfgOperation::create([
-                    'tenant_id' => $dto->tenantId,
-                    'routing_id' => $routing->id,
-                    'sequence' => $operation['sequence'] ?? $sequence,
-                    'operation_code' => $operation['operation_code'],
-                    'name' => $operation['name'],
-                    'description' => $operation['description'] ?? null,
-                    'work_center_id' => $workCenter->id,
-                    'machine_center_id' => $operation['machine_center_id'] ?? null,
-                    'setup_time_minutes' => Money::round($operation['setup_time_minutes'] ?? '0'),
-                    'run_time_minutes_per_unit' => Money::round($operation['run_time_minutes_per_unit'] ?? '0'),
-                    'labor_time_minutes_per_unit' => Money::round($operation['labor_time_minutes_per_unit'] ?? '0'),
-                    'queue_time_minutes' => Money::round($operation['queue_time_minutes'] ?? '0'),
-                    'wait_time_minutes' => Money::round($operation['wait_time_minutes'] ?? '0'),
-                    'teardown_time_minutes' => Money::round($operation['teardown_time_minutes'] ?? '0'),
-                    'standard_labor_rate' => $workCenter->hourly_cost_rate,
-                    'standard_machine_rate' => $workCenter->hourly_overhead_rate,
-                    'is_subcontracted' => $subcontracted,
-                    'subcontractor_contact_id' => $operation['subcontractor_contact_id'] ?? null,
-                    'subcontract_unit_cost' => Money::round($operation['subcontract_unit_cost'] ?? '0', 4),
-                    'quality_plan_id' => $operation['quality_plan_id'] ?? null,
-                ]);
-                $sequence += 10;
-            }
+            $this->writer->write($dto->tenantId, $routing, $dto->operations);
+            $this->dispatcher->publishAndDispatch(new ProductionRoutingDefinedEvent((string) $routing->id, $routing->routing_number, $dto->tenantId));
 
             if ($dto->isDefault) {
                 $item->update(['default_routing_id' => $routing->id]);
             }
 
-            return $routing->load('operations.workCenter');
+            return $routing->load(['operations.workCenter', 'operations.bomComponents']);
         });
     }
 

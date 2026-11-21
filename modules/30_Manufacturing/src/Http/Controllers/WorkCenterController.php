@@ -14,8 +14,10 @@ use Modules\Manufacturing\Http\Requests\SetWorkCenterCalendarRequest;
 use Modules\Manufacturing\Http\Requests\StoreCalendarExceptionRequest;
 use Modules\Manufacturing\Http\Requests\StoreWorkCenterRequest;
 use Modules\Manufacturing\Http\Resources\MfgWorkCenterResource;
+use Modules\Manufacturing\Models\MfgOperation;
 use Modules\Manufacturing\Models\MfgWorkCenter;
 use Modules\Manufacturing\Services\ManufacturingMasterDataService;
+use Modules\Manufacturing\Services\ProductionEngineering\ProductionEngineeringService;
 use Modules\Manufacturing\Services\WorkCenterService;
 use OpenApi\Attributes as OA;
 
@@ -29,6 +31,7 @@ final class WorkCenterController extends Controller
     public function __construct(
         private readonly ManufacturingMasterDataService $masterData,
         private readonly WorkCenterService $workCenters,
+        private readonly ProductionEngineeringService $engineering,
     ) {}
 
     /**
@@ -55,7 +58,12 @@ final class WorkCenterController extends Controller
         responses: [new OA\Response(response: 201, description: 'Work centre created', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgWorkCenter')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgUnprocessable', response: 422)])]
     public function store(StoreWorkCenterRequest $request): JsonResponse
     {
-        return (new MfgWorkCenterResource($this->masterData->createWorkCenter($this->tenantId(), $request->validated())))->response()->setStatusCode(201);
+        $data = $request->validated();
+        $this->engineering->assertWorkCenterReferences($this->tenantId(), null, $data);
+        $workCenter = $this->masterData->createWorkCenter($this->tenantId(), $data);
+        $this->engineering->workCenterSaved($workCenter, true);
+
+        return (new MfgWorkCenterResource($workCenter))->response()->setStatusCode(201);
     }
 
     /**
@@ -78,7 +86,39 @@ final class WorkCenterController extends Controller
         responses: [new OA\Response(response: 200, description: 'Work centre updated', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgWorkCenter')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgNotFound', response: 404), new OA\Response(ref: '#/components/responses/MfgUnprocessable', response: 422)])]
     public function update(StoreWorkCenterRequest $request, string $id): MfgWorkCenterResource
     {
-        return new MfgWorkCenterResource($this->masterData->updateWorkCenter($this->owned(MfgWorkCenter::class, $id), $request->validated())->load('shifts'));
+        $current = $this->owned(MfgWorkCenter::class, $id);
+        $data = $request->validated();
+        $this->engineering->assertWorkCenterReferences($this->tenantId(), $current, $data);
+        $workCenter = $this->masterData->updateWorkCenter($current, $data);
+        $this->engineering->workCenterSaved($workCenter, false);
+
+        return new MfgWorkCenterResource($workCenter->load('shifts'));
+    }
+
+    /**
+     * Deletes a work centre that has no sub work centres and is used by no routing operation.
+     */
+    #[OA\Delete(path: '/api/v1/manufacturing/work-centers/{id}', operationId: 'deleteMfgWorkCenter', summary: 'Delete work centre', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing Work Centres'], parameters: [new OA\Parameter(ref: '#/components/parameters/MfgId')], responses: [new OA\Response(response: 204, description: 'Deleted'), new OA\Response(response: 404, description: 'Not found'), new OA\Response(response: 409, description: 'Work centre in use')])]
+    public function destroy(string $id): JsonResponse
+    {
+        $workCenter = $this->owned(MfgWorkCenter::class, $id);
+        $inUse = MfgWorkCenter::query()->where('tenant_id', $this->tenantId())->where('parent_work_center_id', $workCenter->id)->exists()
+            || MfgOperation::query()->where('tenant_id', $this->tenantId())->where('work_center_id', $workCenter->id)->exists();
+        if ($inUse) {
+            return response()->json(['message' => 'The work centre has sub work centres or routing operations.', 'errors' => ['work_center' => ['The work centre has sub work centres or routing operations.']]], 409);
+        }
+        $workCenter->delete();
+
+        return response()->json(null, 204);
+    }
+
+    /**
+     * The work centre with its sub work centres and machines as a tree.
+     */
+    #[OA\Get(path: '/api/v1/manufacturing/work-centers/{id}/hierarchy', operationId: 'hierarchyMfgWorkCenter', summary: 'Work centre hierarchy', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing Work Centres'], parameters: [new OA\Parameter(ref: '#/components/parameters/MfgId')], responses: [new OA\Response(response: 200, description: 'Hierarchy'), new OA\Response(response: 404, description: 'Not found')])]
+    public function hierarchy(string $id): JsonResponse
+    {
+        return response()->json(['data' => $this->engineering->hierarchy($this->owned(MfgWorkCenter::class, $id))]);
     }
 
     /**
