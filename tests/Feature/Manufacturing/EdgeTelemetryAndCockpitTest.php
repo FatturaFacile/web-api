@@ -44,6 +44,27 @@ function mfgEdgePost(object $test, string $gatewayId, string $secret, array $bod
     ], $raw);
 }
 
+/**
+ * A released order of 10 pumps with its line and operation ids.
+ *
+ * @return array{id: string, steel_line: string, op10: string, op20: string}
+ */
+function mfgCockpitReleasedOrder(object $test): array
+{
+    $orderId = (string) $test->postJson('/api/v1/manufacturing/production-orders', [
+        'mfg_item_id' => $test->product['fg']->id,
+        'target_quantity' => '10',
+        'planned_start_date' => now()->toDateString(),
+        'planned_end_date' => now()->addDays(5)->toDateString(),
+    ])->assertCreated()->json('data.id');
+
+    $released = $test->postJson("/api/v1/manufacturing/production-orders/{$orderId}/release")->assertOk();
+    $lines = collect($released->json('data.lines'))->keyBy('mfg_item_id');
+    $operations = collect($released->json('data.operations'))->keyBy('sequence');
+
+    return ['id' => $orderId, 'steel_line' => (string) $lines[$test->product['steel']->id]['id'], 'op10' => (string) $operations[10]['id'], 'op20' => (string) $operations[20]['id']];
+}
+
 test('edge telemetry is authenticated by HMAC, idempotent by event uuid and keeps the newest machine state', function (): void {
     $gateway = $this->postJson('/api/v1/manufacturing/edge/gateways', ['name' => 'Machining hall'])->assertCreated();
     $gatewayId = (string) $gateway->json('data.id');
@@ -69,7 +90,7 @@ test('edge telemetry is authenticated by HMAC, idempotent by event uuid and keep
 test('the cockpit aggregates strategies, machine alerts and WIP, and the WIP ledger equals the order WIP balance', function (): void {
     $this->machine->forceFill(['current_state' => 'FAULT', 'state_since' => now()])->save();
 
-    $order = mfgReleasedOrder($this);
+    $order = mfgCockpitReleasedOrder($this);
     $id = $order['id'];
     $this->postJson("/api/v1/manufacturing/production-orders/{$id}/issues", ['lines' => [['line_id' => $order['steel_line'], 'quantity' => '20']]])->assertCreated();
     $this->postJson("/api/v1/manufacturing/production-orders/{$id}/operations/{$order['op10']}/confirmations", ['setup_minutes' => '30', 'run_minutes' => '66', 'good_quantity' => '10', 'is_final' => true])->assertCreated();
