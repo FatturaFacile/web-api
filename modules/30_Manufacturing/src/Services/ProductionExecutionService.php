@@ -27,6 +27,7 @@ use Modules\Manufacturing\Exceptions\ManufacturingOperationException;
 use Modules\Manufacturing\Models\MfgBom;
 use Modules\Manufacturing\Models\MfgItem;
 use Modules\Manufacturing\Models\MfgMaterialMovement;
+use Modules\Manufacturing\Models\MfgMesMaterialConsumption;
 use Modules\Manufacturing\Models\MfgOperation;
 use Modules\Manufacturing\Models\MfgOperationConfirmation;
 use Modules\Manufacturing\Models\MfgProductionCost;
@@ -626,7 +627,13 @@ final readonly class ProductionExecutionService implements ProductionExecutionSe
         $lines = MfgProductionOrderLine::query()->where('production_order_id', $order->id)->where('issue_method', 'backflush')->orderBy('id')->lockForUpdate()->get();
 
         foreach ($lines->filter($filter) as $line) {
-            $quantity = Money::qty(Money::mul($line->quantity_per_unit, $processed));
+            // Lots the operator already registered on the MES board were issued then: only the rest is backflushed.
+            $pending = MfgMesMaterialConsumption::query()->where('production_order_line_id', $line->id)->whereNull('settled_at')->get();
+            $registered = $pending->reduce(static fn (string $sum, MfgMesMaterialConsumption $row): string => Money::add($sum, $row->quantity), '0');
+            $quantity = Money::qty(Money::max('0', Money::sub(Money::mul($line->quantity_per_unit, $processed), $registered)));
+            if ($pending->isNotEmpty()) {
+                MfgMesMaterialConsumption::query()->whereIn('id', $pending->modelKeys())->update(['settled_at' => now()]);
+            }
             if (Money::isPositive($quantity)) {
                 $this->consume($order, $line, $quantity, null, MfgMaterialMovement::Backflush, $date, $actorUserId);
             }
