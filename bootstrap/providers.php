@@ -72,6 +72,7 @@ use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
 use Modules\Sustainability\Providers\SustainabilityServiceProvider;
+use Modules\SwissFiscal\Providers\SwissFiscalServiceProvider;
 use Modules\TalentLearning\Providers\TalentLearningServiceProvider;
 use Modules\Transportation\Providers\TransportationServiceProvider;
 use Modules\TravelExpense\Providers\TravelExpenseServiceProvider;
@@ -163,5 +164,6 @@ return [
     ForecastingServiceProvider::class,
     OcrExtractionServiceProvider::class,
     KpiDashboardsServiceProvider::class,
+    SwissFiscalServiceProvider::class,
     AiCognitiveServiceProvider::class,
 ];

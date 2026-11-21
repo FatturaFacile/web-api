@@ -3101,4 +3101,9 @@ return [
     'with_anomaly_scan' => 'Anomalie-Prüfung',
     'consent_reference' => 'Einwilligungsreferenz',
     'ttl_minutes' => 'Dauer in Minuten',
+    'building_number' => 'Hausnummer',
+    'creditor' => 'Zahlungsempfänger',
+    'debtor' => 'Zahlungspflichtiger',
+    'bill_information' => 'Rechnungsinformationen',
+    'town' => 'Ort',
 ];
