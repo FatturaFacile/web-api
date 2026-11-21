@@ -7,6 +7,7 @@ namespace Modules\Platform\Identity\Listeners;
 use App\Models\User;
 use App\Services\Tenancy\AccessAudit;
 use Modules\Platform\Identity\Domain\Events\AccountLocked;
+use Modules\Platform\Identity\Domain\Events\ImpersonationEnded;
 use Modules\Platform\Identity\Domain\Events\ImpersonationStarted;
 use Modules\Platform\Identity\Domain\Events\LoginFailed;
 use Modules\Platform\Identity\Domain\Events\LoginSucceeded;
@@ -81,7 +82,7 @@ final readonly class RecordSecurityEvent
         return [
             RoleCreated::class, RoleUpdated::class, RoleAssigned::class, RoleRevoked::class,
             PasskeyRegistered::class, PasskeyRevoked::class, MfaEnabled::class, MfaDisabled::class,
-            LoginSucceeded::class, LoginFailed::class, AccountLocked::class, SessionsRevoked::class, ImpersonationStarted::class,
+            LoginSucceeded::class, LoginFailed::class, AccountLocked::class, SessionsRevoked::class, ImpersonationStarted::class, ImpersonationEnded::class,
         ];
     }
 
