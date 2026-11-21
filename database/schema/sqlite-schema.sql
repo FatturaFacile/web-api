@@ -41675,6 +41675,205 @@ CREATE INDEX "kpi_threshold_alert_logs_tenant_id_kpi_code_status_index" on "kpi_
   "kpi_code",
   "status"
 );
+CREATE TABLE "ipp_payroll_periods"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "year" integer not null,
+  "month" integer not null,
+  "include_tredicesima" tinyint(1) not null default '0',
+  "include_quattordicesima" tinyint(1) not null default '0',
+  "status" varchar not null default 'attendance_open',
+  "export_format" varchar,
+  "export_checksum" varchar,
+  "validated_at" datetime,
+  "validated_by" varchar,
+  "exported_at" datetime,
+  "exported_by" varchar,
+  "paid_at" datetime,
+  "validation_report_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ipp_periods_unique" on "ipp_payroll_periods"(
+  "tenant_id",
+  "legal_entity_id",
+  "year",
+  "month"
+);
+CREATE TABLE "ipp_lul_records"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "payroll_period_id" varchar not null,
+  "employee_id" varchar not null,
+  "matricola_inps" varchar,
+  "causal_code" varchar not null,
+  "hours_or_days" numeric not null default '0',
+  "meal_vouchers_count" integer not null default '0',
+  "reimbursement_amount" numeric not null default '0',
+  "fringe_benefit_amount" numeric not null default '0',
+  "inps_protocol_number" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("payroll_period_id") references "ipp_payroll_periods"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ipp_lul_period_employee_idx" on "ipp_lul_records"(
+  "tenant_id",
+  "payroll_period_id",
+  "employee_id"
+);
+CREATE TABLE "ipp_causal_mappings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "consultant_format" varchar not null,
+  "causal_code" varchar not null,
+  "external_code" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ipp_causal_unique" on "ipp_causal_mappings"(
+  "tenant_id",
+  "consultant_format",
+  "causal_code"
+);
+CREATE TABLE "ipp_documents"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "kind" varchar not null,
+  "disk" varchar not null,
+  "path" varchar not null,
+  "sha256" varchar not null,
+  "size_bytes" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE TABLE "ipp_payslip_distributions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "payroll_period_id" varchar not null,
+  "employee_id" varchar not null,
+  "cedolino_pdf_document_id" varchar,
+  "cu_pdf_document_id" varchar,
+  "net_amount" numeric not null default '0',
+  "viewed_by_employee_at" datetime,
+  "viewed_from_ip" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("payroll_period_id") references "ipp_payroll_periods"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ipp_distribution_unique" on "ipp_payslip_distributions"(
+  "tenant_id",
+  "payroll_period_id",
+  "employee_id"
+);
+CREATE TABLE "ipp_download_audits"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "distribution_id" varchar not null,
+  "employee_id" varchar not null,
+  "document_kind" varchar not null,
+  "ip_address" varchar,
+  "user_agent" varchar,
+  "biometric_confirmed" tinyint(1) not null default '0',
+  "occurred_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("distribution_id") references "ipp_payslip_distributions"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ipp_download_audits_tenant_id_distribution_id_index" on "ipp_download_audits"(
+  "tenant_id",
+  "distribution_id"
+);
+CREATE TABLE "ipp_accounting_imports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "payroll_period_id" varchar not null,
+  "total_gross_wages" numeric not null,
+  "inps_employee_withholding" numeric not null,
+  "inps_employer_contribution" numeric not null,
+  "irpef_withholding" numeric not null,
+  "regional_municipal_addizionali" numeric not null,
+  "tfr_monthly_accrual" numeric not null,
+  "tfr_fondo_tesoreria_or_previdenza" numeric not null,
+  "inail_accrual" numeric not null default '0',
+  "net_payable" numeric not null,
+  "gl_journal_entry_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("payroll_period_id") references "ipp_payroll_periods"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ipp_accounting_period_unique" on "ipp_accounting_imports"(
+  "tenant_id",
+  "payroll_period_id"
+);
+CREATE TABLE "ipp_gl_account_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "role" varchar not null,
+  "account_id" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ipp_gl_role_unique" on "ipp_gl_account_settings"(
+  "tenant_id",
+  "role"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -42077,3 +42276,4 @@ INSERT INTO migrations VALUES(398,'2027_12_13_000100_add_blind_indexes_to_contac
 INSERT INTO migrations VALUES(399,'2027_12_13_000200_create_offline_audit_entries_table',11);
 INSERT INTO migrations VALUES(400,'2027_12_16_000100_create_ai_cognitive_tables',12);
 INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_kpi_dashboard_tables',13);
+INSERT INTO migrations VALUES(402,'2027_12_17_000100_create_italian_payroll_preprocessing_tables',14);

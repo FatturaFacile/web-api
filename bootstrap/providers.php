@@ -49,6 +49,7 @@ use Modules\Integrations\Providers\IntegrationsServiceProvider;
 use Modules\Intrastat\Providers\IntrastatServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
+use Modules\ItalianPayroll\Providers\ItalianPayrollServiceProvider;
 use Modules\KpiDashboards\Providers\KpiDashboardsServiceProvider;
 use Modules\LeaseAccounting\Providers\LeaseAccountingServiceProvider;
 use Modules\Logistics\Providers\LogisticsServiceProvider;
@@ -163,5 +164,6 @@ return [
     ForecastingServiceProvider::class,
     OcrExtractionServiceProvider::class,
     KpiDashboardsServiceProvider::class,
+    ItalianPayrollServiceProvider::class,
     AiCognitiveServiceProvider::class,
 ];
