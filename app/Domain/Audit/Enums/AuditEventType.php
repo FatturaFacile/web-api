@@ -17,6 +17,9 @@ enum AuditEventType: string
     case PermissionChanged = 'PERMISSION_CHANGED';
     case WormSealed = 'WORM_SEALED';
     case AuditLogInspected = 'AUDIT_LOG_INSPECTED';
+    case PiiUnmasked = 'PII_UNMASKED';
+    case KeyRotated = 'KEY_ROTATED';
+    case OfflineSynced = 'OFFLINE_SYNCED';
 
     /**
      * @return list<string>

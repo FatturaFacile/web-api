@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\OcrExtraction\Infrastructure\Services;
 
+use App\Services\Security\FieldEncryptionService;
 use Illuminate\Support\Facades\DB;
 use Modules\OcrExtraction\Domain\ValueObjects\ExtractedPayloadDto;
 
@@ -44,8 +45,13 @@ final class VendorResolver
      */
     private function find(string $tenantId, array $columns, array $values): ?string
     {
-        $query = DB::table('contacts')->where('tenant_id', $tenantId)->whereNull('deleted_at')->where(function ($group) use ($columns, $values): void {
+        $query = DB::table('contacts')->where('tenant_id', $tenantId)->whereNull('deleted_at')->where(function ($group) use ($columns, $values, $tenantId): void {
             foreach ($columns as $column) {
+                if (in_array($column, ['iban', 'qr_iban'], true)) {
+                    $encryption = app(FieldEncryptionService::class);
+                    $group->orWhereIn($column.'_bidx', array_map(fn (string $value): string => $encryption->blindIndex($value, $tenantId, $column), $values));
+                }
+
                 $group->orWhereIn(DB::raw("REPLACE(REPLACE(REPLACE(UPPER({$column}), ' ', ''), '.', ''), '-', '')"), $values);
             }
         });

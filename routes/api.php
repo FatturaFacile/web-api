@@ -256,6 +256,7 @@ Route::prefix('v1')->group(function (): void {
         // Every route below declares its module (config/permissions.php), except the ones listed in
         // tests/Feature/Foundation/RouteModuleAccessTest.php, which check the user themselves (own records, own profile).
         require __DIR__.'/audit.php';
+        require __DIR__.'/security_center.php';
 
         Route::middleware('module.access:system')->group(function (): void {
             Route::post('/translations', [TranslationController::class, 'storeOrUpdate'])->name('translations.storeOrUpdate');

@@ -6409,6 +6409,591 @@
                 }
             }
         },
+        "/v1/ai/usage-audit": {
+            "get": {
+                "operationId": "ai.usage-audit",
+                "tags": [
+                    "AiAudit"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/SuggestionStatus"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "kind",
+                        "in": "query",
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/SuggestionKind"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "priority",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "low",
+                                "normal",
+                                "high",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 200
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "event_type",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 40
+                        }
+                    },
+                    {
+                        "name": "verify_chain",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "horizon_days",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 400
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "AI usage and audit trail"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "period": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "from": {
+                                                            "type": "string"
+                                                        },
+                                                        "to": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "from",
+                                                        "to"
+                                                    ]
+                                                },
+                                                "usage": {
+                                                    "type": "object",
+                                                    "additionalProperties": {}
+                                                },
+                                                "chain": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ],
+                                                    "properties": {
+                                                        "valid": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "checked": {
+                                                            "type": "integer"
+                                                        },
+                                                        "broken_at": {
+                                                            "type": [
+                                                                "integer",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "valid",
+                                                        "checked",
+                                                        "broken_at"
+                                                    ]
+                                                },
+                                                "audit": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "period",
+                                                "usage",
+                                                "chain",
+                                                "audit"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "per_page",
+                                                "total",
+                                                "last_page"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/copilot/query": {
+            "post": {
+                "operationId": "ai.copilot.query",
+                "tags": [
+                    "AiCopilot"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CopilotQueryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/copilot/drafts": {
+            "post": {
+                "operationId": "ai.copilot.drafts",
+                "tags": [
+                    "AiCopilot"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerateDraftRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/copilot/index/rebuild": {
+            "post": {
+                "operationId": "ai.copilot.index.rebuild",
+                "tags": [
+                    "AiCopilot"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RunAiJobRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Index rebuild queued"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "queued": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "queued"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/insights": {
+            "get": {
+                "operationId": "ai.insights.dashboard",
+                "tags": [
+                    "AiInsight"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/SuggestionStatus"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "kind",
+                        "in": "query",
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/SuggestionKind"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "priority",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "low",
+                                "normal",
+                                "high",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 200
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "event_type",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 40
+                        }
+                    },
+                    {
+                        "name": "verify_chain",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "horizon_days",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 400
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "cash_flow": {},
+                                                "payment_risk": {},
+                                                "recommendations": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "anomalies": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "cash_flow",
+                                                "payment_risk",
+                                                "recommendations",
+                                                "anomalies"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/insights/generate": {
+            "post": {
+                "operationId": "ai.insights.generate",
+                "tags": [
+                    "AiInsight"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RunAiJobRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/dms/ai-settings": {
             "get": {
                 "operationId": "dms.ai-settings.show",
@@ -6550,6 +7135,737 @@
                                     },
                                     "required": [
                                         "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/settings": {
+            "get": {
+                "operationId": "ai.settings.show",
+                "tags": [
+                    "AiSettings"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "external_providers_allowed": {
+                                                    "type": "boolean"
+                                                },
+                                                "providers": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "rules": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "workflow": {
+                                                                "type": "string"
+                                                            },
+                                                            "is_enabled": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "auto_approve_enabled": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "auto_approve_min_confidence": {
+                                                                "type": "number"
+                                                            },
+                                                            "max_auto_amount": {
+                                                                "type": [
+                                                                    "number",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "data_classification": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "public",
+                                                                    "internal",
+                                                                    "confidential_pii"
+                                                                ]
+                                                            },
+                                                            "preferred_provider": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "configured": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "workflow",
+                                                            "is_enabled",
+                                                            "auto_approve_enabled",
+                                                            "auto_approve_min_confidence",
+                                                            "max_auto_amount",
+                                                            "data_classification",
+                                                            "preferred_provider",
+                                                            "configured"
+                                                        ]
+                                                    }
+                                                },
+                                                "supported_providers": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "data_classifications": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "external_providers_allowed",
+                                                "providers",
+                                                "rules",
+                                                "supported_providers",
+                                                "data_classifications"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/settings/providers/{provider}": {
+            "put": {
+                "operationId": "ai.settings.providers.update",
+                "tags": [
+                    "AiSettings"
+                ],
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfigureAiProviderRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/settings/rules/{workflow}": {
+            "put": {
+                "operationId": "ai.settings.rules.update",
+                "tags": [
+                    "AiSettings"
+                ],
+                "parameters": [
+                    {
+                        "name": "workflow",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfigureAutomationRuleRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Automation rule saved"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "workflow": {
+                                                    "type": "string"
+                                                },
+                                                "is_enabled": {
+                                                    "type": "boolean"
+                                                },
+                                                "auto_approve_enabled": {
+                                                    "type": "boolean"
+                                                },
+                                                "auto_approve_min_confidence": {
+                                                    "type": "number"
+                                                },
+                                                "max_auto_amount": {
+                                                    "type": [
+                                                        "number",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "data_classification": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "public",
+                                                        "internal",
+                                                        "confidential_pii"
+                                                    ]
+                                                },
+                                                "preferred_provider": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "workflow",
+                                                "is_enabled",
+                                                "auto_approve_enabled",
+                                                "auto_approve_min_confidence",
+                                                "max_auto_amount",
+                                                "data_classification",
+                                                "preferred_provider"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Not Found"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 404
+                                        },
+                                        "detail": {
+                                            "type": "string"
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/suggestions": {
+            "get": {
+                "operationId": "ai.suggestions.index",
+                "tags": [
+                    "AiSuggestion"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/SuggestionStatus"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "kind",
+                        "in": "query",
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/SuggestionKind"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "priority",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "low",
+                                "normal",
+                                "high",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 200
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "event_type",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 40
+                        }
+                    },
+                    {
+                        "name": "verify_chain",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "horizon_days",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 400
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "AI suggestions"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/suggestions/extract": {
+            "post": {
+                "operationId": "ai.suggestions.extract",
+                "tags": [
+                    "AiSuggestion"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExtractCognitiveRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/suggestions/{id}": {
+            "get": {
+                "operationId": "ai.suggestions.show",
+                "tags": [
+                    "AiSuggestion"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/suggestions/{id}/approve": {
+            "post": {
+                "operationId": "ai.suggestions.approve",
+                "tags": [
+                    "AiSuggestion"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ApproveAiSuggestionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/suggestions/{id}/reject": {
+            "post": {
+                "operationId": "ai.suggestions.reject",
+                "tags": [
+                    "AiSuggestion"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RejectAiSuggestionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/accounting/coding": {
+            "post": {
+                "operationId": "ai.accounting.coding",
+                "tags": [
+                    "AiSuggestion"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SuggestCodingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/ai/accounting/reconciliation": {
+            "post": {
+                "operationId": "ai.accounting.reconciliation",
+                "tags": [
+                    "AiSuggestion"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RunAiJobRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
                                     ]
                                 }
                             }
@@ -15171,7 +16487,10 @@
                                     "LOGIN_FAILED",
                                     "PERMISSION_CHANGED",
                                     "WORM_SEALED",
-                                    "AUDIT_LOG_INSPECTED"
+                                    "AUDIT_LOG_INSPECTED",
+                                    "PII_UNMASKED",
+                                    "KEY_ROTATED",
+                                    "OFFLINE_SYNCED"
                                 ]
                             }
                         }
@@ -15363,7 +16682,10 @@
                                     "LOGIN_FAILED",
                                     "PERMISSION_CHANGED",
                                     "WORM_SEALED",
-                                    "AUDIT_LOG_INSPECTED"
+                                    "AUDIT_LOG_INSPECTED",
+                                    "PII_UNMASKED",
+                                    "KEY_ROTATED",
+                                    "OFFLINE_SYNCED"
                                 ]
                             }
                         }
@@ -159373,6 +160695,118 @@
                 }
             }
         },
+        "/v1/audit/offline-batches": {
+            "post": {
+                "operationId": "audit.offline-batches.store",
+                "tags": [
+                    "OfflineAuditBatch"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreOfflineAuditBatchRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "batch_id": {},
+                                                "received_at": {
+                                                    "type": "string"
+                                                },
+                                                "entries": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "sequence_number": {
+                                                                "type": "integer"
+                                                            },
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "server_received_at": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "sequence_number",
+                                                            "id",
+                                                            "server_received_at"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "batch_id",
+                                                "received_at",
+                                                "entries"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "examples": [
+                                                "Missing or unresolvable tenant context"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/supplier-portal/onboardings": {
             "get": {
                 "operationId": "v1.supplier-portal.onboardings.index",
@@ -236017,6 +237451,202 @@
                 }
             }
         },
+        "/v1/security/posture": {
+            "get": {
+                "operationId": "security.posture",
+                "tags": [
+                    "SecurityCenter"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "audit_chain": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "status": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "verified",
+                                                                "tamper_alert"
+                                                            ]
+                                                        },
+                                                        "last_verified_at": {
+                                                            "type": "string"
+                                                        },
+                                                        "last_hash": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "broken_at_sequence": {}
+                                                    },
+                                                    "required": [
+                                                        "status",
+                                                        "last_verified_at",
+                                                        "last_hash",
+                                                        "broken_at_sequence"
+                                                    ]
+                                                },
+                                                "encrypted_fields_coverage": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "encrypted": {
+                                                            "type": "integer",
+                                                            "const": 0
+                                                        },
+                                                        "total": {
+                                                            "type": "integer",
+                                                            "const": 0
+                                                        },
+                                                        "percent": {
+                                                            "type": "number"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "encrypted",
+                                                        "total",
+                                                        "percent"
+                                                    ]
+                                                },
+                                                "active_dsar": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "count": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "nearest_due_at": {}
+                                                    },
+                                                    "required": [
+                                                        "count",
+                                                        "nearest_due_at"
+                                                    ]
+                                                },
+                                                "legal_holds_active": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "open_incidents": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "readiness_score": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "audit_chain",
+                                                "encrypted_fields_coverage",
+                                                "active_dsar",
+                                                "legal_holds_active",
+                                                "open_incidents",
+                                                "readiness_score"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/security/pii/unmask": {
+            "post": {
+                "operationId": "security.pii.unmask",
+                "tags": [
+                    "SecurityCenter"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UnmaskPiiRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "value": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "value"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/settings/security/policy": {
             "get": {
                 "operationId": "settings.security.policy",
@@ -306465,6 +308095,18 @@
                 ],
                 "title": "AgreementResource"
             },
+            "AiProviderType": {
+                "type": "string",
+                "description": "The model providers a tenant can choose. Ollama runs inside the installation (zero egress); the others are hosted and run on the tenant's own API key (bring your own key).\n",
+                "enum": [
+                    "ollama",
+                    "openai",
+                    "anthropic",
+                    "gemini",
+                    "azure_openai"
+                ],
+                "title": "AiProviderType"
+            },
             "AllocateProjectAssetRequest": {
                 "type": "object",
                 "description": "Validation of an allocation of an asset to a project.",
@@ -308010,6 +309652,28 @@
                     "is_active"
                 ],
                 "title": "ApprovalTemplateResource"
+            },
+            "ApproveAiSuggestionRequest": {
+                "type": "object",
+                "properties": {
+                    "edited_payload": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "feedback": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1000
+                    }
+                },
+                "title": "ApproveAiSuggestionRequest"
             },
             "ApproveLimitRequestRequest": {
                 "type": "object",
@@ -317922,6 +319586,172 @@
                 ],
                 "title": "ConfiguratorRuleResource"
             },
+            "ConfigureAiProviderRequest": {
+                "type": "object",
+                "description": "Provider setup of a tenant. A hosted provider may only point at its own service: the endpoint of OpenAI, Anthropic and\nGemini must be the official host and an Azure endpoint an Azure OpenAI resource, so a tenant cannot send its API key (or\nthe data) to an arbitrary address. Only the local Ollama endpoint is free.",
+                "properties": {
+                    "is_enabled": {
+                        "type": "boolean"
+                    },
+                    "is_default": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "label": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "endpoint": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uri",
+                        "maxLength": 255
+                    },
+                    "model": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "light_model": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "embedding_model": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "api_key": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    },
+                    "extra": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "deployment": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 100
+                            },
+                            "embedding_deployment": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 100
+                            },
+                            "api_version": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "pattern": "^[0-9a-z.-]+$",
+                                "maxLength": 30
+                            }
+                        }
+                    },
+                    "max_data_classification": {
+                        "$ref": "#/components/schemas/DataClassification"
+                    },
+                    "pii_masking_enabled": {
+                        "type": "boolean"
+                    },
+                    "latency_sla_ms": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 100,
+                        "maximum": 120000
+                    },
+                    "monthly_token_budget": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "rate_limit_per_minute": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 10000
+                    }
+                },
+                "required": [
+                    "is_enabled",
+                    "max_data_classification",
+                    "pii_masking_enabled"
+                ],
+                "title": "ConfigureAiProviderRequest"
+            },
+            "ConfigureAutomationRuleRequest": {
+                "type": "object",
+                "properties": {
+                    "is_enabled": {
+                        "type": "boolean"
+                    },
+                    "auto_approve_enabled": {
+                        "type": "boolean"
+                    },
+                    "auto_approve_min_confidence": {
+                        "type": "number",
+                        "minimum": 0.5,
+                        "maximum": 1
+                    },
+                    "max_auto_amount": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "data_classification": {
+                        "$ref": "#/components/schemas/DataClassification"
+                    },
+                    "preferred_provider": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/AiProviderType"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "is_enabled",
+                    "auto_approve_enabled",
+                    "auto_approve_min_confidence",
+                    "data_classification"
+                ],
+                "title": "ConfigureAutomationRuleRequest"
+            },
             "ConfigureRequest": {
                 "type": "object",
                 "description": "The configuration of an installation: the values of the fields of the connector schema (secrets included) and, optionally,\na lower rate limit. The schema itself validates the fields.",
@@ -319164,10 +320994,16 @@
                         "type": "string"
                     },
                     "iban": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "qr_iban": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "payment_terms_days": {
                         "type": "string"
@@ -320800,6 +322636,32 @@
                     "created_at"
                 ],
                 "title": "CopilotMessageResource"
+            },
+            "CopilotQueryRequest": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 2000
+                    },
+                    "mode": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "auto",
+                            "analytics",
+                            "knowledge",
+                            null
+                        ]
+                    }
+                },
+                "required": [
+                    "question"
+                ],
+                "title": "CopilotQueryRequest"
             },
             "CorrectTimeEventRequest": {
                 "type": "object",
@@ -324710,6 +326572,16 @@
                     "updated_at"
                 ],
                 "title": "DashboardResource"
+            },
+            "DataClassification": {
+                "type": "string",
+                "description": "How sensitive the data of a request is, from the least to the most. A provider accepts data up to the classification the tenant configured for it.\n",
+                "enum": [
+                    "public",
+                    "internal",
+                    "confidential_pii"
+                ],
+                "title": "DataClassification"
             },
             "DdtCausale": {
                 "type": "string",
@@ -330176,6 +332048,61 @@
                 ],
                 "title": "ExtendDsarRequest"
             },
+            "ExtractCognitiveRequest": {
+                "type": "object",
+                "properties": {
+                    "kind": {
+                        "type": "string",
+                        "enum": [
+                            "sales_quote",
+                            "purchase_order",
+                            "support_ticket",
+                            "contact"
+                        ]
+                    },
+                    "source_type": {
+                        "type": "string",
+                        "enum": [
+                            "email",
+                            "rfq",
+                            "delivery_note",
+                            "support_ticket",
+                            "document"
+                        ]
+                    },
+                    "text": {
+                        "type": "string",
+                        "minLength": 10,
+                        "maxLength": 20000
+                    },
+                    "source_reference": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    },
+                    "locale": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "it",
+                            "en",
+                            "de",
+                            "fr",
+                            null
+                        ]
+                    }
+                },
+                "required": [
+                    "kind",
+                    "source_type",
+                    "text"
+                ],
+                "title": "ExtractCognitiveRequest"
+            },
             "ExtractionResource": {
                 "type": "object",
                 "properties": {
@@ -332604,6 +334531,54 @@
                     }
                 },
                 "title": "GenerateDemandForecastRequest"
+            },
+            "GenerateDraftRequest": {
+                "type": "object",
+                "properties": {
+                    "purpose": {
+                        "type": "string",
+                        "enum": [
+                            "customer_email",
+                            "payment_reminder",
+                            "quote_cover_letter"
+                        ]
+                    },
+                    "language": {
+                        "type": "string",
+                        "enum": [
+                            "it-CH",
+                            "de-CH",
+                            "fr-CH",
+                            "en",
+                            "it-IT"
+                        ]
+                    },
+                    "facts": {
+                        "type": "array",
+                        "items": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 500
+                        },
+                        "minItems": 1,
+                        "maxItems": 30
+                    },
+                    "instructions": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "purpose",
+                    "language",
+                    "facts"
+                ],
+                "title": "GenerateDraftRequest"
             },
             "GenerateForecastRequest": {
                 "type": "object",
@@ -360219,6 +362194,20 @@
                 "maxItems": 0,
                 "title": "RegistryAssignment"
             },
+            "RejectAiSuggestionRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 1000
+                    }
+                },
+                "required": [
+                    "reason"
+                ],
+                "title": "RejectAiSuggestionRequest"
+            },
             "RejectCopilotActionRequest": {
                 "type": "object",
                 "properties": {
@@ -364825,6 +366814,27 @@
                 ],
                 "title": "RuleRequest"
             },
+            "RunAiJobRequest": {
+                "type": "object",
+                "description": "Body of the endpoints that start a background run (insights, reconciliation, index rebuild): all fields are optional.",
+                "properties": {
+                    "with_anomaly_scan": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "limit": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 500
+                    }
+                },
+                "title": "RunAiJobRequest"
+            },
             "RunBillingPlansRequest": {
                 "type": "object",
                 "description": "The billing plan run: every pending item due on or before a date.",
@@ -368084,6 +370094,9 @@
                                 "ocr_inbox",
                                 "ocr_capture",
                                 "ocr_settings",
+                                "ai_copilot",
+                                "ai_review",
+                                "ai_admin",
                                 "forecasting_wms",
                                 "integrations",
                                 "payment_links",
@@ -387946,6 +389959,117 @@
                 ],
                 "title": "StoreNonConformanceRequest"
             },
+            "StoreOfflineAuditBatchRequest": {
+                "type": "object",
+                "description": "An upload of the local audit queue of a desktop or mobile device (shared contract of both clients).",
+                "properties": {
+                    "device_id": {
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "batch_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 128
+                    },
+                    "origin": {
+                        "type": "string",
+                        "maxLength": 40
+                    },
+                    "entries": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "sequence_number": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                "previous_hash": {
+                                    "type": "string",
+                                    "pattern": "^[0-9a-fA-F]{64}$",
+                                    "minLength": 64,
+                                    "maxLength": 64
+                                },
+                                "payload_hash": {
+                                    "type": "string",
+                                    "pattern": "^[0-9a-fA-F]{64}$",
+                                    "minLength": 64,
+                                    "maxLength": 64
+                                },
+                                "record_hash": {
+                                    "type": "string",
+                                    "pattern": "^[0-9a-fA-F]{64}$",
+                                    "minLength": 64,
+                                    "maxLength": 64
+                                },
+                                "occurred_at": {
+                                    "type": "string",
+                                    "maxLength": 40
+                                },
+                                "entity_type": {
+                                    "type": "string",
+                                    "maxLength": 191
+                                },
+                                "entity_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 191
+                                },
+                                "action": {
+                                    "type": "string",
+                                    "maxLength": 80
+                                },
+                                "payload": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "payload_json": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "metadata": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "metadata_json": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "sequence_number",
+                                "previous_hash",
+                                "payload_hash",
+                                "record_hash",
+                                "occurred_at",
+                                "entity_type",
+                                "action"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 500
+                    }
+                },
+                "required": [
+                    "device_id",
+                    "origin",
+                    "entries"
+                ],
+                "title": "StoreOfflineAuditBatchRequest"
+            },
             "StoreOpenBankingConsentRequest": {
                 "type": "object",
                 "properties": {
@@ -395068,6 +397192,80 @@
                 ],
                 "title": "SuccessorCandidateResource"
             },
+            "SuggestCodingRequest": {
+                "type": "object",
+                "properties": {
+                    "description": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 2000
+                    },
+                    "amount": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "counterparty": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "source_type": {
+                        "type": "string",
+                        "enum": [
+                            "bank_transaction",
+                            "expense_receipt",
+                            "document"
+                        ]
+                    },
+                    "source_reference": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 120
+                    }
+                },
+                "required": [
+                    "description",
+                    "source_type"
+                ],
+                "title": "SuggestCodingRequest"
+            },
+            "SuggestionKind": {
+                "type": "string",
+                "description": "The kinds of item the review queue holds. The first four are draft ERP entities parsed from unstructured text; the others are accounting proposals, anomaly alerts and predictive recommendations.\n",
+                "enum": [
+                    "sales_quote",
+                    "purchase_order",
+                    "support_ticket",
+                    "contact",
+                    "accounting_coding",
+                    "reconciliation_match",
+                    "anomaly",
+                    "late_payment_risk",
+                    "churn_risk",
+                    "reorder",
+                    "cash_flow_alert"
+                ],
+                "title": "SuggestionKind"
+            },
+            "SuggestionStatus": {
+                "type": "string",
+                "enum": [
+                    "pending",
+                    "auto_approved",
+                    "approved",
+                    "edited_approved",
+                    "rejected",
+                    "expired",
+                    "failed"
+                ],
+                "title": "SuggestionStatus"
+            },
             "SupplierCatalogResource": {
                 "type": "object",
                 "properties": {
@@ -400402,6 +402600,37 @@
                     "challenge_token"
                 ],
                 "title": "TwoFactorChallengeRequest"
+            },
+            "UnmaskPiiRequest": {
+                "type": "object",
+                "properties": {
+                    "entity_type": {
+                        "type": "string",
+                        "enum": [
+                            "contact"
+                        ]
+                    },
+                    "entity_id": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "field": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "justification": {
+                        "type": "string",
+                        "minLength": 10,
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "entity_type",
+                    "entity_id",
+                    "field",
+                    "justification"
+                ],
+                "title": "UnmaskPiiRequest"
             },
             "UpdateAccountRequest": {
                 "type": "object",
@@ -410877,8 +413106,28 @@
             "description": "Operations of the Agreement module."
         },
         {
+            "name": "AiAudit",
+            "description": "Operations of the AiAudit module."
+        },
+        {
+            "name": "AiCopilot",
+            "description": "Operations of the AiCopilot module."
+        },
+        {
+            "name": "AiInsight",
+            "description": "Operations of the AiInsight module."
+        },
+        {
             "name": "AiSetting",
             "description": "Operations of the AiSetting module."
+        },
+        {
+            "name": "AiSettings",
+            "description": "Operations of the AiSettings module."
+        },
+        {
+            "name": "AiSuggestion",
+            "description": "Operations of the AiSuggestion module."
         },
         {
             "name": "Alert",
@@ -412265,6 +414514,10 @@
             "description": "Operations of the Offboarding module."
         },
         {
+            "name": "OfflineAuditBatch",
+            "description": "Operations of the OfflineAuditBatch module."
+        },
+        {
             "name": "Onboarding",
             "description": "Operations of the Onboarding module."
         },
@@ -413075,6 +415328,10 @@
         {
             "name": "Section",
             "description": "Operations of the Section module."
+        },
+        {
+            "name": "SecurityCenter",
+            "description": "Operations of the SecurityCenter module."
         },
         {
             "name": "SecurityPolicy",

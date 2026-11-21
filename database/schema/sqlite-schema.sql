@@ -5786,6 +5786,8 @@ CREATE TABLE "contacts"(
   "portal_consent_at" datetime,
   "default_incoterm" varchar,
   "eori_number" varchar,
+  "iban_bidx" varchar,
+  "qr_iban_bidx" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("price_list_id") references "price_lists"("id") on delete set null on update no action,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
@@ -41301,6 +41303,39 @@ CREATE INDEX "webauthn_credentials_tenant_id_user_id_index" on "webauthn_credent
 CREATE UNIQUE INDEX "webauthn_credentials_credential_id_unique" on "webauthn_credentials"(
   "credential_id"
 );
+CREATE INDEX "contacts_iban_bidx_index" on "contacts"("iban_bidx");
+CREATE INDEX "contacts_qr_iban_bidx_index" on "contacts"("qr_iban_bidx");
+CREATE TABLE "offline_audit_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "device_id" varchar not null,
+  "origin" varchar not null,
+  "sequence_number" integer not null,
+  "previous_hash" varchar not null,
+  "payload_hash" varchar not null,
+  "record_hash" varchar not null,
+  "occurred_at" varchar not null,
+  "entity_type" varchar not null,
+  "entity_id" varchar,
+  "action" varchar not null,
+  "payload" text,
+  "metadata" text,
+  "batch_id" varchar,
+  "audit_log_id" varchar,
+  "received_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "offline_audit_device_sequence_unique" on "offline_audit_entries"(
+  "tenant_id",
+  "device_id",
+  "sequence_number"
+);
+CREATE INDEX "offline_audit_entries_tenant_id_index" on "offline_audit_entries"(
+  "tenant_id"
+);
 CREATE TABLE "ai_provider_configs"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -42038,5 +42073,7 @@ INSERT INTO migrations VALUES(394,'2027_12_14_000100_create_ai_forecasting_table
 INSERT INTO migrations VALUES(395,'2027_12_15_000100_create_academy_tables',7);
 INSERT INTO migrations VALUES(396,'2027_12_15_000100_create_ocr_extraction_tables',8);
 INSERT INTO migrations VALUES(397,'2027_12_14_000100_create_iam_tables',9);
-INSERT INTO migrations VALUES(398,'2027_12_16_000100_create_ai_cognitive_tables',10);
-INSERT INTO migrations VALUES(399,'2027_12_16_000100_create_kpi_dashboard_tables',11);
+INSERT INTO migrations VALUES(398,'2027_12_13_000100_add_blind_indexes_to_contacts',10);
+INSERT INTO migrations VALUES(399,'2027_12_13_000200_create_offline_audit_entries_table',11);
+INSERT INTO migrations VALUES(400,'2027_12_16_000100_create_ai_cognitive_tables',12);
+INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_kpi_dashboard_tables',13);
