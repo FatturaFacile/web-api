@@ -45,6 +45,7 @@ return [
         'ocr_extraction' => env('FEATURE_MODULE_OCR_EXTRACTION'),
         'kpi_dashboards' => env('FEATURE_MODULE_KPI_DASHBOARDS'),
         'cpq_quotes' => env('FEATURE_MODULE_CPQ_QUOTES'),
+        'swiss_fiscal' => env('FEATURE_MODULE_SWISS_FISCAL'),
         'ai_cognitive' => env('FEATURE_MODULE_AI_COGNITIVE'),
         'leases' => env('FEATURE_MODULE_LEASES'),
         'retail' => env('FEATURE_MODULE_RETAIL'),

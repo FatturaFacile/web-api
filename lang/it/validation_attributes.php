@@ -3125,4 +3125,9 @@ return [
     'discount_fixed' => 'sconto fisso',
     'tier_prices' => 'prezzi a scaglioni',
     'min_qty' => 'quantità minima',
+    'building_number' => 'numero civico',
+    'creditor' => 'creditore',
+    'debtor' => 'debitore',
+    'bill_information' => 'informazioni di fatturazione',
+    'town' => 'località',
 ];

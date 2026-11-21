@@ -3125,4 +3125,9 @@ return [
     'discount_fixed' => 'fixed discount',
     'tier_prices' => 'tier prices',
     'min_qty' => 'minimum quantity',
+    'building_number' => 'building number',
+    'creditor' => 'creditor',
+    'debtor' => 'debtor',
+    'bill_information' => 'billing information',
+    'town' => 'town',
 ];

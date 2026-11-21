@@ -3125,4 +3125,9 @@ return [
     'discount_fixed' => 'remise fixe',
     'tier_prices' => 'prix par paliers',
     'min_qty' => 'quantité minimale',
+    'building_number' => 'numéro de bâtiment',
+    'creditor' => 'créancier',
+    'debtor' => 'débiteur',
+    'bill_information' => 'informations de facturation',
+    'town' => 'localité',
 ];

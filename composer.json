@@ -83,6 +83,7 @@
             "Modules\\OcrExtraction\\": "modules/67_OcrExtraction/src/",
             "Modules\\KpiDashboards\\": "modules/68_KpiDashboards/src/",
             "Modules\\Quoting\\": "modules/69_Quoting/src/",
+            "Modules\\SwissFiscal\\": "modules/69_SwissFiscal/src/",
             "Modules\\AiCognitive\\": "modules/68_AiCognitive/src/",
             "Modules\\Payroll\\": "modules/18_Payroll/src/",
             "Modules\\Associations\\": "modules/31_Associations/src/",

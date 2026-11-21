@@ -3125,4 +3125,9 @@ return [
     'discount_fixed' => 'Fixrabatt',
     'tier_prices' => 'Staffelpreise',
     'min_qty' => 'Mindestmenge',
+    'building_number' => 'Hausnummer',
+    'creditor' => 'Zahlungsempfänger',
+    'debtor' => 'Zahlungspflichtiger',
+    'bill_information' => 'Rechnungsinformationen',
+    'town' => 'Ort',
 ];
