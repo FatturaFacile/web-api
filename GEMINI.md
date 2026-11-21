@@ -1,8 +1,5 @@
 # GEMINI.md
-
 @AGENTS.md
-
-## Gemini CLI Execution Instructions
-- Strictly follow the architecture, quality gates, and database policies specified in `@AGENTS.md`.
-- Ensure all tests run with `DB_CONNECTION=sqlite` and `DB_DATABASE=:memory:`.
-- Ensure PHPStan and Pint checks pass with zero errors prior to finalizing solutions.
+- Follow [AGENTS.md](AGENTS.md) as the single source of truth for all architecture, coding, i18n (`it`, `de`, `fr`, `en`), DB, git, and quality-gate rules.
+- Run all local commands and tests strictly against SQLite `:memory:` (`DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`, `DB_FOREIGN_KEYS=true`).
+- Never finalize or push to `origin dev` until Pint, PHPStan (`--memory-limit=2G`), and tests pass with zero warnings/errors.
