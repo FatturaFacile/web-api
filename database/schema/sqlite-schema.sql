@@ -42182,6 +42182,9 @@ CREATE TABLE "mfg_bom_co_products"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("bom_id") references "mfg_boms"("id") on delete cascade,
   primary key("id")
 );
@@ -42754,3 +42757,4 @@ INSERT INTO migrations VALUES(402,'2027_12_17_000100_create_data_residency_table
 INSERT INTO migrations VALUES(403,'2027_12_17_000100_create_cpq_quote_tables',15);
 INSERT INTO migrations VALUES(404,'2027_12_17_000100_extend_bom_management',16);
 INSERT INTO migrations VALUES(405,'2027_12_17_000100_create_shift_planning_tables',17);
+INSERT INTO migrations VALUES(406,'2027_12_17_000200_add_audit_columns_to_mfg_bom_co_products',18);
