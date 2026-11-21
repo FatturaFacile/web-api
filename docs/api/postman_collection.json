@@ -148235,6 +148235,581 @@
             ]
         },
         {
+            "name": "Kpi Dashboards",
+            "item": [
+                {
+                    "name": "GET /v1/kpi-dashboards/cockpit",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/cockpit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "cockpit"
+                            ],
+                            "query": [
+                                {
+                                    "key": "preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "company_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "include_intercompany_eliminations",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "role",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "dashboard_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/kpi-dashboards/drill-down/:kpi",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/drill-down/:kpi",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "drill-down",
+                                ":kpi"
+                            ],
+                            "query": [
+                                {
+                                    "key": "preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "company_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "include_intercompany_eliminations",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "period",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "bucket",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "side",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "stage_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "outcome",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "contact_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "product_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "team_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "export",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "kpi",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/kpi-dashboards/catalog",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/catalog",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "catalog"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/kpi-dashboards/layout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/layout",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "layout"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"dashboard_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"role\": \"ceo\",\n    \"custom_title\": \"string\",\n    \"refresh_interval_seconds\": 1,\n    \"expected_version\": 1,\n    \"widgets\": [\n        {\n            \"kpi_code\": \"revenue_ytd_vs_budget\",\n            \"widget_type\": \"metric_card\",\n            \"default_time_comparison\": \"yoy\",\n            \"x\": 1,\n            \"y\": 1,\n            \"w\": 1,\n            \"h\": 1,\n            \"threshold_rules\": [\n                \"string\"\n            ]\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/kpi-dashboards/cubes/refresh",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/cubes/refresh",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "cubes",
+                                "refresh"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/kpi-dashboards/alerts",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/alerts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "alerts"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/kpi-dashboards/alerts",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/alerts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "alerts"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"rule_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"kpi_code\": \"revenue_ytd_vs_budget\",\n    \"operator\": \"<\",\n    \"warning_value\": 1.5,\n    \"critical_value\": 1.5,\n    \"channels\": [\n        \"in_app\"\n    ],\n    \"cooldown_minutes\": 1,\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/kpi-dashboards/alerts/:id/acknowledge",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/alerts/:id/acknowledge",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "alerts",
+                                ":id",
+                                "acknowledge"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "Leases",
             "item": [
                 {
