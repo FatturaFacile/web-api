@@ -18,7 +18,7 @@ final class MobileFrontendTranslations
         'mobile.module.payslips', 'mobile.module.approvals_inbox', 'mobile.module.barcode_scanner',
         'mobile.module.inventory_counts', 'mobile.module.pick_lists', 'mobile.module.work_orders',
         'mobile.module.service_reports', 'mobile.module.appointments', 'mobile.module.customer_360',
-        'mobile.module.quotes', 'mobile.module.kpi_dashboard', 'mobile.module.copilot',
+        'mobile.module.quotes', 'mobile.module.kpi_dashboard', 'mobile.module.copilot', 'mobile.module.executive_dss',
     ];
 
     /**
@@ -33,7 +33,7 @@ final class MobileFrontendTranslations
                 'Sincronizzazione di {count} elementi', 'Errore di sincronizzazione', 'Riprova', 'Cambia azienda', 'Azienda attiva',
                 'Timbratura', 'Turni', 'Permessi', 'Note spese', 'Cedolini', 'Approvazioni', 'Scanner codici',
                 'Inventari', 'Prelievi', 'Ordini di lavoro', 'Rapporti di intervento', 'Appuntamenti', 'Cliente 360',
-                'Preventivi', 'Cruscotto KPI', 'Copilot',
+                'Preventivi', 'Cruscotto KPI', 'Copilot', 'Cruscotto direzionale',
             ],
             'en' => [
                 'Sign in', 'Email', 'Password', 'Sign in', 'Two-factor authentication is required: complete the sign-in in your browser.',
@@ -41,7 +41,7 @@ final class MobileFrontendTranslations
                 'Syncing {count} items', 'Sync error', 'Retry', 'Switch company', 'Active company',
                 'Clock in/out', 'Shifts', 'Leave', 'Expenses', 'Payslips', 'Approvals', 'Barcode scanner',
                 'Inventory counts', 'Pick lists', 'Work orders', 'Service reports', 'Appointments', 'Customer 360',
-                'Quotes', 'KPI dashboard', 'Copilot',
+                'Quotes', 'KPI dashboard', 'Copilot', 'Executive DSS',
             ],
             'de' => [
                 'Anmelden', 'E-Mail', 'Passwort', 'Anmelden', 'Zwei-Faktor-Authentifizierung erforderlich: Schliessen Sie die Anmeldung im Browser ab.',
@@ -49,7 +49,7 @@ final class MobileFrontendTranslations
                 '{count} Elemente werden synchronisiert', 'Synchronisierungsfehler', 'Erneut versuchen', 'Firma wechseln', 'Aktive Firma',
                 'Zeiterfassung', 'Schichten', 'Abwesenheiten', 'Spesen', 'Lohnabrechnungen', 'Genehmigungen', 'Barcode-Scanner',
                 'Inventuren', 'Kommissionierlisten', 'Arbeitsaufträge', 'Serviceberichte', 'Termine', 'Kunde 360',
-                'Angebote', 'KPI-Dashboard', 'Copilot',
+                'Angebote', 'KPI-Dashboard', 'Copilot', 'Management-Cockpit',
             ],
             'fr' => [
                 'Se connecter', 'E-mail', 'Mot de passe', 'Se connecter', 'Authentification à deux facteurs requise : terminez la connexion dans votre navigateur.',
@@ -57,7 +57,7 @@ final class MobileFrontendTranslations
                 'Synchronisation de {count} éléments', 'Erreur de synchronisation', 'Réessayer', 'Changer d\'entreprise', 'Entreprise active',
                 'Pointage', 'Équipes', 'Congés', 'Notes de frais', 'Fiches de paie', 'Approbations', 'Scanner de codes',
                 'Inventaires', 'Listes de prélèvement', 'Ordres de travail', 'Rapports d\'intervention', 'Rendez-vous', 'Client 360',
-                'Devis', 'Tableau de bord KPI', 'Copilot',
+                'Devis', 'Tableau de bord KPI', 'Copilot', 'Cockpit de direction',
             ],
             default => [],
         };

@@ -147,7 +147,12 @@ final class PutawayController extends Controller
         $warehouse = Warehouse::query()->findOrFail($request->string('warehouse_id')->value());
         $item = StockItem::query()->findOrFail($request->string('stock_item_id')->value());
 
-        return response()->json(['data' => $putaway->suggest($warehouse, $item, Quantity::of((string) $request->input('quantity')), (int) $request->input('limit', 5))]);
+        return response()->json(['data' => $putaway->suggest($warehouse, $item, Quantity::of((string) $request->input('quantity')), (int) $request->input('limit', 5), [
+            'lot_id' => $request->input('lot_id'),
+            'temperature_control' => $request->input('temperature_control'),
+            'packaging_unit' => $request->input('packaging_unit'),
+            'abc_class' => $request->input('abc_class'),
+        ])]);
     }
 
     #[OA\Post(
@@ -194,6 +199,9 @@ final class PutawayController extends Controller
             'target_zone_id' => $rule->target_zone_id,
             'target_bin_id' => $rule->target_bin_id,
             'bin_type' => $rule->bin_type,
+            'abc_class' => $rule->abc_class,
+            'temperature_control' => $rule->temperature_control,
+            'packaging_unit' => $rule->packaging_unit,
             'strategy' => (string) $rule->strategy,
             'priority' => (int) $rule->priority,
             'is_active' => (bool) $rule->is_active,

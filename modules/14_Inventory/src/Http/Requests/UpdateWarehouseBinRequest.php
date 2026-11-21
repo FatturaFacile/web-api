@@ -31,6 +31,15 @@ final class UpdateWarehouseBinRequest extends FormRequest
             'max_volume_cbm' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
             'is_locked' => ['sometimes', 'boolean'],
             'pick_sequence' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'block_reason' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'coord_x' => ['sometimes', 'nullable', 'numeric'],
+            'coord_y' => ['sometimes', 'nullable', 'numeric'],
+            'coord_z' => ['sometimes', 'nullable', 'numeric'],
+            'length_cm' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'width_cm' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'height_cm' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'allow_mixed_skus' => ['sometimes', 'boolean'],
+            'allow_mixed_lots' => ['sometimes', 'boolean'],
         ];
     }
 }

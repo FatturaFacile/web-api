@@ -23194,6 +23194,9 @@ CREATE TABLE "putaway_rules"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "abc_class" varchar,
+  "temperature_control" varchar,
+  "packaging_unit" varchar,
   foreign key("target_bin_id") references "warehouse_bins"("id") on delete set null on update no action,
   foreign key("target_zone_id") references "warehouse_zones"("id") on delete set null on update no action,
   foreign key("category_id") references "stock_item_categories"("id") on delete cascade on update no action,
@@ -28955,6 +28958,17 @@ CREATE TABLE "warehouse_bins"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "shelf_code" varchar,
+  "coord_x" numeric,
+  "coord_y" numeric,
+  "coord_z" numeric,
+  "length_cm" numeric,
+  "width_cm" numeric,
+  "height_cm" numeric,
+  "allow_mixed_skus" tinyint(1) not null default '1',
+  "allow_mixed_lots" tinyint(1) not null default '1',
+  "block_reason" varchar,
+  "full_path_code" varchar,
   foreign key("warehouse_rack_id") references "warehouse_racks"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -29002,6 +29016,8 @@ CREATE TABLE "warehouse_zones"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "temperature_control" varchar not null default 'ambient',
+  "security_level" varchar,
   foreign key("warehouse_id") references "warehouses"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -42199,6 +42215,684 @@ CREATE INDEX "mfg_bom_co_products_bom_id_index" on "mfg_bom_co_products"(
 CREATE INDEX "mfg_bom_co_products_product_item_id_index" on "mfg_bom_co_products"(
   "product_item_id"
 );
+CREATE INDEX "warehouse_bins_full_path_code_index" on "warehouse_bins"(
+  "full_path_code"
+);
+CREATE TABLE "dim_date"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "date_key" integer not null,
+  "date" date not null,
+  "year" integer not null,
+  "quarter" integer not null,
+  "month" integer not null,
+  "week" integer not null,
+  "day_of_week" integer not null,
+  "is_weekend" tinyint(1) not null default '0',
+  "is_ch_holiday" tinyint(1) not null default '0',
+  "is_it_holiday" tinyint(1) not null default '0',
+  "working_days" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dim_date_tenant_key_unique" on "dim_date"(
+  "tenant_id",
+  "date_key"
+);
+CREATE TABLE "dim_legal_entity"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar not null,
+  "name" varchar not null,
+  "base_currency" varchar not null,
+  "country" varchar,
+  "region" varchar,
+  "parent_legal_entity_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dim_le_tenant_entity_unique" on "dim_legal_entity"(
+  "tenant_id",
+  "legal_entity_id"
+);
+CREATE TABLE "dim_counterparty"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contact_id" varchar not null,
+  "name" varchar not null,
+  "kind" varchar not null,
+  "country" varchar,
+  "industry_code" varchar,
+  "industry_code_system" varchar,
+  "payment_terms_days" integer not null default '30',
+  "cohort" varchar,
+  "credit_tier" varchar not null default 'B',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dim_cp_tenant_contact_unique" on "dim_counterparty"(
+  "tenant_id",
+  "contact_id"
+);
+CREATE TABLE "dim_product_service"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "product_id" varchar not null,
+  "sku" varchar,
+  "name" varchar not null,
+  "category" varchar,
+  "abc_class" varchar,
+  "xyz_class" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dim_ps_tenant_product_unique" on "dim_product_service"(
+  "tenant_id",
+  "product_id"
+);
+CREATE TABLE "dim_cost_center"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "cost_center_id" varchar not null,
+  "code" varchar,
+  "name" varchar not null,
+  "kind" varchar not null default 'department',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dim_cc_tenant_center_unique" on "dim_cost_center"(
+  "tenant_id",
+  "cost_center_id"
+);
+CREATE TABLE "fact_financial_transactions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "journal_line_id" varchar not null,
+  "journal_entry_id" varchar not null,
+  "date_key" integer not null,
+  "posting_date" date not null,
+  "account_id" varchar not null,
+  "account_code" varchar,
+  "category" varchar not null,
+  "cost_center_id" varchar,
+  "counterparty_id" varchar,
+  "product_id" varchar,
+  "project_id" varchar,
+  "channel" varchar,
+  "transaction_currency" varchar not null,
+  "amount_transaction" numeric not null default '0',
+  "functional_currency" varchar not null,
+  "amount_functional" numeric not null default '0',
+  "amount_chf" numeric,
+  "amount_eur" numeric,
+  "fx_rate_chf" numeric,
+  "fx_rate_eur" numeric,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fft_tenant_line_unique" on "fact_financial_transactions"(
+  "tenant_id",
+  "journal_line_id"
+);
+CREATE INDEX "fft_scope_date_category_index" on "fact_financial_transactions"(
+  "tenant_id",
+  "legal_entity_id",
+  "date_key",
+  "category"
+);
+CREATE INDEX "fft_counterparty_index" on "fact_financial_transactions"(
+  "tenant_id",
+  "counterparty_id",
+  "category"
+);
+CREATE INDEX "fft_entry_index" on "fact_financial_transactions"(
+  "tenant_id",
+  "journal_entry_id"
+);
+CREATE TABLE "fact_commercial_velocity"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "invoice_id" varchar not null,
+  "counterparty_id" varchar,
+  "quote_id" varchar,
+  "channel" varchar not null default 'direct',
+  "issue_date_key" integer not null,
+  "issue_date" date not null,
+  "due_date" date,
+  "paid_date" date,
+  "currency" varchar not null,
+  "amount_net" numeric not null default '0',
+  "amount_gross" numeric not null default '0',
+  "amount_paid" numeric not null default '0',
+  "amount_open" numeric not null default '0',
+  "amount_net_chf" numeric,
+  "amount_net_eur" numeric,
+  "amount_open_chf" numeric,
+  "amount_open_eur" numeric,
+  "discount_amount" numeric not null default '0',
+  "days_to_pay" integer,
+  "quote_to_cash_days" integer,
+  "payment_status" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fcv_tenant_invoice_unique" on "fact_commercial_velocity"(
+  "tenant_id",
+  "invoice_id"
+);
+CREATE INDEX "fcv_scope_date_index" on "fact_commercial_velocity"(
+  "tenant_id",
+  "legal_entity_id",
+  "issue_date_key"
+);
+CREATE TABLE "fact_operational_efficiency"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "source_type" varchar not null,
+  "source_id" varchar not null,
+  "date_key" integer not null,
+  "work_date" date not null,
+  "project_id" varchar,
+  "user_id" varchar,
+  "product_id" varchar,
+  "billable_hours" numeric not null default '0',
+  "non_billable_hours" numeric not null default '0',
+  "labour_cost" numeric not null default '0',
+  "labour_charge" numeric not null default '0',
+  "quantity_out" numeric not null default '0',
+  "value_out" numeric not null default '0',
+  "unit_cost" numeric,
+  "standard_unit_cost" numeric,
+  "unit_cost_variance" numeric,
+  "fulfillment_lead_days" integer,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "foe_tenant_source_unique" on "fact_operational_efficiency"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "foe_scope_date_index" on "fact_operational_efficiency"(
+  "tenant_id",
+  "legal_entity_id",
+  "date_key"
+);
+CREATE TABLE "agg_executive_daily_snapshots"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "date_key" integer not null,
+  "snapshot_date" date not null,
+  "revenue_chf" numeric not null default '0',
+  "revenue_eur" numeric not null default '0',
+  "cogs_chf" numeric not null default '0',
+  "cogs_eur" numeric not null default '0',
+  "opex_chf" numeric not null default '0',
+  "opex_eur" numeric not null default '0',
+  "depreciation_chf" numeric not null default '0',
+  "depreciation_eur" numeric not null default '0',
+  "cash_movement_chf" numeric not null default '0',
+  "cash_movement_eur" numeric not null default '0',
+  "receivable_movement_chf" numeric not null default '0',
+  "receivable_movement_eur" numeric not null default '0',
+  "payable_movement_chf" numeric not null default '0',
+  "payable_movement_eur" numeric not null default '0',
+  "inventory_movement_chf" numeric not null default '0',
+  "inventory_movement_eur" numeric not null default '0',
+  "functional_checksum" numeric not null default '0',
+  "transaction_count" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "aeds_scope_date_unique" on "agg_executive_daily_snapshots"(
+  "tenant_id",
+  "legal_entity_id",
+  "date_key"
+);
+CREATE INDEX "aeds_tenant_date_index" on "agg_executive_daily_snapshots"(
+  "tenant_id",
+  "date_key"
+);
+CREATE TABLE "hse_requirement_matrices"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "jurisdiction" varchar not null,
+  "job_position_id" varchar,
+  "work_center_id" varchar,
+  "construction_site_id" varchar,
+  "suva_hazard_class" varchar,
+  "dvr_risk_profile_code" varchar,
+  "required_training_types_json" text,
+  "required_medical_exam_codes_json" text,
+  "required_ppe_product_ids_json" text,
+  "is_active" tinyint(1) not null default '1',
+  "version" integer not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_requirement_matrices_tenant_id_is_active_index" on "hse_requirement_matrices"(
+  "tenant_id",
+  "is_active"
+);
+CREATE INDEX "hse_requirement_matrices_tenant_id_job_position_id_index" on "hse_requirement_matrices"(
+  "tenant_id",
+  "job_position_id"
+);
+CREATE INDEX "hse_requirement_matrices_tenant_id_work_center_id_index" on "hse_requirement_matrices"(
+  "tenant_id",
+  "work_center_id"
+);
+CREATE INDEX "hse_requirement_matrices_tenant_id_construction_site_id_index" on "hse_requirement_matrices"(
+  "tenant_id",
+  "construction_site_id"
+);
+CREATE TABLE "hse_safety_certificates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "employee_id" varchar not null,
+  "certificate_type" varchar not null,
+  "certificate_number" varchar,
+  "training_provider_name" varchar,
+  "hours_completed" numeric not null default '0',
+  "issued_at" date not null,
+  "expires_at" date,
+  "document_id" varchar,
+  "status" varchar not null default 'valid',
+  "revoked_at" datetime,
+  "version" integer not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_safety_certificates_tenant_id_employee_id_certificate_type_index" on "hse_safety_certificates"(
+  "tenant_id",
+  "employee_id",
+  "certificate_type"
+);
+CREATE INDEX "hse_safety_certificates_tenant_id_expires_at_index" on "hse_safety_certificates"(
+  "tenant_id",
+  "expires_at"
+);
+CREATE TABLE "hse_medical_visits"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "employee_id" varchar not null,
+  "doctor_name" varchar not null,
+  "doctor_registration_number" varchar,
+  "visit_type" varchar not null,
+  "visit_date" date not null,
+  "next_visit_due_date" date,
+  "fitness_outcome" varchar not null,
+  "restrictions_summary" text,
+  "encrypted_clinical_notes_ref" varchar,
+  "certificate_document_id" varchar,
+  "version" integer not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_medical_visits_tenant_id_employee_id_visit_date_index" on "hse_medical_visits"(
+  "tenant_id",
+  "employee_id",
+  "visit_date"
+);
+CREATE INDEX "hse_medical_visits_tenant_id_next_visit_due_date_index" on "hse_medical_visits"(
+  "tenant_id",
+  "next_visit_due_date"
+);
+CREATE TABLE "hse_medical_clinical_vault"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "medical_visit_id" varchar not null,
+  "encrypted_notes" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("medical_visit_id") references "hse_medical_visits"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "hse_medical_clinical_vault_medical_visit_id_unique" on "hse_medical_clinical_vault"(
+  "medical_visit_id"
+);
+CREATE INDEX "hse_medical_clinical_vault_tenant_id_medical_visit_id_index" on "hse_medical_clinical_vault"(
+  "tenant_id",
+  "medical_visit_id"
+);
+CREATE TABLE "hse_employee_clearance_cache"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "employee_id" varchar not null,
+  "medical_status" varchar not null,
+  "restrictions_summary" text,
+  "valid_until" date,
+  "computed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "hse_employee_clearance_cache_tenant_id_employee_id_unique" on "hse_employee_clearance_cache"(
+  "tenant_id",
+  "employee_id"
+);
+CREATE TABLE "hse_ppe_distributions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "employee_id" varchar not null,
+  "product_id" varchar not null,
+  "warehouse_id" varchar not null,
+  "lot_or_serial_id" varchar,
+  "quantity" numeric not null,
+  "ce_marking_standard" varchar,
+  "handed_over_at" datetime not null,
+  "replacement_due_at" date,
+  "employee_signature_hash" varchar not null,
+  "signature_image_base64_or_ref" text,
+  "verbale_consegna_pdf_id" varchar,
+  "stock_movement_id" varchar,
+  "locale" varchar not null default 'en',
+  "delivery_status" varchar not null default 'delivered_signed',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_ppe_distributions_tenant_id_employee_id_product_id_index" on "hse_ppe_distributions"(
+  "tenant_id",
+  "employee_id",
+  "product_id"
+);
+CREATE INDEX "hse_ppe_distributions_tenant_id_replacement_due_at_index" on "hse_ppe_distributions"(
+  "tenant_id",
+  "replacement_due_at"
+);
+CREATE TABLE "hse_incident_reports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "protocol_number" varchar not null,
+  "jurisdiction" varchar not null,
+  "incident_date" datetime not null,
+  "reported_at" datetime not null,
+  "location_or_site_id" varchar,
+  "work_center_id" varchar,
+  "incident_type" varchar not null,
+  "involved_employee_ids_json" text,
+  "witness_employee_ids_json" text,
+  "description" text not null,
+  "immediate_actions_taken" text,
+  "root_cause_analysis_json" text,
+  "corrective_actions_json" text,
+  "prognosis_days" integer not null default '0',
+  "injury_dynamics_json" text,
+  "linked_insurance_claim_id" varchar,
+  "status" varchar not null default 'draft',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "hse_incident_reports_tenant_id_protocol_number_unique" on "hse_incident_reports"(
+  "tenant_id",
+  "protocol_number"
+);
+CREATE INDEX "hse_incident_reports_tenant_id_incident_type_status_index" on "hse_incident_reports"(
+  "tenant_id",
+  "incident_type",
+  "status"
+);
+CREATE TABLE "hse_accident_claim_drafts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "incident_report_id" varchar not null,
+  "jurisdiction" varchar not null,
+  "schema_version" varchar not null,
+  "declaration_type" varchar,
+  "payload_json" text not null,
+  "status" varchar not null default 'draft',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("incident_report_id") references "hse_incident_reports"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_accident_claim_drafts_tenant_id_incident_report_id_index" on "hse_accident_claim_drafts"(
+  "tenant_id",
+  "incident_report_id"
+);
+CREATE TABLE "hse_safety_audits"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "audit_type" varchar not null,
+  "jurisdiction" varchar not null,
+  "audit_date" date not null,
+  "answers_json" text,
+  "score_percent" numeric not null default '0',
+  "corrective_actions_json" text,
+  "status" varchar not null default 'open',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_safety_audits_tenant_id_audit_type_audit_date_index" on "hse_safety_audits"(
+  "tenant_id",
+  "audit_type",
+  "audit_date"
+);
+CREATE TABLE "hse_dvr_documents"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "revision_number" integer not null,
+  "issued_at" date not null,
+  "review_due_at" date,
+  "signatures_json" text,
+  "document_id" varchar,
+  "status" varchar not null default 'draft',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "hse_dvr_documents_tenant_id_revision_number_unique" on "hse_dvr_documents"(
+  "tenant_id",
+  "revision_number"
+);
+CREATE TABLE "hse_toolbox_talks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "topic" varchar not null,
+  "site_or_work_center" varchar,
+  "checklist_points_json" text,
+  "supervisor_employee_id" varchar,
+  "conducted_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_toolbox_talks_tenant_id_conducted_at_index" on "hse_toolbox_talks"(
+  "tenant_id",
+  "conducted_at"
+);
+CREATE TABLE "hse_toolbox_talk_attendances"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "toolbox_talk_id" varchar not null,
+  "employee_id" varchar not null,
+  "signature_hash" varchar not null,
+  "signature_image_base64_or_ref" text,
+  "signed_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("toolbox_talk_id") references "hse_toolbox_talks"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "hse_toolbox_talk_attendances_toolbox_talk_id_employee_id_unique" on "hse_toolbox_talk_attendances"(
+  "toolbox_talk_id",
+  "employee_id"
+);
+CREATE INDEX "hse_toolbox_talk_attendances_tenant_id_toolbox_talk_id_index" on "hse_toolbox_talk_attendances"(
+  "tenant_id",
+  "toolbox_talk_id"
+);
+CREATE TABLE "hse_expiration_alerts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "subject_type" varchar not null,
+  "subject_id" varchar not null,
+  "threshold_days" integer not null,
+  "alert_date" date not null,
+  "recipients_count" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_hse_expiration_alert" on "hse_expiration_alerts"(
+  "tenant_id",
+  "subject_type",
+  "subject_id",
+  "threshold_days",
+  "alert_date"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -42604,3 +43298,6 @@ INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_kpi_dashboard_tables
 INSERT INTO migrations VALUES(402,'2027_12_17_000100_create_data_residency_tables',14);
 INSERT INTO migrations VALUES(403,'2027_12_17_000100_create_cpq_quote_tables',15);
 INSERT INTO migrations VALUES(404,'2027_12_17_000100_extend_bom_management',16);
+INSERT INTO migrations VALUES(405,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',17);
+INSERT INTO migrations VALUES(406,'2027_12_16_000100_create_analytics_dss_tables',18);
+INSERT INTO migrations VALUES(407,'2027_12_17_000100_create_hse_tables',19);

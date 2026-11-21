@@ -38,23 +38,30 @@ final readonly class PutawayService
     /**
      * Candidate bins for `quantity` units of the item, best first.
      *
-     * @return list<array{bin_id: string, barcode: string, code: string, zone_code: ?string, bin_type: string, rule_id: ?string, strategy: string, source: string, occupancy: array{quantity: string, weight_kg: string, volume_m3: string, items: int}}>
+     * Context (all optional): lot_id (lot consolidation and the mixed-lot guard), temperature_control, packaging_unit
+     * and abc_class (defaults to the item's own class). Each suggestion carries its utilisation after the putaway, the
+     * distance to the relevant dock (class A: shipping, class C: receiving) and the reasons it was ranked there.
+     *
+     * @param  array{lot_id?: ?string, temperature_control?: ?string, packaging_unit?: ?string, abc_class?: ?string}  $context
+     * @return list<array{bin_id: string, barcode: string, code: string, full_path_code: ?string, zone_code: ?string, bin_type: string, rule_id: ?string, strategy: string, source: string, occupancy: array{quantity: string, weight_kg: string, volume_m3: string, items: int}, weight_utilization_pct: ?float, volume_utilization_pct: ?float, distance_to_dock: ?float, reasons: list<string>}>
      */
-    public function suggest(Warehouse $warehouse, StockItem $item, string $quantity, int $limit = 5): array
+    public function suggest(Warehouse $warehouse, StockItem $item, string $quantity, int $limit = 5, array $context = []): array
     {
         $quantity = Quantity::of($quantity);
+        $context['abc_class'] ??= $item->abc_class;
         $suggestions = [];
         $seen = [];
+        $docks = $this->docks($warehouse, (string) ($context['abc_class'] ?? ''));
 
-        foreach ($this->rulesFor($warehouse, $item) as $rule) {
-            foreach ($this->rankedBins($this->candidates($warehouse, $rule), $item, (string) $rule->strategy) as $bin) {
-                $this->offer($suggestions, $seen, $bin, $item, $quantity, (string) $rule->id, (string) $rule->strategy, 'rule');
+        foreach ($this->rulesFor($warehouse, $item, $context) as $rule) {
+            foreach ($this->rankedBins($this->candidates($warehouse, $rule), $item, (string) $rule->strategy, $docks) as $bin) {
+                $this->offer($suggestions, $seen, $bin, $item, $quantity, (string) $rule->id, (string) $rule->strategy, 'rule', $context, $docks);
             }
         }
 
         if ($suggestions === []) {
-            foreach ($this->rankedBins($this->storableBins($warehouse)->get(), $item, 'consolidate') as $bin) {
-                $this->offer($suggestions, $seen, $bin, $item, $quantity, null, 'consolidate', 'fallback');
+            foreach ($this->rankedBins($this->storableBins($warehouse)->get(), $item, 'consolidate', $docks) as $bin) {
+                $this->offer($suggestions, $seen, $bin, $item, $quantity, null, 'consolidate', 'fallback', $context, $docks);
             }
         }
 
@@ -108,13 +115,21 @@ final readonly class PutawayService
     }
 
     /**
+     * @param  array<string, mixed>  $context
      * @return Collection<int, PutawayRule>
      */
-    private function rulesFor(Warehouse $warehouse, StockItem $item): Collection
+    private function rulesFor(Warehouse $warehouse, StockItem $item, array $context): Collection
     {
+        $filters = ['abc_class' => $context['abc_class'] ?? null, 'temperature_control' => $context['temperature_control'] ?? null, 'packaging_unit' => $context['packaging_unit'] ?? null];
+
         return PutawayRule::query()
             ->where('warehouse_id', $warehouse->id)
             ->where('is_active', true)
+            ->where(static function (Builder $query) use ($filters): void {
+                foreach ($filters as $column => $value) {
+                    $query->where(static fn (Builder $match) => $match->whereNull($column)->when($value !== null && $value !== '', static fn (Builder $q) => $q->orWhere($column, $value)));
+                }
+            })
             ->where(static function (Builder $match) use ($item): void {
                 $match->where('stock_item_id', $item->id)
                     ->orWhere(static fn (Builder $category) => $category->whereNull('stock_item_id')->where('category_id', $item->category_id))
@@ -166,9 +181,10 @@ final readonly class PutawayService
      * or the walking order (fixed_location); pick sequence and code break ties.
      *
      * @param  Collection<int, WarehouseBin>  $bins
+     * @param  list<WarehouseBin>  $docks
      * @return Collection<int, WarehouseBin>
      */
-    private function rankedBins(Collection $bins, StockItem $item, string $strategy): Collection
+    private function rankedBins(Collection $bins, StockItem $item, string $strategy, array $docks = []): Collection
     {
         if ($bins->isEmpty()) {
             return $bins;
@@ -178,12 +194,13 @@ final readonly class PutawayService
         $holding = StockQuant::query()->whereIn('warehouse_bin_id', $binIds)->where('stock_item_id', $item->id)->where('quantity_on_hand', '>', 0)->pluck('warehouse_bin_id')->map(static fn ($id): string => (string) $id)->flip();
         $occupied = StockQuant::query()->whereIn('warehouse_bin_id', $binIds)->where('quantity_on_hand', '>', 0)->pluck('warehouse_bin_id')->map(static fn ($id): string => (string) $id)->flip();
 
-        return $bins->sortBy(static fn (WarehouseBin $bin): array => [
+        return $bins->sortBy(fn (WarehouseBin $bin): array => [
             match ($strategy) {
                 'consolidate' => $holding->has((string) $bin->id) ? 0 : ($occupied->has((string) $bin->id) ? 2 : 1),
                 'empty_bin' => $occupied->has((string) $bin->id) ? 1 : 0,
                 default => 0,
             },
+            $this->distanceToDock($bin, $docks) ?? PHP_FLOAT_MAX,
             $bin->pick_sequence ?? PHP_INT_MAX,
             (string) $bin->code,
         ])->values();
@@ -192,8 +209,10 @@ final readonly class PutawayService
     /**
      * @param  list<array<string, mixed>>  $suggestions
      * @param  array<string, bool>  $seen
+     * @param  array<string, mixed>  $context
+     * @param  list<WarehouseBin>  $docks
      */
-    private function offer(array &$suggestions, array &$seen, WarehouseBin $bin, StockItem $item, string $quantity, ?string $ruleId, string $strategy, string $source): void
+    private function offer(array &$suggestions, array &$seen, WarehouseBin $bin, StockItem $item, string $quantity, ?string $ruleId, string $strategy, string $source, array $context = [], array $docks = []): void
     {
         if (isset($seen[(string) $bin->id])) {
             return;
@@ -205,18 +224,117 @@ final readonly class PutawayService
             return;
         }
 
+        $lotId = isset($context['lot_id']) && $context['lot_id'] !== '' ? (string) $context['lot_id'] : null;
+        $holds = StockQuant::query()->where('warehouse_bin_id', $bin->id)->where('quantity_on_hand', '>', 0)->get(['stock_item_id', 'lot_id']);
+
+        if (! $bin->allow_mixed_skus && $holds->contains(static fn (StockQuant $quant): bool => (string) $quant->stock_item_id !== (string) $item->id)) {
+            return;
+        }
+
+        if (! $bin->allow_mixed_lots && $holds->contains(static fn (StockQuant $quant): bool => ($quant->lot_id !== null ? (string) $quant->lot_id : null) !== $lotId)) {
+            return;
+        }
+
+        $temperature = (string) ($context['temperature_control'] ?? '');
+        $zone = $bin->rack?->aisle?->zone;
+
+        if ($temperature !== '' && $zone !== null && (string) ($zone->temperature_control ?? 'ambient') !== $temperature) {
+            return;
+        }
+
         $seen[(string) $bin->id] = true;
+        $reasons = [$source === 'rule' ? "Matches putaway rule ({$strategy})" : 'Fallback: no putaway rule matched'];
+
+        if ($holds->contains(static fn (StockQuant $quant): bool => (string) $quant->stock_item_id === (string) $item->id && ($lotId === null || (string) $quant->lot_id === $lotId))) {
+            $reasons[] = $lotId !== null ? 'Consolidates with the same item and lot' : 'Consolidates with the same item';
+        }
+
+        $distance = $this->distanceToDock($bin, $docks);
+
+        if ($distance !== null) {
+            $reasons[] = sprintf('%.1f m from the %s dock', $distance, ($context['abc_class'] ?? '') === 'C' ? 'receiving' : 'shipping');
+        }
+
         $suggestions[] = [
             'bin_id' => (string) $bin->id,
             'barcode' => (string) $bin->barcode,
             'code' => (string) $bin->code,
-            'zone_code' => $bin->rack?->aisle?->zone?->code,
+            'full_path_code' => $bin->full_path_code,
+            'zone_code' => $zone?->code,
             'bin_type' => (string) ($bin->bin_type ?? 'storage'),
             'rule_id' => $ruleId,
             'strategy' => $strategy,
             'source' => $source,
             'occupancy' => $occupancy,
+            'weight_utilization_pct' => $this->utilization($occupancy['weight_kg'], $item->weight_kg, $quantity, $bin->max_weight_kg),
+            'volume_utilization_pct' => $this->utilization($occupancy['volume_m3'], $item->volume_m3, $quantity, $bin->max_volume_cbm),
+            'distance_to_dock' => $distance !== null ? round($distance, 2) : null,
+            'reasons' => $reasons,
         ];
+    }
+
+    /**
+     * Utilisation of a bin limit after the putaway, in percent; null when the bin declares no limit or the item has no
+     * weight/volume to compute with.
+     */
+    private function utilization(string $held, mixed $unit, string $quantity, mixed $max): ?float
+    {
+        if ($max === null || $unit === null || (float) $max <= 0.0) {
+            return null;
+        }
+
+        return round(((float) $held + (float) $quantity * (float) $unit) / (float) $max * 100, 1);
+    }
+
+    /**
+     * The docks the proximity score measures against: shipping bins for class A (fast movers close to the outbound
+     * dock), receiving bins for class C (slow movers close to where stock arrives); none for other classes.
+     *
+     * @return list<WarehouseBin>
+     */
+    private function docks(Warehouse $warehouse, string $abcClass): array
+    {
+        $type = match ($abcClass) {
+            'A' => 'shipping',
+            'C' => 'receiving',
+            default => null,
+        };
+
+        if ($type === null) {
+            return [];
+        }
+
+        return WarehouseBin::query()
+            ->where('bin_type', $type)
+            ->whereNotNull('coord_x')->whereNotNull('coord_y')
+            ->whereHas('rack.aisle.zone', static fn ($zone) => $zone->where('warehouse_id', $warehouse->id))
+            ->get()
+            ->all();
+    }
+
+    /**
+     * Euclidean distance from the bin to its nearest dock; null when either has no coordinates.
+     *
+     * @param  list<WarehouseBin>  $docks
+     */
+    private function distanceToDock(WarehouseBin $bin, array $docks): ?float
+    {
+        if ($docks === [] || $bin->coord_x === null || $bin->coord_y === null) {
+            return null;
+        }
+
+        $best = null;
+
+        foreach ($docks as $dock) {
+            $distance = sqrt(
+                ((float) $bin->coord_x - (float) $dock->coord_x) ** 2
+                + ((float) $bin->coord_y - (float) $dock->coord_y) ** 2
+                + ((float) ($bin->coord_z ?? 0) - (float) ($dock->coord_z ?? 0)) ** 2
+            );
+            $best = $best === null ? $distance : min($best, $distance);
+        }
+
+        return $best;
     }
 
     private function assertStorable(Warehouse $warehouse, WarehouseBin $destination, StockItem $item, string $quantity): void
