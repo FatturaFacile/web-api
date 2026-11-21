@@ -30,6 +30,14 @@ final class WarehouseBin extends BaseEnterpriseModel
             'max_volume_cbm' => 'decimal:4',
             'max_quantity' => 'decimal:4',
             'is_locked' => 'boolean',
+            'allow_mixed_skus' => 'boolean',
+            'allow_mixed_lots' => 'boolean',
+            'coord_x' => 'decimal:2',
+            'coord_y' => 'decimal:2',
+            'coord_z' => 'decimal:2',
+            'length_cm' => 'decimal:2',
+            'width_cm' => 'decimal:2',
+            'height_cm' => 'decimal:2',
             'pick_sequence' => 'integer',
         ];
     }

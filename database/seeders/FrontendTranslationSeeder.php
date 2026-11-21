@@ -8,6 +8,7 @@ use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
+use Database\Seeders\Translations\CpqQuotesFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
@@ -80,6 +81,7 @@ class FrontendTranslationSeeder extends Seeder
             + KpiDashboardsFrontendTranslations::all($locale)
             + HseFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)
+            + CpqQuotesFrontendTranslations::all($locale)
             + DataSovereigntyFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)
             + MobileFeatureTranslations::all($locale)

@@ -20,7 +20,7 @@ use Modules\Manufacturing\Support\Money;
 final readonly class ManufacturingMasterDataService
 {
     /** Item fields stored as decimal strings with 4 decimals. */
-    private const array ItemDecimals = ['standard_cost', 'safety_stock', 'min_lot_size', 'max_lot_size', 'lot_size_multiple'];
+    private const array ItemDecimals = ['standard_cost', 'exw_price', 'safety_stock', 'min_lot_size', 'max_lot_size', 'lot_size_multiple'];
 
     /**
      * Creates an item; the catalog product is taken from the stock item when not given.
@@ -101,7 +101,7 @@ final readonly class ManufacturingMasterDataService
      */
     private function itemAttributes(string $tenantId, array $data): array
     {
-        $attributes = array_intersect_key($data, array_flip(['item_code', 'name', 'description', 'item_type', 'procurement_type', 'stock_item_id', 'product_id', 'default_warehouse_id', 'uom', 'lead_time_days', 'is_active', 'scrap_rate']));
+        $attributes = array_intersect_key($data, array_flip(['item_code', 'name', 'description', 'item_type', 'procurement_type', 'stock_item_id', 'product_id', 'default_warehouse_id', 'uom', 'lead_time_days', 'is_active', 'scrap_rate', 'origin_status']));
 
         foreach (self::ItemDecimals as $field) {
             if (array_key_exists($field, $data)) {
