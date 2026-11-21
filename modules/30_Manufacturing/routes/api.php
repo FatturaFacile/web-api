@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Manufacturing\Http\Controllers\BomController;
+use Modules\Manufacturing\Http\Controllers\BomEngineeringController;
 use Modules\Manufacturing\Http\Controllers\EngineeringChangeController;
 use Modules\Manufacturing\Http\Controllers\ItemController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingKpiController;
@@ -48,6 +49,17 @@ Route::prefix('api/v1/manufacturing')->middleware(['api', 'auth:sanctum', 'tenan
     Route::get('/boms/{id}/explode', [BomController::class, 'explode'])->whereUuid('id')->name('mfg.boms.explode');
     Route::post('/boms/{id}/revise', [BomController::class, 'revise'])->whereUuid('id')->name('mfg.boms.revise');
     Route::post('/boms/{id}/activate', [BomController::class, 'activate'])->whereUuid('id')->name('mfg.boms.activate');
+
+    // Multi-level BOM management
+    Route::post('/boms/revisions', [BomEngineeringController::class, 'createOrRevise'])->name('mfg.boms.revisions');
+    Route::post('/boms/mass-replace', [BomEngineeringController::class, 'massReplace'])->name('mfg.boms.mass_replace');
+    Route::post('/boms/import', [BomEngineeringController::class, 'import'])->name('mfg.boms.import');
+    Route::get('/boms/{id}/explosion', [BomEngineeringController::class, 'explosion'])->whereUuid('id')->name('mfg.boms.explosion');
+    Route::get('/boms/{id}/diff/{otherId}', [BomEngineeringController::class, 'diff'])->whereUuid(['id', 'otherId'])->name('mfg.boms.diff');
+    Route::put('/boms/{id}/co-products', [BomEngineeringController::class, 'replaceCoProducts'])->whereUuid('id')->name('mfg.boms.co_products');
+    Route::get('/boms/{id}/cost-allocation', [BomEngineeringController::class, 'costAllocation'])->whereUuid('id')->name('mfg.boms.cost_allocation');
+    Route::get('/boms/{id}/preferential-origin', [BomEngineeringController::class, 'preferentialOrigin'])->whereUuid('id')->name('mfg.boms.preferential_origin');
+    Route::get('/items/{id}/implosion', [BomEngineeringController::class, 'implosion'])->whereUuid('id')->name('mfg.items.implosion');
 
     // Routings
     Route::get('/routings', [RoutingController::class, 'index'])->name('mfg.routings.index');

@@ -17,6 +17,9 @@ use Modules\Manufacturing\Exceptions\ManufacturingOperationException;
 use Modules\Manufacturing\Models\MfgBom;
 use Modules\Manufacturing\Models\MfgBomComponent;
 use Modules\Manufacturing\Models\MfgItem;
+use Modules\Manufacturing\Services\Bom\BomCycleDetector;
+use Modules\Manufacturing\Services\Bom\BomLineQuantity;
+use Modules\Manufacturing\Services\Bom\CoProductAllocationService;
 use Modules\Manufacturing\Support\Money;
 
 /**
@@ -29,7 +32,11 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
     /** Deeper BOM structures than this are refused rather than exploded. */
     private const int MaxDepth = 25;
 
-    public function __construct(private EventDispatcher $dispatcher) {}
+    public function __construct(
+        private EventDispatcher $dispatcher,
+        private BomCycleDetector $cycles,
+        private CoProductAllocationService $coProducts,
+    ) {}
 
     /**
      * {@inheritDoc}
@@ -180,6 +187,8 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
                 'is_phantom' => $component->is_phantom,
                 'issue_method' => $component->issue_method,
                 'operation_sequence' => $component->operation_sequence,
+                'fixed_scrap_quantity' => $component->fixed_scrap_quantity,
+                'substitute_item_ids' => $component->substitute_item_ids ?? [],
                 'notes' => $component->notes,
             ])->keyBy('component_item_id')->all();
 
@@ -202,7 +211,7 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
                     throw new ManufacturingOperationException("The component [{$itemId}] to add is already in the BOM.", 'components');
                 }
 
-                $fields = array_intersect_key($change, array_flip(['quantity_per', 'sequence', 'scrap_percentage', 'yield_percentage', 'is_phantom', 'issue_method', 'operation_sequence', 'notes']));
+                $fields = array_intersect_key($change, array_flip(['quantity_per', 'sequence', 'scrap_percentage', 'yield_percentage', 'is_phantom', 'issue_method', 'operation_sequence', 'fixed_scrap_quantity', 'substitute_item_ids', 'notes']));
                 $components[$itemId] = [...($components[$itemId] ?? ['component_item_id' => $itemId]), ...$fields];
             }
 
@@ -228,9 +237,10 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
                 'notes' => "Revision {$revision} of {$source->revision}: {$reason}",
             ]);
 
-            /** @var list<array{component_item_id: string, quantity_per: string|int|float, sequence?: int|null, scrap_percentage?: string|int|float|null, yield_percentage?: string|int|float|null, is_phantom?: bool|null, issue_method?: string|null, operation_sequence?: int|null, notes?: string|null}> $rows */
+            /** @var list<array{component_item_id: string, quantity_per: string|int|float, sequence?: int|null, scrap_percentage?: string|int|float|null, yield_percentage?: string|int|float|null, is_phantom?: bool|null, issue_method?: string|null, operation_sequence?: int|null, fixed_scrap_quantity?: string|int|float|null, substitute_item_ids?: list<string>|null, notes?: string|null}> $rows */
             $rows = array_values($components);
             $this->writeComponents($draft, $rows);
+            $this->coProducts->copy($source, $draft);
 
             $this->dispatcher->publishAndDispatch(new BOMRevisedEvent(
                 bomId: (string) $draft->id,
@@ -351,14 +361,12 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
     }
 
     /**
-     * Quantity of a component for the parent ratio: quantity per, grossed up by scrap and divided by yield.
+     * Quantity of a component for the parent ratio: quantity per, grossed up by scrap, divided by yield, plus the fixed
+     * setup waste.
      */
     private function componentQuantity(MfgBomComponent $component, string $ratio): string
     {
-        $gross = Money::mul(Money::mul($component->quantity_per, $ratio), Money::add('1', Money::div($component->scrap_percentage, '100')));
-        $yield = Money::isPositive($component->yield_percentage) ? Money::div($component->yield_percentage, '100') : '1';
-
-        return Money::div($gross, $yield);
+        return BomLineQuantity::gross($component, $ratio);
     }
 
     /**
@@ -370,10 +378,12 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
     }
 
     /**
-     * @param  list<array{component_item_id: string, quantity_per: string|int|float, sequence?: int|null, scrap_percentage?: string|int|float|null, yield_percentage?: string|int|float|null, is_phantom?: bool|null, issue_method?: string|null, operation_sequence?: int|null, notes?: string|null}>  $components
+     * @param  list<array{component_item_id: string, quantity_per: string|int|float, sequence?: int|null, scrap_percentage?: string|int|float|null, yield_percentage?: string|int|float|null, is_phantom?: bool|null, issue_method?: string|null, operation_sequence?: int|null, fixed_scrap_quantity?: string|int|float|null, substitute_item_ids?: list<string>|null, notes?: string|null}>  $components
      */
     private function writeComponents(MfgBom $bom, array $components): void
     {
+        $this->cycles->assertAcyclic((string) $bom->tenant_id, (string) $bom->mfg_item_id, array_values(array_unique(array_map(static fn (array $component): string => (string) $component['component_item_id'], $components))), (string) $bom->id);
+
         $sequence = 10;
         foreach ($components as $component) {
             $item = MfgItem::query()->where('tenant_id', $bom->tenant_id)->findOrFail($component['component_item_id']);
@@ -393,10 +403,40 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
                 'is_phantom' => (bool) ($component['is_phantom'] ?? false),
                 'issue_method' => $component['issue_method'] ?? 'manual',
                 'operation_sequence' => $component['operation_sequence'] ?? null,
+                'fixed_scrap_quantity' => Money::qty($component['fixed_scrap_quantity'] ?? '0'),
+                'substitute_item_ids' => $this->substitutes($bom, $item, $component['substitute_item_ids'] ?? []),
                 'notes' => $component['notes'] ?? null,
             ]);
             $sequence += 10;
         }
+    }
+
+    /**
+     * The approved substitutes of a component in priority order: distinct items of the company, of the same unit of
+     * measure, neither the component itself nor the item the BOM produces.
+     *
+     * @param  list<string>  $substituteIds
+     * @return list<string>|null
+     */
+    private function substitutes(MfgBom $bom, MfgItem $component, array $substituteIds): ?array
+    {
+        $ordered = [];
+        foreach ($substituteIds as $substituteId) {
+            $substituteId = (string) $substituteId;
+            if (isset($ordered[$substituteId])) {
+                continue;
+            }
+            $substitute = MfgItem::query()->where('tenant_id', $bom->tenant_id)->findOrFail($substituteId);
+            if ((string) $substitute->id === (string) $component->id || (string) $substitute->id === (string) $bom->mfg_item_id) {
+                throw new ManufacturingOperationException("Item [{$substitute->item_code}] cannot be a substitute of [{$component->item_code}] in this BOM.", 'components');
+            }
+            if ($substitute->uom !== $component->uom) {
+                throw new ManufacturingOperationException("Substitute [{$substitute->item_code}] has unit {$substitute->uom}, component [{$component->item_code}] has {$component->uom}.", 'components');
+            }
+            $ordered[$substituteId] = $substituteId;
+        }
+
+        return $ordered === [] ? null : array_values($ordered);
     }
 
     /**
