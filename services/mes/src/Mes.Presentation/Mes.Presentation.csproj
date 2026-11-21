@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\Mes.Application\Mes.Application.csproj" />
+    <ProjectReference Include="..\Mes.Infrastructure.Persistence\Mes.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\Mes.Infrastructure.LaravelSync\Mes.Infrastructure.LaravelSync.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Certificate" Version="9.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Mes.Tests" />
+  </ItemGroup>
+</Project>
