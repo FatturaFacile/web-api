@@ -5,8 +5,10 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Manufacturing\Http\Controllers\BomController;
 use Modules\Manufacturing\Http\Controllers\BomEngineeringController;
+use Modules\Manufacturing\Http\Controllers\EdgeTelemetryController;
 use Modules\Manufacturing\Http\Controllers\EngineeringChangeController;
 use Modules\Manufacturing\Http\Controllers\ItemController;
+use Modules\Manufacturing\Http\Controllers\ManufacturingCockpitController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingKpiController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingSettingsController;
 use Modules\Manufacturing\Http\Controllers\MesOperatorBoardController;
@@ -145,4 +147,13 @@ Route::prefix('api/v1/manufacturing')->middleware(['api', 'auth:sanctum', 'tenan
     Route::get('/settings/accounting', [ManufacturingSettingsController::class, 'show'])->name('mfg.settings.accounting');
     Route::put('/settings/accounting', [ManufacturingSettingsController::class, 'update'])->name('mfg.settings.accounting.update');
     Route::get('/kpis', ManufacturingKpiController::class)->name('mfg.kpis');
+    Route::get('/cockpit', [ManufacturingCockpitController::class, 'cockpit'])->name('mfg.cockpit');
+    Route::get('/production-orders/{id}/genealogy', [ManufacturingCockpitController::class, 'genealogy'])->whereUuid('id')->name('mfg.production_orders.genealogy');
+    Route::get('/edge/gateways', [EdgeTelemetryController::class, 'gateways'])->name('mfg.edge.gateways');
+    Route::post('/edge/gateways', [EdgeTelemetryController::class, 'storeGateway'])->name('mfg.edge.gateways.store');
+});
+
+// Edge gateways authenticate with the HMAC-SHA256 signature of the body, which also selects the tenant.
+Route::prefix('api/v1/manufacturing/edge')->middleware(['api', 'throttle:600,1'])->group(function (): void {
+    Route::post('/telemetry', [EdgeTelemetryController::class, 'ingest'])->name('mfg.edge.telemetry');
 });

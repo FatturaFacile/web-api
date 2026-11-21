@@ -1,7 +1,5 @@
 # Antigravity Rules
-
 @AGENTS.md
-
-- Canonical project guidelines, architecture, and verification commands are defined in `AGENTS.md`.
-- Enforce SQLite `:memory:` for all local and test executions.
-- Run `vendor/bin/pint --dirty --format agent`, `vendor/bin/phpstan analyse --memory-limit=2G`, and `php artisan test` to verify code quality.
+- Follow [AGENTS.md](../AGENTS.md) as the single source of truth for all architecture, coding, i18n (`it`, `de`, `fr`, `en`), DB, git, and quality-gate rules.
+- Enforce SQLite `:memory:` (`DB_FOREIGN_KEYS=true`) for all local runs and automated tests.
+- Run Pint, PHPStan (`--memory-limit=2G`), and tests with zero errors before finalizing or pushing to `dev`.

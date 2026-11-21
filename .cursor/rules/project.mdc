@@ -1,13 +1,7 @@
 ---
-description: Project coding guidelines, architectural standards, and verification commands
+description: Canonical project governance pointer
 globs: **/*
 alwaysApply: true
 ---
-
-# Project Guidelines
-
-Refer directly to [AGENTS.md](../../AGENTS.md) for canonical instructions:
-- Strict typing (`declare(strict_types=1);`), thin controllers, FormRequests, JsonResources.
-- SQLite `:memory:` for local dev and tests (`php artisan test`). Never require PostgreSQL locally.
-- Keep migrations and queries 100% compatible across SQLite and PostgreSQL.
-- Run quality gates: `vendor/bin/pint --dirty --format agent`, `vendor/bin/phpstan analyse --memory-limit=2G`, and `php artisan test`.
+- Follow [AGENTS.md](../../AGENTS.md) as the single source of truth for all architecture, coding, i18n (`it`, `de`, `fr`, `en`), DB, git (`dev` only, no PRs), and quality-gate rules.
+- Enforce PHP 8.5 strict types, tenant isolation, SQLite `:memory:` local tests, and zero-error Pint/PHPStan/test gates before pushing to `dev`.
