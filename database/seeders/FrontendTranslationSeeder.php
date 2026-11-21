@@ -13,6 +13,7 @@ use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
+use Database\Seeders\Translations\IdentityFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
@@ -66,6 +67,7 @@ class FrontendTranslationSeeder extends Seeder
             + ReleaseAuditFrontendTranslations::all($locale)
             + AuditTrailFrontendTranslations::all($locale)
             + PreservationFrontendTranslations::all($locale)
+            + IdentityFrontendTranslations::all($locale)
             + AiForecastingFrontendTranslations::all($locale)
             + OcrInboxFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)

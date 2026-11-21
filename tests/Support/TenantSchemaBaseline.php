@@ -21,6 +21,10 @@ final class TenantSchemaBaseline
      * @var list<string>
      */
     public const GLOBAL_TABLES = [
+        'abac_rules',
+        'field_policies',
+        'role_permissions',
+        'roles',
         'academy_contextual_help_articles',
         'academy_interactive_missions',
         'academy_learning_tracks',
