@@ -17333,6 +17333,8 @@ CREATE TABLE "mfg_machine_centers"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "current_state" varchar,
+  "state_since" datetime,
   foreign key("work_center_id") references "mfg_work_centers"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -17617,6 +17619,7 @@ CREATE TABLE "mfg_operation_confirmations"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "posting_uuid" varchar,
   foreign key("production_order_id") references "mfg_production_orders"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -17866,6 +17869,7 @@ CREATE TABLE "mfg_production_orders"(
   "variance_journal_entry_id" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "production_strategy" varchar,
   primary key("id")
 );
 
@@ -42446,318 +42450,6 @@ CREATE INDEX "core_sovereignty_attestations_legal_entity_id_index" on "core_sove
 CREATE UNIQUE INDEX "core_sovereignty_attestations_certificate_number_unique" on "core_sovereignty_attestations"(
   "certificate_number"
 );
-CREATE INDEX "mfg_engineering_change_orders_approval_workflow_id_index" on "mfg_engineering_change_orders"(
-  "approval_workflow_id"
-);
-CREATE TABLE "mfg_bom_co_products"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "bom_id" varchar not null,
-  "product_item_id" varchar not null,
-  "product_type" varchar not null default 'co_product',
-  "output_ratio_qty" numeric not null default '1',
-  "cost_allocation_percentage" numeric not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("bom_id") references "mfg_boms"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "mfg_bom_co_products_bom_id_product_item_id_unique" on "mfg_bom_co_products"(
-  "bom_id",
-  "product_item_id"
-);
-CREATE INDEX "mfg_bom_co_products_tenant_id_index" on "mfg_bom_co_products"(
-  "tenant_id"
-);
-CREATE INDEX "mfg_bom_co_products_bom_id_index" on "mfg_bom_co_products"(
-  "bom_id"
-);
-CREATE INDEX "mfg_bom_co_products_product_item_id_index" on "mfg_bom_co_products"(
-  "product_item_id"
-);
-CREATE INDEX "warehouse_bins_full_path_code_index" on "warehouse_bins"(
-  "full_path_code"
-);
-CREATE INDEX "procurement_rfqs_submission_deadline_index" on "procurement_rfqs"(
-  "submission_deadline"
-);
-CREATE INDEX "procurement_rfqs_buyer_user_id_index" on "procurement_rfqs"(
-  "buyer_user_id"
-);
-CREATE INDEX "procurement_rfq_lines_item_id_index" on "procurement_rfq_lines"(
-  "item_id"
-);
-CREATE INDEX "procurement_rfq_lines_awarded_supplier_id_index" on "procurement_rfq_lines"(
-  "awarded_supplier_id"
-);
-CREATE INDEX "procurement_rfq_lines_awarded_bid_line_id_index" on "procurement_rfq_lines"(
-  "awarded_bid_line_id"
-);
-CREATE INDEX "procurement_rfq_lines_generated_purchase_order_id_index" on "procurement_rfq_lines"(
-  "generated_purchase_order_id"
-);
-CREATE TABLE "procurement_rfq_attachments"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "rfq_id" varchar not null,
-  "file_name" varchar not null,
-  "mime_type" varchar not null,
-  "file_size_bytes" integer not null,
-  "storage_disk" varchar not null default 'local',
-  "storage_path" varchar not null,
-  "sha256_hash" varchar not null,
-  "is_visible_to_suppliers" tinyint(1) not null default '1',
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("rfq_id") references "procurement_rfqs"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "idx_rfq_attachments_tenant_rfq" on "procurement_rfq_attachments"(
-  "tenant_id",
-  "rfq_id"
-);
-CREATE INDEX "procurement_rfq_attachments_tenant_id_index" on "procurement_rfq_attachments"(
-  "tenant_id"
-);
-CREATE UNIQUE INDEX "uq_rfq_supplier_token_hash" on "procurement_rfq_suppliers"(
-  "access_token_hash"
-);
-CREATE INDEX "procurement_rfq_suppliers_token_expires_at_index" on "procurement_rfq_suppliers"(
-  "token_expires_at"
-);
-CREATE INDEX "procurement_supplier_quotes_invitation_id_index" on "procurement_supplier_quotes"(
-  "invitation_id"
-);
-CREATE INDEX "procurement_supplier_quote_lines_is_awarded_index" on "procurement_supplier_quote_lines"(
-  "is_awarded"
-);
-CREATE INDEX "purchase_order_lines_rfq_line_id_index" on "purchase_order_lines"(
-  "rfq_line_id"
-);
-CREATE INDEX "purchase_order_lines_supplier_bid_line_id_index" on "purchase_order_lines"(
-  "supplier_bid_line_id"
-);
-CREATE TABLE "purchase_requisitions"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "company_id" varchar,
-  "branch_id" varchar,
-  "department_id" varchar,
-  "cost_center_id" varchar,
-  "project_id" varchar,
-  "requisition_number" varchar not null,
-  "title" varchar not null,
-  "requestor_user_id" varchar not null,
-  "urgency" varchar not null default('medium'),
-  "required_by_date" date not null,
-  "status" varchar not null default('draft'),
-  "total_estimated_amount" numeric not null default('0'),
-  "currency" varchar not null default('EUR'),
-  "notes" text,
-  "is_locked" tinyint(1) not null default('0'),
-  "created_by" varchar,
-  "updated_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "submitted_at" datetime,
-  "approved_at" datetime,
-  "workflow_instance_id" varchar,
-  "deleted_by" varchar,
-  "requester_user_id" varchar,
-  "requested_delivery_date" date,
-  "economic_justification" text,
-  "budget_check_snapshot" text,
-  "budget_warning_acknowledged" tinyint(1) not null default '0',
-  "current_approval_level" integer,
-  "rejected_at" datetime,
-  "rejection_reason" text,
-  "cancelled_at" datetime,
-  "converted_at" datetime,
-  foreign key("requestor_user_id") references "users"("id") on delete restrict on update no action,
-  foreign key("project_id") references "projects"("id") on delete set null,
-  primary key("id")
-);
-
-CREATE INDEX "idx_pr_tenant_status" on "purchase_requisitions"(
-  "tenant_id",
-  "status",
-  "requestor_user_id"
-);
-CREATE INDEX "purchase_requisitions_branch_id_index" on "purchase_requisitions"(
-  "branch_id"
-);
-CREATE INDEX "purchase_requisitions_company_id_index" on "purchase_requisitions"(
-  "company_id"
-);
-CREATE INDEX "purchase_requisitions_cost_center_id_index" on "purchase_requisitions"(
-  "cost_center_id"
-);
-CREATE INDEX "purchase_requisitions_department_id_index" on "purchase_requisitions"(
-  "department_id"
-);
-CREATE INDEX "purchase_requisitions_project_id_index" on "purchase_requisitions"(
-  "project_id"
-);
-CREATE INDEX "purchase_requisitions_status_index" on "purchase_requisitions"(
-  "status"
-);
-CREATE INDEX "purchase_requisitions_tenant_id_index" on "purchase_requisitions"(
-  "tenant_id"
-);
-CREATE INDEX "purchase_requisitions_workflow_instance_id_index" on "purchase_requisitions"(
-  "workflow_instance_id"
-);
-CREATE UNIQUE INDEX "uq_pr_number" on "purchase_requisitions"(
-  "tenant_id",
-  "requisition_number"
-);
-CREATE INDEX "purchase_requisitions_requester_user_id_index" on "purchase_requisitions"(
-  "requester_user_id"
-);
-CREATE TABLE "purchase_requisition_lines"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "purchase_requisition_id" varchar not null,
-  "line_number" integer not null default('1'),
-  "supplier_catalog_id" varchar,
-  "description" varchar not null,
-  "quantity_requested" numeric not null,
-  "uom" varchar not null default('PCE'),
-  "estimated_unit_price" numeric not null default('0'),
-  "estimated_total_price" numeric not null default('0'),
-  "suggested_supplier_id" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "quantity_quoted" numeric not null default('0'),
-  "quantity_ordered" numeric not null default('0'),
-  "sourcing_status" varchar not null default('open'),
-  "item_type" varchar not null default 'free_text',
-  "catalog_item_id" varchar,
-  "quantity" numeric,
-  "unit_of_measure" varchar,
-  "estimated_line_total" numeric,
-  "cost_center_id" varchar,
-  "project_id" varchar,
-  "converted_quantity" numeric not null default '0',
-  "conversion_status" varchar not null default 'unconverted',
-  foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete cascade on update no action,
-  foreign key("supplier_catalog_id") references "supplier_catalogs"("id") on delete set null on update no action,
-  foreign key("suggested_supplier_id") references "suppliers"("id") on delete set null on update no action,
-  foreign key("project_id") references "projects"("id") on delete set null,
-  primary key("id")
-);
-
-CREATE INDEX "purchase_requisition_lines_sourcing_status_index" on "purchase_requisition_lines"(
-  "sourcing_status"
-);
-CREATE INDEX "purchase_requisition_lines_tenant_id_index" on "purchase_requisition_lines"(
-  "tenant_id"
-);
-CREATE INDEX "purchase_requisition_lines_catalog_item_id_index" on "purchase_requisition_lines"(
-  "catalog_item_id"
-);
-CREATE INDEX "purchase_requisition_lines_cost_center_id_index" on "purchase_requisition_lines"(
-  "cost_center_id"
-);
-CREATE INDEX "purchase_requisition_lines_project_id_index" on "purchase_requisition_lines"(
-  "project_id"
-);
-CREATE INDEX "purchase_requisition_lines_conversion_status_index" on "purchase_requisition_lines"(
-  "conversion_status"
-);
-CREATE TABLE "purchase_requisition_approval_logs"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "purchase_requisition_id" varchar not null,
-  "approval_step_level" integer not null default '0',
-  "approver_user_id" varchar,
-  "action" varchar not null,
-  "channel" varchar not null default 'web',
-  "comment" text,
-  "ip_address" varchar,
-  "user_agent" text,
-  "metadata" text,
-  "acted_at" datetime not null,
-  "created_at" datetime,
-  foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "idx_pr_approval_logs_pr_acted" on "purchase_requisition_approval_logs"(
-  "purchase_requisition_id",
-  "acted_at"
-);
-CREATE INDEX "idx_pr_approval_logs_tenant_pr" on "purchase_requisition_approval_logs"(
-  "tenant_id",
-  "purchase_requisition_id"
-);
-CREATE INDEX "purchase_requisition_approval_logs_tenant_id_index" on "purchase_requisition_approval_logs"(
-  "tenant_id"
-);
-CREATE INDEX "purchase_requisition_approval_logs_approver_user_id_index" on "purchase_requisition_approval_logs"(
-  "approver_user_id"
-);
-CREATE TABLE "purchase_requisition_document_links"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "purchase_requisition_id" varchar not null,
-  "purchase_requisition_line_id" varchar not null,
-  "target_document_type" varchar not null,
-  "target_document_id" varchar not null,
-  "target_document_number" varchar not null,
-  "target_document_line_id" varchar,
-  "converted_quantity" numeric not null,
-  "created_by_user_id" varchar,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete cascade,
-  foreign key("purchase_requisition_line_id") references "purchase_requisition_lines"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "idx_pr_doc_links_tenant_pr" on "purchase_requisition_document_links"(
-  "tenant_id",
-  "purchase_requisition_id"
-);
-CREATE INDEX "idx_pr_doc_links_pr_line" on "purchase_requisition_document_links"(
-  "purchase_requisition_line_id"
-);
-CREATE INDEX "idx_pr_doc_links_target" on "purchase_requisition_document_links"(
-  "tenant_id",
-  "target_document_type",
-  "target_document_id"
-);
-CREATE INDEX "purchase_requisition_document_links_tenant_id_index" on "purchase_requisition_document_links"(
-  "tenant_id"
-);
-CREATE INDEX "purchase_requisition_document_links_target_document_id_index" on "purchase_requisition_document_links"(
-  "target_document_id"
-);
-CREATE INDEX "purchase_requisition_document_links_target_document_line_id_index" on "purchase_requisition_document_links"(
-  "target_document_line_id"
-);
-CREATE INDEX "purchase_requisition_document_links_created_by_user_id_index" on "purchase_requisition_document_links"(
-  "created_by_user_id"
-);
 CREATE TABLE "hse_requirement_matrices"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43333,6 +43025,554 @@ CREATE TABLE "ipp_gl_account_settings"(
 CREATE UNIQUE INDEX "ipp_gl_role_unique" on "ipp_gl_account_settings"(
   "tenant_id",
   "role"
+);
+CREATE TABLE "roster_shift_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" text not null,
+  "start_time" time not null,
+  "end_time" time not null,
+  "break_minutes" integer not null default '0',
+  "color_hex" varchar not null default '#1890FF',
+  "night_surcharge_applicable" tinyint(1) not null default '1',
+  "is_on_call" tinyint(1) not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_shift_templates_tenant_id_code_index" on "roster_shift_templates"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "roster_shift_templates_tenant_id_is_active_index" on "roster_shift_templates"(
+  "tenant_id",
+  "is_active"
+);
+CREATE TABLE "roster_schedule_periods"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "location_or_department_id" varchar,
+  "production_line_id" varchar,
+  "period_type" varchar not null,
+  "jurisdiction" varchar not null,
+  "start_date" date not null,
+  "end_date" date not null,
+  "status" varchar not null default 'draft',
+  "published_at" datetime,
+  "published_by" varchar,
+  "locked_at" datetime,
+  "locked_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_schedule_periods_tenant_id_start_date_end_date_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "start_date",
+  "end_date"
+);
+CREATE INDEX "roster_schedule_periods_tenant_id_location_or_department_id_status_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "location_or_department_id",
+  "status"
+);
+CREATE INDEX "roster_schedule_periods_tenant_id_production_line_id_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "production_line_id"
+);
+CREATE TABLE "roster_shift_assignments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "roster_schedule_period_id" varchar not null,
+  "employee_id" varchar,
+  "shift_date" date not null,
+  "shift_template_id" varchar not null,
+  "start_at" datetime not null,
+  "end_at" datetime not null,
+  "required_role_or_skill_id" varchar,
+  "estimated_labor_cost" numeric not null default '0',
+  "surcharge_breakdown" text,
+  "compliance_warnings" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("roster_schedule_period_id") references "roster_schedule_periods"("id") on delete cascade,
+  foreign key("shift_template_id") references "roster_shift_templates"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "roster_assign_period_date_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "roster_schedule_period_id",
+  "shift_date"
+);
+CREATE INDEX "roster_assign_employee_start_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "employee_id",
+  "start_at"
+);
+CREATE INDEX "roster_assign_employee_end_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "employee_id",
+  "end_at"
+);
+CREATE TABLE "roster_shift_swap_requests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "requester_employee_id" varchar not null,
+  "target_peer_employee_id" varchar,
+  "shift_assignment_id" varchar not null,
+  "target_shift_assignment_id" varchar,
+  "status" varchar not null default 'pending_peer_acceptance',
+  "peer_responded_at" datetime,
+  "reviewed_by_user_id" varchar,
+  "reviewed_at" datetime,
+  "rejection_reason" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("shift_assignment_id") references "roster_shift_assignments"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_shift_swap_requests_tenant_id_status_index" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "roster_swap_requester_idx" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "requester_employee_id",
+  "status"
+);
+CREATE INDEX "roster_swap_peer_idx" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "target_peer_employee_id",
+  "status"
+);
+CREATE INDEX "roster_shift_swap_requests_tenant_id_shift_assignment_id_index" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "shift_assignment_id"
+);
+CREATE INDEX "mfg_engineering_change_orders_approval_workflow_id_index" on "mfg_engineering_change_orders"(
+  "approval_workflow_id"
+);
+CREATE TABLE "mfg_bom_co_products"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "bom_id" varchar not null,
+  "product_item_id" varchar not null,
+  "product_type" varchar not null default 'co_product',
+  "output_ratio_qty" numeric not null default '1',
+  "cost_allocation_percentage" numeric not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("bom_id") references "mfg_boms"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mfg_bom_co_products_bom_id_product_item_id_unique" on "mfg_bom_co_products"(
+  "bom_id",
+  "product_item_id"
+);
+CREATE INDEX "mfg_bom_co_products_tenant_id_index" on "mfg_bom_co_products"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_bom_co_products_bom_id_index" on "mfg_bom_co_products"(
+  "bom_id"
+);
+CREATE INDEX "mfg_bom_co_products_product_item_id_index" on "mfg_bom_co_products"(
+  "product_item_id"
+);
+CREATE INDEX "warehouse_bins_full_path_code_index" on "warehouse_bins"(
+  "full_path_code"
+);
+CREATE INDEX "procurement_rfqs_submission_deadline_index" on "procurement_rfqs"(
+  "submission_deadline"
+);
+CREATE INDEX "procurement_rfqs_buyer_user_id_index" on "procurement_rfqs"(
+  "buyer_user_id"
+);
+CREATE INDEX "procurement_rfq_lines_item_id_index" on "procurement_rfq_lines"(
+  "item_id"
+);
+CREATE INDEX "procurement_rfq_lines_awarded_supplier_id_index" on "procurement_rfq_lines"(
+  "awarded_supplier_id"
+);
+CREATE INDEX "procurement_rfq_lines_awarded_bid_line_id_index" on "procurement_rfq_lines"(
+  "awarded_bid_line_id"
+);
+CREATE INDEX "procurement_rfq_lines_generated_purchase_order_id_index" on "procurement_rfq_lines"(
+  "generated_purchase_order_id"
+);
+CREATE TABLE "procurement_rfq_attachments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "rfq_id" varchar not null,
+  "file_name" varchar not null,
+  "mime_type" varchar not null,
+  "file_size_bytes" integer not null,
+  "storage_disk" varchar not null default 'local',
+  "storage_path" varchar not null,
+  "sha256_hash" varchar not null,
+  "is_visible_to_suppliers" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("rfq_id") references "procurement_rfqs"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_rfq_attachments_tenant_rfq" on "procurement_rfq_attachments"(
+  "tenant_id",
+  "rfq_id"
+);
+CREATE INDEX "procurement_rfq_attachments_tenant_id_index" on "procurement_rfq_attachments"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "uq_rfq_supplier_token_hash" on "procurement_rfq_suppliers"(
+  "access_token_hash"
+);
+CREATE INDEX "procurement_rfq_suppliers_token_expires_at_index" on "procurement_rfq_suppliers"(
+  "token_expires_at"
+);
+CREATE INDEX "procurement_supplier_quotes_invitation_id_index" on "procurement_supplier_quotes"(
+  "invitation_id"
+);
+CREATE INDEX "procurement_supplier_quote_lines_is_awarded_index" on "procurement_supplier_quote_lines"(
+  "is_awarded"
+);
+CREATE INDEX "purchase_order_lines_rfq_line_id_index" on "purchase_order_lines"(
+  "rfq_line_id"
+);
+CREATE INDEX "purchase_order_lines_supplier_bid_line_id_index" on "purchase_order_lines"(
+  "supplier_bid_line_id"
+);
+CREATE TABLE "purchase_requisitions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "branch_id" varchar,
+  "department_id" varchar,
+  "cost_center_id" varchar,
+  "project_id" varchar,
+  "requisition_number" varchar not null,
+  "title" varchar not null,
+  "requestor_user_id" varchar not null,
+  "urgency" varchar not null default('medium'),
+  "required_by_date" date not null,
+  "status" varchar not null default('draft'),
+  "total_estimated_amount" numeric not null default('0'),
+  "currency" varchar not null default('EUR'),
+  "notes" text,
+  "is_locked" tinyint(1) not null default('0'),
+  "created_by" varchar,
+  "updated_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "submitted_at" datetime,
+  "approved_at" datetime,
+  "workflow_instance_id" varchar,
+  "deleted_by" varchar,
+  "requester_user_id" varchar,
+  "requested_delivery_date" date,
+  "economic_justification" text,
+  "budget_check_snapshot" text,
+  "budget_warning_acknowledged" tinyint(1) not null default '0',
+  "current_approval_level" integer,
+  "rejected_at" datetime,
+  "rejection_reason" text,
+  "cancelled_at" datetime,
+  "converted_at" datetime,
+  foreign key("requestor_user_id") references "users"("id") on delete restrict on update no action,
+  foreign key("project_id") references "projects"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "idx_pr_tenant_status" on "purchase_requisitions"(
+  "tenant_id",
+  "status",
+  "requestor_user_id"
+);
+CREATE INDEX "purchase_requisitions_branch_id_index" on "purchase_requisitions"(
+  "branch_id"
+);
+CREATE INDEX "purchase_requisitions_company_id_index" on "purchase_requisitions"(
+  "company_id"
+);
+CREATE INDEX "purchase_requisitions_cost_center_id_index" on "purchase_requisitions"(
+  "cost_center_id"
+);
+CREATE INDEX "purchase_requisitions_department_id_index" on "purchase_requisitions"(
+  "department_id"
+);
+CREATE INDEX "purchase_requisitions_project_id_index" on "purchase_requisitions"(
+  "project_id"
+);
+CREATE INDEX "purchase_requisitions_status_index" on "purchase_requisitions"(
+  "status"
+);
+CREATE INDEX "purchase_requisitions_tenant_id_index" on "purchase_requisitions"(
+  "tenant_id"
+);
+CREATE INDEX "purchase_requisitions_workflow_instance_id_index" on "purchase_requisitions"(
+  "workflow_instance_id"
+);
+CREATE UNIQUE INDEX "uq_pr_number" on "purchase_requisitions"(
+  "tenant_id",
+  "requisition_number"
+);
+CREATE INDEX "purchase_requisitions_requester_user_id_index" on "purchase_requisitions"(
+  "requester_user_id"
+);
+CREATE TABLE "purchase_requisition_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "purchase_requisition_id" varchar not null,
+  "line_number" integer not null default('1'),
+  "supplier_catalog_id" varchar,
+  "description" varchar not null,
+  "quantity_requested" numeric not null,
+  "uom" varchar not null default('PCE'),
+  "estimated_unit_price" numeric not null default('0'),
+  "estimated_total_price" numeric not null default('0'),
+  "suggested_supplier_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "quantity_quoted" numeric not null default('0'),
+  "quantity_ordered" numeric not null default('0'),
+  "sourcing_status" varchar not null default('open'),
+  "item_type" varchar not null default 'free_text',
+  "catalog_item_id" varchar,
+  "quantity" numeric,
+  "unit_of_measure" varchar,
+  "estimated_line_total" numeric,
+  "cost_center_id" varchar,
+  "project_id" varchar,
+  "converted_quantity" numeric not null default '0',
+  "conversion_status" varchar not null default 'unconverted',
+  foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete cascade on update no action,
+  foreign key("supplier_catalog_id") references "supplier_catalogs"("id") on delete set null on update no action,
+  foreign key("suggested_supplier_id") references "suppliers"("id") on delete set null on update no action,
+  foreign key("project_id") references "projects"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "purchase_requisition_lines_sourcing_status_index" on "purchase_requisition_lines"(
+  "sourcing_status"
+);
+CREATE INDEX "purchase_requisition_lines_tenant_id_index" on "purchase_requisition_lines"(
+  "tenant_id"
+);
+CREATE INDEX "purchase_requisition_lines_catalog_item_id_index" on "purchase_requisition_lines"(
+  "catalog_item_id"
+);
+CREATE INDEX "purchase_requisition_lines_cost_center_id_index" on "purchase_requisition_lines"(
+  "cost_center_id"
+);
+CREATE INDEX "purchase_requisition_lines_project_id_index" on "purchase_requisition_lines"(
+  "project_id"
+);
+CREATE INDEX "purchase_requisition_lines_conversion_status_index" on "purchase_requisition_lines"(
+  "conversion_status"
+);
+CREATE TABLE "purchase_requisition_approval_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "purchase_requisition_id" varchar not null,
+  "approval_step_level" integer not null default '0',
+  "approver_user_id" varchar,
+  "action" varchar not null,
+  "channel" varchar not null default 'web',
+  "comment" text,
+  "ip_address" varchar,
+  "user_agent" text,
+  "metadata" text,
+  "acted_at" datetime not null,
+  "created_at" datetime,
+  foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_pr_approval_logs_pr_acted" on "purchase_requisition_approval_logs"(
+  "purchase_requisition_id",
+  "acted_at"
+);
+CREATE INDEX "idx_pr_approval_logs_tenant_pr" on "purchase_requisition_approval_logs"(
+  "tenant_id",
+  "purchase_requisition_id"
+);
+CREATE INDEX "purchase_requisition_approval_logs_tenant_id_index" on "purchase_requisition_approval_logs"(
+  "tenant_id"
+);
+CREATE INDEX "purchase_requisition_approval_logs_approver_user_id_index" on "purchase_requisition_approval_logs"(
+  "approver_user_id"
+);
+CREATE TABLE "purchase_requisition_document_links"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "purchase_requisition_id" varchar not null,
+  "purchase_requisition_line_id" varchar not null,
+  "target_document_type" varchar not null,
+  "target_document_id" varchar not null,
+  "target_document_number" varchar not null,
+  "target_document_line_id" varchar,
+  "converted_quantity" numeric not null,
+  "created_by_user_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete cascade,
+  foreign key("purchase_requisition_line_id") references "purchase_requisition_lines"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_pr_doc_links_tenant_pr" on "purchase_requisition_document_links"(
+  "tenant_id",
+  "purchase_requisition_id"
+);
+CREATE INDEX "idx_pr_doc_links_pr_line" on "purchase_requisition_document_links"(
+  "purchase_requisition_line_id"
+);
+CREATE INDEX "idx_pr_doc_links_target" on "purchase_requisition_document_links"(
+  "tenant_id",
+  "target_document_type",
+  "target_document_id"
+);
+CREATE INDEX "purchase_requisition_document_links_tenant_id_index" on "purchase_requisition_document_links"(
+  "tenant_id"
+);
+CREATE INDEX "purchase_requisition_document_links_target_document_id_index" on "purchase_requisition_document_links"(
+  "target_document_id"
+);
+CREATE INDEX "purchase_requisition_document_links_target_document_line_id_index" on "purchase_requisition_document_links"(
+  "target_document_line_id"
+);
+CREATE INDEX "purchase_requisition_document_links_created_by_user_id_index" on "purchase_requisition_document_links"(
+  "created_by_user_id"
+);
+CREATE UNIQUE INDEX "mfg_op_conf_posting_uuid_unique" on "mfg_operation_confirmations"(
+  "tenant_id",
+  "posting_uuid"
+);
+CREATE TABLE "mfg_wip_transactions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "production_order_id" varchar not null,
+  "transaction_type" varchar not null,
+  "amount" numeric not null,
+  "source_type" varchar,
+  "source_id" varchar,
+  "journal_entry_id" varchar,
+  "posting_date" date not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("production_order_id") references "mfg_production_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_wip_transactions_tenant_id_index" on "mfg_wip_transactions"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_wip_transactions_production_order_id_index" on "mfg_wip_transactions"(
+  "production_order_id"
+);
+CREATE INDEX "mfg_wip_transactions_transaction_type_index" on "mfg_wip_transactions"(
+  "transaction_type"
+);
+CREATE TABLE "mfg_edge_gateways"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "secret" text not null,
+  "is_active" tinyint(1) not null default '1',
+  "last_seen_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_edge_gateways_tenant_id_index" on "mfg_edge_gateways"(
+  "tenant_id"
+);
+CREATE TABLE "mfg_machine_state_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "gateway_id" varchar not null,
+  "machine_id" varchar not null,
+  "event_uuid" varchar not null,
+  "state" varchar not null,
+  "occurred_at" datetime not null,
+  "production_order_operation_id" varchar,
+  "payload" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mfg_machine_state_events_uuid_unique" on "mfg_machine_state_events"(
+  "tenant_id",
+  "event_uuid"
+);
+CREATE INDEX "mfg_machine_state_events_tenant_id_index" on "mfg_machine_state_events"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_machine_state_events_gateway_id_index" on "mfg_machine_state_events"(
+  "gateway_id"
+);
+CREATE INDEX "mfg_machine_state_events_machine_id_index" on "mfg_machine_state_events"(
+  "machine_id"
+);
+CREATE INDEX "mfg_machine_state_events_production_order_operation_id_index" on "mfg_machine_state_events"(
+  "production_order_operation_id"
 );
 CREATE TABLE "mrp_run_executions"(
   "id" varchar not null,
@@ -43964,10 +44204,14 @@ INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_analytics_dss_tables
 INSERT INTO migrations VALUES(402,'2027_12_16_000100_create_kpi_dashboard_tables',1);
 INSERT INTO migrations VALUES(403,'2027_12_17_000100_create_cpq_quote_tables',1);
 INSERT INTO migrations VALUES(404,'2027_12_17_000100_create_data_residency_tables',1);
-INSERT INTO migrations VALUES(405,'2027_12_17_000100_extend_bom_management',1);
-INSERT INTO migrations VALUES(406,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',1);
-INSERT INTO migrations VALUES(407,'2027_12_17_000100_upgrade_procurement_rfq_module_045',1);
-INSERT INTO migrations VALUES(408,'2027_12_18_000100_upgrade_purchase_requisitions_module_044',1);
-INSERT INTO migrations VALUES(409,'2027_12_17_000100_create_hse_tables',2);
-INSERT INTO migrations VALUES(410,'2027_12_17_000100_create_italian_payroll_preprocessing_tables',2);
-INSERT INTO migrations VALUES(411,'2027_12_19_000100_create_mrp_planning_tables',2);
+INSERT INTO migrations VALUES(405,'2027_12_17_000100_create_hse_tables',1);
+INSERT INTO migrations VALUES(406,'2027_12_17_000100_create_italian_payroll_preprocessing_tables',1);
+INSERT INTO migrations VALUES(407,'2027_12_17_000100_create_shift_planning_tables',1);
+INSERT INTO migrations VALUES(408,'2027_12_17_000100_extend_bom_management',1);
+INSERT INTO migrations VALUES(409,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',1);
+INSERT INTO migrations VALUES(410,'2027_12_17_000100_upgrade_procurement_rfq_module_045',1);
+INSERT INTO migrations VALUES(411,'2027_12_17_000200_add_audit_columns_to_mfg_bom_co_products',1);
+INSERT INTO migrations VALUES(412,'2027_12_18_000100_upgrade_purchase_requisitions_module_044',1);
+INSERT INTO migrations VALUES(413,'2027_12_19_000100_add_posting_uuid_to_mfg_operation_confirmations',1);
+INSERT INTO migrations VALUES(414,'2027_12_19_000200_create_mfg_mes_integration_tables',1);
+INSERT INTO migrations VALUES(415,'2027_12_19_000100_create_mrp_planning_tables',2);

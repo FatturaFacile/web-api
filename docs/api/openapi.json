@@ -127247,6 +127247,1101 @@
                 }
             }
         },
+        "/v1/italian-payroll/periods": {
+            "get": {
+                "operationId": "italian-payroll.periods.index",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "italian-payroll.periods.store",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StorePayrollPeriodRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Periodo paghe creato"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Conflict"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 409
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Il periodo paghe esiste già."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/periods/{id}": {
+            "get": {
+                "operationId": "italian-payroll.periods.show",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/periods/{id}/validate": {
+            "post": {
+                "operationId": "italian-payroll.periods.validate",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ValidateAttendanceRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/periods/{id}/export": {
+            "post": {
+                "operationId": "italian-payroll.periods.export",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExportAttendanceRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/periods/{id}/cedolini": {
+            "post": {
+                "operationId": "italian-payroll.periods.cedolini",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImportCedoliniRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/periods/{id}/accounting-import": {
+            "post": {
+                "operationId": "italian-payroll.periods.accounting",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImportAccountingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/periods/{id}/sepa": {
+            "post": {
+                "operationId": "italian-payroll.periods.sepa",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerateSepaRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/periods/{id}/mark-paid": {
+            "post": {
+                "operationId": "italian-payroll.periods.paid",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/periods/{id}/f24": {
+            "get": {
+                "operationId": "italian-payroll.periods.f24",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "period_id": {
+                                                    "type": "string"
+                                                },
+                                                "due_date": {
+                                                    "type": "string"
+                                                },
+                                                "lines": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "section": {
+                                                                    "type": "string",
+                                                                    "const": "erario"
+                                                                },
+                                                                "tax_code": {
+                                                                    "type": "string",
+                                                                    "const": "1001"
+                                                                },
+                                                                "description": {
+                                                                    "type": "string",
+                                                                    "const": "Ritenute IRPEF lavoro dipendente"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "section",
+                                                                "tax_code",
+                                                                "description",
+                                                                "amount"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "section": {
+                                                                    "type": "string",
+                                                                    "const": "regioni"
+                                                                },
+                                                                "tax_code": {
+                                                                    "type": "string",
+                                                                    "const": "3802"
+                                                                },
+                                                                "description": {
+                                                                    "type": "string",
+                                                                    "const": "Addizionale regionale"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "section",
+                                                                "tax_code",
+                                                                "description",
+                                                                "amount"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "section": {
+                                                                    "type": "string",
+                                                                    "const": "enti_locali"
+                                                                },
+                                                                "tax_code": {
+                                                                    "type": "string",
+                                                                    "const": "3848"
+                                                                },
+                                                                "description": {
+                                                                    "type": "string",
+                                                                    "const": "Addizionale comunale"
+                                                                },
+                                                                "amount": {
+                                                                    "anyOf": [
+                                                                        {
+                                                                            "type": "string"
+                                                                        },
+                                                                        {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "0"
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "section",
+                                                                "tax_code",
+                                                                "description",
+                                                                "amount"
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "minItems": 3,
+                                                    "maxItems": 3,
+                                                    "items": {}
+                                                },
+                                                "total": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "period_id",
+                                                "due_date",
+                                                "lines",
+                                                "total"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/periods/{id}/download-audit": {
+            "get": {
+                "operationId": "italian-payroll.periods.audit",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "employee_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "net_amount": {
+                                                        "type": "string"
+                                                    },
+                                                    "delivered": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "first_viewed_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "first_viewed_from_ip": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "events": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "ip": {
+                                                                            "type": [
+                                                                                "string",
+                                                                                "null"
+                                                                            ]
+                                                                        },
+                                                                        "biometric": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "at": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "kind",
+                                                                        "ip",
+                                                                        "biometric",
+                                                                        "at"
+                                                                    ]
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "employee_id",
+                                                    "net_amount",
+                                                    "delivered",
+                                                    "first_viewed_at",
+                                                    "first_viewed_from_ip",
+                                                    "events"
+                                                ]
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/tfr-ledger": {
+            "get": {
+                "operationId": "italian-payroll.tfr-ledger",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 2000,
+                            "maximum": 2100
+                        }
+                    },
+                    {
+                        "name": "legal_entity_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "foi_percent",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "minimum": -5,
+                            "maximum": 30
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "year": {
+                                                    "type": "integer"
+                                                },
+                                                "months": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "month": {
+                                                                "type": "string"
+                                                            },
+                                                            "accrual": {
+                                                                "type": "string"
+                                                            },
+                                                            "running": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "month",
+                                                            "accrual",
+                                                            "running"
+                                                        ]
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "string"
+                                                },
+                                                "revaluation": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ],
+                                                    "properties": {
+                                                        "gross": {
+                                                            "type": "string"
+                                                        },
+                                                        "tax": {
+                                                            "type": "string"
+                                                        },
+                                                        "net": {
+                                                            "type": "string"
+                                                        },
+                                                        "rate": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "string"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "0"
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "gross",
+                                                        "tax",
+                                                        "net",
+                                                        "rate"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "year",
+                                                "months",
+                                                "total",
+                                                "revaluation"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/gl-accounts": {
+            "put": {
+                "operationId": "italian-payroll.gl-accounts",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SaveGlAccountsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/causal-mappings": {
+            "put": {
+                "operationId": "italian-payroll.causal-mappings",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SaveCausalMappingsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/my-payslips": {
+            "get": {
+                "operationId": "italian-payroll.my-payslips",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/italian-payroll/my-payslips/{distributionId}/open": {
+            "post": {
+                "operationId": "italian-payroll.my-payslips.open",
+                "tags": [
+                    "ItalianPayroll"
+                ],
+                "parameters": [
+                    {
+                        "name": "distributionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OpenPayslipRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/manufacturing/items": {
             "get": {
                 "operationId": "mfg.items.index",
@@ -321821,6 +322916,23 @@
                 ],
                 "title": "CategorizeLineRequest"
             },
+            "CausalCode": {
+                "type": "string",
+                "description": "The internal attendance causals handed to the labour consultant. Each one has a default voice code per consultant software (ConsultantFormat::defaultVoiceCode); a tenant overrides them in ipp_causal_mappings.\n",
+                "enum": [
+                    "FER",
+                    "ROL",
+                    "EXF",
+                    "MAL",
+                    "MAT",
+                    "INF",
+                    "CIG",
+                    "STR25",
+                    "STR50",
+                    "ORD"
+                ],
+                "title": "CausalCode"
+            },
             "CausalePagamento": {
                 "type": "string",
                 "description": "CausalePagamentoType of the FatturaPA schema v1.2.3: the schema states these are the codes of the CU form.\n",
@@ -326454,6 +327566,18 @@
                     "notes"
                 ],
                 "title": "ConstraintResource"
+            },
+            "ConsultantFormat": {
+                "type": "string",
+                "description": "The payroll software of the labour consultant (consulente del lavoro) the attendance is exported to.\n",
+                "enum": [
+                    "zucchetti",
+                    "teamsystem",
+                    "inaz",
+                    "gis",
+                    "generic_csv"
+                ],
+                "title": "ConsultantFormat"
             },
             "ConsumePartRequest": {
                 "type": "object",
@@ -339476,6 +340600,24 @@
                 ],
                 "title": "ExpenseResource"
             },
+            "ExportAttendanceRequest": {
+                "type": "object",
+                "properties": {
+                    "consultant_format": {
+                        "$ref": "#/components/schemas/ConsultantFormat"
+                    },
+                    "company_code": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9]+$",
+                        "maxLength": 6
+                    }
+                },
+                "required": [
+                    "consultant_format",
+                    "company_code"
+                ],
+                "title": "ExportAttendanceRequest"
+            },
             "ExportBoardPackRequest": {
                 "type": "object",
                 "description": "Filter, file format and language of the board pack.",
@@ -343288,6 +344430,36 @@
                 ],
                 "title": "GenerateSalaryCertificatesRequest"
             },
+            "GenerateSepaRequest": {
+                "type": "object",
+                "properties": {
+                    "debtor_name": {
+                        "type": "string",
+                        "maxLength": 70
+                    },
+                    "debtor_iban": {
+                        "type": "string",
+                        "maxLength": 34
+                    },
+                    "debtor_bic": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$"
+                    },
+                    "execution_date": {
+                        "type": "string",
+                        "format": "date"
+                    }
+                },
+                "required": [
+                    "debtor_name",
+                    "debtor_iban",
+                    "execution_date"
+                ],
+                "title": "GenerateSepaRequest"
+            },
             "GenerateVariantsMatrixRequest": {
                 "type": "object",
                 "description": "Bulk generation of the variants of a parent product from an attribute matrix.",
@@ -343380,6 +344552,21 @@
                     }
                 },
                 "title": "GiveContractNoticeRequest"
+            },
+            "GlRole": {
+                "type": "string",
+                "description": "The accounts of the payroll posting, chosen per tenant from its chart of accounts (the application ships no account code): ipp_gl_account_settings maps each role to an account.\n",
+                "enum": [
+                    "gross_wages",
+                    "employer_inps",
+                    "tfr_accrual",
+                    "net_payable",
+                    "inps_payable",
+                    "irpef_payable",
+                    "addizionali_payable",
+                    "tfr_fund"
+                ],
+                "title": "GlRole"
             },
             "GrantProxyRequest": {
                 "type": "object",
@@ -344214,6 +345401,81 @@
                 "additionalProperties": {},
                 "title": "HrRecordResource"
             },
+            "ImportAccountingRequest": {
+                "type": "object",
+                "properties": {
+                    "total_gross_wages": {
+                        "type": "number"
+                    },
+                    "inps_employee_withholding": {
+                        "type": "number"
+                    },
+                    "inps_employer_contribution": {
+                        "type": "number"
+                    },
+                    "irpef_withholding": {
+                        "type": "number"
+                    },
+                    "regional_municipal_addizionali": {
+                        "type": "number"
+                    },
+                    "tfr_monthly_accrual": {
+                        "type": "number"
+                    },
+                    "tfr_fondo_tesoreria_or_previdenza": {
+                        "type": "number"
+                    },
+                    "inail_accrual": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "net_payable": {
+                        "type": "number"
+                    },
+                    "company_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "employee_nets": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "employee_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "net_amount": {
+                                    "type": "number"
+                                }
+                            },
+                            "required": [
+                                "employee_id",
+                                "net_amount"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "total_gross_wages",
+                    "inps_employee_withholding",
+                    "inps_employer_contribution",
+                    "irpef_withholding",
+                    "regional_municipal_addizionali",
+                    "tfr_monthly_accrual",
+                    "tfr_fondo_tesoreria_or_previdenza",
+                    "net_payable"
+                ],
+                "title": "ImportAccountingRequest"
+            },
             "ImportAttachmentRequest": {
                 "type": "object",
                 "description": "Validates the input of the import attachment operation (authorization is decided by module.access).",
@@ -344254,6 +345516,119 @@
                 ],
                 "title": "ImportBankStatementRequest"
             },
+<<<<<<< HEAD
+=======
+            "ImportBomRequest": {
+                "type": "object",
+                "description": "Validation of a BOM import (rows from a CAD, CSV or Excel file mapped to columns): a dry run reports every row, a\nreal run creates the BOM draft when all rows are valid.",
+                "properties": {
+                    "product_code": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 200
+                    },
+                    "dry_run": {
+                        "type": "boolean"
+                    },
+                    "rows": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "item_code": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 50
+                                },
+                                "quantity_per": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 30
+                                },
+                                "uom": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 20
+                                },
+                                "scrap_percentage": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 999
+                                },
+                                "yield_percentage": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "maximum": 100
+                                },
+                                "fixed_scrap_quantity": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 99999999999
+                                },
+                                "operation_sequence": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 1,
+                                    "maximum": 99999
+                                },
+                                "notes": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 1000
+                                }
+                            }
+                        },
+                        "minItems": 1,
+                        "maxItems": 2000
+                    }
+                },
+                "required": [
+                    "product_code",
+                    "dry_run",
+                    "rows"
+                ],
+                "title": "ImportBomRequest"
+            },
+            "ImportCedoliniRequest": {
+                "type": "object",
+                "properties": {
+                    "bundle_pdf": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 51200 kilobytes."
+                    }
+                },
+                "required": [
+                    "bundle_pdf"
+                ],
+                "title": "ImportCedoliniRequest"
+            },
+>>>>>>> fd2762a1e660a7bdc52299268af270d38875b9d4
             "ImportForecastRequest": {
                 "type": "object",
                 "description": "Import of the forecasts into the demand side of a draft scenario.",
@@ -361585,6 +362960,28 @@
                     "birth_date"
                 ],
                 "title": "OpenPayslipLinkRequest"
+            },
+            "OpenPayslipRequest": {
+                "type": "object",
+                "properties": {
+                    "document_kind": {
+                        "type": "string",
+                        "enum": [
+                            "cedolino",
+                            "cu"
+                        ]
+                    },
+                    "biometric_confirmed": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "document_kind"
+                ],
+                "title": "OpenPayslipRequest"
             },
             "OpenPosSessionRequest": {
                 "type": "object",
@@ -387588,6 +388985,40 @@
                 ],
                 "title": "SaveBusinessHoursCalendarRequest"
             },
+            "SaveCausalMappingsRequest": {
+                "type": "object",
+                "properties": {
+                    "consultant_format": {
+                        "$ref": "#/components/schemas/ConsultantFormat"
+                    },
+                    "mappings": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "causal_code": {
+                                    "$ref": "#/components/schemas/CausalCode"
+                                },
+                                "external_code": {
+                                    "type": "string",
+                                    "maxLength": 24
+                                }
+                            },
+                            "required": [
+                                "causal_code",
+                                "external_code"
+                            ]
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true
+                    }
+                },
+                "required": [
+                    "consultant_format",
+                    "mappings"
+                ],
+                "title": "SaveCausalMappingsRequest"
+            },
             "SaveChargeRequest": {
                 "type": "object",
                 "properties": {
@@ -389006,6 +390437,8 @@
                                 "bi_dss_admin",
                                 "ocr_capture",
                                 "kpi_dashboards",
+                                "italian_payroll",
+                                "italian_payroll_self",
                                 "kpi_dashboards_admin",
                                 "swiss_fiscal",
                                 "ocr_settings",
@@ -390241,6 +391674,36 @@
                     "nights_away"
                 ],
                 "title": "SaveFrontierYearRequest"
+            },
+            "SaveGlAccountsRequest": {
+                "type": "object",
+                "properties": {
+                    "accounts": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "role": {
+                                    "$ref": "#/components/schemas/GlRole"
+                                },
+                                "account_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "required": [
+                                "role",
+                                "account_id"
+                            ]
+                        },
+                        "minItems": 1,
+                        "uniqueItems": true
+                    }
+                },
+                "required": [
+                    "accounts"
+                ],
+                "title": "SaveGlAccountsRequest"
             },
             "SaveGoalCycleRequest": {
                 "type": "object",
@@ -411038,6 +412501,45 @@
                 ],
                 "title": "StorePaymentTermRequest"
             },
+            "StorePayrollPeriodRequest": {
+                "type": "object",
+                "properties": {
+                    "legal_entity_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "year": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                    },
+                    "month": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 12
+                    },
+                    "include_tredicesima": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "include_quattordicesima": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "year",
+                    "month"
+                ],
+                "title": "StorePayrollPeriodRequest"
+            },
             "StorePeriodCloseTaskRequest": {
                 "type": "object",
                 "description": "A task of the close checklist of a period.",
@@ -431690,6 +433192,35 @@
                 ],
                 "title": "User"
             },
+            "ValidateAttendanceRequest": {
+                "type": "object",
+                "properties": {
+                    "fringe_benefits": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "employee_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "amount": {
+                                    "type": "number",
+                                    "minimum": 0
+                                }
+                            },
+                            "required": [
+                                "employee_id",
+                                "amount"
+                            ]
+                        }
+                    }
+                },
+                "title": "ValidateAttendanceRequest"
+            },
             "ValidateQrReferenceRequest": {
                 "type": "object",
                 "properties": {
@@ -439105,6 +440636,10 @@
         {
             "name": "Iso20022",
             "description": "Operations of the Iso20022 module."
+        },
+        {
+            "name": "ItalianPayroll",
+            "description": "Operations of the ItalianPayroll module."
         },
         {
             "name": "Item",

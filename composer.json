@@ -87,6 +87,7 @@
             "Modules\\ItalianPayroll\\": "modules/69_ItalianPayroll/src/",
             "Modules\\Quoting\\": "modules/69_Quoting/src/",
             "Modules\\SwissFiscal\\": "modules/69_SwissFiscal/src/",
+            "Modules\\ShiftPlanning\\": "modules/70_ShiftPlanning/src/",
             "Modules\\AiCognitive\\": "modules/68_AiCognitive/src/",
             "Modules\\Hse\\": "modules/69_Hse/src/",
             "Modules\\MrpPlanning\\": "modules/71_MrpPlanning/src/",

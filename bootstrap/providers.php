@@ -75,6 +75,7 @@ use Modules\Rebates\Providers\RebatesServiceProvider;
 use Modules\Returns\Providers\ReturnsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
+use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
 use Modules\Sustainability\Providers\SustainabilityServiceProvider;
@@ -174,6 +175,7 @@ return [
     ItalianPayrollServiceProvider::class,
     QuotingServiceProvider::class,
     SwissFiscalServiceProvider::class,
+    ShiftPlanningServiceProvider::class,
     AiCognitiveServiceProvider::class,
     HseServiceProvider::class,
     MrpPlanningServiceProvider::class,

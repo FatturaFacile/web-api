@@ -120,6 +120,8 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/public/rfq-portal',
         // Academy certificate verification: the unguessable certificate code is the credential; throttled, discloses only what the certificate prints.
         'api/v1/academy/certificates/verify',
+        // Edge gateway telemetry (Mod 064): authenticated by the HMAC-SHA256 signature of the body with the per-gateway secret, which selects the tenant, see Manufacturing\EdgeTelemetryAndCockpitTest.
+        'api/v1/manufacturing/edge/telemetry',
         // Supplier portal: authenticated by the personal X-Supplier-Token header (AuthenticateSupplierPortal), which selects the tenant.
         'api/v1/supplier-self-service',
         // Telegram bot webhook: the secret in the URL is compared with hash_equals and unknown/unset secrets get 404.

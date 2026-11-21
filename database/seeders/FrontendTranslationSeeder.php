@@ -22,6 +22,7 @@ use Database\Seeders\Translations\HseFrontendTranslations;
 use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
 use Database\Seeders\Translations\IdentityFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
+use Database\Seeders\Translations\ItalianPayrollFrontendTranslations;
 use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
@@ -35,6 +36,7 @@ use Database\Seeders\Translations\PurchaseRequisitionFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
 use Database\Seeders\Translations\RfqFrontendTranslations;
 use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
+use Database\Seeders\Translations\ShiftPlanningFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -86,6 +88,8 @@ class FrontendTranslationSeeder extends Seeder
             + BomManagementFrontendTranslations::all($locale)
             + ExecutiveDssFrontendTranslations::all($locale)
             + KpiDashboardsFrontendTranslations::all($locale)
+            + ItalianPayrollFrontendTranslations::all($locale)
+            + ShiftPlanningFrontendTranslations::all($locale)
             + HseFrontendTranslations::all($locale)
             + MrpPlanningFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)

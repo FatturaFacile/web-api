@@ -62,9 +62,6 @@ return new class extends Migration
                 $table->decimal('cost_allocation_percentage', 5, 2)->default(0);
                 $table->timestamps();
                 $table->softDeletes();
-                $table->uuid('created_by')->nullable();
-                $table->uuid('updated_by')->nullable();
-                $table->uuid('deleted_by')->nullable();
 
                 $table->foreign('bom_id')->references('id')->on('mfg_boms')->cascadeOnDelete();
                 $table->unique(['bom_id', 'product_item_id']);

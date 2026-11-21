@@ -57694,6 +57694,348 @@ paths:
                   - data
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/shift-planning/my/shifts:
+    get:
+      operationId: shift-planning.my.shifts
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/my/team-shifts:
+    get:
+      operationId: shift-planning.my.team-shifts
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/my/shifts/{id}/eligible-peers':
+    get:
+      operationId: shift-planning.my.eligible-peers
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/shift-planning/my/open-shifts:
+    get:
+      operationId: shift-planning.my.open-shifts
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/my/open-shifts/{id}/claim':
+    post:
+      operationId: shift-planning.my.claim
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/my/swaps:
+    get:
+      operationId: shift-planning.my.swaps
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    post:
+      operationId: shift-planning.my.swaps.store
+      tags:
+        - EmployeeShift
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestShiftSwapRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/my/swaps/{id}/respond':
+    post:
+      operationId: shift-planning.my.swaps.respond
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PeerSwapResponseRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   '/v1/hr/employees/{id}/contracts':
     get:
       operationId: v1.hr.contracts.index
@@ -77093,7 +77435,7 @@ paths:
           schema:
             anyOf:
               -
-                $ref: '#/components/schemas/Jurisdiction'
+                $ref: '#/components/schemas/Modules.Hse.Domain.Enums.Jurisdiction'
               -
                 type: 'null'
         -
@@ -85183,6 +85525,734 @@ paths:
                   - message
                   - data
                   - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/italian-payroll/periods:
+    get:
+      operationId: italian-payroll.periods.index
+      tags:
+        - ItalianPayroll
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: italian-payroll.periods.store
+      tags:
+        - ItalianPayroll
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorePayrollPeriodRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Periodo paghe creato'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '409':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: Conflict
+                  status:
+                    type: integer
+                    const: 409
+                  detail:
+                    type: string
+                    const: 'Il periodo paghe esiste già.'
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/italian-payroll/periods/{id}':
+    get:
+      operationId: italian-payroll.periods.show
+      tags:
+        - ItalianPayroll
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/italian-payroll/periods/{id}/validate':
+    post:
+      operationId: italian-payroll.periods.validate
+      tags:
+        - ItalianPayroll
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateAttendanceRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/italian-payroll/periods/{id}/export':
+    post:
+      operationId: italian-payroll.periods.export
+      tags:
+        - ItalianPayroll
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportAttendanceRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/italian-payroll/periods/{id}/cedolini':
+    post:
+      operationId: italian-payroll.periods.cedolini
+      tags:
+        - ItalianPayroll
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportCedoliniRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/italian-payroll/periods/{id}/accounting-import':
+    post:
+      operationId: italian-payroll.periods.accounting
+      tags:
+        - ItalianPayroll
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportAccountingRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/italian-payroll/periods/{id}/sepa':
+    post:
+      operationId: italian-payroll.periods.sepa
+      tags:
+        - ItalianPayroll
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateSepaRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/italian-payroll/periods/{id}/mark-paid':
+    post:
+      operationId: italian-payroll.periods.paid
+      tags:
+        - ItalianPayroll
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/italian-payroll/periods/{id}/f24':
+    get:
+      operationId: italian-payroll.periods.f24
+      tags:
+        - ItalianPayroll
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      period_id:
+                        type: string
+                      due_date:
+                        type: string
+                      lines:
+                        type: array
+                        prefixItems:
+                          -
+                            type: object
+                            properties:
+                              section:
+                                type: string
+                                const: erario
+                              tax_code:
+                                type: string
+                                const: '1001'
+                              description:
+                                type: string
+                                const: 'Ritenute IRPEF lavoro dipendente'
+                              amount:
+                                type: string
+                            required:
+                              - section
+                              - tax_code
+                              - description
+                              - amount
+                          -
+                            type: object
+                            properties:
+                              section:
+                                type: string
+                                const: regioni
+                              tax_code:
+                                type: string
+                                const: '3802'
+                              description:
+                                type: string
+                                const: 'Addizionale regionale'
+                              amount:
+                                type: string
+                            required:
+                              - section
+                              - tax_code
+                              - description
+                              - amount
+                          -
+                            type: object
+                            properties:
+                              section:
+                                type: string
+                                const: enti_locali
+                              tax_code:
+                                type: string
+                                const: '3848'
+                              description:
+                                type: string
+                                const: 'Addizionale comunale'
+                              amount:
+                                anyOf:
+                                  -
+                                    type: string
+                                  -
+                                    type: string
+                                    enum:
+                                      - '0'
+                            required:
+                              - section
+                              - tax_code
+                              - description
+                              - amount
+                        minItems: 3
+                        maxItems: 3
+                        items: {}
+                      total:
+                        type: string
+                    required:
+                      - period_id
+                      - due_date
+                      - lines
+                      - total
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/italian-payroll/periods/{id}/download-audit':
+    get:
+      operationId: italian-payroll.periods.audit
+      tags:
+        - ItalianPayroll
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        employee_id:
+                          type: string
+                        net_amount:
+                          type: string
+                        delivered:
+                          type: boolean
+                        first_viewed_at:
+                          type:
+                            - string
+                            - 'null'
+                        first_viewed_from_ip:
+                          type:
+                            - string
+                            - 'null'
+                        events:
+                          anyOf:
+                            -
+                              type: string
+                            -
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  kind:
+                                    type: string
+                                  ip:
+                                    type:
+                                      - string
+                                      - 'null'
+                                  biometric:
+                                    type: boolean
+                                  at:
+                                    type: string
+                                required:
+                                  - kind
+                                  - ip
+                                  - biometric
+                                  - at
+                      required:
+                        - employee_id
+                        - net_amount
+                        - delivered
+                        - first_viewed_at
+                        - first_viewed_from_ip
+                        - events
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/italian-payroll/tfr-ledger:
+    get:
+      operationId: italian-payroll.tfr-ledger
+      tags:
+        - ItalianPayroll
+      parameters:
+        -
+          name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+        -
+          name: legal_entity_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: foi_percent
+          in: query
+          schema:
+            type:
+              - number
+              - 'null'
+            minimum: -5
+            maximum: 30
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      year:
+                        type: integer
+                      months:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month:
+                              type: string
+                            accrual:
+                              type: string
+                            running:
+                              type: string
+                          required:
+                            - month
+                            - accrual
+                            - running
+                      total:
+                        type: string
+                      revaluation:
+                        type:
+                          - object
+                          - 'null'
+                        properties:
+                          gross:
+                            type: string
+                          tax:
+                            type: string
+                          net:
+                            type: string
+                          rate:
+                            anyOf:
+                              -
+                                type: string
+                              -
+                                type: string
+                                enum:
+                                  - '0'
+                        required:
+                          - gross
+                          - tax
+                          - net
+                          - rate
+                    required:
+                      - year
+                      - months
+                      - total
+                      - revaluation
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/italian-payroll/gl-accounts:
+    put:
+      operationId: italian-payroll.gl-accounts
+      tags:
+        - ItalianPayroll
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveGlAccountsRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    additionalProperties: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/italian-payroll/causal-mappings:
+    put:
+      operationId: italian-payroll.causal-mappings
+      tags:
+        - ItalianPayroll
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCausalMappingsRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    additionalProperties: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/italian-payroll/my-payslips:
+    get:
+      operationId: italian-payroll.my-payslips
+      tags:
+        - ItalianPayroll
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/italian-payroll/my-payslips/{distributionId}/open':
+    post:
+      operationId: italian-payroll.my-payslips.open
+      tags:
+        - ItalianPayroll
+      parameters:
+        -
+          name: distributionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenPayslipRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/AuthenticationException'
         '422':
@@ -152492,6 +153562,477 @@ paths:
           description: 'No content'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/shift-planning/templates:
+    get:
+      operationId: shift-planning.templates.index
+      tags:
+        - Roster
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShiftTemplateResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: shift-planning.templates.store
+      tags:
+        - Roster
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreShiftTemplateRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Template created'
+                  data:
+                    $ref: '#/components/schemas/ShiftTemplateResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/templates/{id}':
+    put:
+      operationId: shift-planning.templates.update
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreShiftTemplateRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/periods:
+    get:
+      operationId: shift-planning.periods.index
+      tags:
+        - Roster
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RosterPeriodResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/periods/generate:
+    post:
+      operationId: shift-planning.periods.generate
+      tags:
+        - Roster
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateRosterRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/periods/{id}/matrix':
+    get:
+      operationId: shift-planning.periods.matrix
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/periods/{id}/publish':
+    post:
+      operationId: shift-planning.periods.publish
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/periods/{id}/lock':
+    post:
+      operationId: shift-planning.periods.lock
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/assignments:
+    post:
+      operationId: shift-planning.assignments.store
+      tags:
+        - Roster
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignShiftRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/assignments/{id}':
+    patch:
+      operationId: shift-planning.assignments.move
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignShiftRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/swaps:
+    get:
+      operationId: shift-planning.swaps.index
+      tags:
+        - Roster
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      type: array
+                      items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/swaps/{id}/decision':
+    post:
+      operationId: shift-planning.swaps.decision
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwapDecisionRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/manufacturing/routings:
     get:
       operationId: mfg.routings.index
@@ -211581,6 +213122,34 @@ components:
         - employee_id
         - valid_from
       title: AssignScheduleGroupRequest
+    AssignShiftRequest:
+      type: object
+      description: 'Creates a shift from a template (POST) or assigns/moves an existing one (PATCH: the period comes from the shift).'
+      properties:
+        roster_schedule_period_id:
+          type: string
+          format: uuid
+        shift_date:
+          type: string
+          format: date
+        shift_template_id:
+          type: string
+          format: uuid
+        employee_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        required_role_or_skill_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - roster_schedule_period_id
+        - shift_date
+        - shift_template_id
+      title: AssignShiftRequest
     AssignShiftSequenceRequest:
       type: object
       properties:
@@ -215727,6 +217296,22 @@ components:
       required:
         - category
       title: CategorizeLineRequest
+    CausalCode:
+      type: string
+      description: |
+        The internal attendance causals handed to the labour consultant. Each one has a default voice code per consultant software (ConsultantFormat::defaultVoiceCode); a tenant overrides them in ipp_causal_mappings.
+      enum:
+        - FER
+        - ROL
+        - EXF
+        - MAL
+        - MAT
+        - INF
+        - CIG
+        - STR25
+        - STR50
+        - ORD
+      title: CausalCode
     CausalePagamento:
       type: string
       description: |
@@ -219103,6 +220688,17 @@ components:
         - available_capacity
         - notes
       title: ConstraintResource
+    ConsultantFormat:
+      type: string
+      description: |
+        The payroll software of the labour consultant (consulente del lavoro) the attendance is exported to.
+      enum:
+        - zucchetti
+        - teamsystem
+        - inaz
+        - gis
+        - generic_csv
+      title: ConsultantFormat
     ConsumePartRequest:
       type: object
       description: 'Validation of a spare part issued to a work order.'
@@ -227569,8 +229165,10 @@ components:
         terms:
           type:
             - array
+            - object
             - 'null'
           items: {}
+          additionalProperties: {}
         notes:
           type:
             - string
@@ -228613,6 +230211,19 @@ components:
         - created_at
         - updated_at
       title: ExpenseResource
+    ExportAttendanceRequest:
+      type: object
+      properties:
+        consultant_format:
+          $ref: '#/components/schemas/ConsultantFormat'
+        company_code:
+          type: string
+          pattern: '^[A-Za-z0-9]+$'
+          maxLength: 6
+      required:
+        - consultant_format
+        - company_code
+      title: ExportAttendanceRequest
     ExportBoardPackRequest:
       type: object
       description: 'Filter, file format and language of the board pack.'
@@ -231408,6 +233019,186 @@ components:
       required:
         - invoice_id
       title: GenerateQrBillPdfRequest
+    GenerateQrBillRequest:
+      type: object
+      description: 'Fields of a Swiss QR-bill; the cross-field rules (IBAN family vs reference) are enforced by the QrBill value object.'
+      properties:
+        iban:
+          type: string
+          maxLength: 34
+        currency:
+          type: string
+          enum:
+            - CHF
+            - EUR
+        amount:
+          type:
+            - string
+            - 'null'
+          pattern: '^\d{1,9}(\.\d{1,2})?$'
+        reference_type:
+          $ref: '#/components/schemas/QrReferenceType'
+        reference:
+          type:
+            - string
+            - 'null'
+          maxLength: 40
+        message:
+          type:
+            - string
+            - 'null'
+          maxLength: 140
+        bill_information:
+          type:
+            - string
+            - 'null'
+          maxLength: 140
+        language:
+          type:
+            - string
+            - 'null'
+          enum:
+            - it
+            - de
+            - fr
+            - en
+            - null
+        format:
+          type:
+            - string
+            - 'null'
+          enum:
+            - pdf
+            - json
+            - null
+        creditor:
+          type: object
+          properties:
+            name:
+              type: string
+              maxLength: 70
+            street:
+              type:
+                - string
+                - 'null'
+              maxLength: 70
+            building_number:
+              type:
+                - string
+                - 'null'
+              maxLength: 16
+            postal_code:
+              type: string
+              maxLength: 16
+            town:
+              type: string
+              maxLength: 35
+            country:
+              type: string
+              minLength: 2
+              maxLength: 2
+          required:
+            - name
+            - postal_code
+            - town
+            - country
+        debtor:
+          type:
+            - object
+            - 'null'
+          properties:
+            name:
+              type: string
+              maxLength: 70
+            street:
+              type:
+                - string
+                - 'null'
+              maxLength: 70
+            building_number:
+              type:
+                - string
+                - 'null'
+              maxLength: 16
+            postal_code:
+              type: string
+              maxLength: 16
+            town:
+              type: string
+              maxLength: 35
+            country:
+              type: string
+              minLength: 2
+              maxLength: 2
+      required:
+        - iban
+        - currency
+        - reference_type
+        - creditor
+      title: GenerateQrBillRequest
+    GenerateRosterRequest:
+      type: object
+      properties:
+        location_or_department_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        production_line_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        period_type:
+          $ref: '#/components/schemas/PeriodType'
+        start_date:
+          type: string
+          format: date
+        jurisdiction:
+          anyOf:
+            -
+              $ref: '#/components/schemas/Jurisdiction'
+            -
+              type: 'null'
+        pattern:
+          anyOf:
+            -
+              $ref: '#/components/schemas/RotationPattern'
+            -
+              type: 'null'
+        source_period_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        employee_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        shift_template_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        open_slots:
+          type:
+            - array
+            - 'null'
+          items:
+            type: integer
+            minimum: 1
+            maximum: 50
+      required:
+        - period_type
+        - start_date
+      title: GenerateRosterRequest
     GenerateSalaryCertificatesRequest:
       type: object
       properties:
@@ -231418,6 +233209,28 @@ components:
       required:
         - year
       title: GenerateSalaryCertificatesRequest
+    GenerateSepaRequest:
+      type: object
+      properties:
+        debtor_name:
+          type: string
+          maxLength: 70
+        debtor_iban:
+          type: string
+          maxLength: 34
+        debtor_bic:
+          type:
+            - string
+            - 'null'
+          pattern: '^[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$'
+        execution_date:
+          type: string
+          format: date
+      required:
+        - debtor_name
+        - debtor_iban
+        - execution_date
+      title: GenerateSepaRequest
     GenerateVariantsMatrixRequest:
       type: object
       description: 'Bulk generation of the variants of a parent product from an attribute matrix.'
@@ -231484,6 +233297,20 @@ components:
             - 'null'
           format: date-time
       title: GiveContractNoticeRequest
+    GlRole:
+      type: string
+      description: |
+        The accounts of the payroll posting, chosen per tenant from its chart of accounts (the application ships no account code): ipp_gl_account_settings maps each role to an account.
+      enum:
+        - gross_wages
+        - employer_inps
+        - tfr_accrual
+        - net_payable
+        - inps_payable
+        - irpef_payable
+        - addizionali_payable
+        - tfr_fund
+      title: GlRole
     GrantProxyRequest:
       type: object
       properties:
@@ -232086,6 +233913,59 @@ components:
       type: object
       additionalProperties: {}
       title: HrRecordResource
+    ImportAccountingRequest:
+      type: object
+      properties:
+        total_gross_wages:
+          type: number
+        inps_employee_withholding:
+          type: number
+        inps_employer_contribution:
+          type: number
+        irpef_withholding:
+          type: number
+        regional_municipal_addizionali:
+          type: number
+        tfr_monthly_accrual:
+          type: number
+        tfr_fondo_tesoreria_or_previdenza:
+          type: number
+        inail_accrual:
+          type:
+            - number
+            - 'null'
+        net_payable:
+          type: number
+        company_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        employee_nets:
+          type:
+            - array
+            - 'null'
+          items:
+            type: object
+            properties:
+              employee_id:
+                type: string
+                format: uuid
+              net_amount:
+                type: number
+            required:
+              - employee_id
+              - net_amount
+      required:
+        - total_gross_wages
+        - inps_employee_withholding
+        - inps_employer_contribution
+        - irpef_withholding
+        - regional_municipal_addizionali
+        - tfr_monthly_accrual
+        - tfr_fondo_tesoreria_or_previdenza
+        - net_payable
+      title: ImportAccountingRequest
     ImportAttachmentRequest:
       type: object
       description: 'Validates the input of the import attachment operation (authorization is decided by module.access).'
@@ -232115,6 +233995,88 @@ components:
       required:
         - file
       title: ImportBankStatementRequest
+    ImportBomRequest:
+      type: object
+      description: |-
+        Validation of a BOM import (rows from a CAD, CSV or Excel file mapped to columns): a dry run reports every row, a
+        real run creates the BOM draft when all rows are valid.
+      properties:
+        product_code:
+          type: string
+          maxLength: 50
+        name:
+          type:
+            - string
+            - 'null'
+          maxLength: 200
+        dry_run:
+          type: boolean
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              item_code:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 50
+              quantity_per:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 30
+              uom:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 20
+              scrap_percentage:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+                maximum: 999
+              yield_percentage:
+                type:
+                  - number
+                  - 'null'
+                maximum: 100
+              fixed_scrap_quantity:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+                maximum: 99999999999
+              operation_sequence:
+                type:
+                  - integer
+                  - 'null'
+                minimum: 1
+                maximum: 99999
+              notes:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 1000
+          minItems: 1
+          maxItems: 2000
+      required:
+        - product_code
+        - dry_run
+        - rows
+      title: ImportBomRequest
+    ImportCedoliniRequest:
+      type: object
+      properties:
+        bundle_pdf:
+          type: string
+          format: binary
+          contentMediaType: application/octet-stream
+          description: 'Maximum file size: 51200 kilobytes.'
+      required:
+        - bundle_pdf
+      title: ImportCedoliniRequest
     ImportForecastRequest:
       type: object
       description: 'Import of the forecasts into the demand side of a draft scenario.'
@@ -235372,10 +237334,10 @@ components:
     Jurisdiction:
       type: string
       description: |
-        The statutory regime a rule or a report belongs to: Italy (D.Lgs. 81/2008, INAIL) or Switzerland (UVG, OLL, SUVA).
+        The labour-law regime of an establishment. It selects the compliance strategy, the public holidays and the time zone.
       enum:
-        - IT
         - CH
+        - IT
       title: Jurisdiction
     JurisdictionMode:
       type: string
@@ -242778,6 +244740,14 @@ components:
         - created_at
         - updated_at
       title: Modules.Governance.Http.Resources.FindingResource
+    Modules.Hse.Domain.Enums.Jurisdiction:
+      type: string
+      description: |
+        The statutory regime a rule or a report belongs to: Italy (D.Lgs. 81/2008, INAIL) or Switzerland (UVG, OLL, SUVA).
+      enum:
+        - IT
+        - CH
+      title: Modules.Hse.Domain.Enums.Jurisdiction
     Modules.HumanResources.Http.Requests.HireCandidateRequest:
       type: object
       properties:
@@ -244705,6 +246675,21 @@ components:
       required:
         - birth_date
       title: OpenPayslipLinkRequest
+    OpenPayslipRequest:
+      type: object
+      properties:
+        document_kind:
+          type: string
+          enum:
+            - cedolino
+            - cu
+        biometric_confirmed:
+          type:
+            - boolean
+            - 'null'
+      required:
+        - document_kind
+      title: OpenPayslipRequest
     OpenPosSessionRequest:
       type: object
       properties:
@@ -247237,6 +249222,18 @@ components:
         - updated_by
         - deleted_by
       title: PayslipDocument
+    PeerSwapResponseRequest:
+      type: object
+      description: 'The answer of a colleague to a swap request: approve (accept) or reject (decline), no reason needed.'
+      properties:
+        decision:
+          type: string
+          enum:
+            - approve
+            - reject
+      required:
+        - decision
+      title: PeerSwapResponseRequest
     PerDiemDayResource:
       type: object
       properties:
@@ -247523,6 +249520,12 @@ components:
         - from
         - to
       title: PeriodRequest
+    PeriodType:
+      type: string
+      enum:
+        - weekly
+        - monthly
+      title: PeriodType
     Periodicity:
       type: string
       description: |
@@ -256904,6 +258907,25 @@ components:
       required:
         - message
       title: RequestQuoteChangesRequest
+    RequestShiftSwapRequest:
+      type: object
+      properties:
+        shift_assignment_id:
+          type: string
+          format: uuid
+        target_peer_employee_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        target_shift_assignment_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - shift_assignment_id
+      title: RequestShiftSwapRequest
     RequirementMatrixResource:
       type: object
       properties:
@@ -260085,6 +262107,59 @@ components:
       type: object
       additionalProperties: {}
       title: RopaRecordResource
+    RosterPeriodResource:
+      type: object
+      properties:
+        id:
+          type: string
+        location_or_department_id:
+          type:
+            - string
+            - 'null'
+        production_line_id:
+          type:
+            - string
+            - 'null'
+        period_type:
+          type: string
+          enum:
+            - weekly
+            - monthly
+        jurisdiction:
+          type: string
+          enum:
+            - CH
+            - IT
+        start_date:
+          type: string
+        end_date:
+          type: string
+        status:
+          type: string
+          enum:
+            - draft
+            - published
+            - locked
+        published_at:
+          type:
+            - string
+            - 'null'
+        locked_at:
+          type:
+            - string
+            - 'null'
+      required:
+        - id
+        - location_or_department_id
+        - production_line_id
+        - period_type
+        - jurisdiction
+        - start_date
+        - end_date
+        - status
+        - published_at
+        - locked_at
+      title: RosterPeriodResource
     RotateLeadSourceSecretRequest:
       type: object
       properties:
@@ -260099,6 +262174,18 @@ components:
             - api_key
             - null
       title: RotateLeadSourceSecretRequest
+    RotationPattern:
+      type: string
+      description: |-
+        A rotation pattern: how many days in a row an employee works and rests.
+        | |
+        |---|
+        | `5x2` <br/> Five working days (Monday to Friday) and the weekend off; the shift type changes every week. |
+        | `6x6` <br/> Six working days, six days off (a 12-day cycle, the two halves of the team offset by half a cycle); the shift type changes every cycle. |
+      enum:
+        - 5x2
+        - 6x6
+      title: RotationPattern
     RoutingRuleResource:
       type: object
       properties:
@@ -263511,6 +265598,30 @@ components:
         - timezone
         - weekly_schedule
       title: SaveBusinessHoursCalendarRequest
+    SaveCausalMappingsRequest:
+      type: object
+      properties:
+        consultant_format:
+          $ref: '#/components/schemas/ConsultantFormat'
+        mappings:
+          type: array
+          items:
+            type: object
+            properties:
+              causal_code:
+                $ref: '#/components/schemas/CausalCode'
+              external_code:
+                type: string
+                maxLength: 24
+            required:
+              - causal_code
+              - external_code
+          minItems: 1
+          uniqueItems: true
+      required:
+        - consultant_format
+        - mappings
+      title: SaveCausalMappingsRequest
     SaveChargeRequest:
       type: object
       properties:
@@ -264573,8 +266684,12 @@ components:
               - bi_dss_admin
               - ocr_capture
               - kpi_dashboards
+              - italian_payroll
+              - italian_payroll_self
               - kpi_dashboards_admin
               - swiss_fiscal
+              - shift_planning
+              - shift_planning_self
               - ocr_settings
               - hse
               - hse_medical
@@ -265516,6 +267631,27 @@ components:
         - year
         - nights_away
       title: SaveFrontierYearRequest
+    SaveGlAccountsRequest:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                $ref: '#/components/schemas/GlRole'
+              account_id:
+                type: string
+                format: uuid
+            required:
+              - role
+              - account_id
+          minItems: 1
+          uniqueItems: true
+      required:
+        - accounts
+      title: SaveGlAccountsRequest
     SaveGoalCycleRequest:
       type: object
       properties:
@@ -267311,8 +269447,6 @@ components:
         - kpis
         - period_preset
       title: SaveReportDefinitionRequest
-<<<<<<< HEAD
-=======
     SaveRequirementMatrixRequest:
       type: object
       properties:
@@ -267320,7 +269454,7 @@ components:
           type: string
           maxLength: 160
         jurisdiction:
-          $ref: '#/components/schemas/Jurisdiction'
+          $ref: '#/components/schemas/Modules.Hse.Domain.Enums.Jurisdiction'
         job_position_id:
           type:
             - string
@@ -267449,7 +269583,6 @@ components:
         - backup_node_id
         - queue_node_id
       title: SaveResidencyPolicyRequest
->>>>>>> 3d24f45ee0d9ae8ea8f9f4f7ac1a4d8860c876ca
     SaveRoutingRuleRequest:
       type: object
       properties:
@@ -271383,6 +273516,43 @@ components:
         - weekly_without_weekend
         - manual
       title: ShiftSequencePattern
+    ShiftTemplateResource:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        start_time:
+          type: string
+        end_time:
+          type: string
+        break_minutes:
+          type: integer
+        color_hex:
+          type: string
+        night_surcharge_applicable:
+          type: boolean
+        is_on_call:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+        - id
+        - code
+        - name
+        - start_time
+        - end_time
+        - break_minutes
+        - color_hex
+        - night_surcharge_applicable
+        - is_on_call
+        - is_active
+      title: ShiftTemplateResource
     ShiftVolunteerRequest:
       type: object
       description: 'A volunteer for a shift: its availability, an assignment or a substitution.'
@@ -280790,6 +282960,34 @@ components:
         - code
         - name
       title: StorePaymentTermRequest
+    StorePayrollPeriodRequest:
+      type: object
+      properties:
+        legal_entity_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        include_tredicesima:
+          type:
+            - boolean
+            - 'null'
+        include_quattordicesima:
+          type:
+            - boolean
+            - 'null'
+      required:
+        - year
+        - month
+      title: StorePayrollPeriodRequest
     StorePeriodCloseTaskRequest:
       type: object
       description: 'A task of the close checklist of a period.'
@@ -283423,6 +285621,65 @@ components:
         - technician_id
         - report_date
       title: StoreServiceReportRequest
+    StoreShiftTemplateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: object
+          properties:
+            it:
+              type: string
+              maxLength: 120
+            de:
+              type: string
+              maxLength: 120
+            fr:
+              type: string
+              maxLength: 120
+            en:
+              type: string
+              maxLength: 120
+          required:
+            - it
+            - de
+            - fr
+            - en
+        start_time:
+          type: string
+        end_time:
+          type: string
+        break_minutes:
+          type:
+            - integer
+            - 'null'
+          minimum: 0
+          maximum: 240
+        color_hex:
+          type:
+            - string
+            - 'null'
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        night_surcharge_applicable:
+          type:
+            - boolean
+            - 'null'
+        is_on_call:
+          type:
+            - boolean
+            - 'null'
+        is_active:
+          type:
+            - boolean
+            - 'null'
+      required:
+        - code
+        - name
+        - start_time
+        - end_time
+      title: StoreShiftTemplateRequest
     StoreSignatureRequestRequest:
       type: object
       description: 'An e-signature request: version, signers in order and provider.'
@@ -287454,6 +289711,33 @@ components:
       required:
         - answers
       title: SurveyResponseRequest
+    SwapDecisionRequest:
+      type: object
+      description: 'The answer of a colleague or of the manager to a swap request. The manager gives a reason when rejecting.'
+      properties:
+        decision:
+          type: string
+          enum:
+            - approve
+            - reject
+        rejection_reason:
+          type:
+            - string
+            - 'null'
+          maxLength: 1000
+      required:
+        - decision
+      title: SwapDecisionRequest
+    SwapStatus:
+      type: string
+      description: |
+        Two-step approval of a shift swap: the colleague accepts first, then the manager decides.
+      enum:
+        - pending_peer_acceptance
+        - pending_manager_approval
+        - approved
+        - rejected
+      title: SwapStatus
     SyncEcommerceChannelRequest:
       type: object
       properties:
@@ -295885,6 +298169,26 @@ components:
         - deleted_by
         - ui_preferences
       title: User
+    ValidateAttendanceRequest:
+      type: object
+      properties:
+        fringe_benefits:
+          type:
+            - array
+            - 'null'
+          items:
+            type: object
+            properties:
+              employee_id:
+                type: string
+                format: uuid
+              amount:
+                type: number
+                minimum: 0
+            required:
+              - employee_id
+              - amount
+      title: ValidateAttendanceRequest
     ValidateQrReferenceRequest:
       type: object
       properties:
@@ -301015,6 +303319,9 @@ tags:
     name: EmployeeSelfService
     description: 'Operations of the EmployeeSelfService module.'
   -
+    name: EmployeeShift
+    description: 'Operations of the EmployeeShift module.'
+  -
     name: EmploymentContract
     description: 'Operations of the EmploymentContract module.'
   -
@@ -301275,6 +303582,9 @@ tags:
   -
     name: Iso20022
     description: 'Operations of the Iso20022 module.'
+  -
+    name: ItalianPayroll
+    description: 'Operations of the ItalianPayroll module.'
   -
     name: Item
     description: 'Operations of the Item module.'
@@ -302058,6 +304368,9 @@ tags:
   -
     name: Ropa
     description: 'Operations of the Ropa module.'
+  -
+    name: Roster
+    description: 'Operations of the Roster module.'
   -
     name: Routing
     description: 'Operations of the Routing module.'

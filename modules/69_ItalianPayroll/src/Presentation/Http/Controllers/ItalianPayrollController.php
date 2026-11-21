@@ -57,7 +57,7 @@ final class ItalianPayrollController extends Controller
     #[OA\Get(path: '/api/v1/italian-payroll/periods', operationId: 'listItalianPayrollPeriods', description: 'The payroll months of the tenant with their closing state.', summary: 'List payroll periods', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Italian Payroll'], responses: [new OA\Response(response: 200, description: 'OK'), new OA\Response(response: 422, description: 'A payroll rule was violated')])]
     public function index(): JsonResponse
     {
-        return $this->successResponse(PayrollPeriodResource::collection(ItalianPayrollPeriod::query()->orderByDesc('year')->orderByDesc('month')->get())->resolve());
+        return $this->successResponse(PayrollPeriodResource::collection(ItalianPayrollPeriod::query()->withExists('accountingImport')->orderByDesc('year')->orderByDesc('month')->get())->resolve());
     }
 
     #[OA\Post(path: '/api/v1/italian-payroll/periods', operationId: 'createItalianPayrollPeriod', description: 'Opens a payroll month for a legal entity, in the attendance_open state.', summary: 'Open a payroll period', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Italian Payroll'], responses: [new OA\Response(response: 200, description: 'OK'), new OA\Response(response: 422, description: 'A payroll rule was violated')])]
