@@ -13,6 +13,7 @@ use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Academy\Providers\AcademyServiceProvider;
 use Modules\AiCognitive\Providers\AiCognitiveServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
+use Modules\AnalyticsDss\Providers\AnalyticsDssServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
@@ -45,6 +46,7 @@ use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Governance\Providers\GovernanceServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
 use Modules\Hospitality\Providers\HospitalityServiceProvider;
+use Modules\Hse\Providers\HseServiceProvider;
 use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
 use Modules\Integrations\Providers\IntegrationsServiceProvider;
 use Modules\Intrastat\Providers\IntrastatServiceProvider;
@@ -166,10 +168,12 @@ return [
     DigitalPreservationServiceProvider::class,
     ForecastingServiceProvider::class,
     OcrExtractionServiceProvider::class,
+    AnalyticsDssServiceProvider::class,
     KpiDashboardsServiceProvider::class,
     QuotingServiceProvider::class,
     SwissFiscalServiceProvider::class,
     ShiftPlanningServiceProvider::class,
     AiCognitiveServiceProvider::class,
+    HseServiceProvider::class,
     DataResidencyServiceProvider::class,
 ];

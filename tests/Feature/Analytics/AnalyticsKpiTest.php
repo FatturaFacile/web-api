@@ -24,7 +24,7 @@ uses(RefreshDatabase::class);
 /**
  * A sales invoice. `posted` sets posted_at the way the invoicing service does when it posts the document.
  */
-function kpiInvoice(Tenant $tenant, string $date, string $net, array $overrides = [], bool $posted = true): Invoice
+function analyticsKpiInvoice(Tenant $tenant, string $date, string $net, array $overrides = [], bool $posted = true): Invoice
 {
     $customer = $overrides['customer'] ?? Contact::create(['tenant_id' => $tenant->id, 'type' => 'customer', 'company_name' => 'Cliente '.Str::random(4)]);
     unset($overrides['customer']);
@@ -44,7 +44,7 @@ function kpiInvoice(Tenant $tenant, string $date, string $net, array $overrides 
     return $invoice;
 }
 
-function kpiPurchase(Tenant $tenant, string $date, string $net, bool $posted = true, array $overrides = []): PassiveInvoice
+function analyticsKpiPurchase(Tenant $tenant, string $date, string $net, bool $posted = true, array $overrides = []): PassiveInvoice
 {
     $supplier = Contact::create(['tenant_id' => $tenant->id, 'type' => 'supplier', 'company_name' => '=Fornitore '.Str::random(4)]);
 
@@ -65,7 +65,7 @@ function kpiPurchase(Tenant $tenant, string $date, string $net, bool $posted = t
 /**
  * One posted journal entry of the statutory ledger with a revenue and a cost-of-goods-sold line.
  */
-function kpiLedger(Tenant $tenant, string $date, string $revenue, string $cogs): void
+function analyticsKpiLedger(Tenant $tenant, string $date, string $revenue, string $cogs): void
 {
     $period = DB::table('fiscal_periods')->where('tenant_id', $tenant->id)->value('id');
     $account = function (string $code, string $type, string $normal) use ($tenant): string {
@@ -112,11 +112,11 @@ afterEach(function (): void {
 });
 
 test('sales count posted documents only and credit notes subtract', function (): void {
-    kpiInvoice($this->tenant, '2027-03-05', '150.00');
-    kpiInvoice($this->tenant, '2027-03-06', '-50.00', ['invoice_type' => 'credit_note']);
-    kpiInvoice($this->tenant, '2027-03-07', '999.00', posted: false);
-    kpiInvoice($this->tenant, '2027-03-08', '999.00', ['invoice_type' => 'proforma']);
-    kpiInvoice($this->tenant, '2027-03-09', '999.00', ['status' => 'cancelled']);
+    analyticsKpiInvoice($this->tenant, '2027-03-05', '150.00');
+    analyticsKpiInvoice($this->tenant, '2027-03-06', '-50.00', ['invoice_type' => 'credit_note']);
+    analyticsKpiInvoice($this->tenant, '2027-03-07', '999.00', posted: false);
+    analyticsKpiInvoice($this->tenant, '2027-03-08', '999.00', ['invoice_type' => 'proforma']);
+    analyticsKpiInvoice($this->tenant, '2027-03-09', '999.00', ['status' => 'cancelled']);
 
     $kpi = $this->getJson('/api/v1/analytics/kpis/sales?from=2027-03-01&to=2027-03-31')->assertOk()->json('data');
 
@@ -126,7 +126,7 @@ test('sales count posted documents only and credit notes subtract', function ():
 });
 
 test('a figure without posted data is null, not zero', function (): void {
-    kpiInvoice($this->tenant, '2027-03-07', '999.00', posted: false);
+    analyticsKpiInvoice($this->tenant, '2027-03-07', '999.00', posted: false);
 
     $report = $this->getJson('/api/v1/analytics/kpis?from=2027-03-01&to=2027-03-31')->assertOk()->json('data');
     $byKey = collect($report['kpis'])->keyBy('key');
@@ -143,8 +143,8 @@ test('a figure without posted data is null, not zero', function (): void {
 });
 
 test('the comparison period gives change and percentage, and no percentage against zero', function (): void {
-    kpiInvoice($this->tenant, '2027-03-05', '150.00');
-    kpiInvoice($this->tenant, '2027-02-05', '100.00');
+    analyticsKpiInvoice($this->tenant, '2027-03-05', '150.00');
+    analyticsKpiInvoice($this->tenant, '2027-02-05', '100.00');
 
     $kpi = $this->getJson('/api/v1/analytics/kpis/sales?from=2027-03-01&to=2027-03-31&compare=previous_period')->assertOk()->json('data');
 
@@ -168,9 +168,9 @@ test('snapshot indicators are not compared with a past period', function (): voi
 });
 
 test('purchases count only supplier invoices posted to the ledger', function (): void {
-    kpiPurchase($this->tenant, '2027-03-05', '200.00');
-    kpiPurchase($this->tenant, '2027-03-06', '30.00', overrides: ['document_type' => 'TD04']);
-    kpiPurchase($this->tenant, '2027-03-07', '777.00', posted: false);
+    analyticsKpiPurchase($this->tenant, '2027-03-05', '200.00');
+    analyticsKpiPurchase($this->tenant, '2027-03-06', '30.00', overrides: ['document_type' => 'TD04']);
+    analyticsKpiPurchase($this->tenant, '2027-03-07', '777.00', posted: false);
 
     $kpi = $this->getJson('/api/v1/analytics/kpis/purchases?from=2027-03-01&to=2027-03-31')->assertOk()->json('data');
 
@@ -178,10 +178,10 @@ test('purchases count only supplier invoices posted to the ledger', function ():
 });
 
 test('foreign currency documents use their stored rate and are left out without one', function (): void {
-    kpiInvoice($this->tenant, '2027-03-05', '100.00', ['currency' => 'CHF', 'exchange_rate' => '1.050000']);
-    kpiInvoice($this->tenant, '2027-03-06', '500.00', ['currency' => 'USD', 'exchange_rate' => '0']);
-    kpiPurchase($this->tenant, '2027-03-05', '100.00', overrides: ['currency' => 'CHF', 'exchange_rate' => '0.900000']);
-    kpiPurchase($this->tenant, '2027-03-06', '500.00', overrides: ['currency' => 'USD', 'exchange_rate' => null]);
+    analyticsKpiInvoice($this->tenant, '2027-03-05', '100.00', ['currency' => 'CHF', 'exchange_rate' => '1.050000']);
+    analyticsKpiInvoice($this->tenant, '2027-03-06', '500.00', ['currency' => 'USD', 'exchange_rate' => '0']);
+    analyticsKpiPurchase($this->tenant, '2027-03-05', '100.00', overrides: ['currency' => 'CHF', 'exchange_rate' => '0.900000']);
+    analyticsKpiPurchase($this->tenant, '2027-03-06', '500.00', overrides: ['currency' => 'USD', 'exchange_rate' => null]);
 
     $sales = $this->getJson('/api/v1/analytics/kpis/sales?from=2027-03-01&to=2027-03-31')->assertOk()->json('data');
     $purchases = $this->getJson('/api/v1/analytics/kpis/purchases?from=2027-03-01&to=2027-03-31')->assertOk()->json('data');
@@ -191,7 +191,7 @@ test('foreign currency documents use their stored rate and are left out without 
 });
 
 test('margin reads the posted statutory ledger', function (): void {
-    kpiLedger($this->tenant, '2027-03-10', '1000.00', '600.00');
+    analyticsKpiLedger($this->tenant, '2027-03-10', '1000.00', '600.00');
 
     $kpi = $this->getJson('/api/v1/analytics/kpis/margin?from=2027-03-01&to=2027-03-31')->assertOk()->json('data');
 
@@ -200,12 +200,12 @@ test('margin reads the posted statutory ledger', function (): void {
 });
 
 test('aging splits open posted items by days past due and ignores paid and unposted ones', function (): void {
-    kpiInvoice($this->tenant, '2027-03-01', '100.00', ['due_date' => '2027-03-20']);
-    kpiInvoice($this->tenant, '2027-02-01', '200.00', ['due_date' => '2027-03-01', 'total_paid' => '50.00']);
-    kpiInvoice($this->tenant, '2026-10-01', '400.00', ['due_date' => '2026-11-01']);
-    kpiInvoice($this->tenant, '2027-02-01', '900.00', ['due_date' => '2027-02-10', 'payment_status' => 'paid', 'total_paid' => '900.00']);
-    kpiInvoice($this->tenant, '2027-02-01', '900.00', ['due_date' => '2027-02-10'], posted: false);
-    kpiPurchase($this->tenant, '2027-03-01', '60.00', overrides: ['due_date' => '2027-02-01']);
+    analyticsKpiInvoice($this->tenant, '2027-03-01', '100.00', ['due_date' => '2027-03-20']);
+    analyticsKpiInvoice($this->tenant, '2027-02-01', '200.00', ['due_date' => '2027-03-01', 'total_paid' => '50.00']);
+    analyticsKpiInvoice($this->tenant, '2026-10-01', '400.00', ['due_date' => '2026-11-01']);
+    analyticsKpiInvoice($this->tenant, '2027-02-01', '900.00', ['due_date' => '2027-02-10', 'payment_status' => 'paid', 'total_paid' => '900.00']);
+    analyticsKpiInvoice($this->tenant, '2027-02-01', '900.00', ['due_date' => '2027-02-10'], posted: false);
+    analyticsKpiPurchase($this->tenant, '2027-03-01', '60.00', overrides: ['due_date' => '2027-02-01']);
 
     $receivables = $this->getJson('/api/v1/analytics/kpis/receivables-aging')->assertOk()->json('data');
     $payables = $this->getJson('/api/v1/analytics/kpis/payables-aging')->assertOk()->json('data');
@@ -267,7 +267,7 @@ test('kpi endpoints validate the period, the comparison and the indicator', func
 });
 
 test('analytics are isolated per tenant, closed to other roles and unauthenticated callers', function (): void {
-    kpiInvoice($this->tenant, '2027-03-05', '150.00');
+    analyticsKpiInvoice($this->tenant, '2027-03-05', '150.00');
 
     actingAsMember(complianceTenant('Beta'));
     expect($this->getJson('/api/v1/analytics/kpis/sales?from=2027-03-01&to=2027-03-31')->json('data.value'))->toBeNull();
@@ -280,8 +280,8 @@ test('analytics are isolated per tenant, closed to other roles and unauthenticat
 });
 
 test('the summary export is a neutralised csv and the detail export neutralises names', function (): void {
-    kpiInvoice($this->tenant, '2027-03-05', '150.00', ['customer' => Contact::create(['tenant_id' => $this->tenant->id, 'type' => 'customer', 'company_name' => '=HYPERLINK("http://evil")'])]);
-    kpiPurchase($this->tenant, '2027-03-05', '80.00');
+    analyticsKpiInvoice($this->tenant, '2027-03-05', '150.00', ['customer' => Contact::create(['tenant_id' => $this->tenant->id, 'type' => 'customer', 'company_name' => '=HYPERLINK("http://evil")'])]);
+    analyticsKpiPurchase($this->tenant, '2027-03-05', '80.00');
 
     $summary = $this->get('/api/v1/analytics/kpis-export?from=2027-03-01&to=2027-03-31&kpis[]=sales')->assertOk();
     expect($summary->headers->get('Content-Type'))->toContain('text/csv')
@@ -322,7 +322,7 @@ test('report definitions are saved per user, shared on request and validated', f
 });
 
 test('a saved report runs on the calendar of today and exports to csv', function (): void {
-    kpiInvoice($this->tenant, '2027-03-05', '150.00');
+    analyticsKpiInvoice($this->tenant, '2027-03-05', '150.00');
     $id = $this->postJson('/api/v1/analytics/report-definitions', ['name' => 'MTD', 'kpis' => ['sales'], 'period_preset' => 'month_to_date', 'compare' => 'previous_period'])->json('data.id');
 
     $run = $this->getJson("/api/v1/analytics/report-definitions/{$id}/run")->assertOk()->json('data');

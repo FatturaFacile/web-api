@@ -106,6 +106,16 @@ return [
             'write' => $finance,
             'grants' => ['read' => ['ocr_inbox.view', 'ocr_inbox.*'], 'write' => ['ocr_inbox.review', 'ocr_inbox.*']],
         ],
+        // Executive DSS (Mod 093, Issue #214). bi.dss.view reads the cockpit; bi.dss.simulate runs what-if scenarios; bi.dss.export
+        // generates the board pack; bi.dss.admin reconciles and rebuilds the data mart. A grant of a higher ability opens the lower reads.
+        'bi_dss' => [
+            'read' => [...$financeReaders, 'sales_manager', 'procurement_manager'],
+            'write' => $finance,
+            'grants' => ['read' => ['bi.dss.view', 'bi.dss.simulate', 'bi.dss.export', 'bi.dss.admin', 'bi.dss.*'], 'write' => ['bi.dss.admin', 'bi.dss.*']],
+        ],
+        'bi_dss_simulate' => ['read' => $finance, 'write' => $finance, 'grants' => ['write' => ['bi.dss.simulate', 'bi.dss.*']]],
+        'bi_dss_export' => ['read' => $finance, 'write' => $finance, 'grants' => ['write' => ['bi.dss.export', 'bi.dss.*']]],
+        'bi_dss_admin' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['bi.dss.admin', 'bi.dss.*'], 'write' => ['bi.dss.admin', 'bi.dss.*']]],
         'ocr_capture' => ['read' => $anyMember, 'write' => $anyMember],
         // Executive KPI dashboards (Mod 090). kpi_dashboards: any member opens the cockpits their role allows and saves their own
         // layouts (KpiAccess narrows each KPI by role, legal entity, cost center and compensation grant); kpi_dashboards_admin:
@@ -140,6 +150,16 @@ return [
         ],
         'shift_planning_self' => ['read' => $anyMember, 'write' => $anyMember],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
+        // Workplace health, safety and training (Mod 099). hse: the operational roles read the compliance matrix, the clearance verdict
+        // and the physician judgments (outcome and prescriptions); the HSE team (hr, hse, admins) writes certificates, PPE and incidents.
+        // hse_medical: who records physician judgments. hse_clinical: clinical notes belong to the occupational physician alone,
+        // so owners and admins are deliberately absent (GDPR Art. 9 / nLPD).
+        'hse' => [
+            'read' => ['owner', 'admin', 'hr', 'hse', 'production', 'technician', 'service_manager', 'project_manager', 'accountant', 'member'],
+            'write' => ['owner', 'admin', 'hr', 'hse'],
+        ],
+        'hse_medical' => ['read' => ['owner', 'admin', 'hr', 'hse', 'medico'], 'write' => ['owner', 'admin', 'hr', 'hse', 'medico']],
+        'hse_clinical' => ['read' => ['medico'], 'write' => ['medico'], 'grants' => ['read' => ['hse.clinical.read'], 'write' => ['hse.clinical.write']]],
         // AI Services & Cognitive Automation Layer (Mod 093). ai_copilot (ai.copilot.use): every member asks the copilot and drafts
         // messages, each answer limited to what the caller may read; ai_review (ai.suggestions.review): the finance and sales teams
         // work the review queue and the insights; ai_admin (ai.admin.configure): owners and admins set up providers and policies and

@@ -56952,6 +56952,177 @@ paths:
                   - message
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/analytics/dss/legal-entities:
+    get:
+      operationId: analytics.dss.legal-entities
+      tags:
+        - DssAdmin
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        currency:
+                          type: string
+                      required:
+                        - id
+                        - name
+                        - currency
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/analytics/dss/admin/reconciliation:
+    get:
+      operationId: analytics.dss.admin.reconciliation
+      tags:
+        - DssAdmin
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      variance:
+                        type: number
+                      accounts_checked:
+                        type: integer
+                        minimum: 0
+                      mismatches:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            account_id:
+                              type: string
+                            ledger:
+                              type: number
+                            mart:
+                              type: number
+                            variance:
+                              type: number
+                          required:
+                            - account_id
+                            - ledger
+                            - mart
+                            - variance
+                      snapshot_variance:
+                        type: number
+                    required:
+                      - variance
+                      - accounts_checked
+                      - mismatches
+                      - snapshot_variance
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/analytics/dss/admin/consolidate:
+    post:
+      operationId: analytics.dss.admin.consolidate
+      tags:
+        - DssAdmin
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Data mart consolidated'
+                  data:
+                    type: object
+                    properties:
+                      documents_projected:
+                        type: integer
+                        const: 0
+                      reconciliation:
+                        type: object
+                        properties:
+                          variance:
+                            type: number
+                          accounts_checked:
+                            type: integer
+                            minimum: 0
+                          mismatches:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                account_id:
+                                  type: string
+                                ledger:
+                                  type: number
+                                mart:
+                                  type: number
+                                variance:
+                                  type: number
+                              required:
+                                - account_id
+                                - ledger
+                                - mart
+                                - variance
+                          snapshot_variance:
+                            type: number
+                        required:
+                          - variance
+                          - accounts_checked
+                          - mismatches
+                          - snapshot_variance
+                    required:
+                      - documents_projected
+                      - reconciliation
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/subscriptions/dunning-policy:
     get:
       operationId: subscriptions.dunning-policy.show
@@ -63303,6 +63474,871 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/analytics/dss/overview:
+    get:
+      operationId: analytics.dss.overview
+      tags:
+        - ExecutiveDss
+      parameters:
+        -
+          name: 'legal_entity_ids[]'
+          in: query
+          schema:
+            type:
+              - array
+              - 'null'
+            items:
+              type: string
+              format: uuid
+            maxItems: 50
+        -
+          name: 'cost_center_ids[]'
+          in: query
+          schema:
+            type:
+              - array
+              - 'null'
+            items:
+              type: string
+              format: uuid
+            maxItems: 200
+        -
+          name: currency
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - CHF
+              - EUR
+              - null
+        -
+          name: period_preset
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - MTD
+              - QTD
+              - YTD
+              - L12M
+              - CUSTOM
+              - null
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: comparison_baseline
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - PRIOR_PERIOD
+              - PRIOR_YEAR
+              - BUDGET
+              - null
+        -
+          name: as_of
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    additionalProperties: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/analytics/dss/profitability-matrix:
+    get:
+      operationId: analytics.dss.profitability-matrix
+      tags:
+        - ExecutiveDss
+      parameters:
+        -
+          name: 'legal_entity_ids[]'
+          in: query
+          schema:
+            type:
+              - array
+              - 'null'
+            items:
+              type: string
+              format: uuid
+            maxItems: 50
+        -
+          name: 'cost_center_ids[]'
+          in: query
+          schema:
+            type:
+              - array
+              - 'null'
+            items:
+              type: string
+              format: uuid
+            maxItems: 200
+        -
+          name: currency
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - CHF
+              - EUR
+              - null
+        -
+          name: period_preset
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - MTD
+              - QTD
+              - YTD
+              - L12M
+              - CUSTOM
+              - null
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: comparison_baseline
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - PRIOR_PERIOD
+              - PRIOR_YEAR
+              - BUDGET
+              - null
+        -
+          name: as_of
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: dimension
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - customer
+              - product
+              - channel
+              - cost_center
+              - legal_entity
+              - null
+        -
+          name: limit
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 500
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    additionalProperties: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/analytics/dss/variance-bridge:
+    get:
+      operationId: analytics.dss.variance-bridge
+      tags:
+        - ExecutiveDss
+      parameters:
+        -
+          name: 'legal_entity_ids[]'
+          in: query
+          schema:
+            type:
+              - array
+              - 'null'
+            items:
+              type: string
+              format: uuid
+            maxItems: 50
+        -
+          name: 'cost_center_ids[]'
+          in: query
+          schema:
+            type:
+              - array
+              - 'null'
+            items:
+              type: string
+              format: uuid
+            maxItems: 200
+        -
+          name: currency
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - CHF
+              - EUR
+              - null
+        -
+          name: period_preset
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - MTD
+              - QTD
+              - YTD
+              - L12M
+              - CUSTOM
+              - null
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: comparison_baseline
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - PRIOR_PERIOD
+              - PRIOR_YEAR
+              - BUDGET
+              - null
+        -
+          name: as_of
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    additionalProperties: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/analytics/dss/drill-down:
+    get:
+      operationId: analytics.dss.drill-down
+      tags:
+        - ExecutiveDss
+      parameters:
+        -
+          name: 'legal_entity_ids[]'
+          in: query
+          schema:
+            type:
+              - array
+              - 'null'
+            items:
+              type: string
+              format: uuid
+            maxItems: 50
+        -
+          name: 'cost_center_ids[]'
+          in: query
+          schema:
+            type:
+              - array
+              - 'null'
+            items:
+              type: string
+              format: uuid
+            maxItems: 200
+        -
+          name: currency
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - CHF
+              - EUR
+              - null
+        -
+          name: period_preset
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - MTD
+              - QTD
+              - YTD
+              - L12M
+              - CUSTOM
+              - null
+        -
+          name: date_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: date_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: comparison_baseline
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - PRIOR_PERIOD
+              - PRIOR_YEAR
+              - BUDGET
+              - null
+        -
+          name: as_of
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: metric
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - revenue
+              - cogs
+              - opex
+              - depreciation
+              - cash
+              - receivable
+              - payable
+              - inventory
+        -
+          name: entity_type
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - customer
+              - cost_center
+              - legal_entity
+              - null
+        -
+          name: entity_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 200
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      metric:
+                        type: string
+                      currency:
+                        type: string
+                      data:
+                        anyOf:
+                          -
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                posting_date:
+                                  type: string
+                                account_code:
+                                  type: string
+                                category:
+                                  type: string
+                                counterparty:
+                                  type:
+                                    - object
+                                    - 'null'
+                                  properties:
+                                    id:
+                                      type: string
+                                    name:
+                                      type: string
+                                  required:
+                                    - id
+                                    - name
+                                cost_center_id:
+                                  type: string
+                                legal_entity_id:
+                                  type: string
+                                transaction_currency:
+                                  type: string
+                                amount_transaction:
+                                  type: number
+                                amount_reporting:
+                                  type:
+                                    - number
+                                    - 'null'
+                                source:
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: journal_entry
+                                    id:
+                                      type: string
+                                  required:
+                                    - type
+                                    - id
+                                links:
+                                  type: object
+                                  properties:
+                                    source:
+                                      type: string
+                                    report_builder:
+                                      type: string
+                                      const: /api/v1/business-intelligence/explorer/run
+                                  required:
+                                    - source
+                                    - report_builder
+                              required:
+                                - id
+                                - posting_date
+                                - account_code
+                                - category
+                                - counterparty
+                                - cost_center_id
+                                - legal_entity_id
+                                - transaction_currency
+                                - amount_transaction
+                                - amount_reporting
+                                - source
+                                - links
+                          -
+                            type: string
+                      pagination:
+                        type: object
+                        properties:
+                          page: {}
+                          per_page: {}
+                          total:
+                            anyOf:
+                              -
+                                type: integer
+                                minimum: 0
+                              -
+                                type: string
+                          last_page: {}
+                        required:
+                          - page
+                          - per_page
+                          - total
+                          - last_page
+                      total_amount:
+                        type: number
+                      links:
+                        type: object
+                        properties:
+                          kpi_dashboards:
+                            type: string
+                            const: /api/v1/business-intelligence/dashboards
+                          report_builder:
+                            type: string
+                            const: /api/v1/business-intelligence/explorer/run
+                        required:
+                          - kpi_dashboards
+                          - report_builder
+                    required:
+                      - metric
+                      - currency
+                      - data
+                      - pagination
+                      - total_amount
+                      - links
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/analytics/dss/simulate:
+    post:
+      operationId: analytics.dss.simulate
+      tags:
+        - ExecutiveDss
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulateScenarioRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      currency:
+                        type: string
+                      period:
+                        type: object
+                        properties:
+                          from:
+                            type: string
+                          to:
+                            type: string
+                        required:
+                          - from
+                          - to
+                      inputs:
+                        type: object
+                        properties:
+                          revenue:
+                            type: number
+                          cogs:
+                            type: number
+                          opex:
+                            type: number
+                          dso_days:
+                            type: number
+                          net_cash_flow:
+                            type: number
+                          period_days:
+                            type: integer
+                          fte_annual_cost:
+                            type:
+                              - string
+                              - number
+                          revenue_fx_share:
+                            type: number
+                          cost_fx_share:
+                            type: number
+                        required:
+                          - revenue
+                          - cogs
+                          - opex
+                          - dso_days
+                          - net_cash_flow
+                          - period_days
+                          - fte_annual_cost
+                          - revenue_fx_share
+                          - cost_fx_share
+                      scenario:
+                        type: array
+                        items: {}
+                      baseline:
+                        type: object
+                        properties:
+                          revenue:
+                            type: number
+                          cogs:
+                            type: number
+                          opex:
+                            type: number
+                          ebitda:
+                            type: number
+                          ebitda_margin_pct:
+                            type: number
+                          net_cash_flow:
+                            type: number
+                          break_even_revenue:
+                            type:
+                              - number
+                              - 'null'
+                          break_even_headroom_pct:
+                            type:
+                              - number
+                              - 'null'
+                        required:
+                          - revenue
+                          - cogs
+                          - opex
+                          - ebitda
+                          - ebitda_margin_pct
+                          - net_cash_flow
+                          - break_even_revenue
+                          - break_even_headroom_pct
+                      simulated:
+                        type: object
+                        properties:
+                          revenue:
+                            type: number
+                          cogs:
+                            type: number
+                          opex:
+                            type: number
+                          ebitda:
+                            type: number
+                          ebitda_margin_pct:
+                            type: number
+                          net_cash_flow:
+                            type: number
+                          break_even_revenue:
+                            type:
+                              - number
+                              - 'null'
+                          break_even_headroom_pct:
+                            type:
+                              - number
+                              - 'null'
+                        required:
+                          - revenue
+                          - cogs
+                          - opex
+                          - ebitda
+                          - ebitda_margin_pct
+                          - net_cash_flow
+                          - break_even_revenue
+                          - break_even_headroom_pct
+                      delta:
+                        type: object
+                        properties:
+                          revenue:
+                            type: number
+                          ebitda:
+                            type: number
+                          ebitda_margin_pct:
+                            type: number
+                          net_cash_flow:
+                            type: number
+                          break_even_revenue:
+                            type:
+                              - number
+                              - 'null'
+                        required:
+                          - revenue
+                          - ebitda
+                          - ebitda_margin_pct
+                          - net_cash_flow
+                          - break_even_revenue
+                    required:
+                      - currency
+                      - period
+                      - inputs
+                      - scenario
+                      - baseline
+                      - simulated
+                      - delta
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/analytics/dss/export-board-pack:
+    post:
+      operationId: analytics.dss.export-board-pack
+      tags:
+        - ExecutiveDss
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportBoardPackRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              required: true
+              schema:
+                type: string
+              example: 'attachment; filename=.xlsx'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/expenses/export:
     get:
       operationId: expenses.export
@@ -77934,6 +78970,910 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  /v1/hse/compliance-matrix:
+    get:
+      operationId: hse.compliance-matrix
+      tags:
+        - Hse
+      parameters:
+        -
+          name: page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 200
+        -
+          name: department_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: work_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: construction_site_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/TrafficLight'
+              -
+                type: 'null'
+        -
+          name: jurisdiction
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/Jurisdiction'
+              -
+                type: 'null'
+        -
+          name: as_of
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        employee_id:
+                          type: string
+                        employee_name:
+                          type: string
+                        department_id:
+                          type: string
+                        trainings:
+                          type: string
+                        medical:
+                          anyOf:
+                            -
+                              type: object
+                              properties:
+                                light:
+                                  type: string
+                                  enum:
+                                    - RED
+                                    - YELLOW
+                                    - GREEN
+                                fitness_outcome:
+                                  type: string
+                                  enum:
+                                    - fit_idoneo
+                                    - fit_with_prescriptions_idoneo_con_prescrizioni
+                                    - temporarily_unfit_inidoneo_temporaneo
+                                    - permanently_unfit_inidoneo_permanente
+                                restrictions_summary:
+                                  type:
+                                    - string
+                                    - 'null'
+                                next_visit_due_date:
+                                  type:
+                                    - string
+                                    - 'null'
+                              required:
+                                - light
+                                - fitness_outcome
+                                - restrictions_summary
+                                - next_visit_due_date
+                            -
+                              type: object
+                              properties:
+                                light:
+                                  type: string
+                                fitness_outcome:
+                                  type: 'null'
+                                restrictions_summary:
+                                  type: 'null'
+                                next_visit_due_date:
+                                  type: 'null'
+                              required:
+                                - light
+                                - fitness_outcome
+                                - restrictions_summary
+                                - next_visit_due_date
+                        ppe:
+                          type: string
+                        overall:
+                          type: string
+                          const: GREEN
+                        is_hard_blocked:
+                          type: boolean
+                      required:
+                        - employee_id
+                        - employee_name
+                        - department_id
+                        - trainings
+                        - medical
+                        - ppe
+                        - overall
+                        - is_hard_blocked
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        minimum: 0
+                      per_page: {}
+                      current_page: {}
+                      last_page: {}
+                      kpis:
+                        type: object
+                        properties:
+                          overall_compliance_percent:
+                            type: number
+                          hard_blocked_workers:
+                            type: integer
+                            minimum: 0
+                          expiring_in_30_days:
+                            type: integer
+                            minimum: 0
+                          open_near_miss_and_capas:
+                            type: integer
+                            minimum: 0
+                        required:
+                          - overall_compliance_percent
+                          - hard_blocked_workers
+                          - expiring_in_30_days
+                          - open_near_miss_and_capas
+                    required:
+                      - total
+                      - per_page
+                      - current_page
+                      - last_page
+                      - kpis
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/hse/clearance:
+    get:
+      operationId: hse.clearance
+      tags:
+        - Hse
+      parameters:
+        -
+          name: employee_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        -
+          name: target_context_type
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClearanceContext'
+        -
+          name: target_id
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 96
+        -
+          name: scheduled_date_time
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/hse/expirations:
+    get:
+      operationId: hse.expirations
+      tags:
+        - Hse
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      anyOf:
+                        -
+                          type: object
+                          properties:
+                            subject_type:
+                              type: string
+                              const: certificate
+                            subject_id:
+                              type: string
+                            employee_id:
+                              type: string
+                            label:
+                              type: string
+                            due_date:
+                              type:
+                                - string
+                                - 'null'
+                            days_left:
+                              type: integer
+                          required:
+                            - subject_type
+                            - subject_id
+                            - employee_id
+                            - label
+                            - due_date
+                            - days_left
+                        -
+                          type: object
+                          properties:
+                            subject_type:
+                              type: string
+                              const: medical_visit
+                            subject_id:
+                              type: string
+                            employee_id:
+                              type: string
+                            label:
+                              type: string
+                              const: medical_visit
+                            due_date:
+                              type:
+                                - string
+                                - 'null'
+                            days_left:
+                              type: integer
+                          required:
+                            - subject_type
+                            - subject_id
+                            - employee_id
+                            - label
+                            - due_date
+                            - days_left
+                        -
+                          type: object
+                          properties:
+                            subject_type:
+                              type: string
+                              const: ppe
+                            subject_id:
+                              type: string
+                            employee_id:
+                              type: string
+                            label:
+                              type: string
+                            due_date:
+                              type:
+                                - string
+                                - 'null'
+                            days_left:
+                              type: integer
+                          required:
+                            - subject_type
+                            - subject_id
+                            - employee_id
+                            - label
+                            - due_date
+                            - days_left
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/hse/requirement-matrices:
+    get:
+      operationId: hse.matrices.index
+      tags:
+        - Hse
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RequirementMatrixResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: hse.matrices.store
+      tags:
+        - Hse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveRequirementMatrixRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/hse/requirement-matrices/{id}':
+    put:
+      operationId: hse.matrices.update
+      tags:
+        - Hse
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type:
+              - string
+              - 'null'
+            default: null
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveRequirementMatrixRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/hse/certificates:
+    get:
+      operationId: hse.certificates.index
+      tags:
+        - Hse
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SafetyCertificateResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: hse.certificates.store
+      tags:
+        - Hse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterTrainingRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/hse/medical-visits:
+    get:
+      operationId: hse.medical-visits.index
+      tags:
+        - Hse
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MedicalVisitResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: hse.medical-visits.store
+      tags:
+        - Hse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordMedicalFitnessRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/hse/ppe-distributions:
+    get:
+      operationId: hse.ppe.index
+      tags:
+        - Hse
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PpeDistributionResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: hse.ppe.store
+      tags:
+        - Hse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignPpeRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/hse/ppe-distributions/{id}/verbale':
+    get:
+      operationId: hse.ppe.verbale
+      tags:
+        - Hse
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Transfer-Encoding:
+              required: true
+              schema:
+                type: string
+                enum:
+                  - chunked
+        '404':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: 'Not Found'
+                  status:
+                    type: integer
+                    const: 404
+                  detail:
+                    type: string
+                    const: 'No signed hand-over record for this PPE.'
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/hse/incidents:
+    get:
+      operationId: hse.incidents.index
+      tags:
+        - Hse
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IncidentReportResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: hse.incidents.store
+      tags:
+        - Hse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportIncidentRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/hse/incidents/{id}/claim-draft':
+    get:
+      operationId: hse.incidents.claim-draft
+      tags:
+        - Hse
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/hse/toolbox-talks:
+    post:
+      operationId: hse.toolbox-talks.store
+      tags:
+        - Hse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToolBoxTalkRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/hse/audits:
+    get:
+      operationId: hse.audits.index
+      tags:
+        - Hse
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      mssl_audits:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            audit_date:
+                              type: string
+                            score_percent:
+                              type: string
+                            status:
+                              type: string
+                            answers:
+                              type:
+                                - object
+                                - 'null'
+                              additionalProperties: {}
+                            corrective_actions:
+                              type: array
+                              items:
+                                type: object
+                                additionalProperties: {}
+                          required:
+                            - id
+                            - audit_date
+                            - score_percent
+                            - status
+                            - answers
+                            - corrective_actions
+                      dvr_revisions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            revision_number:
+                              type: integer
+                            issued_at:
+                              type: string
+                            review_due_at:
+                              type:
+                                - string
+                                - 'null'
+                            signatures:
+                              type: object
+                              additionalProperties: {}
+                            status:
+                              type: string
+                          required:
+                            - id
+                            - revision_number
+                            - issued_at
+                            - review_due_at
+                            - signatures
+                            - status
+                    required:
+                      - mssl_audits
+                      - dvr_revisions
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/hse/audits/mssl:
+    post:
+      operationId: hse.audits.mssl
+      tags:
+        - Hse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveSafetyAuditRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/hse/audits/dvr:
+    post:
+      operationId: hse.audits.dvr
+      tags:
+        - Hse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDvrRevisionRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/hse/medical-visits/{id}/clinical-notes':
+    get:
+      operationId: hse.medical-visits.clinical-notes
+      tags:
+        - Hse
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/esm/incidents:
     get:
       operationId: v1.esm.incidents.index
@@ -96856,6 +98796,207 @@ paths:
           $ref: '#/components/responses/AuthorizationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/inventory/warehouses/{id}/locations/bulk':
+    post:
+      operationId: inventory.warehouses.locations.bulk
+      tags:
+        - LocationTopology
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkGenerateLocationsRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created:
+                    type: integer
+                  data:
+                    type: array
+                    items: {}
+                required:
+                  - created
+                  - data
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/inventory/warehouses/{id}/tree':
+    get:
+      operationId: inventory.warehouses.tree
+      tags:
+        - LocationTopology
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: array
+                      items: {}
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/inventory/warehouses/{id}/capacity-summary':
+    get:
+      operationId: inventory.warehouses.capacity-summary
+      tags:
+        - LocationTopology
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: array
+                      items: {}
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/inventory/labels/locations:
+    post:
+      operationId: inventory.labels.locations
+      tags:
+        - LocationTopology
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationLabelsRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/pdf:
+              schema:
+                type: string
+            'text/plain; charset=UTF-8':
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/inventory/in-transit:
+    get:
+      operationId: inventory.in-transit
+      tags:
+        - LocationTopology
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        transfer_order_id:
+                          type: string
+                        transfer_number:
+                          type: string
+                        status:
+                          type: string
+                        source_warehouse_id:
+                          type: string
+                        destination_warehouse_id:
+                          type: string
+                        transit_bin_id:
+                          type: string
+                        line_id:
+                          type: string
+                        stock_item_id:
+                          type: string
+                        sku:
+                          type:
+                            - string
+                            - 'null'
+                        lot_id:
+                          type: string
+                        shipped_qty:
+                          type: string
+                        received_qty:
+                          type: string
+                        damaged_qty:
+                          type: string
+                        outstanding_qty:
+                          type: string
+                        shipped_at:
+                          type:
+                            - string
+                            - 'null'
+                      required:
+                        - transfer_order_id
+                        - transfer_number
+                        - status
+                        - source_warehouse_id
+                        - destination_warehouse_id
+                        - transit_bin_id
+                        - line_id
+                        - stock_item_id
+                        - sku
+                        - lot_id
+                        - shipped_qty
+                        - received_qty
+                        - damaged_qty
+                        - outstanding_qty
+                        - shipped_at
+                required:
+                  - data
         '401':
           $ref: '#/components/responses/AuthenticationException'
   /v1/hospitality/room-types:
@@ -139917,6 +142058,12 @@ paths:
                           type: string
                         bin_type:
                           type: string
+                        abc_class:
+                          type: string
+                        temperature_control:
+                          type: string
+                        packaging_unit:
+                          type: string
                         strategy:
                           type: string
                         priority:
@@ -139931,6 +142078,9 @@ paths:
                         - target_zone_id
                         - target_bin_id
                         - bin_type
+                        - abc_class
+                        - temperature_control
+                        - packaging_unit
                         - strategy
                         - priority
                         - is_active
@@ -139970,6 +142120,12 @@ paths:
                     type: string
                   bin_type:
                     type: string
+                  abc_class:
+                    type: string
+                  temperature_control:
+                    type: string
+                  packaging_unit:
+                    type: string
                   strategy:
                     type: string
                   priority:
@@ -139984,6 +142140,9 @@ paths:
                   - target_zone_id
                   - target_bin_id
                   - bin_type
+                  - abc_class
+                  - temperature_control
+                  - packaging_unit
                   - strategy
                   - priority
                   - is_active
@@ -140033,6 +142192,12 @@ paths:
                     type: string
                   bin_type:
                     type: string
+                  abc_class:
+                    type: string
+                  temperature_control:
+                    type: string
+                  packaging_unit:
+                    type: string
                   strategy:
                     type: string
                   priority:
@@ -140047,6 +142212,9 @@ paths:
                   - target_zone_id
                   - target_bin_id
                   - bin_type
+                  - abc_class
+                  - temperature_control
+                  - packaging_unit
                   - strategy
                   - priority
                   - is_active
@@ -211557,6 +213725,69 @@ components:
       required:
         - mrn
       title: AssignMrnRequest
+    AssignPpeRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        warehouse_id:
+          type: string
+          format: uuid
+        lot_or_serial_id:
+          type:
+            - string
+            - 'null'
+          maxLength: 96
+        quantity:
+          type: number
+        ce_marking_standard:
+          type:
+            - string
+            - 'null'
+          maxLength: 96
+        handed_over_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        replacement_due_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        signature_payload:
+          type: string
+          maxLength: 200000
+        signature_image:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000000
+        locale:
+          type:
+            - string
+            - 'null'
+          enum:
+            - it-CH
+            - de-CH
+            - fr-CH
+            - it-IT
+            - en
+            - it
+            - de
+            - fr
+            - null
+      required:
+        - employee_id
+        - product_id
+        - warehouse_id
+        - quantity
+        - signature_payload
+      title: AssignPpeRequest
     AssignRegistryTypeRequest:
       type: object
       properties:
@@ -214120,6 +216351,84 @@ components:
       required:
         - lines
       title: BulkActivityRecordRequest
+    BulkGenerateLocationsRequest:
+      type: object
+      description: |-
+        The layout of a zone to generate in one batch: how many aisles, racks, shelves and bins, and the limits and size every
+        generated bin gets.
+      properties:
+        zone_code:
+          type: string
+          maxLength: 50
+        zone_name:
+          type:
+            - string
+            - 'null'
+          maxLength: 100
+        zone_type:
+          type:
+            - string
+            - 'null'
+          enum:
+            - receiving
+            - storage
+            - picking
+            - packing
+            - shipping
+            - quarantine
+            - transit
+            - null
+        aisles:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        racks:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        shelves:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        bins:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        max_weight_kg:
+          type:
+            - number
+            - 'null'
+        max_volume_cbm:
+          type:
+            - number
+            - 'null'
+        max_quantity:
+          type:
+            - number
+            - 'null'
+        length_cm:
+          type:
+            - number
+            - 'null'
+        width_cm:
+          type:
+            - number
+            - 'null'
+        height_cm:
+          type:
+            - number
+            - 'null'
+        spacing:
+          type:
+            - number
+            - 'null'
+      required:
+        - zone_code
+        - aisles
+        - racks
+        - shelves
+        - bins
+      title: BulkGenerateLocationsRequest
     BulkPriceListItemsRequest:
       type: object
       properties:
@@ -215648,6 +217957,25 @@ components:
         - physician
         - notes
       title: CertificateResource
+    CertificateType:
+      type: string
+      description: |
+        The safety certificates and licenses an employee can hold, with the statutory refresher cycle of each.
+      enum:
+        - general_safety_accordo_stato_regioni
+        - low_risk_specific
+        - medium_risk_specific
+        - high_risk_specific
+        - forklift_patentino_muletto
+        - crane_operator_gru
+        - first_aid_primo_soccorso
+        - fire_safety_antincendio
+        - work_at_height_lavori_in_quota
+        - confined_spaces
+        - suva_psa_training
+        - rspp_asl_training
+        - sibe_ekas_training
+      title: CertificateType
     ChangeConversationStatusRequest:
       type: object
       description: 'The new status of a conversation.'
@@ -216387,6 +218715,15 @@ components:
       required:
         - status
       title: ClauseStatusRequest
+    ClearanceContext:
+      type: string
+      description: |
+        Where a worker is about to be dispatched: the production floor (Mod 064), an external service call (Mod 084) or a construction site (Mod 108).
+      enum:
+        - production_work_center
+        - external_field_service
+        - construction_site
+      title: ClearanceContext
     ClockInRequest:
       type: object
       properties:
@@ -226914,6 +229251,89 @@ components:
         - created_at
         - updated_at
       title: ExpenseResource
+    ExportBoardPackRequest:
+      type: object
+      description: 'Filter, file format and language of the board pack.'
+      properties:
+        legal_entity_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+          maxItems: 50
+        cost_center_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+          maxItems: 200
+        currency:
+          type:
+            - string
+            - 'null'
+          enum:
+            - CHF
+            - EUR
+            - null
+        period_preset:
+          type:
+            - string
+            - 'null'
+          enum:
+            - MTD
+            - QTD
+            - YTD
+            - L12M
+            - CUSTOM
+            - null
+        date_from:
+          type:
+            - string
+            - 'null'
+          format: date
+        date_to:
+          type:
+            - string
+            - 'null'
+          format: date
+        comparison_baseline:
+          type:
+            - string
+            - 'null'
+          enum:
+            - PRIOR_PERIOD
+            - PRIOR_YEAR
+            - BUDGET
+            - null
+        as_of:
+          type:
+            - string
+            - 'null'
+          format: date
+        format:
+          type:
+            - string
+            - 'null'
+          enum:
+            - pdf
+            - xlsx
+            - null
+        locale:
+          type:
+            - string
+            - 'null'
+          enum:
+            - it-CH
+            - de-CH
+            - fr-CH
+            - en
+            - it-IT
+            - null
+      title: ExportBoardPackRequest
     ExportJobResource:
       type: object
       properties:
@@ -227844,6 +230264,16 @@ components:
         - agm_approved_by
         - agm_resolution_reference
       title: FiscalYearResource
+    FitnessOutcome:
+      type: string
+      description: |
+        The judgment of the occupational physician (Giudizio di Idoneità / Arbeitsmedizinische Beurteilung). Only this judgment and its operational prescriptions are shared; diagnoses never are.
+      enum:
+        - fit_idoneo
+        - fit_with_prescriptions_idoneo_con_prescrizioni
+        - temporarily_unfit_inidoneo_temporaneo
+        - permanently_unfit_inidoneo_permanente
+      title: FitnessOutcome
     FixedAssetResource:
       type: object
       properties:
@@ -230190,6 +232620,8 @@ components:
             - customs
             - hr
             - payroll
+            - hse
+            - medico
             - secretary
             - childcare_manager
             - educator
@@ -230290,6 +232722,99 @@ components:
         - address
         - body
       title: InboundMessageRequest
+    IncidentReportResource:
+      type: object
+      properties:
+        id:
+          type: string
+        protocol_number:
+          type: string
+        jurisdiction:
+          type: string
+          enum:
+            - IT
+            - CH
+        incident_date:
+          type: string
+        reported_at:
+          type: string
+        location_or_site_id:
+          type:
+            - string
+            - 'null'
+        work_center_id:
+          type:
+            - string
+            - 'null'
+        incident_type:
+          type: string
+          enum:
+            - near_miss
+            - first_aid_injury
+            - lost_time_accident_inail_or_suva
+            - fatal_or_severe
+        involved_employee_ids:
+          type: array
+          items:
+            type: string
+        witness_employee_ids:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        immediate_actions_taken:
+          type:
+            - string
+            - 'null'
+        root_cause_analysis:
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+        corrective_actions:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        prognosis_days:
+          type: integer
+        injury_dynamics:
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
+        linked_insurance_claim_id:
+          type:
+            - string
+            - 'null'
+        status:
+          type: string
+          enum:
+            - draft
+            - under_investigation
+            - corrective_actions_open
+            - closed
+      required:
+        - id
+        - protocol_number
+        - jurisdiction
+        - incident_date
+        - reported_at
+        - location_or_site_id
+        - work_center_id
+        - incident_type
+        - involved_employee_ids
+        - witness_employee_ids
+        - description
+        - immediate_actions_taken
+        - root_cause_analysis
+        - corrective_actions
+        - prognosis_days
+        - injury_dynamics
+        - linked_insurance_claim_id
+        - status
+      title: IncidentReportResource
     IncidentRequest:
       type: object
       description: 'A traffic fine, accident or damage. The driver is attributed from the assignment on the day when it is left out.'
@@ -230429,6 +232954,14 @@ components:
         - created_at
         - updated_at
       title: IncidentResource
+    IncidentType:
+      type: string
+      enum:
+        - near_miss
+        - first_aid_injury
+        - lost_time_accident_inail_or_suva
+        - fatal_or_severe
+      title: IncidentType
     Incoterm:
       type: string
       description: |
@@ -232655,6 +235188,14 @@ components:
     JsonResource:
       type: string
       title: JsonResource
+    Jurisdiction:
+      type: string
+      description: |
+        The statutory regime a rule or a report belongs to: Italy (D.Lgs. 81/2008, INAIL) or Switzerland (UVG, OLL, SUVA).
+      enum:
+        - IT
+        - CH
+      title: Jurisdiction
     JurisdictionMode:
       type: string
       description: |
@@ -235412,6 +237953,31 @@ components:
         - overdue_alerted_at
         - notes
       title: LoanerResource
+    LocationLabelsRequest:
+      type: object
+      description: 'Bins to print labels for, the output format and the label size.'
+      properties:
+        bin_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+          maxItems: 500
+        format:
+          type: string
+          enum:
+            - pdf
+            - zpl
+        size:
+          type: string
+          enum:
+            - 100x50
+            - 50x25
+      required:
+        - bin_ids
+        - format
+      title: LocationLabelsRequest
     LogBillableActivityRequest:
       type: object
       properties:
@@ -236031,6 +238597,58 @@ components:
         - created_at
         - updated_at
       title: MaterialityAssessmentResource
+    MedicalVisitResource:
+      type: object
+      properties:
+        id:
+          type: string
+        employee_id:
+          type: string
+        doctor_name:
+          type: string
+        visit_type:
+          type: string
+          enum:
+            - preventive_hiring
+            - periodic
+            - return_from_long_sick_leave
+            - employee_request
+            - job_change
+        visit_date:
+          type: string
+        next_visit_due_date:
+          type:
+            - string
+            - 'null'
+        fitness_outcome:
+          type: string
+          enum:
+            - fit_idoneo
+            - fit_with_prescriptions_idoneo_con_prescrizioni
+            - temporarily_unfit_inidoneo_temporaneo
+            - permanently_unfit_inidoneo_permanente
+        restrictions_summary:
+          type:
+            - string
+            - 'null'
+        certificate_document_id:
+          type:
+            - string
+            - 'null'
+        has_clinical_notes:
+          type: boolean
+      required:
+        - id
+        - employee_id
+        - doctor_name
+        - visit_type
+        - visit_date
+        - next_visit_due_date
+        - fitness_outcome
+        - restrictions_summary
+        - certificate_document_id
+        - has_clinical_notes
+      title: MedicalVisitResource
     MeetingAttendanceRequest:
       type: object
       properties:
@@ -243806,6 +246424,60 @@ components:
             - 'null'
           format: date-time
       title: PostingDateRequest
+    PpeDistributionResource:
+      type: object
+      properties:
+        id:
+          type: string
+        employee_id:
+          type: string
+        product_id:
+          type: string
+        warehouse_id:
+          type: string
+        lot_or_serial_id:
+          type:
+            - string
+            - 'null'
+        quantity:
+          type: string
+        ce_marking_standard:
+          type:
+            - string
+            - 'null'
+        handed_over_at:
+          type: string
+        replacement_due_at:
+          type:
+            - string
+            - 'null'
+        employee_signature_hash:
+          type: string
+        verbale_consegna_pdf_id:
+          type:
+            - string
+            - 'null'
+        delivery_status:
+          type: string
+          enum:
+            - delivered_signed
+            - returned
+            - damaged_replaced
+            - expired
+      required:
+        - id
+        - employee_id
+        - product_id
+        - warehouse_id
+        - lot_or_serial_id
+        - quantity
+        - ce_marking_standard
+        - handed_over_at
+        - replacement_due_at
+        - employee_signature_hash
+        - verbale_consegna_pdf_id
+        - delivery_status
+      title: PpeDistributionResource
     PracticeResource:
       type: object
       additionalProperties: {}
@@ -246992,6 +249664,25 @@ components:
           type: integer
           minimum: 1
           maximum: 50
+        temperature_control:
+          type: string
+          enum:
+            - ambient
+            - chilled
+            - frozen
+            - hazmat
+        packaging_unit:
+          type: string
+          enum:
+            - pallet
+            - box
+            - unit
+        abc_class:
+          type: string
+          enum:
+            - A
+            - B
+            - C
       required:
         - source_bin_id
         - stock_item_id
@@ -247041,6 +249732,34 @@ components:
             - fixed_location
             - consolidate
             - empty_bin
+        abc_class:
+          type:
+            - string
+            - 'null'
+          enum:
+            - A
+            - B
+            - C
+            - null
+        temperature_control:
+          type:
+            - string
+            - 'null'
+          enum:
+            - ambient
+            - chilled
+            - frozen
+            - hazmat
+            - null
+        packaging_unit:
+          type:
+            - string
+            - 'null'
+          enum:
+            - pallet
+            - box
+            - unit
+            - null
         priority:
           type: integer
           minimum: 0
@@ -248414,6 +251133,54 @@ components:
         - document_number
         - taxable_amount
       title: RecordLex398EntryRequest
+    RecordMedicalFitnessRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        doctor_name:
+          type: string
+          maxLength: 160
+        doctor_registration_number:
+          type:
+            - string
+            - 'null'
+          maxLength: 64
+        visit_type:
+          $ref: '#/components/schemas/VisitType'
+        visit_date:
+          type: string
+          format: date-time
+        next_visit_due_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        fitness_outcome:
+          $ref: '#/components/schemas/FitnessOutcome'
+        restrictions_summary:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+        clinical_notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 20000
+        certificate_document_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - employee_id
+        - doctor_name
+        - visit_type
+        - visit_date
+        - fitness_outcome
+      title: RecordMedicalFitnessRequest
     RecordPaymentRequest:
       type: object
       properties:
@@ -249324,6 +252091,41 @@ components:
         - area_id
         - name
       title: RegisterDeviceRequest
+    RegisterDvrRevisionRequest:
+      type: object
+      properties:
+        issued_at:
+          type: string
+          format: date-time
+        review_due_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        document_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        signatures:
+          type:
+            - array
+            - 'null'
+          items:
+            type: object
+            properties:
+              signed_by:
+                type: string
+                maxLength: 160
+              signed_at:
+                type: string
+                format: date-time
+            required:
+              - signed_by
+              - signed_at
+      required:
+        - issued_at
+      title: RegisterDvrRevisionRequest
     RegisterRequest:
       type: object
       properties:
@@ -249375,6 +252177,51 @@ components:
         - tax_id
         - password_confirmation
       title: RegisterRequest
+    RegisterTrainingRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        certificate_type:
+          $ref: '#/components/schemas/CertificateType'
+        certificate_number:
+          type:
+            - string
+            - 'null'
+          maxLength: 96
+        training_provider_name:
+          type:
+            - string
+            - 'null'
+          maxLength: 160
+        hours_completed:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+          maximum: 9999
+        issued_at:
+          type: string
+          format: date-time
+        expires_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        specific_risk_class:
+          type:
+            - boolean
+            - 'null'
+        certificate_pdf_base64:
+          type:
+            - string
+            - 'null'
+      required:
+        - employee_id
+        - certificate_type
+        - issued_at
+      title: RegisterTrainingRequest
     RegistrationRequest:
       type: object
       description: 'A registration. Event and ticket type are fixed on creation; afterwards only the attendee data changes.'
@@ -249960,6 +252807,114 @@ components:
         - is_shared
         - is_owner
       title: ReportDefinitionResource
+    ReportIncidentRequest:
+      type: object
+      properties:
+        incident_type:
+          $ref: '#/components/schemas/IncidentType'
+        incident_date:
+          type: string
+          format: date-time
+        location_or_site_id:
+          type:
+            - string
+            - 'null'
+          maxLength: 96
+        work_center_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        involved_employee_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+        witness_employee_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+        description:
+          type: string
+          maxLength: 5000
+        immediate_actions_taken:
+          type:
+            - string
+            - 'null'
+          maxLength: 5000
+        prognosis_days:
+          type:
+            - integer
+            - 'null'
+          minimum: 0
+          maximum: 3650
+        injury_dynamics:
+          type:
+            - object
+            - 'null'
+          properties:
+            activityAtTimeOfAccident:
+              type: string
+              maxLength: 255
+            deviatingEvent:
+              type: string
+              maxLength: 32
+            materialAgent:
+              type: string
+              maxLength: 32
+            injuredBodyPartCode:
+              type: string
+              maxLength: 32
+            lesionNatureCode:
+              type: string
+              maxLength: 32
+        root_cause_analysis:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+        corrective_actions:
+          type:
+            - array
+            - 'null'
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+                maxLength: 1000
+              assignee_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              due_date:
+                type:
+                  - string
+                  - 'null'
+                format: date-time
+              verification_status:
+                type:
+                  - string
+                  - 'null'
+                enum:
+                  - open
+                  - done
+                  - verified
+                  - null
+            required:
+              - description
+      required:
+        - incident_type
+        - incident_date
+        - description
+      title: ReportIncidentRequest
     ReportingClass:
       type: string
       description: |
@@ -250161,6 +253116,78 @@ components:
       required:
         - message
       title: RequestQuoteChangesRequest
+    RequirementMatrixResource:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        jurisdiction:
+          type: string
+          enum:
+            - IT
+            - CH
+        job_position_id:
+          type:
+            - string
+            - 'null'
+        work_center_id:
+          type:
+            - string
+            - 'null'
+        construction_site_id:
+          type:
+            - string
+            - 'null'
+        suva_hazard_class:
+          type:
+            - string
+            - 'null'
+        dvr_risk_profile_code:
+          type:
+            - string
+            - 'null'
+        required_training_types:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              validity_months:
+                type:
+                  - integer
+                  - 'null'
+            required:
+              - type
+        required_medical_exam_codes:
+          type: array
+          items:
+            type: string
+        required_ppe_product_ids:
+          type: array
+          items:
+            type: string
+        is_active:
+          type: boolean
+        version:
+          type: integer
+      required:
+        - id
+        - name
+        - jurisdiction
+        - job_position_id
+        - work_center_id
+        - construction_site_id
+        - suva_hazard_class
+        - dvr_risk_profile_code
+        - required_training_types
+        - required_medical_exam_codes
+        - required_ppe_product_ids
+        - is_active
+        - version
+      title: RequirementMatrixResource
     RescheduleRequest:
       type: object
       description: 'Validation of new planned dates of a production order.'
@@ -253091,6 +256118,68 @@ components:
       required:
         - bank_statement_id
       title: RunReconciliationRequest
+    SafetyCertificateResource:
+      type: object
+      properties:
+        id:
+          type: string
+        employee_id:
+          type: string
+        certificate_type:
+          type: string
+          enum:
+            - general_safety_accordo_stato_regioni
+            - low_risk_specific
+            - medium_risk_specific
+            - high_risk_specific
+            - forklift_patentino_muletto
+            - crane_operator_gru
+            - first_aid_primo_soccorso
+            - fire_safety_antincendio
+            - work_at_height_lavori_in_quota
+            - confined_spaces
+            - suva_psa_training
+            - rspp_asl_training
+            - sibe_ekas_training
+        certificate_number:
+          type:
+            - string
+            - 'null'
+        training_provider_name:
+          type:
+            - string
+            - 'null'
+        hours_completed:
+          type: string
+        issued_at:
+          type: string
+        expires_at:
+          type:
+            - string
+            - 'null'
+        document_id:
+          type:
+            - string
+            - 'null'
+        status:
+          type: string
+          enum:
+            - valid
+            - expiring_soon
+            - expired
+            - revoked
+      required:
+        - id
+        - employee_id
+        - certificate_type
+        - certificate_number
+        - training_provider_name
+        - hours_completed
+        - issued_at
+        - expires_at
+        - document_id
+        - status
+      title: SafetyCertificateResource
     SafetyDataSheet:
       type: array
       items:
@@ -254787,6 +257876,8 @@ components:
             - customs
             - hr
             - payroll
+            - hse
+            - medico
             - secretary
             - childcare_manager
             - educator
@@ -255445,6 +258536,10 @@ components:
               - digital_preservation
               - forecasting
               - ocr_inbox
+              - bi_dss
+              - bi_dss_simulate
+              - bi_dss_export
+              - bi_dss_admin
               - ocr_capture
               - kpi_dashboards
               - kpi_dashboards_admin
@@ -255456,6 +258551,9 @@ components:
               - sovereignty_attestation
               - swiss_fiscal
               - ocr_settings
+              - hse
+              - hse_medical
+              - hse_clinical
               - ai_copilot
               - ai_review
               - ai_admin
@@ -256615,6 +259713,8 @@ components:
             - customs
             - hr
             - payroll
+            - hse
+            - medico
             - secretary
             - childcare_manager
             - educator
@@ -258399,6 +261499,83 @@ components:
         - kpis
         - period_preset
       title: SaveReportDefinitionRequest
+    SaveRequirementMatrixRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 160
+        jurisdiction:
+          $ref: '#/components/schemas/Jurisdiction'
+        job_position_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        work_center_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        construction_site_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        suva_hazard_class:
+          type:
+            - string
+            - 'null'
+          maxLength: 16
+        dvr_risk_profile_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 48
+        required_training_types:
+          type:
+            - array
+            - 'null'
+          items:
+            type: object
+            properties:
+              type:
+                $ref: '#/components/schemas/CertificateType'
+              validity_months:
+                type:
+                  - integer
+                  - 'null'
+                minimum: 1
+                maximum: 600
+            required:
+              - type
+        required_medical_exam_codes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            maxLength: 48
+        required_ppe_product_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+        is_active:
+          type:
+            - boolean
+            - 'null'
+        expected_version:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+      required:
+        - name
+        - jurisdiction
+      title: SaveRequirementMatrixRequest
     SaveResidencyPolicyRequest:
       type: object
       properties:
@@ -258556,6 +261733,53 @@ components:
         - name
         - actions
       title: SaveRoutingRuleRequest
+    SaveSafetyAuditRequest:
+      type: object
+      properties:
+        audit_date:
+          type: string
+          format: date-time
+        answers:
+          type: array
+          items:
+            type: string
+            enum:
+              - 'yes'
+              - partial
+              - 'no'
+          minItems: 10
+          maxItems: 10
+        corrective_actions:
+          type:
+            - array
+            - 'null'
+          items:
+            type: object
+            properties:
+              point:
+                type: integer
+                minimum: 1
+                maximum: 10
+              description:
+                type: string
+                maxLength: 1000
+              assignee_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              due_date:
+                type:
+                  - string
+                  - 'null'
+                format: date-time
+            required:
+              - point
+              - description
+      required:
+        - audit_date
+        - answers
+      title: SaveSafetyAuditRequest
     SaveSalaryComponentRequest:
       type: object
       description: 'A salary component of the active contract: the payroll wage type code it is paid with and the amount.'
@@ -259465,6 +262689,8 @@ components:
             - customs
             - hr
             - payroll
+            - hse
+            - medico
             - secretary
             - childcare_manager
             - educator
@@ -262709,6 +265935,111 @@ components:
         - mode
         - value
       title: SimulateQuoteRequest
+    SimulateScenarioRequest:
+      type: object
+      description: 'Filter and sensitivity sliders of the what-if simulation (percentages are whole numbers).'
+      properties:
+        legal_entity_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+          maxItems: 50
+        cost_center_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+          maxItems: 200
+        currency:
+          type:
+            - string
+            - 'null'
+          enum:
+            - CHF
+            - EUR
+            - null
+        period_preset:
+          type:
+            - string
+            - 'null'
+          enum:
+            - MTD
+            - QTD
+            - YTD
+            - L12M
+            - CUSTOM
+            - null
+        date_from:
+          type:
+            - string
+            - 'null'
+          format: date
+        date_to:
+          type:
+            - string
+            - 'null'
+          format: date
+        comparison_baseline:
+          type:
+            - string
+            - 'null'
+          enum:
+            - PRIOR_PERIOD
+            - PRIOR_YEAR
+            - BUDGET
+            - null
+        as_of:
+          type:
+            - string
+            - 'null'
+          format: date
+        scenario:
+          type: object
+          properties:
+            price_pct:
+              type:
+                - number
+                - 'null'
+              minimum: -100
+              maximum: 500
+            cogs_pct:
+              type:
+                - number
+                - 'null'
+              minimum: -100
+              maximum: 500
+            opex_pct:
+              type:
+                - number
+                - 'null'
+              minimum: -100
+              maximum: 500
+            dso_days_delta:
+              type:
+                - number
+                - 'null'
+              minimum: -365
+              maximum: 365
+            fx_shift_pct:
+              type:
+                - number
+                - 'null'
+              minimum: -50
+              maximum: 50
+            fte_delta:
+              type:
+                - number
+                - 'null'
+              minimum: -1000
+              maximum: 1000
+      required:
+        - scenario
+      title: SimulateScenarioRequest
     SimulateSdiNotificationRequest:
       type: object
       properties:
@@ -274759,6 +278090,43 @@ components:
             - quarantine
             - transit
             - null
+        shelf_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+        coord_x:
+          type:
+            - number
+            - 'null'
+        coord_y:
+          type:
+            - number
+            - 'null'
+        coord_z:
+          type:
+            - number
+            - 'null'
+        length_cm:
+          type:
+            - number
+            - 'null'
+        width_cm:
+          type:
+            - number
+            - 'null'
+        height_cm:
+          type:
+            - number
+            - 'null'
+        allow_mixed_skus:
+          type:
+            - boolean
+            - 'null'
+        allow_mixed_lots:
+          type:
+            - boolean
+            - 'null'
       required:
         - zone_code
         - aisle_code
@@ -278599,6 +281967,67 @@ components:
         - rear_right_tread_mm
         - warehouse_shelf_location
       title: TireHotelCheckInRequest
+    ToolBoxTalkRequest:
+      type: object
+      properties:
+        talk_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        topic:
+          type: string
+          maxLength: 200
+        site_or_work_center:
+          type:
+            - string
+            - 'null'
+          maxLength: 160
+        checklist_points:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            maxLength: 300
+        supervisor_employee_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        conducted_at:
+          type: string
+          format: date-time
+        attendances:
+          type: array
+          items:
+            type: object
+            properties:
+              employee_id:
+                type: string
+                format: uuid
+              signature_payload:
+                type: string
+                maxLength: 200000
+              signature_image:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 2000000
+              signed_at:
+                type: string
+                format: date-time
+            required:
+              - employee_id
+              - signature_payload
+              - signed_at
+          minItems: 1
+          maxItems: 500
+      required:
+        - topic
+        - conducted_at
+        - attendances
+      title: ToolBoxTalkRequest
     TrackingEventRequest:
       type: object
       description: 'Payload to create or change a tracking event.'
@@ -278680,6 +282109,13 @@ components:
         - is_generic
       additionalProperties: {}
       title: TradesResource
+    TrafficLight:
+      type: string
+      enum:
+        - GREEN
+        - YELLOW
+        - RED
+      title: TrafficLight
     TrainPaymentModelsRequest:
       type: object
       properties:
@@ -282521,6 +285957,8 @@ components:
                   - customs
                   - hr
                   - payroll
+                  - hse
+                  - medico
                   - secretary
                   - childcare_manager
                   - educator
@@ -283313,6 +286751,39 @@ components:
             - integer
             - 'null'
           minimum: 0
+        block_reason:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        coord_x:
+          type:
+            - number
+            - 'null'
+        coord_y:
+          type:
+            - number
+            - 'null'
+        coord_z:
+          type:
+            - number
+            - 'null'
+        length_cm:
+          type:
+            - number
+            - 'null'
+        width_cm:
+          type:
+            - number
+            - 'null'
+        height_cm:
+          type:
+            - number
+            - 'null'
+        allow_mixed_skus:
+          type: boolean
+        allow_mixed_lots:
+          type: boolean
       title: UpdateWarehouseBinRequest
     UpdateWarehouseRequest:
       type: object
@@ -283721,6 +287192,8 @@ components:
               - customs
               - hr
               - payroll
+              - hse
+              - medico
               - secretary
               - childcare_manager
               - educator
@@ -283746,6 +287219,8 @@ components:
             - customs
             - hr
             - payroll
+            - hse
+            - medico
             - secretary
             - childcare_manager
             - educator
@@ -283883,6 +287358,8 @@ components:
               - customs
               - hr
               - payroll
+              - hse
+              - medico
               - secretary
               - childcare_manager
               - educator
@@ -283908,6 +287385,8 @@ components:
             - customs
             - hr
             - payroll
+            - hse
+            - medico
             - secretary
             - childcare_manager
             - educator
@@ -285141,6 +288620,15 @@ components:
         - kiosk_id
         - host_notified_at
       title: VisitResource
+    VisitType:
+      type: string
+      enum:
+        - preventive_hiring
+        - periodic
+        - return_from_long_sick_leave
+        - employee_request
+        - job_change
+      title: VisitType
     VisitorRequest:
       type: object
       description: 'Personal data of a visitor, on creation (POST) or change (PUT).'
@@ -287872,6 +291360,9 @@ tags:
     name: Dsar
     description: 'Operations of the Dsar module.'
   -
+    name: DssAdmin
+    description: 'Operations of the DssAdmin module.'
+  -
     name: Dunning
     description: 'Operations of the Dunning module.'
   -
@@ -287934,6 +291425,9 @@ tags:
   -
     name: Event
     description: 'Operations of the Event module.'
+  -
+    name: ExecutiveDss
+    description: 'Operations of the ExecutiveDss module.'
   -
     name: Expense
     description: 'Operations of the Expense module.'
@@ -288069,6 +291563,9 @@ tags:
   -
     name: HrAnalytics
     description: 'Operations of the HrAnalytics module.'
+  -
+    name: Hse
+    description: 'Operations of the Hse module.'
   -
     name: ITSM
     description: 'Operations of the ITSM module.'
@@ -288291,6 +291788,9 @@ tags:
   -
     name: LocalizationPack
     description: 'Operations of the LocalizationPack module.'
+  -
+    name: LocationTopology
+    description: 'Operations of the LocationTopology module.'
   -
     name: LodgingCatalog
     description: 'Operations of the LodgingCatalog module.'

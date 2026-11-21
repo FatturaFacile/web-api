@@ -17549,6 +17549,671 @@
                     }
                 },
                 {
+                    "name": "GET /v1/analytics/dss/legal-entities",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/legal-entities",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "legal-entities"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/analytics/dss/admin/reconciliation",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/admin/reconciliation",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "admin",
+                                "reconciliation"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/analytics/dss/admin/consolidate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/admin/consolidate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "admin",
+                                "consolidate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/analytics/dss/overview",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/overview",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "overview"
+                            ],
+                            "query": [
+                                {
+                                    "key": "legal_entity_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "period_preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison_baseline",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "as_of",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/analytics/dss/profitability-matrix",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/profitability-matrix",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "profitability-matrix"
+                            ],
+                            "query": [
+                                {
+                                    "key": "legal_entity_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "period_preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison_baseline",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "as_of",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "dimension",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/analytics/dss/variance-bridge",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/variance-bridge",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "variance-bridge"
+                            ],
+                            "query": [
+                                {
+                                    "key": "legal_entity_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "period_preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison_baseline",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "as_of",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/analytics/dss/drill-down",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/drill-down?metric=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "drill-down"
+                            ],
+                            "query": [
+                                {
+                                    "key": "legal_entity_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "period_preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison_baseline",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "as_of",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "metric",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "entity_type",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "entity_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/analytics/dss/simulate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/simulate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "simulate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"cost_center_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"currency\": \"CHF\",\n    \"period_preset\": \"MTD\",\n    \"date_from\": \"2026-01-31\",\n    \"date_to\": \"2026-01-31\",\n    \"comparison_baseline\": \"PRIOR_PERIOD\",\n    \"as_of\": \"2026-01-31\",\n    \"scenario\": {\n        \"price_pct\": 1.5,\n        \"cogs_pct\": 1.5,\n        \"opex_pct\": 1.5,\n        \"dso_days_delta\": 1.5,\n        \"fx_shift_pct\": 1.5,\n        \"fte_delta\": 1.5\n    }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/analytics/dss/export-board-pack",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/export-board-pack",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "export-board-pack"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"cost_center_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"currency\": \"CHF\",\n    \"period_preset\": \"MTD\",\n    \"date_from\": \"2026-01-31\",\n    \"date_to\": \"2026-01-31\",\n    \"comparison_baseline\": \"PRIOR_PERIOD\",\n    \"as_of\": \"2026-01-31\",\n    \"format\": \"pdf\",\n    \"locale\": \"it-CH\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "List scheduled exports",
                     "request": {
                         "method": "GET",
@@ -137367,6 +138032,1153 @@
             ]
         },
         {
+            "name": "Hse",
+            "item": [
+                {
+                    "name": "GET /v1/hse/compliance-matrix",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/compliance-matrix",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "compliance-matrix"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "department_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "work_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "construction_site_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "jurisdiction",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "as_of",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/clearance",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/clearance?employee_id=&target_context_type=&target_id=&scheduled_date_time=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "clearance"
+                            ],
+                            "query": [
+                                {
+                                    "key": "employee_id",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "target_context_type",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "target_id",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "scheduled_date_time",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/expirations",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/expirations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "expirations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/requirement-matrices",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/requirement-matrices",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "requirement-matrices"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/hse/requirement-matrices",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/requirement-matrices",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "requirement-matrices"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"string\",\n    \"jurisdiction\": \"IT\",\n    \"job_position_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"work_center_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"construction_site_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"suva_hazard_class\": \"string\",\n    \"dvr_risk_profile_code\": \"string\",\n    \"required_training_types\": [\n        {\n            \"type\": \"general_safety_accordo_stato_regioni\",\n            \"validity_months\": 1\n        }\n    ],\n    \"required_medical_exam_codes\": [\n        \"string\"\n    ],\n    \"required_ppe_product_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"is_active\": false,\n    \"expected_version\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/hse/requirement-matrices/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/requirement-matrices/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "requirement-matrices",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"string\",\n    \"jurisdiction\": \"IT\",\n    \"job_position_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"work_center_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"construction_site_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"suva_hazard_class\": \"string\",\n    \"dvr_risk_profile_code\": \"string\",\n    \"required_training_types\": [\n        {\n            \"type\": \"general_safety_accordo_stato_regioni\",\n            \"validity_months\": 1\n        }\n    ],\n    \"required_medical_exam_codes\": [\n        \"string\"\n    ],\n    \"required_ppe_product_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"is_active\": false,\n    \"expected_version\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/certificates",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/certificates",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "certificates"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/hse/certificates",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/certificates",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "certificates"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"certificate_type\": \"general_safety_accordo_stato_regioni\",\n    \"certificate_number\": \"string\",\n    \"training_provider_name\": \"string\",\n    \"hours_completed\": 1.5,\n    \"issued_at\": \"2026-01-31T12:00:00+00:00\",\n    \"expires_at\": \"2026-01-31T12:00:00+00:00\",\n    \"specific_risk_class\": false,\n    \"certificate_pdf_base64\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/medical-visits",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/medical-visits",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "medical-visits"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/hse/medical-visits",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/medical-visits",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "medical-visits"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"doctor_name\": \"string\",\n    \"doctor_registration_number\": \"string\",\n    \"visit_type\": \"preventive_hiring\",\n    \"visit_date\": \"2026-01-31T12:00:00+00:00\",\n    \"next_visit_due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"fitness_outcome\": \"fit_idoneo\",\n    \"restrictions_summary\": \"string\",\n    \"clinical_notes\": \"string\",\n    \"certificate_document_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/ppe-distributions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/ppe-distributions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "ppe-distributions"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/hse/ppe-distributions",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/ppe-distributions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "ppe-distributions"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_or_serial_id\": \"string\",\n    \"quantity\": 1.5,\n    \"ce_marking_standard\": \"string\",\n    \"handed_over_at\": \"2026-01-31T12:00:00+00:00\",\n    \"replacement_due_at\": \"2026-01-31T12:00:00+00:00\",\n    \"signature_payload\": \"string\",\n    \"signature_image\": \"string\",\n    \"locale\": \"it-CH\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/ppe-distributions/:id/verbale",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/ppe-distributions/:id/verbale",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "ppe-distributions",
+                                ":id",
+                                "verbale"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/incidents",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/incidents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "incidents"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/hse/incidents",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/incidents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "incidents"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"incident_type\": \"near_miss\",\n    \"incident_date\": \"2026-01-31T12:00:00+00:00\",\n    \"location_or_site_id\": \"string\",\n    \"work_center_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"involved_employee_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"witness_employee_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"description\": \"string\",\n    \"immediate_actions_taken\": \"string\",\n    \"prognosis_days\": 1,\n    \"injury_dynamics\": {\n        \"activityAtTimeOfAccident\": \"string\",\n        \"deviatingEvent\": \"string\",\n        \"materialAgent\": \"string\",\n        \"injuredBodyPartCode\": \"string\",\n        \"lesionNatureCode\": \"string\"\n    },\n    \"root_cause_analysis\": [\n        \"string\"\n    ],\n    \"corrective_actions\": [\n        {\n            \"description\": \"string\",\n            \"assignee_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"due_date\": \"2026-01-31T12:00:00+00:00\",\n            \"verification_status\": \"open\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/incidents/:id/claim-draft",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/incidents/:id/claim-draft",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "incidents",
+                                ":id",
+                                "claim-draft"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/hse/toolbox-talks",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/toolbox-talks",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "toolbox-talks"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"talk_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"topic\": \"string\",\n    \"site_or_work_center\": \"string\",\n    \"checklist_points\": [\n        \"string\"\n    ],\n    \"supervisor_employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"conducted_at\": \"2026-01-31T12:00:00+00:00\",\n    \"attendances\": [\n        {\n            \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"signature_payload\": \"string\",\n            \"signature_image\": \"string\",\n            \"signed_at\": \"2026-01-31T12:00:00+00:00\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/audits",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/audits",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "audits"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/hse/audits/mssl",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/audits/mssl",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "audits",
+                                "mssl"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"audit_date\": \"2026-01-31T12:00:00+00:00\",\n    \"answers\": [\n        \"yes\"\n    ],\n    \"corrective_actions\": [\n        {\n            \"point\": 1,\n            \"description\": \"string\",\n            \"assignee_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"due_date\": \"2026-01-31T12:00:00+00:00\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/hse/audits/dvr",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/audits/dvr",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "audits",
+                                "dvr"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"issued_at\": \"2026-01-31T12:00:00+00:00\",\n    \"review_due_at\": \"2026-01-31T12:00:00+00:00\",\n    \"document_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"signatures\": [\n        {\n            \"signed_by\": \"string\",\n            \"signed_at\": \"2026-01-31T12:00:00+00:00\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/medical-visits/:id/clinical-notes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/medical-visits/:id/clinical-notes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "medical-visits",
+                                ":id",
+                                "clinical-notes"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "Integrations",
             "item": [
                 {
@@ -141723,6 +143535,276 @@
                     }
                 },
                 {
+                    "name": "POST /v1/inventory/warehouses/:id/locations/bulk",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/locations/bulk",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "locations",
+                                "bulk"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisles\": 1,\n    \"racks\": 1,\n    \"shelves\": 1,\n    \"bins\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"spacing\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/warehouses/:id/tree",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/tree",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "tree"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/warehouses/:id/capacity-summary",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/capacity-summary",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "capacity-summary"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/inventory/labels/locations",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/labels/locations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "labels",
+                                "locations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"bin_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"format\": \"pdf\",\n    \"size\": \"100x50\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/in-transit",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/in-transit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "in-transit"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "POST /v1/inventory/sales-orders/:id/reserve",
                     "request": {
                         "method": "POST",
@@ -142910,7 +144992,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"abc_class\": \"A\",\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -142976,7 +145058,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"abc_class\": \"A\",\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -143089,7 +145171,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1,\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"abc_class\": \"A\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -143148,7 +145230,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1,\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"abc_class\": \"A\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -147841,7 +149923,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisle_code\": \"string\",\n    \"rack_code\": \"string\",\n    \"bin_code\": \"string\",\n    \"barcode\": \"string\",\n    \"pick_sequence\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"bin_type\": \"storage\"\n}",
+                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisle_code\": \"string\",\n    \"rack_code\": \"string\",\n    \"bin_code\": \"string\",\n    \"barcode\": \"string\",\n    \"pick_sequence\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"bin_type\": \"storage\",\n    \"shelf_code\": \"string\",\n    \"coord_x\": 1.5,\n    \"coord_y\": 1.5,\n    \"coord_z\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"allow_mixed_skus\": false,\n    \"allow_mixed_lots\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -148073,7 +150155,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"bin_type\": \"storage\",\n    \"max_quantity\": 1.5,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"is_locked\": false,\n    \"pick_sequence\": 1\n}",
+                            "raw": "{\n    \"bin_type\": \"storage\",\n    \"max_quantity\": 1.5,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"is_locked\": false,\n    \"pick_sequence\": 1,\n    \"block_reason\": \"string\",\n    \"coord_x\": 1.5,\n    \"coord_y\": 1.5,\n    \"coord_z\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"allow_mixed_skus\": false,\n    \"allow_mixed_lots\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
