@@ -270,9 +270,9 @@ it('drills a revenue month down to the journal entries behind it', function (): 
 it('drills an aging bucket down to the open invoices and paginates', function (): void {
     $tenant = kpiTenant();
     $customer = kpiContact($tenant);
-    $late = kpiInvoice($tenant, $customer, '2026-05-01', 20000, ['total_tax' => 0, 'due_date' => '2026-06-15']);
-    kpiInvoice($tenant, $customer, '2026-01-10', 4000, ['total_tax' => 0, 'due_date' => '2026-01-20']);
-    kpiInvoice($tenant, $customer, '2026-02-01', 60000, ['total_tax' => 0, 'due_date' => '2026-02-15', 'payment_status' => 'paid', 'total_paid' => 60000]);
+    $late = kpiDashInvoice($tenant, $customer, '2026-05-01', 20000, ['total_tax' => 0, 'due_date' => '2026-06-15']);
+    kpiDashInvoice($tenant, $customer, '2026-01-10', 4000, ['total_tax' => 0, 'due_date' => '2026-01-20']);
+    kpiDashInvoice($tenant, $customer, '2026-02-01', 60000, ['total_tax' => 0, 'due_date' => '2026-02-15', 'payment_status' => 'paid', 'total_paid' => 60000]);
     kpiActAs($tenant, 'accountant');
     $base = ['preset' => 'custom', 'from' => '2026-01-01', 'to' => '2026-06-30'];
 
@@ -310,7 +310,7 @@ it('drills the payables side and the pipeline stages', function (): void {
 it('exports a drill-down as CSV without formula injection', function (): void {
     $tenant = kpiTenant();
     $customer = kpiContact($tenant);
-    kpiInvoice($tenant, $customer, '2026-05-01', 20000, ['total_tax' => 0, 'due_date' => '2026-06-15', 'invoice_number' => '=HYPERLINK("http://evil")']);
+    kpiDashInvoice($tenant, $customer, '2026-05-01', 20000, ['total_tax' => 0, 'due_date' => '2026-06-15', 'invoice_number' => '=HYPERLINK("http://evil")']);
     kpiActAs($tenant, 'accountant');
 
     $response = $this->get('/api/v1/kpi-dashboards/drill-down/dso?'.http_build_query(['preset' => 'custom', 'from' => '2026-01-01', 'to' => '2026-06-30', 'export' => 'csv']), ['Accept' => 'text/csv'])->assertOk();
