@@ -12,7 +12,9 @@ use App\Services\Tenancy\TenantContext;
 use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\PersonalAccessToken;
 use Modules\Platform\Identity\Application\EffectivePermissionResolver;
+use Modules\Platform\Identity\Application\ImpersonationService;
 use Modules\Platform\Identity\Application\PermissionRegistry;
 use Modules\Platform\Identity\Application\RoleService;
 use Modules\Platform\Identity\Domain\Exceptions\PrivilegeEscalationException;
@@ -163,7 +165,27 @@ final class IdentityRoleController extends Controller
             'permissions' => $snapshot['permissions'],
             'field_policies' => $snapshot['field_policies'],
             'company_id' => $company,
+            'impersonation' => $this->impersonation($user),
         ]);
+    }
+
+    /**
+     * @return array{active: bool, actor_id: ?string, expires_at: ?string}
+     */
+    private function impersonation(User $user): array
+    {
+        $token = $user->currentAccessToken();
+        $name = $token instanceof PersonalAccessToken && is_string($token->name) ? $token->name : '';
+
+        if (! str_starts_with($name, ImpersonationService::TOKEN_PREFIX)) {
+            return ['active' => false, 'actor_id' => null, 'expires_at' => null];
+        }
+
+        return [
+            'active' => true,
+            'actor_id' => substr($name, strlen(ImpersonationService::TOKEN_PREFIX)),
+            'expires_at' => $token->expires_at?->toIso8601String(),
+        ];
     }
 
     private function tenantId(): string
