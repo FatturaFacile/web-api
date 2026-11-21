@@ -11,6 +11,8 @@ use Modules\Manufacturing\Http\Controllers\ItemController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingCockpitController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingKpiController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingSettingsController;
+use Modules\Manufacturing\Http\Controllers\MesFeedbackController;
+use Modules\Manufacturing\Http\Controllers\MesSyncController;
 use Modules\Manufacturing\Http\Controllers\MrpController;
 use Modules\Manufacturing\Http\Controllers\ProductionExecutionController;
 use Modules\Manufacturing\Http\Controllers\ProductionOrderController;
@@ -19,6 +21,7 @@ use Modules\Manufacturing\Http\Controllers\RoutingController;
 use Modules\Manufacturing\Http\Controllers\ShopFloorController;
 use Modules\Manufacturing\Http\Controllers\SubcontractController;
 use Modules\Manufacturing\Http\Controllers\WorkCenterController;
+use Modules\Manufacturing\Http\Middleware\VerifyMesSignature;
 
 /*
 | Manufacturing. module.access:manufacturing lets every member read (GET) and only the roles with write access of
@@ -143,4 +146,15 @@ Route::prefix('api/v1/manufacturing')->middleware(['api', 'auth:sanctum', 'tenan
 // Edge gateways authenticate with the HMAC-SHA256 signature of the body, which also selects the tenant.
 Route::prefix('api/v1/manufacturing/edge')->middleware(['api', 'throttle:600,1'])->group(function (): void {
     Route::post('/telemetry', [EdgeTelemetryController::class, 'ingest'])->name('mfg.edge.telemetry');
+});
+
+/*
+| MES Core integration (issue #184). The MES Core is a service, not a user: these routes have no Sanctum session and no
+| `tenant` group. VerifyMesSignature authenticates the HMAC signature, binds the request to a tenant the signing key may
+| address and sets the tenant context. Inbound events are deduplicated by the inbox and the snapshot revision.
+*/
+Route::prefix('api/v1/manufacturing')->middleware(['api', VerifyMesSignature::class])->group(function (): void {
+    Route::get('/mes-sync/{resource}', [MesSyncController::class, 'index'])->where('resource', 'machines|work-orders|shift-calendars|reason-codes')->name('mfg.mes_sync.index');
+    Route::get('/mes-sync/{resource}/manifest', [MesSyncController::class, 'manifest'])->where('resource', 'machines|work-orders|shift-calendars|reason-codes')->name('mfg.mes_sync.manifest');
+    Route::post('/mes-feedback/events', [MesFeedbackController::class, 'store'])->name('mfg.mes_feedback.events');
 });

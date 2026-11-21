@@ -18,6 +18,7 @@ final class ManufacturingReferenceSeeder extends Seeder
             RoutingSeeder::class,
             QualityPlanSeeder::class,
             MRPPolicySeeder::class,
+            MesReasonCodeSeeder::class,
         ]);
     }
 }
