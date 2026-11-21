@@ -277,6 +277,9 @@ function mrpFeatureCapacitySetUp(object $test): array
     $b = mrpFeatureItem($test, 'CAP-B', 'finished_good', ['lead_time_days' => 0, 'procurement_type' => 'make']);
     mrpFeatureRouting($test, $a, $wc1, '0', '4');
     mrpFeatureRouting($test, $b, $wc1, '0', '4');
+    // A production order needs a released BOM, so both goods consume the raw material.
+    mrpFeatureBom($test, $a, $test->rm, '1');
+    mrpFeatureBom($test, $b, $test->rm, '1');
     mrpFeatureDemand($test, $a, '100', $test->due);
     mrpFeatureDemand($test, $b, '100', $test->due);
 

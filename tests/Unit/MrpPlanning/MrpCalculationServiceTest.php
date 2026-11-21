@@ -10,6 +10,7 @@ use Modules\MrpPlanning\Domain\Enums\SchedulingDirection;
 use Modules\MrpPlanning\Domain\Enums\SupplyType;
 use Modules\MrpPlanning\Domain\Exceptions\BomCycleException;
 use Modules\MrpPlanning\Domain\ValueObjects\BomLine;
+use Modules\MrpPlanning\Domain\ValueObjects\DemandLine;
 use Modules\MrpPlanning\Domain\ValueObjects\ItemPlanningData;
 use Modules\MrpPlanning\Domain\ValueObjects\RoutingOperation;
 use Modules\MrpPlanning\Domain\ValueObjects\ScheduleBlock;
@@ -272,7 +273,7 @@ it('gives no advice for a supply that arrives exactly when needed or is in trans
  * Two make items with the same routing (60 min setup + 6 min per unit on wc1) due on Friday 2027-03-12, 50 units each:
  * 360 minutes per order on a work centre with 480 minutes per day.
  *
- * @return array{0: list<ItemPlanningData>, 1: list<\Modules\MrpPlanning\Domain\ValueObjects\DemandLine>}
+ * @return array{0: list<ItemPlanningData>, 1: list<DemandLine>}
  */
 function mrpTwoOrdersOnOneWorkCenter(): array
 {

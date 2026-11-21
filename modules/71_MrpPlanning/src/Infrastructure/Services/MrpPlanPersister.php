@@ -6,6 +6,7 @@ namespace Modules\MrpPlanning\Infrastructure\Services;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
+use Modules\Manufacturing\Support\Money;
 use Modules\MrpPlanning\Domain\Enums\ExceptionCode;
 use Modules\MrpPlanning\Domain\Enums\ProposalStatus;
 use Modules\MrpPlanning\Domain\Enums\ProposalType;
@@ -162,7 +163,7 @@ final class MrpPlanPersister
         if ($available <= 0) {
             return $loaded > 0 ? self::MaxLoadPercentage : '0.00';
         }
-        $value = bcdiv(bcmul((string) $loaded, '100', 6), (string) $available, 2);
+        $value = Money::round(Money::div(Money::mul((string) $loaded, '100'), (string) $available), 2);
 
         return bccomp($value, self::MaxLoadPercentage, 2) > 0 ? self::MaxLoadPercentage : $value;
     }

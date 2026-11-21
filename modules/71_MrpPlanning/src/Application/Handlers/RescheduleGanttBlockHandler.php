@@ -12,6 +12,7 @@ use Modules\MrpPlanning\Domain\Enums\ProposalStatus;
 use Modules\MrpPlanning\Domain\Exceptions\MrpException;
 use Modules\MrpPlanning\Domain\Exceptions\MrpNotFoundException;
 use Modules\MrpPlanning\Domain\Services\CapacityScheduler;
+use Modules\MrpPlanning\Domain\ValueObjects\WorkCenterCalendar;
 use Modules\MrpPlanning\Infrastructure\Models\MrpActionProposal;
 use Modules\MrpPlanning\Infrastructure\Models\MrpRunExecution;
 use Modules\MrpPlanning\Infrastructure\Models\MrpScheduleBlock;
@@ -84,8 +85,8 @@ final class RescheduleGanttBlockHandler
     /**
      * The calendars of every work centre the run loads, the ones already loaded included.
      *
-     * @param  array<string, \Modules\MrpPlanning\Domain\ValueObjects\WorkCenterCalendar>  $known
-     * @return array<string, \Modules\MrpPlanning\Domain\ValueObjects\WorkCenterCalendar>
+     * @param  array<string, WorkCenterCalendar>  $known
+     * @return array<string, WorkCenterCalendar>
      */
     private function calendarsOfRun(MrpRunExecution $run, array $known): array
     {
