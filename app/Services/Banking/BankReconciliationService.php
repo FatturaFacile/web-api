@@ -14,6 +14,7 @@ use App\Models\Invoice;
 use App\Models\PassiveInvoice;
 use App\Models\Payment;
 use App\Models\SupplierPayment;
+use App\Services\Security\FieldEncryptionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -625,7 +626,9 @@ class BankReconciliationService
         if ($line->counterpart_iban !== null && $line->counterpart_iban !== '') {
             $contactIds = $contactIds->merge(
                 Contact::query()->where('tenant_id', $statement->tenant_id)->whereNotNull('iban')
-                    ->whereRaw("replace(upper(iban), ' ', '') = ?", [strtoupper(str_replace(' ', '', $line->counterpart_iban))])
+                    ->where(fn (Builder $query) => $query
+                        ->where('iban_bidx', app(FieldEncryptionService::class)->blindIndex($line->counterpart_iban, (string) $statement->tenant_id, 'iban'))
+                        ->orWhereRaw("replace(upper(iban), ' ', '') = ?", [strtoupper(str_replace(' ', '', $line->counterpart_iban))]))
                     ->pluck('id')
             );
         }

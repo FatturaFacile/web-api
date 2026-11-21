@@ -28,7 +28,7 @@ class Contact extends Model implements AuditableEntityInterface
     use HasImmutableAuditTrail;
 
     /** @var array<string, string|null> field => blind-index column */
-    protected array $encryptedFields = ['iban' => 'iban_bidx', 'qr_iban' => null];
+    protected array $encryptedFields = ['iban' => 'iban_bidx', 'qr_iban' => 'qr_iban_bidx'];
 
     /** @var list<string> */
     protected array $auditMask = ['iban', 'qr_iban', 'fiscal_code'];

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Treasury\Services;
 
+use App\Models\Contact;
 use Carbon\CarbonInterface;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
@@ -515,10 +516,10 @@ final readonly class BankReconciliationService implements BankReconciliationServ
             return null;
         }
 
-        $customerIbans = DB::table('contacts')
+        $customerIbans = Contact::withoutGlobalScopes()
             ->whereIn('id', $candidates->pluck('customer_id')->filter()->unique()->values()->all())
-            ->get(['id', 'iban', 'qr_iban'])
-            ->mapWithKeys(static fn (object $contact): array => [
+            ->get(['id', 'tenant_id', 'iban', 'qr_iban'])
+            ->mapWithKeys(static fn (Contact $contact): array => [
                 (string) $contact->id => array_map(
                     static fn (?string $iban): string => self::normalizeIban((string) $iban),
                     [$contact->iban, $contact->qr_iban]

@@ -13,6 +13,7 @@ return new class extends Migration
         Schema::table('contacts', function (Blueprint $table): void {
             // HMAC-SHA256 blind index of the encrypted IBAN: exact-match search without decrypting the table.
             $table->string('iban_bidx', 64)->nullable()->index();
+            $table->string('qr_iban_bidx', 64)->nullable()->index();
         });
     }
 
@@ -20,7 +21,8 @@ return new class extends Migration
     {
         Schema::table('contacts', function (Blueprint $table): void {
             $table->dropIndex(['iban_bidx']);
-            $table->dropColumn('iban_bidx');
+            $table->dropIndex(['qr_iban_bidx']);
+            $table->dropColumn(['iban_bidx', 'qr_iban_bidx']);
         });
     }
 };

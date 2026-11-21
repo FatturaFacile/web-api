@@ -5787,6 +5787,7 @@ CREATE TABLE "contacts"(
   "default_incoterm" varchar,
   "eori_number" varchar,
   "iban_bidx" varchar,
+  "qr_iban_bidx" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("price_list_id") references "price_lists"("id") on delete set null on update no action,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
@@ -41152,6 +41153,7 @@ CREATE UNIQUE INDEX "tenant_ocr_configurations_dedicated_inbox_alias_unique" on 
   "dedicated_inbox_alias"
 );
 CREATE INDEX "contacts_iban_bidx_index" on "contacts"("iban_bidx");
+CREATE INDEX "contacts_qr_iban_bidx_index" on "contacts"("qr_iban_bidx");
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
