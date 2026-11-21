@@ -62,6 +62,7 @@ class PermissionSeeder extends GlobalDataSeeder
             ['code' => 'audit.view', 'label_it' => 'Consultazione Audit Trail Immutabile', 'label_en' => 'View the Immutable Audit Trail'],
             ['code' => 'audit.verify', 'label_it' => 'Verifica Integrità Crittografica Audit Trail', 'label_en' => 'Verify Audit Trail Cryptographic Integrity'],
             ['code' => 'audit.export', 'label_it' => 'Esportazione Bundle Forense Audit Trail', 'label_en' => 'Export the Forensic Audit Bundle'],
+            ['code' => 'privacy.pii.unmask', 'label_it' => 'Visualizzazione Dati Personali in Chiaro', 'label_en' => 'Reveal Unmasked Personal Data'],
             ['code' => 'audit.worm.manage', 'label_it' => 'Gestione Archivio WORM Audit Trail', 'label_en' => 'Manage the Audit WORM Archive'],
             ['code' => 'hr.payroll.view', 'label_it' => 'Consultazione Paghe Svizzere', 'label_en' => 'View Swiss Payroll'],
             ['code' => 'hr.payroll.manage', 'label_it' => 'Gestione Paghe Svizzere', 'label_en' => 'Manage Swiss Payroll'],

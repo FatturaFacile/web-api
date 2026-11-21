@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AuditLogController;
+use App\Http\Controllers\Api\V1\OfflineAuditBatchController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,6 +15,10 @@ use Illuminate\Support\Facades\Route;
 | trail. There is no route that edits or deletes a record, by design. The literal paths come before {id}.
 |
 */
+
+// Offline audit queue of the desktop and mobile clients (any authenticated member of the tenant: it is the user's own device).
+Route::middleware('module.access:audit_trail')->post('audit/offline-batches', [OfflineAuditBatchController::class, 'store'])
+    ->middleware('throttle:60,1')->name('audit.offline-batches.store');
 
 Route::middleware('module.access:audit_trail')->prefix('audit-logs')->name('audit-logs.')->group(function (): void {
     Route::get('/', [AuditLogController::class, 'index'])->middleware('audit.permission:audit.view')->name('index');
