@@ -59683,6 +59683,715 @@
             ]
         },
         {
+            "name": "Cpq",
+            "item": [
+                {
+                    "name": "GET /v1/cpq/quotes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"jurisdiction\": \"CH\",\n    \"locale\": \"it-CH\",\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"sales_rep_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_name\": \"string\",\n    \"customer_email\": \"user@example.com\",\n    \"customer_phone\": \"string\",\n    \"billing_address\": [\n        \"string\"\n    ],\n    \"shipping_address\": [\n        \"string\"\n    ],\n    \"currency\": \"CHF\",\n    \"exchange_rate\": 1.5,\n    \"valid_until\": \"2026-01-31T12:00:00+00:00\",\n    \"payment_terms\": \"string\",\n    \"incoterms\": \"string\",\n    \"cover_letter\": \"string\",\n    \"terms_and_conditions\": \"string\",\n    \"header_discount_percent\": 1.5,\n    \"min_margin_percent\": 1.5,\n    \"auto_convert\": false,\n    \"auto_convert_target\": \"sales_order\",\n    \"signature_level\": \"ses_otp\",\n    \"sections\": [\n        {\n            \"id\": \"00000000-0000-0000-0000-000000000000\",\n            \"key\": \"string\",\n            \"title\": \"string\",\n            \"description\": \"string\",\n            \"page_break_before\": false,\n            \"discount_percent\": 1.5\n        }\n    ],\n    \"lines\": [\n        {\n            \"id\": \"00000000-0000-0000-0000-000000000000\",\n            \"section_key\": \"string\",\n            \"line_type\": \"product\",\n            \"selection_mode\": \"mandatory\",\n            \"alternative_group\": \"string\",\n            \"is_default_selected\": false,\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"sku\": \"string\",\n            \"description\": \"string\",\n            \"long_description\": \"string\",\n            \"uom\": \"string\",\n            \"resource_role\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"unit_cost\": 1.5,\n            \"discount_percent\": 1.5,\n            \"discount_fixed\": 1.5,\n            \"tier_prices\": [\n                {}\n            ],\n            \"tax_rate\": 1.5\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/cpq/quotes/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/cpq/quotes/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"jurisdiction\": \"CH\",\n    \"locale\": \"it-CH\",\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"sales_rep_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_name\": \"string\",\n    \"customer_email\": \"user@example.com\",\n    \"customer_phone\": \"string\",\n    \"billing_address\": [\n        \"string\"\n    ],\n    \"shipping_address\": [\n        \"string\"\n    ],\n    \"currency\": \"CHF\",\n    \"exchange_rate\": 1.5,\n    \"valid_until\": \"2026-01-31T12:00:00+00:00\",\n    \"payment_terms\": \"string\",\n    \"incoterms\": \"string\",\n    \"cover_letter\": \"string\",\n    \"terms_and_conditions\": \"string\",\n    \"header_discount_percent\": 1.5,\n    \"min_margin_percent\": 1.5,\n    \"auto_convert\": false,\n    \"auto_convert_target\": \"sales_order\",\n    \"signature_level\": \"ses_otp\",\n    \"sections\": [\n        {\n            \"id\": \"00000000-0000-0000-0000-000000000000\",\n            \"key\": \"string\",\n            \"title\": \"string\",\n            \"description\": \"string\",\n            \"page_break_before\": false,\n            \"discount_percent\": 1.5\n        }\n    ],\n    \"lines\": [\n        {\n            \"id\": \"00000000-0000-0000-0000-000000000000\",\n            \"section_key\": \"string\",\n            \"line_type\": \"product\",\n            \"selection_mode\": \"mandatory\",\n            \"alternative_group\": \"string\",\n            \"is_default_selected\": false,\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"sku\": \"string\",\n            \"description\": \"string\",\n            \"long_description\": \"string\",\n            \"uom\": \"string\",\n            \"resource_role\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"unit_cost\": 1.5,\n            \"discount_percent\": 1.5,\n            \"discount_fixed\": 1.5,\n            \"tier_prices\": [\n                {}\n            ],\n            \"tax_rate\": 1.5\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/cpq/quotes/:id/compare/:otherId",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/compare/:otherId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "compare",
+                                ":otherId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "otherId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/cpq/quotes/:id/documents/:kind",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/documents/:kind",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "documents",
+                                ":kind"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "kind",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/reorder",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/reorder",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "reorder"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"section_order\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"line_order\": [\n        {\n            \"id\": \"00000000-0000-0000-0000-000000000000\",\n            \"section_id\": \"00000000-0000-0000-0000-000000000000\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/issue",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/issue",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "issue"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"validity_days\": 1,\n    \"use_pin\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/revisions",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/revisions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "revisions"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/convert-to-invoice",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/convert-to-invoice",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "convert-to-invoice"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"down_payment_percent\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/convert-to-order",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/convert-to-order",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "convert-to-order"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/approve-and-issue",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/approve-and-issue",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "approve-and-issue"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"validity_days\": 1,\n    \"use_pin\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "Credit Management",
             "item": [
                 {
@@ -187682,6 +188391,482 @@
                     }
                 },
                 {
+                    "name": "GET /v1/public/proposals/:token",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/public/proposals/:token/documents/:kind",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/documents/:kind",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "documents",
+                                ":kind"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "kind",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/proposals/:token/verify-pin",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/verify-pin",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "verify-pin"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/public/proposals/:token/selections",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/selections",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "selections"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/proposals/:token/signature",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/signature",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "signature"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/proposals/:token/signature/complete",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/signature/complete",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "signature",
+                                "complete"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/proposals/:token/reject",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/reject",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "reject"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/proposals/:token/comments",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/comments",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "comments"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/signature-webhooks",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/signature-webhooks",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "signature-webhooks"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "GET /v1/public/quote-signatures/:token",
                     "request": {
                         "method": "GET",
@@ -205401,6 +206586,750 @@
             ]
         },
         {
+            "name": "Sovereignty",
+            "item": [
+                {
+                    "name": "GET /v1/sovereignty/nodes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/nodes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "nodes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "jurisdiction_zone",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "service_type",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/dashboard",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/dashboard",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "dashboard"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/policies",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/policies",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "policies"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/policies",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/policies",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "policies"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"jurisdiction_zone\": \"Strict-CH-Only\",\n    \"primary_db_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"replica_db_node_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"s3_storage_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"vector_db_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"ai_inference_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"backup_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"queue_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"enforce_strict_egress_block\": false,\n    \"allow_aggregated_non_pii_consolidation\": false,\n    \"second_approver_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/cross-border-rules",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/cross-border-rules",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "cross-border-rules"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/cross-border-rules/validate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/cross-border-rules/validate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "cross-border-rules",
+                                "validate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"purpose\": \"string\",\n    \"target\": \"string\",\n    \"destination_country_iso2\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/byok",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/byok",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "byok"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/byok/audit-logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/byok/audit-logs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "byok",
+                                "audit-logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/byok/configure",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/byok/configure",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "byok",
+                                "configure"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"key_management_mode\": \"Platform-Managed\",\n    \"provider_type\": \"SECUROSYS_PRIMUS_HSM\",\n    \"external_key_uri\": \"string\",\n    \"kmip_endpoint\": \"https://example.com\",\n    \"credentials\": [\n        \"string\"\n    ],\n    \"dek_cache_ttl_seconds\": 1,\n    \"rotation_interval_days\": 1,\n    \"dry_run\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/byok/:id/rotate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/byok/:id/rotate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "byok",
+                                ":id",
+                                "rotate"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/byok/:id/kill-switch",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/byok/:id/kill-switch",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "byok",
+                                ":id",
+                                "kill-switch"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"action\": \"SUSPEND\",\n    \"reason\": \"string\",\n    \"confirmation_phrase\": \"string\",\n    \"mfa_code\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/attestations/generate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/attestations/generate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "attestations",
+                                "generate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/attestations/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/attestations/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "attestations",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/attestations/:id/pdf",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/attestations/:id/pdf",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "attestations",
+                                ":id",
+                                "pdf"
+                            ],
+                            "query": [
+                                {
+                                    "key": "locale",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "Sub",
             "item": [
                 {
@@ -214258,6 +216187,230 @@
                         "description": "",
                         "auth": {
                             "type": "noauth"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Swiss Fiscal",
+            "item": [
+                {
+                    "name": "GET /v1/swiss-fiscal/vat-rates",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/swiss-fiscal/vat-rates",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "swiss-fiscal",
+                                "vat-rates"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/swiss-fiscal/qr-bills",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/swiss-fiscal/qr-bills",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "swiss-fiscal",
+                                "qr-bills"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"iban\": \"string\",\n    \"currency\": \"CHF\",\n    \"amount\": \"string\",\n    \"reference_type\": \"QRR\",\n    \"reference\": \"string\",\n    \"message\": \"string\",\n    \"bill_information\": \"string\",\n    \"language\": \"it\",\n    \"format\": \"pdf\",\n    \"creditor\": {\n        \"name\": \"string\",\n        \"street\": \"string\",\n        \"building_number\": \"string\",\n        \"postal_code\": \"string\",\n        \"town\": \"string\",\n        \"country\": \"string\"\n    },\n    \"debtor\": {\n        \"name\": \"string\",\n        \"street\": \"string\",\n        \"building_number\": \"string\",\n        \"postal_code\": \"string\",\n        \"town\": \"string\",\n        \"country\": \"string\"\n    }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/swiss-fiscal/fiscal-documents",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/swiss-fiscal/fiscal-documents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "swiss-fiscal",
+                                "fiscal-documents"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"country\": \"IT\",\n    \"invoice_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/swiss-fiscal/camt054",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/swiss-fiscal/camt054",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "swiss-fiscal",
+                                "camt054"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"xml\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     }
                 }

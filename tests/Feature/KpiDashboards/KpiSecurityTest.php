@@ -126,7 +126,7 @@ it('isolates tenants in the drill-down', function (): void {
     $mine = kpiTenant();
     $other = kpiTenant();
     $customer = kpiContact($other);
-    kpiInvoice($other, $customer, '2026-03-01', 1000, ['due_date' => '2026-03-01']);
+    kpiDashInvoice($other, $customer, '2026-03-01', 1000, ['due_date' => '2026-03-01']);
     kpiActAs($mine, 'accountant');
 
     $response = $this->getJson('/api/v1/kpi-dashboards/drill-down/dso?'.http_build_query(['preset' => 'custom', 'from' => '2026-01-01', 'to' => '2026-06-30']))->assertOk();

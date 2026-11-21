@@ -185,12 +185,12 @@ it('computes DSO, DPO, working capital, aging and VAT of the CFO cockpit', funct
     kpiPost($tenant, '2026-01-15', [[$inventory, 10000, 0], [$equity, 0, 10000]]);
 
     // Period 2026-01-01..2026-06-30 = 181 days. Sales 90,000 net, of which 30,000 gross-open invoices.
-    kpiInvoice($tenant, $customer, '2026-02-01', 60000, ['total_tax' => 0, 'payment_status' => 'paid', 'total_paid' => 60000]);
-    kpiInvoice($tenant, $customer, '2026-05-01', 20000, ['total_tax' => 0, 'due_date' => '2026-06-15']);   // 15 days overdue: 1_30
-    kpiInvoice($tenant, $customer, '2026-03-01', 10000, ['total_tax' => 0, 'due_date' => '2026-04-01']);   // 90 days overdue: 61_90
-    kpiInvoice($tenant, $customer, '2026-06-01', 5000, ['total_tax' => 0, 'due_date' => '2026-07-15']);    // not due: current
-    kpiInvoice($tenant, $customer, '2026-01-10', 4000, ['total_tax' => 0, 'due_date' => '2026-01-20']);    // over 90
-    kpiInvoice($tenant, $customer, '2026-06-10', 1000, ['total_tax' => 0, 'invoice_type' => 'proforma']);  // never counts
+    kpiDashInvoice($tenant, $customer, '2026-02-01', 60000, ['total_tax' => 0, 'payment_status' => 'paid', 'total_paid' => 60000]);
+    kpiDashInvoice($tenant, $customer, '2026-05-01', 20000, ['total_tax' => 0, 'due_date' => '2026-06-15']);   // 15 days overdue: 1_30
+    kpiDashInvoice($tenant, $customer, '2026-03-01', 10000, ['total_tax' => 0, 'due_date' => '2026-04-01']);   // 90 days overdue: 61_90
+    kpiDashInvoice($tenant, $customer, '2026-06-01', 5000, ['total_tax' => 0, 'due_date' => '2026-07-15']);    // not due: current
+    kpiDashInvoice($tenant, $customer, '2026-01-10', 4000, ['total_tax' => 0, 'due_date' => '2026-01-20']);    // over 90
+    kpiDashInvoice($tenant, $customer, '2026-06-10', 1000, ['total_tax' => 0, 'invoice_type' => 'proforma']);  // never counts
     // Purchases 30,000 net, 12,000 open.
     kpiPassiveInvoice($tenant, $supplier, '2026-02-01', 18000, ['total_tax' => 0, 'payment_status' => 'paid', 'total_paid' => 18000]);
     kpiPassiveInvoice($tenant, $supplier, '2026-06-01', 12000, ['total_tax' => 0, 'due_date' => '2026-07-01']);
@@ -218,9 +218,9 @@ it('splits the VAT liability by Swiss and Italian jurisdiction', function (): vo
     $customer = kpiContact($tenant, 'Kunde AG', 'CH');
     $swissSupplier = kpiContact($tenant, 'Lieferant AG', 'CH');
     $italianSupplier = kpiContact($tenant, 'Fornitore Srl', 'IT');
-    kpiInvoice($tenant, $customer, '2026-03-01', 10000, ['total_tax' => 810, 'jurisdiction' => 'CH']);
-    kpiInvoice($tenant, $customer, '2026-03-02', 10000, ['total_tax' => 2200, 'jurisdiction' => 'IT']);
-    kpiInvoice($tenant, $customer, '2026-03-03', 1000, ['total_tax' => 81, 'jurisdiction' => 'CH', 'invoice_type' => 'credit_note']);
+    kpiDashInvoice($tenant, $customer, '2026-03-01', 10000, ['total_tax' => 810, 'jurisdiction' => 'CH']);
+    kpiDashInvoice($tenant, $customer, '2026-03-02', 10000, ['total_tax' => 2200, 'jurisdiction' => 'IT']);
+    kpiDashInvoice($tenant, $customer, '2026-03-03', 1000, ['total_tax' => 81, 'jurisdiction' => 'CH', 'invoice_type' => 'credit_note']);
     kpiPassiveInvoice($tenant, $swissSupplier, '2026-03-04', 2000, ['total_tax' => 162]);
     kpiPassiveInvoice($tenant, $italianSupplier, '2026-03-05', 5000, ['total_tax' => 1100]);
     kpiActAs($tenant, 'accountant');

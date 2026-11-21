@@ -116,6 +116,21 @@ return [
             'write' => $finance,
             'grants' => ['read' => ['kpi.*'], 'write' => ['kpi.*']],
         ],
+        // Interactive quotes and proposals (Mod 036). cpq_quotes: the sales team builds, issues, revises and converts quotes;
+        // cpq_quotes_admin: managers override the margin guardrail (approve-and-issue).
+        'cpq_quotes' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager']],
+        'cpq_quotes_admin' => ['read' => ['owner', 'admin', 'sales_manager'], 'write' => ['owner', 'admin', 'sales_manager']],
+        // Data residency, sovereignty and BYOK/HYOK (Mod 381). sovereignty_policy (sovereignty.policy.read / .manage): owners and
+        // administrators (DPO, CISO) read the posture and enforce the residency policy; sovereignty_byok (sovereignty.byok.manage):
+        // configure and rotate the customer-managed key and read the KMS log; sovereignty_killswitch (sovereignty.byok.killswitch):
+        // the emergency suspension and crypto-shredding, owners only (the handler also asks for a step-up MFA code);
+        // sovereignty_attestation (sovereignty.attestation.export): issue and download the signed certificate.
+        'sovereignty_policy' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['sovereignty.policy.read', 'sovereignty.*'], 'write' => ['sovereignty.policy.manage', 'sovereignty.*']]],
+        'sovereignty_byok' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['sovereignty.byok.manage', 'sovereignty.*'], 'write' => ['sovereignty.byok.manage', 'sovereignty.*']]],
+        'sovereignty_killswitch' => ['read' => ['owner'], 'write' => ['owner'], 'grants' => ['read' => ['sovereignty.byok.killswitch'], 'write' => ['sovereignty.byok.killswitch']]],
+        'sovereignty_attestation' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['sovereignty.attestation.export', 'sovereignty.*'], 'write' => ['sovereignty.attestation.export', 'sovereignty.*']]],
+        // Swiss QR-bill, ISO 20022 and country fiscal documents (Issue #83): finance issues and reads them.
+        'swiss_fiscal' => ['read' => $financeReaders, 'write' => $finance],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
         // Workplace health, safety and training (Mod 099). hse: the operational roles read the compliance matrix, the clearance verdict
         // and the physician judgments (outcome and prescriptions); the HSE team (hr, hse, admins) writes certificates, PPE and incidents.
