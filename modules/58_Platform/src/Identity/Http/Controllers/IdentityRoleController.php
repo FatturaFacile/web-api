@@ -12,7 +12,6 @@ use App\Services\Tenancy\TenantContext;
 use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Laravel\Sanctum\PersonalAccessToken;
 use Modules\Platform\Identity\Application\EffectivePermissionResolver;
 use Modules\Platform\Identity\Application\ImpersonationService;
 use Modules\Platform\Identity\Application\PermissionRegistry;
@@ -175,16 +174,18 @@ final class IdentityRoleController extends Controller
     private function impersonation(User $user): array
     {
         $token = $user->currentAccessToken();
-        $name = $token instanceof PersonalAccessToken && is_string($token->name) ? $token->name : '';
+        $name = (string) data_get($token, 'name', '');
 
         if (! str_starts_with($name, ImpersonationService::TOKEN_PREFIX)) {
             return ['active' => false, 'actor_id' => null, 'expires_at' => null];
         }
 
+        $expiresAt = data_get($token, 'expires_at');
+
         return [
             'active' => true,
             'actor_id' => substr($name, strlen(ImpersonationService::TOKEN_PREFIX)),
-            'expires_at' => $token->expires_at?->toIso8601String(),
+            'expires_at' => $expiresAt instanceof \DateTimeInterface ? $expiresAt->format(DATE_ATOM) : null,
         ];
     }
 
