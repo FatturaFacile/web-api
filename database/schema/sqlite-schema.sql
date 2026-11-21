@@ -41907,6 +41907,261 @@ CREATE INDEX "core_sovereignty_attestations_legal_entity_id_index" on "core_sove
 CREATE UNIQUE INDEX "core_sovereignty_attestations_certificate_number_unique" on "core_sovereignty_attestations"(
   "certificate_number"
 );
+CREATE TABLE "cpq_quotes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "root_quote_id" varchar,
+  "parent_quote_id" varchar,
+  "quote_number" varchar not null,
+  "number_prefix" varchar not null default 'OFF',
+  "number_year" integer not null,
+  "number_sequence" integer not null,
+  "revision" integer not null default '1',
+  "status" varchar not null default 'draft',
+  "jurisdiction" varchar not null default 'IT',
+  "locale" varchar not null default 'it-IT',
+  "contact_id" varchar,
+  "sales_rep_id" varchar,
+  "customer_name" varchar,
+  "customer_email" varchar,
+  "customer_phone" varchar,
+  "billing_address" text,
+  "shipping_address" text,
+  "currency" varchar not null default 'EUR',
+  "exchange_rate" numeric not null default '1',
+  "valid_until" date,
+  "payment_terms" varchar,
+  "incoterms" varchar,
+  "cover_letter" text,
+  "terms_and_conditions" text,
+  "header_discount_percent" numeric not null default '0',
+  "min_margin_percent" numeric,
+  "requires_approval" tinyint(1) not null default '0',
+  "auto_convert" tinyint(1) not null default '0',
+  "auto_convert_target" varchar,
+  "signature_level" varchar not null default 'ses_otp',
+  "total_net" numeric not null default '0',
+  "total_tax" numeric not null default '0',
+  "total_gross" numeric not null default '0',
+  "total_cost" numeric not null default '0',
+  "margin_percent" numeric,
+  "frozen_snapshot" text,
+  "snapshot_hash" varchar,
+  "public_token_hash" varchar,
+  "public_pin_hash" varchar,
+  "public_expires_at" datetime,
+  "issued_at" datetime,
+  "viewed_at" datetime,
+  "accepted_at" datetime,
+  "rejected_at" datetime,
+  "rejection_reason" text,
+  "customer_selections" text,
+  "signed_document_path" varchar,
+  "signed_document_hash" varchar,
+  "audit_certificate_path" varchar,
+  "audit_certificate_hash" varchar,
+  "converted_sales_order_id" varchar,
+  "converted_invoice_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpq_quotes_tenant_id_quote_number_unique" on "cpq_quotes"(
+  "tenant_id",
+  "quote_number"
+);
+CREATE INDEX "cpq_quotes_tenant_id_status_index" on "cpq_quotes"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "cpq_quotes_tenant_id_valid_until_index" on "cpq_quotes"(
+  "tenant_id",
+  "valid_until"
+);
+CREATE INDEX "cpq_quotes_root_quote_id_index" on "cpq_quotes"(
+  "root_quote_id"
+);
+CREATE INDEX "cpq_quotes_contact_id_index" on "cpq_quotes"("contact_id");
+CREATE INDEX "cpq_quotes_sales_rep_id_index" on "cpq_quotes"("sales_rep_id");
+CREATE UNIQUE INDEX "cpq_quotes_public_token_hash_unique" on "cpq_quotes"(
+  "public_token_hash"
+);
+CREATE UNIQUE INDEX "cpq_quotes_converted_sales_order_id_unique" on "cpq_quotes"(
+  "converted_sales_order_id"
+);
+CREATE UNIQUE INDEX "cpq_quotes_converted_invoice_id_unique" on "cpq_quotes"(
+  "converted_invoice_id"
+);
+CREATE TABLE "cpq_quote_sections"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "quote_id" varchar not null,
+  "origin_id" varchar,
+  "title" varchar not null,
+  "description" text,
+  "page_break_before" tinyint(1) not null default '0',
+  "discount_percent" numeric not null default '0',
+  "sort_order" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("quote_id") references "cpq_quotes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "cpq_quote_sections_tenant_id_quote_id_sort_order_index" on "cpq_quote_sections"(
+  "tenant_id",
+  "quote_id",
+  "sort_order"
+);
+CREATE TABLE "cpq_quote_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "quote_id" varchar not null,
+  "section_id" varchar,
+  "origin_id" varchar,
+  "line_type" varchar not null,
+  "selection_mode" varchar not null default 'mandatory',
+  "alternative_group" varchar,
+  "is_default_selected" tinyint(1) not null default '1',
+  "product_id" varchar,
+  "sku" varchar,
+  "description" varchar not null,
+  "long_description" text,
+  "uom" varchar,
+  "resource_role" varchar,
+  "quantity" numeric not null default '1',
+  "unit_price" numeric not null default '0',
+  "unit_cost" numeric not null default '0',
+  "discount_percent" numeric not null default '0',
+  "discount_fixed" numeric not null default '0',
+  "tier_prices" text,
+  "tax_rate" numeric not null default '0',
+  "sort_order" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("quote_id") references "cpq_quotes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "cpq_quote_lines_tenant_id_quote_id_sort_order_index" on "cpq_quote_lines"(
+  "tenant_id",
+  "quote_id",
+  "sort_order"
+);
+CREATE INDEX "cpq_quote_lines_section_id_index" on "cpq_quote_lines"(
+  "section_id"
+);
+CREATE TABLE "cpq_signature_envelopes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "quote_id" varchar not null,
+  "level" varchar not null,
+  "provider" varchar not null,
+  "status" varchar not null default 'pending',
+  "signer_name" varchar not null,
+  "signer_role" varchar,
+  "signer_email" varchar,
+  "signer_phone" varchar,
+  "otp_channel" varchar,
+  "otp_hash" varchar,
+  "otp_expires_at" datetime,
+  "otp_attempts" integer not null default '0',
+  "provider_reference" varchar,
+  "document_hash" varchar,
+  "consent_given" tinyint(1) not null default '0',
+  "signer_ip" varchar,
+  "signer_user_agent" varchar,
+  "signed_at" datetime,
+  "verification_metadata" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("quote_id") references "cpq_quotes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "cpq_signature_envelopes_tenant_id_quote_id_status_index" on "cpq_signature_envelopes"(
+  "tenant_id",
+  "quote_id",
+  "status"
+);
+CREATE INDEX "cpq_signature_envelopes_provider_reference_index" on "cpq_signature_envelopes"(
+  "provider_reference"
+);
+CREATE TABLE "cpq_audit_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "quote_id" varchar not null,
+  "sequence" integer not null,
+  "event" varchar not null,
+  "actor" varchar,
+  "ip_address" varchar,
+  "payload" text,
+  "previous_hash" varchar,
+  "event_hash" varchar not null,
+  "occurred_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("quote_id") references "cpq_quotes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpq_audit_events_quote_id_sequence_unique" on "cpq_audit_events"(
+  "quote_id",
+  "sequence"
+);
+CREATE INDEX "cpq_audit_events_tenant_id_event_index" on "cpq_audit_events"(
+  "tenant_id",
+  "event"
+);
+CREATE TABLE "cpq_comments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "quote_id" varchar not null,
+  "line_id" varchar,
+  "author_type" varchar not null default 'customer',
+  "author_name" varchar,
+  "body" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("quote_id") references "cpq_quotes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "cpq_comments_tenant_id_quote_id_index" on "cpq_comments"(
+  "tenant_id",
+  "quote_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -42310,3 +42565,4 @@ INSERT INTO migrations VALUES(399,'2027_12_13_000200_create_offline_audit_entrie
 INSERT INTO migrations VALUES(400,'2027_12_16_000100_create_ai_cognitive_tables',12);
 INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_kpi_dashboard_tables',13);
 INSERT INTO migrations VALUES(402,'2027_12_17_000100_create_data_residency_tables',14);
+INSERT INTO migrations VALUES(403,'2027_12_17_000100_create_cpq_quote_tables',15);

@@ -116,6 +116,10 @@ return [
             'write' => $finance,
             'grants' => ['read' => ['kpi.*'], 'write' => ['kpi.*']],
         ],
+        // Interactive quotes and proposals (Mod 036). cpq_quotes: the sales team builds, issues, revises and converts quotes;
+        // cpq_quotes_admin: managers override the margin guardrail (approve-and-issue).
+        'cpq_quotes' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager']],
+        'cpq_quotes_admin' => ['read' => ['owner', 'admin', 'sales_manager'], 'write' => ['owner', 'admin', 'sales_manager']],
         // Data residency, sovereignty and BYOK/HYOK (Mod 381). sovereignty_policy (sovereignty.policy.read / .manage): owners and
         // administrators (DPO, CISO) read the posture and enforce the residency policy; sovereignty_byok (sovereignty.byok.manage):
         // configure and rotate the customer-managed key and read the KMS log; sovereignty_killswitch (sovereignty.byok.killswitch):
