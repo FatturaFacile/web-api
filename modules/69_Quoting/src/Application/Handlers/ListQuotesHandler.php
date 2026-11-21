@@ -20,6 +20,7 @@ final class ListQuotesHandler
             ->when($query->contactId !== null, fn ($q) => $q->where('contact_id', $query->contactId))
             ->when($query->salesRepId !== null, fn ($q) => $q->where('sales_rep_id', $query->salesRepId))
             ->when($query->expiringBefore !== null, fn ($q) => $q->whereDate('valid_until', '<=', $query->expiringBefore))
+            ->when($query->rootQuoteId !== null, fn ($q) => $q->where('root_quote_id', $query->rootQuoteId))
             ->latest()
             ->paginate($query->perPage);
     }

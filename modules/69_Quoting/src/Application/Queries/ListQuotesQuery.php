@@ -12,5 +12,6 @@ final readonly class ListQuotesQuery
         public ?string $salesRepId = null,
         public ?string $expiringBefore = null,
         public int $perPage = 25,
+        public ?string $rootQuoteId = null,
     ) {}
 }

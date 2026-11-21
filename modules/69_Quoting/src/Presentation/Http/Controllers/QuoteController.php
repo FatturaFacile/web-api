@@ -57,6 +57,7 @@ final class QuoteController extends Controller
             $request->query('sales_rep_id') === null ? null : (string) $request->query('sales_rep_id'),
             $request->query('expiring_before') === null ? null : (string) $request->query('expiring_before'),
             min(100, max(1, (int) $request->query('per_page', 25))),
+            $request->query('root_quote_id') === null ? null : (string) $request->query('root_quote_id'),
         ));
 
         return $this->successResponse(['items' => CpqQuoteResource::collection($page->items())->resolve(), 'total' => $page->total(), 'per_page' => $page->perPage(), 'current_page' => $page->currentPage()]);
