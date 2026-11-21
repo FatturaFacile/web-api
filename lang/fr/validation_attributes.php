@@ -3021,4 +3021,11 @@ return [
     'net_amount' => 'montant net',
     'source_line_index' => 'ligne d\'origine',
     'qr_reference' => 'référence de paiement',
+    'origin' => 'origine',
+    'sequence_number' => 'numéro de séquence',
+    'previous_hash' => 'hash précédent',
+    'payload_hash' => 'hash du contenu',
+    'record_hash' => 'hash de l\'enregistrement',
+    'payload_json' => 'contenu',
+    'metadata_json' => 'métadonnées',
 ];
