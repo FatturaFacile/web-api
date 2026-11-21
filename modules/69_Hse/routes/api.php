@@ -25,6 +25,7 @@ Route::prefix('api/v1/hse')->middleware(['api', 'auth:sanctum', 'tenant', 'local
         Route::get('incidents', [HseController::class, 'incidents'])->name('hse.incidents.index');
         Route::post('incidents', [HseController::class, 'reportIncident'])->name('hse.incidents.store');
         Route::get('incidents/{id}/claim-draft', [HseController::class, 'claimDraft'])->whereUuid('id')->name('hse.incidents.claim-draft');
+        Route::get('incidents/{id}/photos/{photoId}', [HseController::class, 'incidentPhoto'])->whereUuid(['id', 'photoId'])->name('hse.incidents.photo');
         Route::post('toolbox-talks', [HseController::class, 'toolBoxTalk'])->name('hse.toolbox-talks.store');
         Route::get('audits', [HseController::class, 'audits'])->name('hse.audits.index');
         Route::post('audits/mssl', [HseController::class, 'saveAudit'])->name('hse.audits.mssl');

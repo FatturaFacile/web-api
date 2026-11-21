@@ -50,7 +50,7 @@ function spMemberOf(Tenant $tenant, string $role): User
     return $user;
 }
 
-function spActAs(User $user, Tenant $tenant): mixed
+function supplierPortalActAs(User $user, Tenant $tenant): mixed
 {
     Sanctum::actingAs($user);
     test()->flushHeaders();
@@ -85,7 +85,7 @@ function spSupplier(Tenant $tenant, array $attributes = []): Supplier
  */
 function spInvite(Tenant $tenant, User $actor, Supplier $supplier, string $country = 'IT'): array
 {
-    spActAs($actor, $tenant);
+    supplierPortalActAs($actor, $tenant);
     $onboarding = test()->postJson('/api/v1/supplier-portal/onboardings', ['supplier_id' => $supplier->id, 'country' => $country, 'invitation_email' => 'forn@example.it'])->assertCreated()->json('data');
     $token = Mail::sent(SupplierPortalAccessMail::class)->last()->token;
 
@@ -118,7 +118,7 @@ test('tax identifiers: Italian partita IVA and Swiss UID are checked for format 
 test('a supplier goes from invitation to approval, and the approval is gated on documents and qualification', function (): void {
     $supplier = spSupplier($this->tenant);
 
-    spActAs($this->buyer, $this->tenant)->postJson('/api/v1/supplier-portal/document-requirements/seed-defaults')->assertOk()->assertJsonPath('created', 10);
+    supplierPortalActAs($this->buyer, $this->tenant)->postJson('/api/v1/supplier-portal/document-requirements/seed-defaults')->assertOk()->assertJsonPath('created', 10);
     $this->postJson('/api/v1/supplier-portal/document-requirements/seed-defaults')->assertOk()->assertJsonPath('created', 0);
 
     [$onboarding, $token] = spInvite($this->tenant, $this->buyer, $supplier);
@@ -126,7 +126,7 @@ test('a supplier goes from invitation to approval, and the approval is gated on 
     Mail::assertSent(SupplierPortalAccessMail::class, fn (SupplierPortalAccessMail $mail): bool => $mail->hasTo('forn@example.it'));
     expect(Supplier::query()->withoutGlobalScopes()->find($supplier->id)->qualification_status)->toBe('in_qualification');
 
-    spActAs($this->buyer, $this->tenant)->postJson('/api/v1/supplier-portal/onboardings', ['supplier_id' => $supplier->id, 'country' => 'IT'])->assertUnprocessable();
+    supplierPortalActAs($this->buyer, $this->tenant)->postJson('/api/v1/supplier-portal/onboardings', ['supplier_id' => $supplier->id, 'country' => 'IT'])->assertUnprocessable();
 
     $requirements = spRequirementIds($token);
     expect($requirements)->toHaveCount(7)->toHaveKeys(['DURC', 'VISURA_CAMERALE', 'ANTIMAFIA', 'INSURANCE_RC', 'ISO_9001'])->not->toHaveKey('UID_EXTRACT');
@@ -150,7 +150,7 @@ test('a supplier goes from invitation to approval, and the approval is gated on 
     spPortal($token)->postJson('/api/v1/supplier-self-service/submit-for-review')->assertOk()->assertJsonPath('data.status', 'under_review');
     spPortal($token)->postJson('/api/v1/supplier-self-service/registration', $registration)->assertUnprocessable();
 
-    $admin = spActAs($this->admin, $this->tenant);
+    $admin = supplierPortalActAs($this->admin, $this->tenant);
     $detail = $admin->getJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}")->assertOk()->json('data');
     expect(collect($detail['blockers'])->pluck('code')->unique()->values()->all())->toBe(['document_not_accepted', 'qualification_missing']);
     $admin->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/approve")->assertUnprocessable();
@@ -181,9 +181,9 @@ test('a supplier goes from invitation to approval, and the approval is gated on 
         ->assertJsonPath('data.outcome', 'qualified');
     $admin->putJson("/api/v1/supplier-portal/qualification-assessments/{$assessment['id']}/scores", ['scores' => [['criterion_id' => $criteria['DELIVERY'], 'score' => 1]]])->assertUnprocessable();
 
-    spActAs($this->buyer, $this->tenant)->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/approve")->assertForbidden();
+    supplierPortalActAs($this->buyer, $this->tenant)->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/approve")->assertForbidden();
 
-    spActAs($this->admin, $this->tenant)->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/approve", ['notes' => 'Visited the plant'])->assertOk()->assertJsonPath('data.status', 'approved');
+    supplierPortalActAs($this->admin, $this->tenant)->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/approve", ['notes' => 'Visited the plant'])->assertOk()->assertJsonPath('data.status', 'approved');
     $approved = Supplier::query()->withoutGlobalScopes()->find($supplier->id);
     expect($approved->qualification_status)->toBe('qualified')->and($approved->is_approved_vendor)->toBeTrue();
 
@@ -200,7 +200,7 @@ test('a rejected supplier is disqualified and goes back to review, never straigh
     $supplier = spSupplier($this->tenant);
     [$onboarding] = spInvite($this->tenant, $this->buyer, $supplier);
 
-    spActAs($this->admin, $this->tenant)->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/approve")->assertUnprocessable();
+    supplierPortalActAs($this->admin, $this->tenant)->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/approve")->assertUnprocessable();
     $this->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/reject")->assertUnprocessable()->assertJsonValidationErrors('reason');
     $this->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/reject", ['reason' => 'No answer'])->assertOk()->assertJsonPath('data.status', 'rejected');
     expect(Supplier::query()->withoutGlobalScopes()->find($supplier->id)->qualification_status)->toBe('disqualified');
@@ -212,7 +212,7 @@ test('a rejected supplier is disqualified and goes back to review, never straigh
 
 test('failed checks stop the approval and raise the risk flag: a blocked VAT is high risk', function (): void {
     $supplier = spSupplier($this->tenant);
-    spActAs($this->buyer, $this->tenant);
+    supplierPortalActAs($this->buyer, $this->tenant);
 
     $this->postJson('/api/v1/supplier-portal/checks', ['supplier_id' => $supplier->id, 'check_type' => 'vies_vat', 'result' => 'passed'])->assertCreated();
     $this->getJson("/api/v1/supplier-portal/suppliers/{$supplier->id}/risk")->assertOk()->assertJsonPath('data.risk.level', 'none');
@@ -225,7 +225,7 @@ test('failed checks stop the approval and raise the risk flag: a blocked VAT is 
     $this->getJson('/api/v1/supplier-portal/risk?min_level=high')->assertOk()->assertJsonPath('data.0.level', 'critical');
 
     [$onboarding] = spInvite($this->tenant, $this->buyer, $supplier);
-    spActAs($this->admin, $this->tenant)->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/reject", ['reason' => 'x'])->assertOk();
+    supplierPortalActAs($this->admin, $this->tenant)->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/reject", ['reason' => 'x'])->assertOk();
     $this->postJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}/start-review")->assertOk();
     $blockers = collect($this->getJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}")->json('data.blockers'))->pluck('code')->all();
     expect($blockers)->toContain('check_failed')->toContain('risk_critical');
@@ -237,7 +237,7 @@ test('failed checks stop the approval and raise the risk flag: a blocked VAT is 
 
 test('weighted qualification uses exact decimals and the configured bands', function (): void {
     $supplier = spSupplier($this->tenant);
-    $admin = spActAs($this->admin, $this->tenant);
+    $admin = supplierPortalActAs($this->admin, $this->tenant);
     $one = $admin->postJson('/api/v1/supplier-portal/qualification-criteria', ['code' => 'ONE', 'name' => 'One', 'weight' => '33.33', 'max_score' => 3])->assertCreated()->json('data.id');
     $two = $admin->postJson('/api/v1/supplier-portal/qualification-criteria', ['code' => 'TWO', 'name' => 'Two', 'weight' => '66.67', 'max_score' => 10])->assertCreated()->json('data.id');
     $admin->postJson('/api/v1/supplier-portal/qualification-criteria', ['code' => 'ONE', 'name' => 'Dup', 'weight' => '1'])->assertUnprocessable()->assertJsonValidationErrors('code');
@@ -257,13 +257,13 @@ test('weighted qualification uses exact decimals and the configured bands', func
 
 test('expiring documents alert the purchasing staff once per step, expire the qualification and raise the risk', function (): void {
     $supplier = spSupplier($this->tenant);
-    spActAs($this->buyer, $this->tenant)->postJson('/api/v1/supplier-portal/document-requirements/seed-defaults')->assertOk();
+    supplierPortalActAs($this->buyer, $this->tenant)->postJson('/api/v1/supplier-portal/document-requirements/seed-defaults')->assertOk();
     [, $token] = spInvite($this->tenant, $this->buyer, $supplier);
     $requirements = spRequirementIds($token);
 
     $send = function (string $code, string $expiresAt) use ($token, $requirements): string {
         $id = spPortal($token)->post('/api/v1/supplier-self-service/documents', ['requirement_id' => $requirements[$code], 'issued_at' => '2027-05-30', 'expires_at' => $expiresAt, 'file' => UploadedFile::fake()->create('doc.pdf', 20, 'application/pdf')], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
-        spActAs($this->buyer, $this->tenant)->postJson("/api/v1/supplier-portal/documents/{$id}/accept")->assertOk();
+        supplierPortalActAs($this->buyer, $this->tenant)->postJson("/api/v1/supplier-portal/documents/{$id}/accept")->assertOk();
 
         return $id;
     };
@@ -295,19 +295,19 @@ test('expiring documents alert the purchasing staff once per step, expire the qu
     $this->artisan('supplier-portal:alert-expiring-documents')->assertSuccessful();
     expect($this->admin->notifications()->count())->toBe(4);
 
-    $risk = spActAs($this->buyer, $this->tenant)->getJson("/api/v1/supplier-portal/suppliers/{$supplier->id}/risk")->assertOk()->json('data.risk');
+    $risk = supplierPortalActAs($this->buyer, $this->tenant)->getJson("/api/v1/supplier-portal/suppliers/{$supplier->id}/risk")->assertOk()->json('data.risk');
     expect(collect($risk['reasons'])->pluck('code')->all())->toContain('document_expired')->toContain('qualification_expired');
     $this->getJson('/api/v1/supplier-portal/documents?expiring_within_days=30')->assertOk()->assertJsonCount(2, 'data');
 
     $renewal = spPortal($token)->post('/api/v1/supplier-self-service/documents', ['requirement_id' => $requirements['DURC'], 'issued_at' => '2027-07-04', 'file' => UploadedFile::fake()->create('durc.pdf', 20, 'application/pdf')], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
-    spActAs($this->buyer, $this->tenant)->postJson("/api/v1/supplier-portal/documents/{$renewal}/accept")->assertOk()->assertJsonPath('data.expires_at', '2027-11-01');
+    supplierPortalActAs($this->buyer, $this->tenant)->postJson("/api/v1/supplier-portal/documents/{$renewal}/accept")->assertOk()->assertJsonPath('data.expires_at', '2027-11-01');
     expect(SupplierDocumentSubmission::query()->withoutGlobalScopes()->find($durc)->status)->toBe('superseded')
         ->and(SupplierDocument::query()->withoutGlobalScopes()->where('supplier_id', $supplier->id)->where('document_type', 'DURC')->where('is_mandatory', true)->count())->toBe(1);
 });
 
 test('a document is refused with a reason and replaced by a new one', function (): void {
     $supplier = spSupplier($this->tenant);
-    spActAs($this->buyer, $this->tenant)->postJson('/api/v1/supplier-portal/document-requirements/seed-defaults')->assertOk();
+    supplierPortalActAs($this->buyer, $this->tenant)->postJson('/api/v1/supplier-portal/document-requirements/seed-defaults')->assertOk();
     $requirement = collect($this->getJson('/api/v1/supplier-portal/document-requirements?country=CH&active=1')->assertOk()->json('data'))->firstWhere('code', 'UID_EXTRACT');
 
     $first = $this->post('/api/v1/supplier-portal/documents', ['supplier_id' => $supplier->id, 'requirement_id' => $requirement['id'], 'file' => UploadedFile::fake()->create('uid.pdf', 20, 'application/pdf')], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
@@ -336,19 +336,19 @@ test('a bank change is applied only after a callback and two approvals from peop
     spPortal($token)->postJson('/api/v1/supplier-self-service/bank-changes', $payload)->assertUnprocessable();
     spPortal($token)->getJson('/api/v1/supplier-self-service/bank-changes')->assertOk()->assertJsonPath('data.0.iban_masked', 'CH93*************2957');
 
-    $request = spActAs($accountantOne, $this->tenant)->getJson('/api/v1/supplier-portal/bank-changes?status=pending')->assertOk()->assertJsonPath('data.0.previous_iban', SP_CURRENT_IBAN)->json('data.0');
+    $request = supplierPortalActAs($accountantOne, $this->tenant)->getJson('/api/v1/supplier-portal/bank-changes?status=pending')->assertOk()->assertJsonPath('data.0.previous_iban', SP_CURRENT_IBAN)->json('data.0');
     expect($request['id'])->toBe($created['id'])->and($request['source'])->toBe('portal');
 
     $this->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/approve")->assertUnprocessable();
     $this->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/verify-callback")->assertUnprocessable()->assertJsonValidationErrors('note');
-    spActAs($this->buyer, $this->tenant)->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/verify-callback", ['note' => 'called'])->assertForbidden();
+    supplierPortalActAs($this->buyer, $this->tenant)->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/verify-callback", ['note' => 'called'])->assertForbidden();
 
-    spActAs($accountantOne, $this->tenant)->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/verify-callback", ['note' => 'Called the number on the first contract'])->assertOk()->assertJsonPath('data.callback_verified_by', $accountantOne->id);
+    supplierPortalActAs($accountantOne, $this->tenant)->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/verify-callback", ['note' => 'Called the number on the first contract'])->assertOk()->assertJsonPath('data.callback_verified_by', $accountantOne->id);
     $this->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/approve", ['comment' => 'ok'])->assertOk()->assertJsonPath('data.status', 'pending');
     $this->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/approve")->assertUnprocessable();
     expect(Contact::query()->withoutGlobalScopes()->find($supplier->contact_id)->iban)->toBe(SP_CURRENT_IBAN);
 
-    spActAs($accountantTwo, $this->tenant)->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/approve")->assertOk()->assertJsonPath('data.status', 'applied')->assertJsonCount(2, 'data.approvals');
+    supplierPortalActAs($accountantTwo, $this->tenant)->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/approve")->assertOk()->assertJsonPath('data.status', 'applied')->assertJsonCount(2, 'data.approvals');
     expect(Contact::query()->withoutGlobalScopes()->find($supplier->contact_id)->iban)->toBe(SP_NEW_IBAN)
         ->and(Supplier::query()->withoutGlobalScopes()->find($supplier->id)->metadata['bank']['bank_name'])->toBe('UBS');
     $this->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/reject", ['reason' => 'late'])->assertUnprocessable();
@@ -358,17 +358,17 @@ test('the requester never approves their own bank change and one rejection ends 
     $supplier = spSupplier($this->tenant);
     $payload = ['supplier_id' => $supplier->id, 'account_holder' => 'Fornitore Spa', 'iban' => SP_NEW_IBAN];
 
-    $request = spActAs($this->admin, $this->tenant)->postJson('/api/v1/supplier-portal/bank-changes', $payload)->assertCreated()->assertJsonPath('data.source', 'internal')->json('data');
+    $request = supplierPortalActAs($this->admin, $this->tenant)->postJson('/api/v1/supplier-portal/bank-changes', $payload)->assertCreated()->assertJsonPath('data.source', 'internal')->json('data');
     $this->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/verify-callback", ['note' => 'self'])->assertForbidden();
     $this->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/approve")->assertForbidden();
     $this->postJson('/api/v1/supplier-portal/bank-changes', $payload)->assertUnprocessable();
 
     $reviewer = spMemberOf($this->tenant, 'accountant');
-    spActAs($reviewer, $this->tenant)->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/reject")->assertUnprocessable()->assertJsonValidationErrors('reason');
+    supplierPortalActAs($reviewer, $this->tenant)->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/reject")->assertUnprocessable()->assertJsonValidationErrors('reason');
     $this->postJson("/api/v1/supplier-portal/bank-changes/{$request['id']}/reject", ['reason' => 'Not confirmed by phone'])->assertOk()->assertJsonPath('data.status', 'rejected');
     expect(Contact::query()->withoutGlobalScopes()->find($supplier->contact_id)->iban)->toBe(SP_CURRENT_IBAN);
 
-    $again = spActAs($this->admin, $this->tenant)->postJson('/api/v1/supplier-portal/bank-changes', $payload)->assertCreated()->json('data.id');
+    $again = supplierPortalActAs($this->admin, $this->tenant)->postJson('/api/v1/supplier-portal/bank-changes', $payload)->assertCreated()->json('data.id');
     $this->postJson("/api/v1/supplier-portal/bank-changes/{$again}/cancel")->assertOk()->assertJsonPath('data.status', 'cancelled');
 });
 
@@ -411,7 +411,7 @@ test('invited suppliers quote before the deadline, the buyer compares the answer
     spPortal($tokens[2])->postJson("/api/v1/supplier-self-service/rfqs/{$rfq->id}/quote", $quote)->assertUnprocessable();
     spPortal($tokens[2])->getJson('/api/v1/supplier-self-service/rfqs')->assertOk()->assertJsonPath('data.0.can_quote', false);
 
-    $admin = spActAs($this->buyer, $this->tenant);
+    $admin = supplierPortalActAs($this->buyer, $this->tenant);
     $admin->getJson('/api/v1/supplier-portal/rfq-responses')->assertOk()->assertJsonPath('data.0.invited_count', 3)->assertJsonPath('data.0.responded_count', 1)->assertJsonPath('data.0.declined_count', 1)->assertJsonPath('data.0.is_open', false);
 
     $comparison = $admin->getJson("/api/v1/supplier-portal/rfq-responses/{$rfq->id}/comparison")->assertOk()->json('data');
@@ -476,14 +476,14 @@ test('records stay inside the company and ordinary members do not reach the modu
 
     $otherTenant = Tenant::create(['name' => 'Altra Srl', 'legal_name' => 'Altra Srl', 'country' => 'IT', 'default_currency' => 'EUR']);
     $stranger = spMemberOf($otherTenant, 'admin');
-    spActAs($stranger, $otherTenant)->getJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}")->assertNotFound();
+    supplierPortalActAs($stranger, $otherTenant)->getJson("/api/v1/supplier-portal/onboardings/{$onboarding['id']}")->assertNotFound();
     $this->getJson('/api/v1/supplier-portal/onboardings')->assertOk()->assertJsonCount(0, 'data');
     $this->postJson('/api/v1/supplier-portal/onboardings', ['supplier_id' => $supplier->id, 'country' => 'IT'])->assertUnprocessable()->assertJsonValidationErrors('supplier_id');
 
     $member = spMemberOf($this->tenant, 'member');
-    spActAs($member, $this->tenant)->getJson('/api/v1/supplier-portal/onboardings')->assertForbidden();
+    supplierPortalActAs($member, $this->tenant)->getJson('/api/v1/supplier-portal/onboardings')->assertForbidden();
 
     $readOnly = spMemberOf($this->tenant, 'accountant_readonly');
-    spActAs($readOnly, $this->tenant)->getJson('/api/v1/supplier-portal/onboardings')->assertOk();
+    supplierPortalActAs($readOnly, $this->tenant)->getJson('/api/v1/supplier-portal/onboardings')->assertOk();
     $this->postJson('/api/v1/supplier-portal/checks', ['supplier_id' => $supplier->id, 'check_type' => 'other', 'result' => 'passed'])->assertForbidden();
 });

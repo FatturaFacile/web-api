@@ -31,5 +31,7 @@ final readonly class ReportWorkplaceIncidentCommand
         public ?array $rootCauseAnalysis,
         public ?array $correctiveActions,
         public ?string $userId,
+        /** @var list<string> */
+        public array $photos = [],
     ) {}
 }

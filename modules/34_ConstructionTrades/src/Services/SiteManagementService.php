@@ -17,6 +17,8 @@ use Modules\ConstructionTrades\Models\Subcontract;
 use Modules\ConstructionTrades\Models\SubcontractCertification;
 use Modules\ConstructionTrades\Models\Subcontractor;
 use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\Hse\Domain\Contracts\HseDispatchGuardInterface;
+use Modules\Hse\Domain\Enums\ClearanceContext;
 
 /**
  * What happens on a site besides the bid: the subcontracts and the work certified to subcontractors (flowing into the
@@ -28,7 +30,21 @@ final class SiteManagementService
     public function __construct(
         private readonly TradesService $trades,
         private readonly TenantClock $clock,
+        private readonly HseDispatchGuardInterface $hse,
     ) {}
+
+    /**
+     * Mod 099 hard block: a worker may enter the site only with valid certificates, medical fitness and PPE as of the
+     * access day. Throws a ValidationException (key "hse") otherwise.
+     *
+     * @return array{is_cleared: bool, blocking_reasons: list<array<string, string|null>>, warnings: list<string>}
+     */
+    public function assertWorkerAccess(ConstructionSite $site, string $employeeId, ?string $accessDate): array
+    {
+        $at = $accessDate !== null ? CarbonImmutable::parse($accessDate) : CarbonImmutable::now();
+
+        return $this->hse->assertCleared((string) $site->tenant_id, $employeeId, null, ClearanceContext::ConstructionSite, (string) $site->id, $at)->toArray();
+    }
 
     /**
      * Entrusts work on a site to an active subcontractor. A contract tied to a bid must refer to the same site as the

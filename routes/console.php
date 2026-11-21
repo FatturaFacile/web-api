@@ -38,6 +38,7 @@ use Modules\Inventory\Jobs\EvaluateWarehouseReorderRulesJob;
 use Modules\Inventory\Jobs\ExpireStaleReservationsJob;
 use Modules\Inventory\Jobs\ExpireStockLotsJob;
 use Modules\Inventory\Jobs\RecalculateInventoryValuationJob;
+use Modules\Manufacturing\Jobs\MaterialiseShiftInstancesJob;
 use Modules\Manufacturing\Jobs\ProcessManufacturingForecastJob;
 use Modules\Manufacturing\Jobs\ProcessMrpRunJob;
 use Modules\Platform\Jobs\EvaluateNotificationAlertRulesJob;
@@ -217,3 +218,7 @@ Schedule::command('fatturafacile:preservation:verify')->weeklyOn(0, '04:00')->wi
 
 // Workplace health and safety (Mod 099): the 60/30/7 day and overdue alerts for certificates, medical visits and PPE.
 Schedule::command('hse:check-expirations')->dailyAt('06:30')->withoutOverlapping()->onOneServer();
+
+// MES Core integration (issue #184): the UTC shift instances keep a moving horizon, and the change log is compacted.
+$completenessTenantJob('mfg:mes-shift-instances', static fn (Tenant $tenant): object => new MaterialiseShiftInstancesJob($tenant->id))->dailyAt('00:30');
+Schedule::command('mfg:mes-prune-changes')->dailyAt('03:45')->withoutOverlapping()->onOneServer();
