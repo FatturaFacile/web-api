@@ -41675,6 +41675,379 @@ CREATE INDEX "kpi_threshold_alert_logs_tenant_id_kpi_code_status_index" on "kpi_
   "kpi_code",
   "status"
 );
+CREATE TABLE "hse_requirement_matrices"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "jurisdiction" varchar not null,
+  "job_position_id" varchar,
+  "work_center_id" varchar,
+  "construction_site_id" varchar,
+  "suva_hazard_class" varchar,
+  "dvr_risk_profile_code" varchar,
+  "required_training_types_json" text,
+  "required_medical_exam_codes_json" text,
+  "required_ppe_product_ids_json" text,
+  "is_active" tinyint(1) not null default '1',
+  "version" integer not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_requirement_matrices_tenant_id_is_active_index" on "hse_requirement_matrices"(
+  "tenant_id",
+  "is_active"
+);
+CREATE INDEX "hse_requirement_matrices_tenant_id_job_position_id_index" on "hse_requirement_matrices"(
+  "tenant_id",
+  "job_position_id"
+);
+CREATE INDEX "hse_requirement_matrices_tenant_id_work_center_id_index" on "hse_requirement_matrices"(
+  "tenant_id",
+  "work_center_id"
+);
+CREATE INDEX "hse_requirement_matrices_tenant_id_construction_site_id_index" on "hse_requirement_matrices"(
+  "tenant_id",
+  "construction_site_id"
+);
+CREATE TABLE "hse_safety_certificates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "employee_id" varchar not null,
+  "certificate_type" varchar not null,
+  "certificate_number" varchar,
+  "training_provider_name" varchar,
+  "hours_completed" numeric not null default '0',
+  "issued_at" date not null,
+  "expires_at" date,
+  "document_id" varchar,
+  "status" varchar not null default 'valid',
+  "revoked_at" datetime,
+  "version" integer not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_safety_certificates_tenant_id_employee_id_certificate_type_index" on "hse_safety_certificates"(
+  "tenant_id",
+  "employee_id",
+  "certificate_type"
+);
+CREATE INDEX "hse_safety_certificates_tenant_id_expires_at_index" on "hse_safety_certificates"(
+  "tenant_id",
+  "expires_at"
+);
+CREATE TABLE "hse_medical_visits"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "employee_id" varchar not null,
+  "doctor_name" varchar not null,
+  "doctor_registration_number" varchar,
+  "visit_type" varchar not null,
+  "visit_date" date not null,
+  "next_visit_due_date" date,
+  "fitness_outcome" varchar not null,
+  "restrictions_summary" text,
+  "encrypted_clinical_notes_ref" varchar,
+  "certificate_document_id" varchar,
+  "version" integer not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_medical_visits_tenant_id_employee_id_visit_date_index" on "hse_medical_visits"(
+  "tenant_id",
+  "employee_id",
+  "visit_date"
+);
+CREATE INDEX "hse_medical_visits_tenant_id_next_visit_due_date_index" on "hse_medical_visits"(
+  "tenant_id",
+  "next_visit_due_date"
+);
+CREATE TABLE "hse_medical_clinical_vault"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "medical_visit_id" varchar not null,
+  "encrypted_notes" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("medical_visit_id") references "hse_medical_visits"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "hse_medical_clinical_vault_medical_visit_id_unique" on "hse_medical_clinical_vault"(
+  "medical_visit_id"
+);
+CREATE INDEX "hse_medical_clinical_vault_tenant_id_medical_visit_id_index" on "hse_medical_clinical_vault"(
+  "tenant_id",
+  "medical_visit_id"
+);
+CREATE TABLE "hse_employee_clearance_cache"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "employee_id" varchar not null,
+  "medical_status" varchar not null,
+  "restrictions_summary" text,
+  "valid_until" date,
+  "computed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "hse_employee_clearance_cache_tenant_id_employee_id_unique" on "hse_employee_clearance_cache"(
+  "tenant_id",
+  "employee_id"
+);
+CREATE TABLE "hse_ppe_distributions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "employee_id" varchar not null,
+  "product_id" varchar not null,
+  "warehouse_id" varchar not null,
+  "lot_or_serial_id" varchar,
+  "quantity" numeric not null,
+  "ce_marking_standard" varchar,
+  "handed_over_at" datetime not null,
+  "replacement_due_at" date,
+  "employee_signature_hash" varchar not null,
+  "signature_image_base64_or_ref" text,
+  "verbale_consegna_pdf_id" varchar,
+  "stock_movement_id" varchar,
+  "locale" varchar not null default 'en',
+  "delivery_status" varchar not null default 'delivered_signed',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_ppe_distributions_tenant_id_employee_id_product_id_index" on "hse_ppe_distributions"(
+  "tenant_id",
+  "employee_id",
+  "product_id"
+);
+CREATE INDEX "hse_ppe_distributions_tenant_id_replacement_due_at_index" on "hse_ppe_distributions"(
+  "tenant_id",
+  "replacement_due_at"
+);
+CREATE TABLE "hse_incident_reports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "protocol_number" varchar not null,
+  "jurisdiction" varchar not null,
+  "incident_date" datetime not null,
+  "reported_at" datetime not null,
+  "location_or_site_id" varchar,
+  "work_center_id" varchar,
+  "incident_type" varchar not null,
+  "involved_employee_ids_json" text,
+  "witness_employee_ids_json" text,
+  "description" text not null,
+  "immediate_actions_taken" text,
+  "root_cause_analysis_json" text,
+  "corrective_actions_json" text,
+  "prognosis_days" integer not null default '0',
+  "injury_dynamics_json" text,
+  "linked_insurance_claim_id" varchar,
+  "status" varchar not null default 'draft',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "hse_incident_reports_tenant_id_protocol_number_unique" on "hse_incident_reports"(
+  "tenant_id",
+  "protocol_number"
+);
+CREATE INDEX "hse_incident_reports_tenant_id_incident_type_status_index" on "hse_incident_reports"(
+  "tenant_id",
+  "incident_type",
+  "status"
+);
+CREATE TABLE "hse_accident_claim_drafts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "incident_report_id" varchar not null,
+  "jurisdiction" varchar not null,
+  "schema_version" varchar not null,
+  "declaration_type" varchar,
+  "payload_json" text not null,
+  "status" varchar not null default 'draft',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("incident_report_id") references "hse_incident_reports"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_accident_claim_drafts_tenant_id_incident_report_id_index" on "hse_accident_claim_drafts"(
+  "tenant_id",
+  "incident_report_id"
+);
+CREATE TABLE "hse_safety_audits"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "audit_type" varchar not null,
+  "jurisdiction" varchar not null,
+  "audit_date" date not null,
+  "answers_json" text,
+  "score_percent" numeric not null default '0',
+  "corrective_actions_json" text,
+  "status" varchar not null default 'open',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_safety_audits_tenant_id_audit_type_audit_date_index" on "hse_safety_audits"(
+  "tenant_id",
+  "audit_type",
+  "audit_date"
+);
+CREATE TABLE "hse_dvr_documents"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "revision_number" integer not null,
+  "issued_at" date not null,
+  "review_due_at" date,
+  "signatures_json" text,
+  "document_id" varchar,
+  "status" varchar not null default 'draft',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "hse_dvr_documents_tenant_id_revision_number_unique" on "hse_dvr_documents"(
+  "tenant_id",
+  "revision_number"
+);
+CREATE TABLE "hse_toolbox_talks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "topic" varchar not null,
+  "site_or_work_center" varchar,
+  "checklist_points_json" text,
+  "supervisor_employee_id" varchar,
+  "conducted_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_toolbox_talks_tenant_id_conducted_at_index" on "hse_toolbox_talks"(
+  "tenant_id",
+  "conducted_at"
+);
+CREATE TABLE "hse_toolbox_talk_attendances"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "toolbox_talk_id" varchar not null,
+  "employee_id" varchar not null,
+  "signature_hash" varchar not null,
+  "signature_image_base64_or_ref" text,
+  "signed_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("toolbox_talk_id") references "hse_toolbox_talks"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "hse_toolbox_talk_attendances_toolbox_talk_id_employee_id_unique" on "hse_toolbox_talk_attendances"(
+  "toolbox_talk_id",
+  "employee_id"
+);
+CREATE INDEX "hse_toolbox_talk_attendances_tenant_id_toolbox_talk_id_index" on "hse_toolbox_talk_attendances"(
+  "tenant_id",
+  "toolbox_talk_id"
+);
+CREATE TABLE "hse_expiration_alerts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "subject_type" varchar not null,
+  "subject_id" varchar not null,
+  "threshold_days" integer not null,
+  "alert_date" date not null,
+  "recipients_count" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_hse_expiration_alert" on "hse_expiration_alerts"(
+  "tenant_id",
+  "subject_type",
+  "subject_id",
+  "threshold_days",
+  "alert_date"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -42077,3 +42450,4 @@ INSERT INTO migrations VALUES(398,'2027_12_13_000100_add_blind_indexes_to_contac
 INSERT INTO migrations VALUES(399,'2027_12_13_000200_create_offline_audit_entries_table',11);
 INSERT INTO migrations VALUES(400,'2027_12_16_000100_create_ai_cognitive_tables',12);
 INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_kpi_dashboard_tables',13);
+INSERT INTO migrations VALUES(402,'2027_12_17_000100_create_hse_tables',14);

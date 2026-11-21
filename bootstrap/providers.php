@@ -44,6 +44,7 @@ use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Governance\Providers\GovernanceServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
 use Modules\Hospitality\Providers\HospitalityServiceProvider;
+use Modules\Hse\Providers\HseServiceProvider;
 use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
 use Modules\Integrations\Providers\IntegrationsServiceProvider;
 use Modules\Intrastat\Providers\IntrastatServiceProvider;
@@ -164,4 +165,5 @@ return [
     OcrExtractionServiceProvider::class,
     KpiDashboardsServiceProvider::class,
     AiCognitiveServiceProvider::class,
+    HseServiceProvider::class,
 ];

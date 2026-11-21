@@ -214,3 +214,6 @@ Schedule::command('audit:archive-worm')->dailyAt('03:30')->withoutOverlapping()-
 // Digital preservation (AgID conservazione / GeBüV): collect, seal, time-stamp and dispatch; then re-verify the vault.
 Schedule::command('fatturafacile:preservation:run')->dailyAt('03:00')->withoutOverlapping()->onOneServer();
 Schedule::command('fatturafacile:preservation:verify')->weeklyOn(0, '04:00')->withoutOverlapping()->onOneServer();
+
+// Workplace health and safety (Mod 099): the 60/30/7 day and overdue alerts for certificates, medical visits and PPE.
+Schedule::command('hse:check-expirations')->dailyAt('06:30')->withoutOverlapping()->onOneServer();

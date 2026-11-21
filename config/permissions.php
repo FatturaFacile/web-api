@@ -117,6 +117,16 @@ return [
             'grants' => ['read' => ['kpi.*'], 'write' => ['kpi.*']],
         ],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
+        // Workplace health, safety and training (Mod 099). hse: the operational roles read the compliance matrix, the clearance verdict
+        // and the physician judgments (outcome and prescriptions); the HSE team (hr, hse, admins) writes certificates, PPE and incidents.
+        // hse_medical: who records physician judgments. hse_clinical: clinical notes belong to the occupational physician alone,
+        // so owners and admins are deliberately absent (GDPR Art. 9 / nLPD).
+        'hse' => [
+            'read' => ['owner', 'admin', 'hr', 'hse', 'production', 'technician', 'service_manager', 'project_manager', 'accountant', 'member'],
+            'write' => ['owner', 'admin', 'hr', 'hse'],
+        ],
+        'hse_medical' => ['read' => ['owner', 'admin', 'hr', 'hse', 'medico'], 'write' => ['owner', 'admin', 'hr', 'hse', 'medico']],
+        'hse_clinical' => ['read' => ['medico'], 'write' => ['medico'], 'grants' => ['read' => ['hse.clinical.read'], 'write' => ['hse.clinical.write']]],
         // AI Services & Cognitive Automation Layer (Mod 093). ai_copilot (ai.copilot.use): every member asks the copilot and drafts
         // messages, each answer limited to what the caller may read; ai_review (ai.suggestions.review): the finance and sales teams
         // work the review queue and the insights; ai_admin (ai.admin.configure): owners and admins set up providers and policies and

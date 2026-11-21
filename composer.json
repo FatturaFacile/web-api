@@ -83,6 +83,7 @@
             "Modules\\OcrExtraction\\": "modules/67_OcrExtraction/src/",
             "Modules\\KpiDashboards\\": "modules/68_KpiDashboards/src/",
             "Modules\\AiCognitive\\": "modules/68_AiCognitive/src/",
+            "Modules\\Hse\\": "modules/69_Hse/src/",
             "Modules\\Payroll\\": "modules/18_Payroll/src/",
             "Modules\\Associations\\": "modules/31_Associations/src/",
             "Modules\\Customs\\": "modules/32_Customs/src/",
