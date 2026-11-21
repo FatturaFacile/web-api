@@ -13,6 +13,7 @@ use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Academy\Providers\AcademyServiceProvider;
 use Modules\AiCognitive\Providers\AiCognitiveServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
+use Modules\AnalyticsDss\Providers\AnalyticsDssServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
@@ -31,6 +32,7 @@ use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
+use Modules\DataResidency\Providers\DataResidencyServiceProvider;
 use Modules\DigitalPreservation\Providers\DigitalPreservationServiceProvider;
 use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
@@ -65,6 +67,7 @@ use Modules\Pricing\Providers\PricingServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
 use Modules\Quality\Providers\QualityServiceProvider;
+use Modules\Quoting\Providers\QuotingServiceProvider;
 use Modules\Rebates\Providers\RebatesServiceProvider;
 use Modules\Returns\Providers\ReturnsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
@@ -163,7 +166,10 @@ return [
     DigitalPreservationServiceProvider::class,
     ForecastingServiceProvider::class,
     OcrExtractionServiceProvider::class,
+    AnalyticsDssServiceProvider::class,
     KpiDashboardsServiceProvider::class,
+    QuotingServiceProvider::class,
     SwissFiscalServiceProvider::class,
     AiCognitiveServiceProvider::class,
+    DataResidencyServiceProvider::class,
 ];

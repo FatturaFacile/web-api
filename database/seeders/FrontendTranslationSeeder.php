@@ -8,8 +8,11 @@ use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
+use Database\Seeders\Translations\CpqQuotesFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
+use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
+use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
@@ -24,6 +27,7 @@ use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
+use Database\Seeders\Translations\ProposalPortalFrontendTranslations;
 use Database\Seeders\Translations\PurchaseRequisitionFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
 use Database\Seeders\Translations\RfqFrontendTranslations;
@@ -76,7 +80,11 @@ class FrontendTranslationSeeder extends Seeder
             + IdentityFrontendTranslations::all($locale)
             + AiForecastingFrontendTranslations::all($locale)
             + OcrInboxFrontendTranslations::all($locale)
+            + ExecutiveDssFrontendTranslations::all($locale)
             + KpiDashboardsFrontendTranslations::all($locale)
+            + ProposalPortalFrontendTranslations::all($locale)
+            + CpqQuotesFrontendTranslations::all($locale)
+            + DataSovereigntyFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)
             + MobileFeatureTranslations::all($locale)
             + SecurityCenterFrontendTranslations::all($locale)

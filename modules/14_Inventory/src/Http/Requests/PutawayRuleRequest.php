@@ -39,6 +39,9 @@ final class PutawayRuleRequest extends FormRequest
             'target_bin_id' => ['sometimes', 'nullable', 'uuid', $this->tenantExists('warehouse_bins')],
             'bin_type' => ['sometimes', 'nullable', 'string', Rule::in(WarehouseBin::PUTAWAY_BIN_TYPES)],
             'strategy' => [$presence, 'string', Rule::in(PutawayRule::STRATEGIES)],
+            'abc_class' => ['sometimes', 'nullable', 'string', Rule::in(['A', 'B', 'C'])],
+            'temperature_control' => ['sometimes', 'nullable', 'string', Rule::in(['ambient', 'chilled', 'frozen', 'hazmat'])],
+            'packaging_unit' => ['sometimes', 'nullable', 'string', Rule::in(['pallet', 'box', 'unit'])],
             'priority' => ['sometimes', 'integer', 'min:0', 'max:100000'],
             'is_active' => ['sometimes', 'boolean'],
         ];

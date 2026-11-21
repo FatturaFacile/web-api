@@ -29,6 +29,8 @@ final class UpdateItemRequest extends ManufacturingRequest
             'max_lot_size' => ['nullable', ...self::PositiveQuantity],
             'lot_size_multiple' => ['nullable', ...self::Quantity],
             'lead_time_days' => ['sometimes', 'integer', 'min:0', 'max:3650'],
+            'origin_status' => ['sometimes', 'string', 'in:originating,non_originating'],
+            'exw_price' => ['sometimes', ...self::Amount],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }

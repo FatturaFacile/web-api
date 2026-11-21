@@ -62,7 +62,7 @@ it('computes gross margin and the top customers and products with margin', funct
     $customerA = kpiContact($tenant, 'Alfa AG');
     $customerB = kpiContact($tenant, 'Beta AG');
     foreach ([[$customerA, 100, 5000], [$customerB, 10, 2000]] as [$customer, $quantity, $total]) {
-        $invoice = kpiInvoice($tenant, $customer, '2026-03-05', (float) $total);
+        $invoice = kpiDashInvoice($tenant, $customer, '2026-03-05', (float) $total);
         DB::table('invoice_items')->insert(['id' => (string) Str::uuid(), 'tenant_id' => $tenant->id, 'invoice_id' => $invoice, 'product_id' => $product, 'description' => 'Widget', 'quantity' => $quantity, 'unit_price' => $total / $quantity, 'line_total' => $total, 'created_at' => now(), 'updated_at' => now()]);
     }
     kpiActAs($tenant, 'sales');

@@ -49,8 +49,13 @@ abstract class ManufacturingRequest extends FormRequest
             $key.'.*.scrap_percentage' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:999'],
             $key.'.*.yield_percentage' => ['nullable', 'numeric', 'decimal:0,2', 'gt:0', 'max:100'],
             $key.'.*.is_phantom' => ['nullable', 'boolean'],
-            $key.'.*.issue_method' => ['nullable', 'string', 'in:manual,backflush'],
+            $key.'.*.issue_method' => ['nullable', 'string', 'in:manual,backflush,backflush_order_close'],
             $key.'.*.operation_sequence' => ['nullable', 'integer', 'min:1', 'max:99999'],
+            $key.'.*.fixed_scrap_quantity' => ['nullable', ...self::Quantity],
+            $key.'.*.substitute_item_ids' => ['nullable', 'array', 'max:10'],
+            $key.'.*.substitute_item_ids.*' => ['uuid', 'distinct', $this->tenantOwns('mfg_items')],
+            $key.'.*.sequence' => ['nullable', 'integer', 'min:1', 'max:99999'],
+            $key.'.*.notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

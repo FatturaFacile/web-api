@@ -12,6 +12,7 @@ use Modules\Inventory\Http\Controllers\InventoryCostLayerController;
 use Modules\Inventory\Http\Controllers\InventoryCountController;
 use Modules\Inventory\Http\Controllers\InventoryValuationConfigController;
 use Modules\Inventory\Http\Controllers\LandedCostDocumentController;
+use Modules\Inventory\Http\Controllers\LocationTopologyController;
 use Modules\Inventory\Http\Controllers\OutboundController;
 use Modules\Inventory\Http\Controllers\PortalMovementRequestController;
 use Modules\Inventory\Http\Controllers\ProductChargeController;
@@ -143,6 +144,11 @@ Route::prefix('api/v1/inventory')
 
         // 9b. Warehouse Locations
         Route::post('warehouses/{id}/locations', [WarehouseLocationController::class, 'store'])->name('inventory.warehouses.locations.store');
+        Route::post('warehouses/{id}/locations/bulk', [LocationTopologyController::class, 'bulk'])->name('inventory.warehouses.locations.bulk');
+        Route::get('warehouses/{id}/tree', [LocationTopologyController::class, 'tree'])->name('inventory.warehouses.tree');
+        Route::get('warehouses/{id}/capacity-summary', [LocationTopologyController::class, 'capacitySummary'])->name('inventory.warehouses.capacity-summary');
+        Route::post('labels/locations', [LocationTopologyController::class, 'labels'])->name('inventory.labels.locations');
+        Route::get('in-transit', [LocationTopologyController::class, 'inTransit'])->name('inventory.in-transit');
 
         // 9c. Lots: Expiry, Quarantine, Genealogy and Batch Stock
         Route::get('lots', [StockLotController::class, 'index'])->name('inventory.lots.index');

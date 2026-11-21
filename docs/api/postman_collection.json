@@ -58607,6 +58607,715 @@
             ]
         },
         {
+            "name": "Cpq",
+            "item": [
+                {
+                    "name": "GET /v1/cpq/quotes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"jurisdiction\": \"CH\",\n    \"locale\": \"it-CH\",\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"sales_rep_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_name\": \"string\",\n    \"customer_email\": \"user@example.com\",\n    \"customer_phone\": \"string\",\n    \"billing_address\": [\n        \"string\"\n    ],\n    \"shipping_address\": [\n        \"string\"\n    ],\n    \"currency\": \"CHF\",\n    \"exchange_rate\": 1.5,\n    \"valid_until\": \"2026-01-31T12:00:00+00:00\",\n    \"payment_terms\": \"string\",\n    \"incoterms\": \"string\",\n    \"cover_letter\": \"string\",\n    \"terms_and_conditions\": \"string\",\n    \"header_discount_percent\": 1.5,\n    \"min_margin_percent\": 1.5,\n    \"auto_convert\": false,\n    \"auto_convert_target\": \"sales_order\",\n    \"signature_level\": \"ses_otp\",\n    \"sections\": [\n        {\n            \"id\": \"00000000-0000-0000-0000-000000000000\",\n            \"key\": \"string\",\n            \"title\": \"string\",\n            \"description\": \"string\",\n            \"page_break_before\": false,\n            \"discount_percent\": 1.5\n        }\n    ],\n    \"lines\": [\n        {\n            \"id\": \"00000000-0000-0000-0000-000000000000\",\n            \"section_key\": \"string\",\n            \"line_type\": \"product\",\n            \"selection_mode\": \"mandatory\",\n            \"alternative_group\": \"string\",\n            \"is_default_selected\": false,\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"sku\": \"string\",\n            \"description\": \"string\",\n            \"long_description\": \"string\",\n            \"uom\": \"string\",\n            \"resource_role\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"unit_cost\": 1.5,\n            \"discount_percent\": 1.5,\n            \"discount_fixed\": 1.5,\n            \"tier_prices\": [\n                {}\n            ],\n            \"tax_rate\": 1.5\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/cpq/quotes/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/cpq/quotes/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"jurisdiction\": \"CH\",\n    \"locale\": \"it-CH\",\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"sales_rep_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_name\": \"string\",\n    \"customer_email\": \"user@example.com\",\n    \"customer_phone\": \"string\",\n    \"billing_address\": [\n        \"string\"\n    ],\n    \"shipping_address\": [\n        \"string\"\n    ],\n    \"currency\": \"CHF\",\n    \"exchange_rate\": 1.5,\n    \"valid_until\": \"2026-01-31T12:00:00+00:00\",\n    \"payment_terms\": \"string\",\n    \"incoterms\": \"string\",\n    \"cover_letter\": \"string\",\n    \"terms_and_conditions\": \"string\",\n    \"header_discount_percent\": 1.5,\n    \"min_margin_percent\": 1.5,\n    \"auto_convert\": false,\n    \"auto_convert_target\": \"sales_order\",\n    \"signature_level\": \"ses_otp\",\n    \"sections\": [\n        {\n            \"id\": \"00000000-0000-0000-0000-000000000000\",\n            \"key\": \"string\",\n            \"title\": \"string\",\n            \"description\": \"string\",\n            \"page_break_before\": false,\n            \"discount_percent\": 1.5\n        }\n    ],\n    \"lines\": [\n        {\n            \"id\": \"00000000-0000-0000-0000-000000000000\",\n            \"section_key\": \"string\",\n            \"line_type\": \"product\",\n            \"selection_mode\": \"mandatory\",\n            \"alternative_group\": \"string\",\n            \"is_default_selected\": false,\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"sku\": \"string\",\n            \"description\": \"string\",\n            \"long_description\": \"string\",\n            \"uom\": \"string\",\n            \"resource_role\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"unit_cost\": 1.5,\n            \"discount_percent\": 1.5,\n            \"discount_fixed\": 1.5,\n            \"tier_prices\": [\n                {}\n            ],\n            \"tax_rate\": 1.5\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/cpq/quotes/:id/compare/:otherId",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/compare/:otherId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "compare",
+                                ":otherId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "otherId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/cpq/quotes/:id/documents/:kind",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/documents/:kind",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "documents",
+                                ":kind"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "kind",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/reorder",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/reorder",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "reorder"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"section_order\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"line_order\": [\n        {\n            \"id\": \"00000000-0000-0000-0000-000000000000\",\n            \"section_id\": \"00000000-0000-0000-0000-000000000000\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/issue",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/issue",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "issue"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"validity_days\": 1,\n    \"use_pin\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/revisions",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/revisions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "revisions"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/convert-to-invoice",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/convert-to-invoice",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "convert-to-invoice"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"down_payment_percent\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/convert-to-order",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/convert-to-order",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "convert-to-order"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/cpq/quotes/:id/approve-and-issue",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cpq/quotes/:id/approve-and-issue",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cpq",
+                                "quotes",
+                                ":id",
+                                "approve-and-issue"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"validity_days\": 1,\n    \"use_pin\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "Credit Management",
             "item": [
                 {
@@ -139951,6 +140660,276 @@
                     }
                 },
                 {
+                    "name": "POST /v1/inventory/warehouses/:id/locations/bulk",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/locations/bulk",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "locations",
+                                "bulk"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisles\": 1,\n    \"racks\": 1,\n    \"shelves\": 1,\n    \"bins\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"spacing\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/warehouses/:id/tree",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/tree",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "tree"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/warehouses/:id/capacity-summary",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/capacity-summary",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "capacity-summary"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/inventory/labels/locations",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/labels/locations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "labels",
+                                "locations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"bin_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"format\": \"pdf\",\n    \"size\": \"100x50\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/in-transit",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/in-transit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "in-transit"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "POST /v1/inventory/sales-orders/:id/reserve",
                     "request": {
                         "method": "POST",
@@ -141138,7 +142117,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"abc_class\": \"A\",\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -141204,7 +142183,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"abc_class\": \"A\",\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -141317,7 +142296,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1,\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"abc_class\": \"A\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -141376,7 +142355,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1,\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"abc_class\": \"A\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -146069,7 +147048,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisle_code\": \"string\",\n    \"rack_code\": \"string\",\n    \"bin_code\": \"string\",\n    \"barcode\": \"string\",\n    \"pick_sequence\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"bin_type\": \"storage\"\n}",
+                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisle_code\": \"string\",\n    \"rack_code\": \"string\",\n    \"bin_code\": \"string\",\n    \"barcode\": \"string\",\n    \"pick_sequence\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"bin_type\": \"storage\",\n    \"shelf_code\": \"string\",\n    \"coord_x\": 1.5,\n    \"coord_y\": 1.5,\n    \"coord_z\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"allow_mixed_skus\": false,\n    \"allow_mixed_lots\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -146301,7 +147280,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"bin_type\": \"storage\",\n    \"max_quantity\": 1.5,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"is_locked\": false,\n    \"pick_sequence\": 1\n}",
+                            "raw": "{\n    \"bin_type\": \"storage\",\n    \"max_quantity\": 1.5,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"is_locked\": false,\n    \"pick_sequence\": 1,\n    \"block_reason\": \"string\",\n    \"coord_x\": 1.5,\n    \"coord_y\": 1.5,\n    \"coord_z\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"allow_mixed_skus\": false,\n    \"allow_mixed_lots\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -151038,7 +152017,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"mfg_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"name\": \"string\",\n    \"bom_number\": \"string\",\n    \"revision\": \"string\",\n    \"bom_type\": \"standard\",\n    \"base_quantity\": 1.5,\n    \"uom\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"effective_to\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"components\": [\n        {\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"sequence\": 1,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"mfg_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"name\": \"string\",\n    \"bom_number\": \"string\",\n    \"revision\": \"string\",\n    \"bom_type\": \"standard\",\n    \"base_quantity\": 1.5,\n    \"uom\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"effective_to\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"components\": [\n        {\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"sequence\": 1,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"fixed_scrap_quantity\": 1.5,\n            \"substitute_item_ids\": [\n                \"00000000-0000-0000-0000-000000000000\"\n            ],\n            \"notes\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -151153,7 +152132,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"mfg_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"name\": \"string\",\n    \"bom_number\": \"string\",\n    \"revision\": \"string\",\n    \"bom_type\": \"standard\",\n    \"base_quantity\": 1.5,\n    \"uom\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"effective_to\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"components\": [\n        {\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"sequence\": 1,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"mfg_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"name\": \"string\",\n    \"bom_number\": \"string\",\n    \"revision\": \"string\",\n    \"bom_type\": \"standard\",\n    \"base_quantity\": 1.5,\n    \"uom\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"effective_to\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"components\": [\n        {\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"sequence\": 1,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"fixed_scrap_quantity\": 1.5,\n            \"substitute_item_ids\": [\n                \"00000000-0000-0000-0000-000000000000\"\n            ],\n            \"notes\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -151283,7 +152262,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"new_revision\": \"string\",\n    \"reason\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"components\": [\n        {\n            \"action\": \"add\",\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1\n        }\n    ]\n}",
+                            "raw": "{\n    \"new_revision\": \"string\",\n    \"reason\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"components\": [\n        {\n            \"action\": \"add\",\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"fixed_scrap_quantity\": 1.5,\n            \"substitute_item_ids\": [\n                \"00000000-0000-0000-0000-000000000000\"\n            ],\n            \"sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -151341,6 +152320,602 @@
                             ]
                         },
                         "description": "Releases a draft revision",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Creates a BOM draft, or revises a released BOM through an engineering change",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/revisions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                "revisions"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Creates a BOM draft, or revises a released BOM through an engineering change",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"source_bom_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"title\": \"string\",\n    \"reason\": \"string\",\n    \"new_revision\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"components\": [\n        {\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"fixed_scrap_quantity\": 1.5,\n            \"substitute_item_ids\": [\n                \"00000000-0000-0000-0000-000000000000\"\n            ],\n            \"sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ],\n    \"mfg_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"name\": \"string\",\n    \"bom_number\": \"string\",\n    \"revision\": \"string\",\n    \"bom_type\": \"standard\",\n    \"base_quantity\": 1.5,\n    \"uom\": \"string\",\n    \"effective_to\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Replaces a component across the released BOMs that use it",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/mass-replace",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                "mass-replace"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Replaces a component across the released BOMs that use it",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"obsolete_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"substitute_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"reason\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"dry_run\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Dry run or commit of a BOM import",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/import",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                "import"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Dry run or commit of a BOM import",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"product_code\": \"string\",\n    \"name\": \"string\",\n    \"dry_run\": false,\n    \"rows\": [\n        {\n            \"item_code\": \"string\",\n            \"quantity_per\": \"string\",\n            \"uom\": \"string\",\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"fixed_scrap_quantity\": 1.5,\n            \"operation_sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Explosion of a revision: single or multi-level, with waste, phantom flattening and lead times",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/:id/explosion",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                ":id",
+                                "explosion"
+                            ],
+                            "query": [
+                                {
+                                    "key": "quantity",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "multi_level",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "flatten_phantoms",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "threshold_percentage",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Explosion of a revision: single or multi-level, with waste, phantom flattening and lead times",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Structural diff between two revisions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/:id/diff/:otherId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                ":id",
+                                "diff",
+                                ":otherId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "otherId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Structural diff between two revisions",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Replaces the co/by-products of a draft revision",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/:id/co-products",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                ":id",
+                                "co-products"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Replaces the co/by-products of a draft revision",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"co_products\": [\n        {\n            \"product_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"product_type\": \"co_product\",\n            \"output_ratio_qty\": 1.5,\n            \"cost_allocation_percentage\": 1.5\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Cost allocation between the primary output and the co/by-products",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/:id/cost-allocation",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                ":id",
+                                "cost-allocation"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Cost allocation between the primary output and the co/by-products",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Preferential origin (EUR.1) test of a revision",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/:id/preferential-origin",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                ":id",
+                                "preferential-origin"
+                            ],
+                            "query": [
+                                {
+                                    "key": "quantity",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "multi_level",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "flatten_phantoms",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "threshold_percentage",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Preferential origin (EUR.1) test of a revision",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Where-used implosion of an item",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/items/:id/implosion",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "items",
+                                ":id",
+                                "implosion"
+                            ],
+                            "query": [
+                                {
+                                    "key": "quantity",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "multi_level",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "flatten_phantoms",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "threshold_percentage",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Where-used implosion of an item",
                         "auth": {
                             "type": "noauth"
                         }
@@ -151438,7 +153013,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"bom_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"title\": \"string\",\n    \"reason\": \"string\",\n    \"description\": \"string\",\n    \"change_type\": \"bom_change\",\n    \"effective_date\": \"2026-01-31T12:00:00+00:00\",\n    \"new_revision\": \"string\",\n    \"components\": [\n        {\n            \"action\": \"add\",\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1\n        }\n    ]\n}",
+                            "raw": "{\n    \"bom_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"title\": \"string\",\n    \"reason\": \"string\",\n    \"description\": \"string\",\n    \"change_type\": \"bom_change\",\n    \"effective_date\": \"2026-01-31T12:00:00+00:00\",\n    \"new_revision\": \"string\",\n    \"components\": [\n        {\n            \"action\": \"add\",\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"fixed_scrap_quantity\": 1.5,\n            \"substitute_item_ids\": [\n                \"00000000-0000-0000-0000-000000000000\"\n            ],\n            \"sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -151824,7 +153399,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"item_code\": \"string\",\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"item_type\": \"raw_material\",\n    \"procurement_type\": \"make\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"uom\": \"string\",\n    \"standard_cost\": 1.5,\n    \"safety_stock\": 1.5,\n    \"min_lot_size\": 1.5,\n    \"max_lot_size\": 1.5,\n    \"lot_size_multiple\": 1.5,\n    \"lead_time_days\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"item_code\": \"string\",\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"item_type\": \"raw_material\",\n    \"procurement_type\": \"make\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"uom\": \"string\",\n    \"standard_cost\": 1.5,\n    \"safety_stock\": 1.5,\n    \"min_lot_size\": 1.5,\n    \"max_lot_size\": 1.5,\n    \"lot_size_multiple\": 1.5,\n    \"lead_time_days\": 1,\n    \"origin_status\": \"originating\",\n    \"exw_price\": 1.5,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -151939,7 +153514,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"item_type\": \"raw_material\",\n    \"procurement_type\": \"make\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"uom\": \"string\",\n    \"standard_cost\": 1.5,\n    \"safety_stock\": 1.5,\n    \"min_lot_size\": 1.5,\n    \"max_lot_size\": 1.5,\n    \"lot_size_multiple\": 1.5,\n    \"lead_time_days\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"item_type\": \"raw_material\",\n    \"procurement_type\": \"make\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"uom\": \"string\",\n    \"standard_cost\": 1.5,\n    \"safety_stock\": 1.5,\n    \"min_lot_size\": 1.5,\n    \"max_lot_size\": 1.5,\n    \"lot_size_multiple\": 1.5,\n    \"lead_time_days\": 1,\n    \"origin_status\": \"originating\",\n    \"exw_price\": 1.5,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -186589,6 +188164,482 @@
                     }
                 },
                 {
+                    "name": "GET /v1/public/proposals/:token",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/public/proposals/:token/documents/:kind",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/documents/:kind",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "documents",
+                                ":kind"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "kind",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/proposals/:token/verify-pin",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/verify-pin",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "verify-pin"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/public/proposals/:token/selections",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/selections",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "selections"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/proposals/:token/signature",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/signature",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "signature"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/proposals/:token/signature/complete",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/signature/complete",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "signature",
+                                "complete"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/proposals/:token/reject",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/reject",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "reject"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/proposals/:token/comments",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/proposals/:token/comments",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "proposals",
+                                ":token",
+                                "comments"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/public/signature-webhooks",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/public/signature-webhooks",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "signature-webhooks"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "GET /v1/public/quote-signatures/:token",
                     "request": {
                         "method": "GET",
@@ -204532,6 +206583,750 @@
                             "variable": [
                                 {
                                     "key": "user",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Sovereignty",
+            "item": [
+                {
+                    "name": "GET /v1/sovereignty/nodes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/nodes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "nodes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "jurisdiction_zone",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "service_type",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/dashboard",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/dashboard",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "dashboard"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/policies",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/policies",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "policies"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/policies",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/policies",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "policies"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"jurisdiction_zone\": \"Strict-CH-Only\",\n    \"primary_db_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"replica_db_node_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"s3_storage_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"vector_db_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"ai_inference_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"backup_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"queue_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"enforce_strict_egress_block\": false,\n    \"allow_aggregated_non_pii_consolidation\": false,\n    \"second_approver_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/cross-border-rules",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/cross-border-rules",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "cross-border-rules"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/cross-border-rules/validate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/cross-border-rules/validate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "cross-border-rules",
+                                "validate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"purpose\": \"string\",\n    \"target\": \"string\",\n    \"destination_country_iso2\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/byok",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/byok",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "byok"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/byok/audit-logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/byok/audit-logs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "byok",
+                                "audit-logs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/byok/configure",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/byok/configure",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "byok",
+                                "configure"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"key_management_mode\": \"Platform-Managed\",\n    \"provider_type\": \"SECUROSYS_PRIMUS_HSM\",\n    \"external_key_uri\": \"string\",\n    \"kmip_endpoint\": \"https://example.com\",\n    \"credentials\": [\n        \"string\"\n    ],\n    \"dek_cache_ttl_seconds\": 1,\n    \"rotation_interval_days\": 1,\n    \"dry_run\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/byok/:id/rotate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/byok/:id/rotate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "byok",
+                                ":id",
+                                "rotate"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/byok/:id/kill-switch",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/byok/:id/kill-switch",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "byok",
+                                ":id",
+                                "kill-switch"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"action\": \"SUSPEND\",\n    \"reason\": \"string\",\n    \"confirmation_phrase\": \"string\",\n    \"mfa_code\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/sovereignty/attestations/generate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/attestations/generate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "attestations",
+                                "generate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/attestations/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/attestations/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "attestations",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/sovereignty/attestations/:id/pdf",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sovereignty/attestations/:id/pdf",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sovereignty",
+                                "attestations",
+                                ":id",
+                                "pdf"
+                            ],
+                            "query": [
+                                {
+                                    "key": "locale",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
                                     "value": "",
                                     "description": ""
                                 }
