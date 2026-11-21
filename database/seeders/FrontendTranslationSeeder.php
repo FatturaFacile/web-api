@@ -25,6 +25,7 @@ use Database\Seeders\Translations\ItalianPayrollFrontendTranslations;
 use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
+use Database\Seeders\Translations\MesOperatorBoardFrontendTranslations;
 use Database\Seeders\Translations\MobileFeatureTranslations;
 use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
@@ -85,6 +86,7 @@ class FrontendTranslationSeeder extends Seeder
             + AiForecastingFrontendTranslations::all($locale)
             + OcrInboxFrontendTranslations::all($locale)
             + BomManagementFrontendTranslations::all($locale)
+            + MesOperatorBoardFrontendTranslations::all($locale)
             + ExecutiveDssFrontendTranslations::all($locale)
             + KpiDashboardsFrontendTranslations::all($locale)
             + ItalianPayrollFrontendTranslations::all($locale)

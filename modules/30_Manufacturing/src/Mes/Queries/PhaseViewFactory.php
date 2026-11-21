@@ -45,6 +45,7 @@ final class PhaseViewFactory
         $logs = MfgMesTimeLog::query()->whereIn('phase_id', $phaseIds)->orderBy('started_at')->get()->groupBy('phase_id');
         $declared = MfgMesProductionDeclaration::query()->whereIn('phase_id', $phaseIds)->get()->groupBy('phase_id');
         $consumed = MfgMesMaterialConsumption::query()->whereIn('phase_id', $phaseIds)->get()->groupBy('phase_id');
+        $components = $this->componentsByOrder($operations->pluck('production_order_id')->unique()->all());
 
         $rows = [];
         foreach ($phases as $phase) {
@@ -79,6 +80,7 @@ final class PhaseViewFactory
                 'times' => $this->calculator->summarize($phaseLogs, $now)->toArray(),
                 'declared' => ['good_quantity' => Money::qty($good), 'scrap_quantity' => Money::qty($scrap)],
                 'consumptions_count' => $consumed->get($phase->id, collect())->count(),
+                'components' => $components[(string) $phase->production_order_id] ?? [],
                 'taken_over_at' => $phase->taken_over_at->toIso8601String(),
                 'closed_at' => $phase->closed_at?->toIso8601String(),
                 'server_time' => $now->toIso8601String(),
@@ -144,6 +146,35 @@ final class PhaseViewFactory
         }
 
         return $context;
+    }
+
+    /**
+     * The components of each order (item, required and consumed quantity, whether the item is lot-tracked), the choices of
+     * the lot registration on the board.
+     *
+     * @param  list<mixed>  $orderIds
+     * @return array<string, list<array<string, mixed>>>
+     */
+    private function componentsByOrder(array $orderIds): array
+    {
+        $lines = MfgProductionOrderLine::query()->whereIn('production_order_id', $orderIds)->orderBy('id')->get();
+        $items = MfgItem::query()->whereIn('id', $lines->pluck('mfg_item_id'))->get()->keyBy('id');
+        $stockItems = StockItem::withoutGlobalScopes()->whereIn('id', $items->pluck('stock_item_id')->filter())->get()->keyBy('id');
+
+        $byOrder = [];
+        foreach ($lines as $line) {
+            $item = $items->get($line->mfg_item_id);
+            $byOrder[(string) $line->production_order_id][] = [
+                'mfg_item_id' => (string) $line->mfg_item_id,
+                'item_code' => $item?->item_code,
+                'item_name' => $item?->name,
+                'required_quantity' => Money::qty($line->required_quantity),
+                'consumed_quantity' => Money::qty($line->consumed_quantity),
+                'lot_tracked' => $item !== null && $item->stock_item_id !== null && $stockItems->get($item->stock_item_id)?->tracking_type === 'lot',
+            ];
+        }
+
+        return $byOrder;
     }
 
     /**

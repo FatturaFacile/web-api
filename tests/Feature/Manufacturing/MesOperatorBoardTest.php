@@ -221,6 +221,11 @@ test('lots are validated, issued from stock and traced; over-consumption needs c
     $phaseId = mesTakeOver($this, $operationId);
     $this->postJson(MES."/phases/{$phaseId}/start-production", mesBody())->assertOk();
 
+    $this->getJson(MES."/board?work_center_id={$this->product['wc']->id}")
+        ->assertJsonPath('data.phases.0.components.0.item_code', 'RM-ALLOY')
+        ->assertJsonPath('data.phases.0.components.0.lot_tracked', true)
+        ->assertJsonPath('data.phases.0.components.0.required_quantity', '10.0000');
+
     $consume = fn (array $extra) => $this->postJson(MES."/phases/{$phaseId}/material-consumptions", mesBody(['mfg_item_id' => $lotItem->id, ...$extra]));
     $consume(['quantity' => '2'])->assertUnprocessable()->assertJsonValidationErrors(['lot_code']);
     $consume(['quantity' => '2', 'lot_code' => 'UNKNOWN-1'])->assertUnprocessable()->assertJsonValidationErrors(['lot_code']);
