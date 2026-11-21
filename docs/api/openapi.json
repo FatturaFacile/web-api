@@ -1625,6 +1625,7 @@
                                 "access.invitation",
                                 "access.import",
                                 "access.plan",
+                                "access.security",
                                 null
                             ]
                         }
@@ -5348,7 +5349,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     },
                     {
@@ -5563,7 +5564,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     },
                     {
@@ -16626,6 +16627,40 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/auth/2fa/challenge": {
+            "post": {
+                "operationId": "v1.passkeys.2fa.challenge",
+                "summary": "Exchange the challenge of a login with two factors for a Sanctum Bearer token",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TwoFactorChallengeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -97352,7 +97387,43 @@
                                     "properties": {
                                         "data": {
                                             "type": "object",
-                                            "additionalProperties": {}
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "snapshot_date": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "fiscal_year": {
+                                                    "type": "integer"
+                                                },
+                                                "fiscal_month": {
+                                                    "type": "integer"
+                                                },
+                                                "accounts_receivable_balance": {
+                                                    "type": "string"
+                                                },
+                                                "accounts_payable_balance": {
+                                                    "type": "string"
+                                                },
+                                                "inventory_valuation_balance": {
+                                                    "type": "string"
+                                                },
+                                                "net_working_capital": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "snapshot_date",
+                                                "fiscal_year",
+                                                "fiscal_month",
+                                                "accounts_receivable_balance",
+                                                "accounts_payable_balance",
+                                                "inventory_valuation_balance",
+                                                "net_working_capital"
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -110103,7 +110174,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -110162,7 +110233,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -110208,7 +110279,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -110270,7 +110341,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -110319,7 +110390,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -110381,7 +110452,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -110443,7 +110514,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -110503,7 +110574,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -110565,7 +110636,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     },
                     {
@@ -110607,7 +110678,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -110659,7 +110730,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -112239,7 +112310,7 @@
                         "required": true,
                         "description": "The incident ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -112435,7 +112506,7 @@
                         "required": true,
                         "description": "The change ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -112465,6 +112536,992 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/profile/permissions": {
+            "get": {
+                "operationId": "v1.iam.profile.permissions",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "permissions": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "field_policies": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "resource": {
+                                                                "type": "string"
+                                                            },
+                                                            "field": {
+                                                                "type": "string"
+                                                            },
+                                                            "visibility": {
+                                                                "type": "string"
+                                                            },
+                                                            "kind": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "resource",
+                                                            "field",
+                                                            "visibility",
+                                                            "kind"
+                                                        ]
+                                                    }
+                                                },
+                                                "company_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "array",
+                                                        "null"
+                                                    ],
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "permissions",
+                                                "field_policies",
+                                                "company_id"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/settings/permissions/catalog": {
+            "get": {
+                "operationId": "v1.iam.catalog",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "catalog": {
+                                                    "type": "object",
+                                                    "additionalProperties": {
+                                                        "type": "object",
+                                                        "additionalProperties": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "catalog"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/settings/roles": {
+            "get": {
+                "operationId": "v1.iam.roles.index",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1.iam.roles.store",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreRoleRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/settings/roles/{role}": {
+            "get": {
+                "operationId": "v1.iam.roles.show",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1.iam.roles.update",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreRoleRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "412": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Precondition Failed"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 412
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "The role changed since you loaded it."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1.iam.roles.destroy",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/settings/roles/{role}/clone": {
+            "post": {
+                "operationId": "v1.iam.roles.clone",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 120
+                                    }
+                                },
+                                "required": [
+                                    "name"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/settings/roles/{role}/abac-rules": {
+            "get": {
+                "operationId": "v1.iam.roles.abac.show",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {},
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1.iam.roles.abac.update",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpsertAbacRuleRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/settings/roles/{role}/field-policies": {
+            "get": {
+                "operationId": "v1.iam.roles.fields.show",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {},
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1.iam.roles.fields.update",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpsertFieldPolicyRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/settings/users/{user}/roles": {
+            "put": {
+                "operationId": "v1.iam.users.roles",
+                "tags": [
+                    "IdentityRole"
+                ],
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AssignRoleRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/settings/users/{user}/impersonate": {
+            "post": {
+                "operationId": "v1.iam.users.impersonate",
+                "tags": [
+                    "Impersonation"
+                ],
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StartImpersonationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Impersonation started"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string"
+                                                },
+                                                "expires_at": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "token",
+                                                "expires_at"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1.iam.users.impersonate.end",
+                "tags": [
+                    "Impersonation"
+                ],
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Impersonation ended"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "closed": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "closed"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/settings/access-review": {
+            "get": {
+                "operationId": "v1.iam.access-review",
+                "tags": [
+                    "Impersonation"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "user_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "email": {
+                                                        "type": "string"
+                                                    },
+                                                    "role": {
+                                                        "type": "string"
+                                                    },
+                                                    "assigned_roles": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "minItems": 0,
+                                                                "maxItems": 0
+                                                            }
+                                                        ]
+                                                    },
+                                                    "last_login_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "inactive": {
+                                                        "type": "boolean"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "user_id",
+                                                    "name",
+                                                    "email",
+                                                    "role",
+                                                    "assigned_roles",
+                                                    "last_login_at",
+                                                    "inactive"
+                                                ]
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -124965,7 +126022,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -125014,7 +126071,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -125075,7 +126132,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     },
                     {
@@ -140698,7 +141755,7 @@
                         "required": true,
                         "description": "The service contract ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -140755,7 +141812,7 @@
                         "required": true,
                         "description": "The service contract ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -140800,7 +141857,7 @@
                         "required": true,
                         "description": "The service contract ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -140868,7 +141925,7 @@
                         "required": true,
                         "description": "The service contract ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -140930,7 +141987,7 @@
                         "required": true,
                         "description": "The service contract ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -140992,7 +142049,7 @@
                         "required": true,
                         "description": "The service contract ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -163111,6 +164168,423 @@
                 "responses": {
                     "204": {
                         "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/auth/passkeys/login/options": {
+            "post": {
+                "operationId": "v1.passkeys.login.options",
+                "tags": [
+                    "Passkey"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "ceremony_id": {
+                                                    "type": "string"
+                                                },
+                                                "options": {
+                                                    "type": "object",
+                                                    "additionalProperties": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "ceremony_id",
+                                                "options"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/passkeys/login": {
+            "post": {
+                "operationId": "v1.passkeys.login",
+                "tags": [
+                    "Passkey"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PasskeyLoginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/auth/passkeys": {
+            "get": {
+                "operationId": "v1.iam.passkeys.index",
+                "tags": [
+                    "Passkey"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "aaguid": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "created_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "last_used_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "name",
+                                                    "aaguid",
+                                                    "created_at",
+                                                    "last_used_at"
+                                                ]
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1.iam.passkeys.store",
+                "tags": [
+                    "Passkey"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FinishPasskeyRegistrationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Passkey registered"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "aaguid": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last_used_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "aaguid",
+                                                "created_at",
+                                                "last_used_at"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/auth/passkeys/options": {
+            "post": {
+                "operationId": "v1.iam.passkeys.options",
+                "tags": [
+                    "Passkey"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "ceremony_id": {
+                                                    "type": "string"
+                                                },
+                                                "options": {
+                                                    "type": "object",
+                                                    "additionalProperties": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "ceremony_id",
+                                                "options"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/auth/passkeys/{id}": {
+            "delete": {
+                "operationId": "v1.iam.passkeys.destroy",
+                "tags": [
+                    "Passkey"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Passkey revoked"
+                                        },
+                                        "data": {
+                                            "type": "null"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Not Found"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 404
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Passkey not found."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -239348,6 +240822,243 @@
                 }
             }
         },
+        "/v1/profile/sessions": {
+            "get": {
+                "operationId": "v1.iam.profile.sessions.index",
+                "tags": [
+                    "Session"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "prefixItems": [
+                                                {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "kind": {
+                                                                "type": "string",
+                                                                "const": "token"
+                                                            },
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "ip_address": {
+                                                                "type": "null"
+                                                            },
+                                                            "user_agent": {
+                                                                "type": "null"
+                                                            },
+                                                            "last_used_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "expires_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "current": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "kind",
+                                                            "id",
+                                                            "name",
+                                                            "ip_address",
+                                                            "user_agent",
+                                                            "last_used_at",
+                                                            "expires_at",
+                                                            "current"
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "kind": {
+                                                                "type": "string",
+                                                                "const": "session"
+                                                            },
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "null"
+                                                            },
+                                                            "ip_address": {
+                                                                "type": "string"
+                                                            },
+                                                            "user_agent": {
+                                                                "type": "string"
+                                                            },
+                                                            "last_used_at": {
+                                                                "type": "string"
+                                                            },
+                                                            "expires_at": {
+                                                                "type": "string"
+                                                            },
+                                                            "current": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "kind",
+                                                            "id",
+                                                            "name",
+                                                            "ip_address",
+                                                            "user_agent",
+                                                            "last_used_at",
+                                                            "expires_at",
+                                                            "current"
+                                                        ]
+                                                    }
+                                                }
+                                            ],
+                                            "minItems": 2,
+                                            "maxItems": 2,
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/profile/sessions/{id}": {
+            "delete": {
+                "operationId": "v1.iam.profile.sessions.destroy",
+                "summary": "Revokes one open access of the signed-in user by its id alone, whichever kind it is (token or browser session)",
+                "tags": [
+                    "Session"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Session not found"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 404
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "The session does not exist or has already been closed."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Session revoked."
+                                        },
+                                        "data": {
+                                            "type": "null"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/fiscal-retail/pos/sessions/{id}/x-report": {
             "get": {
                 "operationId": "fiscal-retail.pos.x-report",
@@ -240084,297 +241795,6 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            }
-        },
-        "/v1/settings/roles": {
-            "get": {
-                "operationId": "settings.roles",
-                "tags": [
-                    "Settings"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "const": "System RBAC roles retrieved"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "prefixItems": [
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "key": {
-                                                            "type": "string",
-                                                            "const": "owner"
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "const": "Enterprise Owner"
-                                                        },
-                                                        "description": {
-                                                            "type": "string",
-                                                            "const": "Full administrative access across all modules and fiscal settings"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "key",
-                                                        "name",
-                                                        "description"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "key": {
-                                                            "type": "string",
-                                                            "const": "admin"
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "const": "Tenant Administrator"
-                                                        },
-                                                        "description": {
-                                                            "type": "string",
-                                                            "const": "Operational admin for CRM, Sales, AP, and HR"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "key",
-                                                        "name",
-                                                        "description"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "key": {
-                                                            "type": "string",
-                                                            "const": "accountant"
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "const": "Fiduciario / Commercialista"
-                                                        },
-                                                        "description": {
-                                                            "type": "string",
-                                                            "const": "Dedicated access to fiscal invoicing, general ledger, and VAT declarations"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "key",
-                                                        "name",
-                                                        "description"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "key": {
-                                                            "type": "string",
-                                                            "const": "accountant_readonly"
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "const": "Read-only Accountant"
-                                                        },
-                                                        "description": {
-                                                            "type": "string",
-                                                            "const": "Reads fiscal and accounting data without changing it."
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "key",
-                                                        "name",
-                                                        "description"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "key": {
-                                                            "type": "string",
-                                                            "const": "customs"
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "const": "Customs Clerk"
-                                                        },
-                                                        "description": {
-                                                            "type": "string",
-                                                            "const": "Customs declarations, assessment decisions and forwarding dossiers."
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "key",
-                                                        "name",
-                                                        "description"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "key": {
-                                                            "type": "string",
-                                                            "const": "secretary"
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "const": "Association Secretary"
-                                                        },
-                                                        "description": {
-                                                            "type": "string",
-                                                            "const": "Registry, memberships, enrolment, courses and medical certificates of an association"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "key",
-                                                        "name",
-                                                        "description"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "key": {
-                                                            "type": "string",
-                                                            "const": "childcare_manager"
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "const": "Kindergarten Manager"
-                                                        },
-                                                        "description": {
-                                                            "type": "string",
-                                                            "const": "Children, reference persons, documents, corrections, fees and subsidies of a kindergarten"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "key",
-                                                        "name",
-                                                        "description"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "key": {
-                                                            "type": "string",
-                                                            "const": "educator"
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "const": "Educator"
-                                                        },
-                                                        "description": {
-                                                            "type": "string",
-                                                            "const": "Attendance, notes, meals and messages of the children of a kindergarten"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "key",
-                                                        "name",
-                                                        "description"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "key": {
-                                                            "type": "string",
-                                                            "const": "receptionist"
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "const": "Receptionist"
-                                                        },
-                                                        "description": {
-                                                            "type": "string",
-                                                            "const": "Visitor register, check-in and check-out with badges, who is on site"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "key",
-                                                        "name",
-                                                        "description"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "key": {
-                                                            "type": "string",
-                                                            "const": "technician"
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "const": "Field Technician"
-                                                        },
-                                                        "description": {
-                                                            "type": "string",
-                                                            "const": "Access to service tickets, work orders (rapportini), and time clocking"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "key",
-                                                        "name",
-                                                        "description"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "key": {
-                                                            "type": "string",
-                                                            "const": "member"
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "const": "Staff Member"
-                                                        },
-                                                        "description": {
-                                                            "type": "string",
-                                                            "const": "Standard self-service attendance clocking and expense submission"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "key",
-                                                        "name",
-                                                        "description"
-                                                    ]
-                                                }
-                                            ],
-                                            "minItems": 11,
-                                            "maxItems": 11,
-                                            "items": {}
-                                        },
-                                        "meta": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message",
-                                        "data",
-                                        "meta"
-                                    ]
-                                }
-                            }
-                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -249274,6 +250694,270 @@
                             "application/json": {
                                 "schema": {
                                     "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/auth/sso/{provider}/redirect": {
+            "get": {
+                "operationId": "v1.passkeys.sso.redirect",
+                "summary": "Browser entry (Mod 004 spec path): `{provider}` is the id of the tenant whose OIDC provider signs the user in; answers 302 to the identity provider",
+                "tags": [
+                    "SsoLogin"
+                ],
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "",
+                        "headers": {
+                            "Location": {
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Single sign-on unavailable"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 404
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Single sign-on is not available for this organization."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/sso/{provider}/callback": {
+            "get": {
+                "operationId": "v1.passkeys.sso.callback",
+                "tags": [
+                    "SsoLogin"
+                ],
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "code",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 2048
+                        }
+                    },
+                    {
+                        "name": "state",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 256
+                        }
+                    },
+                    {
+                        "name": "token_mode",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object"
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Enter the code of your authenticator app to complete the sign-in."
+                                                },
+                                                "data": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "two_factor_required": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "challenge_token": {
+                                                            "type": "string"
+                                                        },
+                                                        "expires_in": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "two_factor_required",
+                                                        "challenge_token",
+                                                        "expires_in"
+                                                    ]
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Sign-in code issued: exchange it for the session."
+                                                },
+                                                "data": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "sign_in_code": {
+                                                            "type": "string"
+                                                        },
+                                                        "expires_in": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "sign_in_code",
+                                                        "expires_in"
+                                                    ]
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "const": "urn:fatturafacile:problem:sso-login-failed"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Sign-in failed"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 401
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "The sign-in with the identity provider could not be completed."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "303": {
+                        "description": "",
+                        "headers": {
+                            "Location": {
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -274200,7 +275884,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -274264,7 +275948,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -274327,7 +276011,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -274378,7 +276062,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -274451,7 +276135,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -274523,7 +276207,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -274585,7 +276269,7 @@
                         "required": true,
                         "description": "The ticket ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     },
                     {
@@ -284270,6 +285954,9 @@
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "409": {
                         "description": "",
                         "content": {
@@ -284313,9 +286000,6 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
                     }
                 }
             }
@@ -284692,6 +286376,384 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/auth/2fa/totp": {
+            "post": {
+                "operationId": "v1.iam.2fa.totp.enable",
+                "tags": [
+                    "TwoFactor"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfirmedPasswordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Scan the QR code with your authenticator app and confirm with the first code."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "secret": {
+                                                    "type": "string",
+                                                    "const": ""
+                                                },
+                                                "otpauth_uri": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "secret",
+                                                "otpauth_uri"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Already enabled"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 409
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Two-factor authentication is already enabled. Disable it before setting it up again."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1.iam.2fa.totp.disable",
+                "tags": [
+                    "TwoFactor"
+                ],
+                "parameters": [
+                    {
+                        "name": "current_password",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "code",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 16
+                        }
+                    },
+                    {
+                        "name": "recovery_code",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 32
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Two-factor authentication disabled."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "enabled": {
+                                                    "type": "boolean"
+                                                },
+                                                "pending_setup": {
+                                                    "type": "boolean"
+                                                },
+                                                "confirmed_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "remaining_recovery_codes": {
+                                                    "type": "integer"
+                                                },
+                                                "required_by_tenant": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "enabled",
+                                                "pending_setup",
+                                                "confirmed_at",
+                                                "remaining_recovery_codes",
+                                                "required_by_tenant"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "409": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Not enabled"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 409
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Two-factor authentication is not enabled."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/auth/2fa/totp/confirm": {
+            "post": {
+                "operationId": "v1.iam.2fa.totp.confirm",
+                "tags": [
+                    "TwoFactor"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfirmTwoFactorRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Two-factor authentication enabled. Store the recovery codes in a safe place."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "recovery_codes": {
+                                                    "type": [
+                                                        "array",
+                                                        "null"
+                                                    ],
+                                                    "items": {
+                                                        "type": "string",
+                                                        "const": "-"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "recovery_codes"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "409": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "No setup in progress"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 409
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Start the two-factor setup first."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     }
                 }
             }
@@ -287608,6 +289670,116 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/settings/users/{user}/revoke-sessions": {
+            "post": {
+                "operationId": "v1.iam.users.revoke-sessions",
+                "tags": [
+                    "UserSessionAdmin"
+                ],
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Sessions revoked"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "tokens": {
+                                                    "type": "integer"
+                                                },
+                                                "sessions": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "tokens",
+                                                "sessions"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Own Sessions"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 409
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Use the profile to end your own sessions."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -299126,7 +301298,7 @@
                         "required": true,
                         "description": "The work order ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -299172,7 +301344,7 @@
                         "required": true,
                         "description": "The work order ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -299235,7 +301407,7 @@
                         "required": true,
                         "description": "The work order ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -299299,7 +301471,7 @@
                         "required": true,
                         "description": "The work order ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -299362,7 +301534,7 @@
                         "required": true,
                         "description": "The work order ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -299425,7 +301597,7 @@
                         "required": true,
                         "description": "The work order ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -299489,7 +301661,7 @@
                         "required": true,
                         "description": "The work order ID",
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 ],
@@ -307427,6 +309599,30 @@
                     "assignee_id"
                 ],
                 "title": "AssignRequestRequest"
+            },
+            "AssignRoleRequest": {
+                "type": "object",
+                "properties": {
+                    "role_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "minItems": 1
+                    },
+                    "company_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    }
+                },
+                "required": [
+                    "role_ids"
+                ],
+                "title": "AssignRoleRequest"
             },
             "AssignScheduleGroupRequest": {
                 "type": "object",
@@ -326273,144 +328469,7 @@
             },
             "EmployeeResource": {
                 "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string"
-                    },
-                    "tenant_id": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "employee_number": {
-                        "type": "string"
-                    },
-                    "first_name": {
-                        "type": "string"
-                    },
-                    "last_name": {
-                        "type": "string"
-                    },
-                    "full_name": {
-                        "type": "string"
-                    },
-                    "work_email": {
-                        "type": "string"
-                    },
-                    "department_id": {
-                        "type": "string"
-                    },
-                    "team_id": {
-                        "type": "string"
-                    },
-                    "business_unit_id": {
-                        "type": "string"
-                    },
-                    "cost_center_id": {
-                        "type": "string"
-                    },
-                    "position_id": {
-                        "type": "string"
-                    },
-                    "job_grade_id": {
-                        "type": "string"
-                    },
-                    "manager_id": {
-                        "type": "string"
-                    },
-                    "employment_status": {
-                        "type": "string"
-                    },
-                    "employment_type": {
-                        "type": "string"
-                    },
-                    "hire_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "probation_end_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "termination_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "base_annual_salary": {
-                        "type": "number"
-                    },
-                    "hourly_cost_rate": {
-                        "type": "number"
-                    },
-                    "currency": {
-                        "type": "string"
-                    },
-                    "fte_ratio": {
-                        "type": "number"
-                    },
-                    "approval_status": {
-                        "type": "string"
-                    },
-                    "is_locked": {
-                        "type": "boolean"
-                    },
-                    "equipment_assigned": {
-                        "type": "object",
-                        "additionalProperties": {
-                            "anyOf": [
-                                {
-                                    "type": "string"
-                                },
-                                {
-                                    "type": "object",
-                                    "additionalProperties": {}
-                                }
-                            ]
-                        }
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    }
-                },
-                "required": [
-                    "id",
-                    "tenant_id",
-                    "employee_number",
-                    "first_name",
-                    "last_name",
-                    "full_name",
-                    "work_email",
-                    "department_id",
-                    "team_id",
-                    "business_unit_id",
-                    "cost_center_id",
-                    "position_id",
-                    "job_grade_id",
-                    "manager_id",
-                    "employment_status",
-                    "employment_type",
-                    "hire_date",
-                    "probation_end_date",
-                    "termination_date",
-                    "base_annual_salary",
-                    "hourly_cost_rate",
-                    "currency",
-                    "fte_ratio",
-                    "approval_status",
-                    "is_locked",
-                    "equipment_assigned",
-                    "created_at"
-                ],
+                "additionalProperties": {},
                 "title": "EmployeeResource"
             },
             "EmployeeShift": {
@@ -328449,6 +330508,44 @@
                     "created_at"
                 ],
                 "title": "FindingResource"
+            },
+            "FinishPasskeyRegistrationRequest": {
+                "type": "object",
+                "properties": {
+                    "ceremony_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "credential": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "response": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 1
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "response"
+                        ]
+                    }
+                },
+                "required": [
+                    "ceremony_id",
+                    "name",
+                    "credential"
+                ],
+                "title": "FinishPasskeyRegistrationRequest"
             },
             "FiscalLookupRequest": {
                 "type": "object",
@@ -347017,6 +349114,49 @@
                 "minItems": 0,
                 "maxItems": 0,
                 "title": "PassiveInvoiceLine"
+            },
+            "PasskeyLoginRequest": {
+                "type": "object",
+                "properties": {
+                    "ceremony_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "credential": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "response": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 1
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "response"
+                        ]
+                    },
+                    "tenant_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "token_mode": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "ceremony_id",
+                    "credential"
+                ],
+                "title": "PasskeyLoginRequest"
             },
             "PathEnrolmentRequest": {
                 "type": "object",
@@ -376933,6 +379073,24 @@
                 ],
                 "title": "StartExecutionRequest"
             },
+            "StartImpersonationRequest": {
+                "type": "object",
+                "properties": {
+                    "consent_reference": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "ttl_minutes": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 30
+                    }
+                },
+                "required": [
+                    "consent_reference"
+                ],
+                "title": "StartImpersonationRequest"
+            },
             "StartOffboardingRequest": {
                 "type": "object",
                 "properties": {
@@ -389180,6 +391338,35 @@
                     "reported_symptom"
                 ],
                 "title": "StoreRmaOrderRequest"
+            },
+            "StoreRoleRequest": {
+                "type": "object",
+                "description": "Create (POST) or update (PUT) a role: name, description and permission keys.",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 120
+                        }
+                    }
+                },
+                "required": [
+                    "name",
+                    "permissions"
+                ],
+                "title": "StoreRoleRequest"
             },
             "StoreSalRequest": {
                 "type": "object",
@@ -403431,6 +405618,81 @@
                 ],
                 "title": "UploadServiceReportPhotoRequest"
             },
+            "UpsertAbacRuleRequest": {
+                "type": "object",
+                "properties": {
+                    "rules": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "permission": {
+                                    "type": "string",
+                                    "maxLength": 120
+                                },
+                                "effect": {
+                                    "type": "string",
+                                    "enum": [
+                                        "allow",
+                                        "deny"
+                                    ]
+                                },
+                                "conditions": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "attribute": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "contact.owner_id",
+                                                    "contact.region",
+                                                    "document.total",
+                                                    "company_id",
+                                                    "context.ip",
+                                                    "context.hour",
+                                                    "context.weekday"
+                                                ]
+                                            },
+                                            "operator": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "==",
+                                                    "!=",
+                                                    "<",
+                                                    "<=",
+                                                    ">",
+                                                    ">=",
+                                                    "in",
+                                                    "not_in"
+                                                ]
+                                            },
+                                            "value": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "attribute",
+                                            "operator",
+                                            "value"
+                                        ]
+                                    },
+                                    "minItems": 1
+                                }
+                            },
+                            "required": [
+                                "permission",
+                                "effect",
+                                "conditions"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "rules"
+                ],
+                "title": "UpsertAbacRuleRequest"
+            },
             "UpsertEmailTemplateRequest": {
                 "type": "object",
                 "properties": {
@@ -403452,6 +405714,51 @@
                     "is_enabled"
                 ],
                 "title": "UpsertEmailTemplateRequest"
+            },
+            "UpsertFieldPolicyRequest": {
+                "type": "object",
+                "properties": {
+                    "policies": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "resource": {
+                                    "type": "string",
+                                    "maxLength": 80
+                                },
+                                "field": {
+                                    "type": "string",
+                                    "maxLength": 80
+                                },
+                                "visibility": {
+                                    "type": "string",
+                                    "enum": [
+                                        "visible",
+                                        "masked",
+                                        "hidden"
+                                    ]
+                                },
+                                "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                        "amount",
+                                        "iban"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "resource",
+                                "field",
+                                "visibility"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "policies"
+                ],
+                "title": "UpsertFieldPolicyRequest"
             },
             "UpsertPersonResourceRequest": {
                 "type": "object",
@@ -409470,6 +411777,14 @@
             "description": "Operations of the ITSM module."
         },
         {
+            "name": "IdentityRole",
+            "description": "Operations of the IdentityRole module."
+        },
+        {
+            "name": "Impersonation",
+            "description": "Operations of the Impersonation module."
+        },
+        {
             "name": "ImportBill",
             "description": "Operations of the ImportBill module."
         },
@@ -410004,6 +412319,10 @@
         {
             "name": "PartnerTier",
             "description": "Operations of the PartnerTier module."
+        },
+        {
+            "name": "Passkey",
+            "description": "Operations of the Passkey module."
         },
         {
             "name": "PasswordChange",
@@ -411204,6 +413523,10 @@
         {
             "name": "UserPreferences",
             "description": "Operations of the UserPreferences module."
+        },
+        {
+            "name": "UserSessionAdmin",
+            "description": "Operations of the UserSessionAdmin module."
         },
         {
             "name": "UserTenantAccess",
