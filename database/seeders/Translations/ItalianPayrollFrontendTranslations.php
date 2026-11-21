@@ -18,6 +18,7 @@ final class ItalianPayrollFrontendTranslations
     public static function definitions(): array
     {
         return [
+            'mobile.module.italian_payroll_self' => ['Cassaforte riservata', 'Confidential vault', 'Vertraulicher Tresor', 'Coffre confidentiel'],
             'itPayroll.period.select' => ['Periodo paghe', 'Payroll period', 'Lohnperiode', 'Période de paie'],
             'itPayroll.period.none' => ['Nessun periodo paghe: aprine uno qui sopra', 'No payroll period yet: open one above', 'Noch keine Lohnperiode: oben eine eröffnen', 'Aucune période de paie : en ouvrir une ci-dessus'],
             'itPayroll.period.year' => ['Anno', 'Year', 'Jahr', 'Année'],
