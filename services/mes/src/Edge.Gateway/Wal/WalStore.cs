@@ -48,6 +48,12 @@ public sealed class WalStore : IDisposable
                downsampled INTEGER NOT NULL DEFAULT 0,
                payload TEXT NOT NULL);
              CREATE TABLE IF NOT EXISTS wal_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+             CREATE TABLE IF NOT EXISTS wal_quarantine (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               batch_id TEXT NOT NULL,
+               quarantined_ms INTEGER NOT NULL,
+               reason TEXT NOT NULL,
+               detail TEXT NOT NULL);
              """);
     }
 
@@ -141,6 +147,69 @@ public sealed class WalStore : IDisposable
                 c.Transaction = tx;
                 c.CommandText = "DELETE FROM wal_batch WHERE id=$i";
                 c.Parameters.AddWithValue("$i", id);
+                c.ExecuteNonQuery();
+            }
+
+            tx.Commit();
+        }
+    }
+
+    /// <summary>Number of quarantine records (batches or events the backend refused for good).</summary>
+    public long QuarantinedCount
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return Scalar<long>("SELECT COUNT(*) FROM wal_quarantine");
+            }
+        }
+    }
+
+    /// <summary>The kept JSON of every quarantine record, oldest first (operator inspection / manual replay).</summary>
+    public IReadOnlyList<string> QuarantineDetails()
+    {
+        lock (_gate)
+        {
+            using var c = _db.CreateCommand();
+            c.CommandText = "SELECT detail FROM wal_quarantine ORDER BY id";
+            using var r = c.ExecuteReader();
+            var list = new List<string>();
+            while (r.Read())
+            {
+                list.Add(r.GetString(0));
+            }
+
+            return list;
+        }
+    }
+
+    /// <summary>
+    /// Moves a record out of the send queue into <c>wal_quarantine</c> (kept for inspection/replay, never retried
+    /// automatically) so a permanently refused batch cannot block the queue. <paramref name="detail"/> is the JSON to keep
+    /// (the whole batch, or the refused event ids). Atomic with the removal from <c>wal_batch</c>.
+    /// </summary>
+    public void Quarantine(long walId, string batchId, string reason, string detail)
+    {
+        lock (_gate)
+        {
+            using var tx = _db.BeginTransaction();
+            using (var c = _db.CreateCommand())
+            {
+                c.Transaction = tx;
+                c.CommandText = "INSERT INTO wal_quarantine(batch_id, quarantined_ms, reason, detail) VALUES($b,$t,$r,$d)";
+                c.Parameters.AddWithValue("$b", batchId);
+                c.Parameters.AddWithValue("$t", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                c.Parameters.AddWithValue("$r", reason);
+                c.Parameters.AddWithValue("$d", detail);
+                c.ExecuteNonQuery();
+            }
+
+            using (var c = _db.CreateCommand())
+            {
+                c.Transaction = tx;
+                c.CommandText = "DELETE FROM wal_batch WHERE id=$i";
+                c.Parameters.AddWithValue("$i", walId);
                 c.ExecuteNonQuery();
             }
 
