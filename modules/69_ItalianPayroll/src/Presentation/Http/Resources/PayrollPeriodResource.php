@@ -13,6 +13,19 @@ use Modules\ItalianPayroll\Infrastructure\Models\ItalianPayrollPeriod;
  */
 final class PayrollPeriodResource extends JsonResource
 {
+    private function postedAccounting(): bool
+    {
+        $period = $this->resource;
+
+        if (! $period instanceof ItalianPayrollPeriod) {
+            return false;
+        }
+
+        $loaded = $period->getAttribute('accounting_import_exists');
+
+        return $loaded !== null ? (bool) $loaded : $period->accountingImport()->exists();
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -31,6 +44,8 @@ final class PayrollPeriodResource extends JsonResource
             'exported_at' => $this->exported_at?->toIso8601String(),
             'paid_at' => $this->paid_at?->toIso8601String(),
             'validation_report' => $this->validation_report_json,
+            // The list loads it for every row at once (withExists); a single period asks for it.
+            'accounting_imported' => $this->postedAccounting(),
         ];
     }
 }
