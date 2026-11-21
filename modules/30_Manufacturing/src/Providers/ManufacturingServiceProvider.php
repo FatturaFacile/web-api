@@ -8,15 +8,20 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Modules\Manufacturing\Contracts\BillOfMaterialsServiceInterface;
+use Modules\Manufacturing\Contracts\BomExplosionServiceInterface;
+use Modules\Manufacturing\Contracts\CoProductAllocationServiceInterface;
 use Modules\Manufacturing\Contracts\ManufacturingForecastingServiceInterface;
 use Modules\Manufacturing\Contracts\MrpServiceInterface;
+use Modules\Manufacturing\Contracts\PreferentialOriginServiceInterface;
 use Modules\Manufacturing\Contracts\ProductionCostingServiceInterface;
 use Modules\Manufacturing\Contracts\ProductionExecutionServiceInterface;
 use Modules\Manufacturing\Contracts\ProductionPlanningServiceInterface;
 use Modules\Manufacturing\Contracts\QualityManagementServiceInterface;
 use Modules\Manufacturing\Contracts\RoutingServiceInterface;
 use Modules\Manufacturing\Contracts\ShopFloorServiceInterface;
+use Modules\Manufacturing\Events\BomComponentReplacedEvent;
 use Modules\Manufacturing\Events\BOMCreatedEvent;
+use Modules\Manufacturing\Events\BomEcoSubmittedEvent;
 use Modules\Manufacturing\Events\BOMRevisedEvent;
 use Modules\Manufacturing\Events\EngineeringChangeImplementedEvent;
 use Modules\Manufacturing\Events\FinishedGoodsProducedEvent;
@@ -49,6 +54,9 @@ use Modules\Manufacturing\Policies\MfgBomPolicy;
 use Modules\Manufacturing\Policies\MfgEngineeringChangeOrderPolicy;
 use Modules\Manufacturing\Policies\MfgProductionOrderPolicy;
 use Modules\Manufacturing\Services\BillOfMaterialsService;
+use Modules\Manufacturing\Services\Bom\BomExplosionService;
+use Modules\Manufacturing\Services\Bom\CoProductAllocationService;
+use Modules\Manufacturing\Services\Bom\PreferentialOriginService;
 use Modules\Manufacturing\Services\ManufacturingForecastingService;
 use Modules\Manufacturing\Services\MrpService;
 use Modules\Manufacturing\Services\ProductionCostingService;
@@ -84,6 +92,8 @@ final class ManufacturingServiceProvider extends ServiceProvider
         BOMCreatedEvent::class,
         BOMRevisedEvent::class,
         EngineeringChangeImplementedEvent::class,
+        BomEcoSubmittedEvent::class,
+        BomComponentReplacedEvent::class,
         MRPRunCompletedEvent::class,
         ProductionOrderCreatedEvent::class,
         ProductionOrderReleasedEvent::class,
@@ -111,6 +121,9 @@ final class ManufacturingServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(BillOfMaterialsServiceInterface::class, BillOfMaterialsService::class);
+        $this->app->singleton(BomExplosionServiceInterface::class, BomExplosionService::class);
+        $this->app->singleton(PreferentialOriginServiceInterface::class, PreferentialOriginService::class);
+        $this->app->singleton(CoProductAllocationServiceInterface::class, CoProductAllocationService::class);
         $this->app->singleton(RoutingServiceInterface::class, RoutingService::class);
         $this->app->singleton(MrpServiceInterface::class, MrpService::class);
         $this->app->singleton(ProductionPlanningServiceInterface::class, ProductionPlanningService::class);
