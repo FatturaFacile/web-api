@@ -26,6 +26,41 @@ public sealed class GatewayConfig
     public int BatchWindowMs { get; set; } = 1000;
 
     public List<ConnectorEntry> Connectors { get; set; } = [];
+
+    /// <summary>Which backend the WAL is forwarded to. <c>MesCore</c> (default) = ingest batches; <c>Laravel</c> = signed state events.</summary>
+    public string Publisher { get; set; } = "MesCore";
+
+    /// <summary>Settings of the signed Laravel telemetry endpoint (<c>Publisher = Laravel</c>).</summary>
+    public LaravelEdgeEntry Laravel { get; set; } = new();
+}
+
+/// <summary>
+/// <c>POST /api/v1/manufacturing/edge/telemetry</c>. The secret is shown once by <c>POST .../edge/gateways</c>; supply it
+/// through the environment (<c>Gateway__Laravel__Secret</c>) or a secret store, never in a committed file. It is never logged.
+/// </summary>
+public sealed class LaravelEdgeEntry
+{
+    /// <summary>Base URL of the Laravel API, e.g. <c>https://erp.example.com</c>.</summary>
+    public string BaseUrl { get; set; } = "";
+
+    /// <summary>UUID of the registered gateway (<c>X-Gateway-Id</c>).</summary>
+    public string GatewayUuid { get; set; } = "";
+
+    /// <summary>HMAC-SHA256 secret of that gateway.</summary>
+    public string Secret { get; set; } = "";
+
+    /// <summary>Events per request; the backend accepts 1..500.</summary>
+    public int MaxEventsPerRequest { get; set; } = 500;
+}
+
+/// <summary>Maps one raw state value (number or text) of a machine to one of the five backend states.</summary>
+public sealed class StateMapEntry
+{
+    /// <summary>Numeric (<c>"3"</c>) or text (<c>"Running"</c>) value as emitted by the tag; text is compared case-insensitively.</summary>
+    public string Match { get; set; } = "";
+
+    /// <summary>RUNNING, SETUP, IDLE, FAULT or MAINTENANCE.</summary>
+    public string State { get; set; } = "";
 }
 
 public sealed class TagEntry
@@ -51,6 +86,15 @@ public sealed class ConnectorEntry
     public int MapVersion { get; set; } = 1;
 
     public string Protocol { get; set; } = "";
+
+    /// <summary>Id of the machine centre in the backend (<c>mfg_machine_centers.id</c>); defaults to <see cref="MachineId"/>.</summary>
+    public Guid? BackendMachineId { get; set; }
+
+    /// <summary>Tag (mapped id) whose value carries the machine state. Null = this connector emits no state events.</summary>
+    public string? StateTag { get; set; }
+
+    /// <summary>Raw value → state table. Text values that are not listed fall back to well-known names (run, setup, idle, alarm, maintenance…).</summary>
+    public List<StateMapEntry> StateMap { get; set; } = [];
 
     public List<TagEntry> Tags { get; set; } = [];
 
