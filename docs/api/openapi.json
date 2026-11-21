@@ -85030,6 +85030,258 @@
                 }
             }
         },
+        "/v1/analytics/dss/legal-entities": {
+            "get": {
+                "operationId": "analytics.dss.legal-entities",
+                "tags": [
+                    "DssAdmin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "currency": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "name",
+                                                    "currency"
+                                                ]
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/dss/admin/reconciliation": {
+            "get": {
+                "operationId": "analytics.dss.admin.reconciliation",
+                "tags": [
+                    "DssAdmin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "variance": {
+                                                    "type": "number"
+                                                },
+                                                "accounts_checked": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "mismatches": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "account_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "ledger": {
+                                                                "type": "number"
+                                                            },
+                                                            "mart": {
+                                                                "type": "number"
+                                                            },
+                                                            "variance": {
+                                                                "type": "number"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "account_id",
+                                                            "ledger",
+                                                            "mart",
+                                                            "variance"
+                                                        ]
+                                                    }
+                                                },
+                                                "snapshot_variance": {
+                                                    "type": "number"
+                                                }
+                                            },
+                                            "required": [
+                                                "variance",
+                                                "accounts_checked",
+                                                "mismatches",
+                                                "snapshot_variance"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/dss/admin/consolidate": {
+            "post": {
+                "operationId": "analytics.dss.admin.consolidate",
+                "tags": [
+                    "DssAdmin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Data mart consolidated"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "documents_projected": {
+                                                    "type": "integer",
+                                                    "const": 0
+                                                },
+                                                "reconciliation": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "variance": {
+                                                            "type": "number"
+                                                        },
+                                                        "accounts_checked": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "mismatches": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "account_id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "ledger": {
+                                                                        "type": "number"
+                                                                    },
+                                                                    "mart": {
+                                                                        "type": "number"
+                                                                    },
+                                                                    "variance": {
+                                                                        "type": "number"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "account_id",
+                                                                    "ledger",
+                                                                    "mart",
+                                                                    "variance"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "snapshot_variance": {
+                                                            "type": "number"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "variance",
+                                                        "accounts_checked",
+                                                        "mismatches",
+                                                        "snapshot_variance"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "documents_projected",
+                                                "reconciliation"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/subscriptions/dunning-policy": {
             "get": {
                 "operationId": "subscriptions.dunning-policy.show",
@@ -94609,6 +94861,1222 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/dss/overview": {
+            "get": {
+                "operationId": "analytics.dss.overview",
+                "tags": [
+                    "ExecutiveDss"
+                ],
+                "parameters": [
+                    {
+                        "name": "legal_entity_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 50
+                        }
+                    },
+                    {
+                        "name": "cost_center_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 200
+                        }
+                    },
+                    {
+                        "name": "currency",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "CHF",
+                                "EUR",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "period_preset",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "MTD",
+                                "QTD",
+                                "YTD",
+                                "L12M",
+                                "CUSTOM",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "comparison_baseline",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "PRIOR_PERIOD",
+                                "PRIOR_YEAR",
+                                "BUDGET",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "as_of",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/dss/profitability-matrix": {
+            "get": {
+                "operationId": "analytics.dss.profitability-matrix",
+                "tags": [
+                    "ExecutiveDss"
+                ],
+                "parameters": [
+                    {
+                        "name": "legal_entity_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 50
+                        }
+                    },
+                    {
+                        "name": "cost_center_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 200
+                        }
+                    },
+                    {
+                        "name": "currency",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "CHF",
+                                "EUR",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "period_preset",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "MTD",
+                                "QTD",
+                                "YTD",
+                                "L12M",
+                                "CUSTOM",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "comparison_baseline",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "PRIOR_PERIOD",
+                                "PRIOR_YEAR",
+                                "BUDGET",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "as_of",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "dimension",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "customer",
+                                "product",
+                                "channel",
+                                "cost_center",
+                                "legal_entity",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 500
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/dss/variance-bridge": {
+            "get": {
+                "operationId": "analytics.dss.variance-bridge",
+                "tags": [
+                    "ExecutiveDss"
+                ],
+                "parameters": [
+                    {
+                        "name": "legal_entity_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 50
+                        }
+                    },
+                    {
+                        "name": "cost_center_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 200
+                        }
+                    },
+                    {
+                        "name": "currency",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "CHF",
+                                "EUR",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "period_preset",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "MTD",
+                                "QTD",
+                                "YTD",
+                                "L12M",
+                                "CUSTOM",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "comparison_baseline",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "PRIOR_PERIOD",
+                                "PRIOR_YEAR",
+                                "BUDGET",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "as_of",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/dss/drill-down": {
+            "get": {
+                "operationId": "analytics.dss.drill-down",
+                "tags": [
+                    "ExecutiveDss"
+                ],
+                "parameters": [
+                    {
+                        "name": "legal_entity_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 50
+                        }
+                    },
+                    {
+                        "name": "cost_center_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 200
+                        }
+                    },
+                    {
+                        "name": "currency",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "CHF",
+                                "EUR",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "period_preset",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "MTD",
+                                "QTD",
+                                "YTD",
+                                "L12M",
+                                "CUSTOM",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "comparison_baseline",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "PRIOR_PERIOD",
+                                "PRIOR_YEAR",
+                                "BUDGET",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "as_of",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "metric",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "revenue",
+                                "cogs",
+                                "opex",
+                                "depreciation",
+                                "cash",
+                                "receivable",
+                                "payable",
+                                "inventory"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "entity_type",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "customer",
+                                "cost_center",
+                                "legal_entity",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "entity_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 200
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "metric": {
+                                                    "type": "string"
+                                                },
+                                                "currency": {
+                                                    "type": "string"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "posting_date": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "account_code": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "category": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "counterparty": {
+                                                                        "type": [
+                                                                            "object",
+                                                                            "null"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "name": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "id",
+                                                                            "name"
+                                                                        ]
+                                                                    },
+                                                                    "cost_center_id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "legal_entity_id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "transaction_currency": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount_transaction": {
+                                                                        "type": "number"
+                                                                    },
+                                                                    "amount_reporting": {
+                                                                        "type": [
+                                                                            "number",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "source": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "type": {
+                                                                                "type": "string",
+                                                                                "const": "journal_entry"
+                                                                            },
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "type",
+                                                                            "id"
+                                                                        ]
+                                                                    },
+                                                                    "links": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "source": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "report_builder": {
+                                                                                "type": "string",
+                                                                                "const": "/api/v1/business-intelligence/explorer/run"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "source",
+                                                                            "report_builder"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "posting_date",
+                                                                    "account_code",
+                                                                    "category",
+                                                                    "counterparty",
+                                                                    "cost_center_id",
+                                                                    "legal_entity_id",
+                                                                    "transaction_currency",
+                                                                    "amount_transaction",
+                                                                    "amount_reporting",
+                                                                    "source",
+                                                                    "links"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "string"
+                                                        }
+                                                    ]
+                                                },
+                                                "pagination": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "page": {},
+                                                        "per_page": {},
+                                                        "total": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "last_page": {}
+                                                    },
+                                                    "required": [
+                                                        "page",
+                                                        "per_page",
+                                                        "total",
+                                                        "last_page"
+                                                    ]
+                                                },
+                                                "total_amount": {
+                                                    "type": "number"
+                                                },
+                                                "links": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "kpi_dashboards": {
+                                                            "type": "string",
+                                                            "const": "/api/v1/business-intelligence/dashboards"
+                                                        },
+                                                        "report_builder": {
+                                                            "type": "string",
+                                                            "const": "/api/v1/business-intelligence/explorer/run"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "kpi_dashboards",
+                                                        "report_builder"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "metric",
+                                                "currency",
+                                                "data",
+                                                "pagination",
+                                                "total_amount",
+                                                "links"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/dss/simulate": {
+            "post": {
+                "operationId": "analytics.dss.simulate",
+                "tags": [
+                    "ExecutiveDss"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SimulateScenarioRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "currency": {
+                                                    "type": "string"
+                                                },
+                                                "period": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "from": {
+                                                            "type": "string"
+                                                        },
+                                                        "to": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "from",
+                                                        "to"
+                                                    ]
+                                                },
+                                                "inputs": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "revenue": {
+                                                            "type": "number"
+                                                        },
+                                                        "cogs": {
+                                                            "type": "number"
+                                                        },
+                                                        "opex": {
+                                                            "type": "number"
+                                                        },
+                                                        "dso_days": {
+                                                            "type": "number"
+                                                        },
+                                                        "net_cash_flow": {
+                                                            "type": "number"
+                                                        },
+                                                        "period_days": {
+                                                            "type": "integer"
+                                                        },
+                                                        "fte_annual_cost": {
+                                                            "type": [
+                                                                "string",
+                                                                "number"
+                                                            ]
+                                                        },
+                                                        "revenue_fx_share": {
+                                                            "type": "number"
+                                                        },
+                                                        "cost_fx_share": {
+                                                            "type": "number"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "revenue",
+                                                        "cogs",
+                                                        "opex",
+                                                        "dso_days",
+                                                        "net_cash_flow",
+                                                        "period_days",
+                                                        "fte_annual_cost",
+                                                        "revenue_fx_share",
+                                                        "cost_fx_share"
+                                                    ]
+                                                },
+                                                "scenario": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "baseline": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "revenue": {
+                                                            "type": "number"
+                                                        },
+                                                        "cogs": {
+                                                            "type": "number"
+                                                        },
+                                                        "opex": {
+                                                            "type": "number"
+                                                        },
+                                                        "ebitda": {
+                                                            "type": "number"
+                                                        },
+                                                        "ebitda_margin_pct": {
+                                                            "type": "number"
+                                                        },
+                                                        "net_cash_flow": {
+                                                            "type": "number"
+                                                        },
+                                                        "break_even_revenue": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "break_even_headroom_pct": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "revenue",
+                                                        "cogs",
+                                                        "opex",
+                                                        "ebitda",
+                                                        "ebitda_margin_pct",
+                                                        "net_cash_flow",
+                                                        "break_even_revenue",
+                                                        "break_even_headroom_pct"
+                                                    ]
+                                                },
+                                                "simulated": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "revenue": {
+                                                            "type": "number"
+                                                        },
+                                                        "cogs": {
+                                                            "type": "number"
+                                                        },
+                                                        "opex": {
+                                                            "type": "number"
+                                                        },
+                                                        "ebitda": {
+                                                            "type": "number"
+                                                        },
+                                                        "ebitda_margin_pct": {
+                                                            "type": "number"
+                                                        },
+                                                        "net_cash_flow": {
+                                                            "type": "number"
+                                                        },
+                                                        "break_even_revenue": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "break_even_headroom_pct": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "revenue",
+                                                        "cogs",
+                                                        "opex",
+                                                        "ebitda",
+                                                        "ebitda_margin_pct",
+                                                        "net_cash_flow",
+                                                        "break_even_revenue",
+                                                        "break_even_headroom_pct"
+                                                    ]
+                                                },
+                                                "delta": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "revenue": {
+                                                            "type": "number"
+                                                        },
+                                                        "ebitda": {
+                                                            "type": "number"
+                                                        },
+                                                        "ebitda_margin_pct": {
+                                                            "type": "number"
+                                                        },
+                                                        "net_cash_flow": {
+                                                            "type": "number"
+                                                        },
+                                                        "break_even_revenue": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "revenue",
+                                                        "ebitda",
+                                                        "ebitda_margin_pct",
+                                                        "net_cash_flow",
+                                                        "break_even_revenue"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "currency",
+                                                "period",
+                                                "inputs",
+                                                "scenario",
+                                                "baseline",
+                                                "simulated",
+                                                "delta"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/analytics/dss/export-board-pack": {
+            "post": {
+                "operationId": "analytics.dss.export-board-pack",
+                "tags": [
+                    "ExecutiveDss"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExportBoardPackRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                },
+                                "example": "attachment; filename=.xlsx"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -337672,6 +339140,118 @@
                 ],
                 "title": "ExpenseResource"
             },
+            "ExportBoardPackRequest": {
+                "type": "object",
+                "description": "Filter, file format and language of the board pack.",
+                "properties": {
+                    "legal_entity_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 50
+                    },
+                    "cost_center_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 200
+                    },
+                    "currency": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "CHF",
+                            "EUR",
+                            null
+                        ]
+                    },
+                    "period_preset": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "MTD",
+                            "QTD",
+                            "YTD",
+                            "L12M",
+                            "CUSTOM",
+                            null
+                        ]
+                    },
+                    "date_from": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date"
+                    },
+                    "date_to": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date"
+                    },
+                    "comparison_baseline": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "PRIOR_PERIOD",
+                            "PRIOR_YEAR",
+                            "BUDGET",
+                            null
+                        ]
+                    },
+                    "as_of": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date"
+                    },
+                    "format": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "pdf",
+                            "xlsx",
+                            null
+                        ]
+                    },
+                    "locale": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "it-CH",
+                            "de-CH",
+                            "fr-CH",
+                            "en",
+                            "it-IT",
+                            null
+                        ]
+                    }
+                },
+                "title": "ExportBoardPackRequest"
+            },
             "ExportJobResource": {
                 "type": "object",
                 "properties": {
@@ -376892,6 +378472,10 @@
                                 "digital_preservation",
                                 "forecasting",
                                 "ocr_inbox",
+                                "bi_dss",
+                                "bi_dss_simulate",
+                                "bi_dss_export",
+                                "bi_dss_admin",
                                 "ocr_capture",
                                 "kpi_dashboards",
                                 "kpi_dashboards_admin",
@@ -386704,6 +388288,149 @@
                     "value"
                 ],
                 "title": "SimulateQuoteRequest"
+            },
+            "SimulateScenarioRequest": {
+                "type": "object",
+                "description": "Filter and sensitivity sliders of the what-if simulation (percentages are whole numbers).",
+                "properties": {
+                    "legal_entity_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 50
+                    },
+                    "cost_center_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "maxItems": 200
+                    },
+                    "currency": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "CHF",
+                            "EUR",
+                            null
+                        ]
+                    },
+                    "period_preset": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "MTD",
+                            "QTD",
+                            "YTD",
+                            "L12M",
+                            "CUSTOM",
+                            null
+                        ]
+                    },
+                    "date_from": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date"
+                    },
+                    "date_to": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date"
+                    },
+                    "comparison_baseline": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "PRIOR_PERIOD",
+                            "PRIOR_YEAR",
+                            "BUDGET",
+                            null
+                        ]
+                    },
+                    "as_of": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date"
+                    },
+                    "scenario": {
+                        "type": "object",
+                        "properties": {
+                            "price_pct": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": -100,
+                                "maximum": 500
+                            },
+                            "cogs_pct": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": -100,
+                                "maximum": 500
+                            },
+                            "opex_pct": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": -100,
+                                "maximum": 500
+                            },
+                            "dso_days_delta": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": -365,
+                                "maximum": 365
+                            },
+                            "fx_shift_pct": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": -50,
+                                "maximum": 50
+                            },
+                            "fte_delta": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ],
+                                "minimum": -1000,
+                                "maximum": 1000
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "scenario"
+                ],
+                "title": "SimulateScenarioRequest"
             },
             "SimulateSdiNotificationRequest": {
                 "type": "object",
@@ -421169,6 +422896,10 @@
             "description": "Operations of the Dsar module."
         },
         {
+            "name": "DssAdmin",
+            "description": "Operations of the DssAdmin module."
+        },
+        {
             "name": "Dunning",
             "description": "Operations of the Dunning module."
         },
@@ -421251,6 +422982,10 @@
         {
             "name": "Event",
             "description": "Operations of the Event module."
+        },
+        {
+            "name": "ExecutiveDss",
+            "description": "Operations of the ExecutiveDss module."
         },
         {
             "name": "Expense",

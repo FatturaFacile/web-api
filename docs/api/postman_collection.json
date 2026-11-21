@@ -17549,6 +17549,671 @@
                     }
                 },
                 {
+                    "name": "GET /v1/analytics/dss/legal-entities",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/legal-entities",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "legal-entities"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/analytics/dss/admin/reconciliation",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/admin/reconciliation",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "admin",
+                                "reconciliation"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/analytics/dss/admin/consolidate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/admin/consolidate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "admin",
+                                "consolidate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/analytics/dss/overview",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/overview",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "overview"
+                            ],
+                            "query": [
+                                {
+                                    "key": "legal_entity_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "period_preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison_baseline",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "as_of",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/analytics/dss/profitability-matrix",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/profitability-matrix",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "profitability-matrix"
+                            ],
+                            "query": [
+                                {
+                                    "key": "legal_entity_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "period_preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison_baseline",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "as_of",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "dimension",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/analytics/dss/variance-bridge",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/variance-bridge",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "variance-bridge"
+                            ],
+                            "query": [
+                                {
+                                    "key": "legal_entity_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "period_preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison_baseline",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "as_of",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/analytics/dss/drill-down",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/drill-down?metric=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "drill-down"
+                            ],
+                            "query": [
+                                {
+                                    "key": "legal_entity_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "period_preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date_to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison_baseline",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "as_of",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "metric",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "entity_type",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "entity_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/analytics/dss/simulate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/simulate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "simulate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"cost_center_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"currency\": \"CHF\",\n    \"period_preset\": \"MTD\",\n    \"date_from\": \"2026-01-31\",\n    \"date_to\": \"2026-01-31\",\n    \"comparison_baseline\": \"PRIOR_PERIOD\",\n    \"as_of\": \"2026-01-31\",\n    \"scenario\": {\n        \"price_pct\": 1.5,\n        \"cogs_pct\": 1.5,\n        \"opex_pct\": 1.5,\n        \"dso_days_delta\": 1.5,\n        \"fx_shift_pct\": 1.5,\n        \"fte_delta\": 1.5\n    }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/analytics/dss/export-board-pack",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/analytics/dss/export-board-pack",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics",
+                                "dss",
+                                "export-board-pack"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"cost_center_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"currency\": \"CHF\",\n    \"period_preset\": \"MTD\",\n    \"date_from\": \"2026-01-31\",\n    \"date_to\": \"2026-01-31\",\n    \"comparison_baseline\": \"PRIOR_PERIOD\",\n    \"as_of\": \"2026-01-31\",\n    \"format\": \"pdf\",\n    \"locale\": \"it-CH\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "List scheduled exports",
                     "request": {
                         "method": "GET",
