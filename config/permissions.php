@@ -118,6 +118,14 @@ return [
         ],
         // Swiss QR-bill, ISO 20022 and country fiscal documents (Issue #83): finance issues and reads them.
         'swiss_fiscal' => ['read' => $financeReaders, 'write' => $finance],
+        // Workforce shift planning (Mod 073). shift_planning: HR, production and managers plan, publish and lock rosters, see the
+        // labour cost and decide swaps; shift_planning_self: every employee reads the own agenda, claims open shifts and swaps.
+        'shift_planning' => [
+            'read' => ['owner', 'admin', 'hr', 'production'],
+            'write' => ['owner', 'admin', 'hr', 'production'],
+            'grants' => ['read' => ['shift_planning.*'], 'write' => ['shift_planning.*']],
+        ],
+        'shift_planning_self' => ['read' => $anyMember, 'write' => $anyMember],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
         // AI Services & Cognitive Automation Layer (Mod 093). ai_copilot (ai.copilot.use): every member asks the copilot and drafts
         // messages, each answer limited to what the caller may read; ai_review (ai.suggestions.review): the finance and sales teams

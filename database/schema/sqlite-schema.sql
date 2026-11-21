@@ -41675,6 +41675,155 @@ CREATE INDEX "kpi_threshold_alert_logs_tenant_id_kpi_code_status_index" on "kpi_
   "kpi_code",
   "status"
 );
+CREATE TABLE "roster_shift_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" text not null,
+  "start_time" time not null,
+  "end_time" time not null,
+  "break_minutes" integer not null default '0',
+  "color_hex" varchar not null default '#1890FF',
+  "night_surcharge_applicable" tinyint(1) not null default '1',
+  "is_on_call" tinyint(1) not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_shift_templates_tenant_id_code_index" on "roster_shift_templates"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "roster_shift_templates_tenant_id_is_active_index" on "roster_shift_templates"(
+  "tenant_id",
+  "is_active"
+);
+CREATE TABLE "roster_schedule_periods"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "location_or_department_id" varchar,
+  "production_line_id" varchar,
+  "period_type" varchar not null,
+  "jurisdiction" varchar not null,
+  "start_date" date not null,
+  "end_date" date not null,
+  "status" varchar not null default 'draft',
+  "published_at" datetime,
+  "published_by" varchar,
+  "locked_at" datetime,
+  "locked_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_schedule_periods_tenant_id_start_date_end_date_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "start_date",
+  "end_date"
+);
+CREATE INDEX "roster_schedule_periods_tenant_id_location_or_department_id_status_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "location_or_department_id",
+  "status"
+);
+CREATE INDEX "roster_schedule_periods_tenant_id_production_line_id_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "production_line_id"
+);
+CREATE TABLE "roster_shift_assignments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "roster_schedule_period_id" varchar not null,
+  "employee_id" varchar,
+  "shift_date" date not null,
+  "shift_template_id" varchar not null,
+  "start_at" datetime not null,
+  "end_at" datetime not null,
+  "required_role_or_skill_id" varchar,
+  "estimated_labor_cost" numeric not null default '0',
+  "surcharge_breakdown" text,
+  "compliance_warnings" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("roster_schedule_period_id") references "roster_schedule_periods"("id") on delete cascade,
+  foreign key("shift_template_id") references "roster_shift_templates"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "roster_assign_period_date_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "roster_schedule_period_id",
+  "shift_date"
+);
+CREATE INDEX "roster_assign_employee_start_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "employee_id",
+  "start_at"
+);
+CREATE INDEX "roster_assign_employee_end_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "employee_id",
+  "end_at"
+);
+CREATE TABLE "roster_shift_swap_requests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "requester_employee_id" varchar not null,
+  "target_peer_employee_id" varchar,
+  "shift_assignment_id" varchar not null,
+  "target_shift_assignment_id" varchar,
+  "status" varchar not null default 'pending_peer_acceptance',
+  "peer_responded_at" datetime,
+  "reviewed_by_user_id" varchar,
+  "reviewed_at" datetime,
+  "rejection_reason" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("shift_assignment_id") references "roster_shift_assignments"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_shift_swap_requests_tenant_id_status_index" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "roster_swap_requester_idx" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "requester_employee_id",
+  "status"
+);
+CREATE INDEX "roster_swap_peer_idx" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "target_peer_employee_id",
+  "status"
+);
+CREATE INDEX "roster_shift_swap_requests_tenant_id_shift_assignment_id_index" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "shift_assignment_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -42077,3 +42226,4 @@ INSERT INTO migrations VALUES(398,'2027_12_13_000100_add_blind_indexes_to_contac
 INSERT INTO migrations VALUES(399,'2027_12_13_000200_create_offline_audit_entries_table',11);
 INSERT INTO migrations VALUES(400,'2027_12_16_000100_create_ai_cognitive_tables',12);
 INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_kpi_dashboard_tables',13);
+INSERT INTO migrations VALUES(402,'2027_12_17_000100_create_shift_planning_tables',14);
