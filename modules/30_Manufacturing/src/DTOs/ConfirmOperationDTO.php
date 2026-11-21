@@ -21,5 +21,6 @@ final readonly class ConfirmOperationDTO
         public ?string $postingDate = null,
         public string $downtimeMinutes = '0',
         public ?string $shopFloorExecutionId = null,
+        public ?string $postingUuid = null,
     ) {}
 }

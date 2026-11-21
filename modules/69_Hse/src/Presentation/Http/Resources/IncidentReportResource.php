@@ -39,6 +39,7 @@ final class IncidentReportResource extends JsonResource
             'injury_dynamics' => $incident->injury_dynamics_json,
             'linked_insurance_claim_id' => $incident->linked_insurance_claim_id,
             'status' => $incident->status->value,
+            'photo_ids' => $incident->relationLoaded('photos') ? $incident->photos->pluck('id')->all() : $incident->photos()->pluck('id')->all(),
         ];
     }
 }

@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Modules\ConstructionTrades\Http\Requests\SiteManagementRequest;
+use Modules\ConstructionTrades\Http\Requests\SiteWorkerAccessRequest;
 use Modules\ConstructionTrades\Http\Resources\TradesResource;
 use Modules\ConstructionTrades\Models\DiaryEntry;
 use Modules\ConstructionTrades\Models\SiteDocument;
@@ -142,6 +143,23 @@ final class SiteLogController extends Controller
         $this->authorize('viewAny', SiteDocument::class);
 
         return response()->json(['data' => $this->management->expiringDocuments((int) $request->validated('within_days'))]);
+    }
+
+    /**
+     * Check a worker against the HSE hard block before entering the site.
+     */
+    #[OA\Post(path: '/api/v1/construction-trades/sites/{id}/worker-access', operationId: 'checkTradesSiteWorkerAccess', description: 'Mod 099 hard block: 200 when the worker is cleared, 422 with the blocking reasons under "hse" when a certificate, medical judgment or PPE is expired, missing or unfit.', summary: 'Check worker access to a site', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesDiaryRequest')), tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
+        new OA\Response(response: 200, description: 'Worker cleared'),
+        new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/TradesForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/TradesNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/TradesUnprocessable', response: 422),
+    ])]
+    public function workerAccess(SiteWorkerAccessRequest $request, string $id): JsonResponse
+    {
+        $site = $this->constructionSite($id, 'view');
+
+        return response()->json(['data' => $this->management->assertWorkerAccess($site, (string) $request->validated('employee_id'), $request->validated('access_date'))]);
     }
 
     private function constructionSite(string $id, string $ability): ConstructionSite

@@ -17052,6 +17052,7 @@ CREATE INDEX "loyalty_transactions_tenant_id_index" on "loyalty_transactions"(
 );
 CREATE TABLE "mfg_accounting_settings"(
   "id" varchar not null,
+  "machine_time_source" varchar not null default 'manual',
   "tenant_id" varchar,
   "raw_material_account_code" varchar,
   "wip_account_code" varchar,
@@ -17069,7 +17070,6 @@ CREATE TABLE "mfg_accounting_settings"(
   "deleted_at" datetime,
   "created_by" varchar,
   "deleted_by" varchar,
-  "machine_time_source" varchar not null default 'manual',
   primary key("id")
 );
 
@@ -17334,6 +17334,8 @@ CREATE TABLE "mfg_machine_centers"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "current_state" varchar,
+  "state_since" datetime,
   foreign key("work_center_id") references "mfg_work_centers"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -17618,6 +17620,7 @@ CREATE TABLE "mfg_operation_confirmations"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "posting_uuid" varchar,
   foreign key("production_order_id") references "mfg_production_orders"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -17762,6 +17765,7 @@ CREATE INDEX "mfg_production_order_lines_tenant_id_index" on "mfg_production_ord
 );
 CREATE TABLE "mfg_production_order_operations"(
   "id" varchar not null,
+  "ideal_cycle_time_ms" numeric,
   "tenant_id" varchar,
   "production_order_id" varchar not null,
   "operation_id" varchar,
@@ -17794,7 +17798,6 @@ CREATE TABLE "mfg_production_order_operations"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "ideal_cycle_time_ms" numeric,
   foreign key("production_order_id") references "mfg_production_orders"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -17868,6 +17871,7 @@ CREATE TABLE "mfg_production_orders"(
   "variance_journal_entry_id" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "production_strategy" varchar,
   primary key("id")
 );
 
@@ -43024,6 +43028,155 @@ CREATE UNIQUE INDEX "ipp_gl_role_unique" on "ipp_gl_account_settings"(
   "tenant_id",
   "role"
 );
+CREATE TABLE "roster_shift_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" text not null,
+  "start_time" time not null,
+  "end_time" time not null,
+  "break_minutes" integer not null default '0',
+  "color_hex" varchar not null default '#1890FF',
+  "night_surcharge_applicable" tinyint(1) not null default '1',
+  "is_on_call" tinyint(1) not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_shift_templates_tenant_id_code_index" on "roster_shift_templates"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "roster_shift_templates_tenant_id_is_active_index" on "roster_shift_templates"(
+  "tenant_id",
+  "is_active"
+);
+CREATE TABLE "roster_schedule_periods"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "location_or_department_id" varchar,
+  "production_line_id" varchar,
+  "period_type" varchar not null,
+  "jurisdiction" varchar not null,
+  "start_date" date not null,
+  "end_date" date not null,
+  "status" varchar not null default 'draft',
+  "published_at" datetime,
+  "published_by" varchar,
+  "locked_at" datetime,
+  "locked_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_schedule_periods_tenant_id_start_date_end_date_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "start_date",
+  "end_date"
+);
+CREATE INDEX "roster_schedule_periods_tenant_id_location_or_department_id_status_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "location_or_department_id",
+  "status"
+);
+CREATE INDEX "roster_schedule_periods_tenant_id_production_line_id_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "production_line_id"
+);
+CREATE TABLE "roster_shift_assignments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "roster_schedule_period_id" varchar not null,
+  "employee_id" varchar,
+  "shift_date" date not null,
+  "shift_template_id" varchar not null,
+  "start_at" datetime not null,
+  "end_at" datetime not null,
+  "required_role_or_skill_id" varchar,
+  "estimated_labor_cost" numeric not null default '0',
+  "surcharge_breakdown" text,
+  "compliance_warnings" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("roster_schedule_period_id") references "roster_schedule_periods"("id") on delete cascade,
+  foreign key("shift_template_id") references "roster_shift_templates"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "roster_assign_period_date_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "roster_schedule_period_id",
+  "shift_date"
+);
+CREATE INDEX "roster_assign_employee_start_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "employee_id",
+  "start_at"
+);
+CREATE INDEX "roster_assign_employee_end_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "employee_id",
+  "end_at"
+);
+CREATE TABLE "roster_shift_swap_requests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "requester_employee_id" varchar not null,
+  "target_peer_employee_id" varchar,
+  "shift_assignment_id" varchar not null,
+  "target_shift_assignment_id" varchar,
+  "status" varchar not null default 'pending_peer_acceptance',
+  "peer_responded_at" datetime,
+  "reviewed_by_user_id" varchar,
+  "reviewed_at" datetime,
+  "rejection_reason" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("shift_assignment_id") references "roster_shift_assignments"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_shift_swap_requests_tenant_id_status_index" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "roster_swap_requester_idx" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "requester_employee_id",
+  "status"
+);
+CREATE INDEX "roster_swap_peer_idx" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "target_peer_employee_id",
+  "status"
+);
+CREATE INDEX "roster_shift_swap_requests_tenant_id_shift_assignment_id_index" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "shift_assignment_id"
+);
 CREATE INDEX "mfg_engineering_change_orders_approval_workflow_id_index" on "mfg_engineering_change_orders"(
   "approval_workflow_id"
 );
@@ -43038,6 +43191,9 @@ CREATE TABLE "mfg_bom_co_products"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("bom_id") references "mfg_boms"("id") on delete cascade,
   primary key("id")
 );
@@ -43121,6 +43277,28 @@ CREATE INDEX "purchase_order_lines_rfq_line_id_index" on "purchase_order_lines"(
 );
 CREATE INDEX "purchase_order_lines_supplier_bid_line_id_index" on "purchase_order_lines"(
   "supplier_bid_line_id"
+);
+CREATE TABLE "hse_incident_photos"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "incident_report_id" varchar not null,
+  "file_path" varchar not null,
+  "mime_type" varchar not null,
+  "size_bytes" integer not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("incident_report_id") references "hse_incident_reports"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_incident_photos_tenant_id_incident_report_id_index" on "hse_incident_photos"(
+  "tenant_id",
+  "incident_report_id"
 );
 CREATE TABLE "purchase_requisitions"(
   "id" varchar not null,
@@ -43333,6 +43511,94 @@ CREATE INDEX "purchase_requisition_document_links_target_document_line_id_index"
 CREATE INDEX "purchase_requisition_document_links_created_by_user_id_index" on "purchase_requisition_document_links"(
   "created_by_user_id"
 );
+CREATE UNIQUE INDEX "mfg_op_conf_posting_uuid_unique" on "mfg_operation_confirmations"(
+  "tenant_id",
+  "posting_uuid"
+);
+CREATE TABLE "mfg_wip_transactions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "production_order_id" varchar not null,
+  "transaction_type" varchar not null,
+  "amount" numeric not null,
+  "source_type" varchar,
+  "source_id" varchar,
+  "journal_entry_id" varchar,
+  "posting_date" date not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("production_order_id") references "mfg_production_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_wip_transactions_tenant_id_index" on "mfg_wip_transactions"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_wip_transactions_production_order_id_index" on "mfg_wip_transactions"(
+  "production_order_id"
+);
+CREATE INDEX "mfg_wip_transactions_transaction_type_index" on "mfg_wip_transactions"(
+  "transaction_type"
+);
+CREATE TABLE "mfg_edge_gateways"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "secret" text not null,
+  "is_active" tinyint(1) not null default '1',
+  "last_seen_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_edge_gateways_tenant_id_index" on "mfg_edge_gateways"(
+  "tenant_id"
+);
+CREATE TABLE "mfg_machine_state_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "gateway_id" varchar not null,
+  "machine_id" varchar not null,
+  "event_uuid" varchar not null,
+  "state" varchar not null,
+  "occurred_at" datetime not null,
+  "production_order_operation_id" varchar,
+  "payload" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mfg_machine_state_events_uuid_unique" on "mfg_machine_state_events"(
+  "tenant_id",
+  "event_uuid"
+);
+CREATE INDEX "mfg_machine_state_events_tenant_id_index" on "mfg_machine_state_events"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_machine_state_events_gateway_id_index" on "mfg_machine_state_events"(
+  "gateway_id"
+);
+CREATE INDEX "mfg_machine_state_events_machine_id_index" on "mfg_machine_state_events"(
+  "machine_id"
+);
+CREATE INDEX "mfg_machine_state_events_production_order_operation_id_index" on "mfg_machine_state_events"(
+  "production_order_operation_id"
+);
+
 CREATE TABLE "mfg_reason_codes"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43353,9 +43619,11 @@ CREATE UNIQUE INDEX "mfg_reason_codes_tenant_id_code_unique" on "mfg_reason_code
   "tenant_id",
   "code"
 );
+
 CREATE INDEX "mfg_reason_codes_tenant_id_index" on "mfg_reason_codes"(
   "tenant_id"
 );
+
 CREATE TABLE "mfg_reason_code_labels"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43376,12 +43644,15 @@ CREATE UNIQUE INDEX "mfg_reason_code_labels_reason_code_id_locale_unique" on "mf
   "reason_code_id",
   "locale"
 );
+
 CREATE INDEX "mfg_reason_code_labels_tenant_id_index" on "mfg_reason_code_labels"(
   "tenant_id"
 );
+
 CREATE INDEX "mfg_reason_code_labels_reason_code_id_index" on "mfg_reason_code_labels"(
   "reason_code_id"
 );
+
 CREATE TABLE "mfg_shift_instances"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43408,14 +43679,17 @@ CREATE UNIQUE INDEX "mfg_shift_instances_natural" on "mfg_shift_instances"(
   "shift_code",
   "starts_at"
 );
+
 CREATE INDEX "mfg_shift_instances_tenant_id_scope_id_starts_at_index" on "mfg_shift_instances"(
   "tenant_id",
   "scope_id",
   "starts_at"
 );
+
 CREATE INDEX "mfg_shift_instances_tenant_id_index" on "mfg_shift_instances"(
   "tenant_id"
 );
+
 CREATE TABLE "mfg_mes_sync_changes"(
   "seq" integer primary key autoincrement not null,
   "tenant_id" varchar,
@@ -43424,16 +43698,19 @@ CREATE TABLE "mfg_mes_sync_changes"(
   "operation" varchar not null,
   "changed_at" datetime not null
 );
+
 CREATE INDEX "mfg_mes_sync_changes_tenant_id_resource_seq_index" on "mfg_mes_sync_changes"(
   "tenant_id",
   "resource",
   "seq"
 );
+
 CREATE INDEX "mfg_mes_sync_changes_tenant_id_resource_entity_id_index" on "mfg_mes_sync_changes"(
   "tenant_id",
   "resource",
   "entity_id"
 );
+
 CREATE TABLE "mfg_mes_sync_floors"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43446,6 +43723,7 @@ CREATE TABLE "mfg_mes_sync_floors"(
 CREATE UNIQUE INDEX "mfg_mes_sync_floors_tenant_id_unique" on "mfg_mes_sync_floors"(
   "tenant_id"
 );
+
 CREATE TABLE "mfg_mes_inbox"(
   "event_id" varchar not null,
   "tenant_id" varchar,
@@ -43455,6 +43733,7 @@ CREATE TABLE "mfg_mes_inbox"(
 );
 
 CREATE INDEX "mfg_mes_inbox_tenant_id_index" on "mfg_mes_inbox"("tenant_id");
+
 CREATE TABLE "mfg_mes_oee_snapshots"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43481,15 +43760,19 @@ CREATE UNIQUE INDEX "mfg_mes_oee_latest" on "mfg_mes_oee_snapshots"(
   "scope",
   "scope_key"
 );
+
 CREATE INDEX "mfg_mes_oee_snapshots_tenant_id_index" on "mfg_mes_oee_snapshots"(
   "tenant_id"
 );
+
 CREATE INDEX "mfg_mes_oee_snapshots_machine_id_index" on "mfg_mes_oee_snapshots"(
   "machine_id"
 );
+
 CREATE INDEX "mfg_mes_oee_snapshots_production_order_operation_id_index" on "mfg_mes_oee_snapshots"(
   "production_order_operation_id"
 );
+
 CREATE TABLE "mfg_mes_oee_snapshot_revisions"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43505,15 +43788,19 @@ CREATE INDEX "mfg_mes_oee_snapshot_revisions_snapshot_id_revision_index" on "mfg
   "snapshot_id",
   "revision"
 );
+
 CREATE INDEX "mfg_mes_oee_snapshot_revisions_tenant_id_index" on "mfg_mes_oee_snapshot_revisions"(
   "tenant_id"
 );
+
 CREATE INDEX "mfg_mes_oee_snapshot_revisions_snapshot_id_index" on "mfg_mes_oee_snapshot_revisions"(
   "snapshot_id"
 );
+
 CREATE UNIQUE INDEX "mfg_mes_oee_snapshot_revisions_event_id_unique" on "mfg_mes_oee_snapshot_revisions"(
   "event_id"
 );
+
 CREATE TABLE "mfg_mes_machine_time_postings"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43542,12 +43829,15 @@ CREATE INDEX "mfg_mes_postings_operation" on "mfg_mes_machine_time_postings"(
   "production_order_operation_id",
   "machine_id"
 );
+
 CREATE INDEX "mfg_mes_machine_time_postings_tenant_id_index" on "mfg_mes_machine_time_postings"(
   "tenant_id"
 );
+
 CREATE INDEX "mfg_mes_machine_time_postings_snapshot_id_index" on "mfg_mes_machine_time_postings"(
   "snapshot_id"
 );
+
 CREATE TABLE "mfg_mes_count_proposals"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43568,9 +43858,11 @@ CREATE TABLE "mfg_mes_count_proposals"(
 CREATE INDEX "mfg_mes_count_proposals_tenant_id_index" on "mfg_mes_count_proposals"(
   "tenant_id"
 );
+
 CREATE INDEX "mfg_mes_count_proposals_production_order_operation_id_index" on "mfg_mes_count_proposals"(
   "production_order_operation_id"
 );
+
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -43978,8 +44270,13 @@ INSERT INTO migrations VALUES(403,'2027_12_17_000100_create_cpq_quote_tables',1)
 INSERT INTO migrations VALUES(404,'2027_12_17_000100_create_data_residency_tables',1);
 INSERT INTO migrations VALUES(405,'2027_12_17_000100_create_hse_tables',1);
 INSERT INTO migrations VALUES(406,'2027_12_17_000100_create_italian_payroll_preprocessing_tables',1);
-INSERT INTO migrations VALUES(407,'2027_12_17_000100_extend_bom_management',1);
-INSERT INTO migrations VALUES(408,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',1);
-INSERT INTO migrations VALUES(409,'2027_12_17_000100_upgrade_procurement_rfq_module_045',1);
-INSERT INTO migrations VALUES(410,'2027_12_18_000100_upgrade_purchase_requisitions_module_044',1);
-INSERT INTO migrations VALUES(411,'2027_12_19_000100_add_mes_integration_to_manufacturing',1);
+INSERT INTO migrations VALUES(407,'2027_12_17_000100_create_shift_planning_tables',1);
+INSERT INTO migrations VALUES(408,'2027_12_17_000100_extend_bom_management',1);
+INSERT INTO migrations VALUES(409,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',1);
+INSERT INTO migrations VALUES(410,'2027_12_17_000100_upgrade_procurement_rfq_module_045',1);
+INSERT INTO migrations VALUES(411,'2027_12_17_000200_add_audit_columns_to_mfg_bom_co_products',1);
+INSERT INTO migrations VALUES(412,'2027_12_18_000100_create_hse_incident_photos_table',1);
+INSERT INTO migrations VALUES(413,'2027_12_18_000100_upgrade_purchase_requisitions_module_044',1);
+INSERT INTO migrations VALUES(414,'2027_12_19_000100_add_posting_uuid_to_mfg_operation_confirmations',1);
+INSERT INTO migrations VALUES(415,'2027_12_19_000200_create_mfg_mes_integration_tables',1);
+INSERT INTO migrations VALUES(416,'2027_12_19_000100_add_mes_integration_to_manufacturing',1);

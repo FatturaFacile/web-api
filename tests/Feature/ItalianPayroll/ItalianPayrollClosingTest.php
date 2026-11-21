@@ -106,7 +106,7 @@ it('walks a month through validation, export, payslips, accounting, SEPA and pay
     ippSeedAttendance($world, null);
     $base = '/api/v1/italian-payroll';
 
-    $periodId = $this->postJson("{$base}/periods", ['year' => 2027, 'month' => 3])->assertCreated()->assertJsonPath('data.status', 'attendance_open')->json('data.id');
+    $periodId = $this->postJson("{$base}/periods", ['year' => 2027, 'month' => 3])->assertCreated()->assertJsonPath('data.status', 'attendance_open')->assertJsonPath('data.accounting_imported', false)->json('data.id');
     $this->postJson("{$base}/periods", ['year' => 2027, 'month' => 3])->assertStatus(409);
 
     // Sickness without an INPS protocol keeps the month open and says what to fix.
@@ -152,7 +152,11 @@ it('walks a month through validation, export, payslips, accounting, SEPA and pay
 
     $this->postJson("{$base}/periods/{$periodId}/accounting-import", $summary + ['employee_nets' => [['employee_id' => $world['rossi']->id, 'net_amount' => 1]]])->assertStatus(422);
     $this->postJson("{$base}/periods/{$periodId}/accounting-import", array_merge($summary, ['net_payable' => 3000]))->assertStatus(422);
+    $this->getJson("{$base}/periods/{$periodId}")->assertJsonPath('data.accounting_imported', false);
     $entryId = $this->postJson("{$base}/periods/{$periodId}/accounting-import", $summary + ['employee_nets' => $nets])->assertCreated()->json('data.gl_journal_entry_id');
+    // The status stays cedolini_imported, so the hub learns that the summary is posted from this flag, on one period and in the list.
+    $this->getJson("{$base}/periods/{$periodId}")->assertJsonPath('data.accounting_imported', true)->assertJsonPath('data.status', 'cedolini_imported');
+    $this->getJson("{$base}/periods")->assertJsonPath('data.0.accounting_imported', true);
     $this->postJson("{$base}/periods/{$periodId}/accounting-import", $summary + ['employee_nets' => $nets])->assertStatus(422);
 
     $entry = JournalEntry::query()->with('lines')->findOrFail($entryId);

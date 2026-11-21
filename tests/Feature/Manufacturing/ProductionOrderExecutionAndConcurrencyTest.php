@@ -174,3 +174,22 @@ test('the service refuses operations of a planned order and concurrent releases 
     expect(fn () => $service->releaseOrder($order))->toThrow(ManufacturingOperationException::class)
         ->and(MfgProductionOrder::query()->findOrFail($id)->lines()->count())->toBe(2);
 });
+
+test('a replayed operation posting uuid returns the original confirmation without consuming materials again', function (): void {
+    $id = mfgPlannedOrder($this);
+    $released = $this->postJson("/api/v1/manufacturing/production-orders/{$id}/release")->assertOk();
+    $op10 = collect($released->json('data.operations'))->firstWhere('sequence', 10)['id'];
+    $op20 = collect($released->json('data.operations'))->firstWhere('sequence', 20)['id'];
+    $uuid = (string) Str::uuid();
+    $payload = ['run_minutes' => '30', 'good_quantity' => '4', 'operation_posting_uuid' => $uuid];
+
+    $first = $this->postJson("/api/v1/manufacturing/production-orders/{$id}/operations/{$op10}/confirmations", $payload)->assertCreated();
+    $replay = $this->postJson("/api/v1/manufacturing/production-orders/{$id}/operations/{$op10}/confirmations", $payload)->assertOk();
+
+    expect($replay->json('data.id'))->toBe($first->json('data.id'));
+    $this->getJson("/api/v1/manufacturing/production-orders/{$id}/transactions")->assertOk()
+        ->assertJsonCount(1, 'data.confirmations')
+        ->assertJsonCount(1, 'data.material_movements');
+    $this->postJson("/api/v1/manufacturing/production-orders/{$id}/operations/{$op20}/confirmations", $payload)->assertUnprocessable()->assertJsonValidationErrors(['operation_posting_uuid']);
+    $this->postJson("/api/v1/manufacturing/production-orders/{$id}/operations/{$op10}/confirmations", ['run_minutes' => '1', 'good_quantity' => '1', 'operation_posting_uuid' => 'nope'])->assertUnprocessable()->assertJsonValidationErrors(['operation_posting_uuid']);
+});

@@ -25,7 +25,7 @@ final class RequestForQuotationFactory extends Factory
     public function definition(): array
     {
         $tenantId = app(TenantContext::class)->getTenantId()
-            ?? Tenant::query()->first()->id
+            ?? Tenant::query()->value('id')
             ?? (string) Tenant::create([
                 'id' => (string) Str::uuid(),
                 'name' => fake()->company(),

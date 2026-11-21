@@ -44,6 +44,8 @@ final class ReportIncidentRequest extends FormRequest
             'corrective_actions.*.assignee_id' => ['nullable', 'uuid'],
             'corrective_actions.*.due_date' => ['nullable', 'date'],
             'corrective_actions.*.verification_status' => ['nullable', 'string', 'in:open,done,verified'],
+            'photos' => ['nullable', 'array', 'max:3'],
+            'photos.*' => ['string', 'max:4500000'],
         ];
     }
 }

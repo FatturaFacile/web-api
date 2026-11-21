@@ -159,3 +159,24 @@ it('serves the claim draft of an incident and hides it from other tenants', func
     hseActAs($other, 'hse');
     $this->getJson("/api/v1/hse/incidents/{$id}/claim-draft")->assertNotFound();
 });
+
+it('stores the photos sent with a near-miss and serves them back to the tenant only', function (): void {
+    Storage::fake((string) config('filesystems.private_disk', config('filesystems.default', 'local')));
+    $tenant = hseTenant();
+    hseActAs($tenant, 'hse');
+    $png = base64_encode((string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='));
+
+    $response = $this->postJson('/api/v1/hse/incidents', ['incident_type' => 'near_miss', 'incident_date' => '2027-05-05T08:00:00+02:00', 'description' => 'Spilled oil.', 'photos' => ["data:image/png;base64,{$png}"]])->assertCreated();
+
+    $photoId = $response->json('data.photo_ids.0');
+    expect($photoId)->not->toBeNull();
+    $this->get('/api/v1/hse/incidents/'.$response->json('data.id').'/photos/'.$photoId)->assertOk()->assertHeader('Content-Type', 'image/png');
+});
+
+it('refuses a photo that is not an image and stores no incident', function (): void {
+    hseActAs(hseTenant(), 'hse');
+
+    $this->postJson('/api/v1/hse/incidents', ['incident_type' => 'near_miss', 'incident_date' => '2027-05-05T08:00:00+02:00', 'description' => 'Spilled oil.', 'photos' => [base64_encode('<?php echo 1;')]])->assertUnprocessable();
+
+    expect(WorkplaceIncidentReport::query()->count())->toBe(0);
+});

@@ -24,29 +24,6 @@ use Modules\Procurement\Models\Supplier;
 uses(RefreshDatabase::class);
 
 /**
- * In-memory spy capturing outbound mobile push notifications dispatched through MobilePushGateway.
- */
-final class RecordingMobilePushGateway implements MobilePushGateway
-{
-    /** @var list<array{provider: string, token: string, title: string, body: string, data: array<string, mixed>, options: array<string, mixed>}> */
-    public array $messages = [];
-
-    public function send(string $provider, string $token, string $title, string $body, array $data = [], array $options = []): bool
-    {
-        $this->messages[] = [
-            'provider' => $provider,
-            'token' => $token,
-            'title' => $title,
-            'body' => $body,
-            'data' => $data,
-            'options' => $options,
-        ];
-
-        return true;
-    }
-}
-
-/**
  * Creates a tenant with owner, requester, department manager, division director, CFO, HR cost center, project, supplier, and product.
  *
  * @return array{
@@ -61,16 +38,37 @@ final class RecordingMobilePushGateway implements MobilePushGateway
  *     projectId: string,
  *     supplier: Supplier,
  *     product: Product,
- *     pushGateway: RecordingMobilePushGateway
+ *     pushGateway: object
  * }
  */
 function setupMod044Tenant(
     string $budgetPolicy = 'warning',
     string $annualBudget = '50000.00',
     string $country = 'CH',
+    ?MobilePushGateway $pushGateway = null,
 ): array {
-    $pushGateway = new RecordingMobilePushGateway;
-    app()->instance(MobilePushGateway::class, $pushGateway);
+    if ($pushGateway === null) {
+        $pushGateway = new class implements MobilePushGateway
+        {
+            /** @var list<array{provider: string, token: string, title: string, body: string, data: array<string, mixed>, options: array<string, mixed>}> */
+            public array $messages = [];
+
+            public function send(string $provider, string $token, string $title, string $body, array $data = [], array $options = []): bool
+            {
+                $this->messages[] = [
+                    'provider' => $provider,
+                    'token' => $token,
+                    'title' => $title,
+                    'body' => $body,
+                    'data' => $data,
+                    'options' => $options,
+                ];
+
+                return true;
+            }
+        };
+        app()->instance(MobilePushGateway::class, $pushGateway);
+    }
 
     /** @var Tenant $tenant */
     $tenant = Tenant::factory()->create([
@@ -87,12 +85,11 @@ function setupMod044Tenant(
         /** @var User $user */
         $user = User::factory()->create([
             'name' => $name,
-            'default_tenant_id' => $tenant->id,
             'locale' => $locale,
         ]);
         $tenant->users()->attach($user->id, [
+            'id' => (string) Str::uuid7(),
             'role' => $role,
-            'is_default' => true,
         ]);
         MobileDeviceSession::query()->create([
             'tenant_id' => $tenant->id,
@@ -134,7 +131,7 @@ function setupMod044Tenant(
     DB::table('contacts')->insert([
         'id' => $contactId,
         'tenant_id' => $tenant->id,
-        'name' => 'Internal Client Contact',
+        'company_name' => 'Internal Client Contact',
         'type' => 'company',
         'created_at' => now(),
         'updated_at' => now(),
@@ -146,6 +143,7 @@ function setupMod044Tenant(
         'tenant_id' => $tenant->id,
         'cost_center_id' => $costCenterId,
         'contact_id' => $contactId,
+        'project_manager_user_id' => $owner->id,
         'project_number' => 'PRJ-2026-001',
         'name' => 'Zurich Factory Automation',
         'status' => 'active',
@@ -155,9 +153,21 @@ function setupMod044Tenant(
         'updated_at' => now(),
     ]);
 
+    $supplierContactId = (string) Str::uuid();
+    DB::table('contacts')->insert([
+        'id' => $supplierContactId,
+        'tenant_id' => $tenant->id,
+        'company_name' => 'Swiss Precision AG',
+        'type' => 'supplier',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
     /** @var Supplier $supplier */
     $supplier = Supplier::query()->create([
+        'id' => $supplierContactId,
         'tenant_id' => $tenant->id,
+        'contact_id' => $supplierContactId,
         'supplier_code' => 'SUP-'.strtoupper(Str::random(5)),
         'company_name' => 'Swiss Precision AG',
         'currency' => 'CHF',
@@ -172,8 +182,8 @@ function setupMod044Tenant(
         'sku' => 'SKU-CNC-400',
         'name' => 'Precision Linear Actuator',
         'description' => 'Precision Linear Actuator 24V',
-        'unit' => 'PCS',
-        'purchase_price' => '250.00',
+        'unit_measure' => 'PCS',
+        'cost_price' => '250.00',
         'sale_price' => '400.00',
         'is_active' => true,
     ]);
@@ -448,13 +458,13 @@ test('multi-level CHF/EUR delegation routing, four-eyes rule, pending inbox, and
     $this->actingAs($fx['requester'], 'sanctum')
         ->withHeader('X-Tenant-Id', $fx['tenant']->id)
         ->postJson("/api/v1/procurement/purchase-requisitions/{$prId}/approve", ['channel' => 'web'])
-        ->assertStatus(422);
+        ->assertForbidden();
 
     // Wrong role (CFO trying to decide Level 1 assigned to department_manager) is rejected
     $this->actingAs($fx['cfo'], 'sanctum')
         ->withHeader('X-Tenant-Id', $fx['tenant']->id)
         ->postJson("/api/v1/procurement/purchase-requisitions/{$prId}/approve", ['channel' => 'web'])
-        ->assertStatus(422);
+        ->assertForbidden();
 
     // Level 1 Dept Manager approves -> advances to Level 2 Div Director
     $this->actingAs($fx['deptManager'], 'sanctum')
@@ -753,7 +763,7 @@ test('conversion blocks unapproved PRs, supports partial splitting, multi-PR gro
     // Bidirectional link visible on Mod 046 Purchase Order endpoint
     $this->actingAs($fx['buyer'], 'sanctum')
         ->withHeader('X-Tenant-Id', $fx['tenant']->id)
-        ->getJson("/api/v1/procurement/orders/{$poId}")
+        ->getJson("/api/v1/procurement/purchase-orders/{$poId}")
         ->assertOk()
         ->assertJsonCount(2, 'source_requisition_links');
 });
@@ -761,7 +771,7 @@ test('conversion blocks unapproved PRs, supports partial splitting, multi-PR gro
 test('strict multi-tenant isolation and 4-language (it, de, fr, en) validation and notification localization', function (): void {
     Mail::fake();
     $fxA = setupMod044Tenant();
-    $fxB = setupMod044Tenant();
+    $fxB = setupMod044Tenant(pushGateway: $fxA['pushGateway']);
 
     // 4-language validation error localization on Accept-Language
     $expectedMessages = [

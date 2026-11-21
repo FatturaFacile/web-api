@@ -381,8 +381,8 @@ final readonly class Mod006ApprovalWorkflowAdapter implements ApprovalWorkflowGa
             ? User::query()->whereIn('id', $deciderIds)->pluck('name', 'id')
             : collect();
 
-        $resolveDeciderName = static fn (?ApprovalDecision $decision): ?string => $decision !== null
-            ? $deciderNames->get((string) $decision->user_id)
+        $resolveDeciderName = static fn (?ApprovalDecision $decision): ?string => $decision !== null && $decision->user_id !== ''
+            ? $deciderNames->get($decision->user_id)
             : null;
 
         $stepsByLevel = $steps->keyBy('tier_level');

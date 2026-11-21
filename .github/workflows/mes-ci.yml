@@ -1,0 +1,104 @@
+name: MES (.NET) CI
+
+# Standalone .NET 9 solution in services/mes: runs only when it (or this workflow) changes.
+on:
+  push:
+    branches: [ main, dev ]
+    paths: [ 'services/mes/**', '.github/workflows/mes-ci.yml' ]
+  pull_request:
+    branches: [ main, dev ]
+    paths: [ 'services/mes/**', '.github/workflows/mes-ci.yml' ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build (warnings as errors) & test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    defaults:
+      run:
+        working-directory: services/mes
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      # Service containers below. When these are set the integration tests use them instead of starting
+      # Testcontainers (no Docker-in-Docker needed, and the 7 PostgreSQL tests are guaranteed to RUN, not skip).
+      MES_TEST_PG: Host=127.0.0.1;Port=5432;Database=mes_test;Username=postgres;Password=postgres
+      MES_TEST_REDIS: 127.0.0.1:6379
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mes_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mes_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          # Runtime is 9.x; the ASP.NET Core 9 runtime ships with this SDK line. Newer SDKs build net9.0 fine.
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-mes-${{ runner.os }}-${{ hashFiles('services/mes/**/*.csproj') }}
+          restore-keys: nuget-mes-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore Mes.slnx
+
+      - name: Build (TreatWarningsAsErrors)
+        run: dotnet build Mes.slnx --no-restore -c Release -warnaserror -p:TreatWarningsAsErrors=true
+
+      - name: Test (unit, harness, PostgreSQL RLS/partitioning/outbox, Redis)
+        run: >
+          dotnet test Mes.slnx --no-build -c Release
+          --logger "trx;LogFileName=mes-tests.trx"
+          --results-directory TestResults
+
+      - name: Fail if any integration test was skipped
+        # A skipped Postgres/Redis test means the service containers were not picked up: that must be red, not green.
+        run: |
+          skipped=$(grep -o 'outcome="NotExecuted"' TestResults/mes-tests.trx | wc -l || true)
+          echo "skipped tests: $skipped"
+          test "$skipped" -eq 0
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mes-test-results
+          path: services/mes/TestResults/*.trx
+          if-no-files-found: ignore

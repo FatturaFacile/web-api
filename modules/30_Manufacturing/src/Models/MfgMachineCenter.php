@@ -22,6 +22,8 @@ use Modules\AssetManagement\Models\FixedAsset;
  * @property string $power_kw
  * @property string $status
  * @property Carbon|null $last_serviced_at
+ * @property string|null $current_state RUNNING|SETUP|IDLE|FAULT|MAINTENANCE reported by the edge gateway
+ * @property Carbon|null $state_since
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -35,6 +37,7 @@ final class MfgMachineCenter extends BaseEnterpriseModel
             'hourly_rate' => 'decimal:4',
             'power_kw' => 'decimal:2',
             'last_serviced_at' => 'datetime',
+            'state_since' => 'datetime',
         ];
     }
 
