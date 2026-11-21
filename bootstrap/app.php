@@ -33,6 +33,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Routing\Middleware\ThrottleRequestsWithRedis;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use Modules\DataResidency\Presentation\Http\Middleware\EnforceDataResidencyMiddleware;
 use Modules\Platform\Http\Middleware\EnforceIdempotency;
 use Modules\Platform\Http\Middleware\HandleConditionalRequests;
 use Modules\Platform\Identity\Http\Middleware\AppendMaskedFieldsMeta;
@@ -81,6 +82,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EnforceSessionPolicy::class,
             EnsureTwoFactorEnrolled::class,
             EnsureCompanyAccess::class,
+            EnforceDataResidencyMiddleware::class,
             AppendMaskedFieldsMeta::class,
             EnforceIdempotency::class,
             HandleConditionalRequests::class,

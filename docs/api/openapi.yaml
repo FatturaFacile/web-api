@@ -181635,6 +181635,102 @@ paths:
             application/json:
               schema:
                 type: string
+  /v1/swiss-fiscal/vat-rates:
+    get:
+      operationId: swiss-fiscal.vat-rates
+      tags:
+        - SwissFiscal
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/swiss-fiscal/qr-bills:
+    post:
+      operationId: swiss-fiscal.qr-bills
+      tags:
+        - SwissFiscal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateQrBillRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/swiss-fiscal/fiscal-documents:
+    post:
+      operationId: swiss-fiscal.fiscal-documents
+      tags:
+        - SwissFiscal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateFiscalDocumentRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/swiss-fiscal/camt054:
+    post:
+      operationId: swiss-fiscal.camt054
+      tags:
+        - SwissFiscal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParseCamt054Request'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/swiss-qr-bill/generate-pdf:
     post:
       operationId: swiss-qr-bill.generate-pdf
@@ -225965,6 +226061,21 @@ components:
         - language
         - facts
       title: GenerateDraftRequest
+    GenerateFiscalDocumentRequest:
+      type: object
+      description: 'Generates the fiscal document of an existing invoice through the strategy of the given country.'
+      properties:
+        country:
+          type: string
+          enum:
+            - IT
+        invoice_id:
+          type: string
+          format: uuid
+      required:
+        - country
+        - invoice_id
+      title: GenerateFiscalDocumentRequest
     GenerateForecastRequest:
       type: object
       properties:
@@ -226152,6 +226263,123 @@ components:
       required:
         - invoice_id
       title: GenerateQrBillPdfRequest
+    GenerateQrBillRequest:
+      type: object
+      description: 'Fields of a Swiss QR-bill; the cross-field rules (IBAN family vs reference) are enforced by the QrBill value object.'
+      properties:
+        iban:
+          type: string
+          maxLength: 34
+        currency:
+          type: string
+          enum:
+            - CHF
+            - EUR
+        amount:
+          type:
+            - string
+            - 'null'
+          pattern: '^\d{1,9}(\.\d{1,2})?$'
+        reference_type:
+          $ref: '#/components/schemas/QrReferenceType'
+        reference:
+          type:
+            - string
+            - 'null'
+          maxLength: 40
+        message:
+          type:
+            - string
+            - 'null'
+          maxLength: 140
+        bill_information:
+          type:
+            - string
+            - 'null'
+          maxLength: 140
+        language:
+          type:
+            - string
+            - 'null'
+          enum:
+            - it
+            - de
+            - fr
+            - en
+            - null
+        format:
+          type:
+            - string
+            - 'null'
+          enum:
+            - pdf
+            - json
+            - null
+        creditor:
+          type: object
+          properties:
+            name:
+              type: string
+              maxLength: 70
+            street:
+              type:
+                - string
+                - 'null'
+              maxLength: 70
+            building_number:
+              type:
+                - string
+                - 'null'
+              maxLength: 16
+            postal_code:
+              type: string
+              maxLength: 16
+            town:
+              type: string
+              maxLength: 35
+            country:
+              type: string
+              minLength: 2
+              maxLength: 2
+          required:
+            - name
+            - postal_code
+            - town
+            - country
+        debtor:
+          type:
+            - object
+            - 'null'
+          properties:
+            name:
+              type: string
+              maxLength: 70
+            street:
+              type:
+                - string
+                - 'null'
+              maxLength: 70
+            building_number:
+              type:
+                - string
+                - 'null'
+              maxLength: 16
+            postal_code:
+              type: string
+              maxLength: 16
+            town:
+              type: string
+              maxLength: 35
+            country:
+              type: string
+              minLength: 2
+              maxLength: 2
+      required:
+        - iban
+        - currency
+        - reference_type
+        - creditor
+      title: GenerateQrBillRequest
     GenerateSalaryCertificatesRequest:
       type: object
       properties:
@@ -237966,6 +238194,16 @@ components:
         - status
         - paid_at
       title: PagoPaNoticeResource
+    ParseCamt054Request:
+      type: object
+      description: 'A camt.054 notification sent as raw XML text.'
+      properties:
+        xml:
+          type: string
+          maxLength: 5000000
+      required:
+        - xml
+      title: ParseCamt054Request
     ParseQrBillRequest:
       type: object
       properties:
@@ -243639,6 +243877,20 @@ components:
         - warehouse_id
         - strategy
       title: PutawayRuleRequest
+    QrReferenceType:
+      type: string
+      description: |-
+        Reference type of a Swiss QR-bill.
+        | |
+        |---|
+        | `QRR` <br/> 27-digit QR reference, only with a QR-IBAN. |
+        | `SCOR` <br/> ISO 11649 creditor reference, only with a regular IBAN. |
+        | `NON` <br/> No reference, only with a regular IBAN. |
+      enum:
+        - QRR
+        - SCOR
+        - NON
+      title: QrReferenceType
     QualificationAssessmentRequest:
       type: object
       description: 'Opens a qualification assessment (POST) or records scores on a draft one (PUT).'
@@ -251923,6 +252175,7 @@ components:
               - ocr_capture
               - kpi_dashboards
               - kpi_dashboards_admin
+              - swiss_fiscal
               - ocr_settings
               - ai_copilot
               - ai_review
@@ -285373,6 +285626,9 @@ tags:
   -
     name: Swagger
     description: 'Operations of the Swagger module.'
+  -
+    name: SwissFiscal
+    description: 'Operations of the SwissFiscal module.'
   -
     name: SwissQrBill
     description: 'Operations of the SwissQrBill module.'

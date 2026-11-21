@@ -31,6 +31,7 @@ use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
+use Modules\DataResidency\Providers\DataResidencyServiceProvider;
 use Modules\DigitalPreservation\Providers\DigitalPreservationServiceProvider;
 use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
@@ -72,6 +73,7 @@ use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
 use Modules\Sustainability\Providers\SustainabilityServiceProvider;
+use Modules\SwissFiscal\Providers\SwissFiscalServiceProvider;
 use Modules\TalentLearning\Providers\TalentLearningServiceProvider;
 use Modules\Transportation\Providers\TransportationServiceProvider;
 use Modules\TravelExpense\Providers\TravelExpenseServiceProvider;
@@ -163,5 +165,7 @@ return [
     ForecastingServiceProvider::class,
     OcrExtractionServiceProvider::class,
     KpiDashboardsServiceProvider::class,
+    SwissFiscalServiceProvider::class,
     AiCognitiveServiceProvider::class,
+    DataResidencyServiceProvider::class,
 ];
