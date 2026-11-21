@@ -60281,6 +60281,348 @@ paths:
                   - data
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/shift-planning/my/shifts:
+    get:
+      operationId: shift-planning.my.shifts
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/my/team-shifts:
+    get:
+      operationId: shift-planning.my.team-shifts
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/my/shifts/{id}/eligible-peers':
+    get:
+      operationId: shift-planning.my.eligible-peers
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/shift-planning/my/open-shifts:
+    get:
+      operationId: shift-planning.my.open-shifts
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/my/open-shifts/{id}/claim':
+    post:
+      operationId: shift-planning.my.claim
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/my/swaps:
+    get:
+      operationId: shift-planning.my.swaps
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    post:
+      operationId: shift-planning.my.swaps.store
+      tags:
+        - EmployeeShift
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestShiftSwapRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/my/swaps/{id}/respond':
+    post:
+      operationId: shift-planning.my.swaps.respond
+      tags:
+        - EmployeeShift
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PeerSwapResponseRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   '/v1/hr/employees/{id}/contracts':
     get:
       operationId: v1.hr.contracts.index
@@ -79032,7 +79374,7 @@ paths:
           schema:
             anyOf:
               -
-                $ref: '#/components/schemas/Jurisdiction'
+                $ref: '#/components/schemas/Modules.Hse.Domain.Enums.Jurisdiction'
               -
                 type: 'null'
         -
@@ -155877,6 +156219,477 @@ paths:
           description: 'No content'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/shift-planning/templates:
+    get:
+      operationId: shift-planning.templates.index
+      tags:
+        - Roster
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShiftTemplateResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: shift-planning.templates.store
+      tags:
+        - Roster
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreShiftTemplateRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Template created'
+                  data:
+                    $ref: '#/components/schemas/ShiftTemplateResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/templates/{id}':
+    put:
+      operationId: shift-planning.templates.update
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreShiftTemplateRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/periods:
+    get:
+      operationId: shift-planning.periods.index
+      tags:
+        - Roster
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RosterPeriodResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/periods/generate:
+    post:
+      operationId: shift-planning.periods.generate
+      tags:
+        - Roster
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateRosterRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/periods/{id}/matrix':
+    get:
+      operationId: shift-planning.periods.matrix
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/periods/{id}/publish':
+    post:
+      operationId: shift-planning.periods.publish
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/periods/{id}/lock':
+    post:
+      operationId: shift-planning.periods.lock
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/assignments:
+    post:
+      operationId: shift-planning.assignments.store
+      tags:
+        - Roster
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignShiftRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/assignments/{id}':
+    patch:
+      operationId: shift-planning.assignments.move
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignShiftRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/shift-planning/swaps:
+    get:
+      operationId: shift-planning.swaps.index
+      tags:
+        - Roster
+      parameters:
+        -
+          name: group_by
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - employee
+              - role
+              - null
+        -
+          name: period_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/PeriodType'
+              -
+                type: 'null'
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: status
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SwapStatus'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      type: array
+                      items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/shift-planning/swaps/{id}/decision':
+    post:
+      operationId: shift-planning.swaps.decision
+      tags:
+        - Roster
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwapDecisionRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/manufacturing/routings:
     get:
       operationId: mfg.routings.index
@@ -214590,6 +215403,34 @@ components:
         - employee_id
         - valid_from
       title: AssignScheduleGroupRequest
+    AssignShiftRequest:
+      type: object
+      description: 'Creates a shift from a template (POST) or assigns/moves an existing one (PATCH: the period comes from the shift).'
+      properties:
+        roster_schedule_period_id:
+          type: string
+          format: uuid
+        shift_date:
+          type: string
+          format: date
+        shift_template_id:
+          type: string
+          format: uuid
+        employee_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        required_role_or_skill_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - roster_schedule_period_id
+        - shift_date
+        - shift_template_id
+      title: AssignShiftRequest
     AssignShiftSequenceRequest:
       type: object
       properties:
@@ -229046,7 +229887,10 @@ components:
             - string
             - 'null'
         terms:
-          type: string
+          type:
+            - object
+            - 'null'
+          additionalProperties: {}
         notes:
           type:
             - string
@@ -232522,6 +233366,69 @@ components:
         - reference_type
         - creditor
       title: GenerateQrBillRequest
+    GenerateRosterRequest:
+      type: object
+      properties:
+        location_or_department_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        production_line_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        period_type:
+          $ref: '#/components/schemas/PeriodType'
+        start_date:
+          type: string
+          format: date
+        jurisdiction:
+          anyOf:
+            -
+              $ref: '#/components/schemas/Jurisdiction'
+            -
+              type: 'null'
+        pattern:
+          anyOf:
+            -
+              $ref: '#/components/schemas/RotationPattern'
+            -
+              type: 'null'
+        source_period_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        employee_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        shift_template_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        open_slots:
+          type:
+            - array
+            - 'null'
+          items:
+            type: integer
+            minimum: 1
+            maximum: 50
+      required:
+        - period_type
+        - start_date
+      title: GenerateRosterRequest
     GenerateSalaryCertificatesRequest:
       type: object
       properties:
@@ -236059,10 +236966,10 @@ components:
     Jurisdiction:
       type: string
       description: |
-        The statutory regime a rule or a report belongs to: Italy (D.Lgs. 81/2008, INAIL) or Switzerland (UVG, OLL, SUVA).
+        The labour-law regime of an establishment. It selects the compliance strategy, the public holidays and the time zone.
       enum:
-        - IT
         - CH
+        - IT
       title: Jurisdiction
     JurisdictionMode:
       type: string
@@ -242776,6 +243683,14 @@ components:
         - created_at
         - updated_at
       title: Modules.Governance.Http.Resources.FindingResource
+    Modules.Hse.Domain.Enums.Jurisdiction:
+      type: string
+      description: |
+        The statutory regime a rule or a report belongs to: Italy (D.Lgs. 81/2008, INAIL) or Switzerland (UVG, OLL, SUVA).
+      enum:
+        - IT
+        - CH
+      title: Modules.Hse.Domain.Enums.Jurisdiction
     Modules.HumanResources.Http.Requests.HireCandidateRequest:
       type: object
       properties:
@@ -246155,6 +247070,18 @@ components:
       minItems: 0
       maxItems: 0
       title: PayslipDocument
+    PeerSwapResponseRequest:
+      type: object
+      description: 'The answer of a colleague to a swap request: approve (accept) or reject (decline), no reason needed.'
+      properties:
+        decision:
+          type: string
+          enum:
+            - approve
+            - reject
+      required:
+        - decision
+      title: PeerSwapResponseRequest
     PerDiemDayResource:
       type: object
       properties:
@@ -246439,6 +247366,12 @@ components:
         - from
         - to
       title: PeriodRequest
+    PeriodType:
+      type: string
+      enum:
+        - weekly
+        - monthly
+      title: PeriodType
     Periodicity:
       type: string
       description: |
@@ -253999,6 +254932,25 @@ components:
       required:
         - message
       title: RequestQuoteChangesRequest
+    RequestShiftSwapRequest:
+      type: object
+      properties:
+        shift_assignment_id:
+          type: string
+          format: uuid
+        target_peer_employee_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        target_shift_assignment_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - shift_assignment_id
+      title: RequestShiftSwapRequest
     RequirementMatrixResource:
       type: object
       properties:
@@ -256643,6 +257595,59 @@ components:
       type: object
       additionalProperties: {}
       title: RopaRecordResource
+    RosterPeriodResource:
+      type: object
+      properties:
+        id:
+          type: string
+        location_or_department_id:
+          type:
+            - string
+            - 'null'
+        production_line_id:
+          type:
+            - string
+            - 'null'
+        period_type:
+          type: string
+          enum:
+            - weekly
+            - monthly
+        jurisdiction:
+          type: string
+          enum:
+            - CH
+            - IT
+        start_date:
+          type: string
+        end_date:
+          type: string
+        status:
+          type: string
+          enum:
+            - draft
+            - published
+            - locked
+        published_at:
+          type:
+            - string
+            - 'null'
+        locked_at:
+          type:
+            - string
+            - 'null'
+      required:
+        - id
+        - location_or_department_id
+        - production_line_id
+        - period_type
+        - jurisdiction
+        - start_date
+        - end_date
+        - status
+        - published_at
+        - locked_at
+      title: RosterPeriodResource
     RotateLeadSourceSecretRequest:
       type: object
       properties:
@@ -256657,6 +257662,18 @@ components:
             - api_key
             - null
       title: RotateLeadSourceSecretRequest
+    RotationPattern:
+      type: string
+      description: |-
+        A rotation pattern: how many days in a row an employee works and rests.
+        | |
+        |---|
+        | `5x2` <br/> Five working days (Monday to Friday) and the weekend off; the shift type changes every week. |
+        | `6x6` <br/> Six working days, six days off (a 12-day cycle, the two halves of the team offset by half a cycle); the shift type changes every cycle. |
+      enum:
+        - 5x2
+        - 6x6
+      title: RotationPattern
     RoutingRuleResource:
       type: object
       properties:
@@ -259459,6 +260476,8 @@ components:
               - sovereignty_killswitch
               - sovereignty_attestation
               - swiss_fiscal
+              - shift_planning
+              - shift_planning_self
               - ocr_settings
               - hse
               - hse_medical
@@ -262436,7 +263455,7 @@ components:
           type: string
           maxLength: 160
         jurisdiction:
-          $ref: '#/components/schemas/Jurisdiction'
+          $ref: '#/components/schemas/Modules.Hse.Domain.Enums.Jurisdiction'
         job_position_id:
           type:
             - string
@@ -266290,6 +267309,43 @@ components:
         - weekly_without_weekend
         - manual
       title: ShiftSequencePattern
+    ShiftTemplateResource:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        start_time:
+          type: string
+        end_time:
+          type: string
+        break_minutes:
+          type: integer
+        color_hex:
+          type: string
+        night_surcharge_applicable:
+          type: boolean
+        is_on_call:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+        - id
+        - code
+        - name
+        - start_time
+        - end_time
+        - break_minutes
+        - color_hex
+        - night_surcharge_applicable
+        - is_on_call
+        - is_active
+      title: ShiftTemplateResource
     ShiftVolunteerRequest:
       type: object
       description: 'A volunteer for a shift: its availability, an assignment or a substitution.'
@@ -277675,6 +278731,65 @@ components:
         - technician_id
         - report_date
       title: StoreServiceReportRequest
+    StoreShiftTemplateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: object
+          properties:
+            it:
+              type: string
+              maxLength: 120
+            de:
+              type: string
+              maxLength: 120
+            fr:
+              type: string
+              maxLength: 120
+            en:
+              type: string
+              maxLength: 120
+          required:
+            - it
+            - de
+            - fr
+            - en
+        start_time:
+          type: string
+        end_time:
+          type: string
+        break_minutes:
+          type:
+            - integer
+            - 'null'
+          minimum: 0
+          maximum: 240
+        color_hex:
+          type:
+            - string
+            - 'null'
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        night_surcharge_applicable:
+          type:
+            - boolean
+            - 'null'
+        is_on_call:
+          type:
+            - boolean
+            - 'null'
+        is_active:
+          type:
+            - boolean
+            - 'null'
+      required:
+        - code
+        - name
+        - start_time
+        - end_time
+      title: StoreShiftTemplateRequest
     StoreSignatureRequestRequest:
       type: object
       description: 'An e-signature request: version, signers in order and provider.'
@@ -281322,6 +282437,33 @@ components:
       required:
         - answers
       title: SurveyResponseRequest
+    SwapDecisionRequest:
+      type: object
+      description: 'The answer of a colleague or of the manager to a swap request. The manager gives a reason when rejecting.'
+      properties:
+        decision:
+          type: string
+          enum:
+            - approve
+            - reject
+        rejection_reason:
+          type:
+            - string
+            - 'null'
+          maxLength: 1000
+      required:
+        - decision
+      title: SwapDecisionRequest
+    SwapStatus:
+      type: string
+      description: |
+        Two-step approval of a shift swap: the colleague accepts first, then the manager decides.
+      enum:
+        - pending_peer_acceptance
+        - pending_manager_approval
+        - approved
+        - rejected
+      title: SwapStatus
     SyncEcommerceChannelRequest:
       type: object
       properties:
@@ -292374,6 +293516,9 @@ tags:
     name: EmployeeSelfService
     description: 'Operations of the EmployeeSelfService module.'
   -
+    name: EmployeeShift
+    description: 'Operations of the EmployeeShift module.'
+  -
     name: EmploymentContract
     description: 'Operations of the EmploymentContract module.'
   -
@@ -293423,6 +294568,9 @@ tags:
   -
     name: Ropa
     description: 'Operations of the Ropa module.'
+  -
+    name: Roster
+    description: 'Operations of the Roster module.'
   -
     name: Routing
     description: 'Operations of the Routing module.'
