@@ -11,6 +11,7 @@ use Enterprise\Foundation\Providers\EnterpriseFoundationServiceProvider;
 use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Academy\Providers\AcademyServiceProvider;
+use Modules\AiCognitive\Providers\AiCognitiveServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
@@ -160,4 +161,5 @@ return [
     DigitalPreservationServiceProvider::class,
     ForecastingServiceProvider::class,
     OcrExtractionServiceProvider::class,
+    AiCognitiveServiceProvider::class,
 ];
