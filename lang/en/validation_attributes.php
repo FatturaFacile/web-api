@@ -3101,4 +3101,9 @@ return [
     'with_anomaly_scan' => 'anomaly scan',
     'consent_reference' => 'consent reference',
     'ttl_minutes' => 'duration in minutes',
+    'building_number' => 'building number',
+    'creditor' => 'creditor',
+    'debtor' => 'debtor',
+    'bill_information' => 'billing information',
+    'town' => 'town',
 ];

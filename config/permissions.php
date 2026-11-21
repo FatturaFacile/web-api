@@ -116,6 +116,8 @@ return [
             'write' => $finance,
             'grants' => ['read' => ['kpi.*'], 'write' => ['kpi.*']],
         ],
+        // Swiss QR-bill, ISO 20022 and country fiscal documents (Issue #83): finance issues and reads them.
+        'swiss_fiscal' => ['read' => $financeReaders, 'write' => $finance],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
         // AI Services & Cognitive Automation Layer (Mod 093). ai_copilot (ai.copilot.use): every member asks the copilot and drafts
         // messages, each answer limited to what the caller may read; ai_review (ai.suggestions.review): the finance and sales teams
