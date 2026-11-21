@@ -24,6 +24,8 @@ use Illuminate\Support\Carbon;
  * @property bool $is_phantom
  * @property string $issue_method
  * @property int|null $operation_sequence
+ * @property string $fixed_scrap_quantity
+ * @property list<string>|null $substitute_item_ids
  * @property string|null $alternate_for_id
  * @property string|null $notes
  * @property Carbon|null $created_at
@@ -43,6 +45,8 @@ final class MfgBomComponent extends BaseEnterpriseModel
             'yield_percentage' => 'decimal:2',
             'is_phantom' => 'boolean',
             'operation_sequence' => 'integer',
+            'fixed_scrap_quantity' => 'decimal:4',
+            'substitute_item_ids' => 'array',
         ];
     }
 
