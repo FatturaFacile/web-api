@@ -116,6 +116,10 @@ return [
             'write' => $finance,
             'grants' => ['read' => ['kpi.*'], 'write' => ['kpi.*']],
         ],
+        // Interactive quotes and proposals (Mod 036). cpq_quotes: the sales team builds, issues, revises and converts quotes;
+        // cpq_quotes_admin: managers override the margin guardrail (approve-and-issue).
+        'cpq_quotes' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager']],
+        'cpq_quotes_admin' => ['read' => ['owner', 'admin', 'sales_manager'], 'write' => ['owner', 'admin', 'sales_manager']],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
         // AI Services & Cognitive Automation Layer (Mod 093). ai_copilot (ai.copilot.use): every member asks the copilot and drafts
         // messages, each answer limited to what the caller may read; ai_review (ai.suggestions.review): the finance and sales teams

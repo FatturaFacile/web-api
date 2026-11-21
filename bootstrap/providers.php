@@ -65,6 +65,7 @@ use Modules\Pricing\Providers\PricingServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
 use Modules\Quality\Providers\QualityServiceProvider;
+use Modules\Quoting\Providers\QuotingServiceProvider;
 use Modules\Rebates\Providers\RebatesServiceProvider;
 use Modules\Returns\Providers\ReturnsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
@@ -163,5 +164,6 @@ return [
     ForecastingServiceProvider::class,
     OcrExtractionServiceProvider::class,
     KpiDashboardsServiceProvider::class,
+    QuotingServiceProvider::class,
     AiCognitiveServiceProvider::class,
 ];
