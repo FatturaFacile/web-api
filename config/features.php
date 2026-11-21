@@ -43,6 +43,7 @@ return [
         'digital_preservation' => env('FEATURE_MODULE_DIGITAL_PRESERVATION'),
         'forecasting' => env('FEATURE_MODULE_FORECASTING'),
         'ocr_extraction' => env('FEATURE_MODULE_OCR_EXTRACTION'),
+        'bi_dss' => env('FEATURE_MODULE_BI_DSS'),
         'kpi_dashboards' => env('FEATURE_MODULE_KPI_DASHBOARDS'),
         'hse' => env('FEATURE_MODULE_HSE'),
         'cpq_quotes' => env('FEATURE_MODULE_CPQ_QUOTES'),

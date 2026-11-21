@@ -81,6 +81,7 @@
             "Modules\\DigitalPreservation\\": "modules/65_DigitalPreservation/src/",
             "Modules\\Forecasting\\": "modules/66_Forecasting/src/",
             "Modules\\OcrExtraction\\": "modules/67_OcrExtraction/src/",
+            "Modules\\AnalyticsDss\\": "modules/68_AnalyticsDss/src/",
             "Modules\\KpiDashboards\\": "modules/68_KpiDashboards/src/",
             "Modules\\Quoting\\": "modules/69_Quoting/src/",
             "Modules\\SwissFiscal\\": "modules/69_SwissFiscal/src/",
