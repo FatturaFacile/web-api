@@ -186,6 +186,14 @@ function writeRoutesWithoutModule(): array
         'PUT api/v1/settings/roles/{role}/field-policies' => 'can:settings.roles.update',
         'PUT api/v1/settings/users/{user}/roles' => 'can:settings.users.update',
         'POST api/v1/settings/users/{user}/revoke-sessions' => 'can:settings.users.update',
+        // Two-factor enrolment and the sessions belong to the signed-in user, who manages their own.
+        'POST api/v1/auth/2fa/totp' => 'own two-factor',
+        'POST api/v1/auth/2fa/totp/confirm' => 'own two-factor',
+        'DELETE api/v1/auth/2fa/totp' => 'own two-factor',
+        'DELETE api/v1/profile/sessions/{id}' => 'own sessions',
+        // Impersonation is decided by a permission key (can: middleware), like the other user administration.
+        'POST api/v1/settings/users/{user}/impersonate' => 'can:settings.users.update',
+        'DELETE api/v1/settings/users/{user}/impersonate' => 'can:settings.users.update',
         // Passkeys belong to the signed-in user, who manages their own.
         'POST api/v1/auth/passkeys/options' => 'own passkeys',
         'POST api/v1/auth/passkeys' => 'own passkeys',

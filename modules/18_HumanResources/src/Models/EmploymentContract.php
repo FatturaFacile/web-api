@@ -24,6 +24,7 @@ use Modules\Workflow\Models\WorkflowInstance;
  * @property string|null $level_code
  * @property string|null $superseded_by_contract_id
  * @property string|null $notes
+ * @property array<string, mixed>|null $terms
  */
 final class EmploymentContract extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
