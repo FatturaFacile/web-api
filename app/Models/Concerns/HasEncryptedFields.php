@@ -62,9 +62,6 @@ trait HasEncryptedFields
      */
     public function encryptedFieldMap(): array
     {
-        /** @var array<string, string|null> $map */
-        $map = $this->encryptedFields ?? [];
-
-        return $map;
+        return $this->encryptedFields;
     }
 }

@@ -45,7 +45,7 @@ final readonly class FieldEncryptionContext
     {
         $key = $model->getKey();
 
-        if (($key === null || $key === '') && method_exists($model, 'newUniqueId')) {
+        if (($key === null || $key === '') && $model->usesUniqueIds()) {
             $key = $model->newUniqueId();
             $model->setAttribute($model->getKeyName(), $key);
         }
