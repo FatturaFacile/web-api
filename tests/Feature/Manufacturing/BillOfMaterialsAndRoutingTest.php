@@ -81,9 +81,9 @@ test('BOM drafts are edited, released with effective dates, superseded and refus
     $this->postJson("/api/v1/manufacturing/boms/{$revC}/activate")->assertUnprocessable()->assertJsonValidationErrors(['effective_from']);
     $this->postJson("/api/v1/manufacturing/boms/{$revB}/revise", ['reason' => 'Duplicate', 'new_revision' => 'B'])->assertUnprocessable()->assertJsonValidationErrors(['new_revision']);
 
-    // A BOM of RM-1 made of FG-A would close a loop.
-    $loop = (string) $this->postJson('/api/v1/manufacturing/boms', ['mfg_item_id' => $rm1->id, 'name' => 'Loop', 'components' => [['component_item_id' => $fg->id, 'quantity_per' => '1']]])->assertCreated()->json('data.id');
-    $this->postJson("/api/v1/manufacturing/boms/{$loop}/activate")->assertUnprocessable()->assertJsonValidationErrors(['components']);
+    // A BOM of RM-1 made of FG-A would close a loop: refused when the draft is written, at any depth.
+    $this->postJson('/api/v1/manufacturing/boms', ['mfg_item_id' => $rm1->id, 'name' => 'Loop', 'components' => [['component_item_id' => $fg->id, 'quantity_per' => '1']]])
+        ->assertUnprocessable()->assertJsonValidationErrors(['components']);
 
     $this->getJson("/api/v1/manufacturing/items/{$rm1->id}/where-used")->assertOk()->assertJsonCount(3, 'data');
 });

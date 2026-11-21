@@ -45,6 +45,8 @@ final class MfgItemResource extends JsonResource
             'max_lot_size' => $this->max_lot_size,
             'lot_size_multiple' => $this->lot_size_multiple,
             'lead_time_days' => $this->lead_time_days,
+            'origin_status' => $this->origin_status,
+            'exw_price' => $this->exw_price,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

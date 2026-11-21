@@ -9,6 +9,7 @@ use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Manufacturing\Contracts\BillOfMaterialsServiceInterface;
+use Modules\Manufacturing\Events\BomEcoSubmittedEvent;
 use Modules\Manufacturing\Events\EngineeringChangeImplementedEvent;
 use Modules\Manufacturing\Exceptions\ManufacturingOperationException;
 use Modules\Manufacturing\Models\MfgBom;
@@ -54,6 +55,59 @@ final readonly class EngineeringChangeService
     }
 
     /**
+     * Opens and submits the change of a revision that was already prepared as a draft: the change stores the structural
+     * diff between the released revision and the proposal, the proposal waits for the approval (Mod 006 workflow) and
+     * is released by the implementation.
+     *
+     * @param  array<string, mixed>  $diff
+     * @param  list<array<string, mixed>>  $componentChanges
+     */
+    public function openForRevision(MfgBom $source, MfgBom $proposal, array $diff, string $title, string $reason, ?string $effectiveDate, array $componentChanges, ?string $actorUserId): MfgEngineeringChangeOrder
+    {
+        return DB::transaction(function () use ($source, $proposal, $diff, $title, $reason, $effectiveDate, $componentChanges, $actorUserId): MfgEngineeringChangeOrder {
+            $eco = MfgEngineeringChangeOrder::create([
+                'tenant_id' => $source->tenant_id,
+                'eco_number' => 'ECO-'.now()->format('Ymd').'-'.strtoupper(Str::random(6)),
+                'title' => $title,
+                'reason' => $reason,
+                'change_type' => 'bom_change',
+                'status' => 'draft',
+                'bom_id' => $source->id,
+                'resulting_bom_id' => $proposal->id,
+                'effective_date' => $effectiveDate ?? now()->toDateString(),
+                'requested_by' => $this->uuidOrNull($actorUserId),
+                'change_payload' => ['new_revision' => $proposal->revision, 'components' => $componentChanges, 'proposal_bom_id' => $proposal->id],
+                'diff_payload' => $diff,
+            ]);
+
+            $proposal->update(['engineering_change_order_id' => $eco->id, 'status' => 'pending_eco_approval']);
+            $submitted = $this->submit($eco);
+
+            $instance = DB::table('workflow_instances')
+                ->where('approvable_type', MfgEngineeringChangeOrder::class)
+                ->where('approvable_id', $eco->id)
+                ->orderByDesc('created_at')
+                ->first(['id']);
+            if ($instance !== null) {
+                $submitted->update(['approval_workflow_id' => (string) $instance->id]);
+            }
+
+            /** @var array{added: int, removed: int, modified: int, unchanged: int} $summary */
+            $summary = $diff['summary'] ?? ['added' => 0, 'removed' => 0, 'modified' => 0, 'unchanged' => 0];
+            $this->dispatcher->publishAndDispatch(new BomEcoSubmittedEvent(
+                engineeringChangeOrderId: (string) $eco->id,
+                ecoNumber: $eco->eco_number,
+                sourceBomId: (string) $source->id,
+                proposedBomId: (string) $proposal->id,
+                diffSummary: $summary,
+                tenantId: (string) $source->tenant_id
+            ));
+
+            return $submitted->refresh();
+        });
+    }
+
+    /**
      * Submits a draft change for approval.
      */
     public function submit(MfgEngineeringChangeOrder $eco): MfgEngineeringChangeOrder
@@ -84,6 +138,9 @@ final readonly class EngineeringChangeService
     {
         return $this->transition($eco, 'submitted', function (MfgEngineeringChangeOrder $locked) use ($rejecterId, $reason): void {
             $locked->update(['status' => 'rejected', 'rejected_by' => $this->uuidOrNull($rejecterId), 'rejected_at' => now(), 'rejection_reason' => $reason]);
+
+            // The proposed revision goes back to engineering as a draft.
+            MfgBom::query()->where('tenant_id', $locked->tenant_id)->whereKey($locked->resulting_bom_id)->where('status', 'pending_eco_approval')->update(['status' => 'draft']);
         });
     }
 
@@ -105,7 +162,14 @@ final readonly class EngineeringChangeService
             $components = is_array($payload['components'] ?? null) ? array_values($payload['components']) : [];
             $revision = isset($payload['new_revision']) && is_string($payload['new_revision']) && $payload['new_revision'] !== '' ? $payload['new_revision'] : null;
 
-            $draft = $this->boms->reviseBom($bom, $revision, "Engineering change {$locked->eco_number}: {$locked->title}", $components, $effective, $actorUserId);
+            $proposal = $locked->resulting_bom_id !== null ? MfgBom::query()->where('tenant_id', $locked->tenant_id)->find($locked->resulting_bom_id) : null;
+            if ($proposal instanceof MfgBom && $proposal->isPendingApproval()) {
+                // The revision was prepared when the change was opened: it is released from the effective date.
+                $proposal->update(['status' => 'draft', 'effective_from' => $effective]);
+                $draft = $proposal;
+            } else {
+                $draft = $this->boms->reviseBom($bom, $revision, "Engineering change {$locked->eco_number}: {$locked->title}", $components, $effective, $actorUserId);
+            }
             $draft->update(['engineering_change_order_id' => $locked->id]);
             $released = $this->boms->activate($draft, $locked->approved_by ?? $actorUserId);
 

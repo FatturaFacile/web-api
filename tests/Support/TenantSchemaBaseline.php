@@ -22,6 +22,8 @@ final class TenantSchemaBaseline
      */
     public const GLOBAL_TABLES = [
         'abac_rules',
+        'core_cross_border_transfer_rules',
+        'core_sovereign_region_nodes',
         'field_policies',
         'role_permissions',
         'roles',
