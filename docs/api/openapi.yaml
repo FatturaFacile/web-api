@@ -11004,6 +11004,9 @@ paths:
                 - PERMISSION_CHANGED
                 - WORM_SEALED
                 - AUDIT_LOG_INSPECTED
+                - PII_UNMASKED
+                - KEY_ROTATED
+                - OFFLINE_SYNCED
         -
           name: auditable_type
           in: query
@@ -11143,6 +11146,9 @@ paths:
                 - PERMISSION_CHANGED
                 - WORM_SEALED
                 - AUDIT_LOG_INSPECTED
+                - PII_UNMASKED
+                - KEY_ROTATED
+                - OFFLINE_SYNCED
         -
           name: auditable_type
           in: query
@@ -107250,6 +107256,80 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  /v1/audit/offline-batches:
+    post:
+      operationId: audit.offline-batches.store
+      tags:
+        - OfflineAuditBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreOfflineAuditBatchRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      batch_id: {}
+                      received_at:
+                        type: string
+                      entries:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sequence_number:
+                              type: integer
+                            id:
+                              type: string
+                            server_received_at:
+                              type: string
+                          required:
+                            - sequence_number
+                            - id
+                            - server_received_at
+                    required:
+                      - batch_id
+                      - received_at
+                      - entries
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          description: 'An error'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: 'Error overview.'
+                    examples:
+                      - 'Missing or unresolvable tenant context'
+                required:
+                  - message
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/supplier-portal/onboardings:
     get:
       operationId: v1.supplier-portal.onboardings.index
@@ -158276,6 +158356,140 @@ paths:
                   - data
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/security/posture:
+    get:
+      operationId: security.posture
+      tags:
+        - SecurityCenter
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      audit_chain:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                            enum:
+                              - verified
+                              - tamper_alert
+                          last_verified_at:
+                            type: string
+                          last_hash:
+                            type:
+                              - string
+                              - 'null'
+                          broken_at_sequence: {}
+                        required:
+                          - status
+                          - last_verified_at
+                          - last_hash
+                          - broken_at_sequence
+                      encrypted_fields_coverage:
+                        type: object
+                        properties:
+                          encrypted:
+                            type: integer
+                            const: 0
+                          total:
+                            type: integer
+                            const: 0
+                          percent:
+                            type: number
+                        required:
+                          - encrypted
+                          - total
+                          - percent
+                      active_dsar:
+                        type: object
+                        properties:
+                          count:
+                            type: integer
+                            minimum: 0
+                          nearest_due_at: {}
+                        required:
+                          - count
+                          - nearest_due_at
+                      legal_holds_active:
+                        type: integer
+                        minimum: 0
+                      open_incidents:
+                        type: integer
+                        minimum: 0
+                      readiness_score:
+                        type: integer
+                    required:
+                      - audit_chain
+                      - encrypted_fields_coverage
+                      - active_dsar
+                      - legal_holds_active
+                      - open_incidents
+                      - readiness_score
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/security/pii/unmask:
+    post:
+      operationId: security.pii.unmask
+      tags:
+        - SecurityCenter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnmaskPiiRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      value:
+                        type: string
+                    required:
+                      - value
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/settings/security/policy:
     get:
       operationId: settings.security.policy
@@ -215049,9 +215263,13 @@ components:
         document_language:
           type: string
         iban:
-          type: string
+          type:
+            - string
+            - 'null'
         qr_iban:
-          type: string
+          type:
+            - string
+            - 'null'
         payment_terms_days:
           type: string
         parent_id:
@@ -265505,6 +265723,89 @@ components:
         - defect_type
         - description
       title: StoreNonConformanceRequest
+    StoreOfflineAuditBatchRequest:
+      type: object
+      description: 'An upload of the local audit queue of a desktop or mobile device (shared contract of both clients).'
+      properties:
+        device_id:
+          type: string
+          maxLength: 128
+        batch_id:
+          type:
+            - string
+            - 'null'
+          maxLength: 128
+        origin:
+          type: string
+          maxLength: 40
+        entries:
+          type: array
+          items:
+            type: object
+            properties:
+              sequence_number:
+                type: integer
+                minimum: 1
+              previous_hash:
+                type: string
+                pattern: '^[0-9a-fA-F]{64}$'
+                minLength: 64
+                maxLength: 64
+              payload_hash:
+                type: string
+                pattern: '^[0-9a-fA-F]{64}$'
+                minLength: 64
+                maxLength: 64
+              record_hash:
+                type: string
+                pattern: '^[0-9a-fA-F]{64}$'
+                minLength: 64
+                maxLength: 64
+              occurred_at:
+                type: string
+                maxLength: 40
+              entity_type:
+                type: string
+                maxLength: 191
+              entity_id:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 191
+              action:
+                type: string
+                maxLength: 80
+              payload:
+                type:
+                  - string
+                  - 'null'
+              payload_json:
+                type:
+                  - string
+                  - 'null'
+              metadata:
+                type:
+                  - string
+                  - 'null'
+              metadata_json:
+                type:
+                  - string
+                  - 'null'
+            required:
+              - sequence_number
+              - previous_hash
+              - payload_hash
+              - record_hash
+              - occurred_at
+              - entity_type
+              - action
+          minItems: 1
+          maxItems: 500
+      required:
+        - device_id
+        - origin
+        - entries
+      title: StoreOfflineAuditBatchRequest
     StoreOpenBankingConsentRequest:
       type: object
       properties:
@@ -274678,6 +274979,29 @@ components:
       required:
         - challenge_token
       title: TwoFactorChallengeRequest
+    UnmaskPiiRequest:
+      type: object
+      properties:
+        entity_type:
+          type: string
+          enum:
+            - contact
+        entity_id:
+          type: string
+          maxLength: 64
+        field:
+          type: string
+          maxLength: 64
+        justification:
+          type: string
+          minLength: 10
+          maxLength: 500
+      required:
+        - entity_type
+        - entity_id
+        - field
+        - justification
+      title: UnmaskPiiRequest
     UpdateAccountRequest:
       type: object
       description: |-
@@ -283369,6 +283693,9 @@ tags:
     name: Offboarding
     description: 'Operations of the Offboarding module.'
   -
+    name: OfflineAuditBatch
+    description: 'Operations of the OfflineAuditBatch module.'
+  -
     name: Onboarding
     description: 'Operations of the Onboarding module.'
   -
@@ -283977,6 +284304,9 @@ tags:
   -
     name: Section
     description: 'Operations of the Section module.'
+  -
+    name: SecurityCenter
+    description: 'Operations of the SecurityCenter module.'
   -
     name: SecurityPolicy
     description: 'Operations of the SecurityPolicy module.'
