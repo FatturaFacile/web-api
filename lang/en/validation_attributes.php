@@ -3055,4 +3055,11 @@ return [
     'net_amount' => 'net amount',
     'source_line_index' => 'source line',
     'qr_reference' => 'payment reference',
+    'origin' => 'origin',
+    'sequence_number' => 'sequence number',
+    'previous_hash' => 'previous hash',
+    'payload_hash' => 'payload hash',
+    'record_hash' => 'record hash',
+    'payload_json' => 'payload',
+    'metadata_json' => 'metadata',
 ];

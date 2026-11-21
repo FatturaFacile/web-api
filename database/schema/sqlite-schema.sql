@@ -41305,6 +41305,37 @@ CREATE UNIQUE INDEX "webauthn_credentials_credential_id_unique" on "webauthn_cre
 );
 CREATE INDEX "contacts_iban_bidx_index" on "contacts"("iban_bidx");
 CREATE INDEX "contacts_qr_iban_bidx_index" on "contacts"("qr_iban_bidx");
+CREATE TABLE "offline_audit_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "device_id" varchar not null,
+  "origin" varchar not null,
+  "sequence_number" integer not null,
+  "previous_hash" varchar not null,
+  "payload_hash" varchar not null,
+  "record_hash" varchar not null,
+  "occurred_at" varchar not null,
+  "entity_type" varchar not null,
+  "entity_id" varchar,
+  "action" varchar not null,
+  "payload" text,
+  "metadata" text,
+  "batch_id" varchar,
+  "audit_log_id" varchar,
+  "received_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "offline_audit_device_sequence_unique" on "offline_audit_entries"(
+  "tenant_id",
+  "device_id",
+  "sequence_number"
+);
+CREATE INDEX "offline_audit_entries_tenant_id_index" on "offline_audit_entries"(
+  "tenant_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -41704,3 +41735,4 @@ INSERT INTO migrations VALUES(395,'2027_12_15_000100_create_academy_tables',7);
 INSERT INTO migrations VALUES(396,'2027_12_15_000100_create_ocr_extraction_tables',8);
 INSERT INTO migrations VALUES(397,'2027_12_14_000100_create_iam_tables',9);
 INSERT INTO migrations VALUES(398,'2027_12_13_000100_add_blind_indexes_to_contacts',10);
+INSERT INTO migrations VALUES(399,'2027_12_13_000200_create_offline_audit_entries_table',11);
