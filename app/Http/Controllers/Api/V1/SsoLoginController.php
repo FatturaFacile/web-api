@@ -73,6 +73,7 @@ class SsoLoginController extends Controller
     }
 
     /** Browser entry (Mod 004 spec path): `{provider}` is the id of the tenant whose OIDC provider signs the user in; answers 302 to the identity provider. */
+    #[OA\Get(path: '/api/v1/auth/sso/{provider}/redirect', operationId: 'redirectToSsoProvider', description: 'Redirects the browser to the identity provider of the tenant.', summary: 'Start the SSO login of a provider', tags: ['Identity'], parameters: [new OA\Parameter(name: 'provider', in: 'path', required: true, schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'OK')])]
     public function redirect(Request $request, string $provider): Response
     {
         validator(['tenant_id' => $provider], ['tenant_id' => ['required', 'uuid']])->validate();
@@ -106,6 +107,8 @@ class SsoLoginController extends Controller
             new OA\Response(response: 429, description: 'Too many requests', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
+    #[OA\Get(path: '/api/v1/auth/sso/{provider}/callback', operationId: 'ssoProviderCallbackGet', description: 'Receives the answer of the identity provider and opens the session.', summary: 'SSO callback (redirect binding)', tags: ['Identity'], parameters: [new OA\Parameter(name: 'provider', in: 'path', required: true, schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'OK')])]
+    #[OA\Post(path: '/api/v1/auth/sso/{provider}/callback', operationId: 'ssoProviderCallbackPost', description: 'Receives the SAML or OIDC form post of the identity provider and opens the session.', summary: 'SSO callback (POST binding)', tags: ['Identity'], parameters: [new OA\Parameter(name: 'provider', in: 'path', required: true, schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'OK')])]
     public function callback(Request $request): Response
     {
         $validated = $request->validate([
