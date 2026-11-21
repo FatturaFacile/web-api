@@ -17096,6 +17096,8 @@ CREATE TABLE "mfg_bom_components"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "fixed_scrap_quantity" numeric not null default '0',
+  "substitute_item_ids" text,
   foreign key("bom_id") references "mfg_boms"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -17208,6 +17210,8 @@ CREATE TABLE "mfg_engineering_change_orders"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "diff_payload" text,
+  "approval_workflow_id" varchar,
   primary key("id")
 );
 
@@ -17262,6 +17266,8 @@ CREATE TABLE "mfg_items"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "origin_status" varchar not null default 'non_originating',
+  "exw_price" numeric not null default '0',
   primary key("id")
 );
 
@@ -42162,6 +42168,37 @@ CREATE INDEX "cpq_comments_tenant_id_quote_id_index" on "cpq_comments"(
   "tenant_id",
   "quote_id"
 );
+CREATE INDEX "mfg_engineering_change_orders_approval_workflow_id_index" on "mfg_engineering_change_orders"(
+  "approval_workflow_id"
+);
+CREATE TABLE "mfg_bom_co_products"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "bom_id" varchar not null,
+  "product_item_id" varchar not null,
+  "product_type" varchar not null default 'co_product',
+  "output_ratio_qty" numeric not null default '1',
+  "cost_allocation_percentage" numeric not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("bom_id") references "mfg_boms"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mfg_bom_co_products_bom_id_product_item_id_unique" on "mfg_bom_co_products"(
+  "bom_id",
+  "product_item_id"
+);
+CREATE INDEX "mfg_bom_co_products_tenant_id_index" on "mfg_bom_co_products"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_bom_co_products_bom_id_index" on "mfg_bom_co_products"(
+  "bom_id"
+);
+CREATE INDEX "mfg_bom_co_products_product_item_id_index" on "mfg_bom_co_products"(
+  "product_item_id"
+);
 CREATE TABLE "ipp_payroll_periods"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -42769,4 +42806,5 @@ INSERT INTO migrations VALUES(400,'2027_12_16_000100_create_ai_cognitive_tables'
 INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_kpi_dashboard_tables',13);
 INSERT INTO migrations VALUES(402,'2027_12_17_000100_create_data_residency_tables',14);
 INSERT INTO migrations VALUES(403,'2027_12_17_000100_create_cpq_quote_tables',15);
-INSERT INTO migrations VALUES(404,'2027_12_17_000100_create_italian_payroll_preprocessing_tables',16);
+INSERT INTO migrations VALUES(404,'2027_12_17_000100_extend_bom_management',16);
+INSERT INTO migrations VALUES(405,'2027_12_17_000100_create_italian_payroll_preprocessing_tables',17);

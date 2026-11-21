@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Manufacturing\Models\MfgBom;
 use Modules\Manufacturing\Models\MfgBomComponent;
+use Modules\Manufacturing\Models\MfgBomCoProduct;
 
 /**
  * A BOM revision with its effective range, approval and components (when loaded). Quantities are decimal strings.
@@ -54,7 +55,16 @@ final class MfgBomResource extends JsonResource
                 'is_phantom' => $component->is_phantom,
                 'issue_method' => $component->issue_method,
                 'operation_sequence' => $component->operation_sequence,
+                'fixed_scrap_quantity' => $component->fixed_scrap_quantity,
+                'substitute_item_ids' => $component->substitute_item_ids ?? [],
                 'notes' => $component->notes,
+            ])->values()->all()),
+            'co_products' => $this->whenLoaded('coProducts', fn () => $this->coProducts->map(static fn (MfgBomCoProduct $line): array => [
+                'id' => $line->id,
+                'product_item_id' => $line->product_item_id,
+                'product_type' => $line->product_type,
+                'output_ratio_qty' => $line->output_ratio_qty,
+                'cost_allocation_percentage' => $line->cost_allocation_percentage,
             ])->values()->all()),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
