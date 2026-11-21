@@ -3122,4 +3122,9 @@ return [
     'allow_aggregated_non_pii_consolidation' => 'aggregated consolidation',
     'second_approver_id' => 'second approver',
     'destination_country_iso2' => 'destination country',
+    'building_number' => 'building number',
+    'creditor' => 'creditor',
+    'debtor' => 'debtor',
+    'bill_information' => 'billing information',
+    'town' => 'town',
 ];

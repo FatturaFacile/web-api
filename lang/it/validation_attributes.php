@@ -3122,4 +3122,9 @@ return [
     'allow_aggregated_non_pii_consolidation' => 'consolidamento aggregato',
     'second_approver_id' => 'secondo approvatore',
     'destination_country_iso2' => 'paese di destinazione',
+    'building_number' => 'numero civico',
+    'creditor' => 'creditore',
+    'debtor' => 'debitore',
+    'bill_information' => 'informazioni di fatturazione',
+    'town' => 'località',
 ];

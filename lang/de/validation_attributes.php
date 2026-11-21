@@ -3122,4 +3122,9 @@ return [
     'allow_aggregated_non_pii_consolidation' => 'aggregierte Konsolidierung',
     'second_approver_id' => 'zweite Freigabe',
     'destination_country_iso2' => 'Zielland',
+    'building_number' => 'Hausnummer',
+    'creditor' => 'Zahlungsempfänger',
+    'debtor' => 'Zahlungspflichtiger',
+    'bill_information' => 'Rechnungsinformationen',
+    'town' => 'Ort',
 ];
