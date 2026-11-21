@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
+use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
+use Database\Seeders\Translations\IdentityFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
+use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
 use Database\Seeders\Translations\MobileFeatureTranslations;
@@ -22,7 +26,9 @@ use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
+use Database\Seeders\Translations\ProposalPortalFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
+use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -61,17 +67,23 @@ class FrontendTranslationSeeder extends Seeder
             + LeadFrontendTranslations::all($locale)
             + Customer360FrontendTranslations::all($locale)
             + CopilotFrontendTranslations::all($locale)
+            + AiCognitiveFrontendTranslations::all($locale)
             + GapViewsFrontendTranslations::all($locale)
             + MainFrontendTranslations::all($locale)
             + PrivacyGovernanceFrontendTranslations::all($locale)
             + ReleaseAuditFrontendTranslations::all($locale)
             + AuditTrailFrontendTranslations::all($locale)
             + PreservationFrontendTranslations::all($locale)
+            + IdentityFrontendTranslations::all($locale)
             + AiForecastingFrontendTranslations::all($locale)
             + OcrInboxFrontendTranslations::all($locale)
             + ExecutiveDssFrontendTranslations::all($locale)
+            + KpiDashboardsFrontendTranslations::all($locale)
+            + ProposalPortalFrontendTranslations::all($locale)
+            + DataSovereigntyFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)
-            + MobileFeatureTranslations::all($locale);
+            + MobileFeatureTranslations::all($locale)
+            + SecurityCenterFrontendTranslations::all($locale);
     }
 
     /**

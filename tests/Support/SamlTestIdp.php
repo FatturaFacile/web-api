@@ -30,7 +30,8 @@ final class SamlTestIdp
         $key = openssl_pkey_new($config);
 
         if ($key === false) {
-            $file = sys_get_temp_dir().DIRECTORY_SEPARATOR.'ff-openssl-minimal.cnf';
+            // One file per process: parallel test workers must not rewrite a file another one is reading.
+            $file = sys_get_temp_dir().DIRECTORY_SEPARATOR.'ff-openssl-minimal-'.getmypid().'.cnf';
             file_put_contents($file, "[req]\ndistinguished_name=dn\n[dn]\n");
             $config['config'] = $file;
             $key = openssl_pkey_new($config);

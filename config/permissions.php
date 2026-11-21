@@ -117,7 +117,42 @@ return [
         'bi_dss_export' => ['read' => $finance, 'write' => $finance, 'grants' => ['write' => ['bi.dss.export', 'bi.dss.*']]],
         'bi_dss_admin' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['bi.dss.admin', 'bi.dss.*'], 'write' => ['bi.dss.admin', 'bi.dss.*']]],
         'ocr_capture' => ['read' => $anyMember, 'write' => $anyMember],
+        // Executive KPI dashboards (Mod 090). kpi_dashboards: any member opens the cockpits their role allows and saves their own
+        // layouts (KpiAccess narrows each KPI by role, legal entity, cost center and compensation grant); kpi_dashboards_admin:
+        // finance and managers configure threshold alerts and refresh the analytical cubes.
+        'kpi_dashboards' => ['read' => $anyMember, 'write' => $anyMember],
+        'kpi_dashboards_admin' => [
+            'read' => $financeReaders,
+            'write' => $finance,
+            'grants' => ['read' => ['kpi.*'], 'write' => ['kpi.*']],
+        ],
+        // Interactive quotes and proposals (Mod 036). cpq_quotes: the sales team builds, issues, revises and converts quotes;
+        // cpq_quotes_admin: managers override the margin guardrail (approve-and-issue).
+        'cpq_quotes' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager']],
+        'cpq_quotes_admin' => ['read' => ['owner', 'admin', 'sales_manager'], 'write' => ['owner', 'admin', 'sales_manager']],
+        // Data residency, sovereignty and BYOK/HYOK (Mod 381). sovereignty_policy (sovereignty.policy.read / .manage): owners and
+        // administrators (DPO, CISO) read the posture and enforce the residency policy; sovereignty_byok (sovereignty.byok.manage):
+        // configure and rotate the customer-managed key and read the KMS log; sovereignty_killswitch (sovereignty.byok.killswitch):
+        // the emergency suspension and crypto-shredding, owners only (the handler also asks for a step-up MFA code);
+        // sovereignty_attestation (sovereignty.attestation.export): issue and download the signed certificate.
+        'sovereignty_policy' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['sovereignty.policy.read', 'sovereignty.*'], 'write' => ['sovereignty.policy.manage', 'sovereignty.*']]],
+        'sovereignty_byok' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['sovereignty.byok.manage', 'sovereignty.*'], 'write' => ['sovereignty.byok.manage', 'sovereignty.*']]],
+        'sovereignty_killswitch' => ['read' => ['owner'], 'write' => ['owner'], 'grants' => ['read' => ['sovereignty.byok.killswitch'], 'write' => ['sovereignty.byok.killswitch']]],
+        'sovereignty_attestation' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['sovereignty.attestation.export', 'sovereignty.*'], 'write' => ['sovereignty.attestation.export', 'sovereignty.*']]],
+        // Swiss QR-bill, ISO 20022 and country fiscal documents (Issue #83): finance issues and reads them.
+        'swiss_fiscal' => ['read' => $financeReaders, 'write' => $finance],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
+        // AI Services & Cognitive Automation Layer (Mod 093). ai_copilot (ai.copilot.use): every member asks the copilot and drafts
+        // messages, each answer limited to what the caller may read; ai_review (ai.suggestions.review): the finance and sales teams
+        // work the review queue and the insights; ai_admin (ai.admin.configure): owners and admins set up providers and policies and
+        // read the usage and audit trail.
+        'ai_copilot' => ['read' => $anyMember, 'write' => $anyMember, 'grants' => ['read' => ['ai.copilot.use', 'ai.*'], 'write' => ['ai.copilot.use', 'ai.*']]],
+        'ai_review' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager', 'purchasing', 'procurement_manager', 'warehouse'],
+            'write' => [...$finance, 'sales', 'sales_manager', 'purchasing', 'procurement_manager'],
+            'grants' => ['read' => ['ai.suggestions.view', 'ai.suggestions.review', 'ai.*'], 'write' => ['ai.suggestions.review', 'ai.*']],
+        ],
+        'ai_admin' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['ai.admin.configure', 'ai.*'], 'write' => ['ai.admin.configure', 'ai.*']]],
         'forecasting_wms' => [
             'read' => $managers,
             'write' => ['owner', 'admin', 'warehouse', 'purchasing', 'procurement_manager'],

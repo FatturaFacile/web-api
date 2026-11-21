@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\Auth\AuthProblem;
+use App\Exceptions\SodDocumentConflictException;
 use App\Http\Middleware\AuditSensitiveAccess;
 use App\Http\Middleware\EnforceHttps;
 use App\Http\Middleware\EnforceSessionPolicy;
@@ -18,6 +20,7 @@ use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use App\Services\Auth\Sso\SsoBrowserBinding;
 use Enterprise\MultiTenant\Http\Middleware\EnsureModuleAccess;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
@@ -30,8 +33,12 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Routing\Middleware\ThrottleRequestsWithRedis;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use Modules\DataResidency\Presentation\Http\Middleware\EnforceDataResidencyMiddleware;
 use Modules\Platform\Http\Middleware\EnforceIdempotency;
 use Modules\Platform\Http\Middleware\HandleConditionalRequests;
+use Modules\Platform\Identity\Http\Middleware\AppendMaskedFieldsMeta;
+use Modules\Platform\Identity\Http\Middleware\EnsureCompanyAccess;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -74,6 +81,9 @@ return Application::configure(basePath: dirname(__DIR__))
             IdentifyTenant::class,
             EnforceSessionPolicy::class,
             EnsureTwoFactorEnrolled::class,
+            EnsureCompanyAccess::class,
+            EnforceDataResidencyMiddleware::class,
+            AppendMaskedFieldsMeta::class,
             EnforceIdempotency::class,
             HandleConditionalRequests::class,
         ]);
@@ -103,6 +113,24 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // A refused authorization answers with the stable machine-readable code `permission_denied` that every client switches on.
+        $exceptions->render(function (AuthorizationException|AccessDeniedHttpException $e, Request $request) {
+            $origin = $e instanceof AccessDeniedHttpException ? $e->getPrevious() : $e;
+
+            if (! $request->is('api/*') || $origin instanceof SodDocumentConflictException) {
+                return null;
+            }
+
+            return response()->json([
+                'type' => AuthProblem::PermissionDenied->value,
+                'title' => 'Forbidden',
+                'status' => 403,
+                'code' => AuthProblem::PermissionDenied->code(),
+                'detail' => $e->getMessage() !== '' ? $e->getMessage() : 'This action is unauthorized.',
+                'message' => $e->getMessage() !== '' ? $e->getMessage() : 'This action is unauthorized.',
+            ], 403, ['Content-Type' => 'application/problem+json']);
+        });
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

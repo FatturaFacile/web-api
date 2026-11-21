@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\Contact;
+use App\Models\User;
+use App\Services\Security\PiiMasker;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -13,6 +15,25 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class ContactResource extends JsonResource
 {
+    /**
+     * Dynamic data masking: the clear value only for callers holding privacy.pii.unmask.
+     */
+    private function maskedFor(Request $request, ?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        $user = $request->user();
+        $tenantId = $this->tenant_id !== null ? (string) $this->tenant_id : null;
+
+        if ($user instanceof User && $user->hasTenantPermission($tenantId, PiiMasker::PERMISSION)) {
+            return $value;
+        }
+
+        return (new PiiMasker)->iban($value);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -37,8 +58,8 @@ class ContactResource extends JsonResource
             'sdi_code' => $this->sdi_code,
             'pec' => $this->pec,
             'document_language' => $this->document_language,
-            'iban' => $this->iban,
-            'qr_iban' => $this->qr_iban,
+            'iban' => $this->maskedFor($request, $this->iban),
+            'qr_iban' => $this->maskedFor($request, $this->qr_iban),
             'payment_terms_days' => $this->payment_terms_days,
             'parent_id' => $this->parent_id,
             'hierarchy_type' => $this->hierarchy_type,

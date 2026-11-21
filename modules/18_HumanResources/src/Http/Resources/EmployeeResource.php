@@ -6,12 +6,16 @@ namespace Modules\HumanResources\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Platform\Identity\Http\Concerns\MasksSensitiveFields;
 
+/** Salary and cost rate follow the field policies of the caller (resource `hr.employee`). */
 final class EmployeeResource extends JsonResource
 {
+    use MasksSensitiveFields;
+
     public function toArray(Request $request): array
     {
-        return [
+        return $this->maskFields($request, 'hr.employee', [
             'id' => $this->id,
             'tenant_id' => $this->tenant_id,
             'employee_number' => $this->employee_number,
@@ -39,6 +43,6 @@ final class EmployeeResource extends JsonResource
             'is_locked' => (bool) $this->is_locked,
             'equipment_assigned' => $this->equipment_assigned ?? [],
             'created_at' => $this->created_at?->toIso8601String(),
-        ];
+        ]);
     }
 }

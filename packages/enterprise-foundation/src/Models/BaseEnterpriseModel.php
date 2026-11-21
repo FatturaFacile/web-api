@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
+ * @property string $id
  * @property string|null $tenant_id Null only for global records of models that allow them (see BelongsToTenant).
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

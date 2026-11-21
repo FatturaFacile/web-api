@@ -11,6 +11,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Schema;
+use Modules\AiCognitive\Infrastructure\Jobs\NightlyPredictiveScoringJob;
 use Modules\AssetManagement\Jobs\NotifyExpiringAssetCoverageJob;
 use Modules\Associations\Jobs\ExpireMembershipsJob;
 use Modules\Associations\Jobs\SendCertificateAlertsJob;
@@ -127,6 +128,8 @@ $forEachTenant = static fn (string $name, Closure $job): CallbackEvent => Schedu
     static fn (): int => app(TenantJobDispatcher::class)->dispatchForEachTenant($job)
 )->name($name)->withoutOverlapping()->onOneServer();
 
+// AI cognitive layer (Mod 093): predictive recommendations and the anomaly scan after the forecasting models (03:00-03:40).
+$forEachTenant('ai-cognitive:nightly-scoring', static fn (Tenant $tenant): object => new NightlyPredictiveScoringJob($tenant->id))->dailyAt('04:10');
 $forEachTenant('workflow:webhooks', static fn (): object => new DispatchOutboundWebhooksJob)->everyMinute();
 $forEachTenant('workflow:timeouts', static fn (): object => new ProcessBusinessCalendarTimeoutsJob)->everyFifteenMinutes();
 $forEachTenant('workflow:prune-tokens', static fn (): object => new PruneExpiredApprovalTokensJob)->dailyAt('03:20');

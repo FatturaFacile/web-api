@@ -72,6 +72,26 @@ class SsoLoginController extends Controller
         return $this->binding->attach($this->successResponse(data: ['authorization_url' => $url]), $secret);
     }
 
+    /** Browser entry (Mod 004 spec path): `{provider}` is the id of the tenant whose OIDC provider signs the user in; answers 302 to the identity provider. */
+    public function redirect(Request $request, string $provider): Response
+    {
+        validator(['tenant_id' => $provider], ['tenant_id' => ['required', 'uuid']])->validate();
+
+        [$secret, $hash] = $this->binding->issue();
+
+        try {
+            $url = $this->login->start($provider, $hash);
+        } catch (SsoException) {
+            return $this->problemDetailsResponse(
+                title: __('enterprise_auth.errors.sso_unavailable_title'),
+                detail: __('enterprise_auth.errors.sso_unavailable_detail'),
+                status: Response::HTTP_NOT_FOUND,
+            );
+        }
+
+        return $this->binding->attach(redirect()->away($url), $secret);
+    }
+
     #[OA\Post(
         path: '/api/v1/auth/sso/callback',
         operationId: 'completeSsoLogin',

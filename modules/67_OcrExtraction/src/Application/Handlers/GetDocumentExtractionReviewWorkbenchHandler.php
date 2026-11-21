@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\OcrExtraction\Application\Handlers;
 
+use App\Models\Contact;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Modules\Documents\Models\DmsDocumentVersion;
@@ -120,9 +121,9 @@ final readonly class GetDocumentExtractionReviewWorkbenchHandler
             return null;
         }
 
-        $vendor = DB::table('contacts')->where('tenant_id', $tenantId)->where('id', $vendorId)->first(['id', 'company_name', 'vat_number', 'uid_number', 'iban', 'qr_iban', 'country']);
+        $vendor = Contact::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('id', $vendorId)->first(['id', 'tenant_id', 'company_name', 'vat_number', 'uid_number', 'iban', 'qr_iban', 'country']);
 
-        return $vendor !== null ? (array) $vendor : null;
+        return $vendor !== null ? $vendor->only(['id', 'company_name', 'vat_number', 'uid_number', 'iban', 'qr_iban', 'country']) : null;
     }
 
     /**

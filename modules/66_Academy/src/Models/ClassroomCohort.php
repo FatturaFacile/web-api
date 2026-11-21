@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A class of students led by a teacher. Students join with the join code.
  *
+ * @property string $id
  * @property string $teacher_id
  * @property string $name
  * @property string $join_code

@@ -67,6 +67,8 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/oauth2-callback',
         'api/v1/auth/login',
         'api/v1/auth/two-factor-challenge',
+        'api/v1/auth/2fa/challenge',
+        'api/v1/auth/passkeys/login',
         'api/v1/auth/register',
         'api/v1/auth/verify-email',
         'api/v1/auth/resend-verification-email',
@@ -84,6 +86,9 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/report-downloads',
         'api/v1/system/bootstrap-support',
         'api/v1/translations',
+        // Proposal portal (Mod 036): the unguessable token (plus PIN session, OTP or HMAC-signed provider callback) is the credential, see Quoting\CpqQuotingTest.
+        'api/v1/public/proposals',
+        'api/v1/public/signature-webhooks',
         'api/v1/lookups',
         'api/v1/webhooks',
         'api/v1/portal',
