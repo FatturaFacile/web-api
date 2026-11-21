@@ -43,6 +43,7 @@ return [
         'digital_preservation' => env('FEATURE_MODULE_DIGITAL_PRESERVATION'),
         'forecasting' => env('FEATURE_MODULE_FORECASTING'),
         'ocr_extraction' => env('FEATURE_MODULE_OCR_EXTRACTION'),
+        'kpi_dashboards' => env('FEATURE_MODULE_KPI_DASHBOARDS'),
         'ai_cognitive' => env('FEATURE_MODULE_AI_COGNITIVE'),
         'leases' => env('FEATURE_MODULE_LEASES'),
         'retail' => env('FEATURE_MODULE_RETAIL'),
