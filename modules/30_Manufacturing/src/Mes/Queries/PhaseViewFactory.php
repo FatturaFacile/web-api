@@ -6,6 +6,7 @@ namespace Modules\Manufacturing\Mes\Queries;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
+use Modules\Inventory\Models\StockItem;
 use Modules\Manufacturing\Enums\PhaseAction;
 use Modules\Manufacturing\Enums\PhaseStatus;
 use Modules\Manufacturing\Mes\Time\PhaseTimeCalculator;
@@ -15,6 +16,7 @@ use Modules\Manufacturing\Models\MfgMesPhase;
 use Modules\Manufacturing\Models\MfgMesProductionDeclaration;
 use Modules\Manufacturing\Models\MfgMesTimeLog;
 use Modules\Manufacturing\Models\MfgProductionOrder;
+use Modules\Manufacturing\Models\MfgProductionOrderLine;
 use Modules\Manufacturing\Models\MfgProductionOrderOperation;
 use Modules\Manufacturing\Support\Money;
 
