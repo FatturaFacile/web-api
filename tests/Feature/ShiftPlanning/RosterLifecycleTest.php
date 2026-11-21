@@ -201,3 +201,21 @@ it('builds the matrix by required role and marks a mostly open slot as critical'
 
     $this->getJson("/api/v1/shift-planning/periods/{$period->id}/matrix?group_by=nonsense")->assertStatus(422);
 });
+
+it('lists the periods of a type that overlap a window, newest first', function (): void {
+    $tenant = spTenant('CH');
+    spActAs($tenant, spUser($tenant, 'owner'));
+    $first = spPeriod($tenant);
+    $second = spPeriod($tenant, spMonday()->addWeek());
+    $other = spTenant('CH');
+    spPeriod($other);
+    $monday = spMonday()->format('Y-m-d');
+
+    $all = $this->getJson('/api/v1/shift-planning/periods')->assertOk()->json('data');
+    $window = $this->getJson("/api/v1/shift-planning/periods?period_type=weekly&from={$monday}&to={$monday}")->assertOk()->json('data');
+
+    expect(collect($all)->pluck('id')->all())->toBe([$second->id, $first->id])
+        ->and(collect($window)->pluck('id')->all())->toBe([$first->id])
+        ->and($this->getJson('/api/v1/shift-planning/periods?period_type=monthly')->json('data'))->toBe([]);
+    $this->getJson('/api/v1/shift-planning/periods?period_type=yearly')->assertStatus(422);
+});

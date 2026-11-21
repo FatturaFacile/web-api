@@ -6,6 +6,7 @@ namespace Modules\ShiftPlanning\Presentation\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\ShiftPlanning\Domain\Enums\PeriodType;
 use Modules\ShiftPlanning\Domain\Enums\SwapStatus;
 
 /**
@@ -25,6 +26,7 @@ final class ShiftQueryRequest extends FormRequest
     {
         return [
             'group_by' => ['nullable', Rule::in(['employee', 'role'])],
+            'period_type' => ['nullable', Rule::enum(PeriodType::class)],
             'from' => ['nullable', 'date_format:Y-m-d'],
             'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
             'status' => ['nullable', Rule::enum(SwapStatus::class)],

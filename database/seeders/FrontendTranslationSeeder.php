@@ -26,6 +26,7 @@ use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
 use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
+use Database\Seeders\Translations\ShiftPlanningFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -75,6 +76,7 @@ class FrontendTranslationSeeder extends Seeder
             + AiForecastingFrontendTranslations::all($locale)
             + OcrInboxFrontendTranslations::all($locale)
             + KpiDashboardsFrontendTranslations::all($locale)
+            + ShiftPlanningFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)
             + MobileFeatureTranslations::all($locale)
             + SecurityCenterFrontendTranslations::all($locale);

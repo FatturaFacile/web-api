@@ -18,11 +18,13 @@ use Modules\ShiftPlanning\Application\Commands\RespondToShiftSwapCommand;
 use Modules\ShiftPlanning\Application\Handlers\AssignOrMoveShiftHandler;
 use Modules\ShiftPlanning\Application\Handlers\CopyOrGenerateRosterTemplateHandler;
 use Modules\ShiftPlanning\Application\Handlers\GetRosterMatrixHandler;
+use Modules\ShiftPlanning\Application\Handlers\ListRosterPeriodsHandler;
 use Modules\ShiftPlanning\Application\Handlers\ListShiftSwapRequestsHandler;
 use Modules\ShiftPlanning\Application\Handlers\LockRosterPeriodHandler;
 use Modules\ShiftPlanning\Application\Handlers\PublishRosterAndNotifyEmployeesHandler;
 use Modules\ShiftPlanning\Application\Handlers\RespondToShiftSwapHandler;
 use Modules\ShiftPlanning\Application\Queries\GetRosterMatrixQuery;
+use Modules\ShiftPlanning\Application\Queries\ListRosterPeriodsQuery;
 use Modules\ShiftPlanning\Application\Queries\ListShiftSwapRequestsQuery;
 use Modules\ShiftPlanning\Application\Services\ShiftTemplateCatalog;
 use Modules\ShiftPlanning\Domain\Enums\Jurisdiction;
@@ -70,6 +72,17 @@ final class RosterController extends Controller
     public function updateTemplate(string $id, StoreShiftTemplateRequest $request, ShiftTemplateCatalog $catalog): JsonResponse
     {
         return $this->guarded(fn (): JsonResponse => $this->successResponse(new ShiftTemplateResource($catalog->save($this->tenantId(), $id, $request->validated())), 'Template updated'));
+    }
+
+    #[OA\Get(path: '/api/v1/shift-planning/periods', operationId: 'listRosterPeriods', description: 'The roster periods of the tenant that overlap the window from-to, optionally of one type (weekly or monthly). The scheduler uses it to find the period of the week or month on screen.', summary: 'Roster periods', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Shift Planning'], responses: [new OA\Response(response: 200, description: 'The periods')])]
+    public function periods(ShiftQueryRequest $request, ListRosterPeriodsHandler $handler): JsonResponse
+    {
+        return $this->successResponse(RosterPeriodResource::collection($handler->handle(new ListRosterPeriodsQuery(
+            $this->tenantId(),
+            $request->filled('period_type') ? PeriodType::from((string) $request->input('period_type')) : null,
+            $request->filled('from') ? CarbonImmutable::parse((string) $request->input('from')) : null,
+            $request->filled('to') ? CarbonImmutable::parse((string) $request->input('to')) : null,
+        ))));
     }
 
     #[OA\Post(path: '/api/v1/shift-planning/periods/generate', operationId: 'generateRosterPeriod', description: 'Creates a draft weekly or monthly roster from a rotation pattern (5x2, 6x6) or as a copy of a previous period. Generated shifts carry their compliance findings.', summary: 'Generate or copy a roster period', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Shift Planning'], responses: [new OA\Response(response: 201, description: 'The draft period and its counters'), new OA\Response(response: 422, description: 'Invalid request')])]

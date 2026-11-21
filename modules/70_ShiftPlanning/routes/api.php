@@ -13,6 +13,7 @@ Route::prefix('api/v1/shift-planning')->middleware(['api', 'auth:sanctum', 'tena
         Route::get('templates', [RosterController::class, 'templates'])->name('shift-planning.templates.index');
         Route::post('templates', [RosterController::class, 'storeTemplate'])->name('shift-planning.templates.store');
         Route::put('templates/{id}', [RosterController::class, 'updateTemplate'])->whereUuid('id')->name('shift-planning.templates.update');
+        Route::get('periods', [RosterController::class, 'periods'])->name('shift-planning.periods.index');
         Route::post('periods/generate', [RosterController::class, 'generate'])->name('shift-planning.periods.generate');
         Route::get('periods/{id}/matrix', [RosterController::class, 'matrix'])->whereUuid('id')->name('shift-planning.periods.matrix');
         Route::post('periods/{id}/publish', [RosterController::class, 'publish'])->whereUuid('id')->name('shift-planning.periods.publish');
