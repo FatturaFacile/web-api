@@ -24,7 +24,10 @@ test('every business table has the six audit columns', function (): void {
         // Preservation audit trail: append-only and hash-chained, so it carries no update or delete stamps.
         'preservation_audit_logs',
         // AI audit trail: append-only and hash-chained (the model refuses updates and deletes), so it carries no update or delete stamps.
-        'ai_audit_trails'];
+        'ai_audit_trails',
+        // Data residency evidence (Mod 381): the KMS access log, the blocked egress alerts and the signed attestations are append-only
+        // (the models refuse updates and deletes), so they carry no update or delete stamps.
+        'core_byok_key_access_audit', 'core_cross_border_blocked_attempts', 'core_sovereignty_attestations'];
     $incomplete = [];
 
     foreach (Schema::getTableListing(schemaQualified: false) as $table) {

@@ -116,6 +116,15 @@ return [
             'write' => $finance,
             'grants' => ['read' => ['kpi.*'], 'write' => ['kpi.*']],
         ],
+        // Data residency, sovereignty and BYOK/HYOK (Mod 381). sovereignty_policy (sovereignty.policy.read / .manage): owners and
+        // administrators (DPO, CISO) read the posture and enforce the residency policy; sovereignty_byok (sovereignty.byok.manage):
+        // configure and rotate the customer-managed key and read the KMS log; sovereignty_killswitch (sovereignty.byok.killswitch):
+        // the emergency suspension and crypto-shredding, owners only (the handler also asks for a step-up MFA code);
+        // sovereignty_attestation (sovereignty.attestation.export): issue and download the signed certificate.
+        'sovereignty_policy' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['sovereignty.policy.read', 'sovereignty.*'], 'write' => ['sovereignty.policy.manage', 'sovereignty.*']]],
+        'sovereignty_byok' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['sovereignty.byok.manage', 'sovereignty.*'], 'write' => ['sovereignty.byok.manage', 'sovereignty.*']]],
+        'sovereignty_killswitch' => ['read' => ['owner'], 'write' => ['owner'], 'grants' => ['read' => ['sovereignty.byok.killswitch'], 'write' => ['sovereignty.byok.killswitch']]],
+        'sovereignty_attestation' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['sovereignty.attestation.export', 'sovereignty.*'], 'write' => ['sovereignty.attestation.export', 'sovereignty.*']]],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
         // AI Services & Cognitive Automation Layer (Mod 093). ai_copilot (ai.copilot.use): every member asks the copilot and drafts
         // messages, each answer limited to what the caller may read; ai_review (ai.suggestions.review): the finance and sales teams

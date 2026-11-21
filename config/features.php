@@ -45,6 +45,7 @@ return [
         'ocr_extraction' => env('FEATURE_MODULE_OCR_EXTRACTION'),
         'kpi_dashboards' => env('FEATURE_MODULE_KPI_DASHBOARDS'),
         'ai_cognitive' => env('FEATURE_MODULE_AI_COGNITIVE'),
+        'data_residency' => env('FEATURE_MODULE_DATA_RESIDENCY'),
         'leases' => env('FEATURE_MODULE_LEASES'),
         'retail' => env('FEATURE_MODULE_RETAIL'),
         'hospitality' => env('FEATURE_MODULE_HOSPITALITY'),
