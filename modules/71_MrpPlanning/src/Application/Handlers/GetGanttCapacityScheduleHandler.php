@@ -79,7 +79,7 @@ final class GetGanttCapacityScheduleHandler
                         'item_code' => $proposal?->item?->item_code,
                         'item_name' => $proposal?->item?->name,
                         'proposal_status' => $proposal?->status->value,
-                        'exception_messages' => $proposal?->exception_messages ?? [],
+                        'exception_messages' => (array) $proposal?->exception_messages,
                         'operation_sequence' => $block->operation_sequence,
                         'start_date' => CarbonImmutable::parse($block->start_date)->toDateString(),
                         'end_date' => CarbonImmutable::parse($block->end_date)->toDateString(),

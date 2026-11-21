@@ -47,7 +47,7 @@ final class ReleaseGateway implements ReleaseGatewayInterface
             'created_by' => Str::isUuid($requestorUserId) ? $requestorUserId : null,
         ]);
 
-        foreach (array_values($lines) as $index => $line) {
+        foreach ($lines as $index => $line) {
             PurchaseRequisitionLine::create([
                 'tenant_id' => $tenantId,
                 'purchase_requisition_id' => $requisition->id,

@@ -37,7 +37,7 @@ it('detects a cycle and reports the path instead of looping', function (): void 
 
     try {
         (new LowLevelCodeCalculator)->calculate($items);
-        $this->fail('Expected a cycle');
+        throw new LogicException('Expected a cycle');
     } catch (BomCycleException $exception) {
         expect($exception->path)->toBe(['a', 'b', 'c', 'a'])->and($exception->getMessage())->toContain('a -> b -> c -> a');
     }

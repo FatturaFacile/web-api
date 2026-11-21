@@ -142,16 +142,16 @@ final class FirmAndReleaseMrpProposalsHandler
             $groups[in_array((string) $supplier, $known, true) ? (string) $supplier : ''][] = $proposal;
         }
 
-        $run = $proposals === [] ? null : MrpRunExecution::query()->where('tenant_id', $command->tenantId)->whereKey($proposals[0]->mrp_run_id)->first();
+        $runCode = $proposals === [] ? '' : (string) MrpRunExecution::query()->where('tenant_id', $command->tenantId)->whereKey($proposals[0]->mrp_run_id)->value('run_code');
         foreach ($groups as $supplier => $group) {
             $lines = [];
-            $required = null;
+            $required = CarbonImmutable::parse($group[0]->need_by_date);
             foreach ($group as $proposal) {
                 $item = $items[(string) $proposal->mfg_item_id];
                 $lines[] = ['description' => $item->item_code.' '.$item->name, 'quantity' => (string) $proposal->suggested_order_qty, 'uom' => $item->uom, 'unit_price' => Money::of($item->standard_cost), 'supplier_id' => $supplier !== '' ? $supplier : null];
-                $required = $required === null || $proposal->need_by_date < $required ? CarbonImmutable::parse($proposal->need_by_date) : $required;
+                $required = $proposal->need_by_date < $required ? CarbonImmutable::parse($proposal->need_by_date) : $required;
             }
-            $id = $this->gateway->createPurchaseRequisition($command->tenantId, (string) $command->userId, 'MRP '.($run?->run_code ?? ''), $required ?? CarbonImmutable::today(), $lines, 'Released from MRP proposals');
+            $id = $this->gateway->createPurchaseRequisition($command->tenantId, (string) $command->userId, 'MRP '.$runCode, $required, $lines, 'Released from MRP proposals');
             $requisitions[] = $id;
             foreach ($group as $proposal) {
                 $this->markReleased($proposal, 'purchase_requisition', $id);

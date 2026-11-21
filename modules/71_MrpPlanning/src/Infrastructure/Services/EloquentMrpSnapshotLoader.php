@@ -85,7 +85,7 @@ final class EloquentMrpSnapshotLoader implements MrpSnapshotLoaderInterface
             $bom = $this->boms->effectiveBomFor($item, $date);
             $routing = $this->routings->effectiveRoutingFor($item, $date);
             $operations = [];
-            foreach ($routing?->operations ?? [] as $operation) {
+            foreach ($routing === null ? [] : $routing->operations as $operation) {
                 $operations[] = new RoutingOperation((int) $operation->sequence, (string) $operation->work_center_id, Money::of($operation->setup_time_minutes), Money::of($operation->run_time_minutes_per_unit), Money::of($operation->teardown_time_minutes));
                 $workCenterIds[(string) $operation->work_center_id] = true;
             }
@@ -106,12 +106,12 @@ final class EloquentMrpSnapshotLoader implements MrpSnapshotLoaderInterface
                 onHand: $stock[$id]['on_hand'] ?? '0',
                 allocated: $stock[$id]['allocated'] ?? '0',
                 scrapPct: Money::of($item->scrap_rate),
-                lotRule: $parameter?->lot_sizing_rule ?? $this->defaultLotRule($item),
+                lotRule: $parameter === null ? $this->defaultLotRule($item) : $parameter->lot_sizing_rule,
                 moq: Money::of($item->min_lot_size),
                 multiple: Money::of($item->lot_size_multiple),
                 eoq: Money::of($parameter?->eoq_quantity),
-                fixedDays: (int) ($parameter?->fixed_days_of_supply ?? 0),
-                supplierId: $parameter?->supplier_id ?? ($country !== null ? 'country:'.$country : null),
+                fixedDays: $parameter === null ? 0 : $parameter->fixed_days_of_supply,
+                supplierId: $parameter !== null && $parameter->supplier_id !== null ? $parameter->supplier_id : ($country !== null ? 'country:'.$country : null),
                 supplierCountry: $country,
                 customsDays: $parameter?->customs_clearance_days,
                 bomVersionId: $bom?->id,
@@ -331,7 +331,7 @@ final class EloquentMrpSnapshotLoader implements MrpSnapshotLoaderInterface
 
             $start = CarbonImmutable::parse($order->planned_start_date);
             if ($order->status === 'planned') {
-                $bom = $order->bom_id !== null ? MfgBom::query()->find($order->bom_id) : null;
+                $bom = MfgBom::query()->find($order->bom_id);
                 foreach ($bom instanceof MfgBom ? $this->collapse($bom, $all, $date) : [] as $line) {
                     if ($items->has($line->childItemId)) {
                         $demands[] = new DemandLine(DemandSourceType::ProductionOrder, (string) $order->id, $line->childItemId, $start, Money::qty(Money::mul($remaining, Money::mul($line->quantityPer, Money::add('1', Money::div($line->scrapPct, '100'))))));
@@ -488,7 +488,7 @@ final class EloquentMrpSnapshotLoader implements MrpSnapshotLoaderInterface
     {
         $keys = [];
         foreach ($items as $item) {
-            if ($item->supplierId !== null && strtoupper((string) $item->supplierCountry) === $country) {
+            if (strtoupper((string) $item->supplierCountry) === $country) {
                 $keys[$item->supplierId] = $item->supplierId;
             }
         }

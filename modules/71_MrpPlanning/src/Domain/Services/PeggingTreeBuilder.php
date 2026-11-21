@@ -48,7 +48,7 @@ final class PeggingTreeBuilder
     }
 
     /**
-     * @param  array<string, array<string, mixed>>  $nodes
+     * @param  array<string, array{id: string, item_id: string, item_code: string|null, item_name: string|null, proposal_type: string, status: string, quantity: string, need_by_date: string|null, pegging: list<array{type: string, id: string, quantity: string}>}>  $nodes
      * @param  array<string, true>  $path
      * @param  list<array{type: string, id: string, quantity: string}>  $roots
      * @return list<array<string, mixed>>
