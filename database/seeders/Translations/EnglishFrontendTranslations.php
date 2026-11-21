@@ -3864,6 +3864,7 @@ final class EnglishFrontendTranslations
             'NAV.HR_SELF_SERVICE' => 'Employee portal',
             'NAV.HR_SHIFTS' => 'Shift planning',
             'NAV.HR_SHORT_TIME' => 'Short-time work and bad weather',
+            'NAV.HR_ITALIAN_PAYROLL' => 'Payroll closing (consultant)',
             'NAV.HR_TALENT' => 'Talent and training',
             'NAV.HR_GOALS' => 'Goals and OKR',
             'NAV.HR_OFFBOARDING' => 'Offboarding',
