@@ -23188,6 +23188,9 @@ CREATE TABLE "putaway_rules"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "abc_class" varchar,
+  "temperature_control" varchar,
+  "packaging_unit" varchar,
   foreign key("target_bin_id") references "warehouse_bins"("id") on delete set null on update no action,
   foreign key("target_zone_id") references "warehouse_zones"("id") on delete set null on update no action,
   foreign key("category_id") references "stock_item_categories"("id") on delete cascade on update no action,
@@ -28949,6 +28952,17 @@ CREATE TABLE "warehouse_bins"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "shelf_code" varchar,
+  "coord_x" numeric,
+  "coord_y" numeric,
+  "coord_z" numeric,
+  "length_cm" numeric,
+  "width_cm" numeric,
+  "height_cm" numeric,
+  "allow_mixed_skus" tinyint(1) not null default '1',
+  "allow_mixed_lots" tinyint(1) not null default '1',
+  "block_reason" varchar,
+  "full_path_code" varchar,
   foreign key("warehouse_rack_id") references "warehouse_racks"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -28996,6 +29010,8 @@ CREATE TABLE "warehouse_zones"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "temperature_control" varchar not null default 'ambient',
+  "security_level" varchar,
   foreign key("warehouse_id") references "warehouses"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -41675,6 +41691,9 @@ CREATE INDEX "kpi_threshold_alert_logs_tenant_id_kpi_code_status_index" on "kpi_
   "kpi_code",
   "status"
 );
+CREATE INDEX "warehouse_bins_full_path_code_index" on "warehouse_bins"(
+  "full_path_code"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -42077,3 +42096,4 @@ INSERT INTO migrations VALUES(398,'2027_12_13_000100_add_blind_indexes_to_contac
 INSERT INTO migrations VALUES(399,'2027_12_13_000200_create_offline_audit_entries_table',11);
 INSERT INTO migrations VALUES(400,'2027_12_16_000100_create_ai_cognitive_tables',12);
 INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_kpi_dashboard_tables',13);
+INSERT INTO migrations VALUES(402,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',14);

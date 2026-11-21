@@ -34,6 +34,15 @@ final class StoreWarehouseLocationRequest extends FormRequest
             'max_volume_cbm' => ['nullable', 'numeric', 'min:0'],
             'max_quantity' => ['nullable', 'numeric', 'gt:0'],
             'bin_type' => ['nullable', 'string', Rule::in(WarehouseBin::BIN_TYPES)],
+            'shelf_code' => ['nullable', 'string', 'max:50'],
+            'coord_x' => ['nullable', 'numeric'],
+            'coord_y' => ['nullable', 'numeric'],
+            'coord_z' => ['nullable', 'numeric'],
+            'length_cm' => ['nullable', 'numeric', 'gt:0'],
+            'width_cm' => ['nullable', 'numeric', 'gt:0'],
+            'height_cm' => ['nullable', 'numeric', 'gt:0'],
+            'allow_mixed_skus' => ['nullable', 'boolean'],
+            'allow_mixed_lots' => ['nullable', 'boolean'],
         ];
     }
 }
