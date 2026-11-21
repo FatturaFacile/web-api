@@ -184,6 +184,7 @@ final class ProcurementConfigurationController extends Controller
             'price_tolerance_amount' => (string) $settings->price_tolerance_amount,
             'block_invoice_on_mismatch' => (bool) $settings->block_invoice_on_mismatch,
             'landed_cost_clearing_account_code' => (string) $settings->landed_cost_clearing_account_code,
+            'budget_enforcement_policy' => (string) ($settings->budget_enforcement_policy ?? 'warning'),
         ];
     }
 

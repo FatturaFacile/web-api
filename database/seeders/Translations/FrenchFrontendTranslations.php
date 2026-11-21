@@ -3864,6 +3864,7 @@ final class FrenchFrontendTranslations
             'NAV.HR_SELF_SERVICE' => 'Espace employé',
             'NAV.HR_SHIFTS' => 'Planification des horaires',
             'NAV.HR_SHORT_TIME' => 'Réduction de l’horaire de travail et intempéries',
+            'NAV.HR_ITALIAN_PAYROLL' => 'Clôture de la paie (consultant)',
             'NAV.HR_TALENT' => 'Talents et formation',
             'NAV.HR_GOALS' => 'Objectifs et OKR',
             'NAV.HR_OFFBOARDING' => 'Départs (offboarding)',

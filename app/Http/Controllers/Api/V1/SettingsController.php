@@ -311,26 +311,6 @@ class SettingsController extends Controller
         return $this->successResponse(data: $memberships->members($this->tenantContext->getTenant()), message: 'Tenant users retrieved');
     }
 
-    #[OA\Get(
-        path: '/api/v1/settings/roles',
-        operationId: 'getSystemRoles',
-        description: 'List system role definitions and privileges.',
-        summary: 'List system roles',
-        security: [['bearerAuth' => []]],
-        tags: ['Settings'],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Roles retrieved successfully',
-                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
-            ),
-            new OA\Response(
-                response: 401,
-                description: 'Unauthenticated',
-                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
-            ),
-        ]
-    )]
     public function roles(): JsonResponse
     {
         $roles = [

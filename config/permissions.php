@@ -54,7 +54,7 @@ return [
             'write' => $finance,
             'grants' => ['read' => ['gl.*', 'gl.journals.post'], 'write' => ['gl.*']],
         ],
-        'procurement' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'purchasing', 'procurement_manager', 'member']],
+        'procurement' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'purchasing', 'procurement_manager', 'department_manager', 'division_director', 'cfo', 'ceo', 'member']],
         // Valuation management and the inventory book export are granted one by one on the membership (see InventoryPermissionChecker), whatever the role.
         'inventory' => [
             'read' => $anyMember,
@@ -121,6 +121,15 @@ return [
         // layouts (KpiAccess narrows each KPI by role, legal entity, cost center and compensation grant); kpi_dashboards_admin:
         // finance and managers configure threshold alerts and refresh the analytical cubes.
         'kpi_dashboards' => ['read' => $anyMember, 'write' => $anyMember],
+        // Italian payroll pre-processing (Mod 077): attendance validation, consultant export, payslip import, accounting import and
+        // SEPA salaries are pay data of every employee (owners, administrators or payroll.* on the membership, like payroll).
+        // italian_payroll_self: employees open their own payslips and CU; the handler matches the signed-in user to the employee.
+        'italian_payroll' => [
+            'read' => $managers,
+            'write' => $managers,
+            'grants' => ['read' => ['payroll.read', 'payroll.write', 'payroll.*'], 'write' => ['payroll.write', 'payroll.*']],
+        ],
+        'italian_payroll_self' => ['read' => $anyMember, 'write' => $anyMember],
         'kpi_dashboards_admin' => [
             'read' => $financeReaders,
             'write' => $finance,
@@ -141,6 +150,14 @@ return [
         'sovereignty_attestation' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['sovereignty.attestation.export', 'sovereignty.*'], 'write' => ['sovereignty.attestation.export', 'sovereignty.*']]],
         // Swiss QR-bill, ISO 20022 and country fiscal documents (Issue #83): finance issues and reads them.
         'swiss_fiscal' => ['read' => $financeReaders, 'write' => $finance],
+        // Workforce shift planning (Mod 073). shift_planning: HR, production and managers plan, publish and lock rosters, see the
+        // labour cost and decide swaps; shift_planning_self: every employee reads the own agenda, claims open shifts and swaps.
+        'shift_planning' => [
+            'read' => ['owner', 'admin', 'hr', 'production'],
+            'write' => ['owner', 'admin', 'hr', 'production'],
+            'grants' => ['read' => ['shift_planning.*'], 'write' => ['shift_planning.*']],
+        ],
+        'shift_planning_self' => ['read' => $anyMember, 'write' => $anyMember],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
         // Workplace health, safety and training (Mod 099). hse: the operational roles read the compliance matrix, the clearance verdict
         // and the physician judgments (outcome and prescriptions); the HSE team (hr, hse, admins) writes certificates, PPE and incidents.

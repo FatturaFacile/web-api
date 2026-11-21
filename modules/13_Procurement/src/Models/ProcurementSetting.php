@@ -18,6 +18,7 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
  * @property string $price_tolerance_amount
  * @property bool $block_invoice_on_mismatch
  * @property string $landed_cost_clearing_account_code
+ * @property string|null $budget_enforcement_policy
  */
 final class ProcurementSetting extends BaseEnterpriseModel
 {

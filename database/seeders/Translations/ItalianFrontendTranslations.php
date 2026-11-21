@@ -3864,6 +3864,7 @@ final class ItalianFrontendTranslations
             'NAV.HR_SELF_SERVICE' => 'Area dipendente',
             'NAV.HR_SHIFTS' => 'Pianificazione turni',
             'NAV.HR_SHORT_TIME' => 'Lavoro ridotto e intemperie',
+            'NAV.HR_ITALIAN_PAYROLL' => 'Chiusura paghe (consulente)',
             'NAV.HR_TALENT' => 'Talenti e formazione',
             'NAV.HR_GOALS' => 'Obiettivi e OKR',
             'NAV.HR_OFFBOARDING' => 'Uscite (offboarding)',

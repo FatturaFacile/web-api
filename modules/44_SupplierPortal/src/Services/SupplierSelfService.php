@@ -77,7 +77,7 @@ final readonly class SupplierSelfService
 
         return Rfq::query()
             ->whereIn('id', $invitations->keys())
-            ->whereIn('status', ['issued', 'awarded', 'cancelled'])
+            ->whereIn('status', ['issued', 'published', 'bidding_open', 'under_evaluation', 'awarded', 'cancelled', 'expired'])
             ->orderByDesc('response_deadline')
             ->get()
             ->map(fn (Rfq $rfq): array => $this->rfqSummary($rfq, $invitations->get($rfq->id), $supplier));
@@ -89,7 +89,7 @@ final readonly class SupplierSelfService
     public function rfq(Supplier $supplier, string $rfqId): array
     {
         $invitation = RfqSupplier::query()->where('supplier_id', $supplier->id)->where('rfq_id', $rfqId)->firstOrFail();
-        $rfq = Rfq::query()->whereKey($rfqId)->whereIn('status', ['issued', 'awarded', 'cancelled'])->firstOrFail();
+        $rfq = Rfq::query()->whereKey($rfqId)->whereIn('status', ['issued', 'published', 'bidding_open', 'under_evaluation', 'awarded', 'cancelled', 'expired'])->firstOrFail();
 
         return [
             ...$this->rfqSummary($rfq, $invitation, $supplier),
@@ -137,7 +137,7 @@ final readonly class SupplierSelfService
             $rfq = Rfq::query()->whereKey($rfqId)->lockForUpdate()->firstOrFail();
             $invitation = RfqSupplier::query()->where('rfq_id', $rfq->id)->where('supplier_id', $supplier->id)->lockForUpdate()->firstOrFail();
 
-            if ($rfq->status !== 'issued' || $invitation->status !== 'invited') {
+            if (! in_array($rfq->status, ['issued', 'published', 'bidding_open'], true) || ! in_array($invitation->status, ['invited', 'pending', 'sent', 'viewed'], true)) {
                 throw new BusinessRuleException('This request can no longer be declined.');
             }
 
@@ -192,7 +192,10 @@ final readonly class SupplierSelfService
      */
     private function rfqSummary(Rfq $rfq, ?RfqSupplier $invitation, Supplier $supplier): array
     {
-        $open = $rfq->status === 'issued' && $rfq->response_deadline->toDateString() >= now()->toDateString();
+        $open = in_array($rfq->status, ['issued', 'published', 'bidding_open'], true)
+            && ($rfq->submission_deadline !== null
+                ? $rfq->submission_deadline->gte(now('UTC'))
+                : $rfq->response_deadline->toDateString() >= now()->toDateString());
 
         return [
             'id' => (string) $rfq->id,
@@ -202,7 +205,7 @@ final readonly class SupplierSelfService
             'currency' => (string) $rfq->currency,
             'response_deadline' => $rfq->response_deadline->toDateString(),
             'invitation_status' => $invitation?->status,
-            'can_quote' => $open && $invitation?->status === 'invited' && $this->canQuote($supplier),
+            'can_quote' => $open && in_array((string) $invitation?->status, ['invited', 'pending', 'sent', 'viewed'], true) && $this->canQuote($supplier),
         ];
     }
 

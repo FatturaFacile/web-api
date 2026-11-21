@@ -20,6 +20,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $uom
  * @property string $estimated_unit_price
  * @property string $estimated_total_price
+ * @property string $quantity_quoted
+ * @property string $quantity_ordered
+ * @property string $sourcing_status
  * @property string|null $suggested_supplier_id
  * @property SupplierCatalog|null $catalog
  */
@@ -32,6 +35,8 @@ final class PurchaseRequisitionLine extends BaseEnterpriseModel
         return [
             'line_number' => 'integer',
             'quantity_requested' => 'decimal:4',
+            'quantity_quoted' => 'decimal:4',
+            'quantity_ordered' => 'decimal:4',
             'estimated_unit_price' => 'decimal:4',
             'estimated_total_price' => 'decimal:2',
         ];

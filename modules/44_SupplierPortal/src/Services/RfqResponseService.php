@@ -30,10 +30,10 @@ final readonly class RfqResponseService
         return Rfq::query()
             ->withCount([
                 'invitedSuppliers as invited_count',
-                'invitedSuppliers as responded_count' => static fn ($query) => $query->where('status', 'responded'),
+                'invitedSuppliers as responded_count' => static fn ($query) => $query->whereIn('status', ['responded', 'bid_submitted', 'awarded_full', 'awarded_partial', 'not_awarded']),
                 'invitedSuppliers as declined_count' => static fn ($query) => $query->where('status', 'declined'),
             ])
-            ->whereIn('status', $status !== null ? [$status] : ['issued', 'awarded', 'cancelled'])
+            ->whereIn('status', $status !== null ? [$status] : ['issued', 'published', 'bidding_open', 'under_evaluation', 'awarded', 'cancelled', 'expired'])
             ->orderByDesc('response_deadline')
             ->limit(200)
             ->get()
@@ -96,6 +96,9 @@ final readonly class RfqResponseService
 
     public function isOpen(Rfq $rfq): bool
     {
-        return $rfq->status === 'issued' && $rfq->response_deadline->toDateString() >= now()->toDateString();
+        return in_array($rfq->status, ['issued', 'published', 'bidding_open'], true)
+            && ($rfq->submission_deadline !== null
+                ? $rfq->submission_deadline->gte(now('UTC'))
+                : $rfq->response_deadline->toDateString() >= now()->toDateString());
     }
 }

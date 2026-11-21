@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\Procurement\PurchaseRequisitionController as Mod044PurchaseRequisitionController;
+use App\Http\Controllers\Api\V1\Procurement\RfqAttachmentController;
+use App\Http\Controllers\Api\V1\Procurement\RfqController;
 use Illuminate\Support\Facades\Route;
 use Modules\Procurement\Http\Controllers\FrameworkAgreementController;
 use Modules\Procurement\Http\Controllers\InvoiceApprovalController;
@@ -15,7 +18,6 @@ use Modules\Procurement\Http\Controllers\PurchaseReceiptController;
 use Modules\Procurement\Http\Controllers\PurchaseRequisitionController;
 use Modules\Procurement\Http\Controllers\PurchaseReturnController;
 use Modules\Procurement\Http\Controllers\PurchaseSuggestionController;
-use Modules\Procurement\Http\Controllers\RfqController;
 use Modules\Procurement\Http\Controllers\SupplierCatalogController;
 use Modules\Procurement\Http\Controllers\SupplierContractController;
 use Modules\Procurement\Http\Controllers\SupplierController;
@@ -92,15 +94,24 @@ Route::prefix('api/v1/procurement')
         Route::get('suppliers/{id}/performance', [SupplierQualificationController::class, 'performance'])->whereUuid('id')->name('procurement.suppliers.performance');
         Route::post('suppliers/{id}/evaluations/compute', [SupplierQualificationController::class, 'computeEvaluation'])->whereUuid('id')->name('procurement.suppliers.evaluations.compute');
 
-        // 11. Requests for quotation
+        // 11. Requests for quotation (Mod 045)
         Route::get('rfqs', [RfqController::class, 'index'])->name('procurement.rfqs.index');
         Route::post('rfqs', [RfqController::class, 'store'])->name('procurement.rfqs.store');
-        Route::get('rfqs/{id}', [RfqController::class, 'show'])->whereUuid('id')->name('procurement.rfqs.show');
-        Route::post('rfqs/{id}/issue', [RfqController::class, 'issue'])->whereUuid('id')->name('procurement.rfqs.issue');
-        Route::post('rfqs/{id}/quotes', [RfqController::class, 'storeQuote'])->whereUuid('id')->name('procurement.rfqs.quotes.store');
-        Route::get('rfqs/{id}/comparison', [RfqController::class, 'comparison'])->whereUuid('id')->name('procurement.rfqs.comparison');
-        Route::post('rfqs/{id}/award', [RfqController::class, 'award'])->whereUuid('id')->name('procurement.rfqs.award');
-        Route::post('rfqs/{id}/cancel', [RfqController::class, 'cancel'])->whereUuid('id')->name('procurement.rfqs.cancel');
+        Route::post('rfqs/from-requisitions', [RfqController::class, 'fromRequisitions'])->name('procurement.rfqs.from-requisitions');
+        Route::get('rfqs/{rfq}', [RfqController::class, 'show'])->whereUuid('rfq')->name('procurement.rfqs.show');
+        Route::put('rfqs/{rfq}', [RfqController::class, 'update'])->whereUuid('rfq')->name('procurement.rfqs.update');
+        Route::post('rfqs/{rfq}/publish', [RfqController::class, 'publish'])->whereUuid('rfq')->name('procurement.rfqs.publish');
+        Route::post('rfqs/{rfq}/issue', [RfqController::class, 'issue'])->whereUuid('rfq')->name('procurement.rfqs.issue');
+        Route::post('rfqs/{rfq}/extend-deadline', [RfqController::class, 'extendDeadline'])->whereUuid('rfq')->name('procurement.rfqs.extend-deadline');
+        Route::post('rfqs/{rfq}/quotes', [RfqController::class, 'storeQuote'])->whereUuid('rfq')->name('procurement.rfqs.quotes.store');
+        Route::get('rfqs/{rfq}/comparison-matrix', [RfqController::class, 'comparisonMatrix'])->whereUuid('rfq')->name('procurement.rfqs.comparison-matrix');
+        Route::get('rfqs/{rfq}/comparison', [RfqController::class, 'comparison'])->whereUuid('rfq')->name('procurement.rfqs.comparison');
+        Route::post('rfqs/{rfq}/award', [RfqController::class, 'award'])->whereUuid('rfq')->name('procurement.rfqs.award');
+        Route::post('rfqs/{rfq}/cancel', [RfqController::class, 'cancel'])->whereUuid('rfq')->name('procurement.rfqs.cancel');
+        Route::post('rfqs/{rfq}/attachments', [RfqAttachmentController::class, 'store'])->whereUuid('rfq')->name('procurement.rfqs.attachments.store');
+        Route::patch('rfqs/{rfq}/attachments/{attachment}', [RfqAttachmentController::class, 'update'])->whereUuid(['rfq', 'attachment'])->name('procurement.rfqs.attachments.update');
+        Route::get('rfqs/{rfq}/attachments/{attachment}/download', [RfqAttachmentController::class, 'download'])->whereUuid(['rfq', 'attachment'])->name('procurement.rfqs.attachments.download');
+        Route::delete('rfqs/{rfq}/attachments/{attachment}', [RfqAttachmentController::class, 'destroy'])->whereUuid(['rfq', 'attachment'])->name('procurement.rfqs.attachments.destroy');
 
         // 12. Framework agreements and call-offs
         Route::get('contracts/{id}/lines', [FrameworkAgreementController::class, 'lines'])->whereUuid('id')->name('procurement.contracts.lines.index');
@@ -134,6 +145,45 @@ Route::prefix('api/v1/procurement')
         // 17. Supplier Invoice Approval
         Route::get('supplier-invoices/{id}/approval', [InvoiceApprovalController::class, 'show'])->whereUuid('id')->name('procurement.invoice-approval.show');
         Route::post('supplier-invoices/{id}/submit-approval', [InvoiceApprovalController::class, 'submit'])->whereUuid('id')->name('procurement.invoice-approval.submit');
+
+        // 18. Mod 044 Purchase Requisitions (RDA / PR) — Core & Conversion
+        Route::get('purchase-requisitions', [Mod044PurchaseRequisitionController::class, 'index'])->name('procurement.mod044-requisitions.index');
+        Route::post('purchase-requisitions', [Mod044PurchaseRequisitionController::class, 'store'])->name('procurement.mod044-requisitions.store');
+        Route::post('purchase-requisitions/convert', [Mod044PurchaseRequisitionController::class, 'convert'])->name('procurement.mod044-requisitions.convert');
+        Route::get('purchase-requisitions/{id}', [Mod044PurchaseRequisitionController::class, 'show'])->whereUuid('id')->name('procurement.mod044-requisitions.show');
+        Route::put('purchase-requisitions/{id}', [Mod044PurchaseRequisitionController::class, 'update'])->whereUuid('id')->name('procurement.mod044-requisitions.update');
+        Route::delete('purchase-requisitions/{id}', [Mod044PurchaseRequisitionController::class, 'destroy'])->whereUuid('id')->name('procurement.mod044-requisitions.destroy');
+        Route::post('purchase-requisitions/{id}/submit', [Mod044PurchaseRequisitionController::class, 'submit'])->whereUuid('id')->name('procurement.mod044-requisitions.submit');
+    });
+
+// Mod 044 live budget preview (read-only: allowed for every tenant member with procurement.read)
+Route::prefix('api/v1/procurement')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:procurement,read'])
+    ->group(function (): void {
+        Route::post('purchase-requisitions/budget-preview', [Mod044PurchaseRequisitionController::class, 'budgetPreview'])
+            ->name('procurement.mod044-requisitions.budget-preview');
+    });
+
+// Mod 044 internal approval workflow actions & pending inbox (authorized via workflow + delegation matrix + four-eyes)
+Route::prefix('api/v1/procurement')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:workflow'])
+    ->group(function (): void {
+        Route::get('purchase-requisitions/pending-approvals', [Mod044PurchaseRequisitionController::class, 'pendingApprovals'])
+            ->name('procurement.mod044-requisitions.pending-approvals');
+        Route::post('purchase-requisitions/{id}/approve', [Mod044PurchaseRequisitionController::class, 'approve'])
+            ->whereUuid('id')
+            ->name('procurement.mod044-requisitions.approve');
+        Route::post('purchase-requisitions/{id}/reject', [Mod044PurchaseRequisitionController::class, 'reject'])
+            ->whereUuid('id')
+            ->name('procurement.mod044-requisitions.reject');
+    });
+
+// Mod 044 signed single-use 1-click Email/Push approval endpoint
+Route::prefix('api/v1/procurement')
+    ->middleware(['api', 'locale', 'throttle:30,1'])
+    ->group(function (): void {
+        Route::post('purchase-requisitions/one-click-action', [Mod044PurchaseRequisitionController::class, 'oneClickAction'])
+            ->name('procurement.mod044-requisitions.one-click-action');
     });
 
 // The rules decide who can release a payment, so they belong to the finance roles.

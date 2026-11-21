@@ -3864,6 +3864,7 @@ final class GermanFrontendTranslations
             'NAV.HR_SELF_SERVICE' => 'Mitarbeiterportal',
             'NAV.HR_SHIFTS' => 'Schichtplanung',
             'NAV.HR_SHORT_TIME' => 'Kurzarbeit und Schlechtwetter',
+            'NAV.HR_ITALIAN_PAYROLL' => 'Lohnabschluss (Berater)',
             'NAV.HR_TALENT' => 'Talente und Weiterbildung',
             'NAV.HR_GOALS' => 'Ziele und OKR',
             'NAV.HR_OFFBOARDING' => 'Austritte (Offboarding)',

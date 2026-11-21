@@ -4,7 +4,35 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Providers;
 
+use App\Application\Procurement\Rfq\Services\RfqScoreSynchronizer;
+use App\Domain\Procurement\PurchaseRequisition\Contracts\ApprovalWorkflowGatewayInterface;
+use App\Domain\Procurement\PurchaseRequisition\Contracts\BudgetAvailabilityGatewayInterface;
+use App\Domain\Procurement\PurchaseRequisition\Contracts\CatalogItemResolverInterface;
+use App\Domain\Procurement\PurchaseRequisition\Contracts\ProcurementConversionGatewayInterface;
+use App\Domain\Procurement\PurchaseRequisition\Contracts\RequisitionNotificationGatewayInterface;
+use App\Domain\Procurement\PurchaseRequisition\Models\PurchaseRequisition as Mod044PurchaseRequisition;
+use App\Domain\Procurement\PurchaseRequisition\Services\DelegationThresholdDomainService;
+use App\Domain\Procurement\PurchaseRequisition\Services\RequisitionTotalsDomainService;
+use App\Domain\Procurement\Rfq\Contracts\ExchangeRateResolverInterface;
+use App\Domain\Procurement\Rfq\Contracts\PurchaseOrderAwardCreatorInterface;
+use App\Domain\Procurement\Rfq\Contracts\RequisitionSourcingAdapterInterface;
+use App\Domain\Procurement\Rfq\Contracts\SupplierRatingResolverInterface;
+use App\Domain\Procurement\Rfq\Models\RequestForQuotation;
+use App\Domain\Procurement\Rfq\Services\BidScoringDomainService;
+use App\Infrastructure\Procurement\PurchaseRequisition\Services\CatalogItemResolverAdapter;
+use App\Infrastructure\Procurement\PurchaseRequisition\Services\Mod006ApprovalWorkflowAdapter;
+use App\Infrastructure\Procurement\PurchaseRequisition\Services\Mod019BudgetAvailabilityAdapter;
+use App\Infrastructure\Procurement\PurchaseRequisition\Services\Mod045Mod046ConversionAdapter;
+use App\Infrastructure\Procurement\PurchaseRequisition\Services\RequisitionNotificationAdapter;
+use App\Infrastructure\Procurement\Rfq\Services\CreatePurchaseOrderFromAwardAction;
+use App\Infrastructure\Procurement\Rfq\Services\ExchangeRateResolver;
+use App\Infrastructure\Procurement\Rfq\Services\Mod044RequisitionAdapter;
+use App\Infrastructure\Procurement\Rfq\Services\RfqAttachmentStorageService;
+use App\Infrastructure\Procurement\Rfq\Services\RfqSupplierRecipientResolver;
+use App\Infrastructure\Procurement\Rfq\Services\SupplierScorecardRatingResolver;
 use App\Models\PassiveInvoice;
+use App\Policies\Mod044PurchaseRequisitionPolicy;
+use App\Policies\RfqPolicy;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -45,6 +73,7 @@ use Modules\Procurement\Listeners\WorkflowApprovalProcurementListener;
 use Modules\Procurement\Models\PurchaseOrder;
 use Modules\Procurement\Models\PurchaseReceipt;
 use Modules\Procurement\Models\PurchaseRequisition;
+use Modules\Procurement\Models\Rfq;
 use Modules\Procurement\Models\Supplier;
 use Modules\Procurement\Models\SupplierContract;
 use Modules\Procurement\Policies\PurchaseOrderPolicy;
@@ -90,6 +119,25 @@ final class ProcurementServiceProvider extends ServiceProvider
         $this->app->singleton(PurchaseSuggestionHandOffInterface::class, PurchaseSuggestionService::class);
         $this->app->singleton(ProcurementAuditLedgerService::class);
         $this->app->singleton(ProcurementSettingsService::class);
+
+        // Mod 045 RFQ Clean Architecture & CQRS bindings
+        $this->app->singleton(BidScoringDomainService::class);
+        $this->app->singleton(RfqScoreSynchronizer::class);
+        $this->app->singleton(RfqAttachmentStorageService::class);
+        $this->app->singleton(RfqSupplierRecipientResolver::class);
+        $this->app->singleton(RequisitionSourcingAdapterInterface::class, Mod044RequisitionAdapter::class);
+        $this->app->singleton(PurchaseOrderAwardCreatorInterface::class, CreatePurchaseOrderFromAwardAction::class);
+        $this->app->singleton(SupplierRatingResolverInterface::class, SupplierScorecardRatingResolver::class);
+        $this->app->singleton(ExchangeRateResolverInterface::class, ExchangeRateResolver::class);
+
+        // Mod 044 Purchase Requisition Clean Architecture & CQRS bindings
+        $this->app->singleton(RequisitionTotalsDomainService::class);
+        $this->app->singleton(DelegationThresholdDomainService::class);
+        $this->app->singleton(BudgetAvailabilityGatewayInterface::class, Mod019BudgetAvailabilityAdapter::class);
+        $this->app->singleton(ApprovalWorkflowGatewayInterface::class, Mod006ApprovalWorkflowAdapter::class);
+        $this->app->singleton(ProcurementConversionGatewayInterface::class, Mod045Mod046ConversionAdapter::class);
+        $this->app->singleton(RequisitionNotificationGatewayInterface::class, RequisitionNotificationAdapter::class);
+        $this->app->singleton(CatalogItemResolverInterface::class, CatalogItemResolverAdapter::class);
     }
 
     public function boot(): void
@@ -104,9 +152,12 @@ final class ProcurementServiceProvider extends ServiceProvider
         // Register Policies
         Gate::policy(Supplier::class, SupplierPolicy::class);
         Gate::policy(PurchaseRequisition::class, PurchaseRequisitionPolicy::class);
+        Gate::policy(Mod044PurchaseRequisition::class, Mod044PurchaseRequisitionPolicy::class);
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
         Gate::policy(PurchaseReceipt::class, PurchaseReceiptPolicy::class);
         Gate::policy(SupplierContract::class, SupplierContractPolicy::class);
+        Gate::policy(RequestForQuotation::class, RfqPolicy::class);
+        Gate::policy(Rfq::class, RfqPolicy::class);
 
         // Register Outbox Relaying for Domain Events
         Event::listen(SupplierCreatedEvent::class, DispatchOutboxOnProcurementEventListener::class);

@@ -17,6 +17,8 @@ use Illuminate\Support\Carbon;
  * @property int $line_number
  * @property string|null $supplier_catalog_id
  * @property string|null $supplier_contract_line_id
+ * @property string|null $rfq_line_id
+ * @property string|null $supplier_bid_line_id
  * @property string $description
  * @property string $quantity_ordered
  * @property string $quantity_received

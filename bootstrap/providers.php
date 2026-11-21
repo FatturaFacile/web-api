@@ -52,6 +52,7 @@ use Modules\Integrations\Providers\IntegrationsServiceProvider;
 use Modules\Intrastat\Providers\IntrastatServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
+use Modules\ItalianPayroll\Providers\ItalianPayrollServiceProvider;
 use Modules\KpiDashboards\Providers\KpiDashboardsServiceProvider;
 use Modules\LeaseAccounting\Providers\LeaseAccountingServiceProvider;
 use Modules\Logistics\Providers\LogisticsServiceProvider;
@@ -73,6 +74,7 @@ use Modules\Rebates\Providers\RebatesServiceProvider;
 use Modules\Returns\Providers\ReturnsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
+use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
 use Modules\Sustainability\Providers\SustainabilityServiceProvider;
@@ -169,8 +171,10 @@ return [
     OcrExtractionServiceProvider::class,
     AnalyticsDssServiceProvider::class,
     KpiDashboardsServiceProvider::class,
+    ItalianPayrollServiceProvider::class,
     QuotingServiceProvider::class,
     SwissFiscalServiceProvider::class,
+    ShiftPlanningServiceProvider::class,
     AiCognitiveServiceProvider::class,
     HseServiceProvider::class,
     DataResidencyServiceProvider::class,

@@ -124,6 +124,7 @@ final class HseController extends Controller
     }
 
     #[OA\Post(path: '/api/v1/hse/requirement-matrices', operationId: 'saveHseRequirementMatrix', summary: 'Create or update a requirement rule', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['HSE'], responses: [new OA\Response(response: 201, description: 'The rule')])]
+    #[OA\Put(path: '/api/v1/hse/requirement-matrices/{id}', operationId: 'updateHseRequirementMatrix', summary: 'Update a requirement rule', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['HSE'], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [new OA\Response(response: 200, description: 'The rule')])]
     public function saveMatrix(SaveRequirementMatrixRequest $request, SaveRequirementMatrixHandler $handler, ?string $id = null): JsonResponse
     {
         return $this->guarded(fn (): JsonResponse => $this->successResponse(new RequirementMatrixResource($handler->handle(new SaveRequirementMatrixCommand(

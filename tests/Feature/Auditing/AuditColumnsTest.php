@@ -29,7 +29,9 @@ test('every business table has the six audit columns', function (): void {
         // (the models refuse updates and deletes), so they carry no update or delete stamps.
         'core_byok_key_access_audit', 'core_cross_border_blocked_attempts', 'core_sovereignty_attestations',
         // Offline device audit log: append-only and hash-chained per device, so it carries no soft delete or user stamps.
-        'offline_audit_entries'];
+        'offline_audit_entries',
+        // Purchase requisition approval logs: append-only and immutable (the model refuses updates and deletes), so it carries no update or delete stamps.
+        'purchase_requisition_approval_logs'];
     $incomplete = [];
 
     foreach (Schema::getTableListing(schemaQualified: false) as $table) {

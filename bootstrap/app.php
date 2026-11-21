@@ -18,6 +18,7 @@ use App\Http\Middleware\MarkDeprecated;
 use App\Http\Middleware\NormalizeTenantInput;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\ValidateRfqInvitationToken;
 use App\Services\Auth\Sso\SsoBrowserBinding;
 use Enterprise\MultiTenant\Http\Middleware\EnsureModuleAccess;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -100,6 +101,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'audit.access' => AuditSensitiveAccess::class,
             'audit.permission' => EnsureAuditPermission::class,
             'portal.session' => EnsurePortalSession::class,
+            'rfq.invitation.token' => ValidateRfqInvitationToken::class,
         ]);
 
         $middleware->priority([

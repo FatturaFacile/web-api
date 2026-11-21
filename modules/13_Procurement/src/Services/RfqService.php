@@ -130,7 +130,7 @@ final readonly class RfqService
     public function recordQuote(Rfq $rfq, array $data): SupplierQuote
     {
         return DB::transaction(function () use ($rfq, $data): SupplierQuote {
-            $locked = $this->lockInStatus($rfq, ['issued']);
+            $locked = $this->lockInStatus($rfq, ['issued', 'published', 'bidding_open']);
             $invitation = RfqSupplier::query()->where('rfq_id', $locked->id)->where('supplier_id', $data['supplier_id'])->lockForUpdate()->first();
 
             if ($invitation === null) {
@@ -252,7 +252,7 @@ final readonly class RfqService
     public function award(Rfq $rfq, string $quoteId, ?string $userId, ?string $expectedDeliveryDate = null): PurchaseOrder
     {
         return DB::transaction(function () use ($rfq, $quoteId, $userId, $expectedDeliveryDate): PurchaseOrder {
-            $locked = $this->lockInStatus($rfq, ['issued']);
+            $locked = $this->lockInStatus($rfq, ['issued', 'published', 'bidding_open', 'under_evaluation']);
             $quote = SupplierQuote::query()->with('lines.rfqLine')->whereKey($quoteId)->where('rfq_id', $locked->id)->first();
 
             if ($quote === null) {
@@ -312,7 +312,7 @@ final readonly class RfqService
     public function cancel(Rfq $rfq): Rfq
     {
         return DB::transaction(function () use ($rfq): Rfq {
-            $locked = $this->lockInStatus($rfq, ['draft', 'issued']);
+            $locked = $this->lockInStatus($rfq, ['draft', 'issued', 'published', 'bidding_open', 'under_evaluation']);
             $locked->update(['status' => 'cancelled']);
 
             if ($locked->purchase_requisition_id !== null) {

@@ -74,6 +74,7 @@ class TwoFactorController extends Controller
             new OA\Response(response: 422, description: 'Wrong password', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
+    #[OA\Post(path: '/api/v1/auth/2fa/totp', operationId: 'enableTotpSecondFactor', description: 'Creates the TOTP secret of the signed-in user after a password confirmation.', summary: 'Start the authenticator-app enrolment', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Identity'], responses: [new OA\Response(response: 200, description: 'OK')])]
     public function enable(ConfirmedPasswordRequest $request): JsonResponse
     {
         /** @var User $user */
@@ -111,6 +112,7 @@ class TwoFactorController extends Controller
             new OA\Response(response: 422, description: 'Wrong code', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
+    #[OA\Post(path: '/api/v1/auth/2fa/totp/confirm', operationId: 'confirmTotpSecondFactor', description: 'Activates the TOTP second factor with the first valid code.', summary: 'Confirm the authenticator-app enrolment', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Identity'], responses: [new OA\Response(response: 200, description: 'OK')])]
     public function confirm(ConfirmTwoFactorRequest $request): JsonResponse
     {
         /** @var User $user */
@@ -201,6 +203,7 @@ class TwoFactorController extends Controller
             new OA\Response(response: 422, description: 'Wrong password or code', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
+    #[OA\Delete(path: '/api/v1/auth/2fa/totp', operationId: 'disableTotpSecondFactor', description: 'Removes the TOTP second factor of the signed-in user.', summary: 'Disable the authenticator-app second factor', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Identity'], responses: [new OA\Response(response: 200, description: 'OK')])]
     public function disable(DisableTwoFactorRequest $request): JsonResponse
     {
         /** @var User $user */

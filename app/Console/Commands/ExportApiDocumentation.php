@@ -38,6 +38,8 @@ class ExportApiDocumentation extends Command
         '/lookups/',
         '/v1/webhooks/',
         '/v1/portal/',
+        '/v1/public/',
+        '/v1/procurement/purchase-requisitions/one-click-action',
         '/documentation',
     ];
 

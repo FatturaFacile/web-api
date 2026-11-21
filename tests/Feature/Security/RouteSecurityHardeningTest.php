@@ -95,6 +95,8 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         // Machine feed: authenticated by a tenant API key instead of Sanctum, see Compliance\ApiKeyAndReportingTest.
         'api/v1/reporting',
         'api/v1/workflows/remote-approval',
+        // Mod 044 single-use 1-click Email/Push approval token endpoint: signed HMAC-SHA256 + hashed single-use token in approval_tokens selects tenant, throttled by IP.
+        'api/v1/procurement/purchase-requisitions/one-click-action',
         'api/v1/association-public',
         'api/v1/association-area',
         'api/v1/association-access/verify',
@@ -114,6 +116,8 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/public/quote-signatures',
         'api/v1/public/careers',
         'api/v1/public/rma',
+        // Supplier RFQ portal (Mod 045): authenticated by cryptographic rfq.invitation.token middleware, throttled by IP.
+        'api/v1/public/rfq-portal',
         // Academy certificate verification: the unguessable certificate code is the credential; throttled, discloses only what the certificate prints.
         'api/v1/academy/certificates/verify',
         // Supplier portal: authenticated by the personal X-Supplier-Token header (AuthenticateSupplierPortal), which selects the tenant.

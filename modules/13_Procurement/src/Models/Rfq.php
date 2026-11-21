@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string $status
  * @property Carbon|null $issue_date
  * @property Carbon $response_deadline
+ * @property Carbon|null $submission_deadline
  * @property string $currency
  * @property string|null $cost_center_id
  * @property string|null $awarded_supplier_id
@@ -40,6 +41,11 @@ final class Rfq extends BaseEnterpriseModel
         return [
             'issue_date' => 'date',
             'response_deadline' => 'date',
+            'submission_deadline' => 'immutable_datetime',
+            'expected_delivery_date' => 'date',
+            'evaluation_weights' => 'array',
+            'sealed_bidding' => 'boolean',
+            'awarded_at' => 'immutable_datetime',
         ];
     }
 

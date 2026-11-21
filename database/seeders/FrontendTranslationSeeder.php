@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
+use Database\Seeders\Translations\BomManagementFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
 use Database\Seeders\Translations\CpqQuotesFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
@@ -20,6 +21,7 @@ use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\HseFrontendTranslations;
 use Database\Seeders\Translations\IdentityFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
+use Database\Seeders\Translations\ItalianPayrollFrontendTranslations;
 use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
@@ -29,8 +31,11 @@ use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
 use Database\Seeders\Translations\ProposalPortalFrontendTranslations;
+use Database\Seeders\Translations\PurchaseRequisitionFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
+use Database\Seeders\Translations\RfqFrontendTranslations;
 use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
+use Database\Seeders\Translations\ShiftPlanningFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -79,15 +84,20 @@ class FrontendTranslationSeeder extends Seeder
             + IdentityFrontendTranslations::all($locale)
             + AiForecastingFrontendTranslations::all($locale)
             + OcrInboxFrontendTranslations::all($locale)
+            + BomManagementFrontendTranslations::all($locale)
             + ExecutiveDssFrontendTranslations::all($locale)
             + KpiDashboardsFrontendTranslations::all($locale)
+            + ItalianPayrollFrontendTranslations::all($locale)
+            + ShiftPlanningFrontendTranslations::all($locale)
             + HseFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)
             + CpqQuotesFrontendTranslations::all($locale)
             + DataSovereigntyFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)
             + MobileFeatureTranslations::all($locale)
-            + SecurityCenterFrontendTranslations::all($locale);
+            + SecurityCenterFrontendTranslations::all($locale)
+            + RfqFrontendTranslations::all($locale)
+            + PurchaseRequisitionFrontendTranslations::all($locale);
     }
 
     /**
