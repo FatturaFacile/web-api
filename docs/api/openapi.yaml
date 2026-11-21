@@ -44726,6 +44726,1213 @@ paths:
                   - meta
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/sovereignty/nodes:
+    get:
+      operationId: sovereignty.nodes
+      tags:
+        - DataResidency
+      parameters:
+        -
+          name: jurisdiction_zone
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/JurisdictionZone'
+              -
+                type: 'null'
+        -
+          name: service_type
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SovereignServiceType'
+              -
+                type: 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/sovereignty/dashboard:
+    get:
+      operationId: sovereignty.dashboard
+      tags:
+        - DataResidency
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      scopes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            policy_id:
+                              type: string
+                            scope_type:
+                              type: string
+                              enum:
+                                - TENANT_DEFAULT
+                                - LEGAL_ENTITY_OVERRIDE
+                            legal_entity_id:
+                              type:
+                                - string
+                                - 'null'
+                            legal_entity_name:
+                              type:
+                                - string
+                                - 'null'
+                            legal_entity_country:
+                              type:
+                                - string
+                                - 'null'
+                            jurisdiction_zone:
+                              type: string
+                              enum:
+                                - Strict-CH-Only
+                                - Strict-IT-Only
+                                - EEA-Plus-Adequacy-CH
+                            compliance_frameworks:
+                              anyOf:
+                                -
+                                  type: array
+                                  prefixItems:
+                                    -
+                                      type: string
+                                      const: 'nLPD Art. 16-17'
+                                    -
+                                      type: string
+                                      const: 'FINMA Circ. 2018/3'
+                                    -
+                                      type: string
+                                      const: 'Art. 321 CP'
+                                    -
+                                      type: string
+                                      const: 'Art. 47 LBCR'
+                                    -
+                                      type: string
+                                      const: 'ISO/IEC 27001'
+                                  minItems: 5
+                                  maxItems: 5
+                                  items: {}
+                                -
+                                  type: array
+                                  prefixItems:
+                                    -
+                                      type: string
+                                      const: 'GDPR Art. 44-50'
+                                    -
+                                      type: string
+                                      const: ACN/AgID
+                                    -
+                                      type: string
+                                      const: NIS2
+                                    -
+                                      type: string
+                                      const: 'ISO/IEC 27001'
+                                  minItems: 4
+                                  maxItems: 4
+                                  items: {}
+                                -
+                                  type: array
+                                  prefixItems:
+                                    -
+                                      type: string
+                                      const: 'nLPD Art. 16-17'
+                                    -
+                                      type: string
+                                      const: 'GDPR Art. 44-50'
+                                    -
+                                      type: string
+                                      const: ACN/AgID
+                                    -
+                                      type: string
+                                      const: 'ISO/IEC 27001'
+                                  minItems: 4
+                                  maxItems: 4
+                                  items: {}
+                            locked:
+                              type: boolean
+                            enforce_strict_egress_block:
+                              type: boolean
+                            aggregated_non_pii_consolidation:
+                              type: boolean
+                            nodes:
+                              type: object
+                              properties:
+                                postgres_primary:
+                                  type: object
+                                  properties:
+                                    node_code:
+                                      type: string
+                                    region_code: {}
+                                    country_iso2:
+                                      type: string
+                                    canton_or_region:
+                                      type: string
+                                    city:
+                                      type: string
+                                    provider_name:
+                                      type: string
+                                    certifications:
+                                      type: array
+                                      items:
+                                        type: string
+                                    latitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                    longitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                  required:
+                                    - node_code
+                                    - region_code
+                                    - country_iso2
+                                    - canton_or_region
+                                    - city
+                                    - provider_name
+                                    - certifications
+                                    - latitude
+                                    - longitude
+                                postgres_replicas:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      node_code:
+                                        type: string
+                                      region_code: {}
+                                      country_iso2:
+                                        type: string
+                                      canton_or_region:
+                                        type: string
+                                      city:
+                                        type: string
+                                      provider_name:
+                                        type: string
+                                      certifications:
+                                        type: array
+                                        items:
+                                          type: string
+                                      latitude:
+                                        type:
+                                          - number
+                                          - 'null'
+                                      longitude:
+                                        type:
+                                          - number
+                                          - 'null'
+                                    required:
+                                      - node_code
+                                      - region_code
+                                      - country_iso2
+                                      - canton_or_region
+                                      - city
+                                      - provider_name
+                                      - certifications
+                                      - latitude
+                                      - longitude
+                                s3_dms:
+                                  type: object
+                                  properties:
+                                    node_code:
+                                      type: string
+                                    region_code: {}
+                                    country_iso2:
+                                      type: string
+                                    canton_or_region:
+                                      type: string
+                                    city:
+                                      type: string
+                                    provider_name:
+                                      type: string
+                                    certifications:
+                                      type: array
+                                      items:
+                                        type: string
+                                    latitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                    longitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                  required:
+                                    - node_code
+                                    - region_code
+                                    - country_iso2
+                                    - canton_or_region
+                                    - city
+                                    - provider_name
+                                    - certifications
+                                    - latitude
+                                    - longitude
+                                pgvector:
+                                  type: object
+                                  properties:
+                                    node_code:
+                                      type: string
+                                    region_code: {}
+                                    country_iso2:
+                                      type: string
+                                    canton_or_region:
+                                      type: string
+                                    city:
+                                      type: string
+                                    provider_name:
+                                      type: string
+                                    certifications:
+                                      type: array
+                                      items:
+                                        type: string
+                                    latitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                    longitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                  required:
+                                    - node_code
+                                    - region_code
+                                    - country_iso2
+                                    - canton_or_region
+                                    - city
+                                    - provider_name
+                                    - certifications
+                                    - latitude
+                                    - longitude
+                                ai_inference:
+                                  type: object
+                                  properties:
+                                    node_code:
+                                      type: string
+                                    region_code: {}
+                                    country_iso2:
+                                      type: string
+                                    canton_or_region:
+                                      type: string
+                                    city:
+                                      type: string
+                                    provider_name:
+                                      type: string
+                                    certifications:
+                                      type: array
+                                      items:
+                                        type: string
+                                    latitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                    longitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                  required:
+                                    - node_code
+                                    - region_code
+                                    - country_iso2
+                                    - canton_or_region
+                                    - city
+                                    - provider_name
+                                    - certifications
+                                    - latitude
+                                    - longitude
+                                backup_vault:
+                                  type: object
+                                  properties:
+                                    node_code:
+                                      type: string
+                                    region_code: {}
+                                    country_iso2:
+                                      type: string
+                                    canton_or_region:
+                                      type: string
+                                    city:
+                                      type: string
+                                    provider_name:
+                                      type: string
+                                    certifications:
+                                      type: array
+                                      items:
+                                        type: string
+                                    latitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                    longitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                  required:
+                                    - node_code
+                                    - region_code
+                                    - country_iso2
+                                    - canton_or_region
+                                    - city
+                                    - provider_name
+                                    - certifications
+                                    - latitude
+                                    - longitude
+                                queue_broker:
+                                  type: object
+                                  properties:
+                                    node_code:
+                                      type: string
+                                    region_code: {}
+                                    country_iso2:
+                                      type: string
+                                    canton_or_region:
+                                      type: string
+                                    city:
+                                      type: string
+                                    provider_name:
+                                      type: string
+                                    certifications:
+                                      type: array
+                                      items:
+                                        type: string
+                                    latitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                    longitude:
+                                      type:
+                                        - number
+                                        - 'null'
+                                  required:
+                                    - node_code
+                                    - region_code
+                                    - country_iso2
+                                    - canton_or_region
+                                    - city
+                                    - provider_name
+                                    - certifications
+                                    - latitude
+                                    - longitude
+                              required:
+                                - postgres_primary
+                                - postgres_replicas
+                                - s3_dms
+                                - pgvector
+                                - ai_inference
+                                - backup_vault
+                                - queue_broker
+                            key_envelope_id:
+                              type:
+                                - string
+                                - 'null'
+                          required:
+                            - policy_id
+                            - scope_type
+                            - legal_entity_id
+                            - legal_entity_name
+                            - legal_entity_country
+                            - jurisdiction_zone
+                            - compliance_frameworks
+                            - locked
+                            - enforce_strict_egress_block
+                            - aggregated_non_pii_consolidation
+                            - nodes
+                            - key_envelope_id
+                      key_envelopes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            legal_entity_id:
+                              type:
+                                - string
+                                - 'null'
+                            mode:
+                              type: string
+                              enum:
+                                - Platform-Managed
+                                - BYOK
+                                - HYOK
+                            provider:
+                              type: string
+                              enum:
+                                - SECUROSYS_PRIMUS_HSM
+                                - AWS_KMS
+                                - AZURE_KEY_VAULT
+                                - GOOGLE_CLOUD_EKM
+                                - HASHICORP_VAULT
+                                - KMIP_GENERIC
+                                - PLATFORM
+                            status:
+                              type: string
+                              enum:
+                                - ACTIVE
+                                - ROTATING
+                                - SUSPENDED
+                                - REVOKED_CRYPTO_SHREDDED
+                            key_version:
+                              type: string
+                            dek_cache_ttl_seconds:
+                              type: integer
+                            rotation_interval_days:
+                              type: integer
+                            last_rotated_at:
+                              type:
+                                - string
+                                - 'null'
+                            next_rotation_due_at:
+                              type:
+                                - string
+                                - 'null'
+                            rotation_due:
+                              type: boolean
+                            revoked_at:
+                              type:
+                                - string
+                                - 'null'
+                            kms_health:
+                              type: string
+                              enum:
+                                - UNKNOWN
+                                - HEALTHY
+                                - DEGRADED
+                            last_kms_access_at:
+                              type:
+                                - string
+                                - 'null'
+                          required:
+                            - id
+                            - legal_entity_id
+                            - mode
+                            - provider
+                            - status
+                            - key_version
+                            - dek_cache_ttl_seconds
+                            - rotation_interval_days
+                            - last_rotated_at
+                            - next_rotation_due_at
+                            - rotation_due
+                            - revoked_at
+                            - kms_health
+                            - last_kms_access_at
+                      kms_audit:
+                        type: object
+                        properties:
+                          chain:
+                            anyOf:
+                              -
+                                type: object
+                                properties:
+                                  valid:
+                                    type: boolean
+                                  checked:
+                                    type: integer
+                                    const: 0
+                                  broken_at:
+                                    type: 'null'
+                                required:
+                                  - valid
+                                  - checked
+                                  - broken_at
+                              -
+                                type: object
+                                properties:
+                                  valid:
+                                    type: boolean
+                                  checked:
+                                    type: integer
+                                    const: 0
+                                  broken_at:
+                                    type: string
+                                required:
+                                  - valid
+                                  - checked
+                                  - broken_at
+                          recent:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                operation:
+                                  type: string
+                                key_version:
+                                  type:
+                                    - string
+                                    - 'null'
+                                outcome:
+                                  type: string
+                                latency_ms:
+                                  type: integer
+                                source_node_code:
+                                  type: string
+                                occurred_at:
+                                  type: string
+                              required:
+                                - id
+                                - operation
+                                - key_version
+                                - outcome
+                                - latency_ms
+                                - source_node_code
+                                - occurred_at
+                        required:
+                          - chain
+                          - recent
+                      egress_firewall:
+                        type: object
+                        properties:
+                          blocked_last_30_days:
+                            type: integer
+                            minimum: 0
+                          recent_blocked:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                destination_country_iso2:
+                                  type:
+                                    - string
+                                    - 'null'
+                                purpose:
+                                  type: string
+                                target:
+                                  type: string
+                                reason:
+                                  type: string
+                                occurred_at:
+                                  type: string
+                              required:
+                                - id
+                                - destination_country_iso2
+                                - purpose
+                                - target
+                                - reason
+                                - occurred_at
+                        required:
+                          - blocked_last_30_days
+                          - recent_blocked
+                    required:
+                      - scopes
+                      - key_envelopes
+                      - kms_audit
+                      - egress_firewall
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/sovereignty/policies:
+    get:
+      operationId: sovereignty.policies
+      tags:
+        - DataResidency
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: sovereignty.policies.enforce
+      tags:
+        - DataResidency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveResidencyPolicyRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/sovereignty/cross-border-rules:
+    get:
+      operationId: sovereignty.rules
+      tags:
+        - DataResidency
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/sovereignty/cross-border-rules/validate:
+    post:
+      operationId: sovereignty.rules.validate
+      tags:
+        - DataResidency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateTransferRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    anyOf:
+                      -
+                        type: object
+                        properties:
+                          allowed:
+                            type: boolean
+                          destination_country_iso2:
+                            type:
+                              - string
+                              - 'null'
+                          decision_status:
+                            type: string
+                            enum:
+                              - ALLOWED
+                              - REQUIRES_SCC_TIA
+                              - BLOCKED
+                          jurisdiction_zone:
+                            type: string
+                            enum:
+                              - Strict-CH-Only
+                              - Strict-IT-Only
+                              - EEA-Plus-Adequacy-CH
+                          reason:
+                            anyOf:
+                              -
+                                type: 'null'
+                              -
+                                type: string
+                              -
+                                type: string
+                                enum:
+                                  - 'The destination country could not be verified.'
+                          legal_basis_reference:
+                            type:
+                              - string
+                              - 'null'
+                            enum:
+                              - 'Art. 16 Abs. 1 nLPD / Annex 1 DSV'
+                              - 'GDPR Art. 45'
+                              - null
+                        required:
+                          - allowed
+                          - destination_country_iso2
+                          - decision_status
+                          - jurisdiction_zone
+                          - reason
+                          - legal_basis_reference
+                      -
+                        type: object
+                        properties:
+                          allowed:
+                            type: boolean
+                          destination_country_iso2:
+                            type:
+                              - string
+                              - 'null'
+                          decision_status:
+                            type: string
+                            const: ALLOWED
+                          jurisdiction_zone:
+                            type: 'null'
+                          reason:
+                            type: string
+                            const: 'No residency policy is configured.'
+                          legal_basis_reference:
+                            type: 'null'
+                        required:
+                          - allowed
+                          - destination_country_iso2
+                          - decision_status
+                          - jurisdiction_zone
+                          - reason
+                          - legal_basis_reference
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/sovereignty/byok:
+    get:
+      operationId: sovereignty.byok
+      tags:
+        - DataResidency
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/sovereignty/byok/audit-logs:
+    get:
+      operationId: sovereignty.byok.audit
+      tags:
+        - DataResidency
+      parameters:
+        -
+          name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 25
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: object
+                    properties:
+                      chain:
+                        anyOf:
+                          -
+                            type: object
+                            properties:
+                              valid:
+                                type: boolean
+                              checked:
+                                type: integer
+                                const: 0
+                              broken_at:
+                                type: 'null'
+                            required:
+                              - valid
+                              - checked
+                              - broken_at
+                          -
+                            type: object
+                            properties:
+                              valid:
+                                type: boolean
+                              checked:
+                                type: integer
+                                const: 0
+                              broken_at:
+                                type: string
+                            required:
+                              - valid
+                              - checked
+                              - broken_at
+                      pagination:
+                        type: object
+                        properties:
+                          current_page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total:
+                            type: string
+                          last_page:
+                            type: string
+                        required:
+                          - current_page
+                          - per_page
+                          - total
+                          - last_page
+                    required:
+                      - chain
+                      - pagination
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/sovereignty/byok/configure:
+    post:
+      operationId: sovereignty.byok.configure
+      tags:
+        - DataResidency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigureByokRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sovereignty/byok/{id}/rotate':
+    post:
+      operationId: sovereignty.byok.rotate
+      tags:
+        - DataResidency
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sovereignty/byok/{id}/kill-switch':
+    post:
+      operationId: sovereignty.byok.kill-switch
+      tags:
+        - DataResidency
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KillSwitchRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: 'Step-up Authentication Failed'
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'A valid second-factor code is required for the kill-switch.'
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/sovereignty/attestations/generate:
+    post:
+      operationId: sovereignty.attestations.generate
+      tags:
+        - DataResidency
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateAttestationRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sovereignty/attestations/{id}':
+    get:
+      operationId: sovereignty.attestations.show
+      tags:
+        - DataResidency
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      attestation:
+                        type: array
+                        items: {}
+                      bundle:
+                        type: object
+                        properties:
+                          algorithm:
+                            type: string
+                            const: Ed25519
+                          payload:
+                            type: object
+                            properties:
+                              certificate_number:
+                                type: string
+                              tenant_id:
+                                type: string
+                              legal_entity_id:
+                                type:
+                                  - string
+                                  - 'null'
+                              jurisdiction_zone:
+                                type: string
+                              issued_at:
+                                type: string
+                              valid_until:
+                                type: string
+                              physical_topology:
+                                type: object
+                                additionalProperties: {}
+                              byok_status:
+                                type: object
+                                additionalProperties: {}
+                              compliance_frameworks:
+                                type: array
+                                items:
+                                  type: string
+                            required:
+                              - certificate_number
+                              - tenant_id
+                              - legal_entity_id
+                              - jurisdiction_zone
+                              - issued_at
+                              - valid_until
+                              - physical_topology
+                              - byok_status
+                              - compliance_frameworks
+                          sha256_payload_hash:
+                            type: string
+                          signature:
+                            type: string
+                          signer_key_fingerprint:
+                            type: string
+                          signer_public_key:
+                            type: string
+                        required:
+                          - algorithm
+                          - payload
+                          - sha256_payload_hash
+                          - signature
+                          - signer_key_fingerprint
+                          - signer_public_key
+                      signature_valid:
+                        type: boolean
+                    required:
+                      - attestation
+                      - bundle
+                      - signature_valid
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sovereignty/attestations/{id}/pdf':
+    get:
+      operationId: sovereignty.attestations.pdf
+      tags:
+        - DataResidency
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: locale
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/pdf:
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/fleet/deadlines:
     get:
       operationId: v1.fleet.deadlines.index
@@ -135194,6 +136401,294 @@ paths:
                       - status
                 required:
                   - data
+  '/v1/public/proposals/{token}':
+    get:
+      operationId: cpq.public.show
+      tags:
+        - PublicProposal
+      parameters:
+        -
+          name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+  '/v1/public/proposals/{token}/documents/{kind}':
+    get:
+      operationId: cpq.public.document
+      tags:
+        - PublicProposal
+      parameters:
+        -
+          name: token
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: kind
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Transfer-Encoding:
+              required: true
+              schema:
+                type: string
+                enum:
+                  - chunked
+        '404':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: 'Not Found'
+                  status:
+                    type: integer
+                    const: 404
+                  detail:
+                    type: string
+                    const: 'This proposal link is not valid.'
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
+  '/v1/public/proposals/{token}/verify-pin':
+    post:
+      operationId: cpq.public.pin
+      tags:
+        - PublicProposal
+      parameters:
+        -
+          name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/public/proposals/{token}/selections':
+    put:
+      operationId: cpq.public.selections
+      tags:
+        - PublicProposal
+      parameters:
+        -
+          name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/public/proposals/{token}/signature':
+    post:
+      operationId: cpq.public.signature
+      tags:
+        - PublicProposal
+      parameters:
+        -
+          name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/public/proposals/{token}/signature/complete':
+    post:
+      operationId: cpq.public.signature.complete
+      tags:
+        - PublicProposal
+      parameters:
+        -
+          name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/public/proposals/{token}/reject':
+    post:
+      operationId: cpq.public.reject
+      tags:
+        - PublicProposal
+      parameters:
+        -
+          name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/public/proposals/{token}/comments':
+    post:
+      operationId: cpq.public.comments
+      tags:
+        - PublicProposal
+      parameters:
+        -
+          name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/public/signature-webhooks:
+    post:
+      operationId: cpq.public.webhook
+      tags:
+        - PublicProposal
+      responses:
+        '403':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'The callback is not authentic.'
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      quote_number:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - draft
+                          - pending_approval
+                          - sent
+                          - viewed
+                          - negotiating
+                          - accepted
+                          - rejected
+                          - expired
+                          - superseded
+                          - converted
+                      signed_document_hash:
+                        type: string
+                      audit_certificate_hash:
+                        type: string
+                    required:
+                      - quote_number
+                      - status
+                      - signed_document_hash
+                      - audit_certificate_hash
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
   '/v1/public/quote-signatures/{token}':
     get:
       operationId: public.quote-signatures.show
@@ -138237,6 +139732,355 @@ paths:
                     $ref: '#/components/schemas/MfgNonConformanceResource'
                 required:
                   - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/cpq/quotes:
+    get:
+      operationId: cpq.quotes.index
+      tags:
+        - Quote
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items: {}
+                      total:
+                        type: string
+                      per_page:
+                        type: integer
+                      current_page:
+                        type: integer
+                    required:
+                      - items
+                      - total
+                      - per_page
+                      - current_page
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: cpq.quotes.store
+      tags:
+        - Quote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveQuoteRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/cpq/quotes/{id}':
+    get:
+      operationId: cpq.quotes.show
+      tags:
+        - Quote
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: cpq.quotes.update
+      tags:
+        - Quote
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveQuoteRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/cpq/quotes/{id}/compare/{otherId}':
+    get:
+      operationId: cpq.quotes.compare
+      tags:
+        - Quote
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: otherId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/cpq/quotes/{id}/documents/{kind}':
+    get:
+      operationId: cpq.quotes.document
+      tags:
+        - Quote
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: kind
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Transfer-Encoding:
+              required: true
+              schema:
+                type: string
+                enum:
+                  - chunked
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/cpq/quotes/{id}/reorder':
+    post:
+      operationId: cpq.quotes.reorder
+      tags:
+        - Quote
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderQuoteRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/cpq/quotes/{id}/issue':
+    post:
+      operationId: cpq.quotes.issue
+      tags:
+        - Quote
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueQuoteRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/cpq/quotes/{id}/revisions':
+    post:
+      operationId: cpq.quotes.revisions
+      tags:
+        - Quote
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/cpq/quotes/{id}/convert-to-invoice':
+    post:
+      operationId: cpq.quotes.convert-invoice
+      tags:
+        - Quote
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConvertQuoteRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/cpq/quotes/{id}/convert-to-order':
+    post:
+      operationId: cpq.quotes.convert
+      tags:
+        - Quote
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/cpq/quotes/{id}/approve-and-issue':
+    post:
+      operationId: cpq.quotes.approve-and-issue
+      tags:
+        - Quote
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueQuoteRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/AuthenticationException'
         '422':
@@ -181635,6 +183479,102 @@ paths:
             application/json:
               schema:
                 type: string
+  /v1/swiss-fiscal/vat-rates:
+    get:
+      operationId: swiss-fiscal.vat-rates
+      tags:
+        - SwissFiscal
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/swiss-fiscal/qr-bills:
+    post:
+      operationId: swiss-fiscal.qr-bills
+      tags:
+        - SwissFiscal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateQrBillRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/swiss-fiscal/fiscal-documents:
+    post:
+      operationId: swiss-fiscal.fiscal-documents
+      tags:
+        - SwissFiscal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateFiscalDocumentRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/swiss-fiscal/camt054:
+    post:
+      operationId: swiss-fiscal.camt054
+      tags:
+        - SwissFiscal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParseCamt054Request'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/swiss-qr-bill/generate-pdf:
     post:
       operationId: swiss-qr-bill.generate-pdf
@@ -215030,6 +216970,58 @@ components:
         - auto_approve_min_confidence
         - data_classification
       title: ConfigureAutomationRuleRequest
+    ConfigureByokRequest:
+      type: object
+      properties:
+        legal_entity_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        key_management_mode:
+          $ref: '#/components/schemas/KeyManagementMode'
+        provider_type:
+          $ref: '#/components/schemas/KmsProviderType'
+        external_key_uri:
+          type: string
+          maxLength: 512
+        kmip_endpoint:
+          type:
+            - string
+            - 'null'
+          format: uri
+          maxLength: 255
+        credentials:
+          type:
+            - array
+            - 'null'
+          items:
+            type:
+              - string
+              - 'null'
+            maxLength: 4096
+          maxItems: 12
+        dek_cache_ttl_seconds:
+          type:
+            - integer
+            - 'null'
+          minimum: 0
+          maximum: 900
+        rotation_interval_days:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 730
+        dry_run:
+          type:
+            - boolean
+            - 'null'
+      required:
+        - key_management_mode
+        - provider_type
+        - external_key_uri
+      title: ConfigureByokRequest
     ConfigureRequest:
       type: object
       description: |-
@@ -216882,6 +218874,12 @@ components:
         - resolved_at
         - created_at
       title: ConversationResource
+    ConversionTarget:
+      type: string
+      enum:
+        - sales_order
+        - invoice
+      title: ConversionTarget
     ConvertLeadRequest:
       type: object
       description: |-
@@ -216965,6 +218963,15 @@ components:
       required:
         - suggestion_ids
       title: ConvertPurchaseSuggestionsRequest
+    ConvertQuoteRequest:
+      type: object
+      properties:
+        down_payment_percent:
+          type:
+            - number
+            - 'null'
+          maximum: 100
+      title: ConvertQuoteRequest
     ConvertToDeliveryNoteRequest:
       type: object
       description: |-
@@ -225754,6 +227761,15 @@ components:
         - unrealized_gain_loss
         - gl_journal_entry_id
       title: FxRevaluationResource
+    GenerateAttestationRequest:
+      type: object
+      properties:
+        legal_entity_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      title: GenerateAttestationRequest
     GenerateConsolidatedInvoiceRequest:
       type: object
       properties:
@@ -225965,6 +227981,21 @@ components:
         - language
         - facts
       title: GenerateDraftRequest
+    GenerateFiscalDocumentRequest:
+      type: object
+      description: 'Generates the fiscal document of an existing invoice through the strategy of the given country.'
+      properties:
+        country:
+          type: string
+          enum:
+            - IT
+        invoice_id:
+          type: string
+          format: uuid
+      required:
+        - country
+        - invoice_id
+      title: GenerateFiscalDocumentRequest
     GenerateForecastRequest:
       type: object
       properties:
@@ -226152,6 +228183,123 @@ components:
       required:
         - invoice_id
       title: GenerateQrBillPdfRequest
+    GenerateQrBillRequest:
+      type: object
+      description: 'Fields of a Swiss QR-bill; the cross-field rules (IBAN family vs reference) are enforced by the QrBill value object.'
+      properties:
+        iban:
+          type: string
+          maxLength: 34
+        currency:
+          type: string
+          enum:
+            - CHF
+            - EUR
+        amount:
+          type:
+            - string
+            - 'null'
+          pattern: '^\d{1,9}(\.\d{1,2})?$'
+        reference_type:
+          $ref: '#/components/schemas/QrReferenceType'
+        reference:
+          type:
+            - string
+            - 'null'
+          maxLength: 40
+        message:
+          type:
+            - string
+            - 'null'
+          maxLength: 140
+        bill_information:
+          type:
+            - string
+            - 'null'
+          maxLength: 140
+        language:
+          type:
+            - string
+            - 'null'
+          enum:
+            - it
+            - de
+            - fr
+            - en
+            - null
+        format:
+          type:
+            - string
+            - 'null'
+          enum:
+            - pdf
+            - json
+            - null
+        creditor:
+          type: object
+          properties:
+            name:
+              type: string
+              maxLength: 70
+            street:
+              type:
+                - string
+                - 'null'
+              maxLength: 70
+            building_number:
+              type:
+                - string
+                - 'null'
+              maxLength: 16
+            postal_code:
+              type: string
+              maxLength: 16
+            town:
+              type: string
+              maxLength: 35
+            country:
+              type: string
+              minLength: 2
+              maxLength: 2
+          required:
+            - name
+            - postal_code
+            - town
+            - country
+        debtor:
+          type:
+            - object
+            - 'null'
+          properties:
+            name:
+              type: string
+              maxLength: 70
+            street:
+              type:
+                - string
+                - 'null'
+              maxLength: 70
+            building_number:
+              type:
+                - string
+                - 'null'
+              maxLength: 16
+            postal_code:
+              type: string
+              maxLength: 16
+            town:
+              type: string
+              maxLength: 35
+            country:
+              type: string
+              minLength: 2
+              maxLength: 2
+      required:
+        - iban
+        - currency
+        - reference_type
+        - creditor
+      title: GenerateQrBillRequest
     GenerateSalaryCertificatesRequest:
       type: object
       properties:
@@ -229115,6 +231263,18 @@ components:
       required:
         - lines
       title: IssueMaterialsRequest
+    IssueQuoteRequest:
+      type: object
+      properties:
+        validity_days:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 365
+        use_pin:
+          type: boolean
+      title: IssueQuoteRequest
     JobRequest:
       type: object
       description: 'Validation of the JobRequest payload; every reference is limited to the active company.'
@@ -229409,6 +231569,52 @@ components:
         - CH
         - DUAL
       title: JurisdictionMode
+    JurisdictionZone:
+      type: string
+      description: |
+        The legal perimeter in which the data of a tenant (or of one legal entity) must physically stay.
+      enum:
+        - Strict-CH-Only
+        - Strict-IT-Only
+        - EEA-Plus-Adequacy-CH
+      title: JurisdictionZone
+    KeyManagementMode:
+      type: string
+      description: |-
+        | |
+        |---|
+        | `Platform-Managed` <br/>  |
+        | `BYOK` <br/> Bring Your Own Key: the customer KMS wraps the DEK, a short TTL cache is allowed. |
+        | `HYOK` <br/> Hold Your Own Key: no DEK is cached, every cryptographic boundary unwraps in the customer HSM. |
+      enum:
+        - Platform-Managed
+        - BYOK
+        - HYOK
+      title: KeyManagementMode
+    KillSwitchRequest:
+      type: object
+      description: 'The emergency suspension or permanent crypto-shredding: a reason, the typed confirmation phrase and the step-up MFA code.'
+      properties:
+        action:
+          type: string
+          enum:
+            - SUSPEND
+            - CRYPTO_SHRED
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 1000
+        confirmation_phrase:
+          type: string
+          maxLength: 64
+        mfa_code:
+          type: string
+      required:
+        - action
+        - reason
+        - confirmation_phrase
+        - mfa_code
+      title: KillSwitchRequest
     KioskCheckInRequest:
       type: object
       description: |-
@@ -229549,6 +231755,27 @@ components:
         - checked_in_at
         - checked_out_at
       title: KioskVisitResource
+    KmsProviderType:
+      type: string
+      description: |-
+        | |
+        |---|
+        | `SECUROSYS_PRIMUS_HSM` <br/>  |
+        | `AWS_KMS` <br/>  |
+        | `AZURE_KEY_VAULT` <br/>  |
+        | `GOOGLE_CLOUD_EKM` <br/>  |
+        | `HASHICORP_VAULT` <br/>  |
+        | `KMIP_GENERIC` <br/>  |
+        | `PLATFORM` <br/> The platform's own key hierarchy: only for the Platform-Managed mode. |
+      enum:
+        - SECUROSYS_PRIMUS_HSM
+        - AWS_KMS
+        - AZURE_KEY_VAULT
+        - GOOGLE_CLOUD_EKM
+        - HASHICORP_VAULT
+        - KMIP_GENERIC
+        - PLATFORM
+      title: KmsProviderType
     KnowledgeArticleResource:
       type: object
       properties:
@@ -231888,6 +234115,13 @@ components:
         - driver_id
         - notes
       title: LineResource
+    LineSelectionMode:
+      type: string
+      enum:
+        - mandatory
+        - optional
+        - alternative_group
+      title: LineSelectionMode
     LinkDocumentRequest:
       type: object
       description: 'Validates the input of the link document operation (authorization is decided by module.access).'
@@ -237966,6 +240200,16 @@ components:
         - status
         - paid_at
       title: PagoPaNoticeResource
+    ParseCamt054Request:
+      type: object
+      description: 'A camt.054 notification sent as raw XML text.'
+      properties:
+        xml:
+          type: string
+          maxLength: 5000000
+      required:
+        - xml
+      title: ParseCamt054Request
     ParseQrBillRequest:
       type: object
       properties:
@@ -243639,6 +245883,20 @@ components:
         - warehouse_id
         - strategy
       title: PutawayRuleRequest
+    QrReferenceType:
+      type: string
+      description: |-
+        Reference type of a Swiss QR-bill.
+        | |
+        |---|
+        | `QRR` <br/> 27-digit QR reference, only with a QR-IBAN. |
+        | `SCOR` <br/> ISO 11649 creditor reference, only with a regular IBAN. |
+        | `NON` <br/> No reference, only with a regular IBAN. |
+      enum:
+        - QRR
+        - SCOR
+        - NON
+      title: QrReferenceType
     QualificationAssessmentRequest:
       type: object
       description: 'Opens a qualification assessment (POST) or records scores on a draft one (PUT).'
@@ -243911,6 +246169,15 @@ components:
         - min_margin_percent
         - is_active
       title: QuoteApprovalTierResource
+    QuoteLineType:
+      type: string
+      enum:
+        - product
+        - service_fixed
+        - service_time_and_material
+        - text_note
+        - subtotal
+      title: QuoteLineType
     QuoteResource:
       type: object
       properties:
@@ -246326,6 +248593,33 @@ components:
       required:
         - ids
       title: ReorderLeadRoutingRulesRequest
+    ReorderQuoteRequest:
+      type: object
+      properties:
+        section_order:
+          type: array
+          items:
+            type: string
+            format: uuid
+        line_order:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              section_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+            required:
+              - id
+      required:
+        - section_order
+        - line_order
+      title: ReorderQuoteRequest
     ReorderRuleRequest:
       type: object
       description: |-
@@ -251923,6 +254217,13 @@ components:
               - ocr_capture
               - kpi_dashboards
               - kpi_dashboards_admin
+              - cpq_quotes
+              - cpq_quotes_admin
+              - sovereignty_policy
+              - sovereignty_byok
+              - sovereignty_killswitch
+              - sovereignty_attestation
+              - swiss_fiscal
               - ocr_settings
               - ai_copilot
               - ai_review
@@ -254568,6 +256869,230 @@ components:
         - quantity
         - unit_price
       title: SaveQuoteConfigurationRequest
+    SaveQuoteRequest:
+      type: object
+      properties:
+        jurisdiction:
+          type: string
+          enum:
+            - CH
+            - IT
+            - EU
+        locale:
+          type: string
+          enum:
+            - it-CH
+            - de-CH
+            - fr-CH
+            - it-IT
+            - en
+        contact_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        sales_rep_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        customer_name:
+          type: string
+          maxLength: 190
+        customer_email:
+          type:
+            - string
+            - 'null'
+          format: email
+          maxLength: 190
+        customer_phone:
+          type:
+            - string
+            - 'null'
+          maxLength: 40
+        billing_address:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+        shipping_address:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+        currency:
+          type: string
+          enum:
+            - CHF
+            - EUR
+        exchange_rate:
+          type: number
+        valid_until:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        payment_terms:
+          type:
+            - string
+            - 'null'
+          maxLength: 120
+        incoterms:
+          type:
+            - string
+            - 'null'
+          maxLength: 12
+        cover_letter:
+          type:
+            - string
+            - 'null'
+          maxLength: 20000
+        terms_and_conditions:
+          type:
+            - string
+            - 'null'
+          maxLength: 50000
+        header_discount_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        min_margin_percent:
+          type:
+            - number
+            - 'null'
+          minimum: -100
+          maximum: 100
+        auto_convert:
+          type: boolean
+        auto_convert_target:
+          anyOf:
+            -
+              $ref: '#/components/schemas/ConversionTarget'
+            -
+              type: 'null'
+        signature_level:
+          $ref: '#/components/schemas/SignatureLevel'
+        sections:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              key:
+                type: string
+                maxLength: 64
+              title:
+                type: string
+                maxLength: 190
+              description:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 5000
+              page_break_before:
+                type: boolean
+              discount_percent:
+                type: number
+                minimum: 0
+                maximum: 100
+          maxItems: 100
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              section_key:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 64
+              line_type:
+                $ref: '#/components/schemas/QuoteLineType'
+              selection_mode:
+                $ref: '#/components/schemas/LineSelectionMode'
+              alternative_group:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 64
+              is_default_selected:
+                type: boolean
+              product_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              sku:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 64
+              description:
+                type: string
+                maxLength: 500
+              long_description:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 5000
+              uom:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 16
+              resource_role:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 120
+              quantity:
+                type: number
+                minimum: 0
+              unit_price:
+                type: number
+                minimum: 0
+              unit_cost:
+                type: number
+                minimum: 0
+              discount_percent:
+                type: number
+                minimum: 0
+                maximum: 100
+              discount_fixed:
+                type: number
+                minimum: 0
+              tier_prices:
+                type:
+                  - array
+                  - 'null'
+                items:
+                  type: object
+                  properties:
+                    min_qty:
+                      type: number
+                      minimum: 0
+                    unit_price:
+                      type: number
+                      minimum: 0
+              tax_rate:
+                type: number
+                minimum: 0
+                maximum: 100
+          maxItems: 1000
+      required:
+        - customer_name
+      title: SaveQuoteRequest
     SaveRecruitingSettingsRequest:
       type: object
       properties:
@@ -254643,6 +257168,65 @@ components:
         - kpis
         - period_preset
       title: SaveReportDefinitionRequest
+    SaveResidencyPolicyRequest:
+      type: object
+      properties:
+        legal_entity_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        jurisdiction_zone:
+          $ref: '#/components/schemas/JurisdictionZone'
+        primary_db_node_id:
+          type: string
+          format: uuid
+        replica_db_node_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+          maxItems: 8
+          uniqueItems: true
+        s3_storage_node_id:
+          type: string
+          format: uuid
+        vector_db_node_id:
+          type: string
+          format: uuid
+        ai_inference_node_id:
+          type: string
+          format: uuid
+        backup_node_id:
+          type: string
+          format: uuid
+        queue_node_id:
+          type: string
+          format: uuid
+        enforce_strict_egress_block:
+          type:
+            - boolean
+            - 'null'
+        allow_aggregated_non_pii_consolidation:
+          type:
+            - boolean
+            - 'null'
+        second_approver_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - jurisdiction_zone
+        - primary_db_node_id
+        - s3_storage_node_id
+        - vector_db_node_id
+        - ai_inference_node_id
+        - backup_node_id
+        - queue_node_id
+      title: SaveResidencyPolicyRequest
     SaveRoutingRuleRequest:
       type: object
       properties:
@@ -258608,6 +261192,13 @@ components:
         - signed_by
         - signature_base64
       title: SignWorkOrderRequest
+    SignatureLevel:
+      type: string
+      enum:
+        - ses_otp
+        - aes
+        - qes
+      title: SignatureLevel
     SignatureMode:
       type: string
       enum:
@@ -259499,6 +262090,17 @@ components:
         - detected_at
         - resolved_at
       title: SodViolationResource
+    SovereignServiceType:
+      type: string
+      enum:
+        - postgres_primary
+        - postgres_replica
+        - s3_dms
+        - pgvector
+        - ai_inference
+        - backup_vault
+        - queue_broker
+      title: SovereignServiceType
     SpaceRequest:
       type: object
       description: 'A floor or space of a building. The building of an existing space never changes.'
@@ -280153,6 +282755,30 @@ components:
             - '5.0'
             - '6.0'
       title: ValidateSalaryDeclarationRequest
+    ValidateTransferRequest:
+      type: object
+      properties:
+        legal_entity_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        purpose:
+          type: string
+          maxLength: 64
+        target:
+          type: string
+          maxLength: 2048
+        destination_country_iso2:
+          type:
+            - string
+            - 'null'
+          minLength: 2
+          maxLength: 2
+      required:
+        - purpose
+        - target
+      title: ValidateTransferRequest
     ValuateAssetRequest:
       type: object
       description: 'Validation of a revaluation or impairment test.'
@@ -283895,6 +286521,9 @@ tags:
     name: DashboardBuilder
     description: 'Operations of the DashboardBuilder module.'
   -
+    name: DataResidency
+    description: 'Operations of the DataResidency module.'
+  -
     name: Deadline
     description: 'Operations of the Deadline module.'
   -
@@ -284885,6 +287514,9 @@ tags:
     name: PublicEnrolment
     description: 'Operations of the PublicEnrolment module.'
   -
+    name: PublicProposal
+    description: 'Operations of the PublicProposal module.'
+  -
     name: PublicQuoteSignature
     description: 'Operations of the PublicQuoteSignature module.'
   -
@@ -285373,6 +288005,9 @@ tags:
   -
     name: Swagger
     description: 'Operations of the Swagger module.'
+  -
+    name: SwissFiscal
+    description: 'Operations of the SwissFiscal module.'
   -
     name: SwissQrBill
     description: 'Operations of the SwissQrBill module.'
