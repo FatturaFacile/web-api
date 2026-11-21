@@ -9,6 +9,7 @@ use Database\Seeders\Translations\AiForecastingFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
+use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
@@ -77,6 +78,7 @@ class FrontendTranslationSeeder extends Seeder
             + OcrInboxFrontendTranslations::all($locale)
             + KpiDashboardsFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)
+            + DataSovereigntyFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)
             + MobileFeatureTranslations::all($locale)
             + SecurityCenterFrontendTranslations::all($locale);

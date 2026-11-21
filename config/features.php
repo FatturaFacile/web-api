@@ -47,6 +47,7 @@ return [
         'cpq_quotes' => env('FEATURE_MODULE_CPQ_QUOTES'),
         'swiss_fiscal' => env('FEATURE_MODULE_SWISS_FISCAL'),
         'ai_cognitive' => env('FEATURE_MODULE_AI_COGNITIVE'),
+        'data_residency' => env('FEATURE_MODULE_DATA_RESIDENCY'),
         'leases' => env('FEATURE_MODULE_LEASES'),
         'retail' => env('FEATURE_MODULE_RETAIL'),
         'hospitality' => env('FEATURE_MODULE_HOSPITALITY'),
