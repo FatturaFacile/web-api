@@ -18,6 +18,7 @@ final class ItalianPayrollFrontendTranslations
     public static function definitions(): array
     {
         return [
+            'mobile.module.italian_payroll_self' => ['Cassaforte riservata', 'Confidential vault', 'Vertraulicher Tresor', 'Coffre confidentiel'],
             'itPayroll.period.select' => ['Periodo paghe', 'Payroll period', 'Lohnperiode', 'Période de paie'],
             'itPayroll.period.none' => ['Nessun periodo paghe: aprine uno qui sopra', 'No payroll period yet: open one above', 'Noch keine Lohnperiode: oben eine eröffnen', 'Aucune période de paie : en ouvrir une ci-dessus'],
             'itPayroll.period.year' => ['Anno', 'Year', 'Jahr', 'Année'],
@@ -197,6 +198,23 @@ final class ItalianPayrollFrontendTranslations
                 'Confirmez-vous que les salaires ont été payés ? Le mois sera clôturé.',
             ],
             'itPayroll.sepa.paid' => ['Mese pagato e chiuso', 'Month paid and closed', 'Monat bezahlt und abgeschlossen', 'Mois payé et clôturé'],
+            'itPayroll.mine.audit' => [
+                'Ogni apertura di un documento viene registrata in un registro di accesso non modificabile (L. 4/1953).',
+                'Every time you open a document it is recorded in a tamper-proof access log (Law 4/1953).',
+                'Jedes Öffnen eines Dokuments wird in einem unveränderlichen Zugriffsprotokoll festgehalten (Gesetz 4/1953).',
+                'Chaque ouverture d\'un document est enregistrée dans un journal d\'accès inaltérable (loi 4/1953).',
+            ],
+            'itPayroll.mine.loadFailed' => ['Impossibile caricare i tuoi cedolini.', 'Your payslips could not be loaded.', 'Ihre Lohnabrechnungen konnten nicht geladen werden.', 'Impossible de charger vos bulletins de paie.'],
+            'itPayroll.mine.retry' => ['Riprova', 'Retry', 'Erneut versuchen', 'Réessayer'],
+            'itPayroll.mine.empty' => ['Nessun cedolino disponibile', 'No payslips available', 'Keine Lohnabrechnungen verfügbar', 'Aucun bulletin de paie disponible'],
+            'itPayroll.mine.net' => ['Netto', 'Net', 'Netto', 'Net'],
+            'itPayroll.mine.viewedOn' => ['Visto il {date}', 'Viewed on {date}', 'Angesehen am {date}', 'Consulté le {date}'],
+            'itPayroll.mine.new' => ['Nuovo', 'New', 'Neu', 'Nouveau'],
+            'itPayroll.mine.cedolino' => ['Cedolino', 'Payslip', 'Lohnabrechnung', 'Bulletin de paie'],
+            'itPayroll.mine.cu' => ['CU', 'CU tax certificate', 'CU-Steuerbescheinigung', 'Certificat fiscal CU'],
+            'itPayroll.mine.preview' => ['Anteprima documento', 'Document preview', 'Dokumentvorschau', 'Aperçu du document'],
+            'itPayroll.mine.download' => ['Scarica PDF', 'Download PDF', 'PDF herunterladen', 'Télécharger le PDF'],
+            'itPayroll.mine.close' => ['Chiudi', 'Close', 'Schliessen', 'Fermer'],
         ];
     }
 
