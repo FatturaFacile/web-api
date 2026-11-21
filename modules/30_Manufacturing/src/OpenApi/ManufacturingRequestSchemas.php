@@ -171,6 +171,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'scrap_reason', type: 'string', nullable: true),
     new OA\Property(property: 'is_final', type: 'boolean', nullable: true),
     new OA\Property(property: 'posting_date', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'operation_posting_uuid', description: 'Client idempotency key: a retry with the same uuid returns the original confirmation (200) without consuming materials again', type: 'string', format: 'uuid', nullable: true),
 ])]
 #[OA\Schema(schema: 'MfgReceiveOutputRequest', required: ['quantity'], type: 'object', properties: [
     new OA\Property(property: 'quantity', type: 'string', format: 'decimal'),

@@ -24,6 +24,7 @@ final class ConfirmOperationRequest extends ManufacturingRequest
             'scrap_reason' => ['nullable', 'required_with:scrap_quantity', 'string', 'max:255'],
             'is_final' => ['nullable', 'boolean'],
             'posting_date' => ['nullable', 'date'],
+            'operation_posting_uuid' => ['nullable', 'uuid'],
         ];
     }
 }
