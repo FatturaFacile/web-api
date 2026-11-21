@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\EncryptedField;
 use App\Domain\Audit\Concerns\HasImmutableAuditTrail;
 use App\Domain\Audit\Contracts\AuditableEntityInterface;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasEncryptedFields;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,7 +24,11 @@ use Illuminate\Support\Carbon;
 class Contact extends Model implements AuditableEntityInterface
 {
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+    use HasEncryptedFields;
     use HasImmutableAuditTrail;
+
+    /** @var array<string, string|null> field => blind-index column */
+    protected array $encryptedFields = ['iban' => 'iban_bidx', 'qr_iban' => null];
 
     /** @var list<string> */
     protected array $auditMask = ['iban', 'qr_iban', 'fiscal_code'];
@@ -67,6 +73,8 @@ class Contact extends Model implements AuditableEntityInterface
     protected function casts(): array
     {
         return [
+            'iban' => EncryptedField::class,
+            'qr_iban' => EncryptedField::class,
             'processing_restricted_at' => 'datetime',
             'anonymized_at' => 'datetime',
             'fiscal_verified_at' => 'datetime',
