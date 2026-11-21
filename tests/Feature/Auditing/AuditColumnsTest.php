@@ -31,7 +31,10 @@ test('every business table has the six audit columns', function (): void {
         // Offline device audit log: append-only and hash-chained per device, so it carries no soft delete or user stamps.
         'offline_audit_entries',
         // Purchase requisition approval logs: append-only and immutable (the model refuses updates and deletes), so it carries no update or delete stamps.
-        'purchase_requisition_approval_logs'];
+        'purchase_requisition_approval_logs',
+        // MES integration (issue #184): the inbox, the append-only revision log, the change log the MES Core pulls from and its
+        // pruning floor are written by the services only (never edited or soft deleted), so they carry no audit stamps.
+        'mfg_mes_inbox', 'mfg_mes_oee_snapshot_revisions', 'mfg_mes_sync_changes', 'mfg_mes_sync_floors'];
     $incomplete = [];
 
     foreach (Schema::getTableListing(schemaQualified: false) as $table) {

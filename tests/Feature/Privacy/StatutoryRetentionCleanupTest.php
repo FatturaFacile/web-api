@@ -56,6 +56,7 @@ const SCHEDULE_CLEANUPS = [
     'visitors:purge' => 'visitor data, erasable',
     'hr:recruiting:purge-expired-candidates' => 'candidate data past the consent period, erasable (anonymisation)',
     'platform:prune-idempotency-keys' => 'idempotency keys, technical data',
+    'mfg:mes-prune-changes' => 'change log of the reference data pulled by the MES Core, technical data (the entities stay)',
     'associations:expire-memberships' => 'import previews, memberships stay',
     'sales:expire-quotes' => 'status change only',
     'inventory:expire-lots' => 'status change only',
@@ -80,7 +81,7 @@ const SCHEDULE_NON_CLEANUPS = [
     'contracts:expire-signature-requests', 'facility:release-no-shows', 'facility:generate-inspections', 'hospitality:release-expired-blocks',
     'practice:expire-fee-proposals', 'communication:due-campaigns', 'subscriptions:indexation',
     'exports:run-scheduled', 'business-intelligence:run-snapshots', 'marketplace:check-health', 'supplier-portal:alert-expiring-documents',
-    'crm:process-automation', 'esm:loaners:scan-overdue', 'billing:process-recurring', 'audit:archive-worm',
+    'crm:process-automation', 'esm:loaners:scan-overdue', 'billing:process-recurring', 'audit:archive-worm', 'mfg:mes-shift-instances',
 ];
 
 beforeEach(function (): void {
