@@ -54,7 +54,7 @@ return [
             'write' => $finance,
             'grants' => ['read' => ['gl.*', 'gl.journals.post'], 'write' => ['gl.*']],
         ],
-        'procurement' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'purchasing', 'procurement_manager', 'member']],
+        'procurement' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'purchasing', 'procurement_manager', 'department_manager', 'division_director', 'cfo', 'ceo', 'member']],
         // Valuation management and the inventory book export are granted one by one on the membership (see InventoryPermissionChecker), whatever the role.
         'inventory' => [
             'read' => $anyMember,

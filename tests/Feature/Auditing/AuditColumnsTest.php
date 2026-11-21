@@ -26,7 +26,9 @@ test('every business table has the six audit columns', function (): void {
         // AI audit trail: append-only and hash-chained (the model refuses updates and deletes), so it carries no update or delete stamps.
         'ai_audit_trails',
         // Offline device audit log: append-only and hash-chained per device, so it carries no soft delete or user stamps.
-        'offline_audit_entries'];
+        'offline_audit_entries',
+        // Purchase requisition approval logs: append-only and immutable (the model refuses updates and deletes), so it carries no update or delete stamps.
+        'purchase_requisition_approval_logs'];
     $incomplete = [];
 
     foreach (Schema::getTableListing(schemaQualified: false) as $table) {

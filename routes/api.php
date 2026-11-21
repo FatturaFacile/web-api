@@ -75,6 +75,7 @@ use App\Http\Controllers\Api\V1\PosSessionController;
 use App\Http\Controllers\Api\V1\PosTerminalController;
 use App\Http\Controllers\Api\V1\PriceListController;
 use App\Http\Controllers\Api\V1\PrivacyComplianceController;
+use App\Http\Controllers\Api\V1\Procurement\PublicRfqPortalController;
 use App\Http\Controllers\Api\V1\ProductBrandController;
 use App\Http\Controllers\Api\V1\ProductCategoryController;
 use App\Http\Controllers\Api\V1\ProfessionalsController;
@@ -243,6 +244,14 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/{token}/pdf', [PublicQuoteSignatureController::class, 'pdf'])->name('pdf');
         Route::post('/{token}/sign', [PublicQuoteSignatureController::class, 'sign'])->name('sign');
         Route::post('/{token}/request-changes', [PublicQuoteSignatureController::class, 'requestChanges'])->name('request-changes');
+    });
+
+    // Module 045: Public token-authenticated Supplier RFQ Bidding Portal.
+    Route::prefix('public/rfq-portal')->name('public.rfq-portal.')->middleware(['locale', 'throttle:30,1', 'rfq.invitation.token'])->group(function (): void {
+        Route::get('/{token}', [PublicRfqPortalController::class, 'show'])->name('show');
+        Route::post('/{token}/bid', [PublicRfqPortalController::class, 'submitBid'])->name('bid');
+        Route::post('/{token}/decline', [PublicRfqPortalController::class, 'decline'])->name('decline');
+        Route::get('/{token}/attachments/{attachment}', [PublicRfqPortalController::class, 'downloadAttachment'])->whereUuid('attachment')->name('attachments.download');
     });
 
     // Enterprise authentication: SSO (OpenID Connect), tenant security policy, SCIM 2.0.

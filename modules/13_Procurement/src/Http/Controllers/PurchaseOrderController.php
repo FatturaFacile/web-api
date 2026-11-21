@@ -169,7 +169,7 @@ final class PurchaseOrderController extends Controller
     #[EnterpriseEndpoint(summary: 'Show purchase order details and line items', tags: ['Procurement'])]
     public function show(string $id): JsonResponse
     {
-        $order = PurchaseOrder::with(['supplier', 'lines', 'receipts', 'matchLogs'])->findOrFail($id);
+        $order = PurchaseOrder::with(['supplier', 'lines', 'receipts', 'matchLogs', 'sourceRequisitionLinks.requisition'])->findOrFail($id);
         $this->authorize('view', $order);
 
         return response()->json(new PurchaseOrderResource($order));

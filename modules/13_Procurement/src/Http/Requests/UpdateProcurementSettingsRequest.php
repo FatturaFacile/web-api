@@ -28,6 +28,7 @@ final class UpdateProcurementSettingsRequest extends FormRequest
             'price_tolerance_amount' => ['sometimes', 'decimal:0,2', 'min:0'],
             'block_invoice_on_mismatch' => ['sometimes', 'boolean'],
             'landed_cost_clearing_account_code' => ['sometimes', 'string', 'max:20'],
+            'budget_enforcement_policy' => ['sometimes', 'string', 'in:warning,hard_block'],
         ];
     }
 }

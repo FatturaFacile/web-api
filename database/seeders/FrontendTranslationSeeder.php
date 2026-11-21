@@ -24,7 +24,9 @@ use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
+use Database\Seeders\Translations\PurchaseRequisitionFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
+use Database\Seeders\Translations\RfqFrontendTranslations;
 use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -77,7 +79,9 @@ class FrontendTranslationSeeder extends Seeder
             + KpiDashboardsFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)
             + MobileFeatureTranslations::all($locale)
-            + SecurityCenterFrontendTranslations::all($locale);
+            + SecurityCenterFrontendTranslations::all($locale)
+            + RfqFrontendTranslations::all($locale)
+            + PurchaseRequisitionFrontendTranslations::all($locale);
     }
 
     /**

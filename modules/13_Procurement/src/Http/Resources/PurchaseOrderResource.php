@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Http\Resources;
 
+use App\Domain\Procurement\PurchaseRequisition\Models\PurchaseRequisitionDocumentLink;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Procurement\Models\PurchaseOrder;
@@ -72,6 +73,14 @@ final class PurchaseOrderResource extends JsonResource
                 'is_closed' => (bool) $line->is_closed,
             ])->all()),
             'receipts' => PurchaseReceiptResource::collection($this->whenLoaded('receipts')),
+            'source_requisition_links' => $this->whenLoaded('sourceRequisitionLinks', fn () => $this->sourceRequisitionLinks->map(static fn (PurchaseRequisitionDocumentLink $link): array => [
+                'id' => (string) $link->id,
+                'purchase_requisition_id' => (string) $link->purchase_requisition_id,
+                'purchase_requisition_line_id' => (string) $link->purchase_requisition_line_id,
+                'requisition_number' => $link->relationLoaded('requisition') ? $link->requisition?->requisition_number : null,
+                'target_document_line_id' => $link->target_document_line_id,
+                'converted_quantity' => (string) $link->converted_quantity,
+            ])->all()),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

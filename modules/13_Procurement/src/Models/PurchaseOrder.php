@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Models;
 
+use App\Domain\Procurement\PurchaseRequisition\Enums\DocumentLinkTargetType;
+use App\Domain\Procurement\PurchaseRequisition\Models\PurchaseRequisitionDocumentLink;
 use App\Enums\PurchaseOrderStatus;
 use App\Models\User;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
@@ -203,5 +205,14 @@ final class PurchaseOrder extends BaseEnterpriseModel implements LockableByWorkf
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * @return HasMany<PurchaseRequisitionDocumentLink, $this>
+     */
+    public function sourceRequisitionLinks(): HasMany
+    {
+        return $this->hasMany(PurchaseRequisitionDocumentLink::class, 'target_document_id')
+            ->where('target_document_type', DocumentLinkTargetType::PoMod046->value);
     }
 }
