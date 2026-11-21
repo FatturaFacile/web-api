@@ -96858,6 +96858,207 @@ paths:
           $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  '/v1/inventory/warehouses/{id}/locations/bulk':
+    post:
+      operationId: inventory.warehouses.locations.bulk
+      tags:
+        - LocationTopology
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkGenerateLocationsRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created:
+                    type: integer
+                  data:
+                    type: array
+                    items: {}
+                required:
+                  - created
+                  - data
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/inventory/warehouses/{id}/tree':
+    get:
+      operationId: inventory.warehouses.tree
+      tags:
+        - LocationTopology
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: array
+                      items: {}
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/inventory/warehouses/{id}/capacity-summary':
+    get:
+      operationId: inventory.warehouses.capacity-summary
+      tags:
+        - LocationTopology
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: array
+                      items: {}
+                required:
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/inventory/labels/locations:
+    post:
+      operationId: inventory.labels.locations
+      tags:
+        - LocationTopology
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationLabelsRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/pdf:
+              schema:
+                type: string
+            'text/plain; charset=UTF-8':
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/inventory/in-transit:
+    get:
+      operationId: inventory.in-transit
+      tags:
+        - LocationTopology
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        transfer_order_id:
+                          type: string
+                        transfer_number:
+                          type: string
+                        status:
+                          type: string
+                        source_warehouse_id:
+                          type: string
+                        destination_warehouse_id:
+                          type: string
+                        transit_bin_id:
+                          type: string
+                        line_id:
+                          type: string
+                        stock_item_id:
+                          type: string
+                        sku:
+                          type:
+                            - string
+                            - 'null'
+                        lot_id:
+                          type: string
+                        shipped_qty:
+                          type: string
+                        received_qty:
+                          type: string
+                        damaged_qty:
+                          type: string
+                        outstanding_qty:
+                          type: string
+                        shipped_at:
+                          type:
+                            - string
+                            - 'null'
+                      required:
+                        - transfer_order_id
+                        - transfer_number
+                        - status
+                        - source_warehouse_id
+                        - destination_warehouse_id
+                        - transit_bin_id
+                        - line_id
+                        - stock_item_id
+                        - sku
+                        - lot_id
+                        - shipped_qty
+                        - received_qty
+                        - damaged_qty
+                        - outstanding_qty
+                        - shipped_at
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/hospitality/room-types:
     get:
       operationId: v1.hospitality.room-types.index
@@ -139917,6 +140118,12 @@ paths:
                           type: string
                         bin_type:
                           type: string
+                        abc_class:
+                          type: string
+                        temperature_control:
+                          type: string
+                        packaging_unit:
+                          type: string
                         strategy:
                           type: string
                         priority:
@@ -139931,6 +140138,9 @@ paths:
                         - target_zone_id
                         - target_bin_id
                         - bin_type
+                        - abc_class
+                        - temperature_control
+                        - packaging_unit
                         - strategy
                         - priority
                         - is_active
@@ -139970,6 +140180,12 @@ paths:
                     type: string
                   bin_type:
                     type: string
+                  abc_class:
+                    type: string
+                  temperature_control:
+                    type: string
+                  packaging_unit:
+                    type: string
                   strategy:
                     type: string
                   priority:
@@ -139984,6 +140200,9 @@ paths:
                   - target_zone_id
                   - target_bin_id
                   - bin_type
+                  - abc_class
+                  - temperature_control
+                  - packaging_unit
                   - strategy
                   - priority
                   - is_active
@@ -140033,6 +140252,12 @@ paths:
                     type: string
                   bin_type:
                     type: string
+                  abc_class:
+                    type: string
+                  temperature_control:
+                    type: string
+                  packaging_unit:
+                    type: string
                   strategy:
                     type: string
                   priority:
@@ -140047,6 +140272,9 @@ paths:
                   - target_zone_id
                   - target_bin_id
                   - bin_type
+                  - abc_class
+                  - temperature_control
+                  - packaging_unit
                   - strategy
                   - priority
                   - is_active
@@ -214120,6 +214348,84 @@ components:
       required:
         - lines
       title: BulkActivityRecordRequest
+    BulkGenerateLocationsRequest:
+      type: object
+      description: |-
+        The layout of a zone to generate in one batch: how many aisles, racks, shelves and bins, and the limits and size every
+        generated bin gets.
+      properties:
+        zone_code:
+          type: string
+          maxLength: 50
+        zone_name:
+          type:
+            - string
+            - 'null'
+          maxLength: 100
+        zone_type:
+          type:
+            - string
+            - 'null'
+          enum:
+            - receiving
+            - storage
+            - picking
+            - packing
+            - shipping
+            - quarantine
+            - transit
+            - null
+        aisles:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        racks:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        shelves:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        bins:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        max_weight_kg:
+          type:
+            - number
+            - 'null'
+        max_volume_cbm:
+          type:
+            - number
+            - 'null'
+        max_quantity:
+          type:
+            - number
+            - 'null'
+        length_cm:
+          type:
+            - number
+            - 'null'
+        width_cm:
+          type:
+            - number
+            - 'null'
+        height_cm:
+          type:
+            - number
+            - 'null'
+        spacing:
+          type:
+            - number
+            - 'null'
+      required:
+        - zone_code
+        - aisles
+        - racks
+        - shelves
+        - bins
+      title: BulkGenerateLocationsRequest
     BulkPriceListItemsRequest:
       type: object
       properties:
@@ -235412,6 +235718,31 @@ components:
         - overdue_alerted_at
         - notes
       title: LoanerResource
+    LocationLabelsRequest:
+      type: object
+      description: 'Bins to print labels for, the output format and the label size.'
+      properties:
+        bin_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+          maxItems: 500
+        format:
+          type: string
+          enum:
+            - pdf
+            - zpl
+        size:
+          type: string
+          enum:
+            - 100x50
+            - 50x25
+      required:
+        - bin_ids
+        - format
+      title: LocationLabelsRequest
     LogBillableActivityRequest:
       type: object
       properties:
@@ -246992,6 +247323,25 @@ components:
           type: integer
           minimum: 1
           maximum: 50
+        temperature_control:
+          type: string
+          enum:
+            - ambient
+            - chilled
+            - frozen
+            - hazmat
+        packaging_unit:
+          type: string
+          enum:
+            - pallet
+            - box
+            - unit
+        abc_class:
+          type: string
+          enum:
+            - A
+            - B
+            - C
       required:
         - source_bin_id
         - stock_item_id
@@ -247041,6 +247391,34 @@ components:
             - fixed_location
             - consolidate
             - empty_bin
+        abc_class:
+          type:
+            - string
+            - 'null'
+          enum:
+            - A
+            - B
+            - C
+            - null
+        temperature_control:
+          type:
+            - string
+            - 'null'
+          enum:
+            - ambient
+            - chilled
+            - frozen
+            - hazmat
+            - null
+        packaging_unit:
+          type:
+            - string
+            - 'null'
+          enum:
+            - pallet
+            - box
+            - unit
+            - null
         priority:
           type: integer
           minimum: 0
@@ -274759,6 +275137,43 @@ components:
             - quarantine
             - transit
             - null
+        shelf_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+        coord_x:
+          type:
+            - number
+            - 'null'
+        coord_y:
+          type:
+            - number
+            - 'null'
+        coord_z:
+          type:
+            - number
+            - 'null'
+        length_cm:
+          type:
+            - number
+            - 'null'
+        width_cm:
+          type:
+            - number
+            - 'null'
+        height_cm:
+          type:
+            - number
+            - 'null'
+        allow_mixed_skus:
+          type:
+            - boolean
+            - 'null'
+        allow_mixed_lots:
+          type:
+            - boolean
+            - 'null'
       required:
         - zone_code
         - aisle_code
@@ -283313,6 +283728,39 @@ components:
             - integer
             - 'null'
           minimum: 0
+        block_reason:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        coord_x:
+          type:
+            - number
+            - 'null'
+        coord_y:
+          type:
+            - number
+            - 'null'
+        coord_z:
+          type:
+            - number
+            - 'null'
+        length_cm:
+          type:
+            - number
+            - 'null'
+        width_cm:
+          type:
+            - number
+            - 'null'
+        height_cm:
+          type:
+            - number
+            - 'null'
+        allow_mixed_skus:
+          type: boolean
+        allow_mixed_lots:
+          type: boolean
       title: UpdateWarehouseBinRequest
     UpdateWarehouseRequest:
       type: object
@@ -288291,6 +288739,9 @@ tags:
   -
     name: LocalizationPack
     description: 'Operations of the LocalizationPack module.'
+  -
+    name: LocationTopology
+    description: 'Operations of the LocationTopology module.'
   -
     name: LodgingCatalog
     description: 'Operations of the LodgingCatalog module.'

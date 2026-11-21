@@ -141723,6 +141723,276 @@
                     }
                 },
                 {
+                    "name": "POST /v1/inventory/warehouses/:id/locations/bulk",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/locations/bulk",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "locations",
+                                "bulk"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisles\": 1,\n    \"racks\": 1,\n    \"shelves\": 1,\n    \"bins\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"spacing\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/warehouses/:id/tree",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/tree",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "tree"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/warehouses/:id/capacity-summary",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/capacity-summary",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "capacity-summary"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/inventory/labels/locations",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/labels/locations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "labels",
+                                "locations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"bin_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"format\": \"pdf\",\n    \"size\": \"100x50\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/in-transit",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/in-transit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "in-transit"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "POST /v1/inventory/sales-orders/:id/reserve",
                     "request": {
                         "method": "POST",
@@ -142910,7 +143180,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"abc_class\": \"A\",\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -142976,7 +143246,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"abc_class\": \"A\",\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -143089,7 +143359,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1,\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"abc_class\": \"A\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -143148,7 +143418,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1,\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"abc_class\": \"A\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -147841,7 +148111,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisle_code\": \"string\",\n    \"rack_code\": \"string\",\n    \"bin_code\": \"string\",\n    \"barcode\": \"string\",\n    \"pick_sequence\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"bin_type\": \"storage\"\n}",
+                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisle_code\": \"string\",\n    \"rack_code\": \"string\",\n    \"bin_code\": \"string\",\n    \"barcode\": \"string\",\n    \"pick_sequence\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"bin_type\": \"storage\",\n    \"shelf_code\": \"string\",\n    \"coord_x\": 1.5,\n    \"coord_y\": 1.5,\n    \"coord_z\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"allow_mixed_skus\": false,\n    \"allow_mixed_lots\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -148073,7 +148343,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"bin_type\": \"storage\",\n    \"max_quantity\": 1.5,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"is_locked\": false,\n    \"pick_sequence\": 1\n}",
+                            "raw": "{\n    \"bin_type\": \"storage\",\n    \"max_quantity\": 1.5,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"is_locked\": false,\n    \"pick_sequence\": 1,\n    \"block_reason\": \"string\",\n    \"coord_x\": 1.5,\n    \"coord_y\": 1.5,\n    \"coord_z\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"allow_mixed_skus\": false,\n    \"allow_mixed_lots\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
