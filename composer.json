@@ -82,6 +82,7 @@
             "Modules\\Forecasting\\": "modules/66_Forecasting/src/",
             "Modules\\OcrExtraction\\": "modules/67_OcrExtraction/src/",
             "Modules\\KpiDashboards\\": "modules/68_KpiDashboards/src/",
+            "Modules\\Quoting\\": "modules/69_Quoting/src/",
             "Modules\\SwissFiscal\\": "modules/69_SwissFiscal/src/",
             "Modules\\AiCognitive\\": "modules/68_AiCognitive/src/",
             "Modules\\DataResidency\\": "modules/69_DataResidency/src/",

@@ -86,6 +86,9 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/report-downloads',
         'api/v1/system/bootstrap-support',
         'api/v1/translations',
+        // Proposal portal (Mod 036): the unguessable token (plus PIN session, OTP or HMAC-signed provider callback) is the credential, see Quoting\CpqQuotingTest.
+        'api/v1/public/proposals',
+        'api/v1/public/signature-webhooks',
         'api/v1/lookups',
         'api/v1/webhooks',
         'api/v1/portal',
