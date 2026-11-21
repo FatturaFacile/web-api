@@ -34,7 +34,7 @@ function mesBody(array $extra = []): array
 function mesTakeOver(object $test, string $operationId, ?string $operatorId = null, array $extra = []): string
 {
     return (string) $test->postJson(MES.'/phases/take-over', mesBody(['production_order_operation_id' => $operationId, 'operator_id' => $operatorId ?? $test->member->id, ...$extra]))
-        ->assertOk()->assertJsonPath('data.status', 'assigned')->json('data.id');
+        ->assertCreated()->assertJsonPath('data.status', 'assigned')->json('data.id');
 }
 
 beforeEach(function (): void {

@@ -3290,4 +3290,8 @@ return [
     'allow_mixed_skus' => 'consenti SKU misti',
     'allow_mixed_lots' => 'consenti lotti misti',
     'block_reason' => 'motivo del blocco',
+    'machine_mode' => 'modalità macchina',
+    'defect_reason' => 'causale di difetto',
+    'lot_code' => 'lotto',
+    'over_consumption_confirmed' => 'conferma del consumo in eccesso',
 ];

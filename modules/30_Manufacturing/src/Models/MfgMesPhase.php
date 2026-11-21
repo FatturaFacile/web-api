@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Manufacturing\Models;
 
+use Carbon\CarbonInterface;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,8 +27,8 @@ use Modules\Manufacturing\Enums\PhaseStatus;
  * @property PhaseStatus|null $resume_to
  * @property MachineMode $machine_mode
  * @property int $version
- * @property Carbon $taken_over_at
- * @property Carbon|null $closed_at
+ * @property CarbonInterface $taken_over_at
+ * @property CarbonInterface|null $closed_at
  * @property string|null $confirmation_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

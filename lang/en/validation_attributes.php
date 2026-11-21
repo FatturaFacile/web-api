@@ -3290,4 +3290,8 @@ return [
     'allow_mixed_skus' => 'allow mixed SKUs',
     'allow_mixed_lots' => 'allow mixed lots',
     'block_reason' => 'block reason',
+    'machine_mode' => 'machine mode',
+    'defect_reason' => 'defect reason',
+    'lot_code' => 'lot',
+    'over_consumption_confirmed' => 'over-consumption confirmation',
 ];

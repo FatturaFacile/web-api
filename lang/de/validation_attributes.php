@@ -3290,4 +3290,8 @@ return [
     'allow_mixed_skus' => 'gemischte SKUs erlauben',
     'allow_mixed_lots' => 'gemischte Chargen erlauben',
     'block_reason' => 'Sperrgrund',
+    'machine_mode' => 'Maschinenmodus',
+    'defect_reason' => 'Fehlergrund',
+    'lot_code' => 'Charge',
+    'over_consumption_confirmed' => 'Bestätigung des Mehrverbrauchs',
 ];
