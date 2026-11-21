@@ -21198,13 +21198,6 @@ CREATE TABLE "procurement_rfq_lines"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "item_id" varchar,
-  "custom_item_code" varchar,
-  "technical_specifications" text,
-  "target_unit_price" numeric,
-  "awarded_supplier_id" varchar,
-  "awarded_bid_line_id" varchar,
-  "generated_purchase_order_id" varchar,
   foreign key("purchase_requisition_line_id") references "purchase_requisition_lines"("id") on delete set null on update no action,
   foreign key("rfq_id") references "procurement_rfqs"("id") on delete cascade on update no action,
   primary key("id")
@@ -21227,12 +21220,6 @@ CREATE TABLE "procurement_rfq_suppliers"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "access_token_hash" varchar,
-  "token_expires_at" datetime,
-  "first_viewed_at" datetime,
-  "submitted_at" datetime,
-  "declined_reason" text,
-  "notified_outcome_at" datetime,
   foreign key("supplier_id") references "suppliers"("id") on delete restrict on update no action,
   foreign key("rfq_id") references "procurement_rfqs"("id") on delete cascade on update no action,
   primary key("id")
@@ -21267,16 +21254,6 @@ CREATE TABLE "procurement_rfqs"(
   "deleted_at" datetime,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "description" text,
-  "incoterms" varchar,
-  "submission_deadline" datetime,
-  "expected_delivery_date" date,
-  "evaluation_weights" text,
-  "sealed_bidding" tinyint(1) not null default '0',
-  "buyer_user_id" varchar,
-  "awarded_at" datetime,
-  "awarded_by_user_id" varchar,
-  "award_mode" varchar,
   foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete set null on update no action,
   primary key("id")
 );
@@ -21307,7 +21284,6 @@ CREATE TABLE "procurement_settings"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "budget_enforcement_policy" varchar,
   primary key("id")
 );
 
@@ -21330,14 +21306,6 @@ CREATE TABLE "procurement_supplier_quote_lines"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "is_no_bid" tinyint(1) not null default '0',
-  "discount_percent" numeric not null default '0',
-  "net_unit_price" numeric not null default '0',
-  "line_total_net" numeric not null default '0',
-  "promised_delivery_date" date,
-  "supplier_notes" text,
-  "line_weighted_score" numeric,
-  "is_awarded" tinyint(1) not null default '0',
   foreign key("rfq_line_id") references "procurement_rfq_lines"("id") on delete cascade on update no action,
   foreign key("supplier_quote_id") references "procurement_supplier_quotes"("id") on delete cascade on update no action,
   primary key("id")
@@ -21365,23 +21333,6 @@ CREATE TABLE "procurement_supplier_quotes"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "invitation_id" varchar,
-  "exchange_rate_to_rfq" numeric not null default '1',
-  "payment_terms_days" integer not null default '30',
-  "incoterms" varchar,
-  "shipping_cost" numeric not null default '0',
-  "total_net_amount" numeric not null default '0',
-  "total_landed_cost" numeric not null default '0',
-  "weighted_overall_score" numeric,
-  "submitted_ip_address" varchar,
-  "submitted_user_agent" text,
-  "submitted_at" datetime,
-  "quote_attachment_file_name" varchar,
-  "quote_attachment_mime_type" varchar,
-  "quote_attachment_size_bytes" integer,
-  "quote_attachment_disk" varchar,
-  "quote_attachment_path" varchar,
-  "quote_attachment_sha256" varchar,
   foreign key("supplier_id") references "suppliers"("id") on delete restrict on update no action,
   foreign key("rfq_id") references "procurement_rfqs"("id") on delete cascade on update no action,
   primary key("id")
@@ -22834,8 +22785,6 @@ CREATE TABLE "purchase_order_lines"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "rfq_line_id" varchar,
-  "supplier_bid_line_id" varchar,
   foreign key("supplier_catalog_id") references "supplier_catalogs"("id") on delete set null on update no action,
   foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade on update no action,
   primary key("id")
@@ -23062,6 +23011,97 @@ CREATE INDEX "purchase_requests_status_index" on "purchase_requests"(
 CREATE UNIQUE INDEX "purchase_requests_tenant_id_request_number_unique" on "purchase_requests"(
   "tenant_id",
   "request_number"
+);
+CREATE TABLE "purchase_requisition_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "purchase_requisition_id" varchar not null,
+  "line_number" integer not null default('1'),
+  "supplier_catalog_id" varchar,
+  "description" varchar not null,
+  "quantity_requested" numeric not null,
+  "uom" varchar not null default('PCE'),
+  "estimated_unit_price" numeric not null default('0'),
+  "estimated_total_price" numeric not null default('0'),
+  "suggested_supplier_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("suggested_supplier_id") references "suppliers"("id") on delete set null on update no action,
+  foreign key("supplier_catalog_id") references "supplier_catalogs"("id") on delete set null on update no action,
+  foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "purchase_requisition_lines_tenant_id_index" on "purchase_requisition_lines"(
+  "tenant_id"
+);
+CREATE TABLE "purchase_requisitions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "branch_id" varchar,
+  "department_id" varchar,
+  "cost_center_id" varchar,
+  "project_id" varchar,
+  "requisition_number" varchar not null,
+  "title" varchar not null,
+  "requestor_user_id" varchar not null,
+  "urgency" varchar not null default('medium'),
+  "required_by_date" date not null,
+  "status" varchar not null default('draft'),
+  "total_estimated_amount" numeric not null default('0'),
+  "currency" varchar not null default('EUR'),
+  "notes" text,
+  "is_locked" tinyint(1) not null default('0'),
+  "created_by" varchar,
+  "updated_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "submitted_at" datetime,
+  "approved_at" datetime,
+  "workflow_instance_id" varchar,
+  "deleted_by" varchar,
+  foreign key("requestor_user_id") references "users"("id") on delete restrict on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "idx_pr_tenant_status" on "purchase_requisitions"(
+  "tenant_id",
+  "status",
+  "requestor_user_id"
+);
+CREATE INDEX "purchase_requisitions_branch_id_index" on "purchase_requisitions"(
+  "branch_id"
+);
+CREATE INDEX "purchase_requisitions_company_id_index" on "purchase_requisitions"(
+  "company_id"
+);
+CREATE INDEX "purchase_requisitions_cost_center_id_index" on "purchase_requisitions"(
+  "cost_center_id"
+);
+CREATE INDEX "purchase_requisitions_department_id_index" on "purchase_requisitions"(
+  "department_id"
+);
+CREATE INDEX "purchase_requisitions_project_id_index" on "purchase_requisitions"(
+  "project_id"
+);
+CREATE INDEX "purchase_requisitions_status_index" on "purchase_requisitions"(
+  "status"
+);
+CREATE INDEX "purchase_requisitions_tenant_id_index" on "purchase_requisitions"(
+  "tenant_id"
+);
+CREATE INDEX "purchase_requisitions_workflow_instance_id_index" on "purchase_requisitions"(
+  "workflow_instance_id"
+);
+CREATE UNIQUE INDEX "uq_pr_number" on "purchase_requisitions"(
+  "tenant_id",
+  "requisition_number"
 );
 CREATE TABLE "purchase_return_lines"(
   "id" varchar not null,
@@ -40438,8 +40478,6 @@ CREATE INDEX "privacy_retention_run_logs_tenant_id_started_at_index" on "privacy
   "tenant_id",
   "started_at"
 );
-CREATE INDEX "contacts_iban_bidx_index" on "contacts"("iban_bidx");
-CREATE INDEX "contacts_qr_iban_bidx_index" on "contacts"("qr_iban_bidx");
 CREATE TABLE "preservation_configurations"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -40601,36 +40639,114 @@ CREATE INDEX "preservation_audit_logs_tenant_id_preservation_batch_id_index" on 
   "tenant_id",
   "preservation_batch_id"
 );
-CREATE TABLE "offline_audit_entries"(
+CREATE TABLE "copilot_conversations"(
   "id" varchar not null,
   "tenant_id" varchar,
-  "device_id" varchar not null,
-  "origin" varchar not null,
-  "sequence_number" integer not null,
-  "previous_hash" varchar not null,
-  "payload_hash" varchar not null,
-  "record_hash" varchar not null,
-  "occurred_at" varchar not null,
-  "entity_type" varchar not null,
-  "entity_id" varchar,
-  "action" varchar not null,
-  "payload" text,
-  "metadata" text,
-  "batch_id" varchar,
-  "audit_log_id" varchar,
-  "received_at" datetime not null,
+  "user_id" varchar not null,
+  "title" varchar not null,
+  "locale" varchar not null default 'en',
+  "context_route" varchar,
+  "context_entity_type" varchar,
+  "context_entity_id" varchar,
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
 
-CREATE UNIQUE INDEX "offline_audit_device_sequence_unique" on "offline_audit_entries"(
+CREATE INDEX "copilot_conversations_tenant_id_user_id_updated_at_index" on "copilot_conversations"(
   "tenant_id",
-  "device_id",
-  "sequence_number"
+  "user_id",
+  "updated_at"
 );
-CREATE INDEX "offline_audit_entries_tenant_id_index" on "offline_audit_entries"(
-  "tenant_id"
+CREATE TABLE "copilot_messages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "conversation_id" varchar not null,
+  "role" varchar not null,
+  "content_markdown" text not null default '',
+  "citations_json" text,
+  "visualization_json" text,
+  "proposed_action_json" text,
+  "action_status" varchar,
+  "token_usage_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("conversation_id") references "copilot_conversations"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "copilot_messages_tenant_id_conversation_id_created_at_index" on "copilot_messages"(
+  "tenant_id",
+  "conversation_id",
+  "created_at"
+);
+CREATE INDEX "copilot_messages_tenant_id_action_status_index" on "copilot_messages"(
+  "tenant_id",
+  "action_status"
+);
+CREATE TABLE "copilot_knowledge_chunks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source_type" varchar not null,
+  "jurisdiction" varchar not null,
+  "locale" varchar not null,
+  "document_title" varchar not null,
+  "section_ref" varchar,
+  "content_text" text not null,
+  "embedding_vector" text,
+  "metadata_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "copilot_knowledge_chunks_tenant_id_jurisdiction_locale_index" on "copilot_knowledge_chunks"(
+  "tenant_id",
+  "jurisdiction",
+  "locale"
+);
+CREATE INDEX "copilot_knowledge_chunks_tenant_id_source_type_index" on "copilot_knowledge_chunks"(
+  "tenant_id",
+  "source_type"
+);
+CREATE TABLE "copilot_usages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar,
+  "conversation_id" varchar,
+  "provider" varchar not null,
+  "model" varchar,
+  "prompt_tokens" integer not null default '0',
+  "completion_tokens" integer not null default '0',
+  "total_tokens" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "copilot_usages_tenant_id_created_at_index" on "copilot_usages"(
+  "tenant_id",
+  "created_at"
 );
 CREATE TABLE "customer_payment_behavior_models"(
   "id" varchar not null,
@@ -40749,266 +40865,6 @@ CREATE INDEX "sdf_tenant_product_warehouse_index" on "sku_demand_forecasts"(
 CREATE INDEX "sdf_tenant_period_index" on "sku_demand_forecasts"(
   "tenant_id",
   "forecast_period_start"
-);
-CREATE TABLE "copilot_conversations"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "user_id" varchar not null,
-  "title" varchar not null,
-  "locale" varchar not null default 'en',
-  "context_route" varchar,
-  "context_entity_type" varchar,
-  "context_entity_id" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "copilot_conversations_tenant_id_user_id_updated_at_index" on "copilot_conversations"(
-  "tenant_id",
-  "user_id",
-  "updated_at"
-);
-CREATE TABLE "copilot_messages"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "conversation_id" varchar not null,
-  "role" varchar not null,
-  "content_markdown" text not null default '',
-  "citations_json" text,
-  "visualization_json" text,
-  "proposed_action_json" text,
-  "action_status" varchar,
-  "token_usage_json" text,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("conversation_id") references "copilot_conversations"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "copilot_messages_tenant_id_conversation_id_created_at_index" on "copilot_messages"(
-  "tenant_id",
-  "conversation_id",
-  "created_at"
-);
-CREATE INDEX "copilot_messages_tenant_id_action_status_index" on "copilot_messages"(
-  "tenant_id",
-  "action_status"
-);
-CREATE TABLE "copilot_knowledge_chunks"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "source_type" varchar not null,
-  "jurisdiction" varchar not null,
-  "locale" varchar not null,
-  "document_title" varchar not null,
-  "section_ref" varchar,
-  "content_text" text not null,
-  "embedding_vector" text,
-  "metadata_json" text,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "copilot_knowledge_chunks_tenant_id_jurisdiction_locale_index" on "copilot_knowledge_chunks"(
-  "tenant_id",
-  "jurisdiction",
-  "locale"
-);
-CREATE INDEX "copilot_knowledge_chunks_tenant_id_source_type_index" on "copilot_knowledge_chunks"(
-  "tenant_id",
-  "source_type"
-);
-CREATE TABLE "copilot_usages"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "user_id" varchar,
-  "conversation_id" varchar,
-  "provider" varchar not null,
-  "model" varchar,
-  "prompt_tokens" integer not null default '0',
-  "completion_tokens" integer not null default '0',
-  "total_tokens" integer not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "copilot_usages_tenant_id_created_at_index" on "copilot_usages"(
-  "tenant_id",
-  "created_at"
-);
-CREATE TABLE "roles"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "key" varchar not null,
-  "name" varchar not null,
-  "description" text,
-  "is_system" tinyint(1) not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "roles_tenant_id_key_unique" on "roles"(
-  "tenant_id",
-  "key"
-);
-CREATE TABLE "role_permissions"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "role_id" varchar not null,
-  "permission" varchar not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_at" datetime,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("role_id") references "roles"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "role_permissions_role_id_permission_unique" on "role_permissions"(
-  "role_id",
-  "permission"
-);
-CREATE INDEX "role_permissions_tenant_id_permission_index" on "role_permissions"(
-  "tenant_id",
-  "permission"
-);
-CREATE TABLE "role_assignments"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "user_id" varchar not null,
-  "role_id" varchar not null,
-  "company_id" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_at" datetime,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("user_id") references "users"("id") on delete cascade,
-  foreign key("role_id") references "roles"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "role_assignments_tenant_id_user_id_company_id_index" on "role_assignments"(
-  "tenant_id",
-  "user_id",
-  "company_id"
-);
-CREATE INDEX "role_assignments_tenant_id_role_id_index" on "role_assignments"(
-  "tenant_id",
-  "role_id"
-);
-CREATE TABLE "abac_rules"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "role_id" varchar not null,
-  "permission" varchar not null,
-  "effect" varchar not null default 'deny',
-  "conditions" text not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_at" datetime,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("role_id") references "roles"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "abac_rules_tenant_id_role_id_index" on "abac_rules"(
-  "tenant_id",
-  "role_id"
-);
-CREATE TABLE "field_policies"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "role_id" varchar not null,
-  "resource" varchar not null,
-  "field" varchar not null,
-  "visibility" varchar not null default 'masked',
-  "kind" varchar not null default 'amount',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_at" datetime,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("role_id") references "roles"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "field_policies_role_id_resource_field_unique" on "field_policies"(
-  "role_id",
-  "resource",
-  "field"
-);
-CREATE INDEX "field_policies_tenant_id_resource_index" on "field_policies"(
-  "tenant_id",
-  "resource"
-);
-CREATE TABLE "webauthn_credentials"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "user_id" varchar not null,
-  "name" varchar not null,
-  "credential_id" varchar not null,
-  "public_key" text not null,
-  "sign_count" integer not null default '0',
-  "aaguid" varchar,
-  "last_used_at" datetime,
-  "revoked_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_at" datetime,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("user_id") references "users"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "webauthn_credentials_tenant_id_user_id_index" on "webauthn_credentials"(
-  "tenant_id",
-  "user_id"
-);
-CREATE UNIQUE INDEX "webauthn_credentials_credential_id_unique" on "webauthn_credentials"(
-  "credential_id"
 );
 CREATE TABLE "academy_learning_tracks"(
   "id" varchar not null,
@@ -41318,6 +41174,190 @@ CREATE UNIQUE INDEX "tenant_ocr_configurations_tenant_id_unique" on "tenant_ocr_
 CREATE UNIQUE INDEX "tenant_ocr_configurations_dedicated_inbox_alias_unique" on "tenant_ocr_configurations"(
   "dedicated_inbox_alias"
 );
+CREATE TABLE "roles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "key" varchar not null,
+  "name" varchar not null,
+  "description" text,
+  "is_system" tinyint(1) not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "roles_tenant_id_key_unique" on "roles"(
+  "tenant_id",
+  "key"
+);
+CREATE TABLE "role_permissions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "role_id" varchar not null,
+  "permission" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "role_permissions_role_id_permission_unique" on "role_permissions"(
+  "role_id",
+  "permission"
+);
+CREATE INDEX "role_permissions_tenant_id_permission_index" on "role_permissions"(
+  "tenant_id",
+  "permission"
+);
+CREATE TABLE "role_assignments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar not null,
+  "role_id" varchar not null,
+  "company_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("user_id") references "users"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "role_assignments_tenant_id_user_id_company_id_index" on "role_assignments"(
+  "tenant_id",
+  "user_id",
+  "company_id"
+);
+CREATE INDEX "role_assignments_tenant_id_role_id_index" on "role_assignments"(
+  "tenant_id",
+  "role_id"
+);
+CREATE TABLE "abac_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "role_id" varchar not null,
+  "permission" varchar not null,
+  "effect" varchar not null default 'deny',
+  "conditions" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "abac_rules_tenant_id_role_id_index" on "abac_rules"(
+  "tenant_id",
+  "role_id"
+);
+CREATE TABLE "field_policies"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "role_id" varchar not null,
+  "resource" varchar not null,
+  "field" varchar not null,
+  "visibility" varchar not null default 'masked',
+  "kind" varchar not null default 'amount',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "field_policies_role_id_resource_field_unique" on "field_policies"(
+  "role_id",
+  "resource",
+  "field"
+);
+CREATE INDEX "field_policies_tenant_id_resource_index" on "field_policies"(
+  "tenant_id",
+  "resource"
+);
+CREATE TABLE "webauthn_credentials"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar not null,
+  "name" varchar not null,
+  "credential_id" varchar not null,
+  "public_key" text not null,
+  "sign_count" integer not null default '0',
+  "aaguid" varchar,
+  "last_used_at" datetime,
+  "revoked_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("user_id") references "users"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "webauthn_credentials_tenant_id_user_id_index" on "webauthn_credentials"(
+  "tenant_id",
+  "user_id"
+);
+CREATE UNIQUE INDEX "webauthn_credentials_credential_id_unique" on "webauthn_credentials"(
+  "credential_id"
+);
+CREATE INDEX "contacts_iban_bidx_index" on "contacts"("iban_bidx");
+CREATE INDEX "contacts_qr_iban_bidx_index" on "contacts"("qr_iban_bidx");
+CREATE TABLE "offline_audit_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "device_id" varchar not null,
+  "origin" varchar not null,
+  "sequence_number" integer not null,
+  "previous_hash" varchar not null,
+  "payload_hash" varchar not null,
+  "record_hash" varchar not null,
+  "occurred_at" varchar not null,
+  "entity_type" varchar not null,
+  "entity_id" varchar,
+  "action" varchar not null,
+  "payload" text,
+  "metadata" text,
+  "batch_id" varchar,
+  "audit_log_id" varchar,
+  "received_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "offline_audit_device_sequence_unique" on "offline_audit_entries"(
+  "tenant_id",
+  "device_id",
+  "sequence_number"
+);
+CREATE INDEX "offline_audit_entries_tenant_id_index" on "offline_audit_entries"(
+  "tenant_id"
+);
 CREATE TABLE "ai_provider_configs"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -41546,308 +41586,6 @@ CREATE INDEX "aiat_subject_index" on "ai_audit_trails"(
   "subject_type",
   "subject_id"
 );
-CREATE TABLE "dim_date"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "date_key" integer not null,
-  "date" date not null,
-  "year" integer not null,
-  "quarter" integer not null,
-  "month" integer not null,
-  "week" integer not null,
-  "day_of_week" integer not null,
-  "is_weekend" tinyint(1) not null default '0',
-  "is_ch_holiday" tinyint(1) not null default '0',
-  "is_it_holiday" tinyint(1) not null default '0',
-  "working_days" integer not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "dim_date_tenant_key_unique" on "dim_date"(
-  "tenant_id",
-  "date_key"
-);
-CREATE TABLE "dim_legal_entity"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "legal_entity_id" varchar not null,
-  "name" varchar not null,
-  "base_currency" varchar not null,
-  "country" varchar,
-  "region" varchar,
-  "parent_legal_entity_id" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "dim_le_tenant_entity_unique" on "dim_legal_entity"(
-  "tenant_id",
-  "legal_entity_id"
-);
-CREATE TABLE "dim_counterparty"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "contact_id" varchar not null,
-  "name" varchar not null,
-  "kind" varchar not null,
-  "country" varchar,
-  "industry_code" varchar,
-  "industry_code_system" varchar,
-  "payment_terms_days" integer not null default '30',
-  "cohort" varchar,
-  "credit_tier" varchar not null default 'B',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "dim_cp_tenant_contact_unique" on "dim_counterparty"(
-  "tenant_id",
-  "contact_id"
-);
-CREATE TABLE "dim_product_service"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "product_id" varchar not null,
-  "sku" varchar,
-  "name" varchar not null,
-  "category" varchar,
-  "abc_class" varchar,
-  "xyz_class" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "dim_ps_tenant_product_unique" on "dim_product_service"(
-  "tenant_id",
-  "product_id"
-);
-CREATE TABLE "dim_cost_center"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "cost_center_id" varchar not null,
-  "code" varchar,
-  "name" varchar not null,
-  "kind" varchar not null default 'department',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "dim_cc_tenant_center_unique" on "dim_cost_center"(
-  "tenant_id",
-  "cost_center_id"
-);
-CREATE TABLE "fact_financial_transactions"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "legal_entity_id" varchar,
-  "journal_line_id" varchar not null,
-  "journal_entry_id" varchar not null,
-  "date_key" integer not null,
-  "posting_date" date not null,
-  "account_id" varchar not null,
-  "account_code" varchar,
-  "category" varchar not null,
-  "cost_center_id" varchar,
-  "counterparty_id" varchar,
-  "product_id" varchar,
-  "project_id" varchar,
-  "channel" varchar,
-  "transaction_currency" varchar not null,
-  "amount_transaction" numeric not null default '0',
-  "functional_currency" varchar not null,
-  "amount_functional" numeric not null default '0',
-  "amount_chf" numeric,
-  "amount_eur" numeric,
-  "fx_rate_chf" numeric,
-  "fx_rate_eur" numeric,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "fft_tenant_line_unique" on "fact_financial_transactions"(
-  "tenant_id",
-  "journal_line_id"
-);
-CREATE INDEX "fft_scope_date_category_index" on "fact_financial_transactions"(
-  "tenant_id",
-  "legal_entity_id",
-  "date_key",
-  "category"
-);
-CREATE INDEX "fft_counterparty_index" on "fact_financial_transactions"(
-  "tenant_id",
-  "counterparty_id",
-  "category"
-);
-CREATE INDEX "fft_entry_index" on "fact_financial_transactions"(
-  "tenant_id",
-  "journal_entry_id"
-);
-CREATE TABLE "fact_commercial_velocity"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "legal_entity_id" varchar,
-  "invoice_id" varchar not null,
-  "counterparty_id" varchar,
-  "quote_id" varchar,
-  "channel" varchar not null default 'direct',
-  "issue_date_key" integer not null,
-  "issue_date" date not null,
-  "due_date" date,
-  "paid_date" date,
-  "currency" varchar not null,
-  "amount_net" numeric not null default '0',
-  "amount_gross" numeric not null default '0',
-  "amount_paid" numeric not null default '0',
-  "amount_open" numeric not null default '0',
-  "amount_net_chf" numeric,
-  "amount_net_eur" numeric,
-  "amount_open_chf" numeric,
-  "amount_open_eur" numeric,
-  "discount_amount" numeric not null default '0',
-  "days_to_pay" integer,
-  "quote_to_cash_days" integer,
-  "payment_status" varchar not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "fcv_tenant_invoice_unique" on "fact_commercial_velocity"(
-  "tenant_id",
-  "invoice_id"
-);
-CREATE INDEX "fcv_scope_date_index" on "fact_commercial_velocity"(
-  "tenant_id",
-  "legal_entity_id",
-  "issue_date_key"
-);
-CREATE TABLE "fact_operational_efficiency"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "legal_entity_id" varchar,
-  "source_type" varchar not null,
-  "source_id" varchar not null,
-  "date_key" integer not null,
-  "work_date" date not null,
-  "project_id" varchar,
-  "user_id" varchar,
-  "product_id" varchar,
-  "billable_hours" numeric not null default '0',
-  "non_billable_hours" numeric not null default '0',
-  "labour_cost" numeric not null default '0',
-  "labour_charge" numeric not null default '0',
-  "quantity_out" numeric not null default '0',
-  "value_out" numeric not null default '0',
-  "unit_cost" numeric,
-  "standard_unit_cost" numeric,
-  "unit_cost_variance" numeric,
-  "fulfillment_lead_days" integer,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "foe_tenant_source_unique" on "fact_operational_efficiency"(
-  "tenant_id",
-  "source_type",
-  "source_id"
-);
-CREATE INDEX "foe_scope_date_index" on "fact_operational_efficiency"(
-  "tenant_id",
-  "legal_entity_id",
-  "date_key"
-);
-CREATE TABLE "agg_executive_daily_snapshots"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "legal_entity_id" varchar,
-  "date_key" integer not null,
-  "snapshot_date" date not null,
-  "revenue_chf" numeric not null default '0',
-  "revenue_eur" numeric not null default '0',
-  "cogs_chf" numeric not null default '0',
-  "cogs_eur" numeric not null default '0',
-  "opex_chf" numeric not null default '0',
-  "opex_eur" numeric not null default '0',
-  "depreciation_chf" numeric not null default '0',
-  "depreciation_eur" numeric not null default '0',
-  "cash_movement_chf" numeric not null default '0',
-  "cash_movement_eur" numeric not null default '0',
-  "receivable_movement_chf" numeric not null default '0',
-  "receivable_movement_eur" numeric not null default '0',
-  "payable_movement_chf" numeric not null default '0',
-  "payable_movement_eur" numeric not null default '0',
-  "inventory_movement_chf" numeric not null default '0',
-  "inventory_movement_eur" numeric not null default '0',
-  "functional_checksum" numeric not null default '0',
-  "transaction_count" integer not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "aeds_scope_date_unique" on "agg_executive_daily_snapshots"(
-  "tenant_id",
-  "legal_entity_id",
-  "date_key"
-);
-CREATE INDEX "aeds_tenant_date_index" on "agg_executive_daily_snapshots"(
-  "tenant_id",
-  "date_key"
-);
 CREATE TABLE "kpi_dashboards"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -41958,6 +41696,238 @@ CREATE INDEX "kpi_threshold_alert_logs_tenant_id_kpi_code_status_index" on "kpi_
   "tenant_id",
   "kpi_code",
   "status"
+);
+CREATE TABLE "core_sovereign_region_nodes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "node_code" varchar not null,
+  "service_type" varchar not null,
+  "country_iso2" varchar not null,
+  "canton_or_region" varchar not null,
+  "city" varchar not null,
+  "provider_name" varchar not null,
+  "endpoint_dsn_encrypted" text,
+  "certifications_json" text,
+  "latitude" numeric,
+  "longitude" numeric,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "core_sovereign_region_nodes_tenant_id_service_type_index" on "core_sovereign_region_nodes"(
+  "tenant_id",
+  "service_type"
+);
+CREATE UNIQUE INDEX "uq_core_sovereign_node_code" on "core_sovereign_region_nodes"(
+  "node_code"
+);
+CREATE INDEX "core_sovereign_region_nodes_country_iso2_index" on "core_sovereign_region_nodes"(
+  "country_iso2"
+);
+CREATE TABLE "core_data_residency_policies"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "scope_type" varchar not null,
+  "jurisdiction_zone" varchar not null,
+  "primary_db_node_id" varchar not null,
+  "replica_db_node_ids_json" text,
+  "s3_storage_node_id" varchar not null,
+  "vector_db_node_id" varchar not null,
+  "ai_inference_node_id" varchar not null,
+  "backup_node_id" varchar not null,
+  "queue_node_id" varchar not null,
+  "enforce_strict_egress_block" tinyint(1) not null default '1',
+  "allow_aggregated_non_pii_consolidation" tinyint(1) not null default '1',
+  "locked_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("primary_db_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
+  foreign key("s3_storage_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
+  foreign key("vector_db_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
+  foreign key("ai_inference_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
+  foreign key("backup_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
+  foreign key("queue_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_core_residency_tenant_entity" on "core_data_residency_policies"(
+  "tenant_id",
+  "legal_entity_id"
+);
+CREATE INDEX "core_data_residency_policies_legal_entity_id_index" on "core_data_residency_policies"(
+  "legal_entity_id"
+);
+CREATE INDEX "core_data_residency_policies_jurisdiction_zone_index" on "core_data_residency_policies"(
+  "jurisdiction_zone"
+);
+CREATE TABLE "core_byok_kms_configurations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "key_management_mode" varchar not null,
+  "provider_type" varchar not null,
+  "external_key_uri" varchar not null,
+  "kmip_endpoint" varchar,
+  "kms_credentials_encrypted" text,
+  "current_key_version" varchar not null,
+  "wrapped_dek_ciphertext" text,
+  "dek_wrap_algorithm" varchar not null default 'AES-256-GCM',
+  "status" varchar not null,
+  "dek_cache_ttl_seconds" integer not null default '0',
+  "rotation_interval_days" integer not null default '90',
+  "last_rotated_at" datetime,
+  "next_rotation_due_at" datetime,
+  "revoked_at" datetime,
+  "revocation_reason" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "core_byok_kms_configurations_tenant_id_legal_entity_id_status_index" on "core_byok_kms_configurations"(
+  "tenant_id",
+  "legal_entity_id",
+  "status"
+);
+CREATE INDEX "core_byok_kms_configurations_legal_entity_id_index" on "core_byok_kms_configurations"(
+  "legal_entity_id"
+);
+CREATE INDEX "core_byok_kms_configurations_status_index" on "core_byok_kms_configurations"(
+  "status"
+);
+CREATE TABLE "core_byok_key_access_audit"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "kms_configuration_id" varchar not null,
+  "operation" varchar not null,
+  "key_version" varchar,
+  "actor_type" varchar not null,
+  "actor_id" varchar,
+  "source_node_code" varchar not null,
+  "source_ip" varchar,
+  "outcome" varchar not null,
+  "latency_ms" integer not null default '0',
+  "previous_entry_hash" varchar not null,
+  "entry_hash" varchar not null,
+  "occurred_at" datetime not null,
+  foreign key("tenant_id") references "tenants"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "core_byok_key_access_audit_tenant_id_occurred_at_index" on "core_byok_key_access_audit"(
+  "tenant_id",
+  "occurred_at"
+);
+CREATE INDEX "core_byok_key_access_audit_legal_entity_id_index" on "core_byok_key_access_audit"(
+  "legal_entity_id"
+);
+CREATE INDEX "core_byok_key_access_audit_kms_configuration_id_index" on "core_byok_key_access_audit"(
+  "kms_configuration_id"
+);
+CREATE INDEX "core_byok_key_access_audit_occurred_at_index" on "core_byok_key_access_audit"(
+  "occurred_at"
+);
+CREATE TABLE "core_cross_border_transfer_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source_jurisdiction" varchar not null,
+  "destination_country_iso2" varchar not null,
+  "destination_country_name" varchar not null,
+  "has_ch_adequacy" tinyint(1) not null default '0',
+  "has_eu_adequacy" tinyint(1) not null default '0',
+  "decision_status" varchar not null,
+  "legal_basis_reference" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_core_transfer_rule_lookup" on "core_cross_border_transfer_rules"(
+  "tenant_id",
+  "source_jurisdiction",
+  "destination_country_iso2"
+);
+CREATE INDEX "core_cross_border_transfer_rules_destination_country_iso2_index" on "core_cross_border_transfer_rules"(
+  "destination_country_iso2"
+);
+CREATE TABLE "core_cross_border_blocked_attempts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "jurisdiction_zone" varchar not null,
+  "destination_country_iso2" varchar,
+  "purpose" varchar not null,
+  "target" varchar,
+  "decision_status" varchar not null,
+  "reason" varchar not null,
+  "occurred_at" datetime not null,
+  foreign key("tenant_id") references "tenants"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "core_cross_border_blocked_attempts_tenant_id_occurred_at_index" on "core_cross_border_blocked_attempts"(
+  "tenant_id",
+  "occurred_at"
+);
+CREATE INDEX "core_cross_border_blocked_attempts_legal_entity_id_index" on "core_cross_border_blocked_attempts"(
+  "legal_entity_id"
+);
+CREATE INDEX "core_cross_border_blocked_attempts_occurred_at_index" on "core_cross_border_blocked_attempts"(
+  "occurred_at"
+);
+CREATE TABLE "core_sovereignty_attestations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "certificate_number" varchar not null,
+  "jurisdiction_zone" varchar not null,
+  "topology_snapshot_json" text not null,
+  "byok_snapshot_json" text not null,
+  "compliance_frameworks_json" text not null,
+  "sha256_payload_hash" varchar not null,
+  "digital_signature" text not null,
+  "signer_key_fingerprint" varchar not null,
+  "issued_at" datetime not null,
+  "valid_until" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "core_sovereignty_attestations_tenant_id_issued_at_index" on "core_sovereignty_attestations"(
+  "tenant_id",
+  "issued_at"
+);
+CREATE INDEX "core_sovereignty_attestations_legal_entity_id_index" on "core_sovereignty_attestations"(
+  "legal_entity_id"
+);
+CREATE UNIQUE INDEX "core_sovereignty_attestations_certificate_number_unique" on "core_sovereignty_attestations"(
+  "certificate_number"
 );
 CREATE TABLE "cpq_quotes"(
   "id" varchar not null,
@@ -42214,238 +42184,6 @@ CREATE INDEX "cpq_comments_tenant_id_quote_id_index" on "cpq_comments"(
   "tenant_id",
   "quote_id"
 );
-CREATE TABLE "core_sovereign_region_nodes"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "node_code" varchar not null,
-  "service_type" varchar not null,
-  "country_iso2" varchar not null,
-  "canton_or_region" varchar not null,
-  "city" varchar not null,
-  "provider_name" varchar not null,
-  "endpoint_dsn_encrypted" text,
-  "certifications_json" text,
-  "latitude" numeric,
-  "longitude" numeric,
-  "is_active" tinyint(1) not null default '1',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "core_sovereign_region_nodes_tenant_id_service_type_index" on "core_sovereign_region_nodes"(
-  "tenant_id",
-  "service_type"
-);
-CREATE UNIQUE INDEX "uq_core_sovereign_node_code" on "core_sovereign_region_nodes"(
-  "node_code"
-);
-CREATE INDEX "core_sovereign_region_nodes_country_iso2_index" on "core_sovereign_region_nodes"(
-  "country_iso2"
-);
-CREATE TABLE "core_data_residency_policies"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "legal_entity_id" varchar,
-  "scope_type" varchar not null,
-  "jurisdiction_zone" varchar not null,
-  "primary_db_node_id" varchar not null,
-  "replica_db_node_ids_json" text,
-  "s3_storage_node_id" varchar not null,
-  "vector_db_node_id" varchar not null,
-  "ai_inference_node_id" varchar not null,
-  "backup_node_id" varchar not null,
-  "queue_node_id" varchar not null,
-  "enforce_strict_egress_block" tinyint(1) not null default '1',
-  "allow_aggregated_non_pii_consolidation" tinyint(1) not null default '1',
-  "locked_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("primary_db_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
-  foreign key("s3_storage_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
-  foreign key("vector_db_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
-  foreign key("ai_inference_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
-  foreign key("backup_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
-  foreign key("queue_node_id") references "core_sovereign_region_nodes"("id") on delete restrict,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "uq_core_residency_tenant_entity" on "core_data_residency_policies"(
-  "tenant_id",
-  "legal_entity_id"
-);
-CREATE INDEX "core_data_residency_policies_legal_entity_id_index" on "core_data_residency_policies"(
-  "legal_entity_id"
-);
-CREATE INDEX "core_data_residency_policies_jurisdiction_zone_index" on "core_data_residency_policies"(
-  "jurisdiction_zone"
-);
-CREATE TABLE "core_byok_kms_configurations"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "legal_entity_id" varchar,
-  "key_management_mode" varchar not null,
-  "provider_type" varchar not null,
-  "external_key_uri" varchar not null,
-  "kmip_endpoint" varchar,
-  "kms_credentials_encrypted" text,
-  "current_key_version" varchar not null,
-  "wrapped_dek_ciphertext" text,
-  "dek_wrap_algorithm" varchar not null default 'AES-256-GCM',
-  "status" varchar not null,
-  "dek_cache_ttl_seconds" integer not null default '0',
-  "rotation_interval_days" integer not null default '90',
-  "last_rotated_at" datetime,
-  "next_rotation_due_at" datetime,
-  "revoked_at" datetime,
-  "revocation_reason" text,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "core_byok_kms_configurations_tenant_id_legal_entity_id_status_index" on "core_byok_kms_configurations"(
-  "tenant_id",
-  "legal_entity_id",
-  "status"
-);
-CREATE INDEX "core_byok_kms_configurations_legal_entity_id_index" on "core_byok_kms_configurations"(
-  "legal_entity_id"
-);
-CREATE INDEX "core_byok_kms_configurations_status_index" on "core_byok_kms_configurations"(
-  "status"
-);
-CREATE TABLE "core_byok_key_access_audit"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "legal_entity_id" varchar,
-  "kms_configuration_id" varchar not null,
-  "operation" varchar not null,
-  "key_version" varchar,
-  "actor_type" varchar not null,
-  "actor_id" varchar,
-  "source_node_code" varchar not null,
-  "source_ip" varchar,
-  "outcome" varchar not null,
-  "latency_ms" integer not null default '0',
-  "previous_entry_hash" varchar not null,
-  "entry_hash" varchar not null,
-  "occurred_at" datetime not null,
-  foreign key("tenant_id") references "tenants"("id") on delete restrict,
-  primary key("id")
-);
-
-CREATE INDEX "core_byok_key_access_audit_tenant_id_occurred_at_index" on "core_byok_key_access_audit"(
-  "tenant_id",
-  "occurred_at"
-);
-CREATE INDEX "core_byok_key_access_audit_legal_entity_id_index" on "core_byok_key_access_audit"(
-  "legal_entity_id"
-);
-CREATE INDEX "core_byok_key_access_audit_kms_configuration_id_index" on "core_byok_key_access_audit"(
-  "kms_configuration_id"
-);
-CREATE INDEX "core_byok_key_access_audit_occurred_at_index" on "core_byok_key_access_audit"(
-  "occurred_at"
-);
-CREATE TABLE "core_cross_border_transfer_rules"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "source_jurisdiction" varchar not null,
-  "destination_country_iso2" varchar not null,
-  "destination_country_name" varchar not null,
-  "has_ch_adequacy" tinyint(1) not null default '0',
-  "has_eu_adequacy" tinyint(1) not null default '0',
-  "decision_status" varchar not null,
-  "legal_basis_reference" varchar not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "idx_core_transfer_rule_lookup" on "core_cross_border_transfer_rules"(
-  "tenant_id",
-  "source_jurisdiction",
-  "destination_country_iso2"
-);
-CREATE INDEX "core_cross_border_transfer_rules_destination_country_iso2_index" on "core_cross_border_transfer_rules"(
-  "destination_country_iso2"
-);
-CREATE TABLE "core_cross_border_blocked_attempts"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "legal_entity_id" varchar,
-  "jurisdiction_zone" varchar not null,
-  "destination_country_iso2" varchar,
-  "purpose" varchar not null,
-  "target" varchar,
-  "decision_status" varchar not null,
-  "reason" varchar not null,
-  "occurred_at" datetime not null,
-  foreign key("tenant_id") references "tenants"("id") on delete restrict,
-  primary key("id")
-);
-
-CREATE INDEX "core_cross_border_blocked_attempts_tenant_id_occurred_at_index" on "core_cross_border_blocked_attempts"(
-  "tenant_id",
-  "occurred_at"
-);
-CREATE INDEX "core_cross_border_blocked_attempts_legal_entity_id_index" on "core_cross_border_blocked_attempts"(
-  "legal_entity_id"
-);
-CREATE INDEX "core_cross_border_blocked_attempts_occurred_at_index" on "core_cross_border_blocked_attempts"(
-  "occurred_at"
-);
-CREATE TABLE "core_sovereignty_attestations"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "legal_entity_id" varchar,
-  "certificate_number" varchar not null,
-  "jurisdiction_zone" varchar not null,
-  "topology_snapshot_json" text not null,
-  "byok_snapshot_json" text not null,
-  "compliance_frameworks_json" text not null,
-  "sha256_payload_hash" varchar not null,
-  "digital_signature" text not null,
-  "signer_key_fingerprint" varchar not null,
-  "issued_at" datetime not null,
-  "valid_until" datetime not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete restrict,
-  primary key("id")
-);
-
-CREATE INDEX "core_sovereignty_attestations_tenant_id_issued_at_index" on "core_sovereignty_attestations"(
-  "tenant_id",
-  "issued_at"
-);
-CREATE INDEX "core_sovereignty_attestations_legal_entity_id_index" on "core_sovereignty_attestations"(
-  "legal_entity_id"
-);
-CREATE UNIQUE INDEX "core_sovereignty_attestations_certificate_number_unique" on "core_sovereignty_attestations"(
-  "certificate_number"
-);
 CREATE INDEX "mfg_engineering_change_orders_approval_workflow_id_index" on "mfg_engineering_change_orders"(
   "approval_workflow_id"
 );
@@ -42460,6 +42198,9 @@ CREATE TABLE "mfg_bom_co_products"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("bom_id") references "mfg_boms"("id") on delete cascade,
   primary key("id")
 );
@@ -42480,162 +42221,6 @@ CREATE INDEX "mfg_bom_co_products_product_item_id_index" on "mfg_bom_co_products
 CREATE INDEX "warehouse_bins_full_path_code_index" on "warehouse_bins"(
   "full_path_code"
 );
-<<<<<<< HEAD
-CREATE INDEX "procurement_rfqs_submission_deadline_index" on "procurement_rfqs"(
-  "submission_deadline"
-);
-CREATE INDEX "procurement_rfqs_buyer_user_id_index" on "procurement_rfqs"(
-  "buyer_user_id"
-);
-CREATE INDEX "procurement_rfq_lines_item_id_index" on "procurement_rfq_lines"(
-  "item_id"
-);
-CREATE INDEX "procurement_rfq_lines_awarded_supplier_id_index" on "procurement_rfq_lines"(
-  "awarded_supplier_id"
-);
-CREATE INDEX "procurement_rfq_lines_awarded_bid_line_id_index" on "procurement_rfq_lines"(
-  "awarded_bid_line_id"
-);
-CREATE INDEX "procurement_rfq_lines_generated_purchase_order_id_index" on "procurement_rfq_lines"(
-  "generated_purchase_order_id"
-);
-CREATE TABLE "procurement_rfq_attachments"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "rfq_id" varchar not null,
-  "file_name" varchar not null,
-  "mime_type" varchar not null,
-  "file_size_bytes" integer not null,
-  "storage_disk" varchar not null default 'local',
-  "storage_path" varchar not null,
-  "sha256_hash" varchar not null,
-  "is_visible_to_suppliers" tinyint(1) not null default '1',
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("rfq_id") references "procurement_rfqs"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "idx_rfq_attachments_tenant_rfq" on "procurement_rfq_attachments"(
-  "tenant_id",
-  "rfq_id"
-);
-CREATE INDEX "procurement_rfq_attachments_tenant_id_index" on "procurement_rfq_attachments"(
-  "tenant_id"
-);
-CREATE UNIQUE INDEX "uq_rfq_supplier_token_hash" on "procurement_rfq_suppliers"(
-  "access_token_hash"
-);
-CREATE INDEX "procurement_rfq_suppliers_token_expires_at_index" on "procurement_rfq_suppliers"(
-  "token_expires_at"
-);
-CREATE INDEX "procurement_supplier_quotes_invitation_id_index" on "procurement_supplier_quotes"(
-  "invitation_id"
-);
-CREATE INDEX "procurement_supplier_quote_lines_is_awarded_index" on "procurement_supplier_quote_lines"(
-  "is_awarded"
-);
-CREATE INDEX "purchase_order_lines_rfq_line_id_index" on "purchase_order_lines"(
-  "rfq_line_id"
-);
-CREATE INDEX "purchase_order_lines_supplier_bid_line_id_index" on "purchase_order_lines"(
-  "supplier_bid_line_id"
-);
-CREATE TABLE "purchase_requisitions"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "company_id" varchar,
-  "branch_id" varchar,
-  "department_id" varchar,
-  "cost_center_id" varchar,
-  "project_id" varchar,
-  "requisition_number" varchar not null,
-  "title" varchar not null,
-  "requestor_user_id" varchar not null,
-  "urgency" varchar not null default('medium'),
-  "required_by_date" date not null,
-  "status" varchar not null default('draft'),
-  "total_estimated_amount" numeric not null default('0'),
-  "currency" varchar not null default('EUR'),
-  "notes" text,
-  "is_locked" tinyint(1) not null default('0'),
-  "created_by" varchar,
-  "updated_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "submitted_at" datetime,
-  "approved_at" datetime,
-  "workflow_instance_id" varchar,
-  "deleted_by" varchar,
-  "requester_user_id" varchar,
-  "requested_delivery_date" date,
-  "economic_justification" text,
-  "budget_check_snapshot" text,
-  "budget_warning_acknowledged" tinyint(1) not null default '0',
-  "current_approval_level" integer,
-  "rejected_at" datetime,
-  "rejection_reason" text,
-  "cancelled_at" datetime,
-  "converted_at" datetime,
-  foreign key("requestor_user_id") references "users"("id") on delete restrict on update no action,
-  foreign key("project_id") references "projects"("id") on delete set null,
-  primary key("id")
-);
-
-CREATE INDEX "idx_pr_tenant_status" on "purchase_requisitions"(
-  "tenant_id",
-  "status",
-  "requestor_user_id"
-);
-CREATE INDEX "purchase_requisitions_branch_id_index" on "purchase_requisitions"(
-  "branch_id"
-);
-CREATE INDEX "purchase_requisitions_company_id_index" on "purchase_requisitions"(
-  "company_id"
-);
-CREATE INDEX "purchase_requisitions_cost_center_id_index" on "purchase_requisitions"(
-  "cost_center_id"
-);
-CREATE INDEX "purchase_requisitions_department_id_index" on "purchase_requisitions"(
-  "department_id"
-);
-CREATE INDEX "purchase_requisitions_project_id_index" on "purchase_requisitions"(
-  "project_id"
-);
-CREATE INDEX "purchase_requisitions_status_index" on "purchase_requisitions"(
-  "status"
-);
-CREATE INDEX "purchase_requisitions_tenant_id_index" on "purchase_requisitions"(
-  "tenant_id"
-);
-CREATE INDEX "purchase_requisitions_workflow_instance_id_index" on "purchase_requisitions"(
-  "workflow_instance_id"
-);
-CREATE UNIQUE INDEX "uq_pr_number" on "purchase_requisitions"(
-  "tenant_id",
-  "requisition_number"
-);
-CREATE INDEX "purchase_requisitions_requester_user_id_index" on "purchase_requisitions"(
-  "requester_user_id"
-);
-CREATE TABLE "purchase_requisition_lines"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "purchase_requisition_id" varchar not null,
-  "line_number" integer not null default('1'),
-  "supplier_catalog_id" varchar,
-  "description" varchar not null,
-  "quantity_requested" numeric not null,
-  "uom" varchar not null default('PCE'),
-  "estimated_unit_price" numeric not null default('0'),
-  "estimated_total_price" numeric not null default('0'),
-  "suggested_supplier_id" varchar,
-=======
 CREATE TABLE "dim_date"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43174,129 +42759,12 @@ CREATE TABLE "hse_accident_claim_drafts"(
   "declaration_type" varchar,
   "payload_json" text not null,
   "status" varchar not null default 'draft',
->>>>>>> 3d24f45ee0d9ae8ea8f9f4f7ac1a4d8860c876ca
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-<<<<<<< HEAD
-  "quantity_quoted" numeric not null default('0'),
-  "quantity_ordered" numeric not null default('0'),
-  "sourcing_status" varchar not null default('open'),
-  "item_type" varchar not null default 'free_text',
-  "catalog_item_id" varchar,
-  "quantity" numeric,
-  "unit_of_measure" varchar,
-  "estimated_line_total" numeric,
-  "cost_center_id" varchar,
-  "project_id" varchar,
-  "converted_quantity" numeric not null default '0',
-  "conversion_status" varchar not null default 'unconverted',
-  foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete cascade on update no action,
-  foreign key("supplier_catalog_id") references "supplier_catalogs"("id") on delete set null on update no action,
-  foreign key("suggested_supplier_id") references "suppliers"("id") on delete set null on update no action,
-  foreign key("project_id") references "projects"("id") on delete set null,
-  primary key("id")
-);
-
-CREATE INDEX "purchase_requisition_lines_sourcing_status_index" on "purchase_requisition_lines"(
-  "sourcing_status"
-);
-CREATE INDEX "purchase_requisition_lines_tenant_id_index" on "purchase_requisition_lines"(
-  "tenant_id"
-);
-CREATE INDEX "purchase_requisition_lines_catalog_item_id_index" on "purchase_requisition_lines"(
-  "catalog_item_id"
-);
-CREATE INDEX "purchase_requisition_lines_cost_center_id_index" on "purchase_requisition_lines"(
-  "cost_center_id"
-);
-CREATE INDEX "purchase_requisition_lines_project_id_index" on "purchase_requisition_lines"(
-  "project_id"
-);
-CREATE INDEX "purchase_requisition_lines_conversion_status_index" on "purchase_requisition_lines"(
-  "conversion_status"
-);
-CREATE TABLE "purchase_requisition_approval_logs"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "purchase_requisition_id" varchar not null,
-  "approval_step_level" integer not null default '0',
-  "approver_user_id" varchar,
-  "action" varchar not null,
-  "channel" varchar not null default 'web',
-  "comment" text,
-  "ip_address" varchar,
-  "user_agent" text,
-  "metadata" text,
-  "acted_at" datetime not null,
-  "created_at" datetime,
-  foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "idx_pr_approval_logs_pr_acted" on "purchase_requisition_approval_logs"(
-  "purchase_requisition_id",
-  "acted_at"
-);
-CREATE INDEX "idx_pr_approval_logs_tenant_pr" on "purchase_requisition_approval_logs"(
-  "tenant_id",
-  "purchase_requisition_id"
-);
-CREATE INDEX "purchase_requisition_approval_logs_tenant_id_index" on "purchase_requisition_approval_logs"(
-  "tenant_id"
-);
-CREATE INDEX "purchase_requisition_approval_logs_approver_user_id_index" on "purchase_requisition_approval_logs"(
-  "approver_user_id"
-);
-CREATE TABLE "purchase_requisition_document_links"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "purchase_requisition_id" varchar not null,
-  "purchase_requisition_line_id" varchar not null,
-  "target_document_type" varchar not null,
-  "target_document_id" varchar not null,
-  "target_document_number" varchar not null,
-  "target_document_line_id" varchar,
-  "converted_quantity" numeric not null,
-  "created_by_user_id" varchar,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete cascade,
-  foreign key("purchase_requisition_line_id") references "purchase_requisition_lines"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "idx_pr_doc_links_tenant_pr" on "purchase_requisition_document_links"(
-  "tenant_id",
-  "purchase_requisition_id"
-);
-CREATE INDEX "idx_pr_doc_links_pr_line" on "purchase_requisition_document_links"(
-  "purchase_requisition_line_id"
-);
-CREATE INDEX "idx_pr_doc_links_target" on "purchase_requisition_document_links"(
-  "tenant_id",
-  "target_document_type",
-  "target_document_id"
-);
-CREATE INDEX "purchase_requisition_document_links_tenant_id_index" on "purchase_requisition_document_links"(
-  "tenant_id"
-);
-CREATE INDEX "purchase_requisition_document_links_target_document_id_index" on "purchase_requisition_document_links"(
-  "target_document_id"
-);
-CREATE INDEX "purchase_requisition_document_links_target_document_line_id_index" on "purchase_requisition_document_links"(
-  "target_document_line_id"
-);
-CREATE INDEX "purchase_requisition_document_links_created_by_user_id_index" on "purchase_requisition_document_links"(
-  "created_by_user_id"
-=======
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("incident_report_id") references "hse_incident_reports"("id") on delete cascade,
   primary key("id")
@@ -43630,7 +43098,155 @@ CREATE TABLE "ipp_gl_account_settings"(
 CREATE UNIQUE INDEX "ipp_gl_role_unique" on "ipp_gl_account_settings"(
   "tenant_id",
   "role"
->>>>>>> 3d24f45ee0d9ae8ea8f9f4f7ac1a4d8860c876ca
+);
+CREATE TABLE "roster_shift_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" text not null,
+  "start_time" time not null,
+  "end_time" time not null,
+  "break_minutes" integer not null default '0',
+  "color_hex" varchar not null default '#1890FF',
+  "night_surcharge_applicable" tinyint(1) not null default '1',
+  "is_on_call" tinyint(1) not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_shift_templates_tenant_id_code_index" on "roster_shift_templates"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "roster_shift_templates_tenant_id_is_active_index" on "roster_shift_templates"(
+  "tenant_id",
+  "is_active"
+);
+CREATE TABLE "roster_schedule_periods"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "location_or_department_id" varchar,
+  "production_line_id" varchar,
+  "period_type" varchar not null,
+  "jurisdiction" varchar not null,
+  "start_date" date not null,
+  "end_date" date not null,
+  "status" varchar not null default 'draft',
+  "published_at" datetime,
+  "published_by" varchar,
+  "locked_at" datetime,
+  "locked_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_schedule_periods_tenant_id_start_date_end_date_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "start_date",
+  "end_date"
+);
+CREATE INDEX "roster_schedule_periods_tenant_id_location_or_department_id_status_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "location_or_department_id",
+  "status"
+);
+CREATE INDEX "roster_schedule_periods_tenant_id_production_line_id_index" on "roster_schedule_periods"(
+  "tenant_id",
+  "production_line_id"
+);
+CREATE TABLE "roster_shift_assignments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "roster_schedule_period_id" varchar not null,
+  "employee_id" varchar,
+  "shift_date" date not null,
+  "shift_template_id" varchar not null,
+  "start_at" datetime not null,
+  "end_at" datetime not null,
+  "required_role_or_skill_id" varchar,
+  "estimated_labor_cost" numeric not null default '0',
+  "surcharge_breakdown" text,
+  "compliance_warnings" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("roster_schedule_period_id") references "roster_schedule_periods"("id") on delete cascade,
+  foreign key("shift_template_id") references "roster_shift_templates"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "roster_assign_period_date_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "roster_schedule_period_id",
+  "shift_date"
+);
+CREATE INDEX "roster_assign_employee_start_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "employee_id",
+  "start_at"
+);
+CREATE INDEX "roster_assign_employee_end_idx" on "roster_shift_assignments"(
+  "tenant_id",
+  "employee_id",
+  "end_at"
+);
+CREATE TABLE "roster_shift_swap_requests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "requester_employee_id" varchar not null,
+  "target_peer_employee_id" varchar,
+  "shift_assignment_id" varchar not null,
+  "target_shift_assignment_id" varchar,
+  "status" varchar not null default 'pending_peer_acceptance',
+  "peer_responded_at" datetime,
+  "reviewed_by_user_id" varchar,
+  "reviewed_at" datetime,
+  "rejection_reason" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("shift_assignment_id") references "roster_shift_assignments"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "roster_shift_swap_requests_tenant_id_status_index" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "roster_swap_requester_idx" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "requester_employee_id",
+  "status"
+);
+CREATE INDEX "roster_swap_peer_idx" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "target_peer_employee_id",
+  "status"
+);
+CREATE INDEX "roster_shift_swap_requests_tenant_id_shift_assignment_id_index" on "roster_shift_swap_requests"(
+  "tenant_id",
+  "shift_assignment_id"
 );
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
@@ -44021,28 +43637,6 @@ INSERT INTO migrations VALUES(385,'2027_12_10_100000_create_controlling_tables',
 INSERT INTO migrations VALUES(386,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',1);
 INSERT INTO migrations VALUES(387,'2027_12_11_000100_create_immutable_audit_trail',1);
 INSERT INTO migrations VALUES(388,'2027_12_12_000100_create_privacy_governance_tables',1);
-<<<<<<< HEAD
-INSERT INTO migrations VALUES(389,'2027_12_13_000100_add_blind_indexes_to_contacts',1);
-INSERT INTO migrations VALUES(390,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',1);
-INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_payment_method_to_payment_links',1);
-INSERT INTO migrations VALUES(392,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',1);
-INSERT INTO migrations VALUES(393,'2027_12_13_000100_create_digital_preservation_tables',1);
-INSERT INTO migrations VALUES(394,'2027_12_13_000200_create_offline_audit_entries_table',1);
-INSERT INTO migrations VALUES(395,'2027_12_14_000100_create_ai_forecasting_tables',1);
-INSERT INTO migrations VALUES(396,'2027_12_14_000100_create_copilot_tables',1);
-INSERT INTO migrations VALUES(397,'2027_12_14_000100_create_iam_tables',1);
-INSERT INTO migrations VALUES(398,'2027_12_15_000100_create_academy_tables',1);
-INSERT INTO migrations VALUES(399,'2027_12_15_000100_create_ocr_extraction_tables',1);
-INSERT INTO migrations VALUES(400,'2027_12_16_000100_create_ai_cognitive_tables',1);
-INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_analytics_dss_tables',1);
-INSERT INTO migrations VALUES(402,'2027_12_16_000100_create_kpi_dashboard_tables',1);
-INSERT INTO migrations VALUES(403,'2027_12_17_000100_create_cpq_quote_tables',1);
-INSERT INTO migrations VALUES(404,'2027_12_17_000100_create_data_residency_tables',1);
-INSERT INTO migrations VALUES(405,'2027_12_17_000100_extend_bom_management',1);
-INSERT INTO migrations VALUES(406,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',1);
-INSERT INTO migrations VALUES(407,'2027_12_17_000100_upgrade_procurement_rfq_module_045',1);
-INSERT INTO migrations VALUES(408,'2027_12_18_000100_upgrade_purchase_requisitions_module_044',1);
-=======
 INSERT INTO migrations VALUES(389,'2027_12_13_000100_add_payment_method_to_payment_links',2);
 INSERT INTO migrations VALUES(390,'2027_12_13_000100_create_digital_preservation_tables',3);
 INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',3);
@@ -44063,4 +43657,5 @@ INSERT INTO migrations VALUES(405,'2027_12_17_000100_extend_warehouse_locations_
 INSERT INTO migrations VALUES(406,'2027_12_16_000100_create_analytics_dss_tables',18);
 INSERT INTO migrations VALUES(407,'2027_12_17_000100_create_hse_tables',19);
 INSERT INTO migrations VALUES(408,'2027_12_17_000100_create_italian_payroll_preprocessing_tables',20);
->>>>>>> 3d24f45ee0d9ae8ea8f9f4f7ac1a4d8860c876ca
+INSERT INTO migrations VALUES(409,'2027_12_17_000100_create_shift_planning_tables',21);
+INSERT INTO migrations VALUES(410,'2027_12_17_000200_add_audit_columns_to_mfg_bom_co_products',21);

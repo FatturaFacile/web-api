@@ -15523,6 +15523,1082 @@
             ]
         },
         {
+            "name": "Ai",
+            "item": [
+                {
+                    "name": "GET /v1/ai/usage-audit",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/usage-audit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "usage-audit"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "kind",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "priority",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "event_type",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "verify_chain",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "horizon_days",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ai/copilot/query",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/copilot/query",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "copilot",
+                                "query"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"question\": \"string\",\n    \"mode\": \"auto\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ai/copilot/drafts",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/copilot/drafts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "copilot",
+                                "drafts"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"purpose\": \"customer_email\",\n    \"language\": \"it-CH\",\n    \"facts\": [\n        \"string\"\n    ],\n    \"instructions\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ai/copilot/index/rebuild",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/copilot/index/rebuild",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "copilot",
+                                "index",
+                                "rebuild"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"with_anomaly_scan\": false,\n    \"limit\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/ai/insights",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/insights",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "insights"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "kind",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "priority",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "event_type",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "verify_chain",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "horizon_days",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ai/insights/generate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/insights/generate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "insights",
+                                "generate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"with_anomaly_scan\": false,\n    \"limit\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/ai/settings",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/settings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "settings"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/ai/settings/providers/:provider",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/settings/providers/:provider",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "settings",
+                                "providers",
+                                ":provider"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "provider",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"is_enabled\": false,\n    \"is_default\": false,\n    \"label\": \"string\",\n    \"endpoint\": \"https://example.com\",\n    \"model\": \"string\",\n    \"light_model\": \"string\",\n    \"embedding_model\": \"string\",\n    \"api_key\": \"string\",\n    \"extra\": {\n        \"deployment\": \"string\",\n        \"embedding_deployment\": \"string\",\n        \"api_version\": \"string\"\n    },\n    \"max_data_classification\": \"public\",\n    \"pii_masking_enabled\": false,\n    \"latency_sla_ms\": 1,\n    \"monthly_token_budget\": 1,\n    \"rate_limit_per_minute\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/ai/settings/rules/:workflow",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/settings/rules/:workflow",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "settings",
+                                "rules",
+                                ":workflow"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "workflow",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"is_enabled\": false,\n    \"auto_approve_enabled\": false,\n    \"auto_approve_min_confidence\": 1.5,\n    \"max_auto_amount\": 1.5,\n    \"data_classification\": \"public\",\n    \"preferred_provider\": \"ollama\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/ai/suggestions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/suggestions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "suggestions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "kind",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "priority",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "event_type",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "verify_chain",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "horizon_days",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ai/suggestions/extract",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/suggestions/extract",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "suggestions",
+                                "extract"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"kind\": \"sales_quote\",\n    \"source_type\": \"email\",\n    \"text\": \"string\",\n    \"source_reference\": \"string\",\n    \"locale\": \"it\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/ai/suggestions/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/suggestions/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "suggestions",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ai/suggestions/:id/approve",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/suggestions/:id/approve",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "suggestions",
+                                ":id",
+                                "approve"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"edited_payload\": [\n        \"string\"\n    ],\n    \"feedback\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ai/suggestions/:id/reject",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/suggestions/:id/reject",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "suggestions",
+                                ":id",
+                                "reject"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ai/accounting/coding",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/accounting/coding",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "accounting",
+                                "coding"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"description\": \"string\",\n    \"amount\": 1.5,\n    \"counterparty\": \"string\",\n    \"source_type\": \"bank_transaction\",\n    \"source_reference\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/ai/accounting/reconciliation",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/ai/accounting/reconciliation",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ai",
+                                "accounting",
+                                "reconciliation"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"with_anomaly_scan\": false,\n    \"limit\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "Alerts",
             "item": [
                 {
@@ -16119,7 +17195,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"visibility\": \"private\",\n    \"shared_role_ids\": [\n        \"string\"\n    ],\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"visibility\": \"private\",\n    \"shared_role_ids\": [\n        \"string\"\n    ],\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -16234,7 +17310,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"visibility\": \"private\",\n    \"shared_role_ids\": [\n        \"string\"\n    ],\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"visibility\": \"private\",\n    \"shared_role_ids\": [\n        \"string\"\n    ],\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -19554,7 +20630,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\",\n    \"locale\": \"it-CH\",\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ]\n}",
+                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\",\n    \"locale\": \"it-CH\",\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -19614,7 +20690,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\",\n    \"locale\": \"it-CH\",\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ]\n}",
+                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\",\n    \"locale\": \"it-CH\",\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -19674,7 +20750,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\",\n    \"locale\": \"it-CH\",\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ]\n}",
+                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\",\n    \"locale\": \"it-CH\",\n    \"pivot\": [\n        \"string\"\n    ],\n    \"calculated_fields\": [\n        \"string\"\n    ],\n    \"conditional_formatting\": [\n        \"string\"\n    ],\n    \"chart_config\": [\n        \"string\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -127796,10 +128872,6 @@
                             {
                                 "key": "X-Tenant-Id",
                                 "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -127823,18 +128895,9 @@
                                 }
                             ]
                         },
-                        "description": "Change the descriptive data of the active contract",
+                        "description": "⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):\n  [FormRequestRulesEvaluator] SQLSTATE[HY000]: General error: 1 no such table: hr_employment_contracts (Connection: sqlite, Database: /home/runner/work/web-api/web-api/database/database.sqlite, SQL: select \"start_date\" from \"hr_employment_contracts\" where \"hr_employment_contracts\".\"id\" =  and (1 = 0) and \"hr_employment_contracts\".\"deleted_at\" is null limit 1) (at /home/runner/work/web-api/web-api/vendor/laravel/framework/src/Illuminate/Database/Connection.php:864)\n  [NodeRulesEvaluator] Only arrays and Traversables can be unpacked, null given (at /home/runner/work/web-api/web-api/vendor/dedoc/scramble/src/Support/OperationExtensions/RulesEvaluator/NodeRulesEvaluator.php:221)",
                         "auth": {
                             "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"job_title\": \"string\",\n    \"end_date\": \"2026-01-31\",\n    \"probation_end_date\": \"2026-01-31\",\n    \"collective_agreement\": \"string\",\n    \"collective_agreement_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"collective_agreement_level_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"level_code\": \"string\",\n    \"terms\": [\n        \"string\"\n    ],\n    \"notes\": \"string\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
                         }
                     }
                 },
@@ -149944,6 +151007,1510 @@
                                 "invoice-approvals",
                                 "matrices",
                                 ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Italian Payroll",
+            "item": [
+                {
+                    "name": "GET /v1/italian-payroll/periods",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/periods",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "periods"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/italian-payroll/periods",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/periods",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "periods"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"legal_entity_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"year\": 1,\n    \"month\": 1,\n    \"include_tredicesima\": false,\n    \"include_quattordicesima\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/italian-payroll/periods/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/periods/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "periods",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/italian-payroll/periods/:id/validate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/periods/:id/validate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "periods",
+                                ":id",
+                                "validate"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"fringe_benefits\": [\n        {\n            \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"amount\": 1.5\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/italian-payroll/periods/:id/export",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/periods/:id/export",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "periods",
+                                ":id",
+                                "export"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"consultant_format\": \"zucchetti\",\n    \"company_code\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/italian-payroll/periods/:id/cedolini",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/periods/:id/cedolini",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "periods",
+                                ":id",
+                                "cedolini"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "bundle_pdf",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/italian-payroll/periods/:id/accounting-import",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/periods/:id/accounting-import",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "periods",
+                                ":id",
+                                "accounting-import"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"total_gross_wages\": 1.5,\n    \"inps_employee_withholding\": 1.5,\n    \"inps_employer_contribution\": 1.5,\n    \"irpef_withholding\": 1.5,\n    \"regional_municipal_addizionali\": 1.5,\n    \"tfr_monthly_accrual\": 1.5,\n    \"tfr_fondo_tesoreria_or_previdenza\": 1.5,\n    \"inail_accrual\": 1.5,\n    \"net_payable\": 1.5,\n    \"company_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"employee_nets\": [\n        {\n            \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"net_amount\": 1.5\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/italian-payroll/periods/:id/sepa",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/periods/:id/sepa",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "periods",
+                                ":id",
+                                "sepa"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"debtor_name\": \"string\",\n    \"debtor_iban\": \"string\",\n    \"debtor_bic\": \"string\",\n    \"execution_date\": \"2026-01-31\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/italian-payroll/periods/:id/mark-paid",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/periods/:id/mark-paid",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "periods",
+                                ":id",
+                                "mark-paid"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/italian-payroll/periods/:id/f24",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/periods/:id/f24",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "periods",
+                                ":id",
+                                "f24"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/italian-payroll/periods/:id/download-audit",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/periods/:id/download-audit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "periods",
+                                ":id",
+                                "download-audit"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/italian-payroll/tfr-ledger",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/tfr-ledger?year=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "tfr-ledger"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "legal_entity_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "foi_percent",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/italian-payroll/gl-accounts",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/gl-accounts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "gl-accounts"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"accounts\": [\n        {\n            \"role\": \"gross_wages\",\n            \"account_id\": \"00000000-0000-0000-0000-000000000000\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/italian-payroll/causal-mappings",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/causal-mappings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "causal-mappings"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"consultant_format\": \"zucchetti\",\n    \"mappings\": [\n        {\n            \"causal_code\": \"FER\",\n            \"external_code\": \"string\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/italian-payroll/my-payslips",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/my-payslips",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "my-payslips"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/italian-payroll/my-payslips/:distributionId/open",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/italian-payroll/my-payslips/:distributionId/open",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "italian-payroll",
+                                "my-payslips",
+                                ":distributionId",
+                                "open"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "distributionId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"document_kind\": \"cedolino\",\n    \"biometric_confirmed\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Kpi Dashboards",
+            "item": [
+                {
+                    "name": "GET /v1/kpi-dashboards/cockpit",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/cockpit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "cockpit"
+                            ],
+                            "query": [
+                                {
+                                    "key": "preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "company_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "include_intercompany_eliminations",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "role",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "dashboard_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/kpi-dashboards/drill-down/:kpi",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/drill-down/:kpi",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "drill-down",
+                                ":kpi"
+                            ],
+                            "query": [
+                                {
+                                    "key": "preset",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "comparison",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "company_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_ids[]",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "include_intercompany_eliminations",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "period",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "bucket",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "side",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "stage_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "outcome",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "contact_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "product_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "team_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "export",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "kpi",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/kpi-dashboards/catalog",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/catalog",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "catalog"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/kpi-dashboards/layout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/layout",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "layout"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"dashboard_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"role\": \"ceo\",\n    \"custom_title\": \"string\",\n    \"refresh_interval_seconds\": 1,\n    \"expected_version\": 1,\n    \"widgets\": [\n        {\n            \"kpi_code\": \"revenue_ytd_vs_budget\",\n            \"widget_type\": \"metric_card\",\n            \"default_time_comparison\": \"yoy\",\n            \"x\": 1,\n            \"y\": 1,\n            \"w\": 1,\n            \"h\": 1,\n            \"threshold_rules\": [\n                \"string\"\n            ]\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/kpi-dashboards/cubes/refresh",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/cubes/refresh",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "cubes",
+                                "refresh"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/kpi-dashboards/alerts",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/alerts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "alerts"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/kpi-dashboards/alerts",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/alerts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "alerts"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"rule_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"kpi_code\": \"revenue_ytd_vs_budget\",\n    \"operator\": \"<\",\n    \"warning_value\": 1.5,\n    \"critical_value\": 1.5,\n    \"channels\": [\n        \"in_app\"\n    ],\n    \"cooldown_minutes\": 1,\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/kpi-dashboards/alerts/:id/acknowledge",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/kpi-dashboards/alerts/:id/acknowledge",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "kpi-dashboards",
+                                "alerts",
+                                ":id",
+                                "acknowledge"
                             ],
                             "query": [],
                             "variable": [
@@ -182756,7 +185323,7 @@
                     }
                 },
                 {
-                    "name": "List requests for quotation",
+                    "name": "Paginated requests for quotation",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -182791,14 +185358,14 @@
                             "query": [],
                             "variable": []
                         },
-                        "description": "List requests for quotation",
+                        "description": "Paginated requests for quotation",
                         "auth": {
                             "type": "noauth"
                         }
                     }
                 },
                 {
-                    "name": "Create a draft request for quotation",
+                    "name": "Creates a request for quotation",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -182841,13 +185408,13 @@
                             "query": [],
                             "variable": []
                         },
-                        "description": "Create a draft request for quotation",
+                        "description": "Creates a request for quotation",
                         "auth": {
                             "type": "noauth"
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"currency_code\": \"string\",\n    \"currency\": \"string\",\n    \"incoterms\": \"string\",\n    \"submission_deadline\": \"2026-01-31T12:00:00+00:00\",\n    \"response_deadline\": \"2026-01-31\",\n    \"expected_delivery_date\": \"2026-01-31\",\n    \"sealed_bidding\": false,\n    \"evaluation_weights\": {\n        \"price_weight\": 1,\n        \"lead_time_weight\": 1,\n        \"supplier_rating_weight\": 1\n    },\n    \"purchase_requisition_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"cost_center_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"notes\": \"string\",\n    \"supplier_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"lines\": [\n        {\n            \"source_requisition_line_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"custom_item_code\": \"string\",\n            \"internal_sku\": \"string\",\n            \"description\": \"string\",\n            \"technical_specifications\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_of_measure\": \"string\",\n            \"uom\": \"string\",\n            \"target_unit_price\": 1.5,\n            \"requested_delivery_date\": \"2026-01-31\",\n            \"required_by_date\": \"2026-01-31\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"title\": \"string\",\n    \"response_deadline\": \"2026-01-31\",\n    \"currency\": \"string\",\n    \"purchase_requisition_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"cost_center_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"notes\": \"string\",\n    \"supplier_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"lines\": [\n        {\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"uom\": \"string\",\n            \"internal_sku\": \"string\",\n            \"required_by_date\": \"2026-01-31\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -182857,67 +185424,7 @@
                     }
                 },
                 {
-                    "name": "Create a draft RFQ by importing & optionally consolidating approved Purchase Requisitions (Mod 044)",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/from-requisitions",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "procurement",
-                                "rfqs",
-                                "from-requisitions"
-                            ],
-                            "query": [],
-                            "variable": []
-                        },
-                        "description": "Create a draft RFQ by importing & optionally consolidating approved Purchase Requisitions (Mod 044)",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"purchase_requisition_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"line_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"currency_code\": \"string\",\n    \"incoterms\": \"string\",\n    \"submission_deadline\": \"2026-01-31T12:00:00+00:00\",\n    \"expected_delivery_date\": \"2026-01-31\",\n    \"sealed_bidding\": false,\n    \"consolidate_matching_items\": false,\n    \"evaluation_weights\": {\n        \"price_weight\": 1,\n        \"lead_time_weight\": 1,\n        \"supplier_rating_weight\": 1\n    },\n    \"supplier_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"notes\": \"string\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "Show one RFQ aggregate with lines, attachments, invitations, and bids",
+                    "name": "One request with lines, suppliers and quotes",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -182939,7 +185446,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq",
+                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:id",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -182948,91 +185455,25 @@
                                 "v1",
                                 "procurement",
                                 "rfqs",
-                                ":rfq"
+                                ":id"
                             ],
                             "query": [],
                             "variable": [
                                 {
-                                    "key": "rfq",
+                                    "key": "id",
                                     "value": "",
                                     "description": ""
                                 }
                             ]
                         },
-                        "description": "Show one RFQ aggregate with lines, attachments, invitations, and bids",
+                        "description": "One request with lines, suppliers and quotes",
                         "auth": {
                             "type": "noauth"
                         }
                     }
                 },
                 {
-                    "name": "Update a draft request for quotation",
-                    "request": {
-                        "method": "PUT",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "procurement",
-                                "rfqs",
-                                ":rfq"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "rfq",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "Update a draft request for quotation",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"currency_code\": \"string\",\n    \"currency\": \"string\",\n    \"incoterms\": \"string\",\n    \"submission_deadline\": \"2026-01-31T12:00:00+00:00\",\n    \"expected_delivery_date\": \"2026-01-31\",\n    \"sealed_bidding\": false,\n    \"evaluation_weights\": {\n        \"price_weight\": 1,\n        \"lead_time_weight\": 1,\n        \"supplier_rating_weight\": 1\n    },\n    \"cost_center_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"notes\": \"string\",\n    \"supplier_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"lines\": [\n        {\n            \"source_requisition_line_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"custom_item_code\": \"string\",\n            \"internal_sku\": \"string\",\n            \"description\": \"string\",\n            \"technical_specifications\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_of_measure\": \"string\",\n            \"uom\": \"string\",\n            \"target_unit_price\": 1.5,\n            \"requested_delivery_date\": \"2026-01-31\"\n        }\n    ]\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "Publish a draft RFQ, generate magic-link tokens, and dispatch invitation emails",
+                    "name": "Issues the request to the suppliers",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -183058,7 +185499,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/publish",
+                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:id/issue",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -183067,80 +185508,26 @@
                                 "v1",
                                 "procurement",
                                 "rfqs",
-                                ":rfq",
-                                "publish"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "rfq",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "Publish a draft RFQ, generate magic-link tokens, and dispatch invitation emails",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    }
-                },
-                {
-                    "name": "Legacy issue endpoint preserved for backward compatibility",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/issue",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "procurement",
-                                "rfqs",
-                                ":rfq",
+                                ":id",
                                 "issue"
                             ],
                             "query": [],
                             "variable": [
                                 {
-                                    "key": "rfq",
+                                    "key": "id",
                                     "value": "",
                                     "description": ""
                                 }
                             ]
                         },
-                        "description": "Legacy issue endpoint preserved for backward compatibility",
+                        "description": "Issues the request to the suppliers",
                         "auth": {
                             "type": "noauth"
                         }
                     }
                 },
                 {
-                    "name": "Extend the submission deadline of an RFQ and notify invited suppliers",
+                    "name": "Records the quote of an invited supplier",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -183170,7 +185557,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/extend-deadline",
+                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:id/quotes",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -183179,86 +185566,19 @@
                                 "v1",
                                 "procurement",
                                 "rfqs",
-                                ":rfq",
-                                "extend-deadline"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "rfq",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "Extend the submission deadline of an RFQ and notify invited suppliers",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"submission_deadline\": \"2026-01-31T12:00:00+00:00\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "Legacy internal quote recording endpoint preserved for backward compatibility",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/quotes",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "procurement",
-                                "rfqs",
-                                ":rfq",
+                                ":id",
                                 "quotes"
                             ],
                             "query": [],
                             "variable": [
                                 {
-                                    "key": "rfq",
+                                    "key": "id",
                                     "value": "",
                                     "description": ""
                                 }
                             ]
                         },
-                        "description": "Legacy internal quote recording endpoint preserved for backward compatibility",
+                        "description": "Records the quote of an invited supplier",
                         "auth": {
                             "type": "noauth"
                         },
@@ -183274,7 +185594,7 @@
                     }
                 },
                 {
-                    "name": "Side-by-side bid comparison matrix with normalized weighted scoring and sealed-bidding compliance",
+                    "name": "Side-by-side comparison of the quotes",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -183296,7 +185616,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/comparison-matrix",
+                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:id/comparison",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -183305,76 +185625,26 @@
                                 "v1",
                                 "procurement",
                                 "rfqs",
-                                ":rfq",
-                                "comparison-matrix"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "rfq",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "Side-by-side bid comparison matrix with normalized weighted scoring and sealed-bidding compliance",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    }
-                },
-                {
-                    "name": "Legacy comparison endpoint preserved for backward compatibility",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/comparison",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "procurement",
-                                "rfqs",
-                                ":rfq",
+                                ":id",
                                 "comparison"
                             ],
                             "query": [],
                             "variable": [
                                 {
-                                    "key": "rfq",
+                                    "key": "id",
                                     "value": "",
                                     "description": ""
                                 }
                             ]
                         },
-                        "description": "Legacy comparison endpoint preserved for backward compatibility",
+                        "description": "Side-by-side comparison of the quotes",
                         "auth": {
                             "type": "noauth"
                         }
                     }
                 },
                 {
-                    "name": "Execute Full Award or Split Award, generating Mod 046 Purchase Order(s) and sending notifications",
+                    "name": "Awards the request to a quote",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -183404,7 +185674,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/award",
+                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:id/award",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -183413,25 +185683,25 @@
                                 "v1",
                                 "procurement",
                                 "rfqs",
-                                ":rfq",
+                                ":id",
                                 "award"
                             ],
                             "query": [],
                             "variable": [
                                 {
-                                    "key": "rfq",
+                                    "key": "id",
                                     "value": "",
                                     "description": ""
                                 }
                             ]
                         },
-                        "description": "Execute Full Award or Split Award, generating Mod 046 Purchase Order(s) and sending notifications",
+                        "description": "Awards the request to a quote",
                         "auth": {
                             "type": "noauth"
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"award_mode\": \"full\",\n    \"supplier_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bid_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"supplier_quote_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"line_awards\": [\n        {\n            \"rfq_line_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"supplier_bid_line_id\": \"00000000-0000-0000-0000-000000000000\"\n        }\n    ],\n    \"expected_delivery_date\": \"2026-01-31\",\n    \"notes\": \"string\"\n}",
+                            "raw": "{\n    \"supplier_quote_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"expected_delivery_date\": \"2026-01-31\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -183441,7 +185711,7 @@
                     }
                 },
                 {
-                    "name": "Cancel an RFQ, release locked Mod 044 PR lines, and notify invited suppliers",
+                    "name": "Cancels an open request",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -183464,14 +185734,10 @@
                             {
                                 "key": "X-Tenant-Id",
                                 "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
                             }
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/cancel",
+                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:id/cancel",
                             "host": [
                                 "{{baseUrl}}"
                             ],
@@ -183480,287 +185746,19 @@
                                 "v1",
                                 "procurement",
                                 "rfqs",
-                                ":rfq",
+                                ":id",
                                 "cancel"
                             ],
                             "query": [],
                             "variable": [
                                 {
-                                    "key": "rfq",
+                                    "key": "id",
                                     "value": "",
                                     "description": ""
                                 }
                             ]
                         },
-                        "description": "Cancel an RFQ, release locked Mod 044 PR lines, and notify invited suppliers",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"reason\": \"string\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "POST /v1/procurement/rfqs/:rfq/attachments",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/attachments",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "procurement",
-                                "rfqs",
-                                ":rfq",
-                                "attachments"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "rfq",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "formdata",
-                            "formdata": [
-                                {
-                                    "key": "file",
-                                    "type": "file",
-                                    "src": []
-                                },
-                                {
-                                    "key": "is_visible_to_suppliers",
-                                    "type": "text",
-                                    "value": ""
-                                }
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "PATCH /v1/procurement/rfqs/:rfq/attachments/:attachment",
-                    "request": {
-                        "method": "PATCH",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/attachments/:attachment",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "procurement",
-                                "rfqs",
-                                ":rfq",
-                                "attachments",
-                                ":attachment"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "rfq",
-                                    "value": "",
-                                    "description": ""
-                                },
-                                {
-                                    "key": "attachment",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"is_visible_to_suppliers\": false\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "DELETE /v1/procurement/rfqs/:rfq/attachments/:attachment",
-                    "request": {
-                        "method": "DELETE",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/attachments/:attachment",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "procurement",
-                                "rfqs",
-                                ":rfq",
-                                "attachments",
-                                ":attachment"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "rfq",
-                                    "value": "",
-                                    "description": ""
-                                },
-                                {
-                                    "key": "attachment",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    }
-                },
-                {
-                    "name": "GET /v1/procurement/rfqs/:rfq/attachments/:attachment/download",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/procurement/rfqs/:rfq/attachments/:attachment/download",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "procurement",
-                                "rfqs",
-                                ":rfq",
-                                "attachments",
-                                ":attachment",
-                                "download"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "rfq",
-                                    "value": "",
-                                    "description": ""
-                                },
-                                {
-                                    "key": "attachment",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
+                        "description": "Cancels an open request",
                         "auth": {
                             "type": "noauth"
                         }
@@ -189637,6 +191635,10 @@
                             {
                                 "key": "Referer",
                                 "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -189682,6 +191684,10 @@
                             {
                                 "key": "Referer",
                                 "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -189735,6 +191741,10 @@
                             {
                                 "key": "Referer",
                                 "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -189791,6 +191801,10 @@
                             {
                                 "key": "X-XSRF-TOKEN",
                                 "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -189899,6 +191913,10 @@
                             {
                                 "key": "Referer",
                                 "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -189945,6 +191963,10 @@
                             {
                                 "key": "Referer",
                                 "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -190467,6 +192489,10 @@
                             {
                                 "key": "Referer",
                                 "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -190512,6 +192538,10 @@
                             {
                                 "key": "Referer",
                                 "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -190562,6 +192592,10 @@
                             {
                                 "key": "X-XSRF-TOKEN",
                                 "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             },
                             {
                                 "key": "Content-Type",
@@ -190627,6 +192661,10 @@
                                 "value": "{{xsrfToken}}"
                             },
                             {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
                                 "key": "Content-Type",
                                 "value": "application/json"
                             }
@@ -190669,288 +192707,6 @@
                     }
                 },
                 {
-                    "name": "GET /v1/public/rfq-portal/:token",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/public/rfq-portal/:token",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "public",
-                                "rfq-portal",
-                                ":token"
-                            ],
-                            "query": [
-                                {
-                                    "key": "locale",
-                                    "value": "",
-                                    "disabled": true,
-                                    "description": ""
-                                }
-                            ],
-                            "variable": [
-                                {
-                                    "key": "token",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    }
-                },
-                {
-                    "name": "POST /v1/public/rfq-portal/:token/bid",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/public/rfq-portal/:token/bid",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "public",
-                                "rfq-portal",
-                                ":token",
-                                "bid"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "token",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "formdata",
-                            "formdata": [
-                                {
-                                    "key": "action",
-                                    "type": "text",
-                                    "value": "draft"
-                                },
-                                {
-                                    "key": "supplier_quote_reference",
-                                    "type": "text",
-                                    "value": "string"
-                                },
-                                {
-                                    "key": "currency_code",
-                                    "type": "text",
-                                    "value": "string"
-                                },
-                                {
-                                    "key": "currency",
-                                    "type": "text",
-                                    "value": "string"
-                                },
-                                {
-                                    "key": "exchange_rate_to_rfq",
-                                    "type": "text",
-                                    "value": "1.5"
-                                },
-                                {
-                                    "key": "payment_terms_days",
-                                    "type": "text",
-                                    "value": "1"
-                                },
-                                {
-                                    "key": "incoterms",
-                                    "type": "text",
-                                    "value": "string"
-                                },
-                                {
-                                    "key": "shipping_cost",
-                                    "type": "text",
-                                    "value": "1.5"
-                                },
-                                {
-                                    "key": "valid_until",
-                                    "type": "text",
-                                    "value": "2026-01-31"
-                                },
-                                {
-                                    "key": "general_notes",
-                                    "type": "text",
-                                    "value": "string"
-                                },
-                                {
-                                    "key": "quote_attachment",
-                                    "type": "file",
-                                    "src": []
-                                },
-                                {
-                                    "key": "lines",
-                                    "type": "text",
-                                    "value": "[{\"rfq_line_id\":\"00000000-0000-0000-0000-000000000000\",\"is_no_bid\":false,\"quoted_quantity\":1.5,\"unit_price\":1.5,\"discount_percent\":1.5,\"lead_time_days\":1,\"promised_delivery_date\":\"2026-01-31\",\"supplier_notes\":\"string\",\"tax_rate\":1.5}]"
-                                }
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "POST /v1/public/rfq-portal/:token/decline",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            },
-                            {
-                                "key": "X-XSRF-TOKEN",
-                                "value": "{{xsrfToken}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/public/rfq-portal/:token/decline",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "public",
-                                "rfq-portal",
-                                ":token",
-                                "decline"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "token",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"reason\": \"string\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "GET /v1/public/rfq-portal/:token/attachments/:attachment",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Origin",
-                                "value": "{{frontendUrl}}"
-                            },
-                            {
-                                "key": "Referer",
-                                "value": "{{frontendUrl}}/"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/public/rfq-portal/:token/attachments/:attachment",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "public",
-                                "rfq-portal",
-                                ":token",
-                                "attachments",
-                                ":attachment"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "token",
-                                    "value": "",
-                                    "description": ""
-                                },
-                                {
-                                    "key": "attachment",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    }
-                },
-                {
                     "name": "GET /v1/public/rma/estimates/:token",
                     "request": {
                         "method": "GET",
@@ -190966,6 +192722,10 @@
                             {
                                 "key": "Referer",
                                 "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -191016,6 +192776,10 @@
                             {
                                 "key": "X-XSRF-TOKEN",
                                 "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             },
                             {
                                 "key": "Content-Type",
@@ -191082,6 +192846,10 @@
                                 "value": "{{xsrfToken}}"
                             },
                             {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
                                 "key": "Content-Type",
                                 "value": "application/json"
                             }
@@ -191140,6 +192908,10 @@
                             {
                                 "key": "Referer",
                                 "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -191192,6 +192964,10 @@
                             {
                                 "key": "Referer",
                                 "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -191241,6 +193017,10 @@
                             {
                                 "key": "X-XSRF-TOKEN",
                                 "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             }
                         ],
                         "url": {
@@ -191291,6 +193071,10 @@
                             {
                                 "key": "X-XSRF-TOKEN",
                                 "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
                             },
                             {
                                 "key": "Content-Type",
@@ -218010,6 +219794,230 @@
                         "description": "",
                         "auth": {
                             "type": "noauth"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Swiss Fiscal",
+            "item": [
+                {
+                    "name": "GET /v1/swiss-fiscal/vat-rates",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/swiss-fiscal/vat-rates",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "swiss-fiscal",
+                                "vat-rates"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/swiss-fiscal/qr-bills",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/swiss-fiscal/qr-bills",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "swiss-fiscal",
+                                "qr-bills"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"iban\": \"string\",\n    \"currency\": \"CHF\",\n    \"amount\": \"string\",\n    \"reference_type\": \"QRR\",\n    \"reference\": \"string\",\n    \"message\": \"string\",\n    \"bill_information\": \"string\",\n    \"language\": \"it\",\n    \"format\": \"pdf\",\n    \"creditor\": {\n        \"name\": \"string\",\n        \"street\": \"string\",\n        \"building_number\": \"string\",\n        \"postal_code\": \"string\",\n        \"town\": \"string\",\n        \"country\": \"string\"\n    },\n    \"debtor\": {\n        \"name\": \"string\",\n        \"street\": \"string\",\n        \"building_number\": \"string\",\n        \"postal_code\": \"string\",\n        \"town\": \"string\",\n        \"country\": \"string\"\n    }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/swiss-fiscal/fiscal-documents",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/swiss-fiscal/fiscal-documents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "swiss-fiscal",
+                                "fiscal-documents"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"country\": \"IT\",\n    \"invoice_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/swiss-fiscal/camt054",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/swiss-fiscal/camt054",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "swiss-fiscal",
+                                "camt054"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"xml\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     }
                 }
