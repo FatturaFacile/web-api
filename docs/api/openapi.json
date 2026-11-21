@@ -128890,6 +128890,953 @@
                 }
             }
         },
+        "/v1/kpi-dashboards/cockpit": {
+            "get": {
+                "operationId": "kpi-dashboards.cockpit",
+                "tags": [
+                    "KpiDashboard"
+                ],
+                "parameters": [
+                    {
+                        "name": "preset",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "mtd",
+                                "qtd",
+                                "ytd",
+                                "last_12m",
+                                "custom",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "comparison",
+                        "in": "query",
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/ComparisonMode"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "company_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 50
+                        }
+                    },
+                    {
+                        "name": "cost_center_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 100
+                        }
+                    },
+                    {
+                        "name": "currency",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "CHF",
+                                "EUR",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "include_intercompany_eliminations",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/RoleCode"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "dashboard_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/kpi-dashboards/drill-down/{kpi}": {
+            "get": {
+                "operationId": "kpi-dashboards.drill-down",
+                "tags": [
+                    "KpiDashboard"
+                ],
+                "parameters": [
+                    {
+                        "name": "kpi",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "preset",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "mtd",
+                                "qtd",
+                                "ytd",
+                                "last_12m",
+                                "custom",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "comparison",
+                        "in": "query",
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/ComparisonMode"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "company_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 50
+                        }
+                    },
+                    {
+                        "name": "cost_center_ids[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "maxItems": 100
+                        }
+                    },
+                    {
+                        "name": "currency",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "CHF",
+                                "EUR",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "include_intercompany_eliminations",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}$"
+                        }
+                    },
+                    {
+                        "name": "bucket",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "current",
+                                "1_30",
+                                "31_60",
+                                "61_90",
+                                "over_90",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "side",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "receivable",
+                                "payable",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "stage_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "outcome",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "won",
+                                "lost",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "contact_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "team_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    },
+                    {
+                        "name": "export",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "csv",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/kpi-dashboards/catalog": {
+            "get": {
+                "operationId": "kpi-dashboards.catalog",
+                "tags": [
+                    "KpiDashboard"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/kpi-dashboards/layout": {
+            "post": {
+                "operationId": "kpi-dashboards.layout",
+                "tags": [
+                    "KpiDashboard"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SaveDashboardLayoutRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/kpi-dashboards/cubes/refresh": {
+            "post": {
+                "operationId": "kpi-dashboards.refresh",
+                "tags": [
+                    "KpiDashboard"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "refreshed": {
+                                                    "type": "boolean"
+                                                },
+                                                "debounced": {
+                                                    "type": "boolean"
+                                                },
+                                                "cache_version": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "refreshed",
+                                                "debounced",
+                                                "cache_version"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/kpi-dashboards/alerts": {
+            "get": {
+                "operationId": "kpi-dashboards.alerts",
+                "tags": [
+                    "KpiDashboard"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operation successful"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "rules": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "kpi_code": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "revenue_ytd_vs_budget",
+                                                                    "ebitda",
+                                                                    "net_financial_position",
+                                                                    "order_backlog",
+                                                                    "headcount_fte",
+                                                                    "dso",
+                                                                    "dpo",
+                                                                    "net_working_capital",
+                                                                    "cash_runway",
+                                                                    "ar_ap_aging",
+                                                                    "vat_liability",
+                                                                    "weighted_pipeline",
+                                                                    "win_rate",
+                                                                    "gross_margin",
+                                                                    "top_customers",
+                                                                    "top_products",
+                                                                    "inventory_turnover",
+                                                                    "otif",
+                                                                    "oee",
+                                                                    "scrap_rate",
+                                                                    "headcount_turnover",
+                                                                    "absenteeism",
+                                                                    "overtime_trend",
+                                                                    "billable_utilization"
+                                                                ]
+                                                            },
+                                                            "operator": {
+                                                                "type": "string"
+                                                            },
+                                                            "warning_value": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "critical_value": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "channels": {
+                                                                "type": [
+                                                                    "array",
+                                                                    "null"
+                                                                ],
+                                                                "items": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "cooldown_minutes": {
+                                                                "type": "integer"
+                                                            },
+                                                            "is_active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "kpi_code",
+                                                            "operator",
+                                                            "warning_value",
+                                                            "critical_value",
+                                                            "channels",
+                                                            "cooldown_minutes",
+                                                            "is_active"
+                                                        ]
+                                                    }
+                                                },
+                                                "alerts": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "rule_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "kpi_code": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "revenue_ytd_vs_budget",
+                                                                    "ebitda",
+                                                                    "net_financial_position",
+                                                                    "order_backlog",
+                                                                    "headcount_fte",
+                                                                    "dso",
+                                                                    "dpo",
+                                                                    "net_working_capital",
+                                                                    "cash_runway",
+                                                                    "ar_ap_aging",
+                                                                    "vat_liability",
+                                                                    "weighted_pipeline",
+                                                                    "win_rate",
+                                                                    "gross_margin",
+                                                                    "top_customers",
+                                                                    "top_products",
+                                                                    "inventory_turnover",
+                                                                    "otif",
+                                                                    "oee",
+                                                                    "scrap_rate",
+                                                                    "headcount_turnover",
+                                                                    "absenteeism",
+                                                                    "overtime_trend",
+                                                                    "billable_utilization"
+                                                                ]
+                                                            },
+                                                            "severity": {
+                                                                "type": "string"
+                                                            },
+                                                            "observed_value": {
+                                                                "type": "number"
+                                                            },
+                                                            "threshold_value": {
+                                                                "type": "number"
+                                                            },
+                                                            "status": {
+                                                                "type": "string"
+                                                            },
+                                                            "channels": {
+                                                                "type": [
+                                                                    "array",
+                                                                    "null"
+                                                                ],
+                                                                "items": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "triggered_at": {
+                                                                "type": "string"
+                                                            },
+                                                            "deep_link": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "rule_id",
+                                                            "kpi_code",
+                                                            "severity",
+                                                            "observed_value",
+                                                            "threshold_value",
+                                                            "status",
+                                                            "channels",
+                                                            "triggered_at",
+                                                            "deep_link"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "rules",
+                                                "alerts"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "kpi-dashboards.alerts.configure",
+                "tags": [
+                    "KpiDashboard"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfigureThresholdAlertRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/kpi-dashboards/alerts/{id}/acknowledge": {
+            "post": {
+                "operationId": "kpi-dashboards.alerts.acknowledge",
+                "tags": [
+                    "KpiDashboard"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Alert acknowledged"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "status"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Not Found"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 404
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Unknown alert."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/analytics/kpi-snapshots": {
             "get": {
                 "operationId": "analytics.kpi-snapshots.index",
@@ -318597,6 +319544,16 @@
                 "maxItems": 0,
                 "title": "CompanySite"
             },
+            "ComparisonMode": {
+                "type": "string",
+                "enum": [
+                    "yoy",
+                    "mom",
+                    "ytd",
+                    "budget"
+                ],
+                "title": "ComparisonMode"
+            },
             "ComplaintRequest": {
                 "type": "object",
                 "description": "A customer complaint at intake.",
@@ -319776,6 +320733,76 @@
                     "config"
                 ],
                 "title": "ConfigureRequest"
+            },
+            "ConfigureThresholdAlertRequest": {
+                "type": "object",
+                "properties": {
+                    "rule_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "kpi_code": {
+                        "$ref": "#/components/schemas/KpiCode"
+                    },
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "<",
+                            "<=",
+                            ">",
+                            ">="
+                        ]
+                    },
+                    "warning_value": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "critical_value": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "channels": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "in_app",
+                                "push",
+                                "email"
+                            ]
+                        },
+                        "minItems": 1
+                    },
+                    "cooldown_minutes": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 43200
+                    },
+                    "is_active": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "kpi_code",
+                    "operator"
+                ],
+                "title": "ConfigureThresholdAlertRequest"
             },
             "ConfirmCopilotActionRequest": {
                 "type": "object",
@@ -339657,6 +340684,37 @@
                     "position"
                 ],
                 "title": "KnowledgeCategoryResource"
+            },
+            "KpiCode": {
+                "type": "string",
+                "description": "The KPI catalog. A flow metric (P&L, activity over the period) converts at the average rate of the period, a stock metric (balance sheet position at the end of the period) at the closing spot rate.\n",
+                "enum": [
+                    "revenue_ytd_vs_budget",
+                    "ebitda",
+                    "net_financial_position",
+                    "order_backlog",
+                    "headcount_fte",
+                    "dso",
+                    "dpo",
+                    "net_working_capital",
+                    "cash_runway",
+                    "ar_ap_aging",
+                    "vat_liability",
+                    "weighted_pipeline",
+                    "win_rate",
+                    "gross_margin",
+                    "top_customers",
+                    "top_products",
+                    "inventory_turnover",
+                    "otif",
+                    "oee",
+                    "scrap_rate",
+                    "headcount_turnover",
+                    "absenteeism",
+                    "overtime_trend",
+                    "billable_utilization"
+                ],
+                "title": "KpiCode"
             },
             "KpiDefinitionRequest": {
                 "type": "object",
@@ -366357,6 +367415,19 @@
                 ],
                 "title": "RmaResource"
             },
+            "RoleCode": {
+                "type": "string",
+                "description": "The role cockpit a dashboard belongs to.\n",
+                "enum": [
+                    "ceo",
+                    "cfo",
+                    "sales",
+                    "operations",
+                    "hr",
+                    "custom"
+                ],
+                "title": "RoleCode"
+            },
             "RollingForecastRequest": {
                 "type": "object",
                 "description": "Validation of the RollingForecastRequest payload; every reference is limited to the active company.",
@@ -369515,6 +370586,120 @@
                 },
                 "title": "SaveCustomsSettingsRequest"
             },
+            "SaveDashboardLayoutRequest": {
+                "type": "object",
+                "properties": {
+                    "dashboard_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "role": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/RoleCode"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "custom_title": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 160
+                    },
+                    "refresh_interval_seconds": {
+                        "type": "integer",
+                        "minimum": 30,
+                        "maximum": 86400
+                    },
+                    "expected_version": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "widgets": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "kpi_code": {
+                                    "$ref": "#/components/schemas/KpiCode"
+                                },
+                                "widget_type": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/WidgetType"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "default_time_comparison": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ComparisonMode"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "x": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 11
+                                },
+                                "y": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                },
+                                "w": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 12
+                                },
+                                "h": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 12
+                                },
+                                "threshold_rules": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "kpi_code",
+                                "x",
+                                "y",
+                                "w",
+                                "h"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 40
+                    }
+                },
+                "required": [
+                    "refresh_interval_seconds",
+                    "widgets"
+                ],
+                "title": "SaveDashboardLayoutRequest"
+            },
             "SaveDeclarationOfIntentRequest": {
                 "type": "object",
                 "properties": {
@@ -370093,6 +371278,8 @@
                                 "forecasting",
                                 "ocr_inbox",
                                 "ocr_capture",
+                                "kpi_dashboards",
+                                "kpi_dashboards_admin",
                                 "ocr_settings",
                                 "ai_copilot",
                                 "ai_review",
@@ -411445,6 +412632,19 @@
                 ],
                 "title": "WidgetResource"
             },
+            "WidgetType": {
+                "type": "string",
+                "enum": [
+                    "metric_card",
+                    "waterfall_chart",
+                    "area_trend",
+                    "funnel",
+                    "heatmap",
+                    "top_n_table",
+                    "gauge"
+                ],
+                "title": "WidgetType"
+            },
             "WithholdingSettlementResource": {
                 "type": "object",
                 "properties": {
@@ -414184,6 +415384,10 @@
         {
             "name": "Kpi",
             "description": "Operations of the Kpi module."
+        },
+        {
+            "name": "KpiDashboard",
+            "description": "Operations of the KpiDashboard module."
         },
         {
             "name": "KpiSnapshot",
