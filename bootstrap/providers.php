@@ -12,6 +12,7 @@ use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Academy\Providers\AcademyServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
+use Modules\AnalyticsDss\Providers\AnalyticsDssServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
@@ -158,4 +159,5 @@ return [
     DigitalPreservationServiceProvider::class,
     ForecastingServiceProvider::class,
     OcrExtractionServiceProvider::class,
+    AnalyticsDssServiceProvider::class,
 ];
