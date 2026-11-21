@@ -55,7 +55,7 @@ final class CapacityScheduler
                     $placed = null;
                 }
             }
-            $placed ??= $this->placeOrder($order, $operations, $calendars, $alternatives, $loaded, $finite, false, max($today, $order->plannedStart->startOfDay()));
+            $placed ??= $this->placeOrder($order, $operations, $calendars, $alternatives, $loaded, $finite, false, $today);
 
             foreach ($placed ?? [] as $block) {
                 $this->load($loaded, $block->workCenterId, $block->segments);

@@ -170,14 +170,11 @@ final class MrpCalculationService
                 $exceptions[] = ExceptionCode::LateDelivery->value;
             }
         } else {
-            $base = $calendar->subtractLeadTime($needBy, $item->leadTimeDays, $item->supplierId);
+            // Customs clearance sits between the supplier's shipment and our receipt: it is taken off the need date first,
+            // the supplier's lead time (which skips the supplier's shutdowns) is counted back from the shipment date.
+            $base = $calendar->subtractLeadTime($needBy->subDays($customs), $item->leadTimeDays, $item->supplierId);
             $release = $base['date'];
             $shifted = $base['shifted'];
-            if ($customs > 0) {
-                $snap = $calendar->subtractLeadTime($release->subDays($customs), 0, $item->supplierId);
-                $release = $snap['date'];
-                $shifted = $shifted || $snap['shifted'];
-            }
             $start = $release;
             $end = $needBy;
             if ($release < $today) {
