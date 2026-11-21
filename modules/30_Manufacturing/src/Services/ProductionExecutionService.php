@@ -196,6 +196,17 @@ final readonly class ProductionExecutionService implements ProductionExecutionSe
             if (! $op instanceof MfgProductionOrderOperation) {
                 throw new ManufacturingOperationException('The operation does not belong to the production order.', 'operation');
             }
+            if ($dto->postingUuid !== null) {
+                // The order row lock serializes retries, so a replay always sees the first posting.
+                $existing = MfgOperationConfirmation::query()->where('tenant_id', $locked->tenant_id)->where('posting_uuid', $dto->postingUuid)->first();
+                if ($existing instanceof MfgOperationConfirmation) {
+                    if ($existing->production_order_operation_id !== $op->id) {
+                        throw new ManufacturingOperationException('The posting uuid was already used for another operation.', 'operation_posting_uuid');
+                    }
+
+                    return $existing;
+                }
+            }
             if ($op->is_subcontracted) {
                 throw new ManufacturingOperationException('A subcontracted operation is confirmed by receiving its subcontract order.', 'operation');
             }
@@ -533,6 +544,7 @@ final readonly class ProductionExecutionService implements ProductionExecutionSe
             'production_order_id' => $order->id,
             'production_order_operation_id' => $op->id,
             'shop_floor_execution_id' => $dto->shopFloorExecutionId,
+            'posting_uuid' => $dto->postingUuid,
             'subcontract_order_id' => $subcontractOrderId,
             'setup_minutes' => $setup,
             'run_minutes' => $run,

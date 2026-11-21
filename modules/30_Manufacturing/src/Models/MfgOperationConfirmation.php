@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property string $production_order_id
  * @property string $production_order_operation_id
  * @property string|null $shop_floor_execution_id
+ * @property string|null $posting_uuid
  * @property string|null $subcontract_order_id
  * @property string $setup_minutes
  * @property string $run_minutes
