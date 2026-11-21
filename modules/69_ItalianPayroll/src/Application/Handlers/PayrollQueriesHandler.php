@@ -46,7 +46,8 @@ final class PayrollQueriesHandler
         $months = [];
 
         foreach ($periods as $period) {
-            $accrual = (string) ($imports->get($period->id)?->tfr_monthly_accrual ?? '0.00');
+            $import = $imports->get($period->id);
+            $accrual = $import instanceof PayrollAccountingImport ? (string) $import->tfr_monthly_accrual : '0.00';
             $running = Dec::add($running, $accrual);
             $months[] = ['month' => $period->month, 'accrual' => Dec::round($accrual), 'running' => Dec::round($running)];
         }

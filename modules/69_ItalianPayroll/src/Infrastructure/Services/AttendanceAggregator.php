@@ -72,7 +72,7 @@ final class AttendanceAggregator
             $vouchers = (int) DB::table('time_meal_bookings')->where('tenant_id', $period->tenant_id)->where('user_id', $userId)->whereNull('deleted_at')
                 ->whereBetween('meal_date', [$start->toDateString(), $end->toDateString()])->distinct()->count('meal_date');
             $reimbursement = (string) (DB::table('expenses')->where('tenant_id', $period->tenant_id)->where('user_id', $userId)->whereNull('deleted_at')->where('status', 'approved')
-                ->where('is_reimbursable', true)->whereBetween('date', [$start->toDateString(), $end->toDateString()])->sum('amount_gross') ?? 0);
+                ->where('is_reimbursable', true)->whereBetween('date', [$start->toDateString(), $end->toDateString()])->sum('amount_gross'));
             $fringe = $fringeBenefits[$employeeId] ?? '0';
 
             $primary = [[CausalCode::Ordinario, $ordinary], [CausalCode::Straordinario25, $tier25], [CausalCode::Straordinario50, $tier50]];

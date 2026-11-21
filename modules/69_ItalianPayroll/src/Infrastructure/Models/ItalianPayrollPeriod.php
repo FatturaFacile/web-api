@@ -6,6 +6,7 @@ namespace Modules\ItalianPayroll\Infrastructure\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Modules\ItalianPayroll\Domain\Enums\PeriodStatus;
 use Modules\ItalianPayroll\Domain\Exceptions\ItalianPayrollException;
 
@@ -22,6 +23,9 @@ use Modules\ItalianPayroll\Domain\Exceptions\ItalianPayrollException;
  * @property string|null $export_format
  * @property string|null $export_checksum
  * @property array<string, mixed>|null $validation_report_json
+ * @property Carbon|null $validated_at
+ * @property Carbon|null $exported_at
+ * @property Carbon|null $paid_at
  */
 final class ItalianPayrollPeriod extends BaseEnterpriseModel
 {

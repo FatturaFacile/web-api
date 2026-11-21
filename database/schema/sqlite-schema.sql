@@ -41775,6 +41775,10 @@ CREATE TABLE "ipp_documents"(
   primary key("id")
 );
 
+CREATE INDEX "ipp_documents_tenant_id_kind_index" on "ipp_documents"(
+  "tenant_id",
+  "kind"
+);
 CREATE TABLE "ipp_payslip_distributions"(
   "id" varchar not null,
   "tenant_id" varchar,

@@ -90,6 +90,8 @@ return new class extends Migration
             $table->uuid('created_by')->nullable();
             $table->uuid('updated_by')->nullable();
             $table->uuid('deleted_by')->nullable();
+
+            $table->index(['tenant_id', 'kind']);
         });
 
         Schema::create('ipp_payslip_distributions', function (Blueprint $table): void {
