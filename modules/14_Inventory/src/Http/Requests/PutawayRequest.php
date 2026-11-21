@@ -35,6 +35,9 @@ final class PutawayRequest extends FormRequest
             'lot_id' => ['nullable', 'uuid', $this->tenantExists('stock_lots')],
             'quantity' => ['required', 'numeric', 'gt:0'],
             'limit' => ['sometimes', 'integer', 'min:1', 'max:50'],
+            'temperature_control' => [$suggesting ? 'nullable' : 'prohibited', 'string', 'in:ambient,chilled,frozen,hazmat'],
+            'packaging_unit' => [$suggesting ? 'nullable' : 'prohibited', 'string', 'in:pallet,box,unit'],
+            'abc_class' => [$suggesting ? 'nullable' : 'prohibited', 'string', 'in:A,B,C'],
         ];
     }
 }

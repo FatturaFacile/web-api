@@ -37,11 +37,15 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read MfgItem|null $mfgItem
  * @property-read Collection<int, MfgBomComponent> $components
+ * @property-read Collection<int, MfgBomCoProduct> $coProducts
  */
 final class MfgBom extends BaseEnterpriseModel
 {
     /** Statuses whose revision can be effective on a date. */
     public const array EffectiveStatuses = ['active', 'superseded'];
+
+    /** Revisions whose structure still counts in recursion checks: in preparation, awaiting approval or released. */
+    public const array LiveStatuses = ['draft', 'pending_eco_approval', 'active'];
 
     protected $table = 'mfg_boms';
 
@@ -83,6 +87,22 @@ final class MfgBom extends BaseEnterpriseModel
     public function components(): HasMany
     {
         return $this->hasMany(MfgBomComponent::class, 'bom_id')->orderBy('sequence');
+    }
+
+    /**
+     * @return HasMany<MfgBomCoProduct, $this>
+     */
+    public function coProducts(): HasMany
+    {
+        return $this->hasMany(MfgBomCoProduct::class, 'bom_id');
+    }
+
+    /**
+     * Whether the revision waits for the approval of its engineering change.
+     */
+    public function isPendingApproval(): bool
+    {
+        return $this->status === 'pending_eco_approval';
     }
 
     /**

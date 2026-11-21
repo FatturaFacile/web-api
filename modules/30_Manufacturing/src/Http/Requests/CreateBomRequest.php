@@ -21,7 +21,7 @@ final class CreateBomRequest extends ManufacturingRequest
             'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:200'],
             'bom_number' => [$creating ? 'nullable' : 'prohibited', 'string', 'max:50'],
             'revision' => [$creating ? 'nullable' : 'prohibited', 'string', 'max:20'],
-            'bom_type' => ['nullable', 'string', 'in:standard,phantom,engineering'],
+            'bom_type' => ['nullable', 'string', 'in:standard,phantom,engineering,process_formula,disassembly'],
             'base_quantity' => ['nullable', ...self::PositiveQuantity],
             'uom' => ['nullable', 'string', 'max:20'],
             'effective_from' => ['nullable', 'date'],
@@ -34,8 +34,11 @@ final class CreateBomRequest extends ManufacturingRequest
             'components.*.scrap_percentage' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:999'],
             'components.*.yield_percentage' => ['nullable', 'numeric', 'decimal:0,2', 'gt:0', 'max:100'],
             'components.*.is_phantom' => ['nullable', 'boolean'],
-            'components.*.issue_method' => ['nullable', 'string', 'in:manual,backflush'],
+            'components.*.issue_method' => ['nullable', 'string', 'in:manual,backflush,backflush_order_close'],
             'components.*.operation_sequence' => ['nullable', 'integer', 'min:1', 'max:99999'],
+            'components.*.fixed_scrap_quantity' => ['nullable', ...self::Quantity],
+            'components.*.substitute_item_ids' => ['nullable', 'array', 'max:10'],
+            'components.*.substitute_item_ids.*' => ['uuid', 'distinct', $this->tenantOwns('mfg_items')],
             'components.*.notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

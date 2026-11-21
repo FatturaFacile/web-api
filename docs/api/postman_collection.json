@@ -141723,6 +141723,276 @@
                     }
                 },
                 {
+                    "name": "POST /v1/inventory/warehouses/:id/locations/bulk",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/locations/bulk",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "locations",
+                                "bulk"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisles\": 1,\n    \"racks\": 1,\n    \"shelves\": 1,\n    \"bins\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"spacing\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/warehouses/:id/tree",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/tree",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "tree"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/warehouses/:id/capacity-summary",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/warehouses/:id/capacity-summary",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "warehouses",
+                                ":id",
+                                "capacity-summary"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/inventory/labels/locations",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/labels/locations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "labels",
+                                "locations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"bin_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"format\": \"pdf\",\n    \"size\": \"100x50\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/inventory/in-transit",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/inventory/in-transit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "inventory",
+                                "in-transit"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "POST /v1/inventory/sales-orders/:id/reserve",
                     "request": {
                         "method": "POST",
@@ -142910,7 +143180,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"abc_class\": \"A\",\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -142976,7 +143246,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_zone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"bin_type\": \"storage\",\n    \"strategy\": \"fixed_location\",\n    \"abc_class\": \"A\",\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"priority\": 1,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -143089,7 +143359,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1,\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"abc_class\": \"A\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -143148,7 +143418,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1\n}",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"source_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"destination_bin_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lot_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"limit\": 1,\n    \"temperature_control\": \"ambient\",\n    \"packaging_unit\": \"pallet\",\n    \"abc_class\": \"A\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -147841,7 +148111,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisle_code\": \"string\",\n    \"rack_code\": \"string\",\n    \"bin_code\": \"string\",\n    \"barcode\": \"string\",\n    \"pick_sequence\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"bin_type\": \"storage\"\n}",
+                            "raw": "{\n    \"zone_code\": \"string\",\n    \"zone_name\": \"string\",\n    \"zone_type\": \"receiving\",\n    \"aisle_code\": \"string\",\n    \"rack_code\": \"string\",\n    \"bin_code\": \"string\",\n    \"barcode\": \"string\",\n    \"pick_sequence\": 1,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"max_quantity\": 1.5,\n    \"bin_type\": \"storage\",\n    \"shelf_code\": \"string\",\n    \"coord_x\": 1.5,\n    \"coord_y\": 1.5,\n    \"coord_z\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"allow_mixed_skus\": false,\n    \"allow_mixed_lots\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -148073,7 +148343,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"bin_type\": \"storage\",\n    \"max_quantity\": 1.5,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"is_locked\": false,\n    \"pick_sequence\": 1\n}",
+                            "raw": "{\n    \"bin_type\": \"storage\",\n    \"max_quantity\": 1.5,\n    \"max_weight_kg\": 1.5,\n    \"max_volume_cbm\": 1.5,\n    \"is_locked\": false,\n    \"pick_sequence\": 1,\n    \"block_reason\": \"string\",\n    \"coord_x\": 1.5,\n    \"coord_y\": 1.5,\n    \"coord_z\": 1.5,\n    \"length_cm\": 1.5,\n    \"width_cm\": 1.5,\n    \"height_cm\": 1.5,\n    \"allow_mixed_skus\": false,\n    \"allow_mixed_lots\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -153385,7 +153655,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"mfg_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"name\": \"string\",\n    \"bom_number\": \"string\",\n    \"revision\": \"string\",\n    \"bom_type\": \"standard\",\n    \"base_quantity\": 1.5,\n    \"uom\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"effective_to\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"components\": [\n        {\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"sequence\": 1,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"mfg_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"name\": \"string\",\n    \"bom_number\": \"string\",\n    \"revision\": \"string\",\n    \"bom_type\": \"standard\",\n    \"base_quantity\": 1.5,\n    \"uom\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"effective_to\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"components\": [\n        {\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"sequence\": 1,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"fixed_scrap_quantity\": 1.5,\n            \"substitute_item_ids\": [\n                \"00000000-0000-0000-0000-000000000000\"\n            ],\n            \"notes\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -153500,7 +153770,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"mfg_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"name\": \"string\",\n    \"bom_number\": \"string\",\n    \"revision\": \"string\",\n    \"bom_type\": \"standard\",\n    \"base_quantity\": 1.5,\n    \"uom\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"effective_to\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"components\": [\n        {\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"sequence\": 1,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"mfg_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"name\": \"string\",\n    \"bom_number\": \"string\",\n    \"revision\": \"string\",\n    \"bom_type\": \"standard\",\n    \"base_quantity\": 1.5,\n    \"uom\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"effective_to\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"components\": [\n        {\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"sequence\": 1,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"fixed_scrap_quantity\": 1.5,\n            \"substitute_item_ids\": [\n                \"00000000-0000-0000-0000-000000000000\"\n            ],\n            \"notes\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -153630,7 +153900,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"new_revision\": \"string\",\n    \"reason\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"components\": [\n        {\n            \"action\": \"add\",\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1\n        }\n    ]\n}",
+                            "raw": "{\n    \"new_revision\": \"string\",\n    \"reason\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"components\": [\n        {\n            \"action\": \"add\",\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"fixed_scrap_quantity\": 1.5,\n            \"substitute_item_ids\": [\n                \"00000000-0000-0000-0000-000000000000\"\n            ],\n            \"sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -153688,6 +153958,602 @@
                             ]
                         },
                         "description": "Releases a draft revision",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Creates a BOM draft, or revises a released BOM through an engineering change",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/revisions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                "revisions"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Creates a BOM draft, or revises a released BOM through an engineering change",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"source_bom_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"title\": \"string\",\n    \"reason\": \"string\",\n    \"new_revision\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"components\": [\n        {\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"fixed_scrap_quantity\": 1.5,\n            \"substitute_item_ids\": [\n                \"00000000-0000-0000-0000-000000000000\"\n            ],\n            \"sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ],\n    \"mfg_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"name\": \"string\",\n    \"bom_number\": \"string\",\n    \"revision\": \"string\",\n    \"bom_type\": \"standard\",\n    \"base_quantity\": 1.5,\n    \"uom\": \"string\",\n    \"effective_to\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Replaces a component across the released BOMs that use it",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/mass-replace",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                "mass-replace"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Replaces a component across the released BOMs that use it",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"obsolete_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"substitute_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"reason\": \"string\",\n    \"effective_from\": \"2026-01-31T12:00:00+00:00\",\n    \"dry_run\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Dry run or commit of a BOM import",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/import",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                "import"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Dry run or commit of a BOM import",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"product_code\": \"string\",\n    \"name\": \"string\",\n    \"dry_run\": false,\n    \"rows\": [\n        {\n            \"item_code\": \"string\",\n            \"quantity_per\": \"string\",\n            \"uom\": \"string\",\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"fixed_scrap_quantity\": 1.5,\n            \"operation_sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Explosion of a revision: single or multi-level, with waste, phantom flattening and lead times",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/:id/explosion",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                ":id",
+                                "explosion"
+                            ],
+                            "query": [
+                                {
+                                    "key": "quantity",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "multi_level",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "flatten_phantoms",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "threshold_percentage",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Explosion of a revision: single or multi-level, with waste, phantom flattening and lead times",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Structural diff between two revisions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/:id/diff/:otherId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                ":id",
+                                "diff",
+                                ":otherId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "otherId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Structural diff between two revisions",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Replaces the co/by-products of a draft revision",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/:id/co-products",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                ":id",
+                                "co-products"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Replaces the co/by-products of a draft revision",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"co_products\": [\n        {\n            \"product_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"product_type\": \"co_product\",\n            \"output_ratio_qty\": 1.5,\n            \"cost_allocation_percentage\": 1.5\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Cost allocation between the primary output and the co/by-products",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/:id/cost-allocation",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                ":id",
+                                "cost-allocation"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Cost allocation between the primary output and the co/by-products",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Preferential origin (EUR.1) test of a revision",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/boms/:id/preferential-origin",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "boms",
+                                ":id",
+                                "preferential-origin"
+                            ],
+                            "query": [
+                                {
+                                    "key": "quantity",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "multi_level",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "flatten_phantoms",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "threshold_percentage",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Preferential origin (EUR.1) test of a revision",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Where-used implosion of an item",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/items/:id/implosion",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "items",
+                                ":id",
+                                "implosion"
+                            ],
+                            "query": [
+                                {
+                                    "key": "quantity",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "multi_level",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "flatten_phantoms",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "threshold_percentage",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Where-used implosion of an item",
                         "auth": {
                             "type": "noauth"
                         }
@@ -153785,7 +154651,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"bom_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"title\": \"string\",\n    \"reason\": \"string\",\n    \"description\": \"string\",\n    \"change_type\": \"bom_change\",\n    \"effective_date\": \"2026-01-31T12:00:00+00:00\",\n    \"new_revision\": \"string\",\n    \"components\": [\n        {\n            \"action\": \"add\",\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1\n        }\n    ]\n}",
+                            "raw": "{\n    \"bom_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"title\": \"string\",\n    \"reason\": \"string\",\n    \"description\": \"string\",\n    \"change_type\": \"bom_change\",\n    \"effective_date\": \"2026-01-31T12:00:00+00:00\",\n    \"new_revision\": \"string\",\n    \"components\": [\n        {\n            \"action\": \"add\",\n            \"component_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_per\": 1.5,\n            \"scrap_percentage\": 1.5,\n            \"yield_percentage\": 1.5,\n            \"is_phantom\": false,\n            \"issue_method\": \"manual\",\n            \"operation_sequence\": 1,\n            \"fixed_scrap_quantity\": 1.5,\n            \"substitute_item_ids\": [\n                \"00000000-0000-0000-0000-000000000000\"\n            ],\n            \"sequence\": 1,\n            \"notes\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -154171,7 +155037,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"item_code\": \"string\",\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"item_type\": \"raw_material\",\n    \"procurement_type\": \"make\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"uom\": \"string\",\n    \"standard_cost\": 1.5,\n    \"safety_stock\": 1.5,\n    \"min_lot_size\": 1.5,\n    \"max_lot_size\": 1.5,\n    \"lot_size_multiple\": 1.5,\n    \"lead_time_days\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"item_code\": \"string\",\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"item_type\": \"raw_material\",\n    \"procurement_type\": \"make\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"uom\": \"string\",\n    \"standard_cost\": 1.5,\n    \"safety_stock\": 1.5,\n    \"min_lot_size\": 1.5,\n    \"max_lot_size\": 1.5,\n    \"lot_size_multiple\": 1.5,\n    \"lead_time_days\": 1,\n    \"origin_status\": \"originating\",\n    \"exw_price\": 1.5,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -154286,7 +155152,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"item_type\": \"raw_material\",\n    \"procurement_type\": \"make\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"uom\": \"string\",\n    \"standard_cost\": 1.5,\n    \"safety_stock\": 1.5,\n    \"min_lot_size\": 1.5,\n    \"max_lot_size\": 1.5,\n    \"lot_size_multiple\": 1.5,\n    \"lead_time_days\": 1,\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"item_type\": \"raw_material\",\n    \"procurement_type\": \"make\",\n    \"stock_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"uom\": \"string\",\n    \"standard_cost\": 1.5,\n    \"safety_stock\": 1.5,\n    \"min_lot_size\": 1.5,\n    \"max_lot_size\": 1.5,\n    \"lot_size_multiple\": 1.5,\n    \"lead_time_days\": 1,\n    \"origin_status\": \"originating\",\n    \"exw_price\": 1.5,\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"

@@ -23826,6 +23826,1204 @@
                 }
             }
         },
+        "/v1/manufacturing/boms/revisions": {
+            "post": {
+                "operationId": "mfg.boms.revisions",
+                "summary": "Creates a BOM draft, or revises a released BOM through an engineering change",
+                "tags": [
+                    "BomEngineering"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateOrReviseBomWithEcoRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "engineering_change": {
+                                                    "type": "null"
+                                                }
+                                            },
+                                            "required": [
+                                                "data",
+                                                "engineering_change"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "engineering_change": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "data",
+                                                "engineering_change"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/boms/mass-replace": {
+            "post": {
+                "operationId": "mfg.boms.mass_replace",
+                "summary": "Replaces a component across the released BOMs that use it",
+                "tags": [
+                    "BomEngineering"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MassReplaceComponentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "obsolete_item_id": {
+                                            "type": "string"
+                                        },
+                                        "substitute_item_id": {
+                                            "type": "string"
+                                        },
+                                        "dry_run": {
+                                            "type": "boolean"
+                                        },
+                                        "replaced": {
+                                            "type": "array",
+                                            "items": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "bom_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "bom_number": {
+                                                                "type": "string"
+                                                            },
+                                                            "revision": {
+                                                                "type": "string"
+                                                            },
+                                                            "new_bom_id": {
+                                                                "type": "null"
+                                                            },
+                                                            "new_revision": {
+                                                                "type": "null"
+                                                            },
+                                                            "eco_id": {
+                                                                "type": "null"
+                                                            },
+                                                            "eco_number": {
+                                                                "type": "null"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "bom_id",
+                                                            "bom_number",
+                                                            "revision",
+                                                            "new_bom_id",
+                                                            "new_revision",
+                                                            "eco_id",
+                                                            "eco_number"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "bom_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "bom_number": {
+                                                                "type": "string"
+                                                            },
+                                                            "revision": {
+                                                                "type": "string"
+                                                            },
+                                                            "new_bom_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "new_revision": {
+                                                                "type": "string"
+                                                            },
+                                                            "eco_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "eco_number": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "bom_id",
+                                                            "bom_number",
+                                                            "revision",
+                                                            "new_bom_id",
+                                                            "new_revision",
+                                                            "eco_id",
+                                                            "eco_number"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "skipped": {
+                                            "type": "array",
+                                            "items": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "bom_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "bom_number": {
+                                                                "type": "string"
+                                                            },
+                                                            "reason": {
+                                                                "type": "string",
+                                                                "const": "already_contains_substitute"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "bom_id",
+                                                            "bom_number",
+                                                            "reason"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "bom_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "bom_number": {
+                                                                "type": "string"
+                                                            },
+                                                            "reason": {
+                                                                "type": "string",
+                                                                "const": "substitute_is_the_product"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "bom_id",
+                                                            "bom_number",
+                                                            "reason"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "obsolete_item_id",
+                                        "substitute_item_id",
+                                        "dry_run",
+                                        "replaced",
+                                        "skipped"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/boms/import": {
+            "post": {
+                "operationId": "mfg.boms.import",
+                "summary": "Dry run or commit of a BOM import",
+                "tags": [
+                    "BomEngineering"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImportBomRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "report": {
+                                            "type": "object",
+                                            "properties": {
+                                                "valid": {
+                                                    "type": "boolean"
+                                                },
+                                                "product_item_id": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "rows": {
+                                                    "type": "string"
+                                                },
+                                                "components": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "summary": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "total": {
+                                                            "type": "integer"
+                                                        },
+                                                        "valid": {
+                                                            "type": "integer"
+                                                        },
+                                                        "invalid": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "total",
+                                                        "valid",
+                                                        "invalid"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "valid",
+                                                "product_item_id",
+                                                "rows",
+                                                "components",
+                                                "summary"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "report"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "valid": {
+                                            "type": "boolean"
+                                        },
+                                        "product_item_id": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "rows": {
+                                            "type": "string"
+                                        },
+                                        "components": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "summary": {
+                                            "type": "object",
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "valid": {
+                                                    "type": "integer"
+                                                },
+                                                "invalid": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "total",
+                                                "valid",
+                                                "invalid"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "valid",
+                                        "product_item_id",
+                                        "rows",
+                                        "components",
+                                        "summary"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/boms/{id}/explosion": {
+            "get": {
+                "operationId": "mfg.boms.explosion",
+                "summary": "Explosion of a revision: single or multi-level, with waste, phantom flattening and lead times",
+                "tags": [
+                    "BomEngineering"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "quantity",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "maximum": 99999999999
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "multi_level",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "flatten_phantoms",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "threshold_percentage",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "minimum": 0,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "bom_id": {
+                                            "type": "string"
+                                        },
+                                        "quantity": {
+                                            "type": "string"
+                                        },
+                                        "date": {
+                                            "type": "string"
+                                        },
+                                        "multi_level": {
+                                            "type": "boolean"
+                                        },
+                                        "flatten_phantoms": {
+                                            "type": "boolean"
+                                        },
+                                        "total_lead_time_days": {
+                                            "type": "integer"
+                                        },
+                                        "lines": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": {}
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "bom_id",
+                                        "quantity",
+                                        "date",
+                                        "multi_level",
+                                        "flatten_phantoms",
+                                        "total_lead_time_days",
+                                        "lines"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/boms/{id}/diff/{otherId}": {
+            "get": {
+                "operationId": "mfg.boms.diff",
+                "summary": "Structural diff between two revisions",
+                "tags": [
+                    "BomEngineering"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "otherId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "from_bom_id": {
+                                            "type": "string"
+                                        },
+                                        "to_bom_id": {
+                                            "type": "string"
+                                        },
+                                        "from_revision": {
+                                            "type": "string"
+                                        },
+                                        "to_revision": {
+                                            "type": "string"
+                                        },
+                                        "added": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "component_item_id": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {}
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "component_item_id"
+                                                ],
+                                                "additionalProperties": {}
+                                            }
+                                        },
+                                        "removed": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "component_item_id": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {}
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "component_item_id"
+                                                ],
+                                                "additionalProperties": {}
+                                            }
+                                        },
+                                        "modified": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "component_item_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "component_item_code": {
+                                                        "type": "string"
+                                                    },
+                                                    "changes": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "component_item_id",
+                                                    "component_item_code",
+                                                    "changes"
+                                                ]
+                                            }
+                                        },
+                                        "summary": {
+                                            "type": "object",
+                                            "properties": {
+                                                "added": {
+                                                    "type": "integer"
+                                                },
+                                                "removed": {
+                                                    "type": "integer"
+                                                },
+                                                "modified": {
+                                                    "type": "integer"
+                                                },
+                                                "unchanged": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "added",
+                                                "removed",
+                                                "modified",
+                                                "unchanged"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "from_bom_id",
+                                        "to_bom_id",
+                                        "from_revision",
+                                        "to_revision",
+                                        "added",
+                                        "removed",
+                                        "modified",
+                                        "summary"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/boms/{id}/co-products": {
+            "put": {
+                "operationId": "mfg.boms.co_products",
+                "summary": "Replaces the co/by-products of a draft revision",
+                "tags": [
+                    "BomEngineering"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReplaceCoProductsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "allocation": {
+                                            "type": "object",
+                                            "properties": {
+                                                "bom_id": {
+                                                    "type": "string"
+                                                },
+                                                "primary_item_id": {
+                                                    "type": "string"
+                                                },
+                                                "primary_percentage": {
+                                                    "type": "string"
+                                                },
+                                                "co_products": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "product_item_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "product_type": {
+                                                                "type": "string"
+                                                            },
+                                                            "output_ratio_qty": {
+                                                                "type": "string"
+                                                            },
+                                                            "cost_allocation_percentage": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "product_item_id",
+                                                            "product_type",
+                                                            "output_ratio_qty",
+                                                            "cost_allocation_percentage"
+                                                        ]
+                                                    }
+                                                },
+                                                "total_percentage": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "bom_id",
+                                                "primary_item_id",
+                                                "primary_percentage",
+                                                "co_products",
+                                                "total_percentage"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "allocation"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/boms/{id}/cost-allocation": {
+            "get": {
+                "operationId": "mfg.boms.cost_allocation",
+                "summary": "Cost allocation between the primary output and the co/by-products",
+                "tags": [
+                    "BomEngineering"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "bom_id": {
+                                            "type": "string"
+                                        },
+                                        "primary_item_id": {
+                                            "type": "string"
+                                        },
+                                        "primary_percentage": {
+                                            "type": "string"
+                                        },
+                                        "co_products": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "product_item_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "product_type": {
+                                                        "type": "string"
+                                                    },
+                                                    "output_ratio_qty": {
+                                                        "type": "string"
+                                                    },
+                                                    "cost_allocation_percentage": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "product_item_id",
+                                                    "product_type",
+                                                    "output_ratio_qty",
+                                                    "cost_allocation_percentage"
+                                                ]
+                                            }
+                                        },
+                                        "total_percentage": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "bom_id",
+                                        "primary_item_id",
+                                        "primary_percentage",
+                                        "co_products",
+                                        "total_percentage"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/boms/{id}/preferential-origin": {
+            "get": {
+                "operationId": "mfg.boms.preferential_origin",
+                "summary": "Preferential origin (EUR.1) test of a revision",
+                "tags": [
+                    "BomEngineering"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "quantity",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "maximum": 99999999999
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "multi_level",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "flatten_phantoms",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "threshold_percentage",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "minimum": 0,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "bom_id": {
+                                            "type": "string"
+                                        },
+                                        "item_id": {
+                                            "type": "string"
+                                        },
+                                        "quantity": {
+                                            "type": "string"
+                                        },
+                                        "exw_price": {
+                                            "type": "string"
+                                        },
+                                        "originating_value": {
+                                            "type": "string"
+                                        },
+                                        "non_originating_value": {
+                                            "type": "string"
+                                        },
+                                        "non_originating_percentage": {
+                                            "type": "string"
+                                        },
+                                        "threshold_percentage": {
+                                            "type": "string"
+                                        },
+                                        "eligible": {
+                                            "type": "boolean"
+                                        },
+                                        "lines": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": {}
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "bom_id",
+                                        "item_id",
+                                        "quantity",
+                                        "exw_price",
+                                        "originating_value",
+                                        "non_originating_value",
+                                        "non_originating_percentage",
+                                        "threshold_percentage",
+                                        "eligible",
+                                        "lines"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/items/{id}/implosion": {
+            "get": {
+                "operationId": "mfg.items.implosion",
+                "summary": "Where-used implosion of an item",
+                "tags": [
+                    "BomEngineering"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "quantity",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "maximum": 99999999999
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "multi_level",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "flatten_phantoms",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "threshold_percentage",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "minimum": 0,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "item_id": {
+                                            "type": "string"
+                                        },
+                                        "item_code": {
+                                            "type": "string"
+                                        },
+                                        "date": {
+                                            "type": "string"
+                                        },
+                                        "parents": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "level": {
+                                                        "type": "number"
+                                                    },
+                                                    "parent_item_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "parent_item_code": {
+                                                        "type": "string"
+                                                    },
+                                                    "parent_item_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "parent_item_type": {
+                                                        "type": "string"
+                                                    },
+                                                    "bom_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "bom_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "revision": {
+                                                        "type": "string"
+                                                    },
+                                                    "is_phantom": {
+                                                        "type": "string"
+                                                    },
+                                                    "quantity_per": {
+                                                        "type": "string"
+                                                    },
+                                                    "cumulative_coefficient": {
+                                                        "type": "string"
+                                                    },
+                                                    "is_top_level": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "path": {
+                                                        "type": "array",
+                                                        "prefixItems": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string"
+                                                            }
+                                                        ],
+                                                        "minItems": 2,
+                                                        "maxItems": 2,
+                                                        "items": {}
+                                                    }
+                                                },
+                                                "required": [
+                                                    "level",
+                                                    "parent_item_id",
+                                                    "parent_item_code",
+                                                    "parent_item_name",
+                                                    "parent_item_type",
+                                                    "bom_id",
+                                                    "bom_number",
+                                                    "revision",
+                                                    "is_phantom",
+                                                    "quantity_per",
+                                                    "cumulative_coefficient",
+                                                    "is_top_level",
+                                                    "path"
+                                                ]
+                                            }
+                                        },
+                                        "top_level": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "item_id",
+                                        "item_code",
+                                        "date",
+                                        "parents",
+                                        "top_level"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/associations/bookings": {
             "get": {
                 "operationId": "v1.associations.bookings.index",
@@ -143685,6 +144883,312 @@
                 }
             }
         },
+        "/v1/inventory/warehouses/{id}/locations/bulk": {
+            "post": {
+                "operationId": "inventory.warehouses.locations.bulk",
+                "tags": [
+                    "LocationTopology"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BulkGenerateLocationsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "created": {
+                                            "type": "integer"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "created",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/inventory/warehouses/{id}/tree": {
+            "get": {
+                "operationId": "inventory.warehouses.tree",
+                "tags": [
+                    "LocationTopology"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "array",
+                                                "items": {}
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/inventory/warehouses/{id}/capacity-summary": {
+            "get": {
+                "operationId": "inventory.warehouses.capacity-summary",
+                "tags": [
+                    "LocationTopology"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "array",
+                                                "items": {}
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/inventory/labels/locations": {
+            "post": {
+                "operationId": "inventory.labels.locations",
+                "tags": [
+                    "LocationTopology"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LocationLabelsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "text/plain; charset=UTF-8": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/inventory/in-transit": {
+            "get": {
+                "operationId": "inventory.in-transit",
+                "tags": [
+                    "LocationTopology"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "transfer_order_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "transfer_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "status": {
+                                                        "type": "string"
+                                                    },
+                                                    "source_warehouse_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "destination_warehouse_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "transit_bin_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "line_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "stock_item_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "sku": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "lot_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "shipped_qty": {
+                                                        "type": "string"
+                                                    },
+                                                    "received_qty": {
+                                                        "type": "string"
+                                                    },
+                                                    "damaged_qty": {
+                                                        "type": "string"
+                                                    },
+                                                    "outstanding_qty": {
+                                                        "type": "string"
+                                                    },
+                                                    "shipped_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "transfer_order_id",
+                                                    "transfer_number",
+                                                    "status",
+                                                    "source_warehouse_id",
+                                                    "destination_warehouse_id",
+                                                    "transit_bin_id",
+                                                    "line_id",
+                                                    "stock_item_id",
+                                                    "sku",
+                                                    "lot_id",
+                                                    "shipped_qty",
+                                                    "received_qty",
+                                                    "damaged_qty",
+                                                    "outstanding_qty",
+                                                    "shipped_at"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/hospitality/room-types": {
             "get": {
                 "operationId": "v1.hospitality.room-types.index",
@@ -208263,6 +209767,15 @@
                                                     "bin_type": {
                                                         "type": "string"
                                                     },
+                                                    "abc_class": {
+                                                        "type": "string"
+                                                    },
+                                                    "temperature_control": {
+                                                        "type": "string"
+                                                    },
+                                                    "packaging_unit": {
+                                                        "type": "string"
+                                                    },
                                                     "strategy": {
                                                         "type": "string"
                                                     },
@@ -208281,6 +209794,9 @@
                                                     "target_zone_id",
                                                     "target_bin_id",
                                                     "bin_type",
+                                                    "abc_class",
+                                                    "temperature_control",
+                                                    "packaging_unit",
                                                     "strategy",
                                                     "priority",
                                                     "is_active"
@@ -208344,6 +209860,15 @@
                                         "bin_type": {
                                             "type": "string"
                                         },
+                                        "abc_class": {
+                                            "type": "string"
+                                        },
+                                        "temperature_control": {
+                                            "type": "string"
+                                        },
+                                        "packaging_unit": {
+                                            "type": "string"
+                                        },
                                         "strategy": {
                                             "type": "string"
                                         },
@@ -208362,6 +209887,9 @@
                                         "target_zone_id",
                                         "target_bin_id",
                                         "bin_type",
+                                        "abc_class",
+                                        "temperature_control",
+                                        "packaging_unit",
                                         "strategy",
                                         "priority",
                                         "is_active"
@@ -208437,6 +209965,15 @@
                                         "bin_type": {
                                             "type": "string"
                                         },
+                                        "abc_class": {
+                                            "type": "string"
+                                        },
+                                        "temperature_control": {
+                                            "type": "string"
+                                        },
+                                        "packaging_unit": {
+                                            "type": "string"
+                                        },
                                         "strategy": {
                                             "type": "string"
                                         },
@@ -208455,6 +209992,9 @@
                                         "target_zone_id",
                                         "target_bin_id",
                                         "bin_type",
+                                        "abc_class",
+                                        "temperature_control",
+                                        "packaging_unit",
                                         "strategy",
                                         "priority",
                                         "is_active"
@@ -318537,6 +320077,109 @@
                 ],
                 "title": "BulkActivityRecordRequest"
             },
+            "BulkGenerateLocationsRequest": {
+                "type": "object",
+                "description": "The layout of a zone to generate in one batch: how many aisles, racks, shelves and bins, and the limits and size every\ngenerated bin gets.",
+                "properties": {
+                    "zone_code": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "zone_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "zone_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "receiving",
+                            "storage",
+                            "picking",
+                            "packing",
+                            "shipping",
+                            "quarantine",
+                            "transit",
+                            null
+                        ]
+                    },
+                    "aisles": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5000
+                    },
+                    "racks": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5000
+                    },
+                    "shelves": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5000
+                    },
+                    "bins": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5000
+                    },
+                    "max_weight_kg": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "max_volume_cbm": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "max_quantity": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "length_cm": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "width_cm": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "height_cm": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "spacing": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "zone_code",
+                    "aisles",
+                    "racks",
+                    "shelves",
+                    "bins"
+                ],
+                "title": "BulkGenerateLocationsRequest"
+            },
             "BulkPriceListItemsRequest": {
                 "type": "object",
                 "properties": {
@@ -326970,6 +328613,8 @@
                             "standard",
                             "phantom",
                             "engineering",
+                            "process_formula",
+                            "disassembly",
                             null
                         ]
                     },
@@ -327058,6 +328703,7 @@
                                     "enum": [
                                         "manual",
                                         "backflush",
+                                        "backflush_order_close",
                                         null
                                     ]
                                 },
@@ -327068,6 +328714,26 @@
                                     ],
                                     "minimum": 1,
                                     "maximum": 99999
+                                },
+                                "fixed_scrap_quantity": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 99999999999
+                                },
+                                "substitute_item_ids": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "maxItems": 10,
+                                    "uniqueItems": true
                                 },
                                 "notes": {
                                     "type": [
@@ -327578,6 +329244,7 @@
                                     "enum": [
                                         "manual",
                                         "backflush",
+                                        "backflush_order_close",
                                         null
                                     ]
                                 },
@@ -327588,6 +329255,41 @@
                                     ],
                                     "minimum": 1,
                                     "maximum": 99999
+                                },
+                                "fixed_scrap_quantity": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 99999999999
+                                },
+                                "substitute_item_ids": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "maxItems": 10,
+                                    "uniqueItems": true
+                                },
+                                "sequence": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 1,
+                                    "maximum": 99999
+                                },
+                                "notes": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 1000
                                 }
                             },
                             "required": [
@@ -328423,6 +330125,216 @@
                     "items"
                 ],
                 "title": "CreateInvoiceRequest"
+            },
+            "CreateOrReviseBomWithEcoRequest": {
+                "type": "object",
+                "description": "Validation of \"create a BOM draft, or revise a released BOM through an engineering change\": with a source BOM the\ncomponents are changes (add, update, remove) to it, without one they are the full lines of a new draft.",
+                "properties": {
+                    "source_bom_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "title": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 200
+                    },
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "new_revision": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "effective_from": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "components": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "component_item_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "quantity_per": {
+                                    "type": "number",
+                                    "maximum": 99999999999
+                                },
+                                "scrap_percentage": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 999
+                                },
+                                "yield_percentage": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "maximum": 100
+                                },
+                                "is_phantom": {
+                                    "type": [
+                                        "boolean",
+                                        "null"
+                                    ]
+                                },
+                                "issue_method": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "enum": [
+                                        "manual",
+                                        "backflush",
+                                        "backflush_order_close",
+                                        null
+                                    ]
+                                },
+                                "operation_sequence": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 1,
+                                    "maximum": 99999
+                                },
+                                "fixed_scrap_quantity": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 99999999999
+                                },
+                                "substitute_item_ids": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "maxItems": 10,
+                                    "uniqueItems": true
+                                },
+                                "sequence": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 1,
+                                    "maximum": 99999
+                                },
+                                "notes": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 1000
+                                }
+                            },
+                            "required": [
+                                "component_item_id",
+                                "quantity_per"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 500,
+                        "uniqueItems": true
+                    },
+                    "mfg_item_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "bom_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50
+                    },
+                    "revision": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "bom_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "standard",
+                            "phantom",
+                            "engineering",
+                            "process_formula",
+                            "disassembly",
+                            null
+                        ]
+                    },
+                    "base_quantity": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "maximum": 99999999999
+                    },
+                    "uom": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "effective_to": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 5000
+                    }
+                },
+                "required": [
+                    "components",
+                    "mfg_item_id",
+                    "name"
+                ],
+                "title": "CreateOrReviseBomWithEcoRequest"
             },
             "CreatePayrollPaymentsRequest": {
                 "type": "object",
@@ -339752,6 +341664,101 @@
                 ],
                 "title": "ImportBankStatementRequest"
             },
+            "ImportBomRequest": {
+                "type": "object",
+                "description": "Validation of a BOM import (rows from a CAD, CSV or Excel file mapped to columns): a dry run reports every row, a\nreal run creates the BOM draft when all rows are valid.",
+                "properties": {
+                    "product_code": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 200
+                    },
+                    "dry_run": {
+                        "type": "boolean"
+                    },
+                    "rows": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "item_code": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 50
+                                },
+                                "quantity_per": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 30
+                                },
+                                "uom": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 20
+                                },
+                                "scrap_percentage": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 999
+                                },
+                                "yield_percentage": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "maximum": 100
+                                },
+                                "fixed_scrap_quantity": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 99999999999
+                                },
+                                "operation_sequence": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 1,
+                                    "maximum": 99999
+                                },
+                                "notes": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 1000
+                                }
+                            }
+                        },
+                        "minItems": 1,
+                        "maxItems": 2000
+                    }
+                },
+                "required": [
+                    "product_code",
+                    "dry_run",
+                    "rows"
+                ],
+                "title": "ImportBomRequest"
+            },
             "ImportForecastRequest": {
                 "type": "object",
                 "description": "Import of the forecasts into the demand side of a draft scenario.",
@@ -347237,6 +349244,40 @@
                 ],
                 "title": "LoanerResource"
             },
+            "LocationLabelsRequest": {
+                "type": "object",
+                "description": "Bins to print labels for, the output format and the label size.",
+                "properties": {
+                    "bin_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "minItems": 1,
+                        "maxItems": 500
+                    },
+                    "format": {
+                        "type": "string",
+                        "enum": [
+                            "pdf",
+                            "zpl"
+                        ]
+                    },
+                    "size": {
+                        "type": "string",
+                        "enum": [
+                            "100x50",
+                            "50x25"
+                        ]
+                    }
+                },
+                "required": [
+                    "bin_ids",
+                    "format"
+                ],
+                "title": "LocationLabelsRequest"
+            },
             "LogBillableActivityRequest": {
                 "type": "object",
                 "properties": {
@@ -347813,6 +349854,43 @@
                 "minItems": 0,
                 "maxItems": 0,
                 "title": "MarketplaceSyncRun"
+            },
+            "MassReplaceComponentRequest": {
+                "type": "object",
+                "description": "Validation of the replacement of a component across the released BOMs that use it.",
+                "properties": {
+                    "obsolete_item_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "substitute_item_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 1000
+                    },
+                    "effective_from": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "dry_run": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "obsolete_item_id",
+                    "substitute_item_id",
+                    "reason"
+                ],
+                "title": "MassReplaceComponentRequest"
             },
             "MatchImportLineRequest": {
                 "type": "object",
@@ -348940,6 +351018,15 @@
                                         "null"
                                     ]
                                 },
+                                "fixed_scrap_quantity": {
+                                    "type": "string"
+                                },
+                                "substitute_item_ids": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
                                 "notes": {
                                     "type": [
                                         "string",
@@ -348959,7 +351046,39 @@
                                 "is_phantom",
                                 "issue_method",
                                 "operation_sequence",
+                                "fixed_scrap_quantity",
+                                "substitute_item_ids",
                                 "notes"
+                            ]
+                        }
+                    },
+                    "co_products": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "product_item_id": {
+                                    "type": "string"
+                                },
+                                "product_type": {
+                                    "type": "string"
+                                },
+                                "output_ratio_qty": {
+                                    "type": "string"
+                                },
+                                "cost_allocation_percentage": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "product_item_id",
+                                "product_type",
+                                "output_ratio_qty",
+                                "cost_allocation_percentage"
                             ]
                         }
                     },
@@ -349092,6 +351211,19 @@
                         ],
                         "additionalProperties": {}
                     },
+                    "diff_payload": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "additionalProperties": {}
+                    },
+                    "approval_workflow_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "created_at": {
                         "type": [
                             "string",
@@ -349119,6 +351251,8 @@
                     "rejection_reason",
                     "implemented_at",
                     "change_payload",
+                    "diff_payload",
+                    "approval_workflow_id",
                     "created_at"
                 ],
                 "title": "MfgEngineeringChangeOrderResource"
@@ -349260,6 +351394,12 @@
                     "lead_time_days": {
                         "type": "integer"
                     },
+                    "origin_status": {
+                        "type": "string"
+                    },
+                    "exw_price": {
+                        "type": "string"
+                    },
                     "is_active": {
                         "type": "boolean"
                     },
@@ -349300,6 +351440,8 @@
                     "max_lot_size",
                     "lot_size_multiple",
                     "lead_time_days",
+                    "origin_status",
+                    "exw_price",
                     "is_active",
                     "created_at",
                     "updated_at"
@@ -363092,6 +365234,31 @@
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 50
+                    },
+                    "temperature_control": {
+                        "type": "string",
+                        "enum": [
+                            "ambient",
+                            "chilled",
+                            "frozen",
+                            "hazmat"
+                        ]
+                    },
+                    "packaging_unit": {
+                        "type": "string",
+                        "enum": [
+                            "pallet",
+                            "box",
+                            "unit"
+                        ]
+                    },
+                    "abc_class": {
+                        "type": "string",
+                        "enum": [
+                            "A",
+                            "B",
+                            "C"
+                        ]
                     }
                 },
                 "required": [
@@ -363155,6 +365322,43 @@
                             "fixed_location",
                             "consolidate",
                             "empty_bin"
+                        ]
+                    },
+                    "abc_class": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "A",
+                            "B",
+                            "C",
+                            null
+                        ]
+                    },
+                    "temperature_control": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "ambient",
+                            "chilled",
+                            "frozen",
+                            "hazmat",
+                            null
+                        ]
+                    },
+                    "packaging_unit": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "pallet",
+                            "box",
+                            "unit",
+                            null
                         ]
                     },
                     "priority": {
@@ -367012,6 +369216,55 @@
                 "maxItems": 0,
                 "title": "RepairOrderLine"
             },
+            "ReplaceCoProductsRequest": {
+                "type": "object",
+                "description": "Validation of the co-products and by-products of a draft BOM revision with their cost shares.",
+                "properties": {
+                    "co_products": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "product_item_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "product_type": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "enum": [
+                                        "co_product",
+                                        "by_product",
+                                        null
+                                    ]
+                                },
+                                "output_ratio_qty": {
+                                    "type": "number",
+                                    "maximum": 99999999999
+                                },
+                                "cost_allocation_percentage": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 100
+                                }
+                            },
+                            "required": [
+                                "product_item_id",
+                                "output_ratio_qty",
+                                "cost_allocation_percentage"
+                            ]
+                        },
+                        "maxItems": 20,
+                        "uniqueItems": true
+                    }
+                },
+                "required": [
+                    "co_products"
+                ],
+                "title": "ReplaceCoProductsRequest"
+            },
             "ReplyConversationRequest": {
                 "type": "object",
                 "description": "The reply an agent sends on the channel of a conversation.",
@@ -368929,6 +371182,7 @@
                                     "enum": [
                                         "manual",
                                         "backflush",
+                                        "backflush_order_close",
                                         null
                                     ]
                                 },
@@ -368939,6 +371193,41 @@
                                     ],
                                     "minimum": 1,
                                     "maximum": 99999
+                                },
+                                "fixed_scrap_quantity": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 99999999999
+                                },
+                                "substitute_item_ids": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "maxItems": 10,
+                                    "uniqueItems": true
+                                },
+                                "sequence": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 1,
+                                    "maximum": 99999
+                                },
+                                "notes": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 1000
                                 }
                             },
                             "required": [
@@ -393293,6 +395582,22 @@
                         "minimum": 0,
                         "maximum": 3650
                     },
+                    "origin_status": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "originating",
+                            "non_originating",
+                            null
+                        ]
+                    },
+                    "exw_price": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 99999999999
+                    },
                     "is_active": {
                         "type": [
                             "boolean",
@@ -400832,6 +403137,61 @@
                             "quarantine",
                             "transit",
                             null
+                        ]
+                    },
+                    "shelf_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50
+                    },
+                    "coord_x": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "coord_y": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "coord_z": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "length_cm": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "width_cm": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "height_cm": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "allow_mixed_skus": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "allow_mixed_lots": {
+                        "type": [
+                            "boolean",
+                            "null"
                         ]
                     }
                 },
@@ -409336,6 +411696,18 @@
                         "minimum": 0,
                         "maximum": 3650
                     },
+                    "origin_status": {
+                        "type": "string",
+                        "enum": [
+                            "originating",
+                            "non_originating"
+                        ]
+                    },
+                    "exw_price": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 99999999999
+                    },
                     "is_active": {
                         "type": "boolean"
                     }
@@ -412519,6 +414891,55 @@
                             "null"
                         ],
                         "minimum": 0
+                    },
+                    "block_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "coord_x": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "coord_y": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "coord_z": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "length_cm": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "width_cm": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "height_cm": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "allow_mixed_skus": {
+                        "type": "boolean"
+                    },
+                    "allow_mixed_lots": {
+                        "type": "boolean"
                     }
                 },
                 "title": "UpdateWarehouseBinRequest"
@@ -418260,6 +420681,10 @@
             "description": "Operations of the Bom module."
         },
         {
+            "name": "BomEngineering",
+            "description": "Operations of the BomEngineering module."
+        },
+        {
             "name": "Booking",
             "description": "Operations of the Booking module."
         },
@@ -419302,6 +421727,10 @@
         {
             "name": "LocalizationPack",
             "description": "Operations of the LocalizationPack module."
+        },
+        {
+            "name": "LocationTopology",
+            "description": "Operations of the LocationTopology module."
         },
         {
             "name": "LodgingCatalog",

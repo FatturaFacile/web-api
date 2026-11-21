@@ -32,6 +32,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $rejection_reason
  * @property Carbon|null $implemented_at
  * @property array<string, mixed>|null $change_payload
+ * @property array<string, mixed>|null $diff_payload
+ * @property string|null $approval_workflow_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -48,6 +50,7 @@ final class MfgEngineeringChangeOrder extends BaseEnterpriseModel
             'rejected_at' => 'datetime',
             'implemented_at' => 'datetime',
             'change_payload' => 'array',
+            'diff_payload' => 'array',
         ];
     }
 
