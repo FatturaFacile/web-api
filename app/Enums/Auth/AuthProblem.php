@@ -28,4 +28,19 @@ enum AuthProblem: string
     case SessionExpired = 'urn:fatturafacile:problem:session-expired';
     case SessionTenantMismatch = 'urn:fatturafacile:problem:session-tenant-mismatch';
     case CookieSessionRequired = 'urn:fatturafacile:problem:cookie-session-required';
+    case PermissionDenied = 'urn:fatturafacile:problem:permission-denied';
+    case CompanyAccessRevoked = 'urn:fatturafacile:problem:company-access-revoked';
+    case MfaCannotBeDisabled = 'urn:fatturafacile:problem:mfa-cannot-be-disabled';
+
+    /** Machine-readable `code` member that clients (web, desktop, mobile) switch on for a 403. */
+    public function code(): ?string
+    {
+        return match ($this) {
+            self::PermissionDenied => 'permission_denied',
+            self::CompanyAccessRevoked => 'company_access_revoked',
+            self::TwoFactorSetupRequired => 'mfa_required',
+            self::MfaCannotBeDisabled => 'mfa_cannot_be_disabled',
+            default => null,
+        };
+    }
 }
