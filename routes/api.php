@@ -825,7 +825,6 @@ Route::prefix('v1')->group(function (): void {
                     Route::get('/audit', [AccessOverviewController::class, 'audit'])->name('audit');
                 });
                 Route::get('/access-options', [TenantMemberController::class, 'options'])->name('access-options');
-                Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
                 Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');
                 Route::get('/security/two-factor', [TwoFactorController::class, 'policy'])->name('security.two-factor');
                 Route::put('/security/two-factor', [TwoFactorController::class, 'updatePolicy'])->name('security.two-factor.update');

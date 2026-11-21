@@ -9,6 +9,8 @@ use App\Models\TenantSecurityPolicy;
 use App\Models\User;
 use App\Services\Auth\Sso\SsoConnection;
 use App\Services\Auth\TwoFactorAuthentication;
+use Modules\Platform\Identity\Domain\Enums\SystemRole;
+use Modules\Platform\Identity\Domain\Services\MfaRequirementResolver;
 
 /**
  * Reads and writes the security policy of a tenant. A tenant can only tighten the platform defaults (the password rules
@@ -78,7 +80,21 @@ final class TenantSecurityPolicies
             return true;
         }
 
+        if (config('iam.mandatory_mfa') === true && $this->mandatoryFor($role)) {
+            return true;
+        }
+
         return $role !== null && in_array($role, $this->forTenant($tenant)->twoFactorRoles, true);
+    }
+
+    /**
+     * Owners and administrators always need a second factor, whatever the tenant policy says (Mod 004).
+     */
+    public function mandatoryFor(?string $role): bool
+    {
+        $system = $role === null ? null : SystemRole::tryFrom($role);
+
+        return $system !== null && ! (new MfaRequirementResolver)->canDisable([$system], false);
     }
 
     /**

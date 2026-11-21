@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 /**
  * The certificate issued to a user who completed every mission of a track. The code is the public verification handle.
  *
+ * @property string $id
  * @property string $user_id
  * @property string $track_id
  * @property string $certificate_code

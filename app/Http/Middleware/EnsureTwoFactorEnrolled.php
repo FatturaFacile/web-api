@@ -57,11 +57,14 @@ final class EnsureTwoFactorEnrolled
             return $next($request);
         }
 
-        return $this->problemDetailsResponse(
+        $response = $this->problemDetailsResponse(
             title: __('two_factor.errors.setup_required_title'),
             detail: __('two_factor.errors.setup_required_detail'),
             status: Response::HTTP_FORBIDDEN,
             type: AuthProblem::TwoFactorSetupRequired->value,
         );
+        $response->setData([...(array) $response->getData(true), 'code' => AuthProblem::TwoFactorSetupRequired->code()]);
+
+        return $response;
     }
 }

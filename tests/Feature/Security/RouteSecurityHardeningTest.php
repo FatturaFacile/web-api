@@ -67,6 +67,8 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/oauth2-callback',
         'api/v1/auth/login',
         'api/v1/auth/two-factor-challenge',
+        'api/v1/auth/2fa/challenge',
+        'api/v1/auth/passkeys/login',
         'api/v1/auth/register',
         'api/v1/auth/verify-email',
         'api/v1/auth/resend-verification-email',

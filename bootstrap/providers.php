@@ -55,6 +55,7 @@ use Modules\Marketplace\Providers\MarketplaceServiceProvider;
 use Modules\OcrExtraction\Providers\OcrExtractionServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
 use Modules\Planning\Providers\PlanningServiceProvider;
+use Modules\Platform\Identity\Providers\IdentityServiceProvider;
 use Modules\Platform\Providers\PlatformServiceProvider;
 use Modules\Plm\Providers\PlmServiceProvider;
 use Modules\PracticeManagement\Providers\PracticeManagementServiceProvider;
@@ -149,6 +150,7 @@ return [
     EventsServiceProvider::class,
     PlmServiceProvider::class,
     PlatformServiceProvider::class,
+    IdentityServiceProvider::class,
     CollaborationServiceProvider::class,
     ReturnsServiceProvider::class,
     WmsServiceProvider::class,
