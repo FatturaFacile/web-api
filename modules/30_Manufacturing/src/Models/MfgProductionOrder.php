@@ -27,6 +27,7 @@ use Modules\Projects\Models\Project;
  * @property string|null $project_id
  * @property string|null $sales_order_id
  * @property string|null $planned_order_id
+ * @property string|null $production_strategy MTO|MTS|ATO, derived from the sales order link when null
  * @property string|null $warehouse_id
  * @property string|null $receipt_warehouse_id
  * @property string $status

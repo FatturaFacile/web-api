@@ -1,0 +1,22 @@
+# Read-only Modbus policy. Enforced at compile time by Microsoft.CodeAnalysis.BannedApiAnalyzers (RS0030).
+# Unresolvable doc-IDs (library not referenced) are ignored by the analyzer, so these are safe to list pre-emptively.
+# Use Mes.Infrastructure.Connectors.Modbus.IReadOnlyModbusMaster instead.
+
+# NModbus / NModbus4
+T:NModbus.IModbusMaster;Use IReadOnlyModbusMaster: the gateway never writes to a PLC
+T:NModbus.IModbusSerialMaster;Use IReadOnlyModbusMaster: the gateway never writes to a PLC
+T:Modbus.Device.IModbusMaster;Use IReadOnlyModbusMaster: the gateway never writes to a PLC
+T:Modbus.Device.ModbusIpMaster;Use IReadOnlyModbusMaster: the gateway never writes to a PLC
+
+# FluentModbus
+M:FluentModbus.ModbusClient.WriteSingleCoil(System.Int32,System.Int32,System.Boolean);Modbus writes are forbidden
+M:FluentModbus.ModbusClient.WriteSingleRegister(System.Int32,System.Int32,System.Int16);Modbus writes are forbidden
+M:FluentModbus.ModbusClient.WriteMultipleCoils(System.Int32,System.Int32,System.Byte[]);Modbus writes are forbidden
+M:FluentModbus.ModbusClient.WriteMultipleRegisters(System.Int32,System.Int32,System.Byte[]);Modbus writes are forbidden
+M:FluentModbus.ModbusClient.ReadWriteMultipleRegisters(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Byte[]);Modbus writes are forbidden
+M:FluentModbus.ModbusClient.MaskWriteRegister(System.Int32,System.Int32,System.Int32,System.Int32);Modbus writes are forbidden
+
+# EasyModbus
+T:EasyModbus.ModbusClient;Use IReadOnlyModbusMaster: EasyModbus exposes write methods
+
+# Anything shaped like a write on our own abstraction must not be introduced under a different name.

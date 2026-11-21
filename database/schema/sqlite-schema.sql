@@ -17333,6 +17333,8 @@ CREATE TABLE "mfg_machine_centers"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "current_state" varchar,
+  "state_since" datetime,
   foreign key("work_center_id") references "mfg_work_centers"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -17617,6 +17619,7 @@ CREATE TABLE "mfg_operation_confirmations"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "posting_uuid" varchar,
   foreign key("production_order_id") references "mfg_production_orders"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -17866,6 +17869,7 @@ CREATE TABLE "mfg_production_orders"(
   "variance_journal_entry_id" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "production_strategy" varchar,
   primary key("id")
 );
 
@@ -43505,6 +43509,93 @@ CREATE INDEX "purchase_requisition_document_links_target_document_line_id_index"
 CREATE INDEX "purchase_requisition_document_links_created_by_user_id_index" on "purchase_requisition_document_links"(
   "created_by_user_id"
 );
+CREATE UNIQUE INDEX "mfg_op_conf_posting_uuid_unique" on "mfg_operation_confirmations"(
+  "tenant_id",
+  "posting_uuid"
+);
+CREATE TABLE "mfg_wip_transactions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "production_order_id" varchar not null,
+  "transaction_type" varchar not null,
+  "amount" numeric not null,
+  "source_type" varchar,
+  "source_id" varchar,
+  "journal_entry_id" varchar,
+  "posting_date" date not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("production_order_id") references "mfg_production_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_wip_transactions_tenant_id_index" on "mfg_wip_transactions"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_wip_transactions_production_order_id_index" on "mfg_wip_transactions"(
+  "production_order_id"
+);
+CREATE INDEX "mfg_wip_transactions_transaction_type_index" on "mfg_wip_transactions"(
+  "transaction_type"
+);
+CREATE TABLE "mfg_edge_gateways"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "secret" text not null,
+  "is_active" tinyint(1) not null default '1',
+  "last_seen_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_edge_gateways_tenant_id_index" on "mfg_edge_gateways"(
+  "tenant_id"
+);
+CREATE TABLE "mfg_machine_state_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "gateway_id" varchar not null,
+  "machine_id" varchar not null,
+  "event_uuid" varchar not null,
+  "state" varchar not null,
+  "occurred_at" datetime not null,
+  "production_order_operation_id" varchar,
+  "payload" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mfg_machine_state_events_uuid_unique" on "mfg_machine_state_events"(
+  "tenant_id",
+  "event_uuid"
+);
+CREATE INDEX "mfg_machine_state_events_tenant_id_index" on "mfg_machine_state_events"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_machine_state_events_gateway_id_index" on "mfg_machine_state_events"(
+  "gateway_id"
+);
+CREATE INDEX "mfg_machine_state_events_machine_id_index" on "mfg_machine_state_events"(
+  "machine_id"
+);
+CREATE INDEX "mfg_machine_state_events_production_order_operation_id_index" on "mfg_machine_state_events"(
+  "production_order_operation_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -43919,3 +44010,5 @@ INSERT INTO migrations VALUES(410,'2027_12_17_000100_upgrade_procurement_rfq_mod
 INSERT INTO migrations VALUES(411,'2027_12_17_000200_add_audit_columns_to_mfg_bom_co_products',1);
 INSERT INTO migrations VALUES(412,'2027_12_18_000100_create_hse_incident_photos_table',1);
 INSERT INTO migrations VALUES(413,'2027_12_18_000100_upgrade_purchase_requisitions_module_044',1);
+INSERT INTO migrations VALUES(414,'2027_12_19_000100_add_posting_uuid_to_mfg_operation_confirmations',1);
+INSERT INTO migrations VALUES(415,'2027_12_19_000200_create_mfg_mes_integration_tables',1);
