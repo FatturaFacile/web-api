@@ -19,6 +19,7 @@ Route::prefix('api/v1/cpq')->middleware(['api', 'auth:sanctum', 'tenant', 'local
         Route::post('quotes/{id}/reorder', [QuoteController::class, 'reorder'])->whereUuid('id')->name('cpq.quotes.reorder');
         Route::post('quotes/{id}/issue', [QuoteController::class, 'issue'])->whereUuid('id')->name('cpq.quotes.issue');
         Route::post('quotes/{id}/revisions', [QuoteController::class, 'createRevision'])->whereUuid('id')->name('cpq.quotes.revisions');
+        Route::post('quotes/{id}/convert-to-invoice', [QuoteController::class, 'convertToInvoice'])->whereUuid('id')->name('cpq.quotes.convert-invoice');
         Route::post('quotes/{id}/convert-to-order', [QuoteController::class, 'convertToOrder'])->whereUuid('id')->name('cpq.quotes.convert');
     });
 

@@ -3130,4 +3130,5 @@ return [
     'debtor' => 'debitore',
     'bill_information' => 'informazioni di fatturazione',
     'town' => 'località',
+    'down_payment_percent' => 'percentuale di acconto',
 ];

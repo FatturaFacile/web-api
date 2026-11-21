@@ -378,3 +378,73 @@ it('keeps quotes of another tenant out of reach', function (): void {
     $this->getJson("/api/v1/cpq/quotes/{$quote['id']}")->assertNotFound();
     $this->getJson('/api/v1/cpq/quotes')->assertOk()->assertJsonPath('data.total', 0);
 });
+
+/**
+ * Signs an issued quote with the one-time code, leaving it accepted.
+ *
+ * @param  array{id: string, token: string, pin: string|null, lines: array<string, string>}  $quote
+ */
+function qtgAccept(array $quote): void
+{
+    ['envelope' => $envelope, 'code' => $code] = qtgSign($quote['token'], $quote['id']);
+    test()->postJson("/api/v1/public/proposals/{$quote['token']}/signature/complete", ['envelope_id' => $envelope, 'otp' => $code])->assertOk();
+}
+
+it('converts an accepted quote into one draft invoice whatever the number of clicks', function (): void {
+    ['contact' => $contact] = qtgLogin();
+    $quote = qtgIssued($contact);
+    $this->postJson("/api/v1/cpq/quotes/{$quote['id']}/convert-to-invoice")->assertUnprocessable();
+
+    qtgAccept($quote);
+    $first = $this->postJson("/api/v1/cpq/quotes/{$quote['id']}/convert-to-invoice")->assertOk()->json('data');
+    $second = $this->postJson("/api/v1/cpq/quotes/{$quote['id']}/convert-to-invoice")->assertOk()->json('data');
+
+    expect($second['invoice_id'])->toBe($first['invoice_id'])
+        ->and($first['is_deposit'])->toBeFalse()
+        ->and(DB::table('invoices')->count())->toBe(1)
+        ->and(DB::table('invoices')->where('id', $first['invoice_id'])->value('status'))->toBe('draft')
+        ->and((float) DB::table('invoices')->where('id', $first['invoice_id'])->value('total_net'))->toBe(2000.0)
+        ->and((float) DB::table('invoices')->where('id', $first['invoice_id'])->value('total_gross'))->toBe(2440.0)
+        ->and(CpqQuote::query()->find($quote['id']))->converted_invoice_id->toBe($first['invoice_id'])->status->value->toBe('converted');
+});
+
+it('invoices a down payment as a percentage of the accepted quote, one line per VAT rate', function (): void {
+    ['contact' => $contact] = qtgLogin();
+    $quote = qtgIssued($contact);
+    qtgAccept($quote);
+
+    $this->postJson("/api/v1/cpq/quotes/{$quote['id']}/convert-to-invoice", ['down_payment_percent' => 0])->assertUnprocessable();
+    $this->postJson("/api/v1/cpq/quotes/{$quote['id']}/convert-to-invoice", ['down_payment_percent' => 101])->assertUnprocessable();
+
+    $deposit = $this->postJson("/api/v1/cpq/quotes/{$quote['id']}/convert-to-invoice", ['down_payment_percent' => 30])->assertOk()->json('data');
+
+    expect($deposit['is_deposit'])->toBeTrue()
+        ->and((float) DB::table('invoices')->where('id', $deposit['invoice_id'])->value('total_net'))->toBe(600.0)
+        ->and((float) DB::table('invoices')->where('id', $deposit['invoice_id'])->value('total_gross'))->toBe(732.0)
+        ->and(DB::table('invoice_items')->where('invoice_id', $deposit['invoice_id'])->count())->toBe(1);
+});
+
+it('converts a quote once: into an order or into an invoice, not both', function (): void {
+    ['contact' => $contact] = qtgLogin();
+    $toOrder = qtgIssued($contact);
+    qtgAccept($toOrder);
+    $this->postJson("/api/v1/cpq/quotes/{$toOrder['id']}/convert-to-order")->assertOk();
+    $this->postJson("/api/v1/cpq/quotes/{$toOrder['id']}/convert-to-invoice")->assertUnprocessable();
+
+    $toInvoice = qtgIssued($contact);
+    qtgAccept($toInvoice);
+    $this->postJson("/api/v1/cpq/quotes/{$toInvoice['id']}/convert-to-invoice")->assertOk();
+    $this->postJson("/api/v1/cpq/quotes/{$toInvoice['id']}/convert-to-order")->assertUnprocessable();
+
+    expect(DB::table('invoices')->count())->toBe(1)->and(DB::table('sales_orders')->count())->toBe(1);
+});
+
+it('drafts the invoice automatically on acceptance when the quote asks for it', function (): void {
+    ['contact' => $contact] = qtgLogin();
+    $quote = qtgIssued($contact, ['auto_convert' => true, 'auto_convert_target' => 'invoice']);
+
+    qtgAccept($quote);
+
+    expect(DB::table('invoices')->count())->toBe(1)->and(DB::table('sales_orders')->count())->toBe(0)
+        ->and(CpqQuote::query()->find($quote['id']))->converted_invoice_id->not->toBeNull()->status->value->toBe('converted');
+});

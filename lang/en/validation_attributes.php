@@ -3130,4 +3130,5 @@ return [
     'debtor' => 'debtor',
     'bill_information' => 'billing information',
     'town' => 'town',
+    'down_payment_percent' => 'down payment percentage',
 ];

@@ -3130,4 +3130,5 @@ return [
     'debtor' => 'Zahlungspflichtiger',
     'bill_information' => 'Rechnungsinformationen',
     'town' => 'Ort',
+    'down_payment_percent' => 'Anzahlungsprozentsatz',
 ];

@@ -11,6 +11,7 @@ use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Modules\Quoting\Application\Commands\ConvertQuoteToInvoiceCommand;
 use Modules\Quoting\Application\Commands\ConvertQuoteToSalesOrderCommand;
 use Modules\Quoting\Application\Commands\CreateNewQuoteRevisionCommand;
 use Modules\Quoting\Application\Commands\CreateQuoteCommand;
@@ -18,6 +19,7 @@ use Modules\Quoting\Application\Commands\IssueQuoteRevisionCommand;
 use Modules\Quoting\Application\Commands\ReorderQuoteLinesCommand;
 use Modules\Quoting\Application\Commands\UpdateDraftQuoteCommand;
 use Modules\Quoting\Application\Handlers\CompareQuoteRevisionsHandler;
+use Modules\Quoting\Application\Handlers\ConvertQuoteToInvoiceHandler;
 use Modules\Quoting\Application\Handlers\ConvertQuoteToSalesOrderHandler;
 use Modules\Quoting\Application\Handlers\CreateNewQuoteRevisionHandler;
 use Modules\Quoting\Application\Handlers\CreateQuoteHandler;
@@ -31,6 +33,7 @@ use Modules\Quoting\Application\Queries\GetQuoteDetailsQuery;
 use Modules\Quoting\Application\Queries\ListQuotesQuery;
 use Modules\Quoting\Domain\Exceptions\QuoteException;
 use Modules\Quoting\Infrastructure\Models\CpqQuote;
+use Modules\Quoting\Presentation\Http\Requests\ConvertQuoteRequest;
 use Modules\Quoting\Presentation\Http\Requests\IssueQuoteRequest;
 use Modules\Quoting\Presentation\Http\Requests\ReorderQuoteRequest;
 use Modules\Quoting\Presentation\Http\Requests\SaveQuoteRequest;
@@ -136,6 +139,17 @@ final class QuoteController extends Controller
             $order = $handler->handle(new ConvertQuoteToSalesOrderCommand($id, $this->userId()));
 
             return $this->successResponse(['sales_order_id' => (string) $order->id, 'order_number' => $order->getAttribute('order_number')]);
+        });
+    }
+
+    #[OA\Post(path: '/api/v1/cpq/quotes/{id}/convert-to-invoice', operationId: 'convertCpqQuoteToInvoice', summary: '1-click conversion of an accepted quote into a draft sales invoice, whole or as a down payment (idempotent)', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Quoting'], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'The draft invoice (the same one on a repeated call)')])]
+    public function convertToInvoice(string $id, ConvertQuoteRequest $request, ConvertQuoteToInvoiceHandler $handler): JsonResponse
+    {
+        return $this->guarded(function () use ($id, $request, $handler): JsonResponse {
+            $percent = $request->validated('down_payment_percent');
+            $invoice = $handler->handle(new ConvertQuoteToInvoiceCommand($id, $this->userId(), $percent === null ? null : (string) $percent));
+
+            return $this->successResponse(['invoice_id' => (string) $invoice->id, 'invoice_number' => $invoice->getAttribute('invoice_number'), 'is_deposit' => (bool) $invoice->is_deposit]);
         });
     }
 

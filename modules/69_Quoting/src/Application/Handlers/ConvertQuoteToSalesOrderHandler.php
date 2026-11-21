@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\DB;
 use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Quoting\Application\Commands\ConvertQuoteToSalesOrderCommand;
+use Modules\Quoting\Application\Services\QuoteBillableLines;
 use Modules\Quoting\Domain\Enums\QuoteStatus;
 use Modules\Quoting\Domain\Events\QuoteConvertedToOrder;
 use Modules\Quoting\Domain\Exceptions\QuoteException;
 use Modules\Quoting\Infrastructure\Models\CpqQuote;
 use Modules\Quoting\Infrastructure\Services\QuoteAuditTrail;
-use Modules\Quoting\Infrastructure\Services\QuoteSnapshotBuilder;
 
 /**
  * Turns an accepted quote into a sales order with zero re-entry: the mandatory lines plus the optional and alternative lines the
@@ -25,7 +25,7 @@ final class ConvertQuoteToSalesOrderHandler
 {
     public function __construct(
         private readonly SalesOrderServiceInterface $orders,
-        private readonly QuoteSnapshotBuilder $snapshots,
+        private readonly QuoteBillableLines $billable,
         private readonly QuoteAuditTrail $audit,
     ) {}
 
@@ -38,6 +38,10 @@ final class ConvertQuoteToSalesOrderHandler
                 return [SalesOrder::query()->findOrFail($quote->converted_sales_order_id), false, $quote];
             }
 
+            if ($quote->converted_invoice_id !== null) {
+                throw new QuoteException("Quote {$quote->quote_number} was already converted into an invoice.");
+            }
+
             if ($quote->status !== QuoteStatus::Accepted) {
                 throw new QuoteException("Quote {$quote->quote_number} is {$quote->status->value}: only an accepted quote can be converted.");
             }
@@ -46,24 +50,7 @@ final class ConvertQuoteToSalesOrderHandler
                 throw new QuoteException('The quote has no customer record: link a contact before converting it.');
             }
 
-            $view = $this->snapshots->publicView($quote, (array) $quote->customer_selections);
-            $items = [];
-            foreach ($view['lines'] as $line) {
-                if (! $line['selected'] || ! in_array($line['line_type'], ['product', 'service_fixed', 'service_time_and_material'], true)) {
-                    continue;
-                }
-
-                $quantity = (string) $line['quantity'];
-                $items[] = [
-                    'product_id' => $this->productOf($quote, (string) $line['id']),
-                    'description' => (string) $line['description'],
-                    'quantity' => $quantity,
-                    'unit_price' => bccomp($quantity, '0', 4) === 0 ? '0' : bcdiv((string) $line['net'], $quantity, 4),
-                    'discount_percentage' => '0',
-                    'tax_rate' => (string) $line['tax_rate'],
-                    'uom' => (string) ($line['uom'] ?? ''),
-                ];
-            }
+            $items = array_map(static fn (array $item): array => array_diff_key($item, ['net' => 1]), $this->billable->of($quote));
 
             if ($items === []) {
                 throw new QuoteException('The accepted selection has no billable line.');
@@ -90,16 +77,5 @@ final class ConvertQuoteToSalesOrderHandler
         }
 
         return $result[0];
-    }
-
-    private function productOf(CpqQuote $quote, string $lineId): ?string
-    {
-        foreach ((array) ($quote->frozen_snapshot['lines'] ?? []) as $line) {
-            if ((string) $line['id'] === $lineId) {
-                return $line['product_id'] ?? null;
-            }
-        }
-
-        return null;
     }
 }
