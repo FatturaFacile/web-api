@@ -43276,6 +43276,28 @@ CREATE INDEX "purchase_order_lines_rfq_line_id_index" on "purchase_order_lines"(
 CREATE INDEX "purchase_order_lines_supplier_bid_line_id_index" on "purchase_order_lines"(
   "supplier_bid_line_id"
 );
+CREATE TABLE "hse_incident_photos"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "incident_report_id" varchar not null,
+  "file_path" varchar not null,
+  "mime_type" varchar not null,
+  "size_bytes" integer not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("incident_report_id") references "hse_incident_reports"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_incident_photos_tenant_id_incident_report_id_index" on "hse_incident_photos"(
+  "tenant_id",
+  "incident_report_id"
+);
 CREATE TABLE "purchase_requisitions"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43986,6 +44008,7 @@ INSERT INTO migrations VALUES(408,'2027_12_17_000100_extend_bom_management',1);
 INSERT INTO migrations VALUES(409,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',1);
 INSERT INTO migrations VALUES(410,'2027_12_17_000100_upgrade_procurement_rfq_module_045',1);
 INSERT INTO migrations VALUES(411,'2027_12_17_000200_add_audit_columns_to_mfg_bom_co_products',1);
-INSERT INTO migrations VALUES(412,'2027_12_18_000100_upgrade_purchase_requisitions_module_044',1);
-INSERT INTO migrations VALUES(413,'2027_12_19_000100_add_posting_uuid_to_mfg_operation_confirmations',1);
-INSERT INTO migrations VALUES(414,'2027_12_19_000200_create_mfg_mes_integration_tables',1);
+INSERT INTO migrations VALUES(412,'2027_12_18_000100_create_hse_incident_photos_table',1);
+INSERT INTO migrations VALUES(413,'2027_12_18_000100_upgrade_purchase_requisitions_module_044',1);
+INSERT INTO migrations VALUES(414,'2027_12_19_000100_add_posting_uuid_to_mfg_operation_confirmations',1);
+INSERT INTO migrations VALUES(415,'2027_12_19_000200_create_mfg_mes_integration_tables',1);

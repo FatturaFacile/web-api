@@ -8,11 +8,13 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Hse\Console\CheckHseExpirationsCommand;
 use Modules\Hse\Domain\Contracts\EmployeeDossierGatewayInterface;
 use Modules\Hse\Domain\Contracts\HseClearanceGatekeeperInterface;
+use Modules\Hse\Domain\Contracts\HseDispatchGuardInterface;
 use Modules\Hse\Domain\Contracts\HseNotificationGatewayInterface;
 use Modules\Hse\Domain\Contracts\Mod074AccidentClaimBridgeInterface;
 use Modules\Hse\Domain\Contracts\PpeStockGatewayInterface;
 use Modules\Hse\Infrastructure\Services\EmployeeDossierGateway;
 use Modules\Hse\Infrastructure\Services\HseClearanceGatekeeper;
+use Modules\Hse\Infrastructure\Services\HseDispatchGuard;
 use Modules\Hse\Infrastructure\Services\Mod051PpeStockGateway;
 use Modules\Hse\Infrastructure\Services\Mod074AccidentClaimBridge;
 use Modules\Hse\Infrastructure\Services\NotificationEngineGateway;
@@ -27,6 +29,7 @@ final class HseServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(HseClearanceGatekeeperInterface::class, HseClearanceGatekeeper::class);
+        $this->app->bind(HseDispatchGuardInterface::class, HseDispatchGuard::class);
         $this->app->bind(PpeStockGatewayInterface::class, Mod051PpeStockGateway::class);
         $this->app->bind(EmployeeDossierGatewayInterface::class, EmployeeDossierGateway::class);
         $this->app->bind(HseNotificationGatewayInterface::class, NotificationEngineGateway::class);

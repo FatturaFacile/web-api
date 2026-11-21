@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\ServiceManagement\FieldService\Commands;
 
+use Carbon\CarbonImmutable;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Hse\Domain\Contracts\HseDispatchGuardInterface;
+use Modules\Hse\Domain\Enums\ClearanceContext;
 use Modules\ServiceManagement\FieldService\VanWarehouseResolver;
 use Modules\ServiceManagement\Models\ServiceTechnician;
 use Modules\ServiceManagement\Models\WorkOrder;
@@ -24,6 +27,7 @@ final readonly class DispatchTechnicianWorkOrderHandler
     public function __construct(
         private VanWarehouseResolver $vans,
         private AuditLedgerInterface $auditLedger,
+        private HseDispatchGuardInterface $hse,
     ) {}
 
     public function __invoke(DispatchTechnicianWorkOrderCommand $command): WorkOrder
@@ -66,6 +70,20 @@ final readonly class DispatchTechnicianWorkOrderHandler
                 } elseif ($this->vans->shortfall($van, $requiredParts) !== []) {
                     $errors['van_stock'][] = __('field_service.errors.van_stock_short');
                 }
+            }
+
+            try {
+                // Mod 099 hard block: certificates, medical fitness and PPE of the technician as of the visit.
+                $this->hse->assertCleared(
+                    (string) $workOrder->tenant_id,
+                    $technician->employee_id !== null ? (string) $technician->employee_id : null,
+                    $technician->user_id !== null ? (string) $technician->user_id : null,
+                    ClearanceContext::ExternalFieldService,
+                    (string) $workOrder->id,
+                    CarbonImmutable::instance($command->scheduledStart),
+                );
+            } catch (ValidationException $hseBlock) {
+                $errors['hse'] = $hseBlock->errors()['hse'] ?? [];
             }
 
             if ($errors !== []) {
