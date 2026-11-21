@@ -112,7 +112,7 @@ function kpiContact(Tenant $tenant, string $name = 'Customer AG', string $countr
 /**
  * @param  array<string, mixed>  $overrides
  */
-function kpiInvoice(Tenant $tenant, string $contact, string $date, float $net, array $overrides = []): string
+function kpiDashInvoice(Tenant $tenant, string $contact, string $date, float $net, array $overrides = []): string
 {
     $id = (string) Str::uuid();
     $tax = $overrides['total_tax'] ?? round($net * 0.081, 2);

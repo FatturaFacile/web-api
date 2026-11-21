@@ -141,6 +141,7 @@ class DatabaseSeeder extends Seeder
             EnterpriseDemoMasterSeeder::class,
             AcademyLearningContentSeeder::class,
             AcademyContextualHelpSeeder::class,
+            SovereignRegionNodeSeeder::class,
         ]);
     }
 }
