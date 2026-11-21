@@ -15,9 +15,13 @@ use Modules\ShiftPlanning\Application\Commands\ClaimOpenShiftOrRequestPeerSwapCo
 use Modules\ShiftPlanning\Application\Commands\RespondToShiftSwapCommand;
 use Modules\ShiftPlanning\Application\Handlers\ClaimOpenShiftOrRequestPeerSwapHandler;
 use Modules\ShiftPlanning\Application\Handlers\GetEmployeeShiftsHandler;
+use Modules\ShiftPlanning\Application\Handlers\GetTeamShiftsHandler;
+use Modules\ShiftPlanning\Application\Handlers\ListEligibleSwapPeersHandler;
 use Modules\ShiftPlanning\Application\Handlers\ListShiftSwapRequestsHandler;
 use Modules\ShiftPlanning\Application\Handlers\RespondToShiftSwapHandler;
 use Modules\ShiftPlanning\Application\Queries\GetEmployeeShiftsQuery;
+use Modules\ShiftPlanning\Application\Queries\GetTeamShiftsQuery;
+use Modules\ShiftPlanning\Application\Queries\ListEligibleSwapPeersQuery;
 use Modules\ShiftPlanning\Application\Queries\ListShiftSwapRequestsQuery;
 use Modules\ShiftPlanning\Domain\Enums\ClaimMode;
 use Modules\ShiftPlanning\Domain\Enums\SwapStatus;
@@ -46,6 +50,23 @@ final class EmployeeShiftController extends Controller
     public function myShifts(ShiftQueryRequest $request, GetEmployeeShiftsHandler $handler): JsonResponse
     {
         return $this->guarded(fn (): JsonResponse => $this->successResponse($handler->handle($this->shiftsQuery($request, false))));
+    }
+
+    #[OA\Get(path: '/api/v1/shift-planning/my/team-shifts', operationId: 'listTeamShifts', description: 'The published shifts of the colleagues who share a roster with the employee in a date window: name, template and time only, no cost.', summary: 'Team calendar', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Shift Planning'], responses: [new OA\Response(response: 200, description: 'The colleagues\' shifts')])]
+    public function teamShifts(ShiftQueryRequest $request, GetTeamShiftsHandler $handler): JsonResponse
+    {
+        return $this->guarded(function () use ($request, $handler): JsonResponse {
+            $from = $request->filled('from') ? CarbonImmutable::parse((string) $request->input('from')) : CarbonImmutable::today();
+            $to = $request->filled('to') ? CarbonImmutable::parse((string) $request->input('to')) : $from->addDays(30);
+
+            return $this->successResponse($handler->handle(new GetTeamShiftsQuery($this->tenantId(), $this->employeeId(), $from, $to)));
+        });
+    }
+
+    #[OA\Get(path: '/api/v1/shift-planning/my/shifts/{id}/eligible-peers', operationId: 'listEligibleSwapPeers', description: 'The colleagues that could take the shift without breaking a blocking rule, with their upcoming shifts for a one-to-one exchange.', summary: 'Colleagues eligible for a swap', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Shift Planning'], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [new OA\Response(response: 200, description: 'The eligible colleagues'), new OA\Response(response: 403, description: 'Not your shift')])]
+    public function eligiblePeers(string $id, ListEligibleSwapPeersHandler $handler): JsonResponse
+    {
+        return $this->guarded(fn (): JsonResponse => $this->successResponse($handler->handle(new ListEligibleSwapPeersQuery($this->tenantId(), $this->employeeId(), $id))));
     }
 
     #[OA\Get(path: '/api/v1/shift-planning/my/open-shifts', operationId: 'listOpenShifts', description: 'The open shifts of published rosters that the employee could claim: skills, certificates, leave and rest rules all pass.', summary: 'Open shifts marketplace', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Shift Planning'], responses: [new OA\Response(response: 200, description: 'The claimable open shifts')])]

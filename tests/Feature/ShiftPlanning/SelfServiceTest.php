@@ -291,3 +291,48 @@ it('does not let an employee swap a shift of somebody else or a shift of a draft
     $this->postJson('/api/v1/shift-planning/my/swaps', ['shift_assignment_id' => $others, 'target_peer_employee_id' => $employees[0]])->assertForbidden();
     expect($period->refresh()->status)->toBe(RosterStatus::Published);
 });
+
+it('shows the team calendar without cost, open shifts or the own shifts', function (): void {
+    $roster = spRoster($this);
+    ['tenant' => $tenant, 'manager' => $manager, 'users' => $users, 'employees' => $employees, 'period' => $period, 'day' => $day] = $roster;
+    spActAs($tenant, $manager);
+    spAssign($this, $period, $day, spMonday()->format('Y-m-d'), $employees[0])->assertCreated();
+    spAssign($this, $period, $day, spMonday()->format('Y-m-d'), $employees[1])->assertCreated();
+    spAssign($this, $period, $day, spMonday()->format('Y-m-d'), null)->assertCreated();
+    $window = '?from='.spMonday()->format('Y-m-d').'&to='.spMonday()->addDays(6)->format('Y-m-d');
+
+    spActAs($tenant, $users[0]);
+    expect($this->getJson('/api/v1/shift-planning/my/team-shifts'.$window)->assertOk()->json('data'))->toBe([]);
+
+    spPublish($this, $roster);
+    spActAs($tenant, $users[0]);
+    $team = $this->getJson('/api/v1/shift-planning/my/team-shifts'.$window)->assertOk()->json('data');
+    spActAs($tenant, $users[2]);
+    $outsider = $this->getJson('/api/v1/shift-planning/my/team-shifts'.$window)->assertOk()->json('data');
+
+    expect($team)->toHaveCount(1)
+        ->and($team[0])->toMatchArray(['employee_id' => $employees[1], 'employee_name' => 'Bruno Bianchi', 'shift_date' => spMonday()->format('Y-m-d')])
+        ->and($team[0])->not->toHaveKeys(['estimated_labor_cost', 'compliance_warnings'])
+        ->and($outsider)->toBe([]);
+});
+
+it('lists the colleagues eligible for a swap with their upcoming shifts and leaves out those who would break a rule', function (): void {
+    $roster = spRoster($this);
+    ['tenant' => $tenant, 'manager' => $manager, 'users' => $users, 'employees' => $employees, 'period' => $period, 'day' => $day] = $roster;
+    spActAs($tenant, $manager);
+    $offered = spAssign($this, $period, $day, spMonday()->format('Y-m-d'), $employees[0])->assertCreated()->json('data.assignment.id');
+    spAssign($this, $period, $day, spMonday()->addDay()->format('Y-m-d'), $employees[1])->assertCreated();
+    spPublish($this, $roster);
+    spLeave($tenant, $employees[2], spMonday()->format('Y-m-d'), spMonday()->format('Y-m-d'));
+
+    spActAs($tenant, $users[0]);
+    $peers = $this->getJson("/api/v1/shift-planning/my/shifts/{$offered}/eligible-peers")->assertOk()->json('data');
+
+    expect($peers)->toHaveCount(1)
+        ->and($peers[0])->toMatchArray(['employee_id' => $employees[1], 'name' => 'Bruno Bianchi'])
+        ->and($peers[0]['shifts'])->toHaveCount(1)
+        ->and($peers[0]['shifts'][0]['template_code'])->toBe('DAY');
+
+    spActAs($tenant, $users[1]);
+    $this->getJson("/api/v1/shift-planning/my/shifts/{$offered}/eligible-peers")->assertForbidden();
+});

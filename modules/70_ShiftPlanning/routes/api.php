@@ -26,6 +26,8 @@ Route::prefix('api/v1/shift-planning')->middleware(['api', 'auth:sanctum', 'tena
 
     Route::prefix('my')->middleware('module.access:shift_planning_self')->group(function (): void {
         Route::get('shifts', [EmployeeShiftController::class, 'myShifts'])->name('shift-planning.my.shifts');
+        Route::get('team-shifts', [EmployeeShiftController::class, 'teamShifts'])->name('shift-planning.my.team-shifts');
+        Route::get('shifts/{id}/eligible-peers', [EmployeeShiftController::class, 'eligiblePeers'])->whereUuid('id')->name('shift-planning.my.eligible-peers');
         Route::get('open-shifts', [EmployeeShiftController::class, 'openShifts'])->name('shift-planning.my.open-shifts');
         Route::post('open-shifts/{id}/claim', [EmployeeShiftController::class, 'claim'])->whereUuid('id')->name('shift-planning.my.claim');
         Route::get('swaps', [EmployeeShiftController::class, 'mySwaps'])->name('shift-planning.my.swaps');

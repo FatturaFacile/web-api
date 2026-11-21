@@ -24,6 +24,8 @@ final class ShiftPlanningFrontendTranslations
             'PAGE_TITLE.SHIFT_PLANNING' => ['Pianificazione turni di lavoro', 'Workforce shift planning', 'Schichtplanung', 'Planification des services'],
             'PAGE_TITLE.SHIFT_TEMPLATES' => ['Modelli di turno', 'Shift templates', 'Schichtvorlagen', 'Modèles de service'],
 
+            'mobile.module.shift_planning_self' => ['I miei turni', 'My shifts', 'Meine Schichten', 'Mes services'],
+
             'SHIFT_PLANNING.TITLE' => ['Piano turni', 'Roster', 'Dienstplan', 'Planning des services'],
             'SHIFT_PLANNING.SUBTITLE' => ['Trascina i turni: i vincoli di legge, le assenze e le certificazioni sono verificati in tempo reale', 'Drag the shifts: labour law, leave and certifications are checked in real time', 'Schichten ziehen: Arbeitsgesetz, Absenzen und Zertifikate werden in Echtzeit geprüft', 'Glissez les services : droit du travail, absences et certificats sont vérifiés en temps réel'],
             'SHIFT_PLANNING.LOAD_ERROR' => ['Impossibile caricare il piano turni', 'The roster could not be loaded', 'Der Dienstplan konnte nicht geladen werden', 'Le planning n’a pas pu être chargé'],
