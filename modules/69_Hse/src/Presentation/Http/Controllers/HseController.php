@@ -50,6 +50,7 @@ use Modules\Hse\Domain\ValueObjects\InjuryDynamics;
 use Modules\Hse\Infrastructure\Models\AccidentClaimDraft;
 use Modules\Hse\Infrastructure\Models\DvrDocumentRegistry;
 use Modules\Hse\Infrastructure\Models\EmployeeSafetyCertificate;
+use Modules\Hse\Infrastructure\Models\IncidentPhoto;
 use Modules\Hse\Infrastructure\Models\MedicalClinicalVaultEntry;
 use Modules\Hse\Infrastructure\Models\OccupationalMedicalVisit;
 use Modules\Hse\Infrastructure\Models\PpeDistributionRecord;
@@ -225,7 +226,7 @@ final class HseController extends Controller
     #[OA\Get(path: '/api/v1/hse/incidents', operationId: 'listHseIncidents', summary: 'Incident and near-miss registry', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['HSE'], responses: [new OA\Response(response: 200, description: 'The incidents')])]
     public function incidents(): JsonResponse
     {
-        return $this->successResponse(IncidentReportResource::collection(WorkplaceIncidentReport::query()->where('tenant_id', $this->tenantId())->orderByDesc('incident_date')->limit(500)->get()));
+        return $this->successResponse(IncidentReportResource::collection(WorkplaceIncidentReport::query()->with('photos:id,incident_report_id')->where('tenant_id', $this->tenantId())->orderByDesc('incident_date')->limit(500)->get()));
     }
 
     #[OA\Post(path: '/api/v1/hse/incidents', operationId: 'reportHseIncident', summary: 'Report a near-miss or an accident', description: 'A reportable accident also creates the SUVA Sunet (CH) or INAIL (IT) claim draft in Mod 074.', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['HSE'], responses: [new OA\Response(response: 201, description: 'The incident')])]
@@ -238,7 +239,16 @@ final class HseController extends Controller
             (string) $request->input('description'), $request->input('immediate_actions_taken'), (int) $request->input('prognosis_days', 0),
             InjuryDynamics::fromArray($request->input('injury_dynamics')), $request->input('root_cause_analysis'),
             $request->input('corrective_actions') === null ? null : array_values((array) $request->input('corrective_actions')), $this->user()?->id,
+            array_values(array_map('strval', (array) $request->input('photos', []))),
         ))), statusCode: Response::HTTP_CREATED));
+    }
+
+    #[OA\Get(path: '/api/v1/hse/incidents/{id}/photos/{photoId}', operationId: 'downloadHseIncidentPhoto', summary: 'A photo attached to an incident', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['HSE'], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'photoId', in: 'path', required: true, schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'The image')])]
+    public function incidentPhoto(string $id, string $photoId): StreamedResponse
+    {
+        $photo = IncidentPhoto::query()->where('tenant_id', $this->tenantId())->where('incident_report_id', $id)->whereKey($photoId)->firstOrFail();
+
+        return Storage::disk((string) config('filesystems.private_disk', config('filesystems.default', 'local')))->response($photo->file_path, null, ['Content-Type' => $photo->mime_type]);
     }
 
     #[OA\Get(path: '/api/v1/hse/incidents/{id}/claim-draft', operationId: 'getHseIncidentClaimDraft', summary: 'SUVA / INAIL claim draft of an incident', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['HSE'], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'The draft')])]

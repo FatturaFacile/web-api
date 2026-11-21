@@ -42893,6 +42893,28 @@ CREATE UNIQUE INDEX "uq_hse_expiration_alert" on "hse_expiration_alerts"(
   "threshold_days",
   "alert_date"
 );
+CREATE TABLE "hse_incident_photos"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "incident_report_id" varchar not null,
+  "file_path" varchar not null,
+  "mime_type" varchar not null,
+  "size_bytes" integer not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("incident_report_id") references "hse_incident_reports"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "hse_incident_photos_tenant_id_incident_report_id_index" on "hse_incident_photos"(
+  "tenant_id",
+  "incident_report_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -43301,3 +43323,4 @@ INSERT INTO migrations VALUES(404,'2027_12_17_000100_extend_bom_management',16);
 INSERT INTO migrations VALUES(405,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',17);
 INSERT INTO migrations VALUES(406,'2027_12_16_000100_create_analytics_dss_tables',18);
 INSERT INTO migrations VALUES(407,'2027_12_17_000100_create_hse_tables',19);
+INSERT INTO migrations VALUES(408,'2027_12_18_000100_create_hse_incident_photos_table',20);
