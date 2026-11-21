@@ -28,7 +28,8 @@
         "smalot/pdfparser": "^2.13",
         "spatie/laravel-permission": "^8.3",
         "spatie/laravel-query-builder": "^7.3",
-        "sprain/swiss-qr-bill": "^5.3"
+        "sprain/swiss-qr-bill": "^5.3",
+        "web-auth/webauthn-lib": "^5.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -80,6 +81,7 @@
             "Modules\\DigitalPreservation\\": "modules/65_DigitalPreservation/src/",
             "Modules\\Forecasting\\": "modules/66_Forecasting/src/",
             "Modules\\OcrExtraction\\": "modules/67_OcrExtraction/src/",
+            "Modules\\AiCognitive\\": "modules/68_AiCognitive/src/",
             "Modules\\Payroll\\": "modules/18_Payroll/src/",
             "Modules\\Associations\\": "modules/31_Associations/src/",
             "Modules\\Customs\\": "modules/32_Customs/src/",

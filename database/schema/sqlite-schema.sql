@@ -41152,6 +41152,385 @@ CREATE UNIQUE INDEX "tenant_ocr_configurations_tenant_id_unique" on "tenant_ocr_
 CREATE UNIQUE INDEX "tenant_ocr_configurations_dedicated_inbox_alias_unique" on "tenant_ocr_configurations"(
   "dedicated_inbox_alias"
 );
+CREATE TABLE "roles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "key" varchar not null,
+  "name" varchar not null,
+  "description" text,
+  "is_system" tinyint(1) not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "roles_tenant_id_key_unique" on "roles"(
+  "tenant_id",
+  "key"
+);
+CREATE TABLE "role_permissions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "role_id" varchar not null,
+  "permission" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "role_permissions_role_id_permission_unique" on "role_permissions"(
+  "role_id",
+  "permission"
+);
+CREATE INDEX "role_permissions_tenant_id_permission_index" on "role_permissions"(
+  "tenant_id",
+  "permission"
+);
+CREATE TABLE "role_assignments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar not null,
+  "role_id" varchar not null,
+  "company_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("user_id") references "users"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "role_assignments_tenant_id_user_id_company_id_index" on "role_assignments"(
+  "tenant_id",
+  "user_id",
+  "company_id"
+);
+CREATE INDEX "role_assignments_tenant_id_role_id_index" on "role_assignments"(
+  "tenant_id",
+  "role_id"
+);
+CREATE TABLE "abac_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "role_id" varchar not null,
+  "permission" varchar not null,
+  "effect" varchar not null default 'deny',
+  "conditions" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "abac_rules_tenant_id_role_id_index" on "abac_rules"(
+  "tenant_id",
+  "role_id"
+);
+CREATE TABLE "field_policies"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "role_id" varchar not null,
+  "resource" varchar not null,
+  "field" varchar not null,
+  "visibility" varchar not null default 'masked',
+  "kind" varchar not null default 'amount',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("role_id") references "roles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "field_policies_role_id_resource_field_unique" on "field_policies"(
+  "role_id",
+  "resource",
+  "field"
+);
+CREATE INDEX "field_policies_tenant_id_resource_index" on "field_policies"(
+  "tenant_id",
+  "resource"
+);
+CREATE TABLE "webauthn_credentials"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar not null,
+  "name" varchar not null,
+  "credential_id" varchar not null,
+  "public_key" text not null,
+  "sign_count" integer not null default '0',
+  "aaguid" varchar,
+  "last_used_at" datetime,
+  "revoked_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_at" datetime,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("user_id") references "users"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "webauthn_credentials_tenant_id_user_id_index" on "webauthn_credentials"(
+  "tenant_id",
+  "user_id"
+);
+CREATE UNIQUE INDEX "webauthn_credentials_credential_id_unique" on "webauthn_credentials"(
+  "credential_id"
+);
+CREATE TABLE "ai_provider_configs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "provider" varchar not null,
+  "label" varchar,
+  "is_enabled" tinyint(1) not null default '1',
+  "is_default" tinyint(1) not null default '0',
+  "endpoint" varchar,
+  "model" varchar,
+  "light_model" varchar,
+  "embedding_model" varchar,
+  "credentials_encrypted" text,
+  "max_data_classification" varchar not null default 'internal',
+  "pii_masking_enabled" tinyint(1) not null default '1',
+  "latency_sla_ms" integer,
+  "monthly_token_budget" integer,
+  "rate_limit_per_minute" integer,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "aipc_tenant_provider_unique" on "ai_provider_configs"(
+  "tenant_id",
+  "provider"
+);
+CREATE TABLE "ai_prompt_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "key" varchar not null,
+  "locale" varchar not null default 'en',
+  "version" integer not null default '1',
+  "system_prompt" text not null,
+  "user_prompt" text,
+  "output_schema_json" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "aipt_lookup_index" on "ai_prompt_templates"(
+  "tenant_id",
+  "key",
+  "locale",
+  "is_active"
+);
+CREATE TABLE "ai_automation_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "workflow" varchar not null,
+  "is_enabled" tinyint(1) not null default '1',
+  "auto_approve_enabled" tinyint(1) not null default '0',
+  "auto_approve_min_confidence" numeric not null default '0.95',
+  "max_auto_amount" numeric,
+  "data_classification" varchar not null default 'internal',
+  "preferred_provider" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "aiar_tenant_workflow_unique" on "ai_automation_rules"(
+  "tenant_id",
+  "workflow"
+);
+CREATE TABLE "ai_suggestions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "kind" varchar not null,
+  "workflow" varchar not null,
+  "source_type" varchar not null,
+  "source_reference" varchar,
+  "source_text" text,
+  "proposed_payload_json" text not null,
+  "field_confidences_json" text,
+  "confidence" numeric not null default '0',
+  "amount" numeric,
+  "reasoning" text,
+  "citations_json" text,
+  "status" varchar not null default 'pending',
+  "priority" varchar not null default 'normal',
+  "fingerprint" varchar,
+  "provider_used" varchar,
+  "model_used" varchar,
+  "decided_by" varchar,
+  "decided_at" datetime,
+  "decision_feedback" text,
+  "final_payload_json" text,
+  "resulting_entity_type" varchar,
+  "resulting_entity_id" varchar,
+  "expires_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "aisg_queue_index" on "ai_suggestions"(
+  "tenant_id",
+  "status",
+  "priority"
+);
+CREATE INDEX "aisg_kind_index" on "ai_suggestions"(
+  "tenant_id",
+  "kind",
+  "status"
+);
+CREATE INDEX "aisg_fingerprint_index" on "ai_suggestions"(
+  "tenant_id",
+  "fingerprint"
+);
+CREATE TABLE "ai_embeddings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source_type" varchar not null,
+  "source_id" varchar not null,
+  "chunk_index" integer not null default '0',
+  "content" text not null,
+  "content_hash" varchar not null,
+  "embedding_json" text not null,
+  "dimension" integer not null,
+  "model" varchar not null,
+  "metadata_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "aiem_source_unique" on "ai_embeddings"(
+  "tenant_id",
+  "source_type",
+  "source_id",
+  "chunk_index"
+);
+CREATE TABLE "ai_usage_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar,
+  "provider" varchar not null,
+  "model" varchar,
+  "task_type" varchar not null,
+  "data_classification" varchar not null,
+  "prompt_tokens" integer not null default '0',
+  "completion_tokens" integer not null default '0',
+  "total_tokens" integer not null default '0',
+  "cost_usd" numeric not null default '0',
+  "latency_ms" integer not null default '0',
+  "cache_hit" tinyint(1) not null default '0',
+  "pii_masked" tinyint(1) not null default '0',
+  "status" varchar not null,
+  "error" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "aiul_tenant_time_index" on "ai_usage_logs"(
+  "tenant_id",
+  "created_at"
+);
+CREATE INDEX "aiul_provider_time_index" on "ai_usage_logs"(
+  "tenant_id",
+  "provider",
+  "created_at"
+);
+CREATE TABLE "ai_audit_trails"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "sequence" integer not null,
+  "event_type" varchar not null,
+  "actor_user_id" varchar,
+  "subject_type" varchar,
+  "subject_id" varchar,
+  "provider" varchar,
+  "model" varchar,
+  "confidence" numeric,
+  "payload_json" text,
+  "previous_hash" varchar,
+  "hash" varchar not null,
+  "created_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "aiat_chain_unique" on "ai_audit_trails"(
+  "tenant_id",
+  "sequence"
+);
+CREATE INDEX "aiat_event_index" on "ai_audit_trails"(
+  "tenant_id",
+  "event_type",
+  "created_at"
+);
+CREATE INDEX "aiat_subject_index" on "ai_audit_trails"(
+  "tenant_id",
+  "subject_type",
+  "subject_id"
+);
 CREATE INDEX "contacts_iban_bidx_index" on "contacts"("iban_bidx");
 CREATE INDEX "contacts_qr_iban_bidx_index" on "contacts"("qr_iban_bidx");
 CREATE TABLE "offline_audit_entries"(
@@ -41582,5 +41961,7 @@ INSERT INTO migrations VALUES(393,'2027_12_14_000100_create_copilot_tables',5);
 INSERT INTO migrations VALUES(394,'2027_12_14_000100_create_ai_forecasting_tables',6);
 INSERT INTO migrations VALUES(395,'2027_12_15_000100_create_academy_tables',7);
 INSERT INTO migrations VALUES(396,'2027_12_15_000100_create_ocr_extraction_tables',8);
-INSERT INTO migrations VALUES(397,'2027_12_13_000100_add_blind_indexes_to_contacts',9);
-INSERT INTO migrations VALUES(398,'2027_12_13_000200_create_offline_audit_entries_table',10);
+INSERT INTO migrations VALUES(397,'2027_12_14_000100_create_iam_tables',9);
+INSERT INTO migrations VALUES(398,'2027_12_16_000100_create_ai_cognitive_tables',10);
+INSERT INTO migrations VALUES(399,'2027_12_13_000100_add_blind_indexes_to_contacts',11);
+INSERT INTO migrations VALUES(400,'2027_12_13_000200_create_offline_audit_entries_table',11);

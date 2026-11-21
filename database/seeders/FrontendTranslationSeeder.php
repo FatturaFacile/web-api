@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
@@ -13,6 +14,7 @@ use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
+use Database\Seeders\Translations\IdentityFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
@@ -61,12 +63,14 @@ class FrontendTranslationSeeder extends Seeder
             + LeadFrontendTranslations::all($locale)
             + Customer360FrontendTranslations::all($locale)
             + CopilotFrontendTranslations::all($locale)
+            + AiCognitiveFrontendTranslations::all($locale)
             + GapViewsFrontendTranslations::all($locale)
             + MainFrontendTranslations::all($locale)
             + PrivacyGovernanceFrontendTranslations::all($locale)
             + ReleaseAuditFrontendTranslations::all($locale)
             + AuditTrailFrontendTranslations::all($locale)
             + PreservationFrontendTranslations::all($locale)
+            + IdentityFrontendTranslations::all($locale)
             + AiForecastingFrontendTranslations::all($locale)
             + OcrInboxFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)
