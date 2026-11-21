@@ -121,6 +121,15 @@ return [
         // layouts (KpiAccess narrows each KPI by role, legal entity, cost center and compensation grant); kpi_dashboards_admin:
         // finance and managers configure threshold alerts and refresh the analytical cubes.
         'kpi_dashboards' => ['read' => $anyMember, 'write' => $anyMember],
+        // Italian payroll pre-processing (Mod 077): attendance validation, consultant export, payslip import, accounting import and
+        // SEPA salaries are pay data of every employee (owners, administrators or payroll.* on the membership, like payroll).
+        // italian_payroll_self: employees open their own payslips and CU; the handler matches the signed-in user to the employee.
+        'italian_payroll' => [
+            'read' => $managers,
+            'write' => $managers,
+            'grants' => ['read' => ['payroll.read', 'payroll.write', 'payroll.*'], 'write' => ['payroll.write', 'payroll.*']],
+        ],
+        'italian_payroll_self' => ['read' => $anyMember, 'write' => $anyMember],
         'kpi_dashboards_admin' => [
             'read' => $financeReaders,
             'write' => $finance,

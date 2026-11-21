@@ -198,6 +198,14 @@ function writeRoutesWithoutModule(): array
         'POST api/v1/auth/passkeys/options' => 'own passkeys',
         'POST api/v1/auth/passkeys' => 'own passkeys',
         'DELETE api/v1/auth/passkeys/{id}' => 'own passkeys',
+        // Authenticator-app second factor and the session list of the signed-in user, who manages their own.
+        'POST api/v1/auth/2fa/totp' => 'own second factor',
+        'POST api/v1/auth/2fa/totp/confirm' => 'own second factor',
+        'DELETE api/v1/auth/2fa/totp' => 'own second factor',
+        'DELETE api/v1/profile/sessions/{id}' => 'own sessions',
+        // Impersonation of a user is decided by a permission key, like the other user administration.
+        'POST api/v1/settings/users/{user}/impersonate' => 'can:settings.users.update',
+        'DELETE api/v1/settings/users/{user}/impersonate' => 'can:settings.users.update',
     ];
 }
 
