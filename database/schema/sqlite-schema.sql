@@ -42460,6 +42460,9 @@ CREATE TABLE "mfg_bom_co_products"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("bom_id") references "mfg_boms"("id") on delete cascade,
   primary key("id")
 );
@@ -42679,7 +42682,7 @@ CREATE INDEX "purchase_requisition_lines_conversion_status_index" on "purchase_r
 );
 CREATE TABLE "purchase_requisition_approval_logs"(
   "id" varchar not null,
-  "tenant_id" varchar not null,
+  "tenant_id" varchar,
   "purchase_requisition_id" varchar not null,
   "approval_step_level" integer not null default '0',
   "approver_user_id" varchar,
