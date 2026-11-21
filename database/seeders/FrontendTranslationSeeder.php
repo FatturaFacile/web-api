@@ -14,6 +14,7 @@ use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
+use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
 use Database\Seeders\Translations\MobileFeatureTranslations;
@@ -68,6 +69,7 @@ class FrontendTranslationSeeder extends Seeder
             + PreservationFrontendTranslations::all($locale)
             + AiForecastingFrontendTranslations::all($locale)
             + OcrInboxFrontendTranslations::all($locale)
+            + KpiDashboardsFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)
             + MobileFeatureTranslations::all($locale);
     }

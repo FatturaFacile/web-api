@@ -41150,6 +41150,117 @@ CREATE UNIQUE INDEX "tenant_ocr_configurations_tenant_id_unique" on "tenant_ocr_
 CREATE UNIQUE INDEX "tenant_ocr_configurations_dedicated_inbox_alias_unique" on "tenant_ocr_configurations"(
   "dedicated_inbox_alias"
 );
+CREATE TABLE "kpi_dashboards"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar,
+  "role_code" varchar not null,
+  "title_key" varchar,
+  "custom_title" varchar,
+  "layout_grid_json" text,
+  "refresh_interval_seconds" integer not null default '300',
+  "is_system_default" tinyint(1) not null default '0',
+  "version" integer not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "kpi_dashboards_tenant_id_role_code_user_id_index" on "kpi_dashboards"(
+  "tenant_id",
+  "role_code",
+  "user_id"
+);
+CREATE TABLE "kpi_widgets"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dashboard_id" varchar not null,
+  "kpi_code" varchar not null,
+  "widget_type" varchar not null,
+  "data_source_query_name" varchar not null,
+  "default_time_comparison" varchar not null default 'yoy',
+  "threshold_rules_json" text,
+  "drill_down_route_template" varchar,
+  "sort_order" integer not null default '0',
+  "grid_x" integer not null default '0',
+  "grid_y" integer not null default '0',
+  "grid_w" integer not null default '4',
+  "grid_h" integer not null default '3',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("dashboard_id") references "kpi_dashboards"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "kpi_widgets_tenant_id_dashboard_id_sort_order_index" on "kpi_widgets"(
+  "tenant_id",
+  "dashboard_id",
+  "sort_order"
+);
+CREATE TABLE "kpi_threshold_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "kpi_code" varchar not null,
+  "operator" varchar not null,
+  "warning_value" numeric,
+  "critical_value" numeric,
+  "channels_json" text,
+  "cooldown_minutes" integer not null default '1440',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "kpi_threshold_rules_tenant_id_kpi_code_index" on "kpi_threshold_rules"(
+  "tenant_id",
+  "kpi_code"
+);
+CREATE TABLE "kpi_threshold_alert_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "rule_id" varchar not null,
+  "kpi_code" varchar not null,
+  "severity" varchar not null,
+  "observed_value" numeric not null,
+  "threshold_value" numeric not null,
+  "status" varchar not null default 'open',
+  "dispatched_channels_json" text,
+  "triggered_at" datetime not null,
+  "cooldown_until" datetime,
+  "acknowledged_at" datetime,
+  "acknowledged_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("rule_id") references "kpi_threshold_rules"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "kpi_threshold_alert_logs_tenant_id_kpi_code_status_index" on "kpi_threshold_alert_logs"(
+  "tenant_id",
+  "kpi_code",
+  "status"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -41547,3 +41658,4 @@ INSERT INTO migrations VALUES(393,'2027_12_14_000100_create_copilot_tables',5);
 INSERT INTO migrations VALUES(394,'2027_12_14_000100_create_ai_forecasting_tables',6);
 INSERT INTO migrations VALUES(395,'2027_12_15_000100_create_academy_tables',7);
 INSERT INTO migrations VALUES(396,'2027_12_15_000100_create_ocr_extraction_tables',8);
+INSERT INTO migrations VALUES(397,'2027_12_16_000100_create_kpi_dashboard_tables',9);

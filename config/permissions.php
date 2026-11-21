@@ -107,6 +107,15 @@ return [
             'grants' => ['read' => ['ocr_inbox.view', 'ocr_inbox.*'], 'write' => ['ocr_inbox.review', 'ocr_inbox.*']],
         ],
         'ocr_capture' => ['read' => $anyMember, 'write' => $anyMember],
+        // Executive KPI dashboards (Mod 090). kpi_dashboards: any member opens the cockpits their role allows and saves their own
+        // layouts (KpiAccess narrows each KPI by role, legal entity, cost center and compensation grant); kpi_dashboards_admin:
+        // finance and managers configure threshold alerts and refresh the analytical cubes.
+        'kpi_dashboards' => ['read' => $anyMember, 'write' => $anyMember],
+        'kpi_dashboards_admin' => [
+            'read' => $financeReaders,
+            'write' => $finance,
+            'grants' => ['read' => ['kpi.*'], 'write' => ['kpi.*']],
+        ],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
         'forecasting_wms' => [
             'read' => $managers,
