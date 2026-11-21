@@ -41,6 +41,8 @@ use Modules\Manufacturing\Support\Money;
  * @property string|null $max_lot_size
  * @property string|null $lot_size_multiple
  * @property int $lead_time_days
+ * @property string $origin_status
+ * @property string $exw_price
  * @property bool $is_active
  * @property array<string, mixed>|null $custom_attributes
  * @property Carbon|null $created_at
@@ -67,6 +69,7 @@ final class MfgItem extends BaseEnterpriseModel
             'max_lot_size' => 'decimal:4',
             'lot_size_multiple' => 'decimal:4',
             'lead_time_days' => 'integer',
+            'exw_price' => 'decimal:4',
             'is_active' => 'boolean',
             'custom_attributes' => 'array',
         ];

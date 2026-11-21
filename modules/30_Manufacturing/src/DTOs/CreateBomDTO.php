@@ -10,7 +10,7 @@ namespace Modules\Manufacturing\DTOs;
 final readonly class CreateBomDTO
 {
     /**
-     * @param  list<array{component_item_id: string, quantity_per: string|int|float, sequence?: int|null, scrap_percentage?: string|int|float|null, yield_percentage?: string|int|float|null, is_phantom?: bool|null, issue_method?: string|null, operation_sequence?: int|null, notes?: string|null}>  $components
+     * @param  list<array{component_item_id: string, quantity_per: string|int|float, sequence?: int|null, scrap_percentage?: string|int|float|null, yield_percentage?: string|int|float|null, is_phantom?: bool|null, issue_method?: string|null, operation_sequence?: int|null, fixed_scrap_quantity?: string|int|float|null, substitute_item_ids?: list<string>|null, notes?: string|null}>  $components
      */
     public function __construct(
         public string $tenantId,

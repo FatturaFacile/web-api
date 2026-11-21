@@ -40,6 +40,8 @@ final class MfgEngineeringChangeOrderResource extends JsonResource
             'rejection_reason' => $this->rejection_reason,
             'implemented_at' => $this->implemented_at?->toIso8601String(),
             'change_payload' => $this->change_payload,
+            'diff_payload' => $this->diff_payload,
+            'approval_workflow_id' => $this->approval_workflow_id,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
