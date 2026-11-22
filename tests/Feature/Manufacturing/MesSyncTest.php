@@ -41,19 +41,19 @@ test('changes get a monotonic sequence and a page is cut with limit plus one', f
     expect($seqs)->toHaveCount(3)->and($seqs)->toBe(collect($seqs)->sort()->values()->all());
 
     $first = mesPull($this, 'machines', '?limit=2');
-    expect($first['items'])->toHaveCount(2)->and($first['has_more'])->toBeTrue()->and($first['watermark'])->toBe($seqs[2])
-        ->and($first['items'][0]['operation'])->toBe('upsert')->and($first['items'][0]['data']['machine_id'] ?? $first['items'][0]['data']['id'] ?? null)->not->toBeNull();
+    expect($first['data'])->toHaveCount(2)->and($first['has_more'])->toBeTrue()->and($first['watermark'])->toBe($seqs[2])
+        ->and($first['data'][0]['deleted'])->toBeFalse()->and($first['data'][0]['payload']['machine_id'] ?? $first['data'][0]['payload']['id'] ?? null)->not->toBeNull();
 
-    $second = mesPull($this, 'machines', '?limit=2&cursor='.$first['next_cursor']);
-    expect($second['items'])->toHaveCount(1)->and($second['has_more'])->toBeFalse()
-        ->and(collect([...$first['items'], ...$second['items']])->pluck('entity_id')->unique()->count())->toBe(3);
+    $second = mesPull($this, 'machines', '?limit=2&after_seq='.$first['next_seq']);
+    expect($second['data'])->toHaveCount(1)->and($second['has_more'])->toBeFalse()
+        ->and(collect([...$first['data'], ...$second['data']])->pluck('id')->unique()->count())->toBe(3);
 
-    $empty = mesPull($this, 'machines', '?cursor='.$second['next_cursor']);
-    expect($empty['items'])->toBe([])->and($empty['has_more'])->toBeFalse();
+    $empty = mesPull($this, 'machines', '?after_seq='.$second['next_seq']);
+    expect($empty['data'])->toBe([])->and($empty['has_more'])->toBeFalse();
 
     $extra->first()->delete();
-    $tombstone = mesPull($this, 'machines', '?cursor='.$second['next_cursor']);
-    expect($tombstone['items'])->toHaveCount(1)->and($tombstone['items'][0]['operation'])->toBe('delete')->and($tombstone['items'][0])->not->toHaveKey('data');
+    $tombstone = mesPull($this, 'machines', '?after_seq='.$second['next_seq']);
+    expect($tombstone['data'])->toHaveCount(1)->and($tombstone['data'][0]['deleted'])->toBeTrue()->and($tombstone['data'][0]['payload'])->toBe([]);
 });
 
 test('planned orders are not exposed until they are released', function (): void {
@@ -61,33 +61,33 @@ test('planned orders are not exposed until they are released', function (): void
 
     $operation = mesOperation($this, 'planned');
     expect(DB::table('mfg_mes_sync_changes')->where('resource', 'work-orders')->count())->toBe(0)
-        ->and(mesPull($this, 'work-orders')['items'])->toBe([]);
+        ->and(mesPull($this, 'work-orders')['data'])->toBe([]);
 
     MfgProductionOrder::query()->findOrFail($operation->production_order_id)->update(['status' => 'released']);
 
     $page = mesPull($this, 'work-orders');
-    expect($page['items'])->toHaveCount(1)
-        ->and($page['items'][0]['entity_id'])->toBe((string) $operation->id)
-        ->and($page['items'][0]['data']['status'])->toBe('Released')
-        ->and($page['items'][0]['data']['machine_id'])->toBe((string) $this->machine->id);
+    expect($page['data'])->toHaveCount(1)
+        ->and($page['data'][0]['id'])->toBe((string) $operation->id)
+        ->and($page['data'][0]['payload']['status'])->toBe('Released')
+        ->and($page['data'][0]['payload']['machine_id'])->toBe((string) $this->machine->id);
     Event::assertDispatched(MesWorkOrderReleasedEvent::class);
 
     MfgProductionOrder::query()->findOrFail($operation->production_order_id)->update(['status' => 'closed']);
     Event::assertDispatched(MesWorkOrderClosedEvent::class);
-    expect(mesPull($this, 'work-orders')['items'][0]['data']['status'])->toBe('Completed');
+    expect(mesPull($this, 'work-orders')['data'][0]['payload']['status'])->toBe('Completed');
 });
 
 test('the ideal cycle time is explicit when frozen on the operation and derived from the planned run time otherwise', function (): void {
     $derived = mesOperation($this, 'released', ['target_quantity' => '120'], ['planned_run_minutes' => '60']);
     $explicit = mesOperation($this, 'released', ['target_quantity' => '120'], ['planned_run_minutes' => '60', 'ideal_cycle_time_ms' => '25000.000']);
 
-    $items = collect(mesPull($this, 'work-orders')['items'])->keyBy('entity_id');
+    $items = collect(mesPull($this, 'work-orders')['data'])->keyBy('id');
 
     // 60 min * 60000 / 120 pieces = 30000 ms per piece.
-    expect((float) $items[(string) $derived->id]['data']['ideal_cycle_time_ms'])->toBe(30000.0)
-        ->and($items[(string) $derived->id]['data']['ict_source'])->toBe(IdealCycleTime::Derived)
-        ->and((float) $items[(string) $explicit->id]['data']['ideal_cycle_time_ms'])->toBe(25000.0)
-        ->and($items[(string) $explicit->id]['data']['ict_source'])->toBe(IdealCycleTime::Explicit);
+    expect((float) $items[(string) $derived->id]['payload']['ideal_cycle_time_ms'])->toBe(30000.0)
+        ->and($items[(string) $derived->id]['payload']['ict_source'])->toBe(IdealCycleTime::Derived)
+        ->and((float) $items[(string) $explicit->id]['payload']['ideal_cycle_time_ms'])->toBe(25000.0)
+        ->and($items[(string) $explicit->id]['payload']['ict_source'])->toBe(IdealCycleTime::Explicit);
 });
 
 test('moving an operation to another machine is notified and a stale cursor is gone', function (): void {
@@ -99,14 +99,14 @@ test('moving an operation to another machine is notified and a stale cursor is g
     Event::assertDispatched(MesWorkOrderAssignedToMachineEvent::class);
 
     $page = mesPull($this, 'work-orders');
-    expect($page['items'][0]['data']['machine_id'])->toBe((string) $other->id);
+    expect($page['data'][0]['payload']['machine_id'])->toBe((string) $other->id);
 
-    // Pruned part of the log: a cursor below it can no longer be served.
+    // Pruned part of the log: a sequence below it can no longer be served.
     DB::table('mfg_mes_sync_floors')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'pruned_through_seq' => 1000000, 'created_at' => now(), 'updated_at' => now()]);
-    $gone = mesCall($this, 'GET', '/api/v1/manufacturing/mes-sync/work-orders?cursor='.$page['next_cursor'])->assertStatus(410);
+    $gone = mesCall($this, 'GET', '/api/v1/manufacturing/mes-sync/work-orders?after_seq='.$page['next_seq'])->assertStatus(410);
     expect($gone->json('code'))->toBe('mes.sync.cursor_gone')->and($gone->headers->get('Content-Type'))->toContain('application/problem+json');
 
-    mesCall($this, 'GET', '/api/v1/manufacturing/mes-sync/work-orders?cursor=not-a-cursor')->assertStatus(400)->assertJsonPath('code', 'mes.sync.invalid_cursor');
+    mesCall($this, 'GET', '/api/v1/manufacturing/mes-sync/work-orders?after_seq=not-a-number')->assertStatus(422)->assertJsonPath('code', 'mes.request.invalid');
 });
 
 test('updated_since bootstraps the first call from a point in time', function (): void {
@@ -118,21 +118,21 @@ test('updated_since bootstraps the first call from a point in time', function ()
     $recent = MfgMachineCenter::factory()->create(['tenant_id' => $this->tenant->id, 'work_center_id' => $this->workCenter->id]);
 
     $page = mesPull($this, 'machines', '?updated_since='.urlencode(now()->subHour()->toIso8601String()));
-    expect($page['items'])->toHaveCount(1)->and($page['items'][0]['entity_id'])->toBe((string) $recent->id);
+    expect($page['data'])->toHaveCount(1)->and($page['data'][0]['id'])->toBe((string) $recent->id);
 
-    expect(mesPull($this, 'machines', '?updated_since='.urlencode(now()->addDay()->toIso8601String()))['items'])->toBe([]);
+    expect(mesPull($this, 'machines', '?updated_since='.urlencode(now()->addDay()->toIso8601String()))['data'])->toBe([]);
 });
 
-test('the manifest lists entity and revision pairs with drift marked as deleted', function (): void {
+test('the manifest lists id and revision pairs of the live entities only', function (): void {
     $machine2 = MfgMachineCenter::factory()->create(['tenant_id' => $this->tenant->id, 'work_center_id' => $this->workCenter->id]);
     $machine2->delete();
 
-    $manifest = collect(mesPull($this, 'machines/manifest')['items'])->keyBy('entity_id');
+    $manifest = collect(mesPull($this, 'machines/manifest')['items'])->keyBy('id');
 
-    expect($manifest)->toHaveCount(2)
-        ->and($manifest[(string) $this->machine->id]['deleted'])->toBeFalse()
-        ->and($manifest[(string) $machine2->id]['deleted'])->toBeTrue()
-        ->and($manifest[(string) $machine2->id]['revision'])->toBeGreaterThan($manifest[(string) $this->machine->id]['revision']);
+    expect($manifest)->toHaveCount(1)
+        ->and($manifest->keys()->all())->toBe([(string) $this->machine->id])
+        ->and($manifest[(string) $this->machine->id]['revision'])->toBeInt()
+        ->and($manifest->has((string) $machine2->id))->toBeFalse();
 });
 
 test('reason codes are served with their labels and a label change is a change of the code', function (): void {
@@ -140,13 +140,13 @@ test('reason codes are served with their labels and a label change is a change o
     MfgReasonCodeLabel::create(['tenant_id' => $this->tenant->id, 'reason_code_id' => $code->id, 'locale' => 'en', 'label' => 'Jam']);
 
     $before = mesPull($this, 'reason-codes');
-    expect($before['items'])->toHaveCount(1)->and($before['items'][0]['data']['labels'])->toBe(['en' => 'Jam']);
+    expect($before['data'])->toHaveCount(1)->and($before['data'][0]['payload']['labels'])->toBe(['en' => 'Jam']);
 
     MfgReasonCodeLabel::create(['tenant_id' => $this->tenant->id, 'reason_code_id' => $code->id, 'locale' => 'it', 'label' => 'Inceppamento']);
 
-    $after = mesPull($this, 'reason-codes', '?cursor='.$before['next_cursor']);
-    expect($after['items'])->toHaveCount(1)->and($after['items'][0]['data']['labels'])->toBe(['en' => 'Jam', 'it' => 'Inceppamento'])
-        ->and($after['items'][0]['revision'])->toBeGreaterThan($before['items'][0]['revision']);
+    $after = mesPull($this, 'reason-codes', '?after_seq='.$before['next_seq']);
+    expect($after['data'])->toHaveCount(1)->and($after['data'][0]['payload']['labels'])->toBe(['en' => 'Jam', 'it' => 'Inceppamento'])
+        ->and($after['data'][0]['revision'])->toBeGreaterThan($before['data'][0]['revision']);
 });
 
 test('the default reason codes seed once per company with the four locales', function (): void {
@@ -162,5 +162,5 @@ test('the default reason codes seed once per company with the four locales', fun
 test('one tenant never sees the changes of another', function (): void {
     app(TenantContext::class)->runWithTenant($this->otherTenant, fn () => MfgMachineCenter::factory()->create(['tenant_id' => $this->otherTenant->id]));
 
-    expect(mesPull($this, 'machines')['items'])->toHaveCount(1);
+    expect(mesPull($this, 'machines')['data'])->toHaveCount(1);
 });

@@ -7,6 +7,7 @@ namespace Modules\Manufacturing\Services\MesSync;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Manufacturing\Exceptions\MesSyncException;
+use stdClass;
 
 /**
  * Serves the pull endpoints of the MES Core: pages of the change log by monotonic sequence cursor and the manifest of
@@ -24,10 +25,8 @@ final readonly class MesSyncQuery
      *
      * @return array<string, mixed>
      */
-    public function page(string $tenantId, string $resource, ?string $cursor, ?string $updatedSince, int $limit): array
+    public function page(string $tenantId, string $resource, ?int $afterSeq, ?string $updatedSince, int $limit): array
     {
-        $afterSeq = $cursor !== null ? self::decodeCursor($cursor) : null;
-
         if ($afterSeq === null && $updatedSince !== null) {
             $afterSeq = $this->seqBefore($tenantId, Carbon::parse($updatedSince));
         }
@@ -59,27 +58,29 @@ final readonly class MesSyncQuery
         $items = [];
         foreach ($latest as $entityId => $seq) {
             $entity = $data[$entityId] ?? null;
-            $items[] = array_filter([
-                'operation' => $entity !== null ? MesChangeRecorder::Upsert : MesChangeRecorder::Delete,
+            $items[] = [
+                'id' => (string) $entityId,
+                'seq' => $seq,
                 'revision' => $seq,
-                'entity_id' => (string) $entityId,
-                'data' => $entity,
-            ], static fn (mixed $value): bool => $value !== null);
+                'deleted' => $entity === null,
+                'payload' => $entity ?? new stdClass,
+            ];
         }
 
         return [
             'schema_version' => self::SchemaVersion,
             'resource' => $resource,
-            'items' => $items,
-            'next_cursor' => $rows->isEmpty() ? null : self::encodeCursor((int) $rows->last()->seq),
+            'data' => $items,
+            // With no row on the page the client may jump to the end of the log: every change of this resource up to the
+            // watermark has been served.
+            'next_seq' => $rows->isEmpty() ? max($afterSeq ?? 0, $this->watermark($tenantId)) : (int) $rows->last()->seq,
             'has_more' => $hasMore,
             'watermark' => $this->watermark($tenantId),
         ];
     }
 
     /**
-     * A page of the `(entity_id, revision)` pairs of the resource, ordered by entity id. An entity that is gone or not
-     * exposed is listed with `deleted: true`, so the MES Core can drop its replica.
+     * A page of the `(id, revision)` pairs of the live entities of the resource, ordered by id.
      *
      * @return array<string, mixed>
      */
@@ -102,11 +103,13 @@ final readonly class MesSyncQuery
 
         $data = $this->presenter->present($resource, $tenantId, $rows->pluck('entity_id')->map(static fn (mixed $id): string => (string) $id)->all());
 
-        $items = $rows->map(static fn (object $row): array => [
-            'entity_id' => (string) $row->entity_id,
-            'revision' => (int) $row->revision,
-            'deleted' => ($data[(string) $row->entity_id] ?? null) === null,
-        ])->values()->all();
+        // Gone or unexposed entities are left out: the MES Core treats a replica row that is not listed as an orphan.
+        $items = $rows
+            ->filter(static fn (object $row): bool => ($data[(string) $row->entity_id] ?? null) !== null)
+            ->map(static fn (object $row): array => [
+                'id' => (string) $row->entity_id,
+                'revision' => (int) $row->revision,
+            ])->values()->all();
 
         return [
             'schema_version' => self::SchemaVersion,
@@ -124,28 +127,6 @@ final readonly class MesSyncQuery
     public function watermark(string $tenantId): int
     {
         return (int) DB::table('mfg_mes_sync_changes')->where('tenant_id', $tenantId)->max('seq');
-    }
-
-    /**
-     * The opaque cursor of a sequence number.
-     */
-    public static function encodeCursor(int $seq): string
-    {
-        return rtrim(strtr(base64_encode((string) json_encode(['v' => 1, 'seq' => $seq])), '+/', '-_'), '=');
-    }
-
-    /**
-     * The sequence number of a cursor; a cursor this API did not issue is refused.
-     */
-    public static function decodeCursor(string $cursor): int
-    {
-        $decoded = json_decode((string) base64_decode(strtr($cursor, '-_', '+/'), true), true);
-
-        if (! is_array($decoded) || ($decoded['v'] ?? null) !== 1 || ! is_int($decoded['seq'] ?? null) || $decoded['seq'] < 0) {
-            throw MesSyncException::invalidCursor();
-        }
-
-        return $decoded['seq'];
     }
 
     /**

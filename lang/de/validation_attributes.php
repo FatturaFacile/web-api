@@ -3365,6 +3365,7 @@ return [
     'lot_code' => 'Charge',
     'over_consumption_confirmed' => 'Bestätigung des Mehrverbrauchs',
     'cursor' => 'Cursor',
+    'after_seq' => 'letzte Sequenz',
     'updated_since' => 'aktualisiert seit',
     'access_date' => 'Zugriffsdatum',
 ];

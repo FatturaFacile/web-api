@@ -1,0 +1,26 @@
+{
+    "description": "A batch with one MachineAlarmRaised message as the OutboxRelay of the MES Core sends it.",
+    "method": "POST",
+    "path": "/api/v1/manufacturing/mes-events",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "kid": "k1",
+    "secret": "contract-test-secret",
+    "t": 1798000000,
+    "body": "{\"events\":[{\"id\":\"018f0000-0000-7000-8000-0000000000d5\",\"type\":\"MachineAlarmRaised\",\"dedupe_key\":\"alarm:018f0000-0000-7000-8000-0000000000a1:2026-12-22T10:00:00.0000000\\u002B00:00\",\"occurred_at\":\"2026-12-23T04:26:00.1234567+00:00\",\"payload\":{\"machine_id\":\"018f0000-0000-7000-8000-0000000000a1\",\"raised_at\":\"2026-12-22T10:00:00\\u002B00:00\"}}]}",
+    "signature": "t=1798000000,kid=k1,v1=fc6eb88971193a989e7bd1ccc8f6c4b2d633b02ad8aafe77331a56b54dfbf99d",
+    "expect": {
+        "http": 207,
+        "first_delivery": [
+            {
+                "id": "018f0000-0000-7000-8000-0000000000d5",
+                "status": "applied"
+            }
+        ],
+        "redelivery": [
+            {
+                "id": "018f0000-0000-7000-8000-0000000000d5",
+                "status": "duplicate"
+            }
+        ]
+    }
+}

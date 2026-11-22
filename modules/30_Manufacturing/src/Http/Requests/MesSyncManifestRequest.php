@@ -24,10 +24,13 @@ class MesSyncManifestRequest extends MesApiRequest
     }
 
     /**
-     * The page size, capped at the configured maximum.
+     * The page size, capped at the configured maximum. Without a limit the whole page the cap allows is served, because
+     * the MES Core reads a single manifest page.
      */
     public function pageLimit(): int
     {
-        return min((int) ($this->validated('limit') ?? config('manufacturing_mes.sync.max_limit')), (int) config('manufacturing_mes.sync.manifest_max_limit'));
+        $max = (int) config('manufacturing_mes.sync.manifest_max_limit');
+
+        return min((int) ($this->validated('limit') ?? $max), $max);
     }
 }

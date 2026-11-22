@@ -1,0 +1,11 @@
+{
+    "description": "Nudge after a production order was released to POST /api/v1/mes/ref-events (read by Program.RefEventDto): no payload, the MES Core pulls work-orders.",
+    "method": "POST",
+    "path": "/api/v1/mes/ref-events",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "kid": "k1",
+    "secret": "contract-test-secret",
+    "t": 1798000000,
+    "body": "{\"tenant_id\":\"018f0000-0000-7000-8000-000000000001\",\"resource\":\"work-orders\",\"id\":\"018f0000-0000-7000-8000-0000000000e1\",\"seq\":7,\"revision\":7,\"deleted\":false,\"payload\":null}",
+    "signature": "t=1798000000,kid=k1,v1=f6b6c82b105d128cde528f9173764d0da4e172829169e9ba58417d7d0a76204c"
+}

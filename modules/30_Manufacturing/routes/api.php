@@ -12,6 +12,7 @@ use Modules\Manufacturing\Http\Controllers\MachineCenterController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingCockpitController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingKpiController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingSettingsController;
+use Modules\Manufacturing\Http\Controllers\MesEventsController;
 use Modules\Manufacturing\Http\Controllers\MesFeedbackController;
 use Modules\Manufacturing\Http\Controllers\MesOperatorBoardController;
 use Modules\Manufacturing\Http\Controllers\MesSyncController;
@@ -202,4 +203,5 @@ Route::prefix('api/v1/manufacturing')->middleware(['api', VerifyMesSignature::cl
     Route::get('/mes-sync/{resource}', [MesSyncController::class, 'index'])->where('resource', 'machines|work-orders|shift-calendars|reason-codes')->name('mfg.mes_sync.index');
     Route::get('/mes-sync/{resource}/manifest', [MesSyncController::class, 'manifest'])->where('resource', 'machines|work-orders|shift-calendars|reason-codes')->name('mfg.mes_sync.manifest');
     Route::post('/mes-feedback/events', [MesFeedbackController::class, 'store'])->name('mfg.mes_feedback.events');
+    Route::post('/mes-events', [MesEventsController::class, 'store'])->name('mfg.mes_events.store');
 });

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Modules\Manufacturing\Http\Requests;
 
 /**
- * Query of the pull endpoint of the reference data: the cursor of the previous page, the bootstrap instant for the
- * first call and the page size.
+ * Query of the pull endpoint of the reference data: the last sequence number the MES Core holds (`after_seq`), the
+ * bootstrap instant for the first call and the page size.
  */
 class MesSyncIndexRequest extends MesApiRequest
 {
@@ -18,10 +18,20 @@ class MesSyncIndexRequest extends MesApiRequest
     public function rules(): array
     {
         return [
-            'cursor' => ['nullable', 'string', 'max:255'],
+            'after_seq' => ['nullable', 'integer', 'min:0'],
             'updated_since' => ['nullable', 'date'],
             'limit' => ['nullable', 'integer', 'min:1'],
         ];
+    }
+
+    /**
+     * The sequence number of the last change the MES Core already holds, null on the first call.
+     */
+    public function afterSeq(): ?int
+    {
+        $afterSeq = $this->validated('after_seq');
+
+        return $afterSeq === null ? null : (int) $afterSeq;
     }
 
     /**

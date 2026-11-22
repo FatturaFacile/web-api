@@ -33,6 +33,7 @@ use Modules\Manufacturing\Events\MaterialConsumedEvent;
 use Modules\Manufacturing\Events\MaterialPurchaseForecastEvent;
 use Modules\Manufacturing\Events\MesExecutionStartedEvent;
 use Modules\Manufacturing\Events\MesExecutionStoppedEvent;
+use Modules\Manufacturing\Events\MesNotificationEvent;
 use Modules\Manufacturing\Events\MesReasonCodeCatalogUpdatedEvent;
 use Modules\Manufacturing\Events\MesShiftCalendarUpdatedEvent;
 use Modules\Manufacturing\Events\MesWorkOrderAssignedToMachineEvent;
@@ -53,6 +54,7 @@ use Modules\Manufacturing\Events\StandardCostChangedEvent;
 use Modules\Manufacturing\Events\SubcontractOrderReceivedEvent;
 use Modules\Manufacturing\Events\WIPRecognizedEvent;
 use Modules\Manufacturing\Listeners\DispatchOutboxOnManufacturingEventListener;
+use Modules\Manufacturing\Listeners\PushMesReferenceChangeListener;
 use Modules\Manufacturing\Listeners\WorkflowApprovalManufacturingListener;
 use Modules\Manufacturing\Models\MfgAccountingSetting;
 use Modules\Manufacturing\Models\MfgBom;
@@ -177,6 +179,10 @@ final class ManufacturingServiceProvider extends ServiceProvider
 
         foreach (self::OutboxEvents as $eventClass) {
             Event::listen($eventClass, DispatchOutboxOnManufacturingEventListener::class);
+
+            if (is_subclass_of($eventClass, MesNotificationEvent::class)) {
+                Event::listen($eventClass, PushMesReferenceChangeListener::class);
+            }
         }
 
         $this->registerMesChangeTracking();

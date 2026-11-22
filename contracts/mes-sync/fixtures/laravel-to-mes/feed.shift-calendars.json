@@ -1,0 +1,29 @@
+{
+    "description": "GET .../mes-sync/shift-calendars: dated UTC shift instances (non_production is empty: breaks and planned downtime are not materialised yet).",
+    "path": "/api/v1/manufacturing/mes-sync/shift-calendars?after_seq=0&limit=500",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "response": {
+        "schema_version": 1,
+        "resource": "shift-calendars",
+        "data": [
+            {
+                "id": "018f0000-0000-7000-8000-000000000201",
+                "seq": 11,
+                "revision": 11,
+                "deleted": false,
+                "payload": {
+                    "scope_type": "work_center",
+                    "scope_id": "018f0000-0000-7000-8000-0000000000f1",
+                    "shift_code": "DAY",
+                    "starts_at": "2026-12-22T05:00:00Z",
+                    "ends_at": "2026-12-22T13:00:00Z",
+                    "timezone": "Europe/Rome",
+                    "non_production": []
+                }
+            }
+        ],
+        "next_seq": 11,
+        "has_more": false,
+        "watermark": 11
+    }
+}

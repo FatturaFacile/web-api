@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Mes.Application;
 using Mes.Application.Abstractions;
 using Mes.Application.Commands;
@@ -218,7 +219,15 @@ app.Run();
 
 namespace Mes.Presentation
 {
-    public sealed record RefEventDto(Guid TenantId, string Resource, Guid Id, long Seq, long Revision, bool Deleted, JsonElement? Payload);
+    /// <summary>Body of the Laravel push (<c>POST /api/v1/mes/ref-events</c>). Names are explicit because the wire format is snake_case, which the web defaults used to read it do not map (<c>tenant_id</c> never bound to <c>TenantId</c>). Frozen by contracts/mes-sync/fixtures.</summary>
+    public sealed record RefEventDto(
+        [property: JsonPropertyName("tenant_id")] Guid TenantId,
+        [property: JsonPropertyName("resource")] string Resource,
+        [property: JsonPropertyName("id")] Guid Id,
+        [property: JsonPropertyName("seq")] long Seq,
+        [property: JsonPropertyName("revision")] long Revision,
+        [property: JsonPropertyName("deleted")] bool Deleted,
+        [property: JsonPropertyName("payload")] JsonElement? Payload);
 
     public sealed record ClassifyDowntimeRequest(Guid MachineId, DateTimeOffset From, DateTimeOffset To, string ReasonCode, MachineState? ReclassifyAs);
 

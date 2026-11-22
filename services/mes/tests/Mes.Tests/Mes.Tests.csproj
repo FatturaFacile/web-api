@@ -23,6 +23,10 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <!-- Golden fixtures shared with the Laravel Pest suite (contracts/mes-sync/fixtures): the contract between the services. -->
+    <None Include="..\..\..\..\contracts\mes-sync\fixtures\**\*.json" Link="contract-fixtures\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
