@@ -16,6 +16,7 @@ use Modules\Workflow\Models\WorkflowInstance;
  * A field service work order. Money columns are decimal strings (never floats); the `total_*` and `lead_*` accessors
  * below only exist for the earlier names used by the contracts of the module.
  *
+ * @property float $total_labor_hours Virtual accessor stored in metadata
  * @property string $labor_cost
  * @property string $material_cost
  * @property string $expense_cost
