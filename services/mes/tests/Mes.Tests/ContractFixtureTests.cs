@@ -195,4 +195,70 @@ public class ContractFixtureTests
         report.Repaired.Should().BeFalse();
         handler.Requests.Should().ContainSingle().Which.Should().Be("GET " + (string)fixture["path"]!);
     }
+
+    [Fact]
+    public async Task Paged_manifest_is_read_to_the_last_page_so_rows_beyond_the_first_are_not_orphaned()
+    {
+        var fixture = Load("laravel-to-mes/manifest.machines.paged.json");
+        var tenant = new TenantId(Guid.Parse((string)fixture["tenant_id"]!));
+        var pages = fixture["pages"]!.AsArray();
+        var store = new InMemoryRefStore();
+        foreach (var page in pages)
+        {
+            foreach (var item in page!["response"]!["items"]!.AsArray())
+            {
+                await store.UpsertAsync(tenant, RefResource.Machines, [new RefRecord(Guid.Parse((string)item!["id"]!), 1, (long)item["revision"]!, false, "{}")], default);
+            }
+        }
+
+        var handler = new StubHandler(req =>
+        {
+            // The client sends the cursor it was given by the previous page, nothing on the first call.
+            var cursor = System.Web.HttpUtility.ParseQueryString(req.RequestUri!.Query)["cursor"];
+            cursor.Should().Be((string?)pages[0]!["response"]!["next_cursor"] is { } next && cursor is not null ? next : null);
+            var match = pages[cursor is null ? 0 : 1];
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(match!["response"]!.ToJsonString(), Encoding.UTF8, "application/json") });
+        });
+        var client = new LaravelReferenceSyncClient(new HttpClient(handler) { BaseAddress = new Uri("https://erp.test") }, store, Options.Create(new LaravelSyncOptions()), NullLogger<LaravelReferenceSyncClient>.Instance);
+
+        var report = await client.ReconcileAsync(tenant, RefResource.Machines, default);
+
+        report.Orphaned.Should().Be(0);
+        report.Repaired.Should().BeFalse();
+        handler.Requests.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void Machine_payload_of_the_feed_builds_the_machine_profile()
+    {
+        var payload = Load("laravel-to-mes/feed.machines.json")["response"]!["data"]![0]!["payload"]!;
+
+        var profile = Mes.Infrastructure.Persistence.RefMachineProfileProvider.Parse(TenantId.New(), new MachineId(Guid.Parse((string)payload["machine_id"]!)), payload.ToJsonString());
+
+        profile.IdealCycleMs.Should().Be(1200);
+        profile.LineCode.Should().Be("WC-LINE-A");
+        profile.Debounce.Should().Be(TimeSpan.FromSeconds(3));
+        profile.StaleAfter.Should().Be(TimeSpan.FromSeconds(30));
+        profile.Counter.RolloverModulus.Should().Be(65536);
+        profile.Roles.Values.Should().BeEquivalentTo([TagRole.Running, TagRole.Alarm, TagRole.TotalCounter, TagRole.GoodCounter]);
+        profile.Policy.PolicyVersion.Should().Be(1);
+    }
+
+    [Fact]
+    public void Shift_instance_of_the_feed_gives_planned_windows_without_breaks_and_the_maintenance_of_that_machine_only()
+    {
+        var fixture = Load("laravel-to-mes/feed.shift-calendars.json")["response"]!["data"]![0]!["payload"]!;
+        var machine = Guid.Parse("018f0000-0000-7000-8000-0000000000a1");
+        var other = Guid.NewGuid();
+        var day = new Interval(DateTimeOffset.Parse("2026-12-22T00:00:00Z"), DateTimeOffset.Parse("2026-12-23T00:00:00Z"));
+
+        var (shift, holes) = Mes.Application.Calendar.ShiftSchedule.ParseInstance(fixture.ToJsonString(), machine);
+        var planned = Mes.Application.Calendar.ShiftSchedule.FromInstances([shift], holes).PlannedWindows(day);
+
+        planned.Select(w => (w.Start.UtcDateTime.ToString("HH:mm"), w.End.UtcDateTime.ToString("HH:mm"))).Should().Equal(("05:00", "09:00"), ("09:15", "11:00"));
+
+        var (otherShift, otherHoles) = Mes.Application.Calendar.ShiftSchedule.ParseInstance(fixture.ToJsonString(), other);
+        Mes.Application.Calendar.ShiftSchedule.FromInstances([otherShift], otherHoles).PlannedWindows(day)
+            .Select(w => (w.Start.UtcDateTime.ToString("HH:mm"), w.End.UtcDateTime.ToString("HH:mm"))).Should().Equal(("05:00", "09:00"), ("09:15", "13:00"));
+    }
 }

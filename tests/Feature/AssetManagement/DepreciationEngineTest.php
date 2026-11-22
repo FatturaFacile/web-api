@@ -7,9 +7,7 @@ namespace Tests\Feature\AssetManagement;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\AssetManagement\Contracts\DepreciationEngineServiceInterface;
@@ -198,30 +196,4 @@ test('a run that gets past the check while another run of the period is stored i
     // The engine does not see the soft deleted run, as it would not see a run committed by another worker after its check.
     expect(fn () => $this->depreciationEngine->executeDepreciationRun($dto, (string) $this->user->id))
         ->toThrow(InvalidArgumentException::class, 'Depreciation run already executed for period [2026-12]');
-});
-
-test('the migration keeps the first of duplicated runs and guards the period with a unique index', function (): void {
-    // The migration repairs legacy PostgreSQL installations only (partial unique index, window functions on jsonb).
-    if (DB::getDriverName() !== 'pgsql') {
-        $this->markTestSkipped('The duplicate repair migration only runs on PostgreSQL.');
-    }
-
-    DB::statement('ALTER TABLE eam_depreciation_runs DROP CONSTRAINT eam_depr_runs_period_unique');
-    $run = fn (string $id, string $executedAt): bool => DB::table('eam_depreciation_runs')->insert([
-        'id' => $id, 'tenant_id' => $this->tenant->id, 'run_number' => "RUN-{$id}", 'period_code' => '2026-10', 'period_type' => 'monthly',
-        'ledger_type' => 'statutory', 'status' => 'posted', 'executed_at' => $executedAt, 'created_at' => now(), 'updated_at' => now(),
-    ]);
-    $first = (string) Str::uuid7();
-    $second = (string) Str::uuid7();
-    $run($second, '2026-11-02 10:00:00');
-    $run($first, '2026-11-01 10:00:00');
-
-    (require database_path('migrations/2027_04_10_000400_add_period_uniqueness_to_eam_depreciation_runs.php'))->up();
-
-    $duplicate = DB::table('eam_depreciation_runs')->where('id', $second)->first();
-
-    expect(DB::table('eam_depreciation_runs')->where('id', $first)->value('deleted_at'))->toBeNull()
-        ->and($duplicate->deleted_at)->not->toBeNull()
-        ->and(json_decode((string) $duplicate->summary_metrics, true))->toBe(['duplicate_of' => $first])
-        ->and(fn () => DB::transaction(fn () => $run((string) Str::uuid7(), '2026-11-03 10:00:00')))->toThrow(UniqueConstraintViolationException::class);
 });

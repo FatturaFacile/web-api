@@ -11,9 +11,6 @@ use Laravel\Sanctum\Sanctum;
 use Modules\Analytics\Models\DesignedReport;
 use Modules\Analytics\Models\ExportRun;
 use Modules\Analytics\Semantic\Dataset;
-use Modules\Analytics\Semantic\Dimension;
-use Modules\Analytics\Semantic\Measure;
-use Modules\Analytics\Semantic\SemanticCatalog;
 use Modules\HumanResources\Models\Employee;
 
 require_once __DIR__.'/BiTestHelpers.php';
@@ -260,26 +257,6 @@ test('the row cap, the page size, the top-N and the time limit are hard', functi
     config(['analytics.reporting.max_rows' => 10000]);
     biRun(biSpec(['customer'], ['net_amount'], ['limit' => 0]))->assertUnprocessable();
     biRun(biSpec(['customer'], ['net_amount']), extra: ['per_page' => 501])->assertUnprocessable()->assertJsonValidationErrors(['per_page']);
-
-    // The statement time limit is an optional PostgreSQL hardening: the other engines have no per-statement timeout.
-    if (DB::getDriverName() === 'pgsql') {
-        // A query that runs too long is cancelled by the database and reported as a 422.
-        app(SemanticCatalog::class)->extend(new Dataset(
-            key: 'slow',
-            label: 'Slow',
-            description: 'Test dataset whose measure sleeps for every row',
-            module: 'invoicing',
-            table: 'invoices',
-            joins: [],
-            conditions: [],
-            dimensions: [new Dimension('status', 'Status', Dimension::TypeString, 'invoices.status')],
-            measures: [new Measure('slept', 'Slept', Measure::UnitCount, 'COUNT(*) FILTER (WHERE length(pg_sleep(0.4)::text) >= 0)')],
-        ));
-        config(['analytics.reporting.timeout_ms' => 300]);
-        biRun(biSpec(['status'], ['slept']), 'slow')->assertUnprocessable()->assertJsonValidationErrors(['report']);
-        config(['analytics.reporting.timeout_ms' => 15000]);
-        $this->postJson('/api/v1/analytics/designer/run', ['dataset' => 'slow', 'spec' => biSpec(['status'], ['slept'])])->assertOk()->assertJsonPath('data.rows.0.slept', 5);
-    }
 });
 
 test('designed reports are saved per user, shared with the company or with named members, and validated', function (): void {

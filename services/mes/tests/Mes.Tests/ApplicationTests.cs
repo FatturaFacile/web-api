@@ -78,6 +78,32 @@ public class IngestAndRecomputeTests
     }
 
     [Fact]
+    public async Task Count_checkpoint_names_the_order_being_produced_so_Laravel_can_attribute_it()
+    {
+        var operation = Guid.NewGuid().ToString();
+        var run = new ProductionRun(Guid.NewGuid(), _tenant, _machine, operation, 1000, T0);
+        await _mem.SaveRunAsync(run, default);
+        var (ingest, _, _, _) = Build();
+
+        await ingest.HandleAsync(new IngestTelemetryBatch(_tenant, "b-run", Scenario()), default);
+
+        var payload = System.Text.Json.JsonDocument.Parse(_mem.Outbox.Single(o => o.Type == OutboxTypes.ProductionCountCheckpoint).PayloadJson).RootElement;
+        payload.GetProperty("work_order_ref").GetString().Should().Be(operation);
+        payload.GetProperty("run_id").GetGuid().Should().Be(run.Id);
+    }
+
+    [Fact]
+    public async Task Count_checkpoint_without_an_open_run_carries_no_order()
+    {
+        var (ingest, _, _, _) = Build();
+
+        await ingest.HandleAsync(new IngestTelemetryBatch(_tenant, "b-norun", Scenario()), default);
+
+        var payload = System.Text.Json.JsonDocument.Parse(_mem.Outbox.Single(o => o.Type == OutboxTypes.ProductionCountCheckpoint).PayloadJson).RootElement;
+        payload.TryGetProperty("work_order_ref", out _).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Replaying_the_same_batch_changes_nothing()
     {
         var (ingest, _, _, _) = Build();

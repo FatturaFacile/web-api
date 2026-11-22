@@ -13,6 +13,9 @@ declare(strict_types=1);
 /** @var mixed $keys */
 $keys = json_decode((string) env('MES_SYNC_KEYS', '{}'), true);
 
+/** @var mixed $breaks */
+$breaks = json_decode((string) env('MES_SHIFT_BREAKS', '[]'), true);
+
 return [
     'keys' => is_array($keys) ? $keys : [],
 
@@ -26,6 +29,9 @@ return [
         'start_time' => env('MES_SHIFT_START_TIME', '06:00'),
         'code' => 'DAY',
         'horizon_days' => (int) env('MES_SHIFT_HORIZON_DAYS', 14),
+        // Breaks of the plant, excluded from the planned time of every shift that fully contains them:
+        // MES_SHIFT_BREAKS='[{"start":"10:00","minutes":15},{"start":"12:30","minutes":30}]' (local time of the plant).
+        'breaks' => is_array($breaks) ? $breaks : [],
     ],
 
     // Change log rows older than this are pruned (a cursor older than the pruned part gets 410 Gone).

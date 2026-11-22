@@ -20,12 +20,9 @@ jobs:
 
     # Global environment variables shared across all steps and database connections
     env:
-      DB_CONNECTION: pgsql
-      DB_HOST: 127.0.0.1
-      DB_PORT: 5432
-      DB_DATABASE: fatturafacile_test
-      DB_USERNAME: ff_admin
-      DB_PASSWORD: secret_password
+      # Tests run on SQLite in memory (phpunit.xml); no database server is needed.
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
 
@@ -57,7 +54,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath
+          extensions: dom, curl, libxml, mbstring, zip, pdo_sqlite, xmlreader, redis, bcmath
           coverage: none
           # Swagger and the OpenAPI coverage tests scan the whole API
           ini-values: memory_limit=2G
@@ -97,25 +94,11 @@ jobs:
       - name: Larastan
         run: ./vendor/bin/phpstan analyse --memory-limit=2G --no-progress
 
-      # PostgreSQL runs as a step, not a service: a service cannot pass server options, and about 3600 relations need
-      # more lock slots than the default to drop the schema in each parallel test process. tmpfs keeps it in RAM.
-      - name: Start PostgreSQL
-        run: |
-          docker run -d --name ci-postgres -p 5432:5432 --tmpfs /var/lib/postgresql/data:rw \
-            -e POSTGRES_DB=fatturafacile_test -e POSTGRES_USER=ff_admin -e POSTGRES_PASSWORD=secret_password \
-            postgres:16-alpine -c max_locks_per_transaction=256
-          for attempt in $(seq 1 30); do
-            docker exec ci-postgres pg_isready -U ff_admin -d fatturafacile_test && exit 0
-            sleep 2
-          done
-          docker logs ci-postgres
-          exit 1
-      # Prepare environment configuration and execute fresh migrations against PostgreSQL
-      - name: Setup Environment & Reset Database (Drop & Recreate)
+      # Prepare environment configuration (the test suite migrates its own in-memory SQLite database)
+      - name: Setup Environment
         run: |
           cp .env.example .env
           php artisan key:generate
-          php artisan migrate:fresh --force
 
       # Verify the OpenAPI (Swagger) documentation can be generated, as the deploy does after the build
       - name: Generate Swagger Documentation
@@ -143,12 +126,9 @@ jobs:
         shard: [1, 2, 3, 4]
 
     env:
-      DB_CONNECTION: pgsql
-      DB_HOST: 127.0.0.1
-      DB_PORT: 5432
-      DB_DATABASE: fatturafacile_test
-      DB_USERNAME: ff_admin
-      DB_PASSWORD: secret_password
+      # Tests run on SQLite in memory (phpunit.xml); no database server is needed.
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
 
@@ -176,7 +156,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath, pcov
+          extensions: dom, curl, libxml, mbstring, zip, pdo_sqlite, xmlreader, redis, bcmath, pcov
           coverage: pcov
           # pcov collects only app/ and modules/ (the <source> of phpunit.xml): any other path is excluded
           ini-values: memory_limit=10G, max_memory_limit=10G, pcov.directory=${{ github.workspace }}, pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
@@ -196,23 +176,10 @@ jobs:
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
-      - name: Start PostgreSQL
-        run: |
-          docker run -d --name ci-postgres-cov -p 5432:5432 --tmpfs /var/lib/postgresql/data:rw \
-            -e POSTGRES_DB=fatturafacile_test -e POSTGRES_USER=ff_admin -e POSTGRES_PASSWORD=secret_password \
-            postgres:16-alpine -c max_locks_per_transaction=256
-          for attempt in $(seq 1 30); do
-            docker exec ci-postgres-cov pg_isready -U ff_admin -d fatturafacile_test && exit 0
-            sleep 2
-          done
-          docker logs ci-postgres-cov
-          exit 1
-
-      - name: Setup Environment & Reset Database
+      - name: Setup Environment
         run: |
           cp .env.example .env
           php artisan key:generate
-          php artisan migrate:fresh --force
 
       - name: Run Pest Coverage with PCOV (shard ${{ matrix.shard }}/4)
         run: ./vendor/bin/pest --shard=${{ matrix.shard }}/4 --compact --coverage-clover=clover-${{ matrix.shard }}.xml

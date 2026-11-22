@@ -7,8 +7,10 @@ namespace Modules\GeneralLedger\Services;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
+use Modules\GeneralLedger\Enums\LedgerBook;
 use Modules\GeneralLedger\Exceptions\LedgerConflictException;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\JournalEntry;
@@ -44,8 +46,20 @@ final readonly class ManualJournalService
         $needsApproval = $requested === 'posted' && $this->settings->approvalRequiredFor($tenantId, $this->totalDebit($data['lines'] ?? []));
         $data['status'] = $needsApproval ? 'pending_approval' : $requested;
 
-        return DB::transaction(function () use ($data, $actorId, $needsApproval): JournalEntry {
+        $siblings = $this->siblingBooks($data);
+        unset($data['post_to_ledgers']);
+        $data['entry_number'] ??= 'JE-'.date('Ymd').'-'.strtoupper(Str::random(6));
+
+        return DB::transaction(function () use ($data, $actorId, $needsApproval, $siblings): JournalEntry {
             $entry = $this->postingService->createAndPost($data, $actorId);
+
+            // Parallel books: the same lines are posted to every other selected book as its own entry, numbered after the first.
+            foreach ($siblings as $book) {
+                $this->postingService->createAndPost(
+                    ['entry_number' => $data['entry_number'].'-L'.$book->value, 'ledger_type' => $book->ledgerType()] + $data,
+                    $actorId
+                );
+            }
 
             if ($needsApproval) {
                 $entry->update(['submitted_at' => now(), 'submitted_by' => $actorId]);
@@ -183,6 +197,28 @@ final readonly class ManualJournalService
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
         }
+    }
+
+    /**
+     * The books other than the one of the entry that it must also be posted to.
+     *
+     * @param  array<string, mixed>  $data
+     * @return list<LedgerBook>
+     */
+    private function siblingBooks(array $data): array
+    {
+        $own = LedgerBook::fromLedgerType((string) ($data['ledger_type'] ?? 'statutory'));
+        $books = [];
+
+        foreach ((array) ($data['post_to_ledgers'] ?? []) as $code) {
+            $book = LedgerBook::resolve((string) $code);
+
+            if ($book !== $own) {
+                $books[$book->value] = $book;
+            }
+        }
+
+        return array_values($books);
     }
 
     /**

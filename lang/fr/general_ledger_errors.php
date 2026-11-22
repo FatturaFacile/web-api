@@ -31,4 +31,11 @@ return [
         'account_automatic_only' => 'Le compte :code n\'accepte que des écritures automatiques.',
         'cost_center_required' => 'Le compte :code exige un centre de coûts.',
     ],
+    'template' => [
+        'unbalanced' => 'Les lignes du modèle ne sont pas équilibrées avec ces montants.',
+        'amount_required' => 'Un montant positif est requis.',
+        'rate_required' => 'Ce modèle applique une taxe : un taux est requis.',
+        'account_unknown' => 'Aucun compte de ce tenant trouvé pour le paramètre « :key ».',
+        'system_readonly' => 'Un modèle système ne peut être ni modifié ni supprimé.',
+    ],
 ];

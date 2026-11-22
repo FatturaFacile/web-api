@@ -1,0 +1,28 @@
+#!/bin/sh
+# Full verification before code reaches the remote: Pint check, whole-project PHPStan, parallel test suite.
+# Branch deletions are not verified. Emergency opt-out: SKIP_PRE_PUSH=1 git push ...
+
+[ -n "$SKIP_PRE_PUSH" ] && exit 0
+
+PUSHING=""
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+    case "$local_sha" in
+        0000000000000000000000000000000000000000) ;;
+        *) PUSHING=1 ;;
+    esac
+done
+
+[ -z "$PUSHING" ] && exit 0
+
+PHP_BIN=${PHP_BIN:-php}
+
+echo "pre-push: Pint..."
+"$PHP_BIN" ./vendor/bin/pint --test || exit 1
+
+echo "pre-push: PHPStan (full project, cached)..."
+"$PHP_BIN" -d memory_limit=2G ./vendor/bin/phpstan analyse --memory-limit=2G --no-progress || exit 1
+
+echo "pre-push: parallel test suite..."
+"$PHP_BIN" scripts/dev/locked.php "$PHP_BIN" -d memory_limit=1536M artisan test --parallel --processes=6 || exit 1
+
+exit 0

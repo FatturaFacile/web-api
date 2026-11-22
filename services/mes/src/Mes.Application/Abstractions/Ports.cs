@@ -83,6 +83,9 @@ public interface IMesStore
 
     Task<ProductionRun?> GetRunAsync(TenantId tenant, Guid runId, CancellationToken ct);
 
+    /// <summary>The most recently started run of the machine that has not ended, if any (the order being produced now).</summary>
+    Task<ProductionRun?> GetOpenRunAsync(TenantId tenant, MachineId machine, CancellationToken ct);
+
     Task SaveRunAsync(ProductionRun run, CancellationToken ct);
 }
 

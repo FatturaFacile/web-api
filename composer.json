@@ -159,17 +159,49 @@
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
+            "@php scripts/dev/locked.php php -d memory_limit=1536M artisan test --parallel --processes=6"
+        ],
+        "test:unit": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test --testsuite=Unit,Architecture --parallel"
+        ],
+        "test:fast": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test --testsuite=Unit,Architecture --parallel"
+        ],
+        "test:module": [
+            "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test --parallel"
+        ],
+        "lint:dirty": "./vendor/bin/pint --dirty --format agent",
+        "lint": "./vendor/bin/pint --test",
+        "analyse": "./vendor/bin/phpstan analyse --memory-limit=2G",
+        "gate": [
+            "@lint:dirty",
+            "@analyse",
+            "@test:unit"
         ],
         "test:serial": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test"
+            "@php scripts/dev/locked.php php artisan test"
         ],
-        "test:pg": [
-            "docker compose -f docker-compose.test.yml up -d --wait postgres-test",
-            "@php artisan migrate:fresh --env=testing --force",
-            "./vendor/bin/pest",
-            "docker compose -f docker-compose.test.yml down"
+        "test:unit": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=6 --no-coverage --testsuite=Unit",
+        "test:arch": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --no-coverage --testsuite=Architecture",
+        "test:fast": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=6 --no-coverage --testsuite=Unit,Architecture",
+        "test:changed": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=4 --no-coverage --dirty",
+        "test:module": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=4 --no-coverage",
+        "lint": "@php vendor/bin/pint --test",
+        "lint:dirty": "@php vendor/bin/pint --dirty",
+        "analyse": "@php -d memory_limit=2G vendor/bin/phpstan analyse --memory-limit=2G",
+        "analyse:dirty": "@php scripts/dev/analyse-dirty.php",
+        "quality": [
+            "@lint",
+            "@analyse",
+            "@test:arch"
+        ],
+        "quality:full": [
+            "@quality",
+            "@test"
         ],
         "test:sail": [
             "./vendor/bin/sail test"
@@ -200,6 +232,7 @@
         }
     },
     "config": {
+        "process-timeout": 0,
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,

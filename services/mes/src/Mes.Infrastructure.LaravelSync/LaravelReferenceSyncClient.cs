@@ -23,7 +23,10 @@ internal sealed record FeedPage(
 
 internal sealed record ManifestItem([property: JsonPropertyName("id")] Guid Id, [property: JsonPropertyName("revision")] long Revision);
 
-internal sealed record Manifest([property: JsonPropertyName("items")] List<ManifestItem> Items);
+internal sealed record Manifest(
+    [property: JsonPropertyName("items")] List<ManifestItem> Items,
+    [property: JsonPropertyName("next_cursor")] string? NextCursor = null,
+    [property: JsonPropertyName("has_more")] bool HasMore = false);
 
 /// <summary>
 /// Pulls the Laravel change feed (<c>GET /api/v1/manufacturing/mes-sync/{resource}?after_seq=&amp;limit=</c>) into the
@@ -113,13 +116,26 @@ public sealed class LaravelReferenceSyncClient(
 
     public async Task<ReconcileReport> ReconcileAsync(TenantId tenant, RefResource resource, CancellationToken ct)
     {
-        using var req = new HttpRequestMessage(HttpMethod.Get, $"{Prefix}{resource.Slug()}/manifest");
-        req.Headers.Add("X-Tenant-Id", tenant.ToString());
-        using var resp = await http.SendAsync(req, ct).ConfigureAwait(false);
-        resp.EnsureSuccessStatusCode();
-        var manifest = await resp.Content.ReadFromJsonAsync<Manifest>(ct).ConfigureAwait(false) ?? throw new InvalidOperationException("Empty manifest.");
+        // The manifest is paged by an opaque cursor: reading a single page would make every row beyond it look orphaned.
+        var remote = new Dictionary<Guid, long>();
+        string? cursor = null;
+        do
+        {
+            var url = $"{Prefix}{resource.Slug()}/manifest" + (cursor is null ? string.Empty : "?cursor=" + Uri.EscapeDataString(cursor));
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            req.Headers.Add("X-Tenant-Id", tenant.ToString());
+            using var resp = await http.SendAsync(req, ct).ConfigureAwait(false);
+            resp.EnsureSuccessStatusCode();
+            var manifest = await resp.Content.ReadFromJsonAsync<Manifest>(ct).ConfigureAwait(false) ?? throw new InvalidOperationException("Empty manifest.");
+            foreach (var item in manifest.Items)
+            {
+                remote[item.Id] = item.Revision;
+            }
 
-        var remote = manifest.Items.ToDictionary(i => i.Id, i => i.Revision);
+            cursor = manifest.HasMore && manifest.NextCursor is { Length: > 0 } next ? next : null;
+        }
+        while (cursor is not null);
+
         var local = await store.ListRevisionsAsync(tenant, resource, ct).ConfigureAwait(false);
 
         var missing = remote.Count(kv => !local.ContainsKey(kv.Key));

@@ -219,7 +219,7 @@ final readonly class ProductionEngineeringService
     {
         $attributes = array_intersect_key($data, array_flip([
             'machine_code', 'name', 'work_center_id', 'asset_id', 'maintenance_schedule_id', 'manufacturer', 'model', 'serial_number', 'is_industria_40_enabled', 'is_transizione_50_enabled',
-            'telemetry_device_id', 'telemetry_endpoint_key', 'parallel_capacity_units', 'status', 'power_kw', 'hourly_rate',
+            'telemetry_device_id', 'telemetry_endpoint_key', 'parallel_capacity_units', 'status', 'power_kw', 'hourly_rate', 'mes_profile',
         ]));
         foreach (['ideal_cycle_time_seconds_per_unit' => 4, 'efficiency_factor_percent' => 2, 'hourly_machine_run_cost_rate_override' => 4] as $field => $decimals) {
             if (array_key_exists($field, $data)) {

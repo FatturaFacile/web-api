@@ -35,6 +35,17 @@
   - `php artisan migrate:fresh --database=sqlite --force && php artisan schema:dump --database=sqlite`
 - **Clean Local Test DB Init**: `php artisan migrate:fresh --seed --env=testing`.
 
+## Fast Feedback Commands (iterate with these; full gate only before the final merge)
+- While iterating: `composer lint:dirty` (Pint on changed files), `composer analyse:dirty` (PHPStan on changed files, warm cache), `composer test:module -- tests/Feature/<Module>` (single module), `composer test:changed` (parallel, only tests touched in git), `composer test:fast` (parallel Unit + Architecture).
+- Tiers: `test:unit` (Unit), `test:arch` (Architecture), `test:fast` (both, parallel), `test` (full parallel suite). `phpunit.xml` defines `Unit`, `Architecture`, `Feature` suites.
+- Before the final local merge: `composer quality:full` (Pint check, full PHPStan, architecture tests, full parallel suite).
+- Git hooks (`.githooks`, enabled by `composer install`): `pre-commit` = Pint + PHPStan on staged files only; `pre-push` = Pint check, full PHPStan, parallel suite (skip with `SKIP_PRE_PUSH=1` only in emergencies).
+- Note: `pest --parallel` accepts a single path; use `--testsuite=A,B` for several.
+- **Local CPU budget (many agents share one 16-thread machine)**: every `composer test*` script runs through `scripts/dev/locked.php` → `scripts/test-lock.ps1` (machine-wide named mutex `Global\FatturaFacileLocalTests`). A second run queues instead of thrashing the cores. Workers are capped: `--processes=6` for full/unit/fast runs, `--processes=4` for `test:module` and `test:changed`. Never call `artisan test --parallel` / `pest --parallel` directly without `--processes`; `TEST_LOCK_BYPASS=1` skips the lock (single-process run on an idle machine only), `TEST_LOCK_TIMEOUT_MIN` changes the 90 min wait. CI (`CI=true`) never locks.
+- **Worktree rule (`.claude/worktrees/*`)**: run ONLY `composer lint:dirty`, `composer analyse:dirty` (or `phpstan`), `composer test:unit`, and the touched module's tests: `composer test:module -- tests/Feature/<Module>` (= `--parallel --processes=4`). NEVER run the full suite inside a worktree. The full suite runs once, on the primary checkout after merging into `dev` (`composer quality:full`), or in GitHub Actions CI.
+- **Workstation PHP**: enable opcache for the CLI in `php.ini` (`opcache.enable_cli=1`, `opcache.memory_consumption=512`, `opcache.interned_strings_buffer=64`, `opcache.max_accelerated_files=100000`, `opcache.file_cache=<writable dir>`). Without `file_cache` each worker process recompiles the whole framework and `modules/` (~4 s per boot with it off). Do not set `validate_timestamps=0`.
+- **SQLite schema dump**: whenever a migration is added or changed, regenerate it without `--prune` (see Database & Testing Policy) so each worker loads the schema instead of replaying every migration.
+
 ## Git Workflow (`dev` Only — ZERO PRs, ZERO Leftovers)
 - **Direct `dev` Merge**: Integrate all work directly into `dev` via local merge from the primary repo root:
   - `git checkout dev && git pull --rebase origin dev && git merge --no-ff <branch>`
@@ -44,11 +55,11 @@
 - **Mandatory End-of-Task Cleanup**: After pushing `dev`, ALWAYS delete merged local & remote feature branches (`git branch -D <branch>`, `git push origin --delete <branch>`), remove linked git worktrees (`git worktree remove --force <path> && git worktree prune`), and remove any temporary/debug files created during the session so `git status` is completely clean.
 
 ## Quality Gates (Mandatory Before Push)
-- **NEVER push to `origin dev` unless ALL quality gates pass with zero warnings/errors**:
-  - Format changed files: `./vendor/bin/pint --dirty --format agent`
-  - Format check: `./vendor/bin/pint --test`
-  - Static analysis (level 5 + baseline): `./vendor/bin/phpstan analyse --memory-limit=2G`
-  - Architecture boundary tests: `./vendor/bin/pest tests/Architecture --no-coverage`
-  - Automated tests (SQLite `:memory:`, `DB_FOREIGN_KEYS=true`): `php artisan test` (or parallel `composer test`)
-- **Full Pre-Push Gate**: `./vendor/bin/pint --test && ./vendor/bin/phpstan analyse --memory-limit=2G && php artisan test` (use `composer test` for parallel runs).
+- **Two-Tier Merge Gate** (the full suite takes ~35 min locally, so it is NOT a local merge gate):
+  - **Tier 1 — local, before merging a worktree into `dev` (minutes):**
+    - `composer lint:dirty` (`pint --dirty`), then `composer analyse` (PHPStan level 5 + baseline, incremental cache in `storage/framework/cache/phpstan`, git-ignored).
+    - `composer test:unit` (Unit + Architecture suites) — skip when the user says tests are left to CI.
+    - Touched domain only: `composer test:module -- tests/Feature/<Domain>` (never the whole suite locally).
+  - **Tier 2 — CI (full verification):** full `php artisan test --parallel` plus the PostgreSQL integration suite in GitHub Actions. Do not run the full suite locally unless explicitly asked; never run it while other test runs are active on the machine (each worker can hold up to 4G, see `phpunit.xml`).
+- Composer test scripts: `test` (full, parallel), `test:serial`, `test:unit`/`test:fast` (Unit + Architecture), `test:module -- <path>`, `lint`, `lint:dirty`, `analyse`, `gate` (lint:dirty + analyse + test:unit).
 - **Auxiliary Checks (when applicable)**: `php artisan config:clear`; `php artisan l5-swagger:generate` (after route/OpenAPI changes); `npm run build` (after Vite/Tailwind changes).

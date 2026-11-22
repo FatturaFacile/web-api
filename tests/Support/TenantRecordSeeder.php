@@ -94,9 +94,7 @@ final class TenantRecordSeeder
     }
 
     /**
-     * Runs the callback with foreign keys not enforced. PostgreSQL does it per transaction inside insert() through
-     * session_replication_role; the other engines switch the setting around the callback, outside any transaction
-     * (SQLite ignores the change inside one).
+     * Runs the callback with foreign keys not enforced. SQLite ignores the setting inside a transaction.
      *
      * @template T
      *
@@ -106,10 +104,6 @@ final class TenantRecordSeeder
     private static function withoutForeignKeys(callable $callback): mixed
     {
         $driver = DB::connection()->getDriverName();
-
-        if ($driver === 'pgsql') {
-            return $callback();
-        }
 
         if ($driver === 'sqlite' && DB::transactionLevel() > 0) {
             // Inside a transaction (a test wrapped by RefreshDatabase) the pragma that turns enforcement off is
@@ -125,7 +119,7 @@ final class TenantRecordSeeder
     /**
      * @param  class-string<Model>  $modelClass
      */
-    public static function insert(string $modelClass, ?Tenant $tenant, bool $enforceForeignKeys = false): string
+    public static function insert(string $modelClass, ?Tenant $tenant): string
     {
         /** @var Model $model */
         $model = new $modelClass;
@@ -163,10 +157,6 @@ final class TenantRecordSeeder
 
         if (! isset($values[$key]) && ! $model->getIncrementing()) {
             $values[$key] = (string) Str::uuid7();
-        }
-
-        if (! $enforceForeignKeys && DB::connection()->getDriverName() === 'pgsql') {
-            DB::statement('SET LOCAL session_replication_role = replica');
         }
 
         if ($model->getIncrementing() && ! isset($values[$key])) {
