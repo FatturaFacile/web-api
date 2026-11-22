@@ -8397,6 +8397,7 @@ CREATE TABLE "cycle_count_plans"(
   "deleted_at" datetime,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "warehouse_zone_id" varchar,
   foreign key("warehouse_id") references "warehouses"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -15773,6 +15774,8 @@ CREATE TABLE "inventory_adjustments"(
   "deleted_at" datetime,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "journal_entry_id" varchar,
+  "gl_posted_at" datetime,
   foreign key("warehouse_id") references "warehouses"("id") on delete restrict on update no action,
   primary key("id")
 );
@@ -15978,6 +15981,12 @@ CREATE TABLE "inventory_count_lines"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "unit_cost" numeric,
+  "system_value" numeric,
+  "variance_percentage" numeric,
+  "recount_required" tinyint(1) not null default '0',
+  "recount_reason" varchar,
+  "count_notes" text,
   foreign key("lot_id") references "stock_lots"("id") on delete set null on update no action,
   foreign key("stock_item_id") references "stock_items"("id") on delete restrict on update no action,
   foreign key("warehouse_bin_id") references "warehouse_bins"("id") on delete restrict on update no action,
@@ -16014,6 +16023,12 @@ CREATE TABLE "inventory_count_sessions"(
   "inventory_adjustment_id" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "is_blind" tinyint(1) not null default '1',
+  "freeze_scope" varchar not null default 'warehouse',
+  "snapshot_at" datetime,
+  "assigned_to" varchar,
+  "approval_level_required" integer,
+  "approval_mode" varchar,
   foreign key("warehouse_id") references "warehouses"("id") on delete restrict on update no action,
   primary key("id")
 );
@@ -25411,6 +25426,8 @@ CREATE TABLE "stock_items"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "abc_class_locked" tinyint(1) not null default '0',
+  "abc_override_reason" varchar,
   foreign key("product_id") references "products"("id") on delete set null on update no action,
   foreign key("category_id") references "stock_item_categories"("id") on delete restrict on update no action,
   primary key("id")
@@ -44527,6 +44544,218 @@ CREATE UNIQUE INDEX "uq_year_end_closing_stage" on "year_end_closing_stages"(
 CREATE INDEX "year_end_closing_stages_tenant_id_index" on "year_end_closing_stages"(
   "tenant_id"
 );
+CREATE TABLE "inventory_count_policies"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "abc_a_share" numeric not null default '80.00',
+  "abc_b_share" numeric not null default '95.00',
+  "abc_period_days" integer not null default '365',
+  "interval_days_a" integer not null default '30',
+  "interval_days_b" integer not null default '90',
+  "interval_days_c" integer not null default '180',
+  "new_item_class" varchar not null default 'C',
+  "blind_by_default" tinyint(1) not null default '1',
+  "reveal_first_count_on_recount" tinyint(1) not null default '0',
+  "recount_threshold_percent" numeric,
+  "recount_threshold_value" numeric,
+  "max_recount_rounds" integer not null default '2',
+  "approval_mode" varchar not null default 'workflow',
+  "auto_approve_within_tolerance" tinyint(1) not null default '1',
+  "level1_threshold_percent" numeric,
+  "level1_threshold_value" numeric,
+  "level2_threshold_percent" numeric,
+  "level2_threshold_value" numeric,
+  "enforce_segregation_of_duties" tinyint(1) not null default '1',
+  "inventory_account_code" varchar not null default '1200',
+  "gain_account_code" varchar not null default '4910',
+  "loss_account_code" varchar not null default '5100',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "inventory_count_policies_tenant_id_unique" on "inventory_count_policies"(
+  "tenant_id"
+);
+CREATE TABLE "inventory_abc_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "warehouse_id" varchar,
+  "period_days" integer not null,
+  "a_share" numeric not null,
+  "b_share" numeric not null,
+  "period_start" datetime not null,
+  "period_end" datetime not null,
+  "total_consumption_value" numeric not null default '0',
+  "item_count" integer not null default '0',
+  "class_a_count" integer not null default '0',
+  "class_b_count" integer not null default '0',
+  "class_c_count" integer not null default '0',
+  "applied" tinyint(1) not null default '1',
+  "run_by" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE INDEX "inventory_abc_runs_tenant_id_index" on "inventory_abc_runs"(
+  "tenant_id"
+);
+CREATE INDEX "inventory_abc_runs_warehouse_id_index" on "inventory_abc_runs"(
+  "warehouse_id"
+);
+CREATE TABLE "inventory_abc_run_items"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "inventory_abc_run_id" varchar not null,
+  "stock_item_id" varchar not null,
+  "rank" integer not null,
+  "consumption_value" numeric not null default '0',
+  "cumulative_share" numeric not null default '0',
+  "abc_class" varchar not null,
+  "previous_class" varchar,
+  "is_manual_override" tinyint(1) not null default '0',
+  "is_new_item" tinyint(1) not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("inventory_abc_run_id") references "inventory_abc_runs"("id") on delete cascade,
+  foreign key("stock_item_id") references "stock_items"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_abc_run_items_class" on "inventory_abc_run_items"(
+  "inventory_abc_run_id",
+  "abc_class"
+);
+CREATE INDEX "inventory_abc_run_items_tenant_id_index" on "inventory_abc_run_items"(
+  "tenant_id"
+);
+CREATE TABLE "inventory_abc_overrides"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "stock_item_id" varchar not null,
+  "previous_class" varchar,
+  "new_class" varchar,
+  "reason" varchar not null,
+  "set_by" varchar not null,
+  "set_at" datetime not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("stock_item_id") references "stock_items"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "inventory_abc_overrides_tenant_id_index" on "inventory_abc_overrides"(
+  "tenant_id"
+);
+CREATE INDEX "inventory_count_sessions_assigned_to_index" on "inventory_count_sessions"(
+  "assigned_to"
+);
+CREATE TABLE "inventory_count_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "inventory_count_session_id" varchar not null,
+  "inventory_count_line_id" varchar not null,
+  "round" integer not null default '0',
+  "counted_quantity" numeric not null,
+  "counted_by" varchar not null,
+  "counted_at" datetime not null,
+  "client_entry_id" varchar,
+  "device_id" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("inventory_count_session_id") references "inventory_count_sessions"("id") on delete cascade,
+  foreign key("inventory_count_line_id") references "inventory_count_lines"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_count_entry_client_id" on "inventory_count_entries"(
+  "tenant_id",
+  "client_entry_id"
+);
+CREATE INDEX "inventory_count_entries_tenant_id_index" on "inventory_count_entries"(
+  "tenant_id"
+);
+CREATE TABLE "inventory_count_approvals"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "inventory_count_session_id" varchar not null,
+  "inventory_adjustment_id" varchar not null,
+  "level" integer not null,
+  "required_role" varchar not null,
+  "status" varchar not null default 'pending',
+  "decided_by" varchar,
+  "decided_at" datetime,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("inventory_count_session_id") references "inventory_count_sessions"("id") on delete cascade,
+  foreign key("inventory_adjustment_id") references "inventory_adjustments"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_count_approval_level" on "inventory_count_approvals"(
+  "inventory_adjustment_id",
+  "level"
+);
+CREATE INDEX "inventory_count_approvals_tenant_id_index" on "inventory_count_approvals"(
+  "tenant_id"
+);
+CREATE TABLE "inventory_count_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "inventory_count_session_id" varchar not null,
+  "inventory_count_line_id" varchar,
+  "event" varchar not null,
+  "user_id" varchar,
+  "payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("inventory_count_session_id") references "inventory_count_sessions"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_count_events_session" on "inventory_count_events"(
+  "inventory_count_session_id",
+  "event"
+);
+CREATE INDEX "inventory_count_events_tenant_id_index" on "inventory_count_events"(
+  "tenant_id"
+);
+CREATE INDEX "inventory_adjustments_journal_entry_id_index" on "inventory_adjustments"(
+  "journal_entry_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -44952,3 +45181,4 @@ INSERT INTO migrations VALUES(421,'2027_12_20_000100_create_accounting_templates
 INSERT INTO migrations VALUES(422,'2027_12_20_000200_create_year_end_closing_stages_table',3);
 INSERT INTO migrations VALUES(423,'2027_12_20_000200_add_audit_columns_to_accounting_templates',4);
 INSERT INTO migrations VALUES(424,'2027_12_20_000300_add_audit_columns_to_gl_templates_and_closing_stages',5);
+INSERT INTO migrations VALUES(425,'2027_12_21_000100_extend_inventory_counting_abc_blind_multilevel',6);

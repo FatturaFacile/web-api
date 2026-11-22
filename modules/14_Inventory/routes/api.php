@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Inventory\Http\Controllers\BarcodeController;
+use Modules\Inventory\Http\Controllers\CountingSetupController;
+use Modules\Inventory\Http\Controllers\CountWorkflowController;
 use Modules\Inventory\Http\Controllers\CustomerPortalStockController;
 use Modules\Inventory\Http\Controllers\CycleCountController;
 use Modules\Inventory\Http\Controllers\InventoryAdjustmentController;
@@ -68,6 +70,7 @@ Route::prefix('api/v1/inventory')
         Route::post('adjustments/{id}/reject', [InventoryAdjustmentController::class, 'reject'])->name('inventory.adjustments.reject');
 
         // 7. Physical Stocktaking & ABC Cycle Counts
+        Route::get('counts/assigned', [CountWorkflowController::class, 'assigned'])->name('inventory.counts.assigned');
         Route::get('counts', [InventoryCountController::class, 'index'])->name('inventory.counts.index');
         Route::post('counts', [InventoryCountController::class, 'store'])->name('inventory.counts.store');
         Route::get('counts/{id}', [InventoryCountController::class, 'show'])->name('inventory.counts.show');
@@ -211,6 +214,25 @@ Route::prefix('api/v1/inventory')
         Route::post('cycle-count-plans/{id}/run', [CycleCountController::class, 'run'])->name('inventory.cycle-count-plans.run');
         Route::post('counts/{id}/recount', [InventoryCountController::class, 'recount'])->name('inventory.counts.recount');
         Route::post('counts/{id}/cancel', [InventoryCountController::class, 'cancel'])->name('inventory.counts.cancel');
+
+        // 15b. Physical inventory and cycle counting (Mod 058): policy, ABC history, blind sheets, freeze, approval levels
+        Route::get('count-policy', [CountingSetupController::class, 'showPolicy'])->name('inventory.count-policy.show');
+        Route::put('count-policy', [CountingSetupController::class, 'updatePolicy'])->name('inventory.count-policy.update');
+        Route::get('abc-runs', [CountingSetupController::class, 'indexRuns'])->name('inventory.abc-runs.index');
+        Route::post('abc-runs', [CountingSetupController::class, 'storeRun'])->name('inventory.abc-runs.store');
+        Route::get('abc-runs/{id}', [CountingSetupController::class, 'showRun'])->name('inventory.abc-runs.show');
+        Route::get('abc-overrides', [CountingSetupController::class, 'indexOverrides'])->name('inventory.abc-overrides.index');
+        Route::post('abc-overrides', [CountingSetupController::class, 'storeOverride'])->name('inventory.abc-overrides.store');
+        Route::post('cycle-count-plans/generate', [CountingSetupController::class, 'generatePlans'])->name('inventory.cycle-count-plans.generate');
+        Route::get('counts/{id}/sheet', [CountWorkflowController::class, 'sheet'])->name('inventory.counts.sheet');
+        Route::post('counts/{id}/record-counts', [CountWorkflowController::class, 'recordBatch'])->name('inventory.counts.record-counts');
+        Route::get('counts/{id}/variance', [CountWorkflowController::class, 'variance'])->name('inventory.counts.variance');
+        Route::get('counts/{id}/events', [CountWorkflowController::class, 'events'])->name('inventory.counts.events');
+        Route::post('counts/{id}/freeze', [CountWorkflowController::class, 'freeze'])->name('inventory.counts.freeze');
+        Route::post('counts/{id}/unfreeze', [CountWorkflowController::class, 'unfreeze'])->name('inventory.counts.unfreeze');
+        Route::post('counts/{id}/assign', [CountWorkflowController::class, 'assign'])->name('inventory.counts.assign');
+        Route::post('counts/{id}/approvals/{level}/approve', [CountWorkflowController::class, 'approve'])->whereNumber('level')->name('inventory.counts.approvals.approve');
+        Route::post('counts/{id}/approvals/{level}/reject', [CountWorkflowController::class, 'reject'])->whereNumber('level')->name('inventory.counts.approvals.reject');
 
         // 16. Replenishment: reorder rules, suggestions, hand-off to Procurement purchase suggestions
         Route::get('reorder-rules', [ReplenishmentController::class, 'index'])->name('inventory.reorder-rules.index');

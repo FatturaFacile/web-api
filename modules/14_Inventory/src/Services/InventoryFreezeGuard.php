@@ -11,7 +11,8 @@ use Modules\Inventory\Models\WarehouseBin;
 /**
  * Physical inventory freeze. While a count session that freezes stock is open (in progress, or with its differences
  * waiting for approval), no movement may touch the
- * bins it counts: its whole warehouse, or only its zone when the session is limited to one. Otherwise the stock would
+ * bins it counts: its whole warehouse, only its zone when the session is limited to one, or only its counted bins
+ * (freeze scope `bins`). Otherwise the stock would
  * change under the counters and the differences would be wrong. The only movements allowed are the ones the session
  * itself posts (the count adjustments). A freeze is opt-in per session (or per cycle count plan).
  */
@@ -33,7 +34,7 @@ final class InventoryFreezeGuard
             ->join('warehouse_aisles as a', 'a.id', '=', 'r.warehouse_aisle_id')
             ->join('warehouse_zones as z', 'z.id', '=', 'a.warehouse_zone_id')
             ->whereIn('warehouse_bins.id', array_map(static fn (WarehouseBin $bin): string => (string) $bin->id, $bins))
-            ->get(['warehouse_bins.barcode', 'z.id as zone_id', 'z.warehouse_id as warehouse_id']);
+            ->get(['warehouse_bins.id as bin_id', 'warehouse_bins.barcode', 'z.id as zone_id', 'z.warehouse_id as warehouse_id']);
 
         foreach ($locations as $location) {
             $freezing = InventoryCountSession::withoutGlobalScopes()
@@ -42,6 +43,13 @@ final class InventoryFreezeGuard
                 ->whereIn('status', InventoryCountService::OPEN_STATUSES)
                 ->where('warehouse_id', $location->getAttribute('warehouse_id'))
                 ->where(static fn ($scope) => $scope->whereNull('warehouse_zone_id')->orWhere('warehouse_zone_id', $location->getAttribute('zone_id')))
+                ->where(static fn ($scope) => $scope->where('freeze_scope', '<>', 'bins')->orWhereExists(
+                    static fn ($lines) => $lines->selectRaw('1')
+                        ->from('inventory_count_lines')
+                        ->whereColumn('inventory_count_lines.inventory_count_session_id', 'inventory_count_sessions.id')
+                        ->where('inventory_count_lines.warehouse_bin_id', $location->getAttribute('bin_id'))
+                        ->whereNull('inventory_count_lines.deleted_at')
+                ))
                 ->when(
                     $originDocumentType === InventoryCountSession::class && $originDocumentId !== null,
                     static fn ($query) => $query->whereKeyNot($originDocumentId)

@@ -29,6 +29,8 @@ final class CreateInventoryCountSessionRequest extends FormRequest
             'freezes_stock' => ['sometimes', 'boolean'],
             'bin_ids' => ['sometimes', 'array', 'max:5000'],
             'bin_ids.*' => ['uuid', $this->tenantExists('warehouse_bins')],
+            'is_blind' => ['sometimes', 'boolean'],
+            'assigned_to' => ['sometimes', 'nullable', 'uuid', 'exists:users,id'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'effective_at' => ['nullable', 'date', 'before_or_equal:now'],
         ];

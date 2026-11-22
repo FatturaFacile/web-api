@@ -6,7 +6,11 @@ namespace Modules\Inventory\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $counted_at
+ */
 final class InventoryCountLine extends BaseEnterpriseModel
 {
     protected $table = 'inventory_count_lines';
@@ -22,6 +26,10 @@ final class InventoryCountLine extends BaseEnterpriseModel
             'first_counted_quantity' => 'decimal:4',
             'recount_count' => 'integer',
             'recount_requested_at' => 'datetime',
+            'unit_cost' => 'decimal:6',
+            'system_value' => 'decimal:2',
+            'variance_percentage' => 'decimal:2',
+            'recount_required' => 'boolean',
         ];
     }
 

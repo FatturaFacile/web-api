@@ -20,6 +20,7 @@ use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\HseFrontendTranslations;
 use Database\Seeders\Translations\IdentityFrontendTranslations;
+use Database\Seeders\Translations\InventoryCountingFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Database\Seeders\Translations\ItalianPayrollFrontendTranslations;
 use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
@@ -96,6 +97,7 @@ class FrontendTranslationSeeder extends Seeder
             + ItalianPayrollFrontendTranslations::all($locale)
             + ShiftPlanningFrontendTranslations::all($locale)
             + HseFrontendTranslations::all($locale)
+            + InventoryCountingFrontendTranslations::all($locale)
             + MrpPlanningFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)
             + CpqQuotesFrontendTranslations::all($locale)

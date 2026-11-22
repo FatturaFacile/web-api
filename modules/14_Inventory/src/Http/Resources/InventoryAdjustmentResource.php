@@ -6,7 +6,11 @@ namespace Modules\Inventory\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Inventory\Models\InventoryAdjustment;
 
+/**
+ * @mixin InventoryAdjustment
+ */
 final class InventoryAdjustmentResource extends JsonResource
 {
     /**
@@ -25,6 +29,8 @@ final class InventoryAdjustmentResource extends JsonResource
             'created_by' => $this->created_by,
             'approved_by' => $this->approved_by,
             'approved_at' => $this->approved_at?->toIso8601String(),
+            'journal_entry_id' => $this->journal_entry_id,
+            'gl_posted_at' => $this->gl_posted_at?->toIso8601String(),
             'warehouse' => new WarehouseResource($this->whenLoaded('warehouse')),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

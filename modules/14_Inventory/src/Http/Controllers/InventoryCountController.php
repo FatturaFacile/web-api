@@ -100,7 +100,9 @@ final class InventoryCountController extends Controller
             zoneId: $request->input('warehouse_zone_id'),
             notes: $request->input('notes'),
             effectiveAt: $request->input('effective_at'),
-            freezesStock: $request->boolean('freezes_stock')
+            freezesStock: $request->boolean('freezes_stock'),
+            isBlind: $request->has('is_blind') ? $request->boolean('is_blind') : null,
+            assignedTo: $request->input('assigned_to')
         );
 
         $session = $service->createSession($dto);
@@ -162,14 +164,18 @@ final class InventoryCountController extends Controller
         $session = InventoryCountSession::findOrFail($id);
         $this->authorize('recordCount', $session);
 
-        $service->recordCount(
+        $line = $service->recordCount(
             sessionLineId: $request->string('session_line_id')->value(),
             countedQuantity: (string) $request->input('counted_quantity'),
             userId: (string) auth()->id(),
-            sessionId: (string) $session->id
+            sessionId: (string) $session->id,
+            clientEntryId: $request->input('client_entry_id'),
+            notes: $request->input('notes'),
+            deviceId: $request->input('device_id')
         );
 
-        return response()->json(['message' => 'Count recorded successfully']);
+        // Blind-safe: nothing here reveals the system quantity or the variance.
+        return response()->json(['message' => 'Count recorded successfully', 'recount_required' => (bool) $line->recount_required, 'recount_round' => (int) $line->recount_count]);
     }
 
     #[OA\Post(
@@ -195,7 +201,7 @@ final class InventoryCountController extends Controller
         $session = InventoryCountSession::findOrFail($id);
         $this->authorize('recount', $session);
 
-        return response()->json(['recount_lines' => $service->requestRecount($session, array_values((array) $request->input('line_ids')))]);
+        return response()->json(['recount_lines' => $service->requestRecount($session, array_values((array) $request->input('line_ids')), (string) auth()->id())]);
     }
 
     #[OA\Post(
@@ -218,7 +224,7 @@ final class InventoryCountController extends Controller
         $session = InventoryCountSession::findOrFail($id);
         $this->authorize('cancel', $session);
 
-        return response()->json(new InventoryCountSessionResource($service->cancelSession($session)));
+        return response()->json(new InventoryCountSessionResource($service->cancelSession($session, (string) auth()->id())));
     }
 
     #[OA\Post(

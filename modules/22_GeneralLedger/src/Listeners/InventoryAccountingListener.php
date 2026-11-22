@@ -22,6 +22,8 @@ use Modules\Inventory\Events\InventoryValuationReadyEvent;
 use Modules\Inventory\Events\InventoryWriteOffEvent;
 use Modules\Inventory\Events\LandedCostAppliedEvent;
 use Modules\Inventory\Events\PurchasePriceVarianceRecordedEvent;
+use Modules\Inventory\Models\InventoryAdjustment;
+use Modules\Inventory\Models\InventoryCountPolicy;
 
 final class InventoryAccountingListener
 {
@@ -177,13 +179,41 @@ final class InventoryAccountingListener
         ]);
     }
 
+    /**
+     * Books the cost impact of a posted inventory adjustment. Idempotent: an adjustment is booked once, a replay of the
+     * event only restores the link between the adjustment and its journal entry.
+     *
+     * Plain adjustments debit/credit inventory against the variance account (5100). The differences of a physical count
+     * (`cycle_count_variance`) use the accounts of the tenant's InventoryCountPolicy: a gain debits inventory and
+     * credits the inventory gain account (sopravvenienza attiva), a loss debits the inventory loss account
+     * (insussistenza passiva / differenza inventariale) and credits inventory.
+     */
     public function handleAdjustmentPosted(InventoryAdjustmentPostedEvent $event): void
     {
+        $existing = JournalEntry::withoutGlobalScopes()
+            ->where('tenant_id', $event->tenantId)
+            ->where('source_document_type', 'inventory_adjustment')
+            ->where('source_document_id', $event->adjustmentId)
+            ->whereNull('deleted_at')
+            ->first();
+
+        if ($existing !== null) {
+            $this->linkAdjustment($event->adjustmentId, (string) $existing->id);
+
+            return;
+        }
+
         $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
-        $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
-        $varAcc = $this->resolveAccount($event->tenantId, '5100', 'Inventory Variance & Shrinkage', 'expense', 'debit');
+        $isCount = $event->reasonCode === 'cycle_count_variance';
+        $policy = InventoryCountPolicy::forTenant($event->tenantId);
+
+        $invAcc = $this->resolveAccount($event->tenantId, $isCount ? $policy->inventory_account_code : '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
+        $lossAcc = $this->resolveAccount($event->tenantId, $isCount ? $policy->loss_account_code : '5100', 'Inventory Variance & Shrinkage', 'expense', 'debit');
+        $gainAcc = $isCount
+            ? $this->resolveAccount($event->tenantId, $policy->gain_account_code, 'Inventory Gain (Sopravvenienze Attive)', 'revenue', 'credit')
+            : $lossAcc;
 
         // Nothing to post for an adjustment without cost impact: no amount is made up.
         $impact = LedgerAmount::of($event->totalCostImpact, 2);
@@ -194,7 +224,7 @@ final class InventoryAccountingListener
 
         $isPositive = ! Decimal::isNegative($impact);
 
-        $this->postingService->createAndPost([
+        $entry = $this->postingService->createAndPost([
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
@@ -207,19 +237,32 @@ final class InventoryAccountingListener
             'description' => "Inventory Adjustment: {$event->reasonCode}",
             'lines' => [
                 [
-                    'account_id' => $isPositive ? $invAcc->id : $varAcc->id,
+                    'account_id' => $isPositive ? $invAcc->id : $lossAcc->id,
                     'debit_amount' => $cost,
                     'credit_amount' => '0',
                     'description' => 'Inventory Adjustment Debit',
                 ],
                 [
-                    'account_id' => $isPositive ? $varAcc->id : $invAcc->id,
+                    'account_id' => $isPositive ? $gainAcc->id : $invAcc->id,
                     'debit_amount' => '0',
                     'credit_amount' => $cost,
                     'description' => 'Inventory Adjustment Credit',
                 ],
             ],
         ]);
+
+        $this->linkAdjustment($event->adjustmentId, (string) $entry->id);
+    }
+
+    /**
+     * The adjustment points to its journal entry (the entry points back through its source document).
+     */
+    private function linkAdjustment(string $adjustmentId, string $journalEntryId): void
+    {
+        InventoryAdjustment::withoutGlobalScopes()
+            ->whereKey($adjustmentId)
+            ->whereNull('journal_entry_id')
+            ->update(['journal_entry_id' => $journalEntryId, 'gl_posted_at' => now()]);
     }
 
     public function handleWriteOff(InventoryWriteOffEvent $event): void
