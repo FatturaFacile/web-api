@@ -17052,7 +17052,6 @@ CREATE INDEX "loyalty_transactions_tenant_id_index" on "loyalty_transactions"(
 );
 CREATE TABLE "mfg_accounting_settings"(
   "id" varchar not null,
-  "machine_time_source" varchar not null default 'manual',
   "tenant_id" varchar,
   "raw_material_account_code" varchar,
   "wip_account_code" varchar,
@@ -17070,6 +17069,7 @@ CREATE TABLE "mfg_accounting_settings"(
   "deleted_at" datetime,
   "created_by" varchar,
   "deleted_by" varchar,
+  "machine_time_source" varchar not null default 'manual',
   primary key("id")
 );
 
@@ -17334,8 +17334,6 @@ CREATE TABLE "mfg_machine_centers"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "current_state" varchar,
-  "state_since" datetime,
   "manufacturer" varchar,
   "model" varchar,
   "serial_number" varchar,
@@ -17350,6 +17348,8 @@ CREATE TABLE "mfg_machine_centers"(
   "parallel_capacity_units" integer not null default '1',
   "efficiency_factor_percent" numeric,
   "hourly_machine_run_cost_rate_override" numeric,
+  "current_state" varchar,
+  "state_since" datetime,
   foreign key("work_center_id") references "mfg_work_centers"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -17449,6 +17449,202 @@ CREATE INDEX "mfg_material_movements_subcontract_order_id_index" on "mfg_materia
   "subcontract_order_id"
 );
 CREATE INDEX "mfg_material_movements_tenant_id_index" on "mfg_material_movements"(
+  "tenant_id"
+);
+CREATE TABLE "mfg_mes_command_receipts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "idempotency_key" varchar not null,
+  "command" varchar not null,
+  "phase_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_mes_command_receipts_phase_id_index" on "mfg_mes_command_receipts"(
+  "phase_id"
+);
+CREATE INDEX "mfg_mes_command_receipts_tenant_id_index" on "mfg_mes_command_receipts"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "mfg_mes_receipts_key_unique" on "mfg_mes_command_receipts"(
+  "tenant_id",
+  "idempotency_key"
+);
+CREATE TABLE "mfg_mes_material_consumptions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "phase_id" varchar not null,
+  "production_order_line_id" varchar not null,
+  "mfg_item_id" varchar not null,
+  "lot_id" varchar,
+  "lot_code" varchar,
+  "quantity" numeric not null,
+  "material_movement_id" varchar,
+  "operator_id" varchar,
+  "idempotency_key" varchar not null,
+  "consumed_at" datetime not null,
+  "settled_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("phase_id") references "mfg_mes_phases"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mfg_mes_consumptions_key_unique" on "mfg_mes_material_consumptions"(
+  "tenant_id",
+  "idempotency_key"
+);
+CREATE INDEX "mfg_mes_material_consumptions_lot_id_index" on "mfg_mes_material_consumptions"(
+  "lot_id"
+);
+CREATE INDEX "mfg_mes_material_consumptions_mfg_item_id_index" on "mfg_mes_material_consumptions"(
+  "mfg_item_id"
+);
+CREATE INDEX "mfg_mes_material_consumptions_production_order_line_id_index" on "mfg_mes_material_consumptions"(
+  "production_order_line_id"
+);
+CREATE INDEX "mfg_mes_material_consumptions_tenant_id_index" on "mfg_mes_material_consumptions"(
+  "tenant_id"
+);
+CREATE TABLE "mfg_mes_phases"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "production_order_id" varchar not null,
+  "production_order_operation_id" varchar not null,
+  "work_center_id" varchar not null,
+  "machine_id" varchar,
+  "operator_id" varchar,
+  "status" varchar not null,
+  "resume_to" varchar,
+  "machine_mode" varchar not null default('attended'),
+  "version" integer not null default('1'),
+  "taken_over_at" datetime not null,
+  "closed_at" datetime,
+  "confirmation_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("production_order_operation_id") references "mfg_production_order_operations"("id") on delete cascade on update no action,
+  foreign key("production_order_id") references "mfg_production_orders"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_mes_phases_board_index" on "mfg_mes_phases"(
+  "tenant_id",
+  "work_center_id",
+  "status"
+);
+CREATE INDEX "mfg_mes_phases_machine_id_index" on "mfg_mes_phases"(
+  "machine_id"
+);
+CREATE UNIQUE INDEX "mfg_mes_phases_operation_unique" on "mfg_mes_phases"(
+  "tenant_id",
+  "production_order_operation_id"
+);
+CREATE INDEX "mfg_mes_phases_operator_id_index" on "mfg_mes_phases"(
+  "operator_id"
+);
+CREATE INDEX "mfg_mes_phases_production_order_id_index" on "mfg_mes_phases"(
+  "production_order_id"
+);
+CREATE INDEX "mfg_mes_phases_status_index" on "mfg_mes_phases"("status");
+CREATE INDEX "mfg_mes_phases_tenant_id_index" on "mfg_mes_phases"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_mes_phases_work_center_id_index" on "mfg_mes_phases"(
+  "work_center_id"
+);
+CREATE TABLE "mfg_mes_production_declarations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "phase_id" varchar not null,
+  "operator_id" varchar,
+  "good_quantity" numeric not null default('0'),
+  "scrap_quantity" numeric not null default('0'),
+  "idempotency_key" varchar not null,
+  "declared_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("phase_id") references "mfg_mes_phases"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mfg_mes_declarations_key_unique" on "mfg_mes_production_declarations"(
+  "tenant_id",
+  "idempotency_key"
+);
+CREATE INDEX "mfg_mes_production_declarations_tenant_id_index" on "mfg_mes_production_declarations"(
+  "tenant_id"
+);
+CREATE TABLE "mfg_mes_scrap_declarations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "phase_id" varchar not null,
+  "production_declaration_id" varchar not null,
+  "quantity" numeric not null,
+  "defect_reason" varchar not null,
+  "note" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("production_declaration_id") references "mfg_mes_production_declarations"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_mes_scrap_declarations_phase_id_index" on "mfg_mes_scrap_declarations"(
+  "phase_id"
+);
+CREATE INDEX "mfg_mes_scrap_declarations_tenant_id_index" on "mfg_mes_scrap_declarations"(
+  "tenant_id"
+);
+CREATE TABLE "mfg_mes_time_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "phase_id" varchar not null,
+  "operator_id" varchar,
+  "category" varchar not null,
+  "machine_attended" tinyint(1) not null default('1'),
+  "suspension_reason" varchar,
+  "started_at" datetime not null,
+  "ended_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("phase_id") references "mfg_mes_phases"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_mes_time_logs_open_index" on "mfg_mes_time_logs"(
+  "phase_id",
+  "ended_at"
+);
+CREATE INDEX "mfg_mes_time_logs_operator_id_index" on "mfg_mes_time_logs"(
+  "operator_id"
+);
+CREATE INDEX "mfg_mes_time_logs_tenant_id_index" on "mfg_mes_time_logs"(
   "tenant_id"
 );
 CREATE TABLE "mfg_mrp_peggings"(
@@ -17731,7 +17927,6 @@ CREATE INDEX "mfg_production_order_lines_tenant_id_index" on "mfg_production_ord
 );
 CREATE TABLE "mfg_production_order_operations"(
   "id" varchar not null,
-  "ideal_cycle_time_ms" numeric,
   "tenant_id" varchar,
   "production_order_id" varchar not null,
   "operation_id" varchar,
@@ -17764,6 +17959,7 @@ CREATE TABLE "mfg_production_order_operations"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "ideal_cycle_time_ms" numeric,
   foreign key("production_order_id") references "mfg_production_orders"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -43493,93 +43689,6 @@ CREATE INDEX "purchase_requisition_document_links_target_document_line_id_index"
 CREATE INDEX "purchase_requisition_document_links_created_by_user_id_index" on "purchase_requisition_document_links"(
   "created_by_user_id"
 );
-CREATE UNIQUE INDEX "mfg_op_conf_posting_uuid_unique" on "mfg_operation_confirmations"(
-  "tenant_id",
-  "posting_uuid"
-);
-CREATE TABLE "mfg_wip_transactions"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "production_order_id" varchar not null,
-  "transaction_type" varchar not null,
-  "amount" numeric not null,
-  "source_type" varchar,
-  "source_id" varchar,
-  "journal_entry_id" varchar,
-  "posting_date" date not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("production_order_id") references "mfg_production_orders"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "mfg_wip_transactions_tenant_id_index" on "mfg_wip_transactions"(
-  "tenant_id"
-);
-CREATE INDEX "mfg_wip_transactions_production_order_id_index" on "mfg_wip_transactions"(
-  "production_order_id"
-);
-CREATE INDEX "mfg_wip_transactions_transaction_type_index" on "mfg_wip_transactions"(
-  "transaction_type"
-);
-CREATE TABLE "mfg_edge_gateways"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "name" varchar not null,
-  "secret" text not null,
-  "is_active" tinyint(1) not null default '1',
-  "last_seen_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  primary key("id")
-);
-
-CREATE INDEX "mfg_edge_gateways_tenant_id_index" on "mfg_edge_gateways"(
-  "tenant_id"
-);
-CREATE TABLE "mfg_machine_state_events"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "gateway_id" varchar not null,
-  "machine_id" varchar not null,
-  "event_uuid" varchar not null,
-  "state" varchar not null,
-  "occurred_at" datetime not null,
-  "production_order_operation_id" varchar,
-  "payload" text,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "mfg_machine_state_events_uuid_unique" on "mfg_machine_state_events"(
-  "tenant_id",
-  "event_uuid"
-);
-CREATE INDEX "mfg_machine_state_events_tenant_id_index" on "mfg_machine_state_events"(
-  "tenant_id"
-);
-CREATE INDEX "mfg_machine_state_events_gateway_id_index" on "mfg_machine_state_events"(
-  "gateway_id"
-);
-CREATE INDEX "mfg_machine_state_events_machine_id_index" on "mfg_machine_state_events"(
-  "machine_id"
-);
-CREATE INDEX "mfg_machine_state_events_production_order_operation_id_index" on "mfg_machine_state_events"(
-  "production_order_operation_id"
-);
 CREATE TABLE "mfg_reason_codes"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -43589,10 +43698,10 @@ CREATE TABLE "mfg_reason_codes"(
   "is_active" tinyint(1) not null default '1',
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "deleted_at" datetime,
   primary key("id")
 );
 
@@ -43611,10 +43720,10 @@ CREATE TABLE "mfg_reason_code_labels"(
   "label" varchar not null,
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "deleted_at" datetime,
   foreign key("reason_code_id") references "mfg_reason_codes"("id") on delete cascade,
   primary key("id")
 );
@@ -43641,10 +43750,10 @@ CREATE TABLE "mfg_shift_instances"(
   "non_production" text,
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "deleted_at" datetime,
   primary key("id")
 );
 
@@ -43817,6 +43926,10 @@ CREATE INDEX "mfg_mes_count_proposals_tenant_id_index" on "mfg_mes_count_proposa
 );
 CREATE INDEX "mfg_mes_count_proposals_production_order_operation_id_index" on "mfg_mes_count_proposals"(
   "production_order_operation_id"
+);
+CREATE UNIQUE INDEX "mfg_op_conf_posting_uuid_unique" on "mfg_operation_confirmations"(
+  "tenant_id",
+  "posting_uuid"
 );
 CREATE TABLE "mrp_run_executions"(
   "id" varchar not null,
@@ -44272,6 +44385,89 @@ CREATE INDEX "mfg_oee_logs_work_center_id_index" on "mfg_oee_logs"(
 CREATE INDEX "mfg_oee_logs_machine_center_id_index" on "mfg_oee_logs"(
   "machine_center_id"
 );
+CREATE TABLE "mfg_wip_transactions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "production_order_id" varchar not null,
+  "transaction_type" varchar not null,
+  "amount" numeric not null,
+  "source_type" varchar,
+  "source_id" varchar,
+  "journal_entry_id" varchar,
+  "posting_date" date not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("production_order_id") references "mfg_production_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_wip_transactions_tenant_id_index" on "mfg_wip_transactions"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_wip_transactions_production_order_id_index" on "mfg_wip_transactions"(
+  "production_order_id"
+);
+CREATE INDEX "mfg_wip_transactions_transaction_type_index" on "mfg_wip_transactions"(
+  "transaction_type"
+);
+CREATE TABLE "mfg_edge_gateways"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "secret" text not null,
+  "is_active" tinyint(1) not null default '1',
+  "last_seen_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_edge_gateways_tenant_id_index" on "mfg_edge_gateways"(
+  "tenant_id"
+);
+CREATE TABLE "mfg_machine_state_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "gateway_id" varchar not null,
+  "machine_id" varchar not null,
+  "event_uuid" varchar not null,
+  "state" varchar not null,
+  "occurred_at" datetime not null,
+  "production_order_operation_id" varchar,
+  "payload" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mfg_machine_state_events_uuid_unique" on "mfg_machine_state_events"(
+  "tenant_id",
+  "event_uuid"
+);
+CREATE INDEX "mfg_machine_state_events_tenant_id_index" on "mfg_machine_state_events"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_machine_state_events_gateway_id_index" on "mfg_machine_state_events"(
+  "gateway_id"
+);
+CREATE INDEX "mfg_machine_state_events_machine_id_index" on "mfg_machine_state_events"(
+  "machine_id"
+);
+CREATE INDEX "mfg_machine_state_events_production_order_operation_id_index" on "mfg_machine_state_events"(
+  "production_order_operation_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -44563,131 +44759,132 @@ INSERT INTO migrations VALUES(287,'2027_05_03_000100_extend_consolidation_tables
 INSERT INTO migrations VALUES(288,'2027_05_04_000100_extend_consolidation_tax_release_and_currency',1);
 INSERT INTO migrations VALUES(289,'2027_05_05_000100_extend_consolidation_provision_and_interim',1);
 INSERT INTO migrations VALUES(290,'2027_05_10_000100_create_analytics_self_service_reporting_tables',1);
-INSERT INTO migrations VALUES(291,'2027_05_10_000100_create_webhook_tables',1);
-INSERT INTO migrations VALUES(292,'2027_05_10_000200_add_below_minimum_since_to_stock_reorder_rules',1);
-INSERT INTO migrations VALUES(293,'2027_05_11_000100_add_below_minimum_since_to_products',1);
-INSERT INTO migrations VALUES(294,'2027_05_12_000100_add_vat_carry_over_option',1);
-INSERT INTO migrations VALUES(295,'2027_05_12_000200_add_tenant_foreign_keys',1);
-INSERT INTO migrations VALUES(296,'2027_05_20_000100_apply_nullable_tenant_id_policy',1);
-INSERT INTO migrations VALUES(297,'2027_05_20_000200_add_soft_delete_column_to_price_list_items',1);
-INSERT INTO migrations VALUES(298,'2027_05_21_000100_add_legal_type_to_contacts',1);
-INSERT INTO migrations VALUES(299,'2027_05_22_000100_drop_postgres_immutability_triggers',1);
-INSERT INTO migrations VALUES(300,'2027_05_22_000200_restore_partial_indexes_on_sqlite',1);
-INSERT INTO migrations VALUES(301,'2027_05_22_000300_enforce_one_stock_quant_per_slot_on_every_engine',1);
-INSERT INTO migrations VALUES(302,'2027_05_23_000100_create_pagopa_payment_notices',1);
-INSERT INTO migrations VALUES(303,'2027_05_27_273001_create_rec_recruiting_core_tables',1);
-INSERT INTO migrations VALUES(304,'2027_05_27_273002_create_rec_offers_emails_and_settings_tables',1);
-INSERT INTO migrations VALUES(305,'2027_06_01_000001_extend_contacts_for_customer_registry',1);
-INSERT INTO migrations VALUES(306,'2027_06_10_000100_create_configurator_tables',1);
-INSERT INTO migrations VALUES(307,'2027_06_10_000100_create_supplier_portal_tables',1);
-INSERT INTO migrations VALUES(308,'2027_06_20_000100_create_lease_accounting_tables',1);
-INSERT INTO migrations VALUES(309,'2027_06_20_000100_create_travel_expense_tables',1);
-INSERT INTO migrations VALUES(310,'2027_06_20_043000_create_facility_management_tables',1);
-INSERT INTO migrations VALUES(311,'2027_06_20_100000_create_sustainability_tables',1);
-INSERT INTO migrations VALUES(312,'2027_06_22_100000_create_governance_tables',1);
-INSERT INTO migrations VALUES(313,'2027_06_23_100000_create_returns_tables',1);
-INSERT INTO migrations VALUES(314,'2027_06_24_100000_create_fleet_tables',1);
-INSERT INTO migrations VALUES(315,'2027_06_25_100000_create_hr_goals_and_offboarding_tables',1);
-INSERT INTO migrations VALUES(316,'2027_06_26_100000_create_communication_inbox_campaign_tables',1);
-INSERT INTO migrations VALUES(317,'2027_06_26_100000_create_crm_extension_tables',1);
-INSERT INTO migrations VALUES(318,'2027_06_26_100000_create_dms_approval_ocr_and_chain_tables',1);
-INSERT INTO migrations VALUES(319,'2027_06_26_100000_create_esrs_reporting_tables',1);
-INSERT INTO migrations VALUES(320,'2027_06_26_100000_create_retail_pos_extension_tables',1);
-INSERT INTO migrations VALUES(321,'2027_06_26_200000_create_contract_authoring_tables',1);
-INSERT INTO migrations VALUES(322,'2027_06_26_200000_create_practice_trust_expense_proposal_tables',1);
-INSERT INTO migrations VALUES(323,'2027_06_26_300000_create_quality_spc_calibration_complaint_tables',1);
-INSERT INTO migrations VALUES(324,'2027_06_26_400000_create_hospitality_lodging_tables',1);
-INSERT INTO migrations VALUES(325,'2027_06_26_500000_create_workshop_scheduling_tables',1);
-INSERT INTO migrations VALUES(326,'2027_07_01_100000_create_business_intelligence_tables',1);
-INSERT INTO migrations VALUES(327,'2027_07_01_100000_create_credit_management_tables',1);
-INSERT INTO migrations VALUES(328,'2027_07_01_100000_create_wms_tables',1);
-INSERT INTO migrations VALUES(329,'2027_07_01_110000_create_marketplace_tables',1);
-INSERT INTO migrations VALUES(330,'2027_07_02_100000_create_talent_learning_tables',1);
-INSERT INTO migrations VALUES(331,'2027_07_02_100000_create_transportation_tables',1);
-INSERT INTO migrations VALUES(332,'2027_07_10_100000_create_planning_tables',1);
-INSERT INTO migrations VALUES(333,'2027_07_11_100000_create_budgeting_tables',1);
-INSERT INTO migrations VALUES(334,'2027_07_20_100000_create_us_tax_localization_tables',1);
-INSERT INTO migrations VALUES(335,'2027_07_21_100000_create_gov_sod_tables',1);
-INSERT INTO migrations VALUES(336,'2027_07_21_110000_add_currency_to_supplier_payments_and_intragroup_transactions',1);
-INSERT INTO migrations VALUES(337,'2027_07_22_100000_make_tenants_country_a_portable_string',1);
-INSERT INTO migrations VALUES(338,'2027_07_22_110000_add_currency_to_standalone_money_tables',1);
-INSERT INTO migrations VALUES(339,'2027_11_15_100000_create_workshop_estimates_warranty_and_parts_tables',1);
-INSERT INTO migrations VALUES(340,'2027_11_15_110000_create_hospitality_group_blocks',1);
-INSERT INTO migrations VALUES(341,'2027_11_15_120000_add_stock_posting_to_wms_tasks',1);
-INSERT INTO migrations VALUES(342,'2027_11_15_125500_create_marketplace_import_tables',1);
-INSERT INTO migrations VALUES(343,'2027_11_15_130000_create_localization_gap_tables',1);
-INSERT INTO migrations VALUES(344,'2027_11_15_130000_extend_practice_expenses_trust_postings_and_fee_notes',1);
-INSERT INTO migrations VALUES(345,'2027_11_15_140000_create_gov_sod_document_rules_table',1);
-INSERT INTO migrations VALUES(346,'2027_11_15_150000_create_data_export_tables',1);
-INSERT INTO migrations VALUES(347,'2027_11_15_150000_create_platform_tables',1);
-INSERT INTO migrations VALUES(348,'2027_11_15_150100_add_failure_tracking_to_edocument_transmissions',1);
-INSERT INTO migrations VALUES(349,'2027_11_15_150200_create_assistant_threads_and_feedback',1);
-INSERT INTO migrations VALUES(350,'2027_11_16_000100_add_legal_compliance_to_time_tracking',1);
-INSERT INTO migrations VALUES(351,'2027_11_16_000200_add_geolocation_consent_fields_to_time_tables',1);
-INSERT INTO migrations VALUES(352,'2027_11_16_100000_create_collaboration_tables',1);
-INSERT INTO migrations VALUES(353,'2027_11_17_000001_add_subscription_indexation',1);
-INSERT INTO migrations VALUES(354,'2027_11_17_100000_create_rebates_tables',1);
-INSERT INTO migrations VALUES(355,'2027_11_17_110000_create_events_tables',1);
-INSERT INTO migrations VALUES(356,'2027_11_17_120000_create_plm_tables',1);
-INSERT INTO migrations VALUES(357,'2027_11_18_100000_add_tenant_index_to_child_tables',1);
-INSERT INTO migrations VALUES(358,'2027_11_18_110000_make_tenant_id_nullable_on_late_tables',1);
-INSERT INTO migrations VALUES(359,'2027_11_19_100000_add_audit_columns_to_all_tables',1);
-INSERT INTO migrations VALUES(360,'2027_11_20_100000_add_frequency_and_quiet_hours_to_notifications',1);
-INSERT INTO migrations VALUES(361,'2027_11_20_110000_create_omnichannel_notification_tables',1);
-INSERT INTO migrations VALUES(362,'2027_11_21_100000_add_tracking_and_shipment_flow_to_delivery_notes',1);
-INSERT INTO migrations VALUES(363,'2027_11_22_000100_complete_tenant_columns_and_indexes',1);
-INSERT INTO migrations VALUES(364,'2027_11_22_100000_create_access_management_tables',1);
-INSERT INTO migrations VALUES(365,'2027_11_23_100000_add_swiss_qr_bill_settings_and_invoice_qr_reference',1);
-INSERT INTO migrations VALUES(366,'2027_11_23_100000_create_cpq_lite_quoting_tables',1);
-INSERT INTO migrations VALUES(367,'2027_11_23_100000_create_field_service_preventive_and_digital_report_tables',1);
-INSERT INTO migrations VALUES(368,'2027_11_23_100000_create_portal_settings_and_login_challenges',1);
-INSERT INTO migrations VALUES(369,'2027_11_23_100000_create_vat_validation_logs_table',1);
-INSERT INTO migrations VALUES(370,'2027_11_24_100000_add_cross_border_customs_compliance',1);
-INSERT INTO migrations VALUES(371,'2027_11_24_100000_add_idempotency_to_bank_statement_lines',1);
-INSERT INTO migrations VALUES(372,'2027_11_25_090000_make_customs_tables_tenant_id_nullable',1);
-INSERT INTO migrations VALUES(373,'2027_11_25_100000_create_advanced_pricing_tables',1);
-INSERT INTO migrations VALUES(374,'2027_11_25_100000_create_vat_settlement_periods_table',1);
-INSERT INTO migrations VALUES(375,'2027_12_01_000100_create_esm_maintenance_hour_bank_tables',1);
-INSERT INTO migrations VALUES(376,'2027_12_01_000200_make_customs_tenant_id_nullable',1);
-INSERT INTO migrations VALUES(377,'2027_12_02_000100_complete_audit_and_tenant_columns_on_late_tables',1);
-INSERT INTO migrations VALUES(378,'2027_12_03_000100_add_incoterm_to_invoices_table',1);
-INSERT INTO migrations VALUES(379,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',1);
-INSERT INTO migrations VALUES(380,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',1);
-INSERT INTO migrations VALUES(381,'2027_12_03_000200_add_foreign_trade_fields_to_orders_contacts_and_tenants',1);
-INSERT INTO migrations VALUES(382,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',1);
-INSERT INTO migrations VALUES(383,'2027_12_10_000100_extend_analytics_reporting_for_pivot_studio',1);
-INSERT INTO migrations VALUES(384,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',1);
-INSERT INTO migrations VALUES(385,'2027_12_10_100000_create_controlling_tables',1);
-INSERT INTO migrations VALUES(386,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',1);
-INSERT INTO migrations VALUES(387,'2027_12_11_000100_create_immutable_audit_trail',1);
-INSERT INTO migrations VALUES(388,'2027_12_12_000100_create_privacy_governance_tables',1);
-INSERT INTO migrations VALUES(389,'2027_12_13_000100_add_blind_indexes_to_contacts',1);
-INSERT INTO migrations VALUES(390,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',1);
-INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_payment_method_to_payment_links',1);
-INSERT INTO migrations VALUES(392,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',1);
-INSERT INTO migrations VALUES(393,'2027_12_13_000100_create_digital_preservation_tables',1);
-INSERT INTO migrations VALUES(394,'2027_12_13_000200_create_offline_audit_entries_table',1);
-INSERT INTO migrations VALUES(395,'2027_12_14_000100_create_ai_forecasting_tables',1);
-INSERT INTO migrations VALUES(396,'2027_12_14_000100_create_copilot_tables',1);
-INSERT INTO migrations VALUES(397,'2027_12_14_000100_create_iam_tables',1);
-INSERT INTO migrations VALUES(398,'2027_12_15_000100_create_academy_tables',1);
-INSERT INTO migrations VALUES(399,'2027_12_15_000100_create_ocr_extraction_tables',1);
-INSERT INTO migrations VALUES(400,'2027_12_16_000100_create_ai_cognitive_tables',1);
-INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_analytics_dss_tables',1);
-INSERT INTO migrations VALUES(402,'2027_12_16_000100_create_kpi_dashboard_tables',1);
-INSERT INTO migrations VALUES(403,'2027_12_17_000100_create_cpq_quote_tables',1);
-INSERT INTO migrations VALUES(404,'2027_12_17_000100_create_data_residency_tables',1);
-INSERT INTO migrations VALUES(405,'2027_12_17_000100_create_hse_tables',1);
-INSERT INTO migrations VALUES(406,'2027_12_17_000100_create_italian_payroll_preprocessing_tables',1);
-INSERT INTO migrations VALUES(407,'2027_12_17_000100_create_shift_planning_tables',1);
-INSERT INTO migrations VALUES(408,'2027_12_17_000100_extend_bom_management',1);
-INSERT INTO migrations VALUES(409,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',1);
-INSERT INTO migrations VALUES(410,'2027_12_17_000100_upgrade_procurement_rfq_module_045',1);
-INSERT INTO migrations VALUES(411,'2027_12_17_000200_add_audit_columns_to_mfg_bom_co_products',1);
-INSERT INTO migrations VALUES(412,'2027_12_18_000100_create_hse_incident_photos_table',1);
-INSERT INTO migrations VALUES(413,'2027_12_18_000100_upgrade_purchase_requisitions_module_044',1);
-INSERT INTO migrations VALUES(414,'2027_12_19_000100_add_posting_uuid_to_mfg_operation_confirmations',1);
-INSERT INTO migrations VALUES(415,'2027_12_19_000200_create_mfg_mes_integration_tables',1);
-INSERT INTO migrations VALUES(416,'2027_12_19_000100_add_mes_integration_to_manufacturing',1);
-INSERT INTO migrations VALUES(417,'2027_12_19_000100_create_mrp_planning_tables',2);
-INSERT INTO migrations VALUES(418,'2027_12_19_000100_extend_manufacturing_production_engineering',3);
+INSERT INTO migrations VALUES(291,'2027_05_10_000100_create_mfg_mes_operator_board_tables',1);
+INSERT INTO migrations VALUES(292,'2027_05_10_000100_create_webhook_tables',1);
+INSERT INTO migrations VALUES(293,'2027_05_10_000200_add_below_minimum_since_to_stock_reorder_rules',1);
+INSERT INTO migrations VALUES(294,'2027_05_11_000100_add_below_minimum_since_to_products',1);
+INSERT INTO migrations VALUES(295,'2027_05_12_000100_add_vat_carry_over_option',1);
+INSERT INTO migrations VALUES(296,'2027_05_12_000200_add_tenant_foreign_keys',1);
+INSERT INTO migrations VALUES(297,'2027_05_20_000100_apply_nullable_tenant_id_policy',1);
+INSERT INTO migrations VALUES(298,'2027_05_20_000200_add_soft_delete_column_to_price_list_items',1);
+INSERT INTO migrations VALUES(299,'2027_05_21_000100_add_legal_type_to_contacts',1);
+INSERT INTO migrations VALUES(300,'2027_05_22_000100_drop_postgres_immutability_triggers',1);
+INSERT INTO migrations VALUES(301,'2027_05_22_000200_restore_partial_indexes_on_sqlite',1);
+INSERT INTO migrations VALUES(302,'2027_05_22_000300_enforce_one_stock_quant_per_slot_on_every_engine',1);
+INSERT INTO migrations VALUES(303,'2027_05_23_000100_create_pagopa_payment_notices',1);
+INSERT INTO migrations VALUES(304,'2027_05_27_273001_create_rec_recruiting_core_tables',1);
+INSERT INTO migrations VALUES(305,'2027_05_27_273002_create_rec_offers_emails_and_settings_tables',1);
+INSERT INTO migrations VALUES(306,'2027_06_01_000001_extend_contacts_for_customer_registry',1);
+INSERT INTO migrations VALUES(307,'2027_06_10_000100_create_configurator_tables',1);
+INSERT INTO migrations VALUES(308,'2027_06_10_000100_create_supplier_portal_tables',1);
+INSERT INTO migrations VALUES(309,'2027_06_20_000100_create_lease_accounting_tables',1);
+INSERT INTO migrations VALUES(310,'2027_06_20_000100_create_travel_expense_tables',1);
+INSERT INTO migrations VALUES(311,'2027_06_20_043000_create_facility_management_tables',1);
+INSERT INTO migrations VALUES(312,'2027_06_20_100000_create_sustainability_tables',1);
+INSERT INTO migrations VALUES(313,'2027_06_22_100000_create_governance_tables',1);
+INSERT INTO migrations VALUES(314,'2027_06_23_100000_create_returns_tables',1);
+INSERT INTO migrations VALUES(315,'2027_06_24_100000_create_fleet_tables',1);
+INSERT INTO migrations VALUES(316,'2027_06_25_100000_create_hr_goals_and_offboarding_tables',1);
+INSERT INTO migrations VALUES(317,'2027_06_26_100000_create_communication_inbox_campaign_tables',1);
+INSERT INTO migrations VALUES(318,'2027_06_26_100000_create_crm_extension_tables',1);
+INSERT INTO migrations VALUES(319,'2027_06_26_100000_create_dms_approval_ocr_and_chain_tables',1);
+INSERT INTO migrations VALUES(320,'2027_06_26_100000_create_esrs_reporting_tables',1);
+INSERT INTO migrations VALUES(321,'2027_06_26_100000_create_retail_pos_extension_tables',1);
+INSERT INTO migrations VALUES(322,'2027_06_26_200000_create_contract_authoring_tables',1);
+INSERT INTO migrations VALUES(323,'2027_06_26_200000_create_practice_trust_expense_proposal_tables',1);
+INSERT INTO migrations VALUES(324,'2027_06_26_300000_create_quality_spc_calibration_complaint_tables',1);
+INSERT INTO migrations VALUES(325,'2027_06_26_400000_create_hospitality_lodging_tables',1);
+INSERT INTO migrations VALUES(326,'2027_06_26_500000_create_workshop_scheduling_tables',1);
+INSERT INTO migrations VALUES(327,'2027_07_01_100000_create_business_intelligence_tables',1);
+INSERT INTO migrations VALUES(328,'2027_07_01_100000_create_credit_management_tables',1);
+INSERT INTO migrations VALUES(329,'2027_07_01_100000_create_wms_tables',1);
+INSERT INTO migrations VALUES(330,'2027_07_01_110000_create_marketplace_tables',1);
+INSERT INTO migrations VALUES(331,'2027_07_02_100000_create_talent_learning_tables',1);
+INSERT INTO migrations VALUES(332,'2027_07_02_100000_create_transportation_tables',1);
+INSERT INTO migrations VALUES(333,'2027_07_10_100000_create_planning_tables',1);
+INSERT INTO migrations VALUES(334,'2027_07_11_100000_create_budgeting_tables',1);
+INSERT INTO migrations VALUES(335,'2027_07_20_100000_create_us_tax_localization_tables',1);
+INSERT INTO migrations VALUES(336,'2027_07_21_100000_create_gov_sod_tables',1);
+INSERT INTO migrations VALUES(337,'2027_07_21_110000_add_currency_to_supplier_payments_and_intragroup_transactions',1);
+INSERT INTO migrations VALUES(338,'2027_07_22_100000_make_tenants_country_a_portable_string',1);
+INSERT INTO migrations VALUES(339,'2027_07_22_110000_add_currency_to_standalone_money_tables',1);
+INSERT INTO migrations VALUES(340,'2027_11_15_100000_create_workshop_estimates_warranty_and_parts_tables',1);
+INSERT INTO migrations VALUES(341,'2027_11_15_110000_create_hospitality_group_blocks',1);
+INSERT INTO migrations VALUES(342,'2027_11_15_120000_add_stock_posting_to_wms_tasks',1);
+INSERT INTO migrations VALUES(343,'2027_11_15_125500_create_marketplace_import_tables',1);
+INSERT INTO migrations VALUES(344,'2027_11_15_130000_create_localization_gap_tables',1);
+INSERT INTO migrations VALUES(345,'2027_11_15_130000_extend_practice_expenses_trust_postings_and_fee_notes',1);
+INSERT INTO migrations VALUES(346,'2027_11_15_140000_create_gov_sod_document_rules_table',1);
+INSERT INTO migrations VALUES(347,'2027_11_15_150000_create_data_export_tables',1);
+INSERT INTO migrations VALUES(348,'2027_11_15_150000_create_platform_tables',1);
+INSERT INTO migrations VALUES(349,'2027_11_15_150100_add_failure_tracking_to_edocument_transmissions',1);
+INSERT INTO migrations VALUES(350,'2027_11_15_150200_create_assistant_threads_and_feedback',1);
+INSERT INTO migrations VALUES(351,'2027_11_16_000100_add_legal_compliance_to_time_tracking',1);
+INSERT INTO migrations VALUES(352,'2027_11_16_000200_add_geolocation_consent_fields_to_time_tables',1);
+INSERT INTO migrations VALUES(353,'2027_11_16_100000_create_collaboration_tables',1);
+INSERT INTO migrations VALUES(354,'2027_11_17_000001_add_subscription_indexation',1);
+INSERT INTO migrations VALUES(355,'2027_11_17_100000_create_rebates_tables',1);
+INSERT INTO migrations VALUES(356,'2027_11_17_110000_create_events_tables',1);
+INSERT INTO migrations VALUES(357,'2027_11_17_120000_create_plm_tables',1);
+INSERT INTO migrations VALUES(358,'2027_11_18_100000_add_tenant_index_to_child_tables',1);
+INSERT INTO migrations VALUES(359,'2027_11_18_110000_make_tenant_id_nullable_on_late_tables',1);
+INSERT INTO migrations VALUES(360,'2027_11_19_100000_add_audit_columns_to_all_tables',1);
+INSERT INTO migrations VALUES(361,'2027_11_20_100000_add_frequency_and_quiet_hours_to_notifications',1);
+INSERT INTO migrations VALUES(362,'2027_11_20_110000_create_omnichannel_notification_tables',1);
+INSERT INTO migrations VALUES(363,'2027_11_21_100000_add_tracking_and_shipment_flow_to_delivery_notes',1);
+INSERT INTO migrations VALUES(364,'2027_11_22_000100_complete_tenant_columns_and_indexes',1);
+INSERT INTO migrations VALUES(365,'2027_11_22_100000_create_access_management_tables',1);
+INSERT INTO migrations VALUES(366,'2027_11_23_100000_add_swiss_qr_bill_settings_and_invoice_qr_reference',1);
+INSERT INTO migrations VALUES(367,'2027_11_23_100000_create_cpq_lite_quoting_tables',1);
+INSERT INTO migrations VALUES(368,'2027_11_23_100000_create_field_service_preventive_and_digital_report_tables',1);
+INSERT INTO migrations VALUES(369,'2027_11_23_100000_create_portal_settings_and_login_challenges',1);
+INSERT INTO migrations VALUES(370,'2027_11_23_100000_create_vat_validation_logs_table',1);
+INSERT INTO migrations VALUES(371,'2027_11_24_100000_add_cross_border_customs_compliance',1);
+INSERT INTO migrations VALUES(372,'2027_11_24_100000_add_idempotency_to_bank_statement_lines',1);
+INSERT INTO migrations VALUES(373,'2027_11_25_090000_make_customs_tables_tenant_id_nullable',1);
+INSERT INTO migrations VALUES(374,'2027_11_25_100000_create_advanced_pricing_tables',1);
+INSERT INTO migrations VALUES(375,'2027_11_25_100000_create_vat_settlement_periods_table',1);
+INSERT INTO migrations VALUES(376,'2027_12_01_000100_create_esm_maintenance_hour_bank_tables',1);
+INSERT INTO migrations VALUES(377,'2027_12_01_000200_make_customs_tenant_id_nullable',1);
+INSERT INTO migrations VALUES(378,'2027_12_02_000100_complete_audit_and_tenant_columns_on_late_tables',1);
+INSERT INTO migrations VALUES(379,'2027_12_03_000100_add_incoterm_to_invoices_table',1);
+INSERT INTO migrations VALUES(380,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',1);
+INSERT INTO migrations VALUES(381,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',1);
+INSERT INTO migrations VALUES(382,'2027_12_03_000200_add_foreign_trade_fields_to_orders_contacts_and_tenants',1);
+INSERT INTO migrations VALUES(383,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',1);
+INSERT INTO migrations VALUES(384,'2027_12_10_000100_extend_analytics_reporting_for_pivot_studio',1);
+INSERT INTO migrations VALUES(385,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',1);
+INSERT INTO migrations VALUES(386,'2027_12_10_100000_create_controlling_tables',1);
+INSERT INTO migrations VALUES(387,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',1);
+INSERT INTO migrations VALUES(388,'2027_12_11_000100_create_immutable_audit_trail',1);
+INSERT INTO migrations VALUES(389,'2027_12_12_000100_create_privacy_governance_tables',1);
+INSERT INTO migrations VALUES(390,'2027_12_13_000100_add_blind_indexes_to_contacts',1);
+INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',1);
+INSERT INTO migrations VALUES(392,'2027_12_13_000100_add_payment_method_to_payment_links',1);
+INSERT INTO migrations VALUES(393,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',1);
+INSERT INTO migrations VALUES(394,'2027_12_13_000100_create_digital_preservation_tables',1);
+INSERT INTO migrations VALUES(395,'2027_12_13_000200_create_offline_audit_entries_table',1);
+INSERT INTO migrations VALUES(396,'2027_12_14_000100_create_ai_forecasting_tables',1);
+INSERT INTO migrations VALUES(397,'2027_12_14_000100_create_copilot_tables',1);
+INSERT INTO migrations VALUES(398,'2027_12_14_000100_create_iam_tables',1);
+INSERT INTO migrations VALUES(399,'2027_12_15_000100_create_academy_tables',1);
+INSERT INTO migrations VALUES(400,'2027_12_15_000100_create_ocr_extraction_tables',1);
+INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_ai_cognitive_tables',1);
+INSERT INTO migrations VALUES(402,'2027_12_16_000100_create_analytics_dss_tables',1);
+INSERT INTO migrations VALUES(403,'2027_12_16_000100_create_kpi_dashboard_tables',1);
+INSERT INTO migrations VALUES(404,'2027_12_17_000100_create_cpq_quote_tables',1);
+INSERT INTO migrations VALUES(405,'2027_12_17_000100_create_data_residency_tables',1);
+INSERT INTO migrations VALUES(406,'2027_12_17_000100_create_hse_tables',1);
+INSERT INTO migrations VALUES(407,'2027_12_17_000100_create_italian_payroll_preprocessing_tables',1);
+INSERT INTO migrations VALUES(408,'2027_12_17_000100_create_shift_planning_tables',1);
+INSERT INTO migrations VALUES(409,'2027_12_17_000100_extend_bom_management',1);
+INSERT INTO migrations VALUES(410,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',1);
+INSERT INTO migrations VALUES(411,'2027_12_17_000100_upgrade_procurement_rfq_module_045',1);
+INSERT INTO migrations VALUES(412,'2027_12_17_000200_add_audit_columns_to_mfg_bom_co_products',1);
+INSERT INTO migrations VALUES(413,'2027_12_18_000100_create_hse_incident_photos_table',1);
+INSERT INTO migrations VALUES(414,'2027_12_18_000100_upgrade_purchase_requisitions_module_044',1);
+INSERT INTO migrations VALUES(415,'2027_12_19_000100_add_mes_integration_to_manufacturing',1);
+INSERT INTO migrations VALUES(416,'2027_12_19_000100_add_posting_uuid_to_mfg_operation_confirmations',1);
+INSERT INTO migrations VALUES(417,'2027_12_19_000100_create_mrp_planning_tables',1);
+INSERT INTO migrations VALUES(418,'2027_12_19_000100_extend_manufacturing_production_engineering',1);
+INSERT INTO migrations VALUES(419,'2027_12_19_000200_create_mfg_mes_integration_tables',1);

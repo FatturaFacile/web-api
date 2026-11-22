@@ -13,6 +13,7 @@ use Modules\Manufacturing\Http\Controllers\ManufacturingCockpitController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingKpiController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingSettingsController;
 use Modules\Manufacturing\Http\Controllers\MesFeedbackController;
+use Modules\Manufacturing\Http\Controllers\MesOperatorBoardController;
 use Modules\Manufacturing\Http\Controllers\MesSyncController;
 use Modules\Manufacturing\Http\Controllers\MrpController;
 use Modules\Manufacturing\Http\Controllers\OeeController;
@@ -39,6 +40,18 @@ Route::prefix('api/v1/manufacturing')->middleware(['api', 'auth:sanctum', 'tenan
     Route::put('/items/{id}', [ItemController::class, 'update'])->whereUuid('id')->name('mfg.items.update');
     Route::post('/items/{id}/cost-rollup', [ItemController::class, 'costRollup'])->whereUuid('id')->name('mfg.items.cost_rollup');
     Route::get('/items/{id}/where-used', [ItemController::class, 'whereUsed'])->whereUuid('id')->name('mfg.items.where_used');
+
+    // MES operator board (#183)
+    Route::get('/mes/board', [MesOperatorBoardController::class, 'board'])->name('mfg.mes.board');
+    Route::post('/mes/phases/take-over', [MesOperatorBoardController::class, 'takeOver'])->name('mfg.mes.take_over');
+    Route::get('/mes/phases/{id}/traceability', [MesOperatorBoardController::class, 'traceability'])->whereUuid('id')->name('mfg.mes.traceability');
+    Route::post('/mes/phases/{id}/start-setup', [MesOperatorBoardController::class, 'startSetup'])->whereUuid('id')->name('mfg.mes.start_setup');
+    Route::post('/mes/phases/{id}/start-production', [MesOperatorBoardController::class, 'startProduction'])->whereUuid('id')->name('mfg.mes.start_production');
+    Route::post('/mes/phases/{id}/suspend', [MesOperatorBoardController::class, 'suspend'])->whereUuid('id')->name('mfg.mes.suspend');
+    Route::post('/mes/phases/{id}/resume', [MesOperatorBoardController::class, 'resume'])->whereUuid('id')->name('mfg.mes.resume');
+    Route::post('/mes/phases/{id}/declarations', [MesOperatorBoardController::class, 'declareProduction'])->whereUuid('id')->name('mfg.mes.declarations');
+    Route::post('/mes/phases/{id}/material-consumptions', [MesOperatorBoardController::class, 'consumeMaterial'])->whereUuid('id')->name('mfg.mes.consumptions');
+    Route::post('/mes/phases/{id}/close', [MesOperatorBoardController::class, 'close'])->whereUuid('id')->name('mfg.mes.close');
 
     // Work centres
     Route::get('/work-centers', [WorkCenterController::class, 'index'])->name('mfg.work_centers.index');
