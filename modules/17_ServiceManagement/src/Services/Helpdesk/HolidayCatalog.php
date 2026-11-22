@@ -77,7 +77,7 @@ final class HolidayCatalog
         $dates = array_unique($dates);
         sort($dates);
 
-        return array_values($dates);
+        return $dates;
     }
 
     /**

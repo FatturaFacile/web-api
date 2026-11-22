@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ServiceManagement\Models;
 
 use App\Models\Contact;
+use Carbon\CarbonInterface;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,12 +19,12 @@ use Modules\Workflow\Models\WorkflowInstance;
 /**
  * @property Carbon|null $resolved_at
  * @property Carbon|null $closed_at
- * @property Carbon|null $response_due_at
- * @property Carbon|null $resolution_due_at
- * @property Carbon|null $first_responded_at
- * @property Carbon|null $next_update_due_at
- * @property Carbon|null $next_update_breached_at
- * @property Carbon|null $sla_paused_at
+ * @property CarbonInterface|null $response_due_at
+ * @property CarbonInterface|null $resolution_due_at
+ * @property CarbonInterface|null $first_responded_at
+ * @property CarbonInterface|null $next_update_due_at
+ * @property CarbonInterface|null $next_update_breached_at
+ * @property CarbonInterface|null $sla_paused_at
  * @property array<string, mixed>|null $metadata
  */
 final class Ticket extends BaseEnterpriseModel implements LockableByWorkflowInterface
