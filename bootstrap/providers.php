@@ -12,6 +12,7 @@ use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Academy\Providers\AcademyServiceProvider;
 use Modules\AiCognitive\Providers\AiCognitiveServiceProvider;
+use Modules\AnalyticalAccounting\Providers\AnalyticalAccountingServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AnalyticsDss\Providers\AnalyticsDssServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
@@ -153,6 +154,7 @@ return [
     PlanningServiceProvider::class,
     BudgetingServiceProvider::class,
     ControllingServiceProvider::class,
+    AnalyticalAccountingServiceProvider::class,
     BusinessIntelligenceServiceProvider::class,
     MarketplaceServiceProvider::class,
     RebatesServiceProvider::class,

@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
+use Database\Seeders\Translations\AnalyticalAccountingFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\BomManagementFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
@@ -96,6 +97,7 @@ class FrontendTranslationSeeder extends Seeder
             + KpiDashboardsFrontendTranslations::all($locale)
             + ItalianPayrollFrontendTranslations::all($locale)
             + ShiftPlanningFrontendTranslations::all($locale)
+            + AnalyticalAccountingFrontendTranslations::all($locale)
             + HseFrontendTranslations::all($locale)
             + MrpPlanningFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)

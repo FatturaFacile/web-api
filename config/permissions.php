@@ -286,6 +286,13 @@ return [
             'read' => [...$financeReaders, 'sales_manager', 'production', 'procurement_manager'],
             'write' => [...$finance, 'production'],
         ],
+        // Industrial and analytical cost accounting (Mod 018): finance, sales management and production read; owners,
+        // administrators and accountants keep centers, rules, drivers and manual analytical postings. Running, consolidating
+        // and reversing apportionment cycles is reserved by the policy to analytical.apportionment.run.
+        'analytical_accounting' => [
+            'read' => [...$financeReaders, 'sales_manager', 'production', 'procurement_manager'],
+            'write' => [...$finance],
+        ],
         // Sales and operations planning (S&OP): every member reads; planners, production, purchasing and finance staff keep
         // the scenarios, plan lines and capacity data. Approving, rejecting, locking and publishing a plan are reserved by
         // the policy to owners, administrators and members granted planning.approve.
