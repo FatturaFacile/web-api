@@ -37,6 +37,7 @@ final class MfgMachineCenterResource extends JsonResource
             'telemetry_status' => $this->telemetry_status,
             'telemetry_last_seen_at' => $this->telemetry_last_seen_at?->toIso8601String(),
             'ideal_cycle_time_seconds_per_unit' => $this->ideal_cycle_time_seconds_per_unit,
+            'mes_profile' => $this->mes_profile,
             'parallel_capacity_units' => $this->parallel_capacity_units,
             'efficiency_factor_percent' => $this->efficiency_factor_percent,
             'hourly_machine_run_cost_rate_override' => $this->hourly_machine_run_cost_rate_override,

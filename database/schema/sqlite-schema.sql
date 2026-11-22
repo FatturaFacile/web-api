@@ -17350,6 +17350,7 @@ CREATE TABLE "mfg_machine_centers"(
   "hourly_machine_run_cost_rate_override" numeric,
   "current_state" varchar,
   "state_since" datetime,
+  "mes_profile" text,
   foreign key("work_center_id") references "mfg_work_centers"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -44888,3 +44889,4 @@ INSERT INTO migrations VALUES(416,'2027_12_19_000100_add_posting_uuid_to_mfg_ope
 INSERT INTO migrations VALUES(417,'2027_12_19_000100_create_mrp_planning_tables',1);
 INSERT INTO migrations VALUES(418,'2027_12_19_000100_extend_manufacturing_production_engineering',1);
 INSERT INTO migrations VALUES(419,'2027_12_19_000200_create_mfg_mes_integration_tables',1);
+INSERT INTO migrations VALUES(420,'2027_12_19_000300_add_mes_profile_to_mfg_machine_centers',2);

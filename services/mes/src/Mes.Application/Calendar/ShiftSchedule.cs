@@ -18,8 +18,56 @@ public sealed record ShiftPattern(IReadOnlySet<DayOfWeek> Days, TimeOnly Start, 
 /// </summary>
 public sealed class ShiftSchedule(TimeZoneInfo zone, IReadOnlyList<ShiftPattern> patterns, IReadOnlyList<Interval> closures)
 {
+    private IReadOnlyList<Interval>? _dated;
+
+    /// <summary>
+    /// A schedule made of dated shift intervals (what Laravel materialises: UTC instances) minus holes (breaks, planned
+    /// maintenance). Outside the given shifts nothing is planned.
+    /// </summary>
+    public static ShiftSchedule FromInstances(IReadOnlyList<Interval> shifts, IReadOnlyList<Interval> holes) =>
+        new(TimeZoneInfo.Utc, [], holes) { _dated = shifts };
+
+    /// <summary>
+    /// Parses one shift instance of the Laravel <c>shift-calendars</c> feed
+    /// (<c>{"starts_at","ends_at","non_production":[{"kind","from","to","machine_id"?}]}</c>, UTC): the shift and the holes
+    /// that apply to <paramref name="machine"/> (entries without a machine apply to every machine of the work centre).
+    /// </summary>
+    public static (Interval Shift, IReadOnlyList<Interval> Holes) ParseInstance(string json, Guid machine)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var shift = new Interval(root.GetProperty("starts_at").GetDateTimeOffset(), root.GetProperty("ends_at").GetDateTimeOffset());
+            var holes = new List<Interval>();
+            if (root.TryGetProperty("non_production", out var np) && np.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var h in np.EnumerateArray())
+                {
+                    var forMachine = !h.TryGetProperty("machine_id", out var m) || m.ValueKind == JsonValueKind.Null || (Guid.TryParse(m.GetString(), out var g) && g == machine);
+                    if (forMachine)
+                    {
+                        holes.Add(new Interval(h.GetProperty("from").GetDateTimeOffset(), h.GetProperty("to").GetDateTimeOffset()));
+                    }
+                }
+            }
+
+            return (shift, holes);
+        }
+        catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or ArgumentException or FormatException)
+        {
+            throw new FormatException("Invalid shift instance payload: " + ex.Message, ex);
+        }
+    }
+
     public IReadOnlyList<Interval> PlannedWindows(Interval window)
     {
+        if (_dated is not null)
+        {
+            var inside = _dated.Select(s => s.Intersect(window)).OfType<Interval>().ToList();
+            return Subtract(Merge(inside), closures);
+        }
+
         var raw = new List<Interval>();
         // A night shift that started yesterday can overlap the window: begin one local day early, end one day late.
         var firstDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(window.Start, zone).DateTime).AddDays(-1);

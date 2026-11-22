@@ -71,11 +71,11 @@ dotnet test  services/mes/Mes.slnx
 The Laravel side lives in `modules/30_Manufacturing` (HMAC middleware, `mes-sync` feeds, `mes-events` receiver, `ref-events` push) and the wire contract is frozen by the golden fixtures in `contracts/mes-sync/fixtures` (see `contracts/mes-sync/README.md`), read by both this solution's `ContractFixtureTests` and Laravel's `MesContractFixturesTest`. Summary:
 
 * `GET /api/v1/manufacturing/mes-sync/{machines|work-orders|shift-calendars|reason-codes}?after_seq=&limit=` → `{ data: [{id, seq, revision, deleted, payload}], next_seq, has_more }`; `410` when the cursor is older than retained history.
-* `GET …/{resource}/manifest` → `{ items: [{id, revision}] }` of the live entities. **Single page**: Laravel serves up to `manifest_max_limit` (5000) items and exposes `next_cursor`; the client does not page yet (a tenant with more rows would see the rest as orphans).
+* `GET …/{resource}/manifest` → `{ items: [{id, revision}], next_cursor, has_more }` of the live entities. The client reads every page (opaque `cursor`) before deciding what is orphaned.
 * `POST /api/v1/mes/ref-events` (Laravel → Mes.Core) body `{tenant_id, resource, id, seq, revision, deleted, payload}`; Laravel sends payload-less nudges (the MES Core pulls), `id` is the aggregate named by the change (order, work centre), not necessarily a feed entity.
-* `POST /api/v1/manufacturing/mes-events` (Mes.Core → Laravel) body `{events:[{id,type,dedupe_key,occurred_at,payload}]}` → `207 {results:[{id,status,message}]}`. `OeeSnapshotRevised` without a window (scrap correction by run) and `ProductionCountCheckpoint` without `work_order_ref` cannot be attributed and are `rejected`.
+* `POST /api/v1/manufacturing/mes-events` (Mes.Core → Laravel) body `{events:[{id,type,dedupe_key,occurred_at,payload}]}` → `207 {results:[{id,status,message}]}`. `ProductionCountCheckpoint` carries `run_id` and `work_order_ref` of the open run (omitted when none is open: Laravel then `rejected` it, nothing is guessed); `OeeSnapshotRevised` for a scrap correction carries `work_order_ref`, `total` and `scrap_total` and revises the order snapshot of the run.
 * Signature: `X-Mes-Signature: t=<unix>,kid=<id>,v1=<hex>`, `v1 = HMAC-SHA256(secret[kid], "{t}.{raw body}")`, ±5 min tolerance, constant-time compare. GET requests are signed over an empty body (the path is not bound; binding method+path would be stronger).
-* `ref_machine.payload` carries only machine identity today; the profile fields of `RefMachineProfileProvider` (tag roles, ideal cycle, counter policy) are not sent by Laravel yet.
+* `ref_machine.payload` carries the machine identity, `line_code`, `ideal_cycle_ms` and the configured profile (`tag_roles`, `debounce_ms`, `stale_after_s`, `counter`, `oee_policy`, set through `mes_profile` on the Laravel machine API): `RefMachineProfileProvider.Parse` reads it. Shift calendars: Laravel serves dated UTC instances per work centre with `non_production` windows (plant breaks, and the planned maintenance of one machine with its `machine_id`); `RefShiftCalendarProvider` builds the schedule from them (`ShiftSchedule.FromInstances`).
 
 ## Edge Gateway → Laravel signed telemetry (`Publisher = Laravel`)
 
@@ -122,7 +122,7 @@ Quarantine state (a pending anomalous level) is deliberately not persisted.
 
 ## Shift calendar port
 
-`IShiftCalendarProvider.PlannedWindowsAsync(tenant, machine, window)` is the only thing OEE knows about calendars. Implementations: `AlwaysPlannedCalendarProvider` (default in `AddMesApplication`) and `RefShiftCalendarProvider` (registered by `AddMesPersistence`; `ref_machine.payload.shift_calendar_id` → `ref_shift_calendar.payload`, parsed by `ShiftSchedule`; no calendar ⇒ always planned, logged; invalid calendar ⇒ always planned, logged as an **error**). `ShiftSchedule` is DST-safe (local wall clock per date), handles night shifts and closures. The JSON it parses is **tentative** (`{"timezone","shifts":[{"days":[ISO weekdays],"start":"HH:mm","end":"HH:mm"}],"closures":[{"from","to"}]}`) until the Laravel payload is final; only `ShiftSchedule.Parse` needs to change.
+`IShiftCalendarProvider.PlannedWindowsAsync(tenant, machine, window)` is the only thing OEE knows about calendars. Implementations: `AlwaysPlannedCalendarProvider` (default in `AddMesApplication`) and `RefShiftCalendarProvider` (registered by `AddMesPersistence`; the dated instances of `ref_machine.payload.work_center_id` (`ref_shift_calendar.payload.scope_id`, parsed by `ShiftSchedule.ParseInstance`; breaks and the machine's planned maintenance are subtracted), with the legacy weekly `shift_calendar_id` payload as fallback; no calendar ⇒ always planned, logged; invalid calendar ⇒ always planned, logged as an **error**). `ShiftSchedule` is DST-safe (local wall clock per date), handles night shifts and closures. The JSON it parses is **tentative** (`{"timezone","shifts":[{"days":[ISO weekdays],"start":"HH:mm","end":"HH:mm"}],"closures":[{"from","to"}]}`) until the Laravel payload is final; only `ShiftSchedule.Parse` needs to change.
 
 ## Gateway → Core authentication (JWT today, mTLS ready)
 
@@ -154,7 +154,7 @@ dotnet test services/mes/Mes.slnx
 
 ## Not done / next
 
-* Laravel side: see Contract status. Still open: breaks and planned downtime in the shift-calendar payload (`non_production` is empty), `ShiftSchedule.Parse` reading the dated UTC instances Laravel serves, the machine profile in `ref_machine.payload`, manifest paging. No Angular/Flutter/desktop UI.
+* Laravel side: see Contract status. Planned maintenance is read from the asset maintenance work orders when the shift instances are materialised (daily and on a calendar change): a work order created later reaches the MES Core with the next materialisation, not at once. No Angular/Flutter/desktop UI.
 * The OPC UA harness runs with security policy `None`; signed/encrypted sessions and certificate trust flows are not covered by tests.
 * The shift-calendar JSON and the `ref_machine` profile payload are tentative until Laravel defines them.
 * Pending debounce and quarantine state are in memory (bounded by the debounce window / a few samples).

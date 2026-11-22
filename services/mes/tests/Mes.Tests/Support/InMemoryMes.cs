@@ -151,6 +151,9 @@ public sealed class InMemoryMes : IMesStore, ITelemetryStore, IOutbox, ITransact
 
     public Task<ProductionRun?> GetRunAsync(TenantId tenant, Guid runId, CancellationToken ct) => Task.FromResult(Runs.GetValueOrDefault(runId));
 
+    public Task<ProductionRun?> GetOpenRunAsync(TenantId tenant, MachineId machine, CancellationToken ct) =>
+        Task.FromResult(Runs.Values.Where(r => r.TenantId == tenant && r.MachineId == machine && r.EndedAt is null).OrderByDescending(r => r.StartedAt).FirstOrDefault());
+
     public Task SaveRunAsync(ProductionRun run, CancellationToken ct)
     {
         Runs[run.Id] = run;

@@ -92,10 +92,11 @@ function mesFixtureSetUp(object $test): void
     $fixture = mesFixture('mes-to-laravel/oee-shift-closed.json');
     config(['manufacturing_mes.keys' => [(string) $fixture['kid'] => ['secret' => (string) $fixture['secret'], 'tenants' => [MES_FIXTURE_TENANT]]]]);
 
-    $workCenter = MfgWorkCenter::factory()->create(['id' => MES_FIXTURE_WORK_CENTER, 'tenant_id' => MES_FIXTURE_TENANT]);
+    $workCenter = MfgWorkCenter::factory()->create(['id' => MES_FIXTURE_WORK_CENTER, 'tenant_id' => MES_FIXTURE_TENANT, 'work_center_code' => 'WC-LINE-A']);
     $test->machine = MfgMachineCenter::factory()->create([
         'id' => MES_FIXTURE_MACHINE, 'tenant_id' => MES_FIXTURE_TENANT, 'work_center_id' => $workCenter->id,
-        'machine_code' => 'CNC-01', 'name' => 'CNC lathe 1', 'power_kw' => '15.5', 'hourly_rate' => '60',
+        'machine_code' => 'CNC-01', 'name' => 'CNC lathe 1', 'power_kw' => '15.5', 'hourly_rate' => '60', 'ideal_cycle_time_seconds_per_unit' => '1.2',
+        'mes_profile' => array_intersect_key(mesFixture('laravel-to-mes/feed.machines.json')['response']['data'][0]['payload'], array_flip(['tag_roles', 'debounce_ms', 'stale_after_s', 'counter', 'oee_policy'])),
     ]);
     $order = MfgProductionOrder::factory()->create(['tenant_id' => MES_FIXTURE_TENANT, 'status' => 'released', 'target_quantity' => '500']);
     $test->operation = MfgProductionOrderOperation::factory()->create([
@@ -247,7 +248,7 @@ test('a failing MES Core makes the push job fail so it is retried', function ():
     expect(fn () => dispatch_sync(new PushMesReferenceChangeJob(MES_FIXTURE_TENANT, 'machines', MES_FIXTURE_MACHINE, 3)))->toThrow(RuntimeException::class);
 });
 
-test('the pull feed of machines has the shape of its fixture', function (): void {
+test('the pull feed of machines carries the identity and the profile of its fixture', function (): void {
     $fixture = mesFixture('laravel-to-mes/feed.machines.json');
 
     $page = mesSendFixture($this, ['method' => 'GET', 'path' => '/api/v1/manufacturing/mes-sync/machines', 'body' => '', 'tenant_id' => MES_FIXTURE_TENANT, 'signature' => MesHmac::header('k1', 'contract-test-secret', '', 1798000000)])
@@ -257,8 +258,7 @@ test('the pull feed of machines has the shape of its fixture', function (): void
 
     expect(mesShape($page['data'][0]))->toBe(mesShape($expected['data'][0]))
         ->and(array_keys($page))->toBe(array_keys($expected))
-        ->and($page['data'][0]['payload']['machine_id'])->toBe(MES_FIXTURE_MACHINE)
-        ->and($page['data'][0]['payload']['machine_code'])->toBe('CNC-01')
+        ->and($page['data'][0]['payload'])->toEqual($expected['data'][0]['payload'])
         ->and($page['has_more'])->toBeFalse();
 });
 
@@ -278,7 +278,7 @@ test('the shift calendar feed has the shape of its fixture', function (): void {
 
     DB::table('mfg_shift_instances')->insert([
         'id' => '018f0000-0000-7000-8000-000000000201', 'tenant_id' => MES_FIXTURE_TENANT, 'scope_type' => $expected['scope_type'], 'scope_id' => MES_FIXTURE_WORK_CENTER,
-        'shift_code' => 'DAY', 'starts_at' => '2026-12-22 05:00:00', 'ends_at' => '2026-12-22 13:00:00', 'timezone' => 'Europe/Rome', 'non_production' => json_encode([]),
+        'shift_code' => 'DAY', 'starts_at' => '2026-12-22 05:00:00', 'ends_at' => '2026-12-22 13:00:00', 'timezone' => 'Europe/Rome', 'non_production' => json_encode($expected['non_production']),
         'created_at' => now(), 'updated_at' => now(),
     ]);
     DB::table('mfg_mes_sync_changes')->insert(['tenant_id' => MES_FIXTURE_TENANT, 'resource' => 'shift-calendars', 'entity_id' => '018f0000-0000-7000-8000-000000000201', 'operation' => 'upsert', 'changed_at' => now()]);
@@ -313,4 +313,58 @@ test('releasing a planned order pushes its operations to the MES Core once the c
 
         return $sent['resource'] === 'work-orders' && $sent['id'] === (string) $planned->id && $sent['deleted'] === false && $sent['payload'] === null;
     });
+});
+
+test('a scrap correction of the run revises the order snapshot and refreshes the count proposal', function (): void {
+    mesSendFixture($this, mesFixture('mes-to-laravel/oee-order-completed.json'))->assertStatus(207);
+    $results = mesSendFixture($this, mesFixture('mes-to-laravel/oee-snapshot-revised-scrap.json'))->assertStatus(207)->json('results');
+
+    $snapshot = DB::table('mfg_mes_oee_snapshots')->first();
+    $proposal = DB::table('mfg_mes_count_proposals')->first();
+
+    expect($results[0]['status'])->toBe('applied')
+        ->and(DB::table('mfg_mes_oee_snapshots')->count())->toBe(1)
+        ->and(DB::table('mfg_mes_oee_snapshot_revisions')->count())->toBe(2)
+        ->and(json_decode((string) $snapshot->metrics, true))->toBe(['good_count' => 486, 'scrap_count' => 14])
+        ->and(DB::table('mfg_mes_count_proposals')->count())->toBe(1)
+        ->and((float) $proposal->scrap_count)->toBe(14.0);
+});
+
+test('a count checkpoint carries the order being produced and becomes a proposal for that operation', function (): void {
+    $fixture = mesFixture('mes-to-laravel/production-count-checkpoint.json');
+
+    mesSendFixture($this, $fixture)->assertStatus(207);
+    $proposal = DB::table('mfg_mes_count_proposals')->first();
+
+    expect($proposal->production_order_operation_id)->toBe(MES_FIXTURE_OPERATION)
+        ->and((float) $proposal->good_count)->toBe(236.0)
+        ->and((float) $proposal->scrap_count)->toBe(4.0);
+});
+
+test('a checkpoint without the order being produced is rejected, not guessed', function (): void {
+    $fixture = mesFixture('mes-to-laravel/production-count-checkpoint.json');
+    $event = json_decode((string) $fixture['body'], true)['events'][0];
+    unset($event['payload']['work_order_ref'], $event['payload']['run_id']);
+    $body = (string) json_encode(['events' => [$event]], JSON_UNESCAPED_SLASHES);
+
+    $results = mesSendFixture($this, $fixture, ['body' => $body, 'signature' => MesHmac::header((string) $fixture['kid'], (string) $fixture['secret'], $body, (int) $fixture['t'])])->assertStatus(207)->json('results');
+
+    expect($results[0]['status'])->toBe('rejected')->and(DB::table('mfg_mes_count_proposals')->count())->toBe(0);
+});
+
+test('the manifest is served in pages by an opaque cursor like its fixture', function (): void {
+    $fixture = mesFixture('laravel-to-mes/manifest.machines.paged.json');
+    MfgMachineCenter::factory()->create(['tenant_id' => MES_FIXTURE_TENANT, 'work_center_id' => MES_FIXTURE_WORK_CENTER]);
+    $sign = fn (string $path): array => ['method' => 'GET', 'path' => $path, 'body' => '', 'tenant_id' => MES_FIXTURE_TENANT, 'signature' => MesHmac::header('k1', 'contract-test-secret', '', 1798000000)];
+
+    $first = mesSendFixture($this, $sign('/api/v1/manufacturing/mes-sync/machines/manifest?limit=1'))->assertOk()->json();
+    $second = mesSendFixture($this, $sign('/api/v1/manufacturing/mes-sync/machines/manifest?limit=1&cursor='.$first['next_cursor']))->assertOk()->json();
+
+    $ids = [$first['items'][0]['id'], $second['items'][0]['id']];
+
+    expect(mesShape($first))->toBe(mesShape($fixture['pages'][0]['response']))
+        ->and($first['has_more'])->toBeTrue()
+        ->and($first['next_cursor'])->toBeString()
+        ->and(mesShape($second))->toBe(mesShape($fixture['pages'][1]['response']))
+        ->and(count(array_unique($ids)))->toBe(2);
 });

@@ -33,6 +33,7 @@ use Modules\AssetManagement\Models\FixedAsset;
  * @property Carbon|null $telemetry_last_seen_at
  * @property string|null $telemetry_status
  * @property string|null $ideal_cycle_time_seconds_per_unit
+ * @property array<string, mixed>|null $mes_profile
  * @property int $parallel_capacity_units
  * @property string|null $efficiency_factor_percent
  * @property string|null $hourly_machine_run_cost_rate_override
@@ -50,6 +51,7 @@ final class MfgMachineCenter extends BaseEnterpriseModel
         return [
             'hourly_rate' => 'decimal:4',
             'power_kw' => 'decimal:2',
+            'mes_profile' => 'array',
             'last_serviced_at' => 'datetime',
             'is_industria_40_enabled' => 'boolean',
             'is_transizione_50_enabled' => 'boolean',

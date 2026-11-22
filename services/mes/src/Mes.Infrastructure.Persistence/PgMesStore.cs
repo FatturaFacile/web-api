@@ -255,6 +255,24 @@ public sealed class PgMesStore(PgSession session) : IMesStore, ITelemetryStore, 
         return run;
     }
 
+    public async Task<ProductionRun?> GetOpenRunAsync(TenantId tenant, MachineId machine, CancellationToken ct)
+    {
+        await using var scope = await session.OpenAsync(tenant, ct).ConfigureAwait(false);
+        await using var cmd = scope.Command("SELECT id, work_order_ref, ideal_cycle_ms, started_at, total_count, scrap_count FROM production_run WHERE tenant_id=@t AND machine_id=@m AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1");
+        cmd.Parameters.AddWithValue("t", tenant.Value);
+        cmd.Parameters.AddWithValue("m", machine.Value);
+        await using var r = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        if (!await r.ReadAsync(ct).ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        var run = new ProductionRun(r.GetGuid(0), tenant, machine, r.GetString(1), r.GetDouble(2), r.GetFieldValue<DateTimeOffset>(3));
+        run.Count(r.GetInt64(4));
+        run.ReportScrap(new Quantity(r.GetInt64(5)));
+        return run;
+    }
+
     public async Task SaveRunAsync(ProductionRun run, CancellationToken ct)
     {
         await using var scope = await session.OpenAsync(run.TenantId, ct).ConfigureAwait(false);

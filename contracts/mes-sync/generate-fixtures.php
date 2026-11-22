@@ -80,10 +80,10 @@ function envelope(string $description, string $method, string $path, array $body
  * @param  array<string, mixed>  $payload
  * @return array<string, mixed>
  */
-function outbox(string $id, string $type, string $dedupe, array $payload): array
+function outbox(string $id, string $type, string $dedupe, array $payload, string $at = '2026-12-23T04:26:00.1234567+00:00'): array
 {
     // Shape of OutboxRelay.DeliverAsync: {id, type, dedupe_key, occurred_at, payload}.
-    return ['id' => $id, 'type' => $type, 'dedupe_key' => $dedupe, 'occurred_at' => '2026-12-23T04:26:00.1234567+00:00', 'payload' => $payload];
+    return ['id' => $id, 'type' => $type, 'dedupe_key' => $dedupe, 'occurred_at' => $at, 'payload' => $payload];
 }
 
 $oee = [
@@ -105,8 +105,11 @@ $events = [
         'run_id' => RUN, 'work_order_ref' => OPERATION, 'machine_id' => MACHINE, 'total' => 500, 'scrap' => 12, 'ended_at' => '2026-12-22T13:30:00+00:00',
     ]), 'applied'],
     'production-count-checkpoint' => [outbox('018f0000-0000-7000-8000-0000000000d4', 'ProductionCountCheckpoint', 'ckpt:'.MACHINE.':batch-1', [
-        'machine_id' => MACHINE, 'at' => '2026-12-22T09:15:00+00:00', 'total' => 240, 'good' => 236, 'work_order_ref' => OPERATION,
+        'machine_id' => MACHINE, 'at' => '2026-12-22T09:15:00+00:00', 'total' => 240, 'good' => 236, 'work_order_ref' => OPERATION, 'run_id' => RUN,
     ]), 'applied'],
+    'oee-snapshot-revised-scrap' => [outbox('018f0000-0000-7000-8000-0000000000d6', 'OeeSnapshotRevised', 'scrap:'.RUN.':14', [
+        'machine_id' => MACHINE, 'run_id' => RUN, 'work_order_ref' => OPERATION, 'total' => 500, 'scrap_total' => 14, 'at' => '2026-12-22T13:31:00+00:00',
+    ], '2026-12-23T04:27:00.1234567+00:00'), 'applied'],
     'machine-alarm-raised' => [outbox('018f0000-0000-7000-8000-0000000000d5', 'MachineAlarmRaised', 'alarm:'.MACHINE.':2026-12-22T10:00:00.0000000+00:00', [
         'machine_id' => MACHINE, 'raised_at' => '2026-12-22T10:00:00+00:00',
     ]), 'applied'],
@@ -160,8 +163,16 @@ put($dir, 'laravel-to-mes/feed.work-orders.json', [
     ],
 ]);
 
-$machinePayload = ['machine_id' => MACHINE, 'machine_code' => 'CNC-01', 'name' => 'CNC lathe 1', 'work_center_id' => '018f0000-0000-7000-8000-0000000000f1', 'asset_id' => null, 'power_kw' => '15.5000', 'status' => 'active'];
-$shiftPayload = ['scope_type' => 'work_center', 'scope_id' => '018f0000-0000-7000-8000-0000000000f1', 'shift_code' => 'DAY', 'starts_at' => '2026-12-22T05:00:00Z', 'ends_at' => '2026-12-22T13:00:00Z', 'timezone' => 'Europe/Rome', 'non_production' => []];
+$machinePayload = [
+    'machine_id' => MACHINE, 'machine_code' => 'CNC-01', 'name' => 'CNC lathe 1', 'work_center_id' => '018f0000-0000-7000-8000-0000000000f1', 'asset_id' => null, 'power_kw' => '15.50', 'status' => 'active',
+    'line_code' => 'WC-LINE-A', 'ideal_cycle_ms' => 1200.0,
+    'tag_roles' => ['run' => 'Running', 'alarm' => 'Alarm', 'count' => 'TotalCounter', 'good' => 'GoodCounter'], 'debounce_ms' => 3000, 'stale_after_s' => 30,
+    'counter' => ['rollover_modulus' => 65536, 'max_delta_per_sample' => 500], 'oee_policy' => ['version' => 1, 'setup' => 'AvailabilityLoss', 'gap' => 'ExcludeFromPlanned'],
+];
+$shiftPayload = ['scope_type' => 'work_center', 'scope_id' => '018f0000-0000-7000-8000-0000000000f1', 'shift_code' => 'DAY', 'starts_at' => '2026-12-22T05:00:00Z', 'ends_at' => '2026-12-22T13:00:00Z', 'timezone' => 'Europe/Rome', 'non_production' => [
+    ['kind' => 'break', 'machine_id' => null, 'from' => '2026-12-22T09:00:00Z', 'to' => '2026-12-22T09:15:00Z', 'reference' => null],
+    ['kind' => 'planned_maintenance', 'machine_id' => MACHINE, 'from' => '2026-12-22T11:00:00Z', 'to' => '2026-12-22T13:00:00Z', 'reference' => 'MWO-2026-0007'],
+]];
 
 put($dir, 'laravel-to-mes/feed.machines.json', [
     'description' => 'GET /api/v1/manufacturing/mes-sync/machines?after_seq=0&limit=2 (page with a live machine and a tombstone).',
@@ -178,7 +189,7 @@ put($dir, 'laravel-to-mes/feed.machines.json', [
 ]);
 
 put($dir, 'laravel-to-mes/feed.shift-calendars.json', [
-    'description' => 'GET .../mes-sync/shift-calendars: dated UTC shift instances (non_production is empty: breaks and planned downtime are not materialised yet).',
+    'description' => 'GET .../mes-sync/shift-calendars: dated UTC shift instances with the breaks of the plant and the planned maintenance of one machine (non_production).',
     'path' => '/api/v1/manufacturing/mes-sync/shift-calendars?after_seq=0&limit=500',
     'tenant_id' => TENANT,
     'response' => [
@@ -193,6 +204,15 @@ put($dir, 'laravel-to-mes/manifest.machines.json', [
     'path' => '/api/v1/manufacturing/mes-sync/machines/manifest',
     'tenant_id' => TENANT,
     'response' => ['schema_version' => 1, 'resource' => 'machines', 'items' => [['id' => MACHINE, 'revision' => 3]], 'next_cursor' => null, 'has_more' => false, 'watermark' => 5],
+]);
+
+put($dir, 'laravel-to-mes/manifest.machines.paged.json', [
+    'description' => 'The manifest is paged by an opaque cursor: the MES Core must read every page before it decides what is orphaned.',
+    'tenant_id' => TENANT,
+    'pages' => [
+        ['path' => '/api/v1/manufacturing/mes-sync/machines/manifest?limit=1', 'response' => ['schema_version' => 1, 'resource' => 'machines', 'items' => [['id' => MACHINE, 'revision' => 3]], 'next_cursor' => 'eyJ2IjoxLCJlbnRpdHkiOiIwMThmMDAwMC0wMDAwLTcwMDAtODAwMC0wMDAwMDAwMDAwYTEifQ', 'has_more' => true, 'watermark' => 8]],
+        ['path' => '/api/v1/manufacturing/mes-sync/machines/manifest?limit=1&cursor=eyJ2IjoxLCJlbnRpdHkiOiIwMThmMDAwMC0wMDAwLTcwMDAtODAwMC0wMDAwMDAwMDAwYTEifQ', 'response' => ['schema_version' => 1, 'resource' => 'machines', 'items' => [['id' => '018f0000-0000-7000-8000-0000000000a3', 'revision' => 8]], 'next_cursor' => null, 'has_more' => false, 'watermark' => 8]],
+    ],
 ]);
 
 echo "Fixtures written to {$dir}\n";

@@ -41,3 +41,18 @@ strings `+` is written as backslash-u002B, except in `occurred_at`). Idempotency
 
 Laravel configuration (`config/manufacturing_mes.php`): `MES_SYNC_KEYS` (inbound keys, bound to tenants), and for the push
 `MES_CORE_BASE_URL`, `MES_CORE_KEY_ID`, `MES_CORE_SECRET` (the MES Core's `LaravelSync:InboundKeys`).
+
+## Attribution of counts and scrap
+
+`ProductionCountCheckpoint` carries `run_id` and `work_order_ref` (the id of the production order operation, as pulled from
+`work-orders`) of the run open on the machine; without it Laravel answers `rejected` instead of guessing. A scrap correction
+(`OeeSnapshotRevised` with `run_id`, `work_order_ref`, `total`, `scrap_total`) revises the order snapshot of the run, like
+`OeeOrderCompleted`, and refreshes the pending count proposal.
+
+## Shift calendars and machine profile
+
+`shift-calendars` entities are dated UTC shift instances per work centre. `non_production` lists windows excluded from the planned
+time: `{kind: "break", machine_id: null, from, to}` for the plant breaks (`MES_SHIFT_BREAKS`) and
+`{kind: "planned_maintenance", machine_id, from, to, reference}` for the preventive maintenance work orders of the asset of a
+machine. `machines` payloads carry `line_code`, `ideal_cycle_ms` and the configured `mes_profile` (`tag_roles`, `debounce_ms`,
+`stale_after_s`, `counter`, `oee_policy`).

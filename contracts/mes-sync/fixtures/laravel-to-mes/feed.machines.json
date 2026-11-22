@@ -17,8 +17,27 @@
                     "name": "CNC lathe 1",
                     "work_center_id": "018f0000-0000-7000-8000-0000000000f1",
                     "asset_id": null,
-                    "power_kw": "15.5000",
-                    "status": "active"
+                    "power_kw": "15.50",
+                    "status": "active",
+                    "line_code": "WC-LINE-A",
+                    "ideal_cycle_ms": 1200.0,
+                    "tag_roles": {
+                        "run": "Running",
+                        "alarm": "Alarm",
+                        "count": "TotalCounter",
+                        "good": "GoodCounter"
+                    },
+                    "debounce_ms": 3000,
+                    "stale_after_s": 30,
+                    "counter": {
+                        "rollover_modulus": 65536,
+                        "max_delta_per_sample": 500
+                    },
+                    "oee_policy": {
+                        "version": 1,
+                        "setup": "AvailabilityLoss",
+                        "gap": "ExcludeFromPlanned"
+                    }
                 }
             },
             {
