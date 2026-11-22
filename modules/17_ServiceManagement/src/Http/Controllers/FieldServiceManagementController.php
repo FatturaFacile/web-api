@@ -9,6 +9,7 @@ use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -25,6 +26,7 @@ use Modules\ServiceManagement\FieldService\Commands\RecordVanStockPartConsumptio
 use Modules\ServiceManagement\FieldService\Commands\RecordVanStockPartConsumptionHandler;
 use Modules\ServiceManagement\FieldService\Commands\SignAndCloseServiceReportHandler;
 use Modules\ServiceManagement\FieldService\Commands\SignServiceReportRules;
+use Modules\ServiceManagement\FieldService\Commands\UploadWorkOrderPhotoHandler;
 use Modules\ServiceManagement\FieldService\Queries\GetCustomerEquipmentServiceHistoryQuery;
 use Modules\ServiceManagement\FieldService\Queries\GetDispatcherGanttAndMapBoardQuery;
 use Modules\ServiceManagement\FieldService\Queries\GetTechnicianOfflineWorkQueueQuery;
@@ -33,14 +35,17 @@ use Modules\ServiceManagement\Http\Requests\RecordVanPartRequest;
 use Modules\ServiceManagement\Http\Requests\SaveMaintenanceContractRequest;
 use Modules\ServiceManagement\Http\Requests\SignServiceReportRequest;
 use Modules\ServiceManagement\Http\Requests\StoreFieldWorkOrderRequest;
+use Modules\ServiceManagement\Http\Requests\StoreWorkOrderPhotoRequest;
 use Modules\ServiceManagement\Http\Resources\DigitalServiceReportResource;
 use Modules\ServiceManagement\Http\Resources\FieldWorkOrderResource;
 use Modules\ServiceManagement\Http\Resources\MaintenanceContractResource;
+use Modules\ServiceManagement\Http\Resources\WorkOrderPhotoResource;
 use Modules\ServiceManagement\Models\DigitalServiceReport;
 use Modules\ServiceManagement\Models\PartsConsumption;
 use Modules\ServiceManagement\Models\SerializedEquipmentPassport;
 use Modules\ServiceManagement\Models\ServiceContract;
 use Modules\ServiceManagement\Models\WorkOrder;
+use Modules\ServiceManagement\Models\WorkOrderPhoto;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -230,6 +235,70 @@ final class FieldServiceManagementController extends Controller
             'unit_price' => (string) $consumption->unit_price,
             'stock_movement_id' => $consumption->stock_movement_id === null ? null : (string) $consumption->stock_movement_id,
         ]], $consumption->wasRecentlyCreated ? 201 : 200);
+    }
+
+    #[OA\Post(
+        path: '/api/v1/fsm/work-orders/{workOrder}/photos', operationId: 'fsmUploadWorkOrderPhoto', summary: 'Upload a photo of a work order (idempotent on client_uuid)',
+        description: 'Multipart upload from the technician app. A replay of the same client_uuid returns 200 with the existing record; the first call returns 201. The id can be referenced by `photo_ids` when signing the service report.',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['FSM Work Orders'],
+        parameters: [new OA\Parameter(name: 'workOrder', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(required: ['photo', 'client_uuid'], properties: [
+            new OA\Property(property: 'photo', type: 'string', format: 'binary', description: 'jpeg, png, heic or webp, max 10 MB'),
+            new OA\Property(property: 'client_uuid', type: 'string', maxLength: 64),
+            new OA\Property(property: 'stage', type: 'string', enum: ['before', 'during', 'after'], nullable: true),
+            new OA\Property(property: 'caption', type: 'string', maxLength: 255, nullable: true),
+            new OA\Property(property: 'captured_at', type: 'string', format: 'date-time', nullable: true),
+        ]))),
+        responses: [new OA\Response(response: 201, description: 'Uploaded', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/FsmWorkOrderPhoto')])), new OA\Response(response: 200, description: 'Replay of an existing client_uuid'), new OA\Response(response: 404, description: 'Work order not found'), new OA\Response(response: 422, description: 'Validation error')]
+    )]
+    public function uploadPhoto(StoreWorkOrderPhotoRequest $request, string $workOrder, UploadWorkOrderPhotoHandler $handler): JsonResponse
+    {
+        $data = $request->validated();
+        $record = WorkOrder::query()->where('tenant_id', $this->tenantId())->findOrFail($workOrder);
+
+        $file = $request->file('photo');
+        abort_unless($file instanceof UploadedFile, 422);
+
+        $photo = $handler(
+            $record,
+            $file,
+            (string) $data['client_uuid'],
+            $data['stage'] ?? null,
+            $data['caption'] ?? null,
+            isset($data['captured_at']) ? CarbonImmutable::parse($data['captured_at']) : null,
+            $request->user()?->id === null ? null : (string) $request->user()->id,
+        );
+
+        return response()->json(['data' => (new WorkOrderPhotoResource($photo))->resolve()], $photo->wasRecentlyCreated ? 201 : 200);
+    }
+
+    #[OA\Get(
+        path: '/api/v1/fsm/work-orders/{workOrder}/photos', operationId: 'fsmListWorkOrderPhotos', summary: 'List the photos of a work order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['FSM Work Orders'],
+        parameters: [new OA\Parameter(name: 'workOrder', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Photos', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/FsmWorkOrderPhoto'))])), new OA\Response(response: 404, description: 'Work order not found')]
+    )]
+    public function listPhotos(string $workOrder): JsonResponse
+    {
+        $record = WorkOrder::query()->where('tenant_id', $this->tenantId())->findOrFail($workOrder);
+        $photos = WorkOrderPhoto::query()->where('tenant_id', $record->tenant_id)->where('work_order_id', $record->id)->orderBy('created_at')->get();
+
+        return response()->json(['data' => WorkOrderPhotoResource::collection($photos)->resolve()]);
+    }
+
+    #[OA\Get(
+        path: '/api/v1/fsm/work-orders/{workOrder}/photos/{photo}', operationId: 'fsmDownloadWorkOrderPhoto', summary: 'Download a work order photo',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['FSM Work Orders'],
+        parameters: [new OA\Parameter(name: 'workOrder', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'photo', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [new OA\Response(response: 200, description: 'Image binary'), new OA\Response(response: 404, description: 'Not found')]
+    )]
+    public function showPhoto(string $workOrder, string $photo): StreamedResponse
+    {
+        $record = WorkOrder::query()->where('tenant_id', $this->tenantId())->findOrFail($workOrder);
+        $file = WorkOrderPhoto::query()->where('tenant_id', $record->tenant_id)->where('work_order_id', $record->id)->findOrFail($photo);
+        abort_unless(Storage::disk('local')->exists($file->path), 404);
+
+        return Storage::disk('local')->download($file->path, basename($file->path));
     }
 
     #[OA\Post(

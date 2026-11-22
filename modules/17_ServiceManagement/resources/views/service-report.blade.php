@@ -53,6 +53,10 @@
     </p>
 @endif
 
+@if (! empty($report->photo_attachments_json))
+    <p>{{ __('field_service.pdf.photos') }}: {{ count($report->photo_attachments_json) }}</p>
+@endif
+
 <h2>{{ __('field_service.pdf.charges') }}</h2>
 <table>
     <tr>

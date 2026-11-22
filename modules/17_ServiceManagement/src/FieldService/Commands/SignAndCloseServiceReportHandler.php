@@ -18,6 +18,7 @@ use Modules\ServiceManagement\Models\DigitalServiceReport;
 use Modules\ServiceManagement\Models\SerializedEquipmentPassport;
 use Modules\ServiceManagement\Models\ServiceContract;
 use Modules\ServiceManagement\Models\WorkOrder;
+use Modules\ServiceManagement\Models\WorkOrderPhoto;
 use Modules\ServiceManagement\Services\ServiceAmounts;
 
 /**
@@ -46,6 +47,45 @@ final readonly class SignAndCloseServiceReportHandler
         }
 
         return $report;
+    }
+
+    /**
+     * The inline photo references of the command plus the uploaded photos it names by id, which must all belong to the
+     * work order (and so to the tenant); anything else is rejected as a validation error.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function referencedPhotos(WorkOrder $workOrder, SignAndCloseServiceReportCommand $command): array
+    {
+        $photos = $command->photos;
+
+        if ($command->photoIds === []) {
+            return $photos;
+        }
+
+        $uploaded = WorkOrderPhoto::query()
+            ->where('tenant_id', $workOrder->tenant_id)
+            ->where('work_order_id', $workOrder->id)
+            ->whereIn('id', $command->photoIds)
+            ->get()
+            ->keyBy(static fn (WorkOrderPhoto $photo): string => (string) $photo->id);
+
+        if ($uploaded->count() !== count(array_unique($command->photoIds))) {
+            throw ValidationException::withMessages(['photo_ids' => __('field_service.errors.photos_not_in_work_order')]);
+        }
+
+        foreach ($command->photoIds as $id) {
+            $photo = $uploaded[$id];
+            $photos[] = array_filter([
+                'id' => (string) $photo->id,
+                'path' => $photo->path,
+                'name' => $photo->caption,
+                'stage' => $photo->stage,
+                'taken_at' => $photo->captured_at?->toIso8601String(),
+            ], static fn (mixed $value): bool => $value !== null);
+        }
+
+        return array_values($photos);
     }
 
     private function sign(SignAndCloseServiceReportCommand $command): DigitalServiceReport
@@ -79,6 +119,8 @@ final readonly class SignAndCloseServiceReportHandler
         if ($passport !== null) {
             $this->assertMeterMonotonic($passport, $command);
         }
+
+        $photos = $this->referencedPhotos($workOrder, $command);
 
         $number = $this->nextReportNumber((string) $workOrder->tenant_id, $command->signedAt);
         $labor = ServiceAmounts::text($command->laborHours);
@@ -117,7 +159,7 @@ final readonly class SignAndCloseServiceReportHandler
             'signed_at' => $command->signedAt,
             'gps_latitude' => $command->gpsLatitude,
             'gps_longitude' => $command->gpsLongitude,
-            'photo_attachments_json' => $command->photos,
+            'photo_attachments_json' => $photos,
             'locale' => $command->locale,
             'client_uuid' => $command->clientUuid,
         ]);
