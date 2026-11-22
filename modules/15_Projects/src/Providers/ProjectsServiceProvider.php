@@ -11,6 +11,7 @@ use Modules\Inventory\Events\ProjectInventoryIssueEvent;
 use Modules\Inventory\Events\ProjectInventoryReservationEvent;
 use Modules\Inventory\Events\ProjectMaterialConsumptionEvent;
 use Modules\Procurement\Events\GoodsReceivedEvent;
+use Modules\Procurement\Models\PurchaseOrder;
 use Modules\Projects\Contracts\EarnedValueCalculationServiceInterface;
 use Modules\Projects\Contracts\JobCostingAccumulationServiceInterface;
 use Modules\Projects\Contracts\ProjectBudgetServiceInterface;
@@ -22,6 +23,7 @@ use Modules\Projects\Contracts\ProjectFxRateResolverInterface;
 use Modules\Projects\Contracts\ProjectRevenueRecognitionServiceInterface;
 use Modules\Projects\Contracts\ProjectTimesheetServiceInterface;
 use Modules\Projects\Events\ProjectAccrualReadyEvent;
+use Modules\Projects\Events\ProjectBaselineCapturedEvent;
 use Modules\Projects\Events\ProjectBillingReadyEvent;
 use Modules\Projects\Events\ProjectBudgetExceededEvent;
 use Modules\Projects\Events\ProjectCashFlowForecastEvent;
@@ -50,6 +52,7 @@ use Modules\Projects\Events\ProjectRevenueReadyEvent;
 use Modules\Projects\Events\ProjectRevenueRecognitionReadyEvent;
 use Modules\Projects\Events\ProjectRevenueRecognizedEvent;
 use Modules\Projects\Events\ProjectRiskDetectedEvent;
+use Modules\Projects\Events\ProjectScheduleRecalculatedEvent;
 use Modules\Projects\Events\ProjectStartedEvent;
 use Modules\Projects\Events\ProjectTimesheetApprovedEvent;
 use Modules\Projects\Events\ProjectWipReadyEvent;
@@ -75,6 +78,7 @@ use Modules\Projects\Services\ProjectBudgetService;
 use Modules\Projects\Services\ProjectChangeOrderService;
 use Modules\Projects\Services\ProjectExpenseService;
 use Modules\Projects\Services\ProjectForecastService;
+use Modules\Projects\Services\ProjectReferenceCodePropagator;
 use Modules\Projects\Services\ProjectRevenueRecognitionService;
 use Modules\Projects\Services\ProjectTimesheetService;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
@@ -152,6 +156,8 @@ final class ProjectsServiceProvider extends ServiceProvider
             ProjectPaymentForecastEvent::class,
             ProjectReceivableReadyEvent::class,
             ProjectEvmSnapshotComputedEvent::class,
+            ProjectScheduleRecalculatedEvent::class,
+            ProjectBaselineCapturedEvent::class,
         ];
 
         foreach ($domainEvents as $eventClass) {
@@ -167,6 +173,13 @@ final class ProjectsServiceProvider extends ServiceProvider
         // Goods receipts become actual cost; open purchase orders are read live as commitments
         // (ProjectCommitmentService) and supplier invoices are not booked again.
         Event::listen(GoodsReceivedEvent::class, [ProcurementIntegrationListener::class, 'handleGoodsReceived']);
+
+        // A purchase order opened on a project takes the CUP and CIG of the project (Mod 078).
+        PurchaseOrder::saving(static function (PurchaseOrder $order): void {
+            if ($order->project_id !== null && (! $order->exists || $order->isDirty('project_id'))) {
+                app(ProjectReferenceCodePropagator::class)->inheritOnPurchaseOrder($order);
+            }
+        });
 
         // Cross-Module Workflow Approvals
         Event::listen(WorkflowInstanceCompletedEvent::class, [WorkflowApprovalProjectListener::class, 'handleCompleted']);

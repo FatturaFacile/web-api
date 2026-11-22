@@ -12,10 +12,14 @@ use Modules\Projects\Http\Controllers\ProjectEvmController;
 use Modules\Projects\Http\Controllers\ProjectExpenseController;
 use Modules\Projects\Http\Controllers\ProjectForecastController;
 use Modules\Projects\Http\Controllers\ProjectMilestoneController;
+use Modules\Projects\Http\Controllers\ProjectPortfolioController;
 use Modules\Projects\Http\Controllers\ProjectResourceController;
 use Modules\Projects\Http\Controllers\ProjectRevenueRecognitionController;
 use Modules\Projects\Http\Controllers\ProjectTaskController;
 use Modules\Projects\Http\Controllers\ProjectTimesheetController;
+use Modules\Projects\Http\Controllers\ProjectWbsBaselineController;
+use Modules\Projects\Http\Controllers\ProjectWbsController;
+use Modules\Projects\Http\Controllers\ProjectWbsDependencyController;
 
 /*
  * Projects (commesse). module.access:projects lets every member read and the write roles of config/permissions.php
@@ -55,6 +59,10 @@ Route::prefix('api/v1/projects')
         Route::get('/evm/scurve', [ProjectEvmController::class, 'scurve'])->name('projects.evm.scurve');
         Route::post('/evm/overhead-allocations', [ProjectEvmController::class, 'allocateOverhead'])->name('projects.evm.overhead-allocations');
 
+        // Portfolio overview and creation from a template (Mod 078).
+        Route::get('/portfolio', [ProjectPortfolioController::class, 'portfolio'])->name('projects.portfolio');
+        Route::post('/from-template', [ProjectPortfolioController::class, 'fromTemplate'])->name('projects.from-template');
+
         // Project master data and lifecycle.
         Route::get('/', [ProjectController::class, 'index'])->name('projects.index');
         Route::post('/', [ProjectController::class, 'store'])->name('projects.store');
@@ -82,6 +90,21 @@ Route::prefix('api/v1/projects')
             Route::post('/tasks', [ProjectTaskController::class, 'store'])->name('projects.tasks.store');
             Route::get('/milestones', [ProjectMilestoneController::class, 'index'])->name('projects.milestones.index');
             Route::post('/milestones', [ProjectMilestoneController::class, 'store'])->name('projects.milestones.store');
+
+            // Multilevel WBS, dependencies, critical path method, baselines and Kanban (Mod 078).
+            Route::patch('/status', [ProjectPortfolioController::class, 'changeStatus'])->name('projects.status');
+            Route::post('/wbs-nodes', [ProjectWbsController::class, 'store'])->name('projects.wbs-nodes.store');
+            Route::patch('/wbs-nodes/reorder', [ProjectWbsController::class, 'reorder'])->name('projects.wbs-nodes.reorder');
+            Route::put('/wbs-nodes/{nodeId}', [ProjectWbsController::class, 'update'])->whereUuid('nodeId')->name('projects.wbs-nodes.update');
+            Route::delete('/wbs-nodes/{nodeId}', [ProjectWbsController::class, 'destroy'])->whereUuid('nodeId')->name('projects.wbs-nodes.destroy');
+            Route::post('/dependencies', [ProjectWbsDependencyController::class, 'store'])->name('projects.dependencies.store');
+            Route::put('/dependencies/{depId}', [ProjectWbsDependencyController::class, 'update'])->whereUuid('depId')->name('projects.dependencies.update');
+            Route::delete('/dependencies/{depId}', [ProjectWbsDependencyController::class, 'destroy'])->whereUuid('depId')->name('projects.dependencies.destroy');
+            Route::post('/cpm/recalculate', [ProjectWbsController::class, 'recalculate'])->name('projects.cpm.recalculate');
+            Route::get('/baselines', [ProjectWbsBaselineController::class, 'index'])->name('projects.baselines.index');
+            Route::post('/baselines', [ProjectWbsBaselineController::class, 'store'])->name('projects.baselines.store');
+            Route::get('/baselines/{baselineId}/variance', [ProjectWbsBaselineController::class, 'variance'])->whereUuid('baselineId')->name('projects.baselines.variance');
+            Route::get('/kanban', [ProjectWbsController::class, 'kanban'])->name('projects.kanban');
 
             // Budget by category, commitments and baselines.
             Route::get('/budget', [ProjectBudgetController::class, 'show'])->name('projects.budget.show');

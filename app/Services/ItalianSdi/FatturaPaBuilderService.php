@@ -17,6 +17,7 @@ use InvalidArgumentException;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Invoicing\Models\DeclarationOfIntent;
 use Modules\Invoicing\Models\InvoiceInstallment;
+use Modules\Projects\Services\ProjectInvoiceReferenceBlock;
 use Modules\SDI\Enums\CausalePagamento;
 use Modules\SDI\Enums\NaturaIva;
 use Modules\SDI\Enums\RegimeFiscale;
@@ -30,6 +31,7 @@ class FatturaPaBuilderService
     public function __construct(
         private readonly VatSummaryCalculator $vat = new VatSummaryCalculator,
         private readonly FatturaPaOptionalBlocks $optional = new FatturaPaOptionalBlocks,
+        private readonly ProjectInvoiceReferenceBlock $projectReferences = new ProjectInvoiceReferenceBlock,
     ) {}
 
     /**
@@ -491,6 +493,12 @@ class FatturaPaBuilderService
             $datiGenerali->appendChild($linked);
         }
 
+        $projectBlock = $this->projectReferenceBlock($dom, $invoice);
+
+        if ($projectBlock !== null) {
+            $datiGenerali->appendChild($projectBlock);
+        }
+
         foreach ($this->transportDocuments($dom, $invoice) as $transportDocument) {
             $datiGenerali->appendChild($transportDocument);
         }
@@ -622,6 +630,33 @@ class FatturaPaBuilderService
         }
 
         return $linked;
+    }
+
+    /**
+     * DatiContratto (or DatiConvenzione) with the CUP and CIG of the project the invoice belongs to. A block of the same
+     * name given by hand in `sdi_extra` wins, so the data entered on the invoice is never duplicated or overridden.
+     */
+    private function projectReferenceBlock(DOMDocument $dom, Invoice $invoice): ?DOMElement
+    {
+        $reference = $this->projectReferences->forProject($invoice->project_id);
+
+        if ($reference === null) {
+            return null;
+        }
+
+        $extra = is_array($invoice->sdi_extra) ? $invoice->sdi_extra : [];
+
+        if (isset($extra['FatturaElettronicaBody']['DatiGenerali'][$reference['element']])) {
+            return null;
+        }
+
+        $block = $dom->createElement($reference['element']);
+
+        foreach ($reference['data'] as $name => $value) {
+            $block->appendChild($dom->createElement($name, htmlspecialchars($value)));
+        }
+
+        return $block;
     }
 
     /**

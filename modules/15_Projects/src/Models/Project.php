@@ -43,6 +43,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $contract_value
  * @property string $progress_percentage
  * @property string $health_status
+ * @property string|null $cup_code
+ * @property string|null $cig_code
+ * @property string $sdi_reference_block
+ * @property string $planned_hours
+ * @property string $actual_hours
+ * @property string $planned_cost
+ * @property string $actual_cost
+ * @property string $planned_revenue
  * @property string|null $created_by
  */
 final class Project extends BaseEnterpriseModel
@@ -68,6 +76,11 @@ final class Project extends BaseEnterpriseModel
             'closed_at' => 'datetime',
             'contract_value' => 'decimal:2',
             'progress_percentage' => 'decimal:2',
+            'planned_hours' => 'decimal:2',
+            'actual_hours' => 'decimal:2',
+            'planned_cost' => 'decimal:2',
+            'actual_cost' => 'decimal:2',
+            'planned_revenue' => 'decimal:2',
         ];
     }
 
@@ -141,6 +154,30 @@ final class Project extends BaseEnterpriseModel
     public function tasks(): HasMany
     {
         return $this->hasMany(ProjectTask::class, 'project_id');
+    }
+
+    /**
+     * @return HasMany<ProjectWbsNode, $this>
+     */
+    public function wbsNodes(): HasMany
+    {
+        return $this->hasMany(ProjectWbsNode::class, 'project_id')->orderBy('sort_order');
+    }
+
+    /**
+     * @return HasMany<ProjectWbsDependency, $this>
+     */
+    public function wbsDependencies(): HasMany
+    {
+        return $this->hasMany(ProjectWbsDependency::class, 'project_id');
+    }
+
+    /**
+     * @return HasMany<ProjectWbsBaseline, $this>
+     */
+    public function wbsBaselines(): HasMany
+    {
+        return $this->hasMany(ProjectWbsBaseline::class, 'project_id')->orderBy('baseline_number');
     }
 
     /**
