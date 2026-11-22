@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\CRM\Services;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Modules\CRM\Models\Account;
@@ -180,7 +181,7 @@ final class Customer360Service
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<SalesInvoice>
+     * @return Builder<SalesInvoice>
      */
     private function postedInvoices(string $tenantId, string $customerId)
     {
