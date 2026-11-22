@@ -39,6 +39,7 @@ use Database\Seeders\Translations\PurchaseRequisitionFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
 use Database\Seeders\Translations\RfqFrontendTranslations;
 use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
+use Database\Seeders\Translations\ArtisanalGelatoFrontendTranslations;
 use Database\Seeders\Translations\ShiftPlanningFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -95,6 +96,7 @@ class FrontendTranslationSeeder extends Seeder
             + KpiDashboardsFrontendTranslations::all($locale)
             + ItalianPayrollFrontendTranslations::all($locale)
             + ShiftPlanningFrontendTranslations::all($locale)
+            + ArtisanalGelatoFrontendTranslations::all($locale)
             + HseFrontendTranslations::all($locale)
             + MrpPlanningFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)

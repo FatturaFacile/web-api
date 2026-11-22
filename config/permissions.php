@@ -157,6 +157,9 @@ return [
             'write' => ['owner', 'admin', 'hr', 'production'],
             'grants' => ['read' => ['shift_planning.*'], 'write' => ['shift_planning.*']],
         ],
+        // Artisanal gelato, chocolaterie and cold pastry (Mod 398): laboratory staff balance recipes, record lots and HACCP logs and
+        // publish the showcase; any member reads recipes, the showcase and the allergen book.
+        'artisanal_gelato' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'production', 'technician', 'member']],
         'shift_planning_self' => ['read' => $anyMember, 'write' => $anyMember],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
         // Workplace health, safety and training (Mod 099). hse: the operational roles read the compliance matrix, the clearance verdict
