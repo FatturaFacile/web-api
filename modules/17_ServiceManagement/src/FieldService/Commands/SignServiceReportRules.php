@@ -40,6 +40,8 @@ final class SignServiceReportRules
             'photos.*.path' => ['required_with:photos', 'string', 'max:255'],
             'photos.*.name' => ['nullable', 'string', 'max:150'],
             'photos.*.taken_at' => ['nullable', 'date'],
+            'photo_ids' => ['nullable', 'array', 'max:20'],
+            'photo_ids.*' => ['uuid', 'distinct'],
             'locale' => ['nullable', 'in:it-IT,it-CH,de-CH,fr-CH,en'],
         ];
     }
@@ -67,6 +69,7 @@ final class SignServiceReportRules
             gpsLatitude: isset($data['gps_latitude']) ? (float) $data['gps_latitude'] : null,
             gpsLongitude: isset($data['gps_longitude']) ? (float) $data['gps_longitude'] : null,
             photos: array_values((array) ($data['photos'] ?? [])),
+            photoIds: array_values(array_map('strval', (array) ($data['photo_ids'] ?? []))),
             locale: (string) ($data['locale'] ?? 'it-IT'),
             actorUserId: $actorUserId,
         );

@@ -39690,6 +39690,34 @@ CREATE UNIQUE INDEX "esm_digital_service_reports_tenant_id_report_number_unique"
 CREATE UNIQUE INDEX "esm_digital_service_reports_work_order_id_unique" on "esm_digital_service_reports"(
   "work_order_id"
 );
+CREATE TABLE "esm_work_order_photos"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "work_order_id" varchar not null,
+  "client_uuid" varchar not null,
+  "path" varchar not null,
+  "stage" varchar,
+  "caption" varchar,
+  "captured_at" datetime,
+  "uploaded_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  foreign key("work_order_id") references "esm_work_orders"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "esm_work_order_photos_work_order_id_index" on "esm_work_order_photos"(
+  "work_order_id"
+);
+CREATE UNIQUE INDEX "esm_work_order_photos_tenant_client_uuid_unique" on "esm_work_order_photos"(
+  "tenant_id",
+  "client_uuid"
+);
 CREATE TABLE "vat_settlement_periods"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -45639,3 +45667,4 @@ INSERT INTO migrations VALUES(424,'2027_12_20_000300_add_audit_columns_to_gl_tem
 INSERT INTO migrations VALUES(425,'2027_12_20_000100_create_project_evm_profitability_tables',6);
 INSERT INTO migrations VALUES(426,'2027_12_21_000100_create_artisanal_gelato_tables',7);
 INSERT INTO migrations VALUES(427,'2027_12_21_000100_extend_inventory_counting_abc_blind_multilevel',7);
+INSERT INTO migrations VALUES(428,'2027_12_22_000100_create_esm_work_order_photos_table',7);

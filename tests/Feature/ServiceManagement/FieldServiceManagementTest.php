@@ -12,6 +12,7 @@ use App\Services\Inventory\StockService;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -28,6 +29,7 @@ use Modules\ServiceManagement\Models\SerializedEquipmentPassport;
 use Modules\ServiceManagement\Models\ServiceContract;
 use Modules\ServiceManagement\Models\ServiceTechnician;
 use Modules\ServiceManagement\Models\WorkOrder;
+use Modules\ServiceManagement\Models\WorkOrderPhoto;
 
 uses(RefreshDatabase::class);
 
@@ -458,4 +460,68 @@ test('a work order is created idempotently from a client uuid', function (): voi
     $b = $this->postJson('/api/v1/fsm/work-orders', $payload)->assertOk();
 
     expect($b->json('data.id'))->toBe($a->json('data.id'))->and(WorkOrder::where('client_uuid', 'wo-1')->count())->toBe(1);
+});
+
+test('a work order photo is uploaded idempotently to the tenant private disk', function (): void {
+    $workOrder = fsmDispatchedWorkOrder();
+    $payload = fn (): array => ['photo' => UploadedFile::fake()->image('before.jpg'), 'client_uuid' => 'photo-1', 'stage' => 'before', 'caption' => 'Unit before repair', 'captured_at' => '2026-03-02T08:15:00Z'];
+
+    $first = $this->post("/api/v1/fsm/work-orders/{$workOrder->id}/photos", $payload(), ['Accept' => 'application/json'])
+        ->assertCreated()
+        ->assertJsonPath('data.work_order_id', $workOrder->id)
+        ->assertJsonPath('data.stage', 'before')
+        ->assertJsonPath('data.caption', 'Unit before repair')
+        ->assertJsonStructure(['data' => ['id', 'work_order_id', 'path', 'stage', 'caption', 'captured_at', 'url']]);
+
+    $path = $first->json('data.path');
+    expect($path)->toStartWith("field-service/photos/{$this->tenant->id}/{$workOrder->id}/");
+    Storage::disk('local')->assertExists($path);
+
+    $replay = $this->post("/api/v1/fsm/work-orders/{$workOrder->id}/photos", $payload(), ['Accept' => 'application/json'])->assertOk();
+
+    expect($replay->json('data.id'))->toBe($first->json('data.id'))
+        ->and(WorkOrderPhoto::where('client_uuid', 'photo-1')->count())->toBe(1)
+        ->and(Storage::disk('local')->allFiles("field-service/photos/{$this->tenant->id}/{$workOrder->id}"))->toHaveCount(1);
+
+    $this->getJson("/api/v1/fsm/work-orders/{$workOrder->id}/photos")->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $first->json('data.id'));
+    $this->get($first->json('data.url'))->assertOk();
+});
+
+test('work order photos are validated and never reach work orders of another tenant', function (): void {
+    $workOrder = fsmDispatchedWorkOrder();
+    $url = "/api/v1/fsm/work-orders/{$workOrder->id}/photos";
+    $headers = ['Accept' => 'application/json'];
+
+    $this->post($url, ['client_uuid' => 'p-1'], $headers)->assertUnprocessable()->assertJsonValidationErrors(['photo']);
+    $this->post($url, ['photo' => UploadedFile::fake()->image('a.jpg')], $headers)->assertUnprocessable()->assertJsonValidationErrors(['client_uuid']);
+    $this->post($url, ['photo' => UploadedFile::fake()->create('a.pdf', 10, 'application/pdf'), 'client_uuid' => 'p-2'], $headers)->assertUnprocessable()->assertJsonValidationErrors(['photo']);
+    $this->post($url, ['photo' => UploadedFile::fake()->image('big.jpg')->size(10241), 'client_uuid' => 'p-3'], $headers)->assertUnprocessable()->assertJsonValidationErrors(['photo']);
+    $this->post($url, ['photo' => UploadedFile::fake()->image('a.png'), 'client_uuid' => 'p-4', 'stage' => 'later'], $headers)->assertUnprocessable()->assertJsonValidationErrors(['stage']);
+    $this->post($url, ['photo' => UploadedFile::fake()->image('a.png'), 'client_uuid' => 'p-5', 'caption' => str_repeat('x', 256)], $headers)->assertUnprocessable()->assertJsonValidationErrors(['caption']);
+    expect(WorkOrderPhoto::count())->toBe(0);
+
+    $foreign = Tenant::query()->whereKey($this->other->id)->first();
+    $foreignOrder = app(TenantContext::class)->runWithTenant($foreign, fn (): WorkOrder => WorkOrder::create(['tenant_id' => $foreign->id, 'work_order_number' => 'WO-F', 'title' => 'Other', 'work_type' => 'corrective', 'status' => 'dispatched', 'customer_id' => (string) Str::uuid()]));
+
+    $this->post("/api/v1/fsm/work-orders/{$foreignOrder->id}/photos", ['photo' => UploadedFile::fake()->image('a.jpg'), 'client_uuid' => 'p-6'], $headers)->assertNotFound();
+    $this->getJson("/api/v1/fsm/work-orders/{$foreignOrder->id}/photos")->assertNotFound();
+    expect(WorkOrderPhoto::withoutGlobalScopes()->count())->toBe(0);
+});
+
+test('the signed service report references uploaded photos that belong to the work order', function (): void {
+    $workOrder = fsmDispatchedWorkOrder();
+    $other = fsmDispatchedWorkOrder();
+
+    $photoId = $this->post("/api/v1/fsm/work-orders/{$workOrder->id}/photos", ['photo' => UploadedFile::fake()->image('a.jpg'), 'client_uuid' => 'sr-1', 'caption' => 'Result'], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+    $foreignPhotoId = $this->post("/api/v1/fsm/work-orders/{$other->id}/photos", ['photo' => UploadedFile::fake()->image('b.jpg'), 'client_uuid' => 'sr-2'], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+
+    $this->postJson("/api/v1/fsm/work-orders/{$workOrder->id}/service-report", fsmReportPayload(['photo_ids' => [$foreignPhotoId]]))->assertUnprocessable()->assertJsonValidationErrors(['photo_ids']);
+    expect(DigitalServiceReport::count())->toBe(0);
+
+    $response = $this->postJson("/api/v1/fsm/work-orders/{$workOrder->id}/service-report", fsmReportPayload(['photo_ids' => [$photoId], 'locale' => 'en']))->assertCreated();
+
+    $report = DigitalServiceReport::findOrFail($response->json('data.id'));
+    expect($report->photo_attachments_json)->toHaveCount(1)
+        ->and($report->photo_attachments_json[0]['id'])->toBe($photoId)
+        ->and($report->photo_attachments_json[0]['name'])->toBe('Result');
 });

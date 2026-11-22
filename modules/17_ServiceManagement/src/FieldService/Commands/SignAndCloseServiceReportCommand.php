@@ -15,6 +15,7 @@ final readonly class SignAndCloseServiceReportCommand
     /**
      * @param  list<array{item: string, result: string, notes?: string|null}>  $checklist
      * @param  list<array{path?: string, name?: string, taken_at?: string}>  $photos
+     * @param  list<string>  $photoIds  ids of photos uploaded to the work order, referenced by the report
      */
     public function __construct(
         public string $workOrderId,
@@ -34,6 +35,7 @@ final readonly class SignAndCloseServiceReportCommand
         public ?float $gpsLatitude = null,
         public ?float $gpsLongitude = null,
         public array $photos = [],
+        public array $photoIds = [],
         public string $locale = 'it-IT',
         public ?string $actorUserId = null,
     ) {}
