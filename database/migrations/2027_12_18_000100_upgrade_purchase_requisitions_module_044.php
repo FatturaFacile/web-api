@@ -47,7 +47,7 @@ return new class extends Migration
 
         Schema::create('purchase_requisition_approval_logs', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('tenant_id')->nullable()->index();
             $table->foreignUuid('purchase_requisition_id')
                 ->constrained('purchase_requisitions')
                 ->cascadeOnDelete();

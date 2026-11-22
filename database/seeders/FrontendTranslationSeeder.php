@@ -19,6 +19,7 @@ use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\HseFrontendTranslations;
+use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
 use Database\Seeders\Translations\IdentityFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Database\Seeders\Translations\ItalianPayrollFrontendTranslations;
@@ -91,6 +92,7 @@ class FrontendTranslationSeeder extends Seeder
             + ItalianPayrollFrontendTranslations::all($locale)
             + ShiftPlanningFrontendTranslations::all($locale)
             + HseFrontendTranslations::all($locale)
+            + MrpPlanningFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)
             + CpqQuotesFrontendTranslations::all($locale)
             + DataSovereigntyFrontendTranslations::all($locale)

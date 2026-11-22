@@ -58,6 +58,7 @@ use Modules\LeaseAccounting\Providers\LeaseAccountingServiceProvider;
 use Modules\Logistics\Providers\LogisticsServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\Marketplace\Providers\MarketplaceServiceProvider;
+use Modules\MrpPlanning\Providers\MrpPlanningServiceProvider;
 use Modules\OcrExtraction\Providers\OcrExtractionServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
 use Modules\Planning\Providers\PlanningServiceProvider;
@@ -177,5 +178,6 @@ return [
     ShiftPlanningServiceProvider::class,
     AiCognitiveServiceProvider::class,
     HseServiceProvider::class,
+    MrpPlanningServiceProvider::class,
     DataResidencyServiceProvider::class,
 ];
