@@ -391,6 +391,8 @@ test('the dispatcher board lists the queue, technician lanes with blocks, skills
         ->and($board['lanes'])->toHaveCount(1)
         ->and($board['lanes'][0]['skills'])->toBe(['hvac', 'electrical'])
         ->and($board['lanes'][0]['van']['ready'])->toBeTrue()
+        ->and($board['lanes'][0]['van'])->toHaveKey('stock')
+        ->and($board['unassigned'][0])->toHaveKeys(['work_order_type', 'customer_id', 'service_contract_id', 'equipment_passport_id'])
         ->and($board['lanes'][0]['blocks'])->toHaveCount(1);
 });
 
