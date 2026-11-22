@@ -143,6 +143,7 @@ return [
     'allow_conflicts' => 'consenti conflitti',
     'allow_duplicate' => 'consenti duplicati',
     'allow_over_issue' => 'consenti prelievo in eccesso',
+    'allow_overload' => 'consenti sovraccarico',
     'allowance_eligible' => 'idoneo all\'indennità',
     'allowed_email_domains' => 'domini email consentiti',
     'allows_manual_posting' => 'consente registrazione manuale',

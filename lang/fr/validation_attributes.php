@@ -143,6 +143,7 @@ return [
     'allow_conflicts' => 'autoriser les conflits',
     'allow_duplicate' => 'autoriser les doublons',
     'allow_over_issue' => 'autoriser le prélèvement excédentaire',
+    'allow_overload' => 'autoriser la surcharge',
     'allowance_eligible' => 'éligible à l\'indemnité',
     'allowed_email_domains' => 'domaines e-mail autorisés',
     'allows_manual_posting' => 'autorise la saisie manuelle',

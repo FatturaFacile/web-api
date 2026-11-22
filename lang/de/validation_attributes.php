@@ -143,6 +143,7 @@ return [
     'allow_conflicts' => 'Konflikte zulassen',
     'allow_duplicate' => 'Duplikate zulassen',
     'allow_over_issue' => 'Überentnahme zulassen',
+    'allow_overload' => 'Überlastung zulassen',
     'allowance_eligible' => 'zulageberechtigt',
     'allowed_email_domains' => 'erlaubte E-Mail-Domains',
     'allows_manual_posting' => 'erlaubt manuelle Buchung',

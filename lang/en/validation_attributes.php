@@ -143,6 +143,7 @@ return [
     'allow_conflicts' => 'allow conflicts',
     'allow_duplicate' => 'allow duplicates',
     'allow_over_issue' => 'allow over-issue',
+    'allow_overload' => 'allow overload',
     'allowance_eligible' => 'allowance eligible',
     'allowed_email_domains' => 'allowed email domains',
     'allows_manual_posting' => 'allows manual posting',
