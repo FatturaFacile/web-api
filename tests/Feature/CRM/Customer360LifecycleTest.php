@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\CRM\Models\Account;
 use Modules\CRM\Models\Activity;
+use Modules\CRM\Models\CustomerHealthProfile;
 use Modules\CRM\Models\Opportunity;
 use Modules\CRM\Models\OpportunityStage;
 use Modules\ServiceManagement\Models\ContractHourTransaction;
