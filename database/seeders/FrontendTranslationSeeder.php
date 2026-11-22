@@ -34,6 +34,7 @@ use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
+use Database\Seeders\Translations\ProjectEvmFrontendTranslations;
 use Database\Seeders\Translations\ProposalPortalFrontendTranslations;
 use Database\Seeders\Translations\PurchaseRequisitionFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
@@ -105,7 +106,8 @@ class FrontendTranslationSeeder extends Seeder
             + SecurityCenterFrontendTranslations::all($locale)
             + RfqFrontendTranslations::all($locale)
             + PurchaseRequisitionFrontendTranslations::all($locale)
-            + ManufacturingCommandCenterFrontendTranslations::all($locale);
+            + ManufacturingCommandCenterFrontendTranslations::all($locale)
+            + ProjectEvmFrontendTranslations::all($locale);
     }
 
     /**

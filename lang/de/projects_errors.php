@@ -86,6 +86,10 @@ return [
         'already_exists' => 'Diese Abhängigkeit besteht bereits.',
         'cycle' => 'Diese Abhängigkeit würde einen Zyklus im Terminplan erzeugen.',
     ],
+    'evm' => [
+        'no_driver_value' => 'Kein Projekt hat im Zeitraum einen Wert für den gewählten Umlageschlüssel: die Gemeinkosten können nicht umgelegt werden.',
+        'node_not_in_project' => 'Das PSP-Element gehört nicht zu diesem Projekt.',
+    ],
     'timesheet' => [
         'approve_only_submitted' => 'Der Zeitnachweis hat den Status :status: Nur eingereichte Zeitnachweise können genehmigt werden.',
         'reject_only_submitted' => 'Der Zeitnachweis hat den Status :status: Nur eingereichte Zeitnachweise können abgelehnt werden.',

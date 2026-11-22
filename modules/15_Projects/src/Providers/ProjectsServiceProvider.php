@@ -15,8 +15,10 @@ use Modules\Projects\Contracts\EarnedValueCalculationServiceInterface;
 use Modules\Projects\Contracts\JobCostingAccumulationServiceInterface;
 use Modules\Projects\Contracts\ProjectBudgetServiceInterface;
 use Modules\Projects\Contracts\ProjectChangeOrderServiceInterface;
+use Modules\Projects\Contracts\ProjectEvmAlertGatewayInterface;
 use Modules\Projects\Contracts\ProjectExpenseServiceInterface;
 use Modules\Projects\Contracts\ProjectForecastServiceInterface;
+use Modules\Projects\Contracts\ProjectFxRateResolverInterface;
 use Modules\Projects\Contracts\ProjectRevenueRecognitionServiceInterface;
 use Modules\Projects\Contracts\ProjectTimesheetServiceInterface;
 use Modules\Projects\Events\ProjectAccrualReadyEvent;
@@ -30,6 +32,7 @@ use Modules\Projects\Events\ProjectCompletedEvent;
 use Modules\Projects\Events\ProjectCostReadyEvent;
 use Modules\Projects\Events\ProjectCostVarianceDetectedEvent;
 use Modules\Projects\Events\ProjectCreatedEvent;
+use Modules\Projects\Events\ProjectEvmSnapshotComputedEvent;
 use Modules\Projects\Events\ProjectExpenseApprovedEvent;
 use Modules\Projects\Events\ProjectExpensePostingReadyEvent;
 use Modules\Projects\Events\ProjectForecastUpdatedEvent;
@@ -65,7 +68,9 @@ use Modules\Projects\Policies\ProjectPolicy;
 use Modules\Projects\Policies\ProjectTaskPolicy;
 use Modules\Projects\Policies\ProjectTimesheetPolicy;
 use Modules\Projects\Services\EarnedValueCalculationService;
+use Modules\Projects\Services\GeneralLedgerFxRateResolver;
 use Modules\Projects\Services\JobCostingAccumulationService;
+use Modules\Projects\Services\NotificationEngineAlertGateway;
 use Modules\Projects\Services\ProjectBudgetService;
 use Modules\Projects\Services\ProjectChangeOrderService;
 use Modules\Projects\Services\ProjectExpenseService;
@@ -91,6 +96,8 @@ final class ProjectsServiceProvider extends ServiceProvider
         $this->app->singleton(ProjectRevenueRecognitionServiceInterface::class, ProjectRevenueRecognitionService::class);
         $this->app->singleton(ProjectForecastServiceInterface::class, ProjectForecastService::class);
         $this->app->singleton(ProjectExpenseServiceInterface::class, ProjectExpenseService::class);
+        $this->app->singleton(ProjectFxRateResolverInterface::class, GeneralLedgerFxRateResolver::class);
+        $this->app->singleton(ProjectEvmAlertGatewayInterface::class, NotificationEngineAlertGateway::class);
     }
 
     public function boot(): void
@@ -144,6 +151,7 @@ final class ProjectsServiceProvider extends ServiceProvider
             ProjectMaterialCostReadyEvent::class,
             ProjectPaymentForecastEvent::class,
             ProjectReceivableReadyEvent::class,
+            ProjectEvmSnapshotComputedEvent::class,
         ];
 
         foreach ($domainEvents as $eventClass) {

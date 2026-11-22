@@ -86,6 +86,10 @@ return [
         'already_exists' => 'Questa dipendenza esiste già.',
         'cycle' => 'Questa dipendenza creerebbe un ciclo nella pianificazione.',
     ],
+    'evm' => [
+        'no_driver_value' => 'Nessuna commessa ha un valore per il driver scelto nel periodo: i costi generali non possono essere ribaltati.',
+        'node_not_in_project' => 'Il nodo WBS non appartiene a questa commessa.',
+    ],
     'timesheet' => [
         'approve_only_submitted' => 'Il timesheet è :status: si possono approvare solo i timesheet inviati.',
         'reject_only_submitted' => 'Il timesheet è :status: si possono rifiutare solo i timesheet inviati.',
