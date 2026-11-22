@@ -76,7 +76,7 @@ test('escalating a ticket creates a work order that inherits customer, contract,
         ->and($workOrder->service_contract_id)->toBe((string) $contract->id)
         ->and($workOrder->description)->toContain('Compressor tripped')
         ->and($workOrder->scheduled_end?->toDateTimeString())->toBe($ticket->resolution_due_at->toDateTimeString())
-        ->and($workOrder->location_address)->toContain('Bahnhofstrasse 1')
+        ->and((string) json_encode($workOrder->location))->toContain('Bahnhofstrasse 1')
         ->and($ticket->refresh()->is_escalated)->toBeTrue();
 });
 
