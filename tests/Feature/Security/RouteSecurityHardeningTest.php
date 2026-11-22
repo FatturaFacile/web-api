@@ -86,6 +86,9 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/report-downloads',
         'api/v1/system/bootstrap-support',
         'api/v1/translations',
+        // MES Core integration (issue #184): a service caller authenticated by an HMAC signature bound to the tenants of its key (VerifyMesSignature), see Manufacturing\MesSignatureTest.
+        'api/v1/manufacturing/mes-sync',
+        'api/v1/manufacturing/mes-feedback',
         // Proposal portal (Mod 036): the unguessable token (plus PIN session, OTP or HMAC-signed provider callback) is the credential, see Quoting\CpqQuotingTest.
         'api/v1/public/proposals',
         'api/v1/public/signature-webhooks',
@@ -120,6 +123,8 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/public/rfq-portal',
         // Academy certificate verification: the unguessable certificate code is the credential; throttled, discloses only what the certificate prints.
         'api/v1/academy/certificates/verify',
+        // Edge gateway telemetry (Mod 064): authenticated by the HMAC-SHA256 signature of the body with the per-gateway secret, which selects the tenant, see Manufacturing\EdgeTelemetryAndCockpitTest.
+        'api/v1/manufacturing/edge/telemetry',
         // Supplier portal: authenticated by the personal X-Supplier-Token header (AuthenticateSupplierPortal), which selects the tenant.
         'api/v1/supplier-self-service',
         // Telegram bot webhook: the secret in the URL is compared with hash_equals and unknown/unset secrets get 404.

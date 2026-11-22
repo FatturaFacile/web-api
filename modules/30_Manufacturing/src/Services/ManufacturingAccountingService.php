@@ -15,6 +15,7 @@ use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Manufacturing\Exceptions\ManufacturingOperationException;
 use Modules\Manufacturing\Models\MfgAccountingSetting;
 use Modules\Manufacturing\Models\MfgProductionOrder;
+use Modules\Manufacturing\Models\MfgWipTransaction;
 use Modules\Manufacturing\Support\Money;
 
 /**
@@ -53,6 +54,13 @@ final readonly class ManufacturingAccountingService
         'overhead_variance' => ['5930', 'Production overhead variance', 'expense', 'debit'],
         'subcontract_variance' => ['5940', 'Production subcontracting variance', 'expense', 'debit'],
     ];
+
+    /**
+     * WIP ledger transaction type by journal entry prefix.
+     *
+     * @var array<string, string>
+     */
+    private const array WipTypes = ['ISS' => 'material', 'CNF' => 'conversion', 'SUB' => 'subcontract', 'RCP' => 'output', 'VAR' => 'variance'];
 
     public function __construct(
         private DoubleEntryPostingServiceInterface $postingService,
@@ -204,7 +212,7 @@ final readonly class ManufacturingAccountingService
     {
         $tenantId = (string) $order->tenant_id;
 
-        return $this->postingService->createAndPost([
+        $entry = $this->postingService->createAndPost([
             'tenant_id' => $tenantId,
             'company_id' => $tenantId,
             'fiscal_period_id' => $this->assertPeriodOpen($tenantId, $date)->id,
@@ -217,6 +225,40 @@ final readonly class ManufacturingAccountingService
             'description' => $description,
             'lines' => $lines,
         ], $actorUserId);
+
+        $this->recordWip($order, $entry, $prefix, $sourceType, $sourceId, $date, $lines);
+
+        return $entry;
+    }
+
+    /**
+     * Writes the WIP ledger rows of a posted entry: every line on the WIP account, signed debit minus credit.
+     *
+     * @param  list<array<string, mixed>>  $lines
+     */
+    private function recordWip(MfgProductionOrder $order, JournalEntry $entry, string $prefix, string $sourceType, string $sourceId, string $date, array $lines): void
+    {
+        $wipId = $this->account((string) $order->tenant_id, 'wip')->id;
+        $amount = '0';
+        foreach ($lines as $line) {
+            if ((string) $line['account_id'] === (string) $wipId) {
+                $amount = Money::add($amount, Money::sub((string) $line['debit_amount'], (string) $line['credit_amount']));
+            }
+        }
+        if (Money::isZero($amount)) {
+            return;
+        }
+
+        MfgWipTransaction::create([
+            'tenant_id' => $order->tenant_id,
+            'production_order_id' => $order->id,
+            'transaction_type' => self::WipTypes[$prefix] ?? 'material',
+            'amount' => Money::round($amount, 4),
+            'source_type' => $sourceType,
+            'source_id' => $sourceId,
+            'journal_entry_id' => $entry->id,
+            'posting_date' => $date,
+        ]);
     }
 
     /**

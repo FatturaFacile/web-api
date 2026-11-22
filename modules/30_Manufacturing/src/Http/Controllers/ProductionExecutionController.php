@@ -74,9 +74,11 @@ final class ProductionExecutionController extends Controller
             isFinal: (bool) ($data['is_final'] ?? false),
             postingDate: $data['posting_date'] ?? null,
             downtimeMinutes: (string) ($data['downtime_minutes'] ?? '0'),
+            postingUuid: $data['operation_posting_uuid'] ?? null,
         ), $this->actor($request));
 
-        return (new MfgOperationConfirmationResource($confirmation))->response()->setStatusCode(201);
+        // A replayed operation_posting_uuid returns the original confirmation without posting again.
+        return (new MfgOperationConfirmationResource($confirmation))->response()->setStatusCode($confirmation->wasRecentlyCreated ? 201 : 200);
     }
 
     /**

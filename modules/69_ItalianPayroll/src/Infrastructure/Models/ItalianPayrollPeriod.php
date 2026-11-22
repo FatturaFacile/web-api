@@ -6,6 +6,7 @@ namespace Modules\ItalianPayroll\Infrastructure\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Modules\ItalianPayroll\Domain\Enums\PeriodStatus;
 use Modules\ItalianPayroll\Domain\Exceptions\ItalianPayrollException;
@@ -71,5 +72,15 @@ final class ItalianPayrollPeriod extends BaseEnterpriseModel
     public function lulRecords(): HasMany
     {
         return $this->hasMany(LulAttendanceExportRecord::class, 'payroll_period_id');
+    }
+
+    /**
+     * The accounting summary posted for the month (the status does not change when it is imported).
+     *
+     * @return HasOne<PayrollAccountingImport, $this>
+     */
+    public function accountingImport(): HasOne
+    {
+        return $this->hasOne(PayrollAccountingImport::class, 'payroll_period_id');
     }
 }

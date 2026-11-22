@@ -36,6 +36,8 @@ use Modules\AssetManagement\Models\FixedAsset;
  * @property int $parallel_capacity_units
  * @property string|null $efficiency_factor_percent
  * @property string|null $hourly_machine_run_cost_rate_override
+ * @property string|null $current_state RUNNING|SETUP|IDLE|FAULT|MAINTENANCE reported by the edge gateway
+ * @property Carbon|null $state_since
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -56,6 +58,7 @@ final class MfgMachineCenter extends BaseEnterpriseModel
             'parallel_capacity_units' => 'integer',
             'efficiency_factor_percent' => 'decimal:2',
             'hourly_machine_run_cost_rate_override' => 'decimal:4',
+            'state_since' => 'datetime',
         ];
     }
 

@@ -13,14 +13,19 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 final class PurchaseRequisitionResource extends JsonResource
 {
+    /** @var list<array<string, mixed>>|null */
+    private ?array $approvalSteps = null;
+
     /**
-     * @param  list<array<string, mixed>>|null  $approvalSteps
+     * Attaches workflow approval step timeline data (used on detail responses).
+     *
+     * @param  list<array<string, mixed>>  $approvalSteps
      */
-    public function __construct(
-        mixed $resource,
-        private readonly ?array $approvalSteps = null,
-    ) {
-        parent::__construct($resource);
+    public function withApprovalSteps(array $approvalSteps): self
+    {
+        $this->approvalSteps = $approvalSteps;
+
+        return $this;
     }
 
     /**

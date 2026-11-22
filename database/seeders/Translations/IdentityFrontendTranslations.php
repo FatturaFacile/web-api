@@ -83,6 +83,10 @@ final class IdentityFrontendTranslations
             'IAM.ABAC_ADD_CONDITION' => ['Aggiungi condizione', 'Add condition', 'Bedingung hinzufügen', 'Ajouter une condition'],
             'IAM.ABAC_ADD_RULE' => ['Aggiungi regola', 'Add rule', 'Regel hinzufügen', 'Ajouter une règle'],
 
+            'IAM.IMPERSONATION_BANNER' => ['Sessione di supporto: stai agendo come un altro utente', 'Support session: you are acting as another user', 'Support-Sitzung: Sie handeln als anderer Benutzer', 'Session de support : vous agissez comme un autre utilisateur'],
+            'IAM.IMPERSONATION_UNTIL' => ['Scade alle', 'Expires at', 'Läuft ab um', 'Expire à'],
+            'IAM.IMPERSONATION_LEAVE' => ['Esci dalla sessione', 'Leave session', 'Sitzung verlassen', 'Quitter la session'],
+
             'IAM.PASSKEYS_TITLE' => ['Passkey', 'Passkeys', 'Passkeys', 'Passkeys'],
             'IAM.PASSKEYS_HELP' => [
                 'Accedi senza password con l\'impronta, il volto o il PIN del dispositivo. La chiave privata non lascia mai il dispositivo.',

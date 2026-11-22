@@ -150,6 +150,14 @@ return [
         'sovereignty_attestation' => ['read' => $managers, 'write' => $managers, 'grants' => ['read' => ['sovereignty.attestation.export', 'sovereignty.*'], 'write' => ['sovereignty.attestation.export', 'sovereignty.*']]],
         // Swiss QR-bill, ISO 20022 and country fiscal documents (Issue #83): finance issues and reads them.
         'swiss_fiscal' => ['read' => $financeReaders, 'write' => $finance],
+        // Workforce shift planning (Mod 073). shift_planning: HR, production and managers plan, publish and lock rosters, see the
+        // labour cost and decide swaps; shift_planning_self: every employee reads the own agenda, claims open shifts and swaps.
+        'shift_planning' => [
+            'read' => ['owner', 'admin', 'hr', 'production'],
+            'write' => ['owner', 'admin', 'hr', 'production'],
+            'grants' => ['read' => ['shift_planning.*'], 'write' => ['shift_planning.*']],
+        ],
+        'shift_planning_self' => ['read' => $anyMember, 'write' => $anyMember],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
         // Workplace health, safety and training (Mod 099). hse: the operational roles read the compliance matrix, the clearance verdict
         // and the physician judgments (outcome and prescriptions); the HSE team (hr, hse, admins) writes certificates, PPE and incidents.
@@ -159,6 +167,11 @@ return [
             'read' => ['owner', 'admin', 'hr', 'hse', 'production', 'technician', 'service_manager', 'project_manager', 'accountant', 'member'],
             'write' => ['owner', 'admin', 'hr', 'hse'],
         ],
+        // MRP I & II (Mod 063). mrp_planning: every member reads runs, proposals, pegging and the Gantt; production planners and admins run MRP,
+        // level the capacity and move Gantt blocks. mrp_release: firming, releasing and dismissing proposals creates purchase requisitions and
+        // production orders, so only the roles that commit materials and capacity do it.
+        'mrp_planning' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'production', 'technician', 'purchasing', 'procurement_manager']],
+        'mrp_release' => ['read' => ['owner', 'admin', 'production', 'purchasing', 'procurement_manager'], 'write' => ['owner', 'admin', 'production', 'purchasing', 'procurement_manager']],
         'hse_medical' => ['read' => ['owner', 'admin', 'hr', 'hse', 'medico'], 'write' => ['owner', 'admin', 'hr', 'hse', 'medico']],
         'hse_clinical' => ['read' => ['medico'], 'write' => ['medico'], 'grants' => ['read' => ['hse.clinical.read'], 'write' => ['hse.clinical.write']]],
         // AI Services & Cognitive Automation Layer (Mod 093). ai_copilot (ai.copilot.use): every member asks the copilot and drafts

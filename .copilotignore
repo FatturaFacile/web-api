@@ -1,34 +1,41 @@
-# Universal VCS & Editor Caches
-.git/
-.idea/
-.vs/
-.vscode/
-*.log
+# Build & Dependencies
+bin/
+obj/
+vendor/
+node_modules/
+dist/
+build/
+.dart_tool/
+.astro/
+.angular/
+coverage/
+
+# Lockfiles & Generated Code
+package-lock.json
+pnpm-lock.yaml
+composer.lock
+pubspec.lock
+*.Designer.cs
+*.g.cs
+*.g.dart
+*.freezed.dart
+*.min.js
+*.min.css
+*.map
+
+# Databases, Logs & Temp Artifacts
 *.sqlite
 *.sqlite3
-*.sqlite-journal
-.phpunit.result.cache
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.log
+*.tmp
+_r.php
+run*.json
+dbg.done
 
-# Environment & Secrets (Keep .env.example)
-.env
-.env.*
-!.env.example
-
-# Build & Test Coverage Outputs
-coverage/
-build/
-dist/
-
-# PHP / Laravel
-vendor/
-bootstrap/cache/
-storage/framework/
-storage/logs/
-public/build/
-public/hot
-
-# Node / JS
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Git & Worktrees
+.git/
+.worktrees/
+*-wt*/

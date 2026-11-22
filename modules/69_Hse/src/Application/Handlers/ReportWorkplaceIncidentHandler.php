@@ -9,6 +9,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Modules\Hse\Application\Commands\ReportWorkplaceIncidentCommand;
+use Modules\Hse\Application\Services\IncidentPhotoStore;
 use Modules\Hse\Domain\Contracts\Mod074AccidentClaimBridgeInterface;
 use Modules\Hse\Domain\Enums\IncidentStatus;
 use Modules\Hse\Domain\Enums\Jurisdiction;
@@ -28,6 +29,7 @@ final class ReportWorkplaceIncidentHandler
     public function __construct(
         private readonly Mod074AccidentClaimBridgeInterface $bridge,
         private readonly Dispatcher $events,
+        private readonly IncidentPhotoStore $photos,
     ) {}
 
     public function handle(ReportWorkplaceIncidentCommand $command): WorkplaceIncidentReport
@@ -45,7 +47,10 @@ final class ReportWorkplaceIncidentHandler
             throw new HseException('A reportable accident needs the injured employee.');
         }
 
+        $photos = $this->photos->decode($command->photos);
+
         $incident = $this->store($command, $jurisdiction, $reportable);
+        $this->photos->attach($command->tenantId, (string) $incident->id, $photos, $command->userId);
 
         if ($reportable) {
             $this->bridge->createDraft($incident);

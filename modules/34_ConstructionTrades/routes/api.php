@@ -56,6 +56,7 @@ Route::prefix('api/v1/construction-trades')
 
         Route::get('/sites/{id}/diary', [SiteLogController::class, 'diary'])->name('sites.diary.index');
         Route::post('/sites/{id}/diary', [SiteLogController::class, 'storeDiary'])->name('sites.diary.store');
+        Route::post('/sites/{id}/worker-access', [SiteLogController::class, 'workerAccess'])->name('sites.worker-access');
         Route::put('/diary/{id}', [SiteLogController::class, 'updateDiary'])->name('diary.update');
         Route::get('/sites/{id}/documents', [SiteLogController::class, 'documents'])->name('sites.documents.index');
         Route::post('/sites/{id}/documents', [SiteLogController::class, 'storeDocument'])->name('sites.documents.store');

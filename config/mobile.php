@@ -67,7 +67,7 @@ return [
     ],
 
     'workspace_modules' => [
-        'employee' => ['clock', 'shifts', 'leave', 'expenses', 'payslips'],
+        'employee' => ['clock', 'shifts', 'leave', 'expenses', 'payslips', 'italian_payroll_self'],
         'manager' => ['approvals_inbox'],
         'warehouse' => ['barcode_scanner', 'inventory_counts', 'pick_lists'],
         'field_technician' => ['work_orders', 'service_reports', 'appointments'],

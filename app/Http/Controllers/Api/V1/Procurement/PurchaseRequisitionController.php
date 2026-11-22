@@ -145,7 +145,7 @@ final class PurchaseRequisitionController extends Controller
 
         Gate::authorize('view', $detail['requisition']);
 
-        return new PurchaseRequisitionResource($detail['requisition'], $detail['approval_steps']);
+        return (new PurchaseRequisitionResource($detail['requisition']))->withApprovalSteps($detail['approval_steps']);
     }
 
     #[OA\Put(

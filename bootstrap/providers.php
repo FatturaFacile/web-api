@@ -58,6 +58,7 @@ use Modules\LeaseAccounting\Providers\LeaseAccountingServiceProvider;
 use Modules\Logistics\Providers\LogisticsServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\Marketplace\Providers\MarketplaceServiceProvider;
+use Modules\MrpPlanning\Providers\MrpPlanningServiceProvider;
 use Modules\OcrExtraction\Providers\OcrExtractionServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
 use Modules\Planning\Providers\PlanningServiceProvider;
@@ -74,6 +75,7 @@ use Modules\Rebates\Providers\RebatesServiceProvider;
 use Modules\Returns\Providers\ReturnsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
+use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
 use Modules\Sustainability\Providers\SustainabilityServiceProvider;
@@ -173,7 +175,9 @@ return [
     ItalianPayrollServiceProvider::class,
     QuotingServiceProvider::class,
     SwissFiscalServiceProvider::class,
+    ShiftPlanningServiceProvider::class,
     AiCognitiveServiceProvider::class,
     HseServiceProvider::class,
+    MrpPlanningServiceProvider::class,
     DataResidencyServiceProvider::class,
 ];
