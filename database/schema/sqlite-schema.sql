@@ -44947,13 +44947,10 @@ INSERT INTO migrations VALUES(416,'2027_12_19_000100_add_posting_uuid_to_mfg_ope
 INSERT INTO migrations VALUES(417,'2027_12_19_000100_create_mrp_planning_tables',1);
 INSERT INTO migrations VALUES(418,'2027_12_19_000100_extend_manufacturing_production_engineering',1);
 INSERT INTO migrations VALUES(419,'2027_12_19_000200_create_mfg_mes_integration_tables',1);
-<<<<<<< HEAD
 INSERT INTO migrations VALUES(420,'2027_12_19_000300_add_mes_profile_to_mfg_machine_centers',2);
-<<<<<<< HEAD
-=======
-INSERT INTO migrations VALUES(420,'2027_12_20_000100_create_accounting_templates_table',2);
-INSERT INTO migrations VALUES(421,'2027_12_20_000200_create_year_end_closing_stages_table',2);
->>>>>>> 38c5678c (feat(general-ledger): parallel ledger books, accounting templates and staged year-end workflow (#162))
+INSERT INTO migrations VALUES(421,'2027_12_20_000100_create_accounting_templates_table',2);
+INSERT INTO migrations VALUES(422,'2027_12_20_000200_create_year_end_closing_stages_table',2);
+
 =======
 INSERT INTO migrations VALUES(421,'2027_12_20_000100_create_accounting_templates_table',3);
 INSERT INTO migrations VALUES(422,'2027_12_20_000200_create_year_end_closing_stages_table',3);
