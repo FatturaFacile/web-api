@@ -35,6 +35,13 @@
   - `php artisan migrate:fresh --database=sqlite --force && php artisan schema:dump --database=sqlite`
 - **Clean Local Test DB Init**: `php artisan migrate:fresh --seed --env=testing`.
 
+## Fast Feedback Commands (iterate with these; full gate only before the final merge)
+- While iterating: `composer lint:dirty` (Pint on changed files), `composer analyse:dirty` (PHPStan on changed files, warm cache), `composer test:module -- tests/Feature/<Module>` (single module), `composer test:changed` (parallel, only tests touched in git), `composer test:fast` (parallel Unit + Architecture).
+- Tiers: `test:unit` (Unit), `test:arch` (Architecture), `test:fast` (both, parallel), `test` (full parallel suite). `phpunit.xml` defines `Unit`, `Architecture`, `Feature` suites.
+- Before the final local merge: `composer quality:full` (Pint check, full PHPStan, architecture tests, full parallel suite).
+- Git hooks (`.githooks`, enabled by `composer install`): `pre-commit` = Pint + PHPStan on staged files only; `pre-push` = Pint check, full PHPStan, parallel suite (skip with `SKIP_PRE_PUSH=1` only in emergencies).
+- Note: `pest --parallel` accepts a single path; use `--testsuite=A,B` for several.
+
 ## Git Workflow (`dev` Only — ZERO PRs, ZERO Leftovers)
 - **Direct `dev` Merge**: Integrate all work directly into `dev` via local merge from the primary repo root:
   - `git checkout dev && git pull --rebase origin dev && git merge --no-ff <branch>`
