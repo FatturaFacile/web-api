@@ -1,0 +1,36 @@
+{
+    "description": "GET /api/v1/manufacturing/mes-sync/machines?after_seq=0&limit=2 (page with a live machine and a tombstone).",
+    "path": "/api/v1/manufacturing/mes-sync/machines?after_seq=0&limit=2",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "response": {
+        "schema_version": 1,
+        "resource": "machines",
+        "data": [
+            {
+                "id": "018f0000-0000-7000-8000-0000000000a1",
+                "seq": 3,
+                "revision": 3,
+                "deleted": false,
+                "payload": {
+                    "machine_id": "018f0000-0000-7000-8000-0000000000a1",
+                    "machine_code": "CNC-01",
+                    "name": "CNC lathe 1",
+                    "work_center_id": "018f0000-0000-7000-8000-0000000000f1",
+                    "asset_id": null,
+                    "power_kw": "15.5000",
+                    "status": "active"
+                }
+            },
+            {
+                "id": "018f0000-0000-7000-8000-0000000000a2",
+                "seq": 5,
+                "revision": 5,
+                "deleted": true,
+                "payload": {}
+            }
+        ],
+        "next_seq": 5,
+        "has_more": false,
+        "watermark": 5
+    }
+}

@@ -107,7 +107,7 @@ final class MesSyncPresenter
                 'item_id' => (string) $order->mfg_item_id,
                 'item_sku' => $itemCodes[$order->mfg_item_id] ?? null,
                 'planned_quantity' => Money::qty($order->target_quantity),
-                'ideal_cycle_time_ms' => $ideal['ms'],
+                'ideal_cycle_time_ms' => (float) $ideal['ms'],
                 'ict_source' => $ideal['source'],
                 'setup_standard_ms' => (int) Money::round(Money::mul($operation->planned_setup_minutes, '60000'), 0),
                 'scheduled_start' => ($operation->scheduled_date ?? $order->planned_start_date)->toDateString(),

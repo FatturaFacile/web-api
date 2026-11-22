@@ -1,0 +1,26 @@
+{
+    "description": "A batch with one ProductionCountCheckpoint message as the OutboxRelay of the MES Core sends it.",
+    "method": "POST",
+    "path": "/api/v1/manufacturing/mes-events",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "kid": "k1",
+    "secret": "contract-test-secret",
+    "t": 1798000000,
+    "body": "{\"events\":[{\"id\":\"018f0000-0000-7000-8000-0000000000d4\",\"type\":\"ProductionCountCheckpoint\",\"dedupe_key\":\"ckpt:018f0000-0000-7000-8000-0000000000a1:batch-1\",\"occurred_at\":\"2026-12-23T04:26:00.1234567+00:00\",\"payload\":{\"machine_id\":\"018f0000-0000-7000-8000-0000000000a1\",\"at\":\"2026-12-22T09:15:00\\u002B00:00\",\"total\":240,\"good\":236,\"work_order_ref\":\"018f0000-0000-7000-8000-0000000000b1\"}}]}",
+    "signature": "t=1798000000,kid=k1,v1=10b20109d43fe92b42c42ec8ea616100f2b685644b8deeea463303ac99a7a289",
+    "expect": {
+        "http": 207,
+        "first_delivery": [
+            {
+                "id": "018f0000-0000-7000-8000-0000000000d4",
+                "status": "applied"
+            }
+        ],
+        "redelivery": [
+            {
+                "id": "018f0000-0000-7000-8000-0000000000d4",
+                "status": "duplicate"
+            }
+        ]
+    }
+}

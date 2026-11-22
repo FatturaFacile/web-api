@@ -4,10 +4,10 @@ name: MES (.NET) CI
 on:
   push:
     branches: [ main, dev ]
-    paths: [ 'services/mes/**', '.github/workflows/mes-ci.yml' ]
+    paths: [ 'services/mes/**', 'contracts/mes-sync/**', '.github/workflows/mes-ci.yml' ]
   pull_request:
     branches: [ main, dev ]
-    paths: [ 'services/mes/**', '.github/workflows/mes-ci.yml' ]
+    paths: [ 'services/mes/**', 'contracts/mes-sync/**', '.github/workflows/mes-ci.yml' ]
   workflow_dispatch:
 
 concurrency:

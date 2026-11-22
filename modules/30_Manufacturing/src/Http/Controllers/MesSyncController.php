@@ -27,7 +27,7 @@ final class MesSyncController extends Controller
         return new MesSyncPageResource($this->query->page(
             $this->tenantId($request),
             $resource,
-            $request->validated('cursor'),
+            $request->afterSeq(),
             $request->validated('updated_since'),
             $request->pageLimit(),
         ));

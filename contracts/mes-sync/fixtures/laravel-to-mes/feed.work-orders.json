@@ -1,0 +1,38 @@
+{
+    "description": "GET .../mes-sync/work-orders: one released operation with target cycle time and routing parameters.",
+    "path": "/api/v1/manufacturing/mes-sync/work-orders?after_seq=0&limit=500",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "response": {
+        "schema_version": 1,
+        "resource": "work-orders",
+        "data": [
+            {
+                "id": "018f0000-0000-7000-8000-0000000000b1",
+                "seq": 7,
+                "revision": 7,
+                "deleted": false,
+                "payload": {
+                    "production_order_operation_id": "018f0000-0000-7000-8000-0000000000b1",
+                    "work_order_id": "018f0000-0000-7000-8000-0000000000e1",
+                    "order_number": "PO-2026-0042",
+                    "operation_sequence": 10,
+                    "machine_id": "018f0000-0000-7000-8000-0000000000a1",
+                    "work_center_id": "018f0000-0000-7000-8000-0000000000f1",
+                    "item_id": "018f0000-0000-7000-8000-000000000101",
+                    "item_sku": "GEAR-42",
+                    "planned_quantity": "500.0000",
+                    "ideal_cycle_time_ms": 30000.0,
+                    "ict_source": "derived",
+                    "setup_standard_ms": 1800000,
+                    "scheduled_start": "2026-12-22",
+                    "scheduled_end": "2026-12-23",
+                    "status": "Released",
+                    "erp_status_raw": "released"
+                }
+            }
+        ],
+        "next_seq": 7,
+        "has_more": false,
+        "watermark": 7
+    }
+}

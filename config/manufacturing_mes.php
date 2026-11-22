@@ -31,6 +31,17 @@ return [
     // Change log rows older than this are pruned (a cursor older than the pruned part gets 410 Gone).
     'changes_retention_days' => (int) env('MES_CHANGES_RETENTION_DAYS', 30),
 
+    // Laravel -> MES Core push (`POST {base_url}/api/v1/mes/ref-events`), signed like every other call. Empty base_url
+    // turns the push off; the MES Core then relies on its periodic pull. key_id/secret must be listed in the MES Core's
+    // LaravelSync:InboundKeys.
+    'core' => [
+        'base_url' => (string) env('MES_CORE_BASE_URL', ''),
+        'key_id' => (string) env('MES_CORE_KEY_ID', 'k1'),
+        'secret' => (string) env('MES_CORE_SECRET', ''),
+        'timeout_seconds' => (int) env('MES_CORE_TIMEOUT', 5),
+        'push_tries' => 5,
+    ],
+
     'sync' => [
         'default_limit' => 500,
         'max_limit' => 1000,

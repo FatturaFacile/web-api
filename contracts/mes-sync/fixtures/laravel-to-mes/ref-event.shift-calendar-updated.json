@@ -1,0 +1,11 @@
+{
+    "description": "Nudge after the shift instances of a work centre were re-materialised: the id is the work centre, the MES Core pulls shift-calendars.",
+    "method": "POST",
+    "path": "/api/v1/mes/ref-events",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "kid": "k1",
+    "secret": "contract-test-secret",
+    "t": 1798000000,
+    "body": "{\"tenant_id\":\"018f0000-0000-7000-8000-000000000001\",\"resource\":\"shift-calendars\",\"id\":\"018f0000-0000-7000-8000-0000000000f1\",\"seq\":12,\"revision\":12,\"deleted\":false,\"payload\":null}",
+    "signature": "t=1798000000,kid=k1,v1=12354b4b744b06e0dd2aa88aa0e63053dcb25572a1f0e5203e7e7b540fb3aa37"
+}

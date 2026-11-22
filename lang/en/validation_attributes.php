@@ -3365,6 +3365,7 @@ return [
     'lot_code' => 'lot',
     'over_consumption_confirmed' => 'over-consumption confirmation',
     'cursor' => 'cursor',
+    'after_seq' => 'last sequence',
     'updated_since' => 'updated since',
     'access_date' => 'access date',
 ];

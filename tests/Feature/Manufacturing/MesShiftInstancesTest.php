@@ -117,9 +117,9 @@ test('instances are served by the pull endpoint with their UTC interval', functi
     mesClearInstances();
     app(MaterialiseShiftInstancesAction::class)((string) $this->tenant->id, null, CarbonImmutable::parse('2027-01-08 12:00', 'UTC'));
 
-    $items = mesCall($this, 'GET', '/api/v1/manufacturing/mes-sync/shift-calendars')->assertOk()->json('items');
+    $items = mesCall($this, 'GET', '/api/v1/manufacturing/mes-sync/shift-calendars')->assertOk()->json('data');
 
     expect($items)->toHaveCount(3)
-        ->and($items[0]['data']['timezone'])->toBe('Europe/Rome')
-        ->and(CarbonImmutable::parse($items[0]['data']['starts_at'])->utc()->format('Y-m-d H:i'))->toBe('2027-01-08 05:00');
+        ->and($items[0]['payload']['timezone'])->toBe('Europe/Rome')
+        ->and(CarbonImmutable::parse($items[0]['payload']['starts_at'])->utc()->format('Y-m-d H:i'))->toBe('2027-01-08 05:00');
 });

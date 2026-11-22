@@ -9,6 +9,7 @@ use App\Services\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Modules\Manufacturing\Support\MesHmac;
 use Modules\Manufacturing\Support\MesProblem;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -48,11 +49,11 @@ final class VerifyMesSignature
             return MesProblem::response(401, 'signature.invalid', 'Invalid signature', 'The signature key is unknown.');
         }
 
-        if (abs(time() - $parts['t']) > (int) config('manufacturing_mes.signature_tolerance_seconds')) {
+        if (abs(now()->getTimestamp() - $parts['t']) > (int) config('manufacturing_mes.signature_tolerance_seconds')) {
             return MesProblem::response(401, 'signature.expired', 'Signature expired', 'The signature timestamp is outside the accepted window.');
         }
 
-        $expected = hash_hmac('sha256', $parts['t'].'.'.$request->getContent(), $key['secret']);
+        $expected = MesHmac::compute($key['secret'], $parts['t'], $request->getContent());
 
         if (! hash_equals($expected, $parts['v1'])) {
             return MesProblem::response(401, 'signature.invalid', 'Invalid signature', 'The signature does not match the request.');

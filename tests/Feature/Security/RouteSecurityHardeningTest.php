@@ -89,6 +89,7 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         // MES Core integration (issue #184): a service caller authenticated by an HMAC signature bound to the tenants of its key (VerifyMesSignature), see Manufacturing\MesSignatureTest.
         'api/v1/manufacturing/mes-sync',
         'api/v1/manufacturing/mes-feedback',
+        'api/v1/manufacturing/mes-events',
         // Proposal portal (Mod 036): the unguessable token (plus PIN session, OTP or HMAC-signed provider callback) is the credential, see Quoting\CpqQuotingTest.
         'api/v1/public/proposals',
         'api/v1/public/signature-webhooks',
