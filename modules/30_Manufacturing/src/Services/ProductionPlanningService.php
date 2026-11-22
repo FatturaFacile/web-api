@@ -149,7 +149,7 @@ final readonly class ProductionPlanningService implements ProductionPlanningServ
 
         if ($operations->isNotEmpty()) {
             foreach ($operations as $operation) {
-                if ($operation->work_center_id === null || $operation->is_subcontracted) {
+                if (blank($operation->work_center_id) || $operation->is_subcontracted) {
                     continue;
                 }
                 $minutes = Money::add($operation->planned_setup_minutes, $operation->planned_run_minutes);
@@ -163,7 +163,7 @@ final readonly class ProductionPlanningService implements ProductionPlanningServ
             }
         } elseif ($order->routing_id !== null) {
             foreach (MfgOperation::query()->where('routing_id', $order->routing_id)->get() as $operation) {
-                if ($operation->work_center_id === null || $operation->is_subcontracted) {
+                if (blank($operation->work_center_id) || $operation->is_subcontracted) {
                     continue;
                 }
                 $center = (string) $operation->work_center_id;
