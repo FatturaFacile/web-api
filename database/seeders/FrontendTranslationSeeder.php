@@ -17,6 +17,7 @@ use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
+use Database\Seeders\Translations\GeneralLedgerPrimaNotaFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\HseFrontendTranslations;
@@ -92,6 +93,7 @@ class FrontendTranslationSeeder extends Seeder
             + AiForecastingFrontendTranslations::all($locale)
             + OcrInboxFrontendTranslations::all($locale)
             + BomManagementFrontendTranslations::all($locale)
+            + GeneralLedgerPrimaNotaFrontendTranslations::all($locale)
             + MesOperatorBoardFrontendTranslations::all($locale)
             + ManufacturingProductionFrontendTranslations::all($locale)
             + ExecutiveDssFrontendTranslations::all($locale)
