@@ -224,6 +224,9 @@ final class FieldServiceManagementFrontendTranslations
             'FSM.REPORT.SIGN_CHECK_ADD' => ['Aggiungi voce', 'Add item', 'Punkt hinzufügen', 'Ajouter un point'],
             'FSM.REPORT.SIGN_CHECK_REMOVE' => ['Rimuovi', 'Remove', 'Entfernen', 'Supprimer'],
             'FSM.REPORT.SIGN_GPS' => ['Rileva posizione', 'Capture location', 'Standort erfassen', 'Relever la position'],
+            'FSM.REPORT.PHOTOS' => ['Foto dell\'intervento', 'Intervention photos', 'Fotos des Einsatzes', 'Photos de l\'intervention'],
+            'FSM.REPORT.PHOTO_ADD' => ['Aggiungi foto', 'Add photos', 'Fotos hinzufügen', 'Ajouter des photos'],
+            'FSM.REPORT.PHOTO_FAILED' => ['Caricamento della foto non riuscito.', 'The photo could not be uploaded.', 'Das Foto konnte nicht hochgeladen werden.', 'Le téléversement de la photo a échoué.'],
             'FSM.REPORT.SIGN_GPS_FAILED' => ['Posizione non disponibile.', 'Location unavailable.', 'Standort nicht verfügbar.', 'Position indisponible.'],
 
             // Equipment service history
