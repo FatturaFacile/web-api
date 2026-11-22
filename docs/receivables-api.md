@@ -54,3 +54,11 @@ Allocation: `{id,receivable_item_id,source_type,origin,source_id,source_referenc
 
 Enforcement (server side): order confirmation (`block_order`/`credit_hold`) puts the order on credit hold; issuing a delivery note
 (`block_delivery_note`/`credit_hold`) fails with 422 `errors.credit`. An active override for the scope lets the operation through.
+
+## Notes for clients
+- `POST /allocations` honours an optional `Idempotency-Key` header: a replay with the same key (24 h, per company) returns the original 201 body without allocating again.
+- Risk score points: utilisation 0-25 (0 below 70%, linear to 20 at 100%, +5 over 100%), overdue share x25, min(max_days_past_due,120)/120 x25, min(avg days late of payments in the last 12 months,60)/60 x15, uninsured share x5, block 5. Score = rounded sum capped at 100.
+- `decision` in `/customers/{id}/credit` has the shape of `/credit-check`. `dashboard.aging` has the shape of `/aging`; `dashboard.blocked[]` has no customer name (use `aging.customers`).
+- Ledger movement `kind`: `document`, `payment`, `credit_note`, `debit_adjustment`, `write_off`, `discount`.
+- Statement `open_items[]`: `{receivable_item_id,document_type,document_number,issue_date,due_date,original_amount,open_amount,days_past_due,is_overdue,status}`; `aging` has the shape of `/aging`; `credit`: `{granted_limit,total_exposure,available_credit}`.
+- Statement PDF/XLSX take the same `from`, `to`, `currency` query as the JSON statement; `/items` accepts `open_only=1`.

@@ -355,3 +355,15 @@ test('the credit note of an invoice takes the items it covers off the open amoun
     $total = array_reduce($items, fn (string $sum, array $item): string => bcadd($sum, $item['open_amount'], 2), '0.00');
     expect($items)->toHaveCount(2)->and($total)->toBe('600.00');
 });
+
+test('an allocation replayed with the same idempotency key is applied once', function (): void {
+    receivableInvoice('100.00');
+    $item = receivableItems()[0];
+    $body = ['allocations' => [['receivable_item_id' => $item['id'], 'type' => 'discount', 'amount' => '40.00', 'value_date' => now()->toDateString()]]];
+
+    $first = $this->withHeader('Idempotency-Key', 'key-1')->postJson(AR.'/allocations', $body)->assertCreated()->json('data.allocations.0.id');
+    $second = $this->withHeader('Idempotency-Key', 'key-1')->postJson(AR.'/allocations', $body)->assertCreated()->json('data.allocations.0.id');
+
+    expect($second)->toBe($first);
+    $this->getJson(AR.'/items/'.$item['id'])->assertJsonPath('data.open_amount', '60.00')->assertJsonCount(1, 'data.allocations');
+});

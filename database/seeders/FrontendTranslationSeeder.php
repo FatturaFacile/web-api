@@ -43,6 +43,7 @@ use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
 use Database\Seeders\Translations\ProjectEvmFrontendTranslations;
 use Database\Seeders\Translations\ProposalPortalFrontendTranslations;
 use Database\Seeders\Translations\PurchaseRequisitionFrontendTranslations;
+use Database\Seeders\Translations\ReceivablesFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
 use Database\Seeders\Translations\RfqFrontendTranslations;
 use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
@@ -119,7 +120,8 @@ class FrontendTranslationSeeder extends Seeder
             + ManufacturingCommandCenterFrontendTranslations::all($locale)
             + ProjectEvmFrontendTranslations::all($locale)
             + FieldServiceManagementFrontendTranslations::all($locale)
-            + HelpdeskSlaFrontendTranslations::all($locale);
+            + HelpdeskSlaFrontendTranslations::all($locale)
+            + ReceivablesFrontendTranslations::all($locale);
     }
 
     /**

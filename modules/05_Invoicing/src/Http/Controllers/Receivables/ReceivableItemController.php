@@ -6,6 +6,7 @@ namespace Modules\Invoicing\Http\Controllers\Receivables;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Modules\Invoicing\Http\Requests\Receivables\AllocateReceivablesRequest;
 use Modules\Invoicing\Http\Requests\Receivables\DisputeReceivableRequest;
 use Modules\Invoicing\Http\Requests\Receivables\ReceivablesQueryRequest;
@@ -62,16 +63,30 @@ final class ReceivableItemController extends ReceivablesController
     {
         $this->authorizeManage();
         $this->today($request);
+        $key = $request->header('Idempotency-Key');
+        $cacheKey = $key !== null ? 'receivables:allocate:'.$this->tenantId().':'.hash('sha256', (string) $key) : null;
+
+        if ($cacheKey !== null && Cache::has($cacheKey)) {
+            return response()->json(Cache::get($cacheKey), 201);
+        }
+
         $created = $reconciliation->allocateMany($request->validated('allocations'), $this->userId($request));
 
         $items = ReceivableItem::query()->whereKey(collect($created)->pluck('receivable_item_id')->unique()->all())->get();
 
-        return response()->json([
+        $payload = [
             'data' => [
                 'allocations' => ReceivableAllocationResource::collection(collect($created)),
                 'items' => ReceivableItemResource::collection($items),
             ],
-        ], 201);
+        ];
+        $payload = json_decode(response()->json($payload)->getContent(), true);
+
+        if ($cacheKey !== null) {
+            Cache::put($cacheKey, $payload, now()->addDay());
+        }
+
+        return response()->json($payload, 201);
     }
 
     #[OA\Post(path: '/api/v1/invoicing/receivables/allocations/{id}/reverse', operationId: 'reverseInvoicingReceivableAllocation', summary: 'Reverse an allocation made by mistake', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Invoicing Receivables'], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [new OA\Response(response: 200, description: 'Allocation reversed'), new OA\Response(response: 403, description: 'Not a credit manager', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')), new OA\Response(response: 422, description: 'Cannot be reversed', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse'))])]
