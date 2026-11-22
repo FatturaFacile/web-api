@@ -26,6 +26,9 @@ use Modules\Invoicing\Models\CustomerLedgerEntry;
 use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesOrderHold;
+use Modules\Invoicing\Services\Receivables\CreditDecision;
+use Modules\Invoicing\Services\Receivables\CreditEnforcementService;
+use Modules\Invoicing\Services\Receivables\CreditLimitService;
 
 /**
  * Credit management of the customers (SAP SD credit management): the exposure of a customer is what it owes on issued
@@ -152,6 +155,21 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
             $mode === self::ModeWarn => 'warning',
             default => 'on_hold',
         };
+
+        // A credit limit configured with its reaction policy (receivables module) takes over from the plain profile limit.
+        $enforcement = app(CreditEnforcementService::class);
+
+        if (app(CreditLimitService::class)->effective($tenantId, $customerId) !== null) {
+            $decision = $enforcement->evaluate($tenantId, $customerId, CreditEnforcementService::ScopeOrder, $orderTotal, (string) $order->id);
+            $reason = $decision->outcome === CreditDecision::Ok ? null : $decision->reason;
+            $projectedExposure = $decision->exposure;
+            $limit = $decision->limit;
+            $status = match (true) {
+                $reason === null => 'approved',
+                $decision->blocks() && $mode === self::ModeBlock => 'on_hold',
+                default => 'warning',
+            };
+        }
 
         $order->update(['credit_status' => $status, 'credit_hold_reason' => $reason]);
 

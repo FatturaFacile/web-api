@@ -45735,6 +45735,178 @@ CREATE INDEX "apportionment_run_allocations_source_center_id_index" on "apportio
 CREATE INDEX "apportionment_run_allocations_target_center_id_index" on "apportionment_run_allocations"(
   "target_center_id"
 );
+CREATE TABLE "receivable_items"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "customer_id" varchar not null,
+  "invoice_id" varchar,
+  "sequence" integer not null default '1',
+  "document_type" varchar not null default 'invoice',
+  "document_number" varchar,
+  "currency" varchar not null default 'EUR',
+  "original_amount" numeric not null,
+  "open_amount" numeric not null,
+  "issue_date" date not null,
+  "due_date" date not null,
+  "value_date" date,
+  "status" varchar not null default 'open',
+  "dispute_reason" varchar,
+  "disputed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "receivable_items_source_unique" on "receivable_items"(
+  "tenant_id",
+  "invoice_id",
+  "sequence"
+);
+CREATE INDEX "receivable_items_tenant_id_customer_id_status_index" on "receivable_items"(
+  "tenant_id",
+  "customer_id",
+  "status"
+);
+CREATE INDEX "receivable_items_tenant_id_status_due_date_index" on "receivable_items"(
+  "tenant_id",
+  "status",
+  "due_date"
+);
+CREATE INDEX "receivable_items_invoice_id_index" on "receivable_items"(
+  "invoice_id"
+);
+CREATE TABLE "receivable_allocations"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "receivable_item_id" varchar not null,
+  "source_type" varchar not null,
+  "origin" varchar not null default 'manual',
+  "source_id" varchar,
+  "source_reference" varchar,
+  "amount" numeric not null,
+  "value_date" date not null,
+  "notes" text,
+  "allocated_by" varchar,
+  "reversed_at" datetime,
+  "reversed_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("receivable_item_id") references "receivable_items"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "receivable_allocations_tenant_id_receivable_item_id_index" on "receivable_allocations"(
+  "tenant_id",
+  "receivable_item_id"
+);
+CREATE INDEX "receivable_allocations_tenant_id_source_type_source_id_index" on "receivable_allocations"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "receivable_allocations_source_id_index" on "receivable_allocations"(
+  "source_id"
+);
+CREATE TABLE "customer_credit_limits"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "customer_id" varchar not null,
+  "currency" varchar not null default 'EUR',
+  "granted_limit" numeric not null default '0',
+  "insured_limit" numeric not null default '0',
+  "insurer_name" varchar,
+  "policy_number" varchar,
+  "coverage_percentage" numeric not null default '0',
+  "max_overdue_days" integer,
+  "overdue_tolerance_amount" numeric not null default '0',
+  "reaction_policy" varchar not null default 'warning',
+  "valid_from" date not null,
+  "valid_to" date,
+  "is_active" tinyint(1) not null default '1',
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "customer_credit_limits_tenant_id_customer_id_valid_from_index" on "customer_credit_limits"(
+  "tenant_id",
+  "customer_id",
+  "valid_from"
+);
+CREATE TABLE "customer_credit_overrides"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "customer_id" varchar not null,
+  "scope" varchar not null default 'all',
+  "reason" text not null,
+  "authorized_by" varchar not null,
+  "expires_at" datetime,
+  "revoked_at" datetime,
+  "revoked_by" varchar,
+  "revoke_reason" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "customer_credit_overrides_tenant_id_customer_id_expires_at_index" on "customer_credit_overrides"(
+  "tenant_id",
+  "customer_id",
+  "expires_at"
+);
+CREATE TABLE "receivable_provision_rates"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "bucket_key" varchar not null,
+  "rate_percent" numeric not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "receivable_provision_rates_tenant_id_bucket_key_unique" on "receivable_provision_rates"(
+  "tenant_id",
+  "bucket_key"
+);
+CREATE TABLE "customer_statement_dispatches"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "customer_id" varchar not null,
+  "period_from" date not null,
+  "period_to" date not null,
+  "recipient" varchar not null,
+  "locale" varchar not null default 'en',
+  "status" varchar not null default 'queued',
+  "error" text,
+  "requested_by" varchar,
+  "sent_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "customer_statement_dispatches_tenant_id_customer_id_index" on "customer_statement_dispatches"(
+  "tenant_id",
+  "customer_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -46166,3 +46338,4 @@ INSERT INTO migrations VALUES(427,'2027_12_21_000100_extend_inventory_counting_a
 INSERT INTO migrations VALUES(428,'2027_12_22_000100_create_esm_work_order_photos_table',7);
 INSERT INTO migrations VALUES(429,'2027_12_21_000100_add_helpdesk_sla_escalation_chains_and_ticket_time_billing',8);
 INSERT INTO migrations VALUES(430,'2027_12_21_000100_create_analytical_accounting_tables',8);
+INSERT INTO migrations VALUES(431,'2027_12_23_000100_create_accounts_receivable_credit_tables',9);
