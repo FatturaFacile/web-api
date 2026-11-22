@@ -93,8 +93,8 @@ final class Customer360Service
 
         return [
             'health_index' => $profile !== null ? (float) $profile->health_index : (float) $account->customer_health_index,
-            'churn_risk' => $profile?->churn_risk_indicator ?? $account->churn_risk,
-            'last_interaction_at' => $profile?->last_interaction_at?->toIso8601String(),
+            'churn_risk' => $profile !== null ? $profile->churn_risk_indicator : $account->churn_risk,
+            'last_interaction_at' => $profile !== null && $profile->last_interaction_at !== null ? Carbon::parse($profile->last_interaction_at)->toIso8601String() : null,
         ];
     }
 

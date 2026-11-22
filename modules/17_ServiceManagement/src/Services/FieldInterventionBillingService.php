@@ -6,6 +6,7 @@ namespace Modules\ServiceManagement\Services;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Invoicing\Models\SalesInvoice;
+use Modules\ServiceManagement\Contracts\TicketServiceInterface;
 use Modules\ServiceManagement\Contracts\WorkOrderAndFieldServiceInterface;
 use Modules\ServiceManagement\DTOs\CompleteWorkOrderDTO;
 use Modules\ServiceManagement\DTOs\ResolveTicketDTO;

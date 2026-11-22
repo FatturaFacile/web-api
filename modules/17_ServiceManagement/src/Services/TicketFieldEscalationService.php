@@ -6,8 +6,10 @@ namespace Modules\ServiceManagement\Services;
 
 use App\Models\Contact;
 use App\Models\ContactAddress;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\ServiceManagement\Contracts\TicketServiceInterface;
 use Modules\ServiceManagement\Contracts\WorkOrderAndFieldServiceInterface;
 use Modules\ServiceManagement\DTOs\CreateWorkOrderDTO;
 use Modules\ServiceManagement\DTOs\EscalateTicketDTO;
@@ -66,7 +68,7 @@ final readonly class TicketFieldEscalationService
                 projectId: $locked->project_id,
                 leadTechnicianId: $technicianId ?? $locked->assigned_technician_id,
                 scheduledStart: $scheduledStart,
-                scheduledEnd: $locked->resolution_due_at?->toDateTimeString(),
+                scheduledEnd: $locked->resolution_due_at !== null ? Carbon::parse($locked->resolution_due_at)->toDateTimeString() : null,
                 locationAddress: $this->siteAddress((string) $locked->customer_id),
             ), $actorUserId);
 
