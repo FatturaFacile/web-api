@@ -37,6 +37,7 @@ use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Invoicing\Models\SalesInvoiceItem;
 use Modules\Invoicing\Models\SalesOrder;
+use Modules\Invoicing\Services\Receivables\ReceivableItemService;
 use Modules\SDI\Enums\TipoDocumento;
 use RoundingMode;
 
@@ -994,6 +995,7 @@ final class InvoicingService implements InvoicingServiceInterface
         $creditNote->save();
 
         $this->installments->reduceForCreditNote($originalInvoice, $creditNote);
+        app(ReceivableItemService::class)->syncInvoice($originalInvoice->refresh());
 
         $this->completeCreditNote($creditNote, $originalInvoice, $items, (string) ($data['created_by'] ?? 'system'));
 

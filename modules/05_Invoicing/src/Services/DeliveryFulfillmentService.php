@@ -28,6 +28,7 @@ use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Invoicing\Models\SalesDeliveryNoteItem;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesOrderItem;
+use Modules\Invoicing\Services\Receivables\CreditEnforcementService;
 
 /**
  * The one writer of the sales delivery notes (DDT): the sales API of the app (order and quote conversions) and the
@@ -291,6 +292,8 @@ final class DeliveryFulfillmentService implements DeliveryFulfillmentServiceInte
                 throw ValidationException::withMessages(['status' => __('sales.delivery_note_already_dispatched')]);
             }
 
+            $this->assertCreditAllowsIssue($locked);
+
             DeliveryNoteStatus::assertTransition($locked->status, DeliveryNoteStatus::Issued);
             $locked->load('items');
             $tenantId = (string) $locked->tenant_id;
@@ -432,6 +435,31 @@ final class DeliveryFulfillmentService implements DeliveryFulfillmentServiceInte
         $open = Decimal::sub(DocumentTotalsCalculator::decimal($item->quantity), DocumentTotalsCalculator::decimal($item->quantity_delivered));
 
         return bcadd(Decimal::isPositive($open) ? $open : '0', '0', 4);
+    }
+
+    /**
+     * A delivery note does not leave when the credit of the customer is blocked for delivery notes (reaction policy
+     * `block_delivery_note` or `credit_hold` of its credit limit) and no override allows it. A note of an order adds
+     * nothing to the exposure (the order is counted already); a note without an order adds its value.
+     *
+     * @throws ValidationException when the credit of the customer blocks the issue
+     */
+    private function assertCreditAllowsIssue(SalesDeliveryNote $note): void
+    {
+        $additional = '0';
+
+        if ($note->sales_order_id === null) {
+            foreach ($note->items()->get() as $line) {
+                $net = Decimal::mul(DocumentTotalsCalculator::decimal($line->quantity), DocumentTotalsCalculator::decimal($line->unit_price));
+                $additional = Decimal::add($additional, Decimal::mul($net, Decimal::add('1', Decimal::div(DocumentTotalsCalculator::decimal($line->tax_rate), '100'))));
+            }
+        }
+
+        $decision = app(CreditEnforcementService::class)->evaluate((string) $note->tenant_id, (string) $note->contact_id, CreditEnforcementService::ScopeDeliveryNote, $additional);
+
+        if ($decision->blocks()) {
+            throw ValidationException::withMessages(['credit' => __('receivables.delivery_note_blocked', ['reason' => (string) $decision->reason])]);
+        }
     }
 
     private function today(string $tenantId): string

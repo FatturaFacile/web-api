@@ -48,6 +48,7 @@ use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesQuote;
 use Modules\Invoicing\Observers\InvoicePaidObserver;
+use Modules\Invoicing\Observers\ReceivableItemObserver;
 use Modules\Invoicing\Policies\CustomerCreditProfilePolicy;
 use Modules\Invoicing\Policies\SalesCommissionPolicy;
 use Modules\Invoicing\Policies\SalesDeliveryNotePolicy;
@@ -85,8 +86,11 @@ final class InvoicingServiceProvider extends ServiceProvider
         $this->registerEventConsumers();
         Invoice::observe(InvoicePaidObserver::class);
         SalesInvoice::observe(InvoicePaidObserver::class);
+        Invoice::observe(ReceivableItemObserver::class);
+        SalesInvoice::observe(ReceivableItemObserver::class);
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
         $this->loadRoutesFrom(__DIR__.'/../../routes/commissions.php');
+        $this->loadRoutesFrom(__DIR__.'/../../routes/receivables.php');
     }
 
     private function registerPolicies(): void
