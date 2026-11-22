@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Projects\Http\Controllers\ProjectBillingController;
 use Modules\Projects\Http\Controllers\ProjectBudgetController;
 use Modules\Projects\Http\Controllers\ProjectChangeOrderController;
+use Modules\Projects\Http\Controllers\ProjectContractBillingController;
 use Modules\Projects\Http\Controllers\ProjectController;
 use Modules\Projects\Http\Controllers\ProjectCostEntryController;
 use Modules\Projects\Http\Controllers\ProjectEvmController;
@@ -66,6 +67,10 @@ Route::prefix('api/v1/projects')
         // Project master data and lifecycle.
         Route::get('/', [ProjectController::class, 'index'])->name('projects.index');
         Route::post('/', [ProjectController::class, 'store'])->name('projects.store');
+
+        // Period-end WIP valuation across projects (Mod 081).
+        Route::get('/wip-valuations', [ProjectContractBillingController::class, 'wipIndex'])->name('projects.wip-valuations.index');
+        Route::post('/wip-valuations', [ProjectContractBillingController::class, 'wipRun'])->name('projects.wip-valuations.run');
 
         Route::where(['id' => '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'])->prefix('{id}')->group(function (): void {
             Route::get('/', [ProjectController::class, 'show'])->name('projects.show');
@@ -138,5 +143,25 @@ Route::prefix('api/v1/projects')
             Route::get('/evm/wbs-breakdown', [ProjectEvmController::class, 'wbsBreakdown'])->name('projects.evm.wbs-breakdown');
             Route::get('/evm/waterfall', [ProjectEvmController::class, 'waterfall'])->name('projects.evm.waterfall');
             Route::get('/evm/ledger', [ProjectEvmController::class, 'ledger'])->name('projects.evm.ledger');
+
+            // Project billing engine (Mod 081).
+            Route::get('/billing-contract', [ProjectContractBillingController::class, 'showContract'])->name('projects.billing-contract.show');
+            Route::put('/billing-contract', [ProjectContractBillingController::class, 'upsertContract'])->name('projects.billing-contract.upsert');
+            Route::post('/billing-contract/status', [ProjectContractBillingController::class, 'changeContractStatus'])->name('projects.billing-contract.status');
+            Route::get('/billing/unbilled-summary', [ProjectContractBillingController::class, 'unbilledSummary'])->name('projects.billing.unbilled-summary');
+            Route::get('/billing/contract/time-and-materials', [ProjectContractBillingController::class, 'timeAndMaterialsPreview'])->name('projects.billing.contract.time-and-materials.preview');
+            Route::post('/billing/contract/time-and-materials', [ProjectContractBillingController::class, 'timeAndMaterialsDraft'])->name('projects.billing.contract.time-and-materials.draft');
+            Route::post('/billing/contract/milestones/{milestoneId}', [ProjectContractBillingController::class, 'milestone'])->whereUuid('milestoneId')->name('projects.billing.contract.milestone');
+            Route::get('/sal-certificates', [ProjectContractBillingController::class, 'salIndex'])->name('projects.sal-certificates.index');
+            Route::post('/sal-certificates', [ProjectContractBillingController::class, 'salStore'])->name('projects.sal-certificates.store');
+            Route::post('/sal-certificates/{salId}/submit', [ProjectContractBillingController::class, 'salSubmit'])->whereUuid('salId')->name('projects.sal-certificates.submit');
+            Route::post('/sal-certificates/{salId}/approve-and-invoice', [ProjectContractBillingController::class, 'salApproveAndInvoice'])->whereUuid('salId')->name('projects.sal-certificates.approve-and-invoice');
+            Route::post('/sal-certificates/{salId}/cancel', [ProjectContractBillingController::class, 'salCancel'])->whereUuid('salId')->name('projects.sal-certificates.cancel');
+            Route::get('/retention', [ProjectContractBillingController::class, 'retentionBalance'])->name('projects.retention.balance');
+            Route::post('/retention/release', [ProjectContractBillingController::class, 'retentionRelease'])->name('projects.retention.release');
+            Route::get('/retainer', [ProjectContractBillingController::class, 'retainerBalance'])->name('projects.retainer.balance');
+            Route::post('/retainer/top-up', [ProjectContractBillingController::class, 'retainerTopUp'])->name('projects.retainer.top-up');
+            Route::post('/retainer/consume', [ProjectContractBillingController::class, 'retainerConsume'])->name('projects.retainer.consume');
+            Route::post('/wip-valuations', [ProjectContractBillingController::class, 'wipRunProject'])->name('projects.wip-valuations.run-project');
         });
     });
