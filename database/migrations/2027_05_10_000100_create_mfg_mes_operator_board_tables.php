@@ -33,6 +33,9 @@ return new class extends Migration
                 $table->uuid('confirmation_id')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
 
                 $table->foreign('production_order_id')->references('id')->on('mfg_production_orders')->cascadeOnDelete();
                 $table->foreign('production_order_operation_id')->references('id')->on('mfg_production_order_operations')->cascadeOnDelete();
@@ -54,6 +57,9 @@ return new class extends Migration
                 $table->timestamp('ended_at')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
 
                 $table->foreign('phase_id')->references('id')->on('mfg_mes_phases')->cascadeOnDelete();
                 $table->index(['phase_id', 'ended_at'], 'mfg_mes_time_logs_open_index');
@@ -72,6 +78,9 @@ return new class extends Migration
                 $table->timestamp('declared_at');
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
 
                 $table->foreign('phase_id')->references('id')->on('mfg_mes_phases')->cascadeOnDelete();
                 $table->unique(['tenant_id', 'idempotency_key'], 'mfg_mes_declarations_key_unique');
@@ -89,6 +98,9 @@ return new class extends Migration
                 $table->string('note', 500)->nullable();
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
 
                 $table->foreign('production_declaration_id')->references('id')->on('mfg_mes_production_declarations')->cascadeOnDelete();
             });
@@ -111,6 +123,9 @@ return new class extends Migration
                 $table->timestamp('settled_at')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
 
                 $table->foreign('phase_id')->references('id')->on('mfg_mes_phases')->cascadeOnDelete();
                 $table->unique(['tenant_id', 'idempotency_key'], 'mfg_mes_consumptions_key_unique');
@@ -126,6 +141,9 @@ return new class extends Migration
                 $table->uuid('phase_id')->nullable()->index();
                 $table->timestamps();
                 $table->softDeletes();
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->uuid('deleted_by')->nullable();
 
                 $table->unique(['tenant_id', 'idempotency_key'], 'mfg_mes_receipts_key_unique');
             });
