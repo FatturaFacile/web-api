@@ -155,6 +155,11 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(schema: 'MfgRescheduleRequest', required: ['planned_start_date', 'planned_end_date'], type: 'object', properties: [
     new OA\Property(property: 'planned_start_date', type: 'string', format: 'date'),
     new OA\Property(property: 'planned_end_date', type: 'string', format: 'date'),
+    new OA\Property(property: 'allow_overload', type: 'boolean', nullable: true, description: 'Books the move although a work centre cannot carry the load.'),
+])]
+#[OA\Schema(schema: 'MfgReschedulePlannedOrderRequest', required: ['start_date', 'due_date'], type: 'object', properties: [
+    new OA\Property(property: 'start_date', type: 'string', format: 'date'),
+    new OA\Property(property: 'due_date', type: 'string', format: 'date'),
 ])]
 #[OA\Schema(schema: 'MfgIssueMaterialsRequest', required: ['lines'], type: 'object', properties: [
     new OA\Property(property: 'posting_date', type: 'string', format: 'date', nullable: true),

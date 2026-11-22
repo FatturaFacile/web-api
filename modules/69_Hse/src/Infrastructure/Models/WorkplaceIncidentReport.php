@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Hse\Infrastructure\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\Hse\Domain\Enums\IncidentStatus;
 use Modules\Hse\Domain\Enums\IncidentType;
@@ -51,6 +52,14 @@ final class WorkplaceIncidentReport extends BaseEnterpriseModel
             'injury_dynamics_json' => 'array',
             'prognosis_days' => 'integer',
         ];
+    }
+
+    /**
+     * @return HasMany<IncidentPhoto, $this>
+     */
+    public function photos(): HasMany
+    {
+        return $this->hasMany(IncidentPhoto::class, 'incident_report_id');
     }
 
     public function injuryDynamics(): ?InjuryDynamics

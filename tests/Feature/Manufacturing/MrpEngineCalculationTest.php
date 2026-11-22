@@ -109,6 +109,24 @@ test('MRP nets sales, consumed forecasts, safety stock and dependent demand leve
         ->and($shortages[$this->fg->id]['available_inventory'])->toBe('4.0000');
 });
 
+test('open planned orders are rescheduled, converted ones are not', function (): void {
+    $runId = mfgRunMrp($this);
+    $make = MfgMrpPlannedOrder::query()->where('mrp_run_id', $runId)->where('order_type', 'make')->orderBy('due_date')->firstOrFail();
+    $buy = MfgMrpPlannedOrder::query()->where('mrp_run_id', $runId)->where('order_type', 'buy')->firstOrFail();
+    $start = $make->start_date->copy()->addDays(2)->toDateString();
+    $due = $make->due_date->copy()->addDays(2)->toDateString();
+
+    $this->postJson("/api/v1/manufacturing/mrp/planned-orders/{$make->id}/reschedule", [])->assertUnprocessable()->assertJsonValidationErrors(['start_date', 'due_date']);
+    $this->postJson("/api/v1/manufacturing/mrp/planned-orders/{$make->id}/reschedule", ['start_date' => $due, 'due_date' => $start])->assertUnprocessable()->assertJsonValidationErrors(['due_date']);
+    $this->postJson("/api/v1/manufacturing/mrp/planned-orders/{$make->id}/reschedule", ['start_date' => $start, 'due_date' => $due])
+        ->assertOk()->assertJsonPath('data.start_date', $start)->assertJsonPath('data.due_date', $due);
+    $this->postJson("/api/v1/manufacturing/mrp/planned-orders/{$buy->id}/reschedule", ['start_date' => $start, 'due_date' => $due])->assertOk()->assertJsonPath('data.due_date', $due);
+
+    // The production order made of it takes the new dates; a converted planned order cannot be moved any more.
+    $this->postJson("/api/v1/manufacturing/mrp/planned-orders/{$make->id}/convert")->assertCreated()->assertJsonPath('data.planned_start_date', $start);
+    $this->postJson("/api/v1/manufacturing/mrp/planned-orders/{$make->id}/reschedule", ['start_date' => $start, 'due_date' => $due])->assertUnprocessable()->assertJsonValidationErrors(['status']);
+});
+
 test('make orders are converted into production orders, purchase suggestions are linked by Procurement', function (): void {
     $runId = mfgRunMrp($this);
     $make = MfgMrpPlannedOrder::query()->where('mrp_run_id', $runId)->where('order_type', 'make')->orderBy('due_date')->firstOrFail();

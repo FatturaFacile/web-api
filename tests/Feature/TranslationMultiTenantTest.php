@@ -25,6 +25,29 @@ beforeEach(function (): void {
     ]);
 });
 
+test('regional variants derive from their language, apply the regional spelling and take tenant overrides', function (): void {
+    Translation::createGlobal(['locale' => 'de', 'key' => 'T.STREET', 'value' => 'Straße']);
+    Translation::createGlobal(['locale' => 'de', 'key' => 'T.SAVE', 'value' => 'Speichern']);
+    Translation::createGlobal(['locale' => 'it', 'key' => 'T.SAVE', 'value' => 'Salva']);
+    Translation::create(['tenant_id' => $this->tenant->id, 'locale' => 'de-CH', 'key' => 'T.SAVE', 'value' => 'Sichere']);
+
+    $this->getJson('/api/v1/translations/de-CH')->assertOk()
+        ->assertJsonPath('locale', 'de-CH')
+        ->assertJson(['translations' => ['T.STREET' => 'Strasse']])
+        ->assertJson(['translations' => ['T.SAVE' => 'Speichern']]);
+    $member = User::factory()->create();
+    $member->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'member']);
+    $this->actingAs($member, 'sanctum')->getJson('/api/v1/translations/de-ch?tenant_id='.$this->tenant->id)->assertOk()
+        ->assertJsonPath('locale', 'de-CH')
+        ->assertJson(['translations' => ['T.SAVE' => 'Sichere']]);
+    $this->getJson('/api/v1/translations/de')->assertOk()->assertJson(['translations' => ['T.STREET' => 'Straße']]);
+
+    foreach (['it-CH', 'it-IT'] as $variant) {
+        $this->getJson("/api/v1/translations/{$variant}")->assertOk()->assertJsonPath('locale', $variant)->assertJson(['translations' => ['T.SAVE' => 'Salva']]);
+    }
+    $this->getJson('/api/v1/translations/xx-YY')->assertOk()->assertJsonPath('locale', 'it');
+});
+
 test('GET translations with tenant_id=default returns 200 with tenant_id null and valid dictionary', function (): void {
     Translation::createGlobal([
         'locale' => 'en',

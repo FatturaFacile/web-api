@@ -18,7 +18,7 @@ interface ProductionPlanningServiceInterface
     public function planOrder(CreateProductionOrderDTO $dto): MfgProductionOrder;
 
     /**
-     * Moves the planned dates of an order that has not started.
+     * Moves the planned dates of an order that has not started. Unless $allowOverload is set, the move is refused when the work centres of the order cannot carry its load in the new window.
      */
-    public function scheduleOrder(MfgProductionOrder $order, string $startDate, string $endDate): MfgProductionOrder;
+    public function scheduleOrder(MfgProductionOrder $order, string $startDate, string $endDate, bool $allowOverload = false): MfgProductionOrder;
 }

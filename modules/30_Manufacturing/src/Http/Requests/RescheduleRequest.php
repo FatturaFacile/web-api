@@ -17,6 +17,7 @@ final class RescheduleRequest extends ManufacturingRequest
         return [
             'planned_start_date' => ['required', 'date'],
             'planned_end_date' => ['required', 'date', 'after_or_equal:planned_start_date'],
+            'allow_overload' => ['nullable', 'boolean'],
         ];
     }
 }

@@ -71,9 +71,11 @@ final readonly class ManufacturingCockpitService
     }
 
     /**
+     * Live machine states of the tenant: the counts per state and the machines in fault or maintenance.
+     *
      * @return array{by_state: array<string, int>, alerts: list<array{machine_id: string, machine_code: string, state: string, since: string|null}>}
      */
-    private function machines(string $tenantId): array
+    public function machines(string $tenantId): array
     {
         $byState = array_fill_keys(['RUNNING', 'SETUP', 'IDLE', 'FAULT', 'MAINTENANCE'], 0);
         $alerts = [];

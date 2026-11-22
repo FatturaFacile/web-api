@@ -6,6 +6,8 @@ namespace Modules\Manufacturing\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Hse\Domain\Contracts\HseDispatchGuardInterface;
+use Modules\Hse\Domain\Enums\ClearanceContext;
 use Modules\Manufacturing\Contracts\ShopFloorServiceInterface;
 use Modules\Manufacturing\DTOs\ConfirmOperationDTO;
 use Modules\Manufacturing\Exceptions\ManufacturingOperationException;
@@ -22,7 +24,7 @@ use Modules\Manufacturing\Support\Money;
  */
 final readonly class ShopFloorService implements ShopFloorServiceInterface
 {
-    public function __construct(private ProductionExecutionService $execution) {}
+    public function __construct(private ProductionExecutionService $execution, private HseDispatchGuardInterface $hse) {}
 
     /**
      * {@inheritDoc}
@@ -34,6 +36,11 @@ final readonly class ShopFloorService implements ShopFloorServiceInterface
             $op = MfgProductionOrderOperation::query()->whereKey($operation->id)->lockForUpdate()->firstOrFail();
             if ($op->isCompleted() || $op->is_subcontracted) {
                 throw new ManufacturingOperationException("Operation {$op->sequence} is completed or subcontracted and takes no job cards.", 'production_order_operation_id');
+            }
+
+            if ($operatorId !== null) {
+                // Mod 099 hard block: an operator with an expired certificate, unfit judgment or missing PPE cannot start.
+                $this->hse->assertCleared((string) $order->tenant_id, null, $operatorId, ClearanceContext::ProductionWorkCenter, (string) $op->work_center_id);
             }
 
             $op->update(['status' => 'in_progress', 'started_at' => $op->started_at ?? now()]);

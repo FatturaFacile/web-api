@@ -7,6 +7,8 @@ namespace Modules\Manufacturing\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\Manufacturing\Console\BackfillMesSyncCommand;
+use Modules\Manufacturing\Console\PruneMesSyncChangesCommand;
 use Modules\Manufacturing\Contracts\BillOfMaterialsServiceInterface;
 use Modules\Manufacturing\Contracts\BomExplosionServiceInterface;
 use Modules\Manufacturing\Contracts\CoProductAllocationServiceInterface;
@@ -29,6 +31,13 @@ use Modules\Manufacturing\Events\InventoryForecastEvent;
 use Modules\Manufacturing\Events\InventoryProducedEvent;
 use Modules\Manufacturing\Events\MaterialConsumedEvent;
 use Modules\Manufacturing\Events\MaterialPurchaseForecastEvent;
+use Modules\Manufacturing\Events\MesExecutionStartedEvent;
+use Modules\Manufacturing\Events\MesExecutionStoppedEvent;
+use Modules\Manufacturing\Events\MesReasonCodeCatalogUpdatedEvent;
+use Modules\Manufacturing\Events\MesShiftCalendarUpdatedEvent;
+use Modules\Manufacturing\Events\MesWorkOrderAssignedToMachineEvent;
+use Modules\Manufacturing\Events\MesWorkOrderClosedEvent;
+use Modules\Manufacturing\Events\MesWorkOrderReleasedEvent;
 use Modules\Manufacturing\Events\MRPRunCompletedEvent;
 use Modules\Manufacturing\Events\NonConformanceDetectedEvent;
 use Modules\Manufacturing\Events\OperationConfirmedEvent;
@@ -48,7 +57,15 @@ use Modules\Manufacturing\Listeners\WorkflowApprovalManufacturingListener;
 use Modules\Manufacturing\Models\MfgAccountingSetting;
 use Modules\Manufacturing\Models\MfgBom;
 use Modules\Manufacturing\Models\MfgEngineeringChangeOrder;
+use Modules\Manufacturing\Models\MfgMachineCenter;
 use Modules\Manufacturing\Models\MfgProductionOrder;
+use Modules\Manufacturing\Models\MfgProductionOrderOperation;
+use Modules\Manufacturing\Models\MfgReasonCode;
+use Modules\Manufacturing\Models\MfgReasonCodeLabel;
+use Modules\Manufacturing\Models\MfgShopFloorExecution;
+use Modules\Manufacturing\Models\MfgWorkCenterCapacity;
+use Modules\Manufacturing\Models\MfgWorkCenterShift;
+use Modules\Manufacturing\Observers\MesReferenceDataObserver;
 use Modules\Manufacturing\Policies\MfgAccountingSettingPolicy;
 use Modules\Manufacturing\Policies\MfgBomPolicy;
 use Modules\Manufacturing\Policies\MfgEngineeringChangeOrderPolicy;
@@ -113,6 +130,13 @@ final class ManufacturingServiceProvider extends ServiceProvider
         ProductionCashForecastEvent::class,
         MaterialPurchaseForecastEvent::class,
         InventoryForecastEvent::class,
+        MesWorkOrderReleasedEvent::class,
+        MesWorkOrderAssignedToMachineEvent::class,
+        MesWorkOrderClosedEvent::class,
+        MesShiftCalendarUpdatedEvent::class,
+        MesReasonCodeCatalogUpdatedEvent::class,
+        MesExecutionStartedEvent::class,
+        MesExecutionStoppedEvent::class,
     ];
 
     /**
@@ -153,6 +177,37 @@ final class ManufacturingServiceProvider extends ServiceProvider
 
         foreach (self::OutboxEvents as $eventClass) {
             Event::listen($eventClass, DispatchOutboxOnManufacturingEventListener::class);
+        }
+
+        $this->registerMesChangeTracking();
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([BackfillMesSyncCommand::class, PruneMesSyncChangesCommand::class]);
+        }
+    }
+
+    /**
+     * Records, inside the transaction of each change, what the MES Core pulls: machines, the operations of released
+     * orders, reason codes and shop floor job cards, and re-materialises the shift instances when a calendar changes.
+     */
+    private function registerMesChangeTracking(): void
+    {
+        $observer = static fn (): MesReferenceDataObserver => app(MesReferenceDataObserver::class);
+
+        MfgMachineCenter::saved(static fn (MfgMachineCenter $machine) => $observer()->machineSaved($machine));
+        MfgMachineCenter::deleted(static fn (MfgMachineCenter $machine) => $observer()->machineDeleted($machine));
+        MfgProductionOrder::saved(static fn (MfgProductionOrder $order) => $observer()->orderSaved($order));
+        MfgProductionOrderOperation::saved(static fn (MfgProductionOrderOperation $operation) => $observer()->operationSaved($operation));
+        MfgProductionOrderOperation::deleted(static fn (MfgProductionOrderOperation $operation) => $observer()->operationDeleted($operation));
+        MfgReasonCode::saved(static fn (MfgReasonCode $reasonCode) => $observer()->reasonCodeChanged($reasonCode));
+        MfgReasonCode::deleted(static fn (MfgReasonCode $reasonCode) => $observer()->reasonCodeChanged($reasonCode));
+        MfgReasonCodeLabel::saved(static fn (MfgReasonCodeLabel $label) => $observer()->reasonCodeLabelChanged($label));
+        MfgReasonCodeLabel::deleted(static fn (MfgReasonCodeLabel $label) => $observer()->reasonCodeLabelChanged($label));
+        MfgShopFloorExecution::saved(static fn (MfgShopFloorExecution $execution) => $observer()->executionSaved($execution));
+
+        foreach ([MfgWorkCenterShift::class, MfgWorkCenterCapacity::class] as $calendarModel) {
+            $calendarModel::saved(static fn (MfgWorkCenterShift|MfgWorkCenterCapacity $row) => $observer()->calendarChanged((string) $row->tenant_id, (string) $row->work_center_id));
+            $calendarModel::deleted(static fn (MfgWorkCenterShift|MfgWorkCenterCapacity $row) => $observer()->calendarChanged((string) $row->tenant_id, (string) $row->work_center_id));
         }
     }
 }

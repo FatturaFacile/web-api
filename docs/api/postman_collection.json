@@ -53152,6 +53152,73 @@
                     }
                 },
                 {
+                    "name": "Check a worker against the HSE hard block before entering the site",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/sites/:id/worker-access",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "sites",
+                                ":id",
+                                "worker-access"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Check a worker against the HSE hard block before entering the site",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"access_date\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "Correct a diary entry; the day itself does not change",
                     "request": {
                         "method": "PUT",
@@ -138365,7 +138432,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"incident_type\": \"near_miss\",\n    \"incident_date\": \"2026-01-31T12:00:00+00:00\",\n    \"location_or_site_id\": \"string\",\n    \"work_center_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"involved_employee_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"witness_employee_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"description\": \"string\",\n    \"immediate_actions_taken\": \"string\",\n    \"prognosis_days\": 1,\n    \"injury_dynamics\": {\n        \"activityAtTimeOfAccident\": \"string\",\n        \"deviatingEvent\": \"string\",\n        \"materialAgent\": \"string\",\n        \"injuredBodyPartCode\": \"string\",\n        \"lesionNatureCode\": \"string\"\n    },\n    \"root_cause_analysis\": [\n        \"string\"\n    ],\n    \"corrective_actions\": [\n        {\n            \"description\": \"string\",\n            \"assignee_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"due_date\": \"2026-01-31T12:00:00+00:00\",\n            \"verification_status\": \"open\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"incident_type\": \"near_miss\",\n    \"incident_date\": \"2026-01-31T12:00:00+00:00\",\n    \"location_or_site_id\": \"string\",\n    \"work_center_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"involved_employee_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"witness_employee_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"description\": \"string\",\n    \"immediate_actions_taken\": \"string\",\n    \"prognosis_days\": 1,\n    \"injury_dynamics\": {\n        \"activityAtTimeOfAccident\": \"string\",\n        \"deviatingEvent\": \"string\",\n        \"materialAgent\": \"string\",\n        \"injuredBodyPartCode\": \"string\",\n        \"lesionNatureCode\": \"string\"\n    },\n    \"root_cause_analysis\": [\n        \"string\"\n    ],\n    \"corrective_actions\": [\n        {\n            \"description\": \"string\",\n            \"assignee_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"due_date\": \"2026-01-31T12:00:00+00:00\",\n            \"verification_status\": \"open\"\n        }\n    ],\n    \"photos\": [\n        \"string\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -138413,6 +138480,62 @@
                             "variable": [
                                 {
                                     "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/hse/incidents/:id/photos/:photoId",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hse/incidents/:id/photos/:photoId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hse",
+                                "incidents",
+                                ":id",
+                                "photos",
+                                ":photoId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "photoId",
                                     "value": "",
                                     "description": ""
                                 }
@@ -157666,6 +157789,49 @@
                     }
                 },
                 {
+                    "name": "Server-sent events of the machine states",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/machines/stream",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "machines",
+                                "stream"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Server-sent events of the machine states",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "Genealogy of a production order",
                     "request": {
                         "method": "GET",
@@ -157871,6 +158037,66 @@
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"raw_material_account_code\": \"string\",\n    \"wip_account_code\": \"string\",\n    \"finished_goods_account_code\": \"string\",\n    \"labor_absorbed_account_code\": \"string\",\n    \"overhead_absorbed_account_code\": \"string\",\n    \"subcontract_accrual_account_code\": \"string\",\n    \"material_variance_account_code\": \"string\",\n    \"labor_variance_account_code\": \"string\",\n    \"overhead_variance_account_code\": \"string\",\n    \"subcontract_variance_account_code\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Processes a batch of events",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/mes-feedback/events",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "mes-feedback",
+                                "events"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Processes a batch of events",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"events\": [\n        \"string\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -158511,6 +158737,137 @@
                     }
                 },
                 {
+                    "name": "A page of changes of a resource after the cursor, with tombstones for removed entities",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/mes-sync/:resource",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "mes-sync",
+                                ":resource"
+                            ],
+                            "query": [
+                                {
+                                    "key": "cursor",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "updated_since",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "resource",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "A page of changes of a resource after the cursor, with tombstones for removed entities",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "A page of the `(entity_id, revision)` pairs of a resource, to detect and repair drift of a replica",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/mes-sync/:resource/manifest",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "mes-sync",
+                                ":resource",
+                                "manifest"
+                            ],
+                            "query": [
+                                {
+                                    "key": "cursor",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "resource",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "A page of the `(entity_id, revision)` pairs of a resource, to detect and repair drift of a replica",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "Paginated MRP runs",
                     "request": {
                         "method": "GET",
@@ -158844,6 +159201,74 @@
                         "description": "Converts a make planned order into a production order",
                         "auth": {
                             "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Moves the dates of a planned order",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/mrp/planned-orders/:id/reschedule",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "mrp",
+                                "planned-orders",
+                                ":id",
+                                "reschedule"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Moves the dates of a planned order",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"start_date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     }
                 },
@@ -159536,7 +159961,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"planned_start_date\": \"2026-01-31T12:00:00+00:00\",\n    \"planned_end_date\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "raw": "{\n    \"planned_start_date\": \"2026-01-31T12:00:00+00:00\",\n    \"planned_end_date\": \"2026-01-31T12:00:00+00:00\",\n    \"allow_overload\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"

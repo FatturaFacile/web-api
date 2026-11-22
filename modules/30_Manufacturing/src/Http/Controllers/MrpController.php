@@ -13,6 +13,7 @@ use Modules\Manufacturing\Contracts\MrpServiceInterface;
 use Modules\Manufacturing\DTOs\RunMrpDTO;
 use Modules\Manufacturing\Http\Controllers\Concerns\InteractsWithManufacturing;
 use Modules\Manufacturing\Http\Requests\MarkSuggestionConvertedRequest;
+use Modules\Manufacturing\Http\Requests\ReschedulePlannedOrderRequest;
 use Modules\Manufacturing\Http\Requests\RunMrpRequest;
 use Modules\Manufacturing\Http\Requests\StoreForecastRequest;
 use Modules\Manufacturing\Http\Resources\MfgForecastResource;
@@ -135,6 +136,20 @@ final class MrpController extends Controller
         $order = $this->mrp->convertPlannedOrder($this->owned(MfgMrpPlannedOrder::class, $id), $this->actor($request));
 
         return (new MfgProductionOrderResource($order))->response()->setStatusCode(201);
+    }
+
+    /**
+     * Moves the dates of a planned order.
+     */
+    #[OA\Post(path: '/api/v1/manufacturing/mrp/planned-orders/{id}/reschedule', operationId: 'rescheduleManufacturingMrpPlannedOrder', description: 'Moves the start and due date of a planned order (make order or purchase suggestion) that is not converted yet. The next MRP run replans open planned orders from scratch.', summary: 'Reschedule planned order', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MfgReschedulePlannedOrderRequest')),
+        responses: [new OA\Response(response: 200, description: 'Planned order rescheduled', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgPlannedOrder')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgNotFound', response: 404), new OA\Response(ref: '#/components/responses/MfgUnprocessable', response: 422)])]
+    public function reschedulePlannedOrder(ReschedulePlannedOrderRequest $request, string $id): MfgPlannedOrderResource
+    {
+        $data = $request->validated();
+
+        return new MfgPlannedOrderResource($this->mrp->reschedulePlannedOrder($this->owned(MfgMrpPlannedOrder::class, $id), (string) $data['start_date'], (string) $data['due_date']));
     }
 
     /**

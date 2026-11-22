@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\Manufacturing\Http\Middleware\VerifyMesSignature;
 
 uses(RefreshDatabase::class);
 
@@ -33,7 +34,11 @@ test('every route of a business module declares its access rule', function (): v
         $segment = explode('/', $route->uri())[2] ?? '';
         $isModuleRoute = str_starts_with($route->getActionName(), 'Modules\\') && in_array($segment, $prefixes, true);
 
-        if ($isModuleRoute && ! collect($route->gatherMiddleware())->contains(fn (string $name): bool => str_starts_with($name, 'module.access:'))) {
+        // The MES Core and the edge gateways are services, not members: their routes are authenticated by an HMAC signature
+        // (bound to the tenants of the key, or selecting the tenant of the gateway).
+        $isMesService = collect($route->gatherMiddleware())->contains(VerifyMesSignature::class) || $route->getName() === 'mfg.edge.telemetry';
+
+        if ($isModuleRoute && ! $isMesService && ! collect($route->gatherMiddleware())->contains(fn (string $name): bool => str_starts_with($name, 'module.access:'))) {
             $unprotected[] = $route->uri();
         }
     }

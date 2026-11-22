@@ -167,6 +167,11 @@ return [
             'read' => ['owner', 'admin', 'hr', 'hse', 'production', 'technician', 'service_manager', 'project_manager', 'accountant', 'member'],
             'write' => ['owner', 'admin', 'hr', 'hse'],
         ],
+        // MRP I & II (Mod 063). mrp_planning: every member reads runs, proposals, pegging and the Gantt; production planners and admins run MRP,
+        // level the capacity and move Gantt blocks. mrp_release: firming, releasing and dismissing proposals creates purchase requisitions and
+        // production orders, so only the roles that commit materials and capacity do it.
+        'mrp_planning' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'production', 'technician', 'purchasing', 'procurement_manager']],
+        'mrp_release' => ['read' => ['owner', 'admin', 'production', 'purchasing', 'procurement_manager'], 'write' => ['owner', 'admin', 'production', 'purchasing', 'procurement_manager']],
         'hse_medical' => ['read' => ['owner', 'admin', 'hr', 'hse', 'medico'], 'write' => ['owner', 'admin', 'hr', 'hse', 'medico']],
         'hse_clinical' => ['read' => ['medico'], 'write' => ['medico'], 'grants' => ['read' => ['hse.clinical.read'], 'write' => ['hse.clinical.write']]],
         // AI Services & Cognitive Automation Layer (Mod 093). ai_copilot (ai.copilot.use): every member asks the copilot and drafts

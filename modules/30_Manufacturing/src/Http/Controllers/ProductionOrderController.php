@@ -97,7 +97,7 @@ final class ProductionOrderController extends Controller
     /**
      * Moves the planned dates of an order not yet started.
      */
-    #[OA\Post(path: '/api/v1/manufacturing/production-orders/{id}/reschedule', operationId: 'rescheduleManufacturingProductionOrder', description: 'Moves the planned dates of a planned or released order.', summary: 'Reschedule production order', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing Production Orders'],
+    #[OA\Post(path: '/api/v1/manufacturing/production-orders/{id}/reschedule', operationId: 'rescheduleManufacturingProductionOrder', description: 'Moves the planned dates of a planned or released order. The move is checked against the finite capacity of the work centres of the order (422 on planned_start_date when overloaded) unless allow_overload is true; the operations of a released order move with its start date.', summary: 'Reschedule production order', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing Production Orders'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/MfgId')],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MfgRescheduleRequest')),
         responses: [new OA\Response(response: 200, description: 'Order rescheduled', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgProductionOrder')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgNotFound', response: 404), new OA\Response(ref: '#/components/responses/MfgUnprocessable', response: 422)])]
@@ -106,7 +106,7 @@ final class ProductionOrderController extends Controller
         $order = $this->executable($id);
         $data = $request->validated();
 
-        return new MfgProductionOrderResource($this->planning->scheduleOrder($order, (string) $data['planned_start_date'], (string) $data['planned_end_date']));
+        return new MfgProductionOrderResource($this->planning->scheduleOrder($order, (string) $data['planned_start_date'], (string) $data['planned_end_date'], (bool) ($data['allow_overload'] ?? false)));
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Http\Requests\Translations\StoreTranslationRequest;
 use App\Models\Translation;
 use App\Services\Tenancy\PublicTenantResolver;
 use App\Services\Tenancy\TenantContext;
+use App\Support\RegionalTranslations;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -28,7 +29,7 @@ class TranslationController extends Controller
         summary: 'Get localized UI translations',
         tags: ['Translations'],
         parameters: [
-            new OA\Parameter(name: 'locale', in: 'path', required: true, description: 'Locale identifier (it, de, fr, en)', schema: new OA\Schema(type: 'string', enum: ['it', 'de', 'fr', 'en'])),
+            new OA\Parameter(name: 'locale', in: 'path', required: true, description: 'Locale identifier: a language (it, de, fr, en) or a regional variant (it-CH, de-CH, fr-CH, it-IT) derived from its language', schema: new OA\Schema(type: 'string', enum: ['it', 'de', 'fr', 'en', 'it-CH', 'de-CH', 'fr-CH', 'it-IT'])),
             new OA\Parameter(name: 'tenant_id', in: 'query', required: false, description: 'Tenant UUID for tenant-specific translations', schema: new OA\Schema(type: 'string', format: 'uuid')),
             new OA\Parameter(name: 'X-Tenant-Id', in: 'header', required: false, description: 'Tenant UUID header', schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
@@ -51,6 +52,28 @@ class TranslationController extends Controller
         $locale = Translation::normalizeLocale($locale);
         $tenantId = $tenantResolver->resolve($request);
 
+        $base = Translation::baseLocale($locale);
+        $translations = $this->dictionary($base, $tenantId);
+
+        // A regional variant is its language with the regional spelling and the overrides saved under the variant.
+        if ($base !== $locale) {
+            $translations = array_replace(RegionalTranslations::derive($locale, $translations), $this->dictionary($locale, $tenantId));
+        }
+
+        return response()->json([
+            'locale' => $locale,
+            'tenant_id' => $tenantId,
+            'translations' => (object) $translations,
+        ]);
+    }
+
+    /**
+     * The merged global and tenant dictionary of one locale, cached.
+     *
+     * @return array<string, string>
+     */
+    private function dictionary(string $locale, ?string $tenantId): array
+    {
         $cacheKey = $tenantId ? "translations_{$tenantId}_{$locale}" : "translations_global_{$locale}";
 
         $rawTranslations = Cache::rememberForever($cacheKey, function () use ($locale, $tenantId): array {
@@ -101,11 +124,7 @@ class TranslationController extends Controller
             }
         }
 
-        return response()->json([
-            'locale' => $locale,
-            'tenant_id' => $tenantId,
-            'translations' => (object) $translations,
-        ]);
+        return $translations;
     }
 
     /**

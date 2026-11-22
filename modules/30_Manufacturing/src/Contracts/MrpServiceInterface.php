@@ -27,6 +27,11 @@ interface MrpServiceInterface
     public function convertPlannedOrder(MfgMrpPlannedOrder $plannedOrder, ?string $actorUserId = null): MfgProductionOrder;
 
     /**
+     * Moves the dates of a planned order that is not converted yet (make orders and purchase suggestions).
+     */
+    public function reschedulePlannedOrder(MfgMrpPlannedOrder $plannedOrder, string $startDate, string $dueDate): MfgMrpPlannedOrder;
+
+    /**
      * Records the procurement document a purchase suggestion was converted into, for the Procurement module.
      */
     public function markPurchaseSuggestionConverted(MfgMrpPlannedOrder $plannedOrder, string $documentType, string $documentId, ?string $actorUserId = null): MfgMrpPlannedOrder;

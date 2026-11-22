@@ -79855,6 +79855,41 @@ paths:
                 type: object
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  '/v1/hse/incidents/{id}/photos/{photoId}':
+    get:
+      operationId: hse.incidents.photo
+      tags:
+        - Hse
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: photoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Transfer-Encoding:
+              required: true
+              schema:
+                type: string
+                enum:
+                  - chunked
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/hse/toolbox-talks:
     post:
       operationId: hse.toolbox-talks.store
@@ -80304,10 +80339,41 @@ paths:
                           - array
                           - 'null'
                         items: {}
+                      impersonation:
+                        anyOf:
+                          -
+                            type: object
+                            properties:
+                              active:
+                                type: boolean
+                              actor_id:
+                                type: string
+                              expires_at:
+                                type:
+                                  - string
+                                  - 'null'
+                            required:
+                              - active
+                              - actor_id
+                              - expires_at
+                          -
+                            type: object
+                            properties:
+                              active:
+                                type: boolean
+                              actor_id:
+                                type: 'null'
+                              expires_at:
+                                type: 'null'
+                            required:
+                              - active
+                              - actor_id
+                              - expires_at
                     required:
                       - permissions
                       - field_policies
                       - company_id
+                      - impersonation
                   meta:
                     type: string
                 required:
@@ -101739,6 +101805,29 @@ paths:
                   - data
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/manufacturing/machines/stream:
+    get:
+      operationId: mfg.machines.stream
+      summary: 'Server-sent events of the machine states'
+      tags:
+        - ManufacturingCockpit
+      responses:
+        '200':
+          description: ''
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Transfer-Encoding:
+              required: true
+              schema:
+                type: string
+                enum:
+                  - chunked
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   '/v1/manufacturing/production-orders/{id}/genealogy':
     get:
       operationId: mfg.production_orders.genealogy
@@ -107454,6 +107543,27 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  /v1/manufacturing/mes-feedback/events:
+    post:
+      operationId: mfg.mes_feedback.events
+      summary: 'Processes a batch of events'
+      tags:
+        - MesFeedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MesFeedbackEventsRequest'
+      responses:
+        '207':
+          description: '`MesFeedbackResultResource`'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MesFeedbackResultResource'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/manufacturing/mes/board:
     get:
       operationId: mfg.mes.board
@@ -108464,6 +108574,90 @@ paths:
                   - data
         '401':
           $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/manufacturing/mes-sync/{resource}':
+    get:
+      operationId: mfg.mes_sync.index
+      summary: 'A page of changes of a resource after the cursor, with tombstones for removed entities'
+      tags:
+        - MesSync
+      parameters:
+        -
+          name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: cursor
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 255
+        -
+          name: updated_since
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: limit
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+      responses:
+        '200':
+          description: '`MesSyncPageResource`'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MesSyncPageResource'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/manufacturing/mes-sync/{resource}/manifest':
+    get:
+      operationId: mfg.mes_sync.manifest
+      summary: 'A page of the `(entity_id, revision)` pairs of a resource, to detect and repair drift of a replica'
+      tags:
+        - MesSync
+      parameters:
+        -
+          name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: cursor
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 255
+        -
+          name: limit
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+      responses:
+        '200':
+          description: '`MesSyncPageResource`'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MesSyncPageResource'
         '422':
           $ref: '#/components/responses/ValidationException'
   /v1/communication/messages/send:
@@ -112029,6 +112223,41 @@ paths:
                   - data
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  '/v1/manufacturing/mrp/planned-orders/{id}/reschedule':
+    post:
+      operationId: mfg.mrp.planned_orders.reschedule
+      summary: 'Moves the dates of a planned order'
+      tags:
+        - Mrp
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReschedulePlannedOrderRequest'
+      responses:
+        '200':
+          description: '`MfgPlannedOrderResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MfgPlannedOrderResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   '/v1/manufacturing/mrp/planned-orders/{id}/procurement-link':
     post:
       operationId: mfg.mrp.planned_orders.procurement_link
@@ -174776,6 +175005,55 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  '/v1/construction-trades/sites/{id}/worker-access':
+    post:
+      operationId: v1.construction-trades.sites.worker-access
+      summary: 'Check a worker against the HSE hard block before entering the site'
+      tags:
+        - SiteLog
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiteWorkerAccessRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      is_cleared:
+                        type: boolean
+                      blocking_reasons:
+                        type: array
+                        items: {}
+                      warnings:
+                        type: array
+                        items:
+                          type: string
+                    required:
+                      - is_cleared
+                      - blocking_reasons
+                      - warnings
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   '/v1/construction-trades/diary/{id}':
     put:
       operationId: v1.construction-trades.diary.update
@@ -236159,6 +236437,9 @@ components:
             - under_investigation
             - corrective_actions_open
             - closed
+        photo_ids:
+          type: object
+          additionalProperties: {}
       required:
         - id
         - protocol_number
@@ -236178,6 +236459,7 @@ components:
         - injury_dynamics
         - linked_insurance_claim_id
         - status
+        - photo_ids
       title: IncidentReportResource
     IncidentRequest:
       type: object
@@ -242194,10 +242476,37 @@ components:
         - created_at
         - updated_at
       title: MeritProposalResource
+    MesFeedbackEventsRequest:
+      type: object
+      description: |-
+        A batch of events of the MES Core. Only the envelope is validated here; every event is validated and answered on its
+        own, so one bad event does not fail the batch.
+      properties:
+        events:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          maxItems: 100
+      required:
+        - events
+      title: MesFeedbackEventsRequest
+    MesFeedbackResultResource:
+      type: object
+      properties:
+        results:
+          type: string
+      required:
+        - results
+      title: MesFeedbackResultResource
     MesPhaseResource:
       type: object
       additionalProperties: {}
       title: MesPhaseResource
+    MesSyncPageResource:
+      type: object
+      additionalProperties: {}
+      title: MesSyncPageResource
     MessageVisibility:
       type: string
       description: |
@@ -255967,6 +256276,14 @@ components:
                   - null
             required:
               - description
+        photos:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            maxLength: 4500000
+          maxItems: 3
       required:
         - incident_type
         - incident_date
@@ -256264,6 +256581,20 @@ components:
         - is_active
         - version
       title: RequirementMatrixResource
+    ReschedulePlannedOrderRequest:
+      type: object
+      description: 'Validation of the new dates of an MRP planned order.'
+      properties:
+        start_date:
+          type: string
+          format: date-time
+        due_date:
+          type: string
+          format: date-time
+      required:
+        - start_date
+        - due_date
+      title: ReschedulePlannedOrderRequest
     RescheduleRequest:
       type: object
       description: 'Validation of new planned dates of a production order.'
@@ -256274,6 +256605,10 @@ components:
         planned_end_date:
           type: string
           format: date-time
+        allow_overload:
+          type:
+            - boolean
+            - 'null'
       required:
         - planned_start_date
         - planned_end_date
@@ -262130,6 +262465,8 @@ components:
               - shift_planning_self
               - ocr_settings
               - hse
+              - mrp_planning
+              - mrp_release
               - hse_medical
               - hse_clinical
               - ai_copilot
@@ -269247,6 +269584,21 @@ components:
       required:
         - type
       title: SimulateSdiNotificationRequest
+    SiteWorkerAccessRequest:
+      type: object
+      description: 'A worker asking for access to a construction site on a given day.'
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        access_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+      required:
+        - employee_id
+      title: SiteWorkerAccessRequest
     SlottingRecommendationResource:
       type: object
       properties:
@@ -294956,8 +295308,14 @@ tags:
     name: MeritProposal
     description: 'Operations of the MeritProposal module.'
   -
+    name: MesFeedback
+    description: 'Operations of the MesFeedback module.'
+  -
     name: MesOperatorBoard
     description: 'Operations of the MesOperatorBoard module.'
+  -
+    name: MesSync
+    description: 'Operations of the MesSync module.'
   -
     name: Message
     description: 'Operations of the Message module.'

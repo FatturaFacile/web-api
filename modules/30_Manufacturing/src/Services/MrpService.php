@@ -134,6 +134,23 @@ final readonly class MrpService implements MrpServiceInterface
     /**
      * {@inheritDoc}
      */
+    public function reschedulePlannedOrder(MfgMrpPlannedOrder $plannedOrder, string $startDate, string $dueDate): MfgMrpPlannedOrder
+    {
+        return DB::transaction(function () use ($plannedOrder, $startDate, $dueDate): MfgMrpPlannedOrder {
+            $locked = MfgMrpPlannedOrder::query()->whereKey($plannedOrder->id)->lockForUpdate()->firstOrFail();
+            if ($locked->status !== 'planned') {
+                throw new ManufacturingOperationException("Planned order [{$locked->planned_order_number}] is {$locked->status} and cannot be rescheduled.", 'status');
+            }
+
+            $locked->update(['start_date' => $startDate, 'due_date' => $dueDate]);
+
+            return $locked->refresh();
+        });
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function convertPlannedOrder(MfgMrpPlannedOrder $plannedOrder, ?string $actorUserId = null): MfgProductionOrder
     {
         return DB::transaction(function () use ($plannedOrder, $actorUserId): MfgProductionOrder {

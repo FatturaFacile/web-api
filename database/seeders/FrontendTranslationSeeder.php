@@ -25,9 +25,11 @@ use Database\Seeders\Translations\ItalianPayrollFrontendTranslations;
 use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
+use Database\Seeders\Translations\ManufacturingCommandCenterFrontendTranslations;
 use Database\Seeders\Translations\MesOperatorBoardFrontendTranslations;
 use Database\Seeders\Translations\MobileFeatureTranslations;
 use Database\Seeders\Translations\MobileFrontendTranslations;
+use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
@@ -92,6 +94,7 @@ class FrontendTranslationSeeder extends Seeder
             + ItalianPayrollFrontendTranslations::all($locale)
             + ShiftPlanningFrontendTranslations::all($locale)
             + HseFrontendTranslations::all($locale)
+            + MrpPlanningFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)
             + CpqQuotesFrontendTranslations::all($locale)
             + DataSovereigntyFrontendTranslations::all($locale)
@@ -99,7 +102,8 @@ class FrontendTranslationSeeder extends Seeder
             + MobileFeatureTranslations::all($locale)
             + SecurityCenterFrontendTranslations::all($locale)
             + RfqFrontendTranslations::all($locale)
-            + PurchaseRequisitionFrontendTranslations::all($locale);
+            + PurchaseRequisitionFrontendTranslations::all($locale)
+            + ManufacturingCommandCenterFrontendTranslations::all($locale);
     }
 
     /**

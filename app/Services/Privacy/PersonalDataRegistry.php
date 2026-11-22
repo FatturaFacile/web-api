@@ -70,6 +70,7 @@ use Modules\Payroll\Models\PayrollEmployeeProfile;
 use Modules\Payroll\Models\Payslip;
 use Modules\Procurement\Models\Supplier;
 use Modules\Procurement\Models\SupplierContact;
+use Modules\Procurement\Models\SupplierQuote;
 use Modules\ServiceManagement\Models\CSATSurvey;
 use Modules\ServiceManagement\Models\SerializedEquipmentPassport;
 use Modules\ServiceManagement\Models\ServiceContract;
@@ -341,6 +342,7 @@ final class PersonalDataRegistry
             new PersonalDataEntry('comm_conversations', [CommunicationConversation::class], 'Conversations of the shared inbox', 'contact', ['counterparty_address'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('comm_conversation_messages', [ConversationMessage::class], 'Messages of the shared inbox', 'contact', ['sender_address'], $erasable, $operationalNote, [], 'occurred_at'),
             new PersonalDataEntry('quote_signature_requests', [QuoteSignatureRequest::class], 'Online signatures of quotes', 'contact', ['signer_name', 'signer_role', 'ip_address', 'user_agent'], $evidence, 'Proof of acceptance of the quote (signer, time, IP address), kept with the quote for the limitation period.'),
+            new PersonalDataEntry('procurement_supplier_quotes', [SupplierQuote::class], 'Supplier quotes', 'technical', ['submitted_ip_address'], $evidence, 'Proof of the bid submission (time, IP address), kept with the request for quotation for the limitation period.'),
             new PersonalDataEntry('contract_signers', [ContractSigner::class], 'Signers of contracts', 'contact', ['email'], $fiscal, 'Contract record kept for the limitation period.'),
             new PersonalDataEntry('hosp_stays', [Stay::class], 'Hospitality stays', 'contact', ['guest_email'], $erasable, $operationalNote, [], 'created_at'),
             new PersonalDataEntry('evt_registrations', [EventRegistration::class], 'Event registrations', 'contact', ['attendee_email'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),

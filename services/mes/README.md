@@ -77,6 +77,38 @@ The Laravel side of the contract **does not exist yet in `modules/30_Manufacturi
 * Signature: `X-Mes-Signature: t=<unix>,kid=<id>,v1=<hex>`, `v1 = HMAC-SHA256(secret[kid], "{t}.{raw body}")`, ±5 min tolerance, constant-time compare. GET requests are signed over an empty body (the path is not bound — agree on this with Laravel; binding method+path would be stronger).
 * `ref_machine.payload` shape for the machine profile is documented on `RefMachineProfileProvider`.
 
+## Edge Gateway → Laravel signed telemetry (`Publisher = Laravel`)
+
+Besides the Mes.Core ingest (default), the gateway can forward its WAL straight to `modules/30_Manufacturing`'s `POST /api/v1/manufacturing/edge/telemetry`. Choose it at start-up with `Gateway:Publisher = "Laravel"` (the WAL, batching and tag mapping are unchanged; only the forwarder differs: `Publishing/LaravelTelemetry.cs`).
+
+**Request.** Headers `X-Gateway-Id` (uuid from `POST /api/v1/manufacturing/edge/gateways`) and `X-Signature` = lowercase hex `HMAC-SHA256(secret, raw body)`. The body is serialised **once** to bytes, signed, and those same bytes are sent (so a retry by the resilience handler is byte-identical). Body: `{"events":[{"event_uuid","machine_id","state","occurred_at","payload"}]}`, 1–500 events per request (`Gateway:Laravel:MaxEventsPerRequest`, clamped). `occurred_at` is UTC `yyyy-MM-ddTHH:mm:ss.fffZ`; `payload` = `{tag, raw, connector}`.
+
+**Configuration** (`gateway.json` + environment; the secret is shown once at registration and must come from the environment or a secret store — `Gateway__Laravel__Secret` — never from a committed file; it is never logged):
+
+```json
+{ "Gateway": {
+    "Publisher": "Laravel",
+    "Laravel": { "BaseUrl": "https://erp.example.com", "GatewayUuid": "…uuid…", "Secret": "" },
+    "Connectors": [ {
+      "Name": "cnc-01", "MachineId": "…", "BackendMachineId": "…mfg_machine_centers.id (optional, defaults to MachineId)…",
+      "StateTag": "machine_state",
+      "StateMap": [ {"Match":"1","State":"RUNNING"}, {"Match":"2","State":"SETUP"}, {"Match":"3","State":"IDLE"}, {"Match":"4","State":"FAULT"}, {"Match":"5","State":"MAINTENANCE"} ],
+      "Protocol": "opcua", "Tags": [ … ] } ] } }
+```
+
+**State mapping.** Adapters emit tag values, not states. The connector's `StateTag` names the (mapped) tag that carries the machine state; `StateMap` converts its raw value (number or case-insensitive text) to `RUNNING|SETUP|IDLE|FAULT|MAINTENANCE`. Text that is not listed falls back to well-known names (run/running/auto → RUNNING, setup/changeover → SETUP, idle/stopped/standby → IDLE, alarm/error/fault/estop → FAULT, maintenance/service → MAINTENANCE). Anything else is **dropped and logged** (never guessed). This is protocol-agnostic: OPC UA enums, Modbus TCP status registers, MQTT/Sparkplug strings and CNC program/status words all go through the same table. **There is no NUM-specific adapter in this repo**: a NUM CNC is reached through its OPC UA or Modbus interface and mapped with a `StateMap`. Only transitions are sent (repeats of the last state are dropped within a batch and against the last delivered state); bad-quality samples are skipped.
+
+**Idempotency.** `event_uuid` is derived from `(gateway uuid, machine, tag, event time ms, state)` (SHA-256 → version-5-style UUID). A WAL record therefore always produces the same ids, also after a restart or after the WAL downsampled the batch, so resending never creates a new event.
+
+**Responses.**
+
+| Backend answer | Gateway behaviour |
+| :-- | :-- |
+| 200 | `accepted` and `duplicates` ⇒ batch acked and deleted from the WAL. `rejected[]` (e.g. unknown machine) ⇒ ids stored in `wal_quarantine` (`WalStore.QuarantineDetails()`), batch removed, **never retried**, logged as an error. |
+| 401 / 403 | Credentials/signature wrong. Not retried blindly: logged as an error, nothing acked, the forwarder waits 1 min between attempts; data keeps buffering. Also reported without any network call when `GatewayUuid`/`Secret` are not configured. |
+| 422 / other 4xx | The body itself is refused: the whole batch is moved to `wal_quarantine` (so the queue cannot stall), logged as an error. |
+| 5xx, 408, 429, timeout, network, unreadable 200 | Transient: exponential backoff with jitter (`Backoff`), WAL keeps buffering and resends in order when the backend is back. |
+
 ## Counter checkpoints (restart attribution)
 
 `counter_checkpoint(tenant, machine, key 'total'|'good', value, at)` holds the last accepted value of each cumulative counter, behind `ICounterCheckpointStore` (`PgCounterCheckpointStore`). It is written **inside the ingest transaction**, next to the buckets built from the same deltas, so a rollback can never leave a checkpoint ahead of recorded production. On restart `MachineProcessorRegistry` loads it and `CounterTracker.Restore` seeds the baseline:
