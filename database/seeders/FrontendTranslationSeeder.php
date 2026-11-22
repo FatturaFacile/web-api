@@ -21,6 +21,7 @@ use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GeneralLedgerPrimaNotaFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
+use Database\Seeders\Translations\HelpdeskSlaFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\HseFrontendTranslations;
 use Database\Seeders\Translations\IdentityFrontendTranslations;
@@ -117,7 +118,8 @@ class FrontendTranslationSeeder extends Seeder
             + PurchaseRequisitionFrontendTranslations::all($locale)
             + ManufacturingCommandCenterFrontendTranslations::all($locale)
             + ProjectEvmFrontendTranslations::all($locale)
-            + FieldServiceManagementFrontendTranslations::all($locale);
+            + FieldServiceManagementFrontendTranslations::all($locale)
+            + HelpdeskSlaFrontendTranslations::all($locale);
     }
 
     /**

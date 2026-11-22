@@ -27,6 +27,7 @@ final readonly class HelpdeskSlaMonitor
         private TicketActivityLog $activityLog,
         private EventDispatcher $dispatcher,
         private AuditLedgerInterface $auditLedger,
+        private EscalationChainEvaluator $escalations,
     ) {}
 
     /**
@@ -53,6 +54,9 @@ final readonly class HelpdeskSlaMonitor
             $result['warnings'] += $outcome['warnings'];
             $result['breaches'] += $outcome['breaches'];
         }
+
+        // Escalation chains of the SLA policies (#43) and the next-update target, after the plain warnings and breaches.
+        $this->escalations->scan($tenantId);
 
         return $result;
     }

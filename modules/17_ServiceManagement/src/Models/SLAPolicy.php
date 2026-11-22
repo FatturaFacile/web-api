@@ -18,6 +18,8 @@ final class SLAPolicy extends BaseEnterpriseModel
             'resolution_time_minutes' => 'integer',
             'escalation_time_minutes' => 'integer',
             'business_hours_only' => 'boolean',
+            'next_update_interval_minutes' => 'integer',
+            'pause_on_on_hold' => 'boolean',
             'is_active' => 'boolean',
             'translations' => 'array',
             'metadata' => 'array',

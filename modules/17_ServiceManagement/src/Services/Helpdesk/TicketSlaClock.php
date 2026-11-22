@@ -46,11 +46,45 @@ final readonly class TicketSlaClock
 
     public function calendarForTicket(Ticket $ticket): ?BusinessHoursCalendar
     {
+        return $this->calendarFor($this->policyFor($ticket), $ticket->tenant_id);
+    }
+
+    /**
+     * The SLA policy the ticket was stamped with when it was opened.
+     */
+    public function policyFor(Ticket $ticket): ?SLAPolicy
+    {
         $metadata = is_array($ticket->metadata) ? $ticket->metadata : [];
         $policyId = $metadata['sla_policy_id'] ?? null;
-        $policy = is_string($policyId) ? SLAPolicy::query()->find($policyId) : null;
 
-        return $this->calendarFor($policy, $ticket->tenant_id);
+        return is_string($policyId) ? SLAPolicy::query()->find($policyId) : null;
+    }
+
+    /**
+     * Whether the clock stops while the ticket sits in the status: always while waiting for the customer, and on hold
+     * when the policy asks for it.
+     */
+    public function pausesOn(Ticket $ticket, TicketStatus $status): bool
+    {
+        if ($status === TicketStatus::PendingCustomer) {
+            return true;
+        }
+
+        return $status === TicketStatus::OnHold && (bool) $this->policyFor($ticket)?->pause_on_on_hold;
+    }
+
+    /**
+     * Starts the next-update target after a public reply of an agent: the policy interval counted on the business hours.
+     * Without an interval on the policy there is no such target.
+     */
+    public function scheduleNextUpdate(Ticket $ticket, ?DateTimeInterface $from = null): void
+    {
+        $interval = $this->policyFor($ticket)?->next_update_interval_minutes;
+
+        $ticket->next_update_breached_at = null;
+        $ticket->next_update_due_at = $interval === null || $interval <= 0
+            ? null
+            : $this->dueDate($from ?? CarbonImmutable::now(), (int) $interval, $this->calendarForTicket($ticket));
     }
 
     public function dueDate(DateTimeInterface $start, int $minutes, ?BusinessHoursCalendar $calendar): CarbonImmutable
@@ -93,6 +127,10 @@ final readonly class TicketSlaClock
 
         if ($ticket->resolution_due_at !== null && $ticket->resolution_due_at->greaterThan($pausedAt)) {
             $ticket->resolution_due_at = $this->clock->addBusinessMinutes($now, $this->clock->businessMinutesBetween($pausedAt, $ticket->resolution_due_at, $calendar), $calendar);
+        }
+
+        if ($ticket->next_update_due_at !== null && $ticket->next_update_due_at->greaterThan($pausedAt)) {
+            $ticket->next_update_due_at = $this->clock->addBusinessMinutes($now, $this->clock->businessMinutesBetween($pausedAt, $ticket->next_update_due_at, $calendar), $calendar);
         }
 
         $ticket->sla_paused_minutes = (int) $ticket->sla_paused_minutes + $this->clock->businessMinutesBetween($pausedAt, $now, $calendar);

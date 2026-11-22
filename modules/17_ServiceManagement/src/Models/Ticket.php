@@ -18,6 +18,13 @@ use Modules\Workflow\Models\WorkflowInstance;
 /**
  * @property Carbon|null $resolved_at
  * @property Carbon|null $closed_at
+ * @property Carbon|null $response_due_at
+ * @property Carbon|null $resolution_due_at
+ * @property Carbon|null $first_responded_at
+ * @property Carbon|null $next_update_due_at
+ * @property Carbon|null $next_update_breached_at
+ * @property Carbon|null $sla_paused_at
+ * @property array<string, mixed>|null $metadata
  */
 final class Ticket extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
@@ -47,6 +54,8 @@ final class Ticket extends BaseEnterpriseModel implements LockableByWorkflowInte
             'resolution_warning_sent_at' => 'datetime',
             'response_breached_at' => 'datetime',
             'resolution_breached_at' => 'datetime',
+            'next_update_due_at' => 'datetime',
+            'next_update_breached_at' => 'datetime',
         ];
     }
 

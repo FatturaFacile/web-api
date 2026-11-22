@@ -98,6 +98,7 @@ final class KnowledgeBaseController extends Controller
         $query = KnowledgeArticle::query()
             ->where('tenant_id', $this->tenantId())
             ->when(isset($filters['visibility']), fn ($q) => $q->where('visibility', $filters['visibility']))
+            ->when(isset($filters['locale']), fn ($q) => $q->where('locale', $filters['locale']))
             ->when(isset($filters['knowledge_category_id']), fn ($q) => $q->where('knowledge_category_id', $filters['knowledge_category_id']))
             ->when(array_key_exists('is_published', $filters), fn ($q) => $q->where('is_published', (bool) $filters['is_published']));
 

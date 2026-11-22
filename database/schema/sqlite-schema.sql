@@ -10673,6 +10673,8 @@ CREATE TABLE "esm_business_hours_calendars"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "holiday_country" varchar,
+  "holiday_region" varchar,
   foreign key("hr_holiday_calendar_id") references "hr_holiday_calendars"("id") on delete set null on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -10702,6 +10704,7 @@ CREATE TABLE "esm_canned_responses"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "locale" varchar,
   foreign key("owner_user_id") references "users"("id") on delete set null on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -11130,6 +11133,7 @@ CREATE TABLE "esm_knowledge_articles"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "locale" varchar,
   foreign key("knowledge_category_id") references "esm_knowledge_categories"("id") on delete set null on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("category_id") references "esm_service_categories"("id") on delete set null on update no action,
@@ -11425,6 +11429,7 @@ CREATE TABLE "esm_rma_orders"(
   "updated_by" varchar,
   "deleted_by" varchar,
   "return_delivery_note_id" varchar,
+  "ticket_id" varchar,
   foreign key("equipment_passport_id") references "esm_equipment_passports"("id") on delete restrict on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -11831,6 +11836,9 @@ CREATE TABLE "esm_sla_policies"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "escalation_chain_id" varchar,
+  "next_update_interval_minutes" integer,
+  "pause_on_on_hold" tinyint(1) not null default '0',
   foreign key("support_plan_id") references "esm_support_plans"("id") on delete set null on update no action,
   foreign key("service_category_id") references "esm_service_categories"("id") on delete set null on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -12124,6 +12132,11 @@ CREATE TABLE "esm_ticket_time_entries"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "service_contract_id" varchar,
+  "contract_transaction_id" varchar,
+  "contract_hours" numeric not null default '0',
+  "billable_hours" numeric not null default '0',
+  "billing_status" varchar not null default 'none',
   foreign key("technician_id") references "esm_service_technicians"("id") on delete cascade on update no action,
   foreign key("ticket_id") references "esm_tickets"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -12218,6 +12231,8 @@ CREATE TABLE "esm_tickets"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "next_update_due_at" datetime,
+  "next_update_breached_at" datetime,
   foreign key("split_from_ticket_id") references "esm_tickets"("id") on delete set null on update no action,
   foreign key("merged_into_ticket_id") references "esm_tickets"("id") on delete set null on update no action,
   foreign key("knowledge_article_id") references "esm_knowledge_articles"("id") on delete set null on update no action,
@@ -45239,6 +45254,487 @@ CREATE INDEX "inventory_count_events_tenant_id_index" on "inventory_count_events
 CREATE INDEX "inventory_adjustments_journal_entry_id_index" on "inventory_adjustments"(
   "journal_entry_id"
 );
+CREATE TABLE "esm_escalation_chains"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "esm_escalation_chains_tenant_id_code_unique" on "esm_escalation_chains"(
+  "tenant_id",
+  "code"
+);
+CREATE TABLE "esm_escalation_steps"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "chain_id" varchar not null,
+  "target" varchar not null,
+  "threshold_percent" integer not null,
+  "action" varchar not null,
+  "notify_user_ids" text,
+  "notify_team_lead" tinyint(1) not null default '0',
+  "team_id" varchar,
+  "priority" varchar,
+  "position" integer not null default '100',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("chain_id") references "esm_escalation_chains"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "esm_escalation_steps_tenant_id_chain_id_target_index" on "esm_escalation_steps"(
+  "tenant_id",
+  "chain_id",
+  "target"
+);
+CREATE TABLE "esm_ticket_escalation_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ticket_id" varchar not null,
+  "chain_id" varchar not null,
+  "step_id" varchar not null,
+  "target" varchar not null,
+  "threshold_percent" integer not null,
+  "action" varchar not null,
+  "elapsed_percent" integer not null,
+  "cycle_key" varchar not null default '',
+  "outcome" text,
+  "fired_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ticket_id") references "esm_tickets"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "esm_ticket_escalation_logs_ticket_id_step_id_cycle_key_unique" on "esm_ticket_escalation_logs"(
+  "ticket_id",
+  "step_id",
+  "cycle_key"
+);
+CREATE INDEX "esm_ticket_escalation_logs_tenant_id_ticket_id_index" on "esm_ticket_escalation_logs"(
+  "tenant_id",
+  "ticket_id"
+);
+CREATE INDEX "esm_tickets_tenant_id_next_update_due_at_index" on "esm_tickets"(
+  "tenant_id",
+  "next_update_due_at"
+);
+CREATE INDEX "esm_knowledge_articles_tenant_id_locale_index" on "esm_knowledge_articles"(
+  "tenant_id",
+  "locale"
+);
+CREATE INDEX "esm_rma_orders_tenant_id_ticket_id_index" on "esm_rma_orders"(
+  "tenant_id",
+  "ticket_id"
+);
+CREATE TABLE "analytical_centers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "parent_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "name_translations" text,
+  "center_type" varchar not null,
+  "category" varchar not null,
+  "path" varchar not null default '',
+  "depth" integer not null default '0',
+  "manager_user_id" varchar,
+  "manager_name" varchar,
+  "is_active" tinyint(1) not null default '1',
+  "valid_from" date,
+  "valid_to" date,
+  "default_profit_center_id" varchar,
+  "default_project_id" varchar,
+  "default_product_line_id" varchar,
+  "default_cost_element_type" varchar,
+  "metadata" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "analytical_centers_tenant_id_code_unique" on "analytical_centers"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "analytical_centers_tenant_id_center_type_is_active_index" on "analytical_centers"(
+  "tenant_id",
+  "center_type",
+  "is_active"
+);
+CREATE INDEX "analytical_centers_tenant_id_index" on "analytical_centers"(
+  "tenant_id"
+);
+CREATE INDEX "analytical_centers_parent_id_index" on "analytical_centers"(
+  "parent_id"
+);
+CREATE TABLE "analytical_allocation_drivers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "driver_type" varchar not null,
+  "unit" varchar,
+  "is_system" tinyint(1) not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "analytical_allocation_drivers_tenant_id_code_unique" on "analytical_allocation_drivers"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "analytical_allocation_drivers_tenant_id_index" on "analytical_allocation_drivers"(
+  "tenant_id"
+);
+CREATE TABLE "analytical_driver_values"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "allocation_driver_id" varchar not null,
+  "analytical_center_id" varchar not null,
+  "period_key" varchar not null,
+  "value" numeric not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("allocation_driver_id") references "analytical_allocation_drivers"("id") on delete cascade,
+  foreign key("analytical_center_id") references "analytical_centers"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_analytical_driver_value" on "analytical_driver_values"(
+  "allocation_driver_id",
+  "analytical_center_id",
+  "period_key"
+);
+CREATE INDEX "analytical_driver_values_tenant_id_period_key_index" on "analytical_driver_values"(
+  "tenant_id",
+  "period_key"
+);
+CREATE INDEX "analytical_driver_values_tenant_id_index" on "analytical_driver_values"(
+  "tenant_id"
+);
+CREATE TABLE "analytical_derivation_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "priority" integer not null default '100',
+  "is_active" tinyint(1) not null default '1',
+  "valid_from" date,
+  "valid_to" date,
+  "accounting_cause_id" varchar,
+  "journal_type" varchar,
+  "product_id" varchar,
+  "product_category_id" varchar,
+  "account_id" varchar,
+  "counterparty_type" varchar,
+  "counterparty_id" varchar,
+  "cost_center_id" varchar,
+  "profit_center_id" varchar,
+  "project_id" varchar,
+  "product_line_id" varchar,
+  "cost_element_type" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "analytical_derivation_rules_tenant_id_is_active_priority_index" on "analytical_derivation_rules"(
+  "tenant_id",
+  "is_active",
+  "priority"
+);
+CREATE INDEX "analytical_derivation_rules_tenant_id_index" on "analytical_derivation_rules"(
+  "tenant_id"
+);
+CREATE TABLE "analytical_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "entry_type" varchar not null,
+  "posting_date" date not null,
+  "period_key" varchar not null,
+  "currency" varchar not null default 'EUR',
+  "description" varchar,
+  "source_type" varchar,
+  "source_id" varchar,
+  "gl_journal_entry_id" varchar,
+  "invoice_id" varchar,
+  "apportionment_run_id" varchar,
+  "is_reversed" tinyint(1) not null default '0',
+  "reversed_by_entry_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "analytical_entries_tenant_id_period_key_entry_type_index" on "analytical_entries"(
+  "tenant_id",
+  "period_key",
+  "entry_type"
+);
+CREATE INDEX "analytical_entries_tenant_id_source_type_source_id_index" on "analytical_entries"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "analytical_entries_apportionment_run_id_index" on "analytical_entries"(
+  "apportionment_run_id"
+);
+CREATE INDEX "analytical_entries_tenant_id_index" on "analytical_entries"(
+  "tenant_id"
+);
+CREATE TABLE "analytical_entry_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "analytical_entry_id" varchar not null,
+  "line_number" integer not null default '1',
+  "cost_center_id" varchar,
+  "profit_center_id" varchar,
+  "project_id" varchar,
+  "product_line_id" varchar,
+  "department_id" varchar,
+  "location_id" varchar,
+  "cost_element_type" varchar not null,
+  "amount" numeric not null,
+  "split_percentage" numeric,
+  "posting_date" date not null,
+  "period_key" varchar not null,
+  "derivation_source" varchar not null default 'MANUAL',
+  "derivation_meta" text,
+  "gl_journal_line_id" varchar,
+  "invoice_line_id" varchar,
+  "apportionment_step_id" varchar,
+  "description" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("analytical_entry_id") references "analytical_entries"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "analytical_entry_lines_tenant_id_period_key_cost_element_type_index" on "analytical_entry_lines"(
+  "tenant_id",
+  "period_key",
+  "cost_element_type"
+);
+CREATE INDEX "analytical_entry_lines_tenant_id_index" on "analytical_entry_lines"(
+  "tenant_id"
+);
+CREATE INDEX "analytical_entry_lines_cost_center_id_index" on "analytical_entry_lines"(
+  "cost_center_id"
+);
+CREATE INDEX "analytical_entry_lines_profit_center_id_index" on "analytical_entry_lines"(
+  "profit_center_id"
+);
+CREATE INDEX "analytical_entry_lines_project_id_index" on "analytical_entry_lines"(
+  "project_id"
+);
+CREATE INDEX "analytical_entry_lines_product_line_id_index" on "analytical_entry_lines"(
+  "product_line_id"
+);
+CREATE TABLE "apportionment_schedules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "is_active" tinyint(1) not null default '1',
+  "description" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "apportionment_schedules_tenant_id_name_unique" on "apportionment_schedules"(
+  "tenant_id",
+  "name"
+);
+CREATE INDEX "apportionment_schedules_tenant_id_index" on "apportionment_schedules"(
+  "tenant_id"
+);
+CREATE TABLE "apportionment_schedule_steps"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "apportionment_schedule_id" varchar not null,
+  "step_order" integer not null,
+  "source_center_id" varchar not null,
+  "allocation_driver_id" varchar,
+  "driver_type" varchar not null,
+  "include_descendants" tinyint(1) not null default '0',
+  "fixed_weights_json" text,
+  "target_filter_json" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("apportionment_schedule_id") references "apportionment_schedules"("id") on delete cascade,
+  foreign key("source_center_id") references "analytical_centers"("id") on delete restrict,
+  foreign key("allocation_driver_id") references "analytical_allocation_drivers"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_apportionment_step_order" on "apportionment_schedule_steps"(
+  "apportionment_schedule_id",
+  "step_order"
+);
+CREATE INDEX "apportionment_schedule_steps_tenant_id_index" on "apportionment_schedule_steps"(
+  "tenant_id"
+);
+CREATE TABLE "apportionment_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "apportionment_schedule_id" varchar,
+  "period_key" varchar not null,
+  "period_start" date not null,
+  "period_end" date not null,
+  "status" varchar not null,
+  "total_pool" numeric not null default '0',
+  "total_allocated" numeric not null default '0',
+  "total_unallocated" numeric not null default '0',
+  "warnings" text,
+  "consolidated_at" datetime,
+  "consolidated_by" varchar,
+  "reversed_at" datetime,
+  "reversed_by" varchar,
+  "reversal_reason" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "apportionment_runs_tenant_id_period_key_status_index" on "apportionment_runs"(
+  "tenant_id",
+  "period_key",
+  "status"
+);
+CREATE INDEX "apportionment_runs_tenant_id_index" on "apportionment_runs"(
+  "tenant_id"
+);
+CREATE INDEX "apportionment_runs_apportionment_schedule_id_index" on "apportionment_runs"(
+  "apportionment_schedule_id"
+);
+CREATE TABLE "apportionment_run_steps"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "apportionment_run_id" varchar not null,
+  "step_order" integer not null,
+  "source_center_id" varchar not null,
+  "driver_type" varchar not null,
+  "status" varchar not null,
+  "pool_amount" numeric not null default '0',
+  "allocated_amount" numeric not null default '0',
+  "driver_total" numeric not null default '0',
+  "warnings" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("apportionment_run_id") references "apportionment_runs"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_run_step_order" on "apportionment_run_steps"(
+  "apportionment_run_id",
+  "step_order"
+);
+CREATE INDEX "apportionment_run_steps_tenant_id_index" on "apportionment_run_steps"(
+  "tenant_id"
+);
+CREATE INDEX "apportionment_run_steps_source_center_id_index" on "apportionment_run_steps"(
+  "source_center_id"
+);
+CREATE TABLE "apportionment_run_allocations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "apportionment_run_id" varchar not null,
+  "step_order" integer not null,
+  "source_center_id" varchar not null,
+  "target_center_id" varchar not null,
+  "driver_type" varchar not null,
+  "driver_value" numeric not null default '0',
+  "driver_total" numeric not null default '0',
+  "share_ratio" numeric not null default '0',
+  "allocated_amount" numeric not null default '0',
+  "rounding_adjustment" numeric not null default '0',
+  "analytical_entry_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("apportionment_run_id") references "apportionment_runs"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "apportionment_run_allocations_apportionment_run_id_step_order_index" on "apportionment_run_allocations"(
+  "apportionment_run_id",
+  "step_order"
+);
+CREATE INDEX "apportionment_run_allocations_tenant_id_index" on "apportionment_run_allocations"(
+  "tenant_id"
+);
+CREATE INDEX "apportionment_run_allocations_source_center_id_index" on "apportionment_run_allocations"(
+  "source_center_id"
+);
+CREATE INDEX "apportionment_run_allocations_target_center_id_index" on "apportionment_run_allocations"(
+  "target_center_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -45668,3 +46164,5 @@ INSERT INTO migrations VALUES(425,'2027_12_20_000100_create_project_evm_profitab
 INSERT INTO migrations VALUES(426,'2027_12_21_000100_create_artisanal_gelato_tables',7);
 INSERT INTO migrations VALUES(427,'2027_12_21_000100_extend_inventory_counting_abc_blind_multilevel',7);
 INSERT INTO migrations VALUES(428,'2027_12_22_000100_create_esm_work_order_photos_table',7);
+INSERT INTO migrations VALUES(429,'2027_12_21_000100_add_helpdesk_sla_escalation_chains_and_ticket_time_billing',8);
+INSERT INTO migrations VALUES(430,'2027_12_21_000100_create_analytical_accounting_tables',8);

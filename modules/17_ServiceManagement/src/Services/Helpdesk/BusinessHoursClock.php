@@ -32,6 +32,8 @@ final class BusinessHoursClock
         'sun' => 'sun', 'sunday' => 'sun', '7' => 'sun', '0' => 'sun',
     ];
 
+    public function __construct(private readonly HolidayCatalog $holidayCatalog = new HolidayCatalog) {}
+
     public function addBusinessMinutes(DateTimeInterface $start, int $minutes, ?BusinessHoursCalendar $calendar): CarbonImmutable
     {
         $start = CarbonImmutable::instance($start)->utc();
@@ -97,13 +99,12 @@ final class BusinessHoursClock
     {
         $timezone = $calendar->timezone ?: 'UTC';
         $schedule = $this->schedule(is_array($calendar->weekly_schedule) ? $calendar->weekly_schedule : []);
-        $holidays = $this->holidays($calendar);
+        $day = $instant->setTimezone($timezone)->startOfDay();
+        $holidays = $this->holidays($calendar, $day->year);
 
         if ($schedule === []) {
             return;
         }
-
-        $day = $instant->setTimezone($timezone)->startOfDay();
 
         for ($index = 0; $index < self::MaxDays; $index++, $day = $day->addDay()) {
             $date = $day->format('Y-m-d');
@@ -171,7 +172,7 @@ final class BusinessHoursClock
      *
      * @return array<string, true>
      */
-    private function holidays(BusinessHoursCalendar $calendar): array
+    private function holidays(BusinessHoursCalendar $calendar, int $fromYear): array
     {
         $entries = is_array($calendar->holidays) ? $calendar->holidays : [];
 
@@ -190,6 +191,27 @@ final class BusinessHoursClock
             }
         }
 
+        // Swiss (federal and cantonal) and Italian (national and regional) public holidays of the calendar's country.
+        foreach ($this->catalogHolidays($calendar, $fromYear) as $date) {
+            $dates[$date] = true;
+        }
+
         return $dates;
+    }
+
+    /**
+     * Public holidays of the holiday country and region of the calendar, for as many years as the clock walks.
+     *
+     * @return list<string>
+     */
+    private function catalogHolidays(BusinessHoursCalendar $calendar, int $fromYear): array
+    {
+        $country = $calendar->holiday_country;
+
+        if (! is_string($country) || ! $this->holidayCatalog->supports($country, $calendar->holiday_region)) {
+            return [];
+        }
+
+        return $this->holidayCatalog->between($country, $calendar->holiday_region, $fromYear, $fromYear + intdiv(self::MaxDays, 365) + 1);
     }
 }

@@ -145,11 +145,11 @@ final readonly class HelpdeskTicketService
             $ticket->closed_at = null;
         }
 
-        if ($current === TicketStatus::PendingCustomer) {
+        if ($this->slaClock->pausesOn($ticket, $current)) {
             $this->slaClock->resume($ticket);
         }
 
-        if ($target === TicketStatus::PendingCustomer) {
+        if ($this->slaClock->pausesOn($ticket, $target)) {
             $this->slaClock->pause($ticket);
         }
 

@@ -3447,4 +3447,13 @@ return [
     'pickup_at' => 'pickup',
     'slots' => 'wells',
     'slot_number' => 'well number',
+    'threshold_percent' => 'threshold percent',
+    'notify_user_ids' => 'users to notify',
+    'notify_team_lead' => 'notify the team lead',
+    'escalation_chain_id' => 'escalation chain',
+    'next_update_interval_minutes' => 'next update interval (minutes)',
+    'pause_on_on_hold' => 'pause when on hold',
+    'risk_percent' => 'risk percent',
+    'holiday_country' => 'holiday country',
+    'holiday_region' => 'holiday canton or region',
 ];

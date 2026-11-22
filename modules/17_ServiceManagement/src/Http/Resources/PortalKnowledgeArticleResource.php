@@ -26,6 +26,7 @@ final class PortalKnowledgeArticleResource extends JsonResource
             'id' => $this->id,
             'article_number' => $this->article_number,
             'title' => $this->title,
+            'locale' => $this->locale,
             'summary' => $this->summary,
             'content' => $this->when($this->withContent, $this->content),
             'knowledge_category_id' => $this->knowledge_category_id,

@@ -7,7 +7,15 @@ namespace Modules\ServiceManagement\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $work_date
+ * @property string $contract_hours
+ * @property string $billable_hours
+ * @property string $total_charge
+ * @property array<string, mixed>|null $metadata
+ */
 final class TicketTimeEntry extends BaseEnterpriseModel
 {
     protected $table = 'esm_ticket_time_entries';
@@ -22,6 +30,8 @@ final class TicketTimeEntry extends BaseEnterpriseModel
             'total_cost' => 'decimal:2',
             'total_charge' => 'decimal:2',
             'is_billable' => 'boolean',
+            'contract_hours' => 'decimal:2',
+            'billable_hours' => 'decimal:2',
             'metadata' => 'array',
         ];
     }

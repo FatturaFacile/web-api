@@ -3447,4 +3447,13 @@ return [
     'pickup_at' => 'Abholung',
     'slots' => 'Vitrinenplätze',
     'slot_number' => 'Platznummer',
+    'threshold_percent' => 'Schwellenwert in Prozent',
+    'notify_user_ids' => 'zu benachrichtigende Benutzer',
+    'notify_team_lead' => 'Teamleiter benachrichtigen',
+    'escalation_chain_id' => 'Eskalationskette',
+    'next_update_interval_minutes' => 'Intervall bis zum nächsten Update (Minuten)',
+    'pause_on_on_hold' => 'bei Warteposition pausieren',
+    'risk_percent' => 'Risikoprozentsatz',
+    'holiday_country' => 'Land der Feiertage',
+    'holiday_region' => 'Kanton oder Region der Feiertage',
 ];

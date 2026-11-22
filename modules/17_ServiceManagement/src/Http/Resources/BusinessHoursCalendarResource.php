@@ -26,6 +26,8 @@ final class BusinessHoursCalendarResource extends JsonResource
             'weekly_schedule' => $this->weekly_schedule ?? (object) [],
             'holidays' => $this->holidays ?? [],
             'hr_holiday_calendar_id' => $this->hr_holiday_calendar_id,
+            'holiday_country' => $this->holiday_country,
+            'holiday_region' => $this->holiday_region,
             'is_active' => (bool) $this->is_active,
             'created_at' => $this->created_at?->toIso8601String(),
         ];

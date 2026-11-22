@@ -6,6 +6,8 @@ namespace Modules\ServiceManagement\Http\Requests;
 
 use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Modules\ServiceManagement\Services\Helpdesk\HelpdeskLocales;
 
 final class SaveKnowledgeArticleRequest extends FormRequest
 {
@@ -30,6 +32,7 @@ final class SaveKnowledgeArticleRequest extends FormRequest
             'knowledge_category_id' => ['sometimes', 'nullable', 'uuid', $this->tenantOwns('esm_knowledge_categories')],
             'category_id' => ['sometimes', 'nullable', 'uuid', $this->tenantExists('esm_service_categories')],
             'visibility' => ['sometimes', 'string', 'in:internal,public'],
+            'locale' => ['sometimes', 'nullable', 'string', Rule::in(HelpdeskLocales::All)],
             'is_published' => ['sometimes', 'boolean'],
             'tags' => ['sometimes', 'array', 'max:30'],
             'tags.*' => ['string', 'max:50'],
