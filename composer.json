@@ -161,6 +161,26 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test --parallel"
         ],
+        "test:unit": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test --testsuite=Unit,Architecture --parallel"
+        ],
+        "test:fast": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test --testsuite=Unit,Architecture --parallel"
+        ],
+        "test:module": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test --parallel"
+        ],
+        "lint:dirty": "./vendor/bin/pint --dirty --format agent",
+        "lint": "./vendor/bin/pint --test",
+        "analyse": "./vendor/bin/phpstan analyse --memory-limit=2G",
+        "gate": [
+            "@lint:dirty",
+            "@analyse",
+            "@test:unit"
+        ],
         "test:serial": [
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"

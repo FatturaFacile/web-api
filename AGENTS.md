@@ -44,11 +44,11 @@
 - **Mandatory End-of-Task Cleanup**: After pushing `dev`, ALWAYS delete merged local & remote feature branches (`git branch -D <branch>`, `git push origin --delete <branch>`), remove linked git worktrees (`git worktree remove --force <path> && git worktree prune`), and remove any temporary/debug files created during the session so `git status` is completely clean.
 
 ## Quality Gates (Mandatory Before Push)
-- **NEVER push to `origin dev` unless ALL quality gates pass with zero warnings/errors**:
-  - Format changed files: `./vendor/bin/pint --dirty --format agent`
-  - Format check: `./vendor/bin/pint --test`
-  - Static analysis (level 5 + baseline): `./vendor/bin/phpstan analyse --memory-limit=2G`
-  - Architecture boundary tests: `./vendor/bin/pest tests/Architecture --no-coverage`
-  - Automated tests (SQLite `:memory:`, `DB_FOREIGN_KEYS=true`): `php artisan test` (or parallel `composer test`)
-- **Full Pre-Push Gate**: `./vendor/bin/pint --test && ./vendor/bin/phpstan analyse --memory-limit=2G && php artisan test` (use `composer test` for parallel runs).
+- **Two-Tier Merge Gate** (the full suite takes ~35 min locally, so it is NOT a local merge gate):
+  - **Tier 1 — local, before merging a worktree into `dev` (minutes):**
+    - `composer lint:dirty` (`pint --dirty`), then `composer analyse` (PHPStan level 5 + baseline, incremental cache in `storage/framework/cache/phpstan`, git-ignored).
+    - `composer test:unit` (Unit + Architecture suites) — skip when the user says tests are left to CI.
+    - Touched domain only: `composer test:module -- tests/Feature/<Domain>` (never the whole suite locally).
+  - **Tier 2 — CI (full verification):** full `php artisan test --parallel` plus the PostgreSQL integration suite in GitHub Actions. Do not run the full suite locally unless explicitly asked; never run it while other test runs are active on the machine (each worker can hold up to 4G, see `phpunit.xml`).
+- Composer test scripts: `test` (full, parallel), `test:serial`, `test:unit`/`test:fast` (Unit + Architecture), `test:module -- <path>`, `lint`, `lint:dirty`, `analyse`, `gate` (lint:dirty + analyse + test:unit).
 - **Auxiliary Checks (when applicable)**: `php artisan config:clear`; `php artisan l5-swagger:generate` (after route/OpenAPI changes); `npm run build` (after Vite/Tailwind changes).
