@@ -169,9 +169,10 @@ final class HelpdeskSlaController extends Controller
             $request->validated('description'),
             (bool) $request->validated('is_billable', true),
             $request->user()?->id,
+            $request->validated('idempotency_key') ?? $request->header('Idempotency-Key'),
         );
 
-        return response()->json(['data' => new TicketTimeEntryResource($entry)], 201);
+        return response()->json(['data' => new TicketTimeEntryResource($entry)], $entry->wasRecentlyCreated ? 201 : 200);
     }
 
     #[OA\Post(path: '/api/v1/esm/tickets/{ticket}/escalate/field-service', operationId: 'escalateEsmTicketToFieldService', summary: 'Hand a ticket off to a field service work order', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['ESM Helpdesk SLA'], parameters: [new OA\Parameter(ref: '#/components/parameters/HelpdeskTicketPath')], responses: [new OA\Response(response: 201, description: 'Work order created, or the one created before'), new OA\Response(response: 422, description: 'The ticket cannot be handed off')])]

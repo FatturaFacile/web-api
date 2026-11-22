@@ -29,6 +29,7 @@ final class LogTicketTimeRequest extends FormRequest
             'technician_id' => ['sometimes', 'nullable', 'uuid', $this->tenantOwns('esm_service_technicians')],
             'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'is_billable' => ['sometimes', 'boolean'],
+            'idempotency_key' => ['sometimes', 'nullable', 'string', 'max:100'],
         ];
     }
 }

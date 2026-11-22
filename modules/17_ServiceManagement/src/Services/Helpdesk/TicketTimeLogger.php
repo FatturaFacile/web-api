@@ -40,9 +40,19 @@ final readonly class TicketTimeLogger
         private TicketActivityLog $activityLog,
     ) {}
 
-    public function log(Ticket $ticket, int $minutes, ?string $technicianId = null, ?string $description = null, bool $billable = true, ?string $actorUserId = null): TicketTimeEntry
+    public function log(Ticket $ticket, int $minutes, ?string $technicianId = null, ?string $description = null, bool $billable = true, ?string $actorUserId = null, ?string $idempotencyKey = null): TicketTimeEntry
     {
-        return DB::transaction(function () use ($ticket, $minutes, $technicianId, $description, $billable, $actorUserId): TicketTimeEntry {
+        return DB::transaction(function () use ($ticket, $minutes, $technicianId, $description, $billable, $actorUserId, $idempotencyKey): TicketTimeEntry {
+            if ($idempotencyKey !== null) {
+                // A replay of a queued log (lost response, offline client) returns the entry written the first time.
+                $existing = TicketTimeEntry::query()->where('ticket_id', $ticket->id)->get()
+                    ->first(static fn (TicketTimeEntry $entry): bool => ($entry->metadata['idempotency_key'] ?? null) === $idempotencyKey);
+
+                if ($existing !== null) {
+                    return $existing;
+                }
+            }
+
             $technicianId ??= $ticket->assigned_technician_id;
 
             if ($technicianId === null) {
@@ -72,6 +82,10 @@ final readonly class TicketTimeLogger
             };
             // Hours the contract covers are not charged again.
             $entry->total_charge = ServiceAmounts::lineTotal($billableHours, $entry->hourly_rate);
+            if ($idempotencyKey !== null) {
+                $entry->metadata = [...(array) $entry->metadata, 'idempotency_key' => $idempotencyKey];
+            }
+
             $entry->save();
 
             $this->activityLog->record($ticket, 'time_logged', null, $entry->billing_status, [

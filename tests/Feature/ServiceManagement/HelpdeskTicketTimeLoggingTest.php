@@ -189,3 +189,17 @@ test('time cannot be logged on a locked ticket or a ticket of another tenant', f
 
     expect(TicketTimeEntry::query()->count())->toBe(0);
 });
+
+test('a replay with the same idempotency key returns the first entry and books the hours once', function (): void {
+    $contract = prepaidContract($this, '10.00');
+    $url = "/api/v1/esm/tickets/{$this->ticket->id}/time-entries";
+
+    $first = $this->postJson($url, ['minutes' => 60, 'idempotency_key' => 'queue-1'])->assertCreated()->json('data.id');
+    $again = $this->withHeader('Idempotency-Key', 'queue-1')->postJson($url, ['minutes' => 60])->assertOk()->json('data.id');
+    $other = $this->postJson($url, ['minutes' => 60, 'idempotency_key' => 'queue-2'])->assertCreated()->json('data.id');
+
+    expect($again)->toBe($first)
+        ->and($other)->not->toBe($first)
+        ->and(TicketTimeEntry::query()->count())->toBe(2)
+        ->and($contract->fresh()->consumed_hours)->toBe('2.00');
+});

@@ -11,6 +11,10 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property Carbon|null $work_date
+ * @property string $contract_hours
+ * @property string $billable_hours
+ * @property string $total_charge
+ * @property array<string, mixed>|null $metadata
  */
 final class TicketTimeEntry extends BaseEnterpriseModel
 {
