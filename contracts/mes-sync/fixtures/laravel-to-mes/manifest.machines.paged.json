@@ -1,0 +1,38 @@
+{
+    "description": "The manifest is paged by an opaque cursor: the MES Core must read every page before it decides what is orphaned.",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "pages": [
+        {
+            "path": "/api/v1/manufacturing/mes-sync/machines/manifest?limit=1",
+            "response": {
+                "schema_version": 1,
+                "resource": "machines",
+                "items": [
+                    {
+                        "id": "018f0000-0000-7000-8000-0000000000a1",
+                        "revision": 3
+                    }
+                ],
+                "next_cursor": "eyJ2IjoxLCJlbnRpdHkiOiIwMThmMDAwMC0wMDAwLTcwMDAtODAwMC0wMDAwMDAwMDAwYTEifQ",
+                "has_more": true,
+                "watermark": 8
+            }
+        },
+        {
+            "path": "/api/v1/manufacturing/mes-sync/machines/manifest?limit=1&cursor=eyJ2IjoxLCJlbnRpdHkiOiIwMThmMDAwMC0wMDAwLTcwMDAtODAwMC0wMDAwMDAwMDAwYTEifQ",
+            "response": {
+                "schema_version": 1,
+                "resource": "machines",
+                "items": [
+                    {
+                        "id": "018f0000-0000-7000-8000-0000000000a3",
+                        "revision": 8
+                    }
+                ],
+                "next_cursor": null,
+                "has_more": false,
+                "watermark": 8
+            }
+        }
+    ]
+}

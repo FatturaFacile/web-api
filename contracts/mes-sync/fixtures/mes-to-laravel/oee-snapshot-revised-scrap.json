@@ -1,0 +1,26 @@
+{
+    "description": "A batch with one OeeSnapshotRevised message as the OutboxRelay of the MES Core sends it.",
+    "method": "POST",
+    "path": "/api/v1/manufacturing/mes-events",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "kid": "k1",
+    "secret": "contract-test-secret",
+    "t": 1798000000,
+    "body": "{\"events\":[{\"id\":\"018f0000-0000-7000-8000-0000000000d6\",\"type\":\"OeeSnapshotRevised\",\"dedupe_key\":\"scrap:018f0000-0000-7000-8000-0000000000c1:14\",\"occurred_at\":\"2026-12-23T04:27:00.1234567+00:00\",\"payload\":{\"machine_id\":\"018f0000-0000-7000-8000-0000000000a1\",\"run_id\":\"018f0000-0000-7000-8000-0000000000c1\",\"work_order_ref\":\"018f0000-0000-7000-8000-0000000000b1\",\"total\":500,\"scrap_total\":14,\"at\":\"2026-12-22T13:31:00\\u002B00:00\"}}]}",
+    "signature": "t=1798000000,kid=k1,v1=30d41a24d32c96cc3a45d88221f05ac39cc0f84e13be522d870eb79ac1502b32",
+    "expect": {
+        "http": 207,
+        "first_delivery": [
+            {
+                "id": "018f0000-0000-7000-8000-0000000000d6",
+                "status": "applied"
+            }
+        ],
+        "redelivery": [
+            {
+                "id": "018f0000-0000-7000-8000-0000000000d6",
+                "status": "duplicate"
+            }
+        ]
+    }
+}

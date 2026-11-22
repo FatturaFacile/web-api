@@ -121,13 +121,16 @@ public sealed class IngestTelemetryBatchHandler(
                     if (r.Counts.Count > 0)
                     {
                         var last = r.Counts.Max(x => x.At);
+
+                        // The order being produced, so Laravel can attribute the counts to an operation (null when no run is open).
+                        var openRun = await store.GetOpenRunAsync(cmd.TenantId, group.Key, c);
                         await outbox.EnqueueAsync(
                             new OutboxMessage(
                                 Guid.CreateVersion7(),
                                 cmd.TenantId,
                                 OutboxTypes.ProductionCountCheckpoint,
                                 $"ckpt:{group.Key}:{cmd.BatchId}",
-                                Json.Serialize(new { machine_id = group.Key.Value, at = last, total = r.Counts.Sum(x => x.Total), good = r.Counts.Sum(x => x.Good ?? 0) }),
+                                Json.Serialize(new { machine_id = group.Key.Value, at = last, total = r.Counts.Sum(x => x.Total), good = r.Counts.Sum(x => x.Good ?? 0), run_id = openRun?.Id, work_order_ref = openRun?.WorkOrderRef }),
                                 time.GetUtcNow()),
                             c);
                     }
@@ -331,7 +334,7 @@ public sealed class ReportScrapHandler(IMesStore store, IMachineProfileProvider 
                     cmd.TenantId,
                     OutboxTypes.OeeSnapshotRevised,
                     $"scrap:{cmd.RunId}:{run.ScrapCount}",
-                    Json.Serialize(new { machine_id = cmd.MachineId.Value, run_id = cmd.RunId, scrap_total = run.ScrapCount, at = minute }),
+                    Json.Serialize(new { machine_id = cmd.MachineId.Value, run_id = cmd.RunId, work_order_ref = run.WorkOrderRef, total = run.TotalCount, scrap_total = run.ScrapCount, at = minute }),
                     time.GetUtcNow()),
                 c);
         }, ct);

@@ -8,7 +8,9 @@ use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Modules\Manufacturing\Events\MesShiftCalendarUpdatedEvent;
+use Modules\Manufacturing\Models\MfgMachineCenter;
 use Modules\Manufacturing\Models\MfgShiftInstance;
 use Modules\Manufacturing\Models\MfgWorkCenter;
 use Modules\Manufacturing\Models\MfgWorkCenterCapacity;
@@ -82,7 +84,9 @@ final readonly class MaterialiseShiftInstancesAction
             ->get()
             ->keyBy(static fn (MfgWorkCenterCapacity $row): string => $row->calendar_date->toDateString());
 
-        /** @var array<string, array{starts: CarbonImmutable, ends: CarbonImmutable}> $wanted */
+        $maintenance = $this->plannedMaintenance($workCenter, $firstDay, $lastDay, $startTime, $timezone);
+
+        /** @var array<string, array{starts: CarbonImmutable, ends: CarbonImmutable, holes: list<array<string, string|null>>}> $wanted */
         $wanted = [];
         for ($day = $firstDay; $day->lessThanOrEqualTo($lastDay); $day = $day->addDay()) {
             $hours = $this->workCenters->grossHours($workCenter, $day, $shifts, $exceptions);
@@ -92,7 +96,8 @@ final readonly class MaterialiseShiftInstancesAction
             }
 
             $starts = CarbonImmutable::parse($day->toDateString().' '.$startTime, $timezone)->utc();
-            $wanted[self::key($starts)] = ['starts' => $starts, 'ends' => $starts->addSeconds((int) Money::round(Money::mul($hours, '3600'), 0))];
+            $ends = $starts->addSeconds((int) Money::round(Money::mul($hours, '3600'), 0));
+            $wanted[self::key($starts)] = ['starts' => $starts, 'ends' => $ends, 'holes' => $this->holes($day, $starts, $ends, $timezone, $maintenance)];
         }
 
         $existing = MfgShiftInstance::withTrashed()
@@ -120,15 +125,15 @@ final readonly class MaterialiseShiftInstancesAction
                     'starts_at' => $interval['starts'],
                     'ends_at' => $interval['ends'],
                     'timezone' => $timezone,
-                    'non_production' => [],
+                    'non_production' => $interval['holes'],
                 ]);
                 $counts['created']++;
             } elseif ($row->trashed()) {
                 $row->restore();
-                $row->update(['ends_at' => $interval['ends'], 'timezone' => $timezone]);
+                $row->update(['ends_at' => $interval['ends'], 'timezone' => $timezone, 'non_production' => $interval['holes']]);
                 $counts['created']++;
-            } elseif (! $row->ends_at->equalTo($interval['ends']) || $row->timezone !== $timezone) {
-                $row->update(['ends_at' => $interval['ends'], 'timezone' => $timezone]);
+            } elseif (! $row->ends_at->equalTo($interval['ends']) || $row->timezone !== $timezone || ($row->non_production ?? []) !== $interval['holes']) {
+                $row->update(['ends_at' => $interval['ends'], 'timezone' => $timezone, 'non_production' => $interval['holes']]);
                 $counts['updated']++;
             } else {
                 continue;
@@ -150,6 +155,92 @@ final readonly class MaterialiseShiftInstancesAction
         }
 
         return $counts;
+    }
+
+    /**
+     * The non-production windows of one shift, in UTC: the configured breaks of the plant (no machine: they apply to
+     * every machine of the work centre) and the planned maintenance of single machines, clipped to the shift.
+     *
+     * @param  list<array{machine_id: string, from: CarbonImmutable, to: CarbonImmutable, reference: string}>  $maintenance
+     * @return list<array<string, string|null>>
+     */
+    private function holes(CarbonImmutable $day, CarbonImmutable $starts, CarbonImmutable $ends, string $timezone, array $maintenance): array
+    {
+        $holes = [];
+
+        foreach ((array) config('manufacturing_mes.shifts.breaks') as $break) {
+            if (! is_array($break) || ! is_string($break['start'] ?? null) || (int) ($break['minutes'] ?? 0) <= 0) {
+                continue;
+            }
+
+            $from = CarbonImmutable::parse($day->toDateString().' '.$break['start'], $timezone)->utc();
+            $to = $from->addMinutes((int) $break['minutes']);
+
+            if ($from->greaterThanOrEqualTo($starts) && $to->lessThanOrEqualTo($ends)) {
+                $holes[] = ['kind' => 'break', 'machine_id' => null, 'from' => self::iso($from), 'to' => self::iso($to), 'reference' => null];
+            }
+        }
+
+        foreach ($maintenance as $window) {
+            $from = $window['from']->greaterThan($starts) ? $window['from'] : $starts;
+            $to = $window['to']->lessThan($ends) ? $window['to'] : $ends;
+
+            if ($to->greaterThan($from)) {
+                $holes[] = ['kind' => 'planned_maintenance', 'machine_id' => $window['machine_id'], 'from' => self::iso($from), 'to' => self::iso($to), 'reference' => $window['reference']];
+            }
+        }
+
+        usort($holes, static fn (array $a, array $b): int => [$a['from'], $a['kind'], $a['machine_id']] <=> [$b['from'], $b['kind'], $b['machine_id']]);
+
+        return $holes;
+    }
+
+    /**
+     * The planned maintenance of the machines of the work centre (asset maintenance work orders that are scheduled or in
+     * progress, preventive, condition based or upgrade, with a planned downtime). The window starts when the work order
+     * started, or at the shift start of its scheduled day, and lasts the planned downtime hours. Corrective and
+     * emergency work is unplanned: it shows up as machine downtime, not as excluded time.
+     *
+     * @return list<array{machine_id: string, from: CarbonImmutable, to: CarbonImmutable, reference: string}>
+     */
+    private function plannedMaintenance(MfgWorkCenter $workCenter, CarbonImmutable $firstDay, CarbonImmutable $lastDay, string $startTime, string $timezone): array
+    {
+        $machines = MfgMachineCenter::query()->where('tenant_id', $workCenter->tenant_id)->where('work_center_id', $workCenter->id)->whereNotNull('asset_id')->pluck('asset_id', 'id');
+
+        if ($machines->isEmpty() || ! Schema::hasTable('eam_maintenance_work_orders')) {
+            return [];
+        }
+
+        $orders = DB::table('eam_maintenance_work_orders')
+            ->where('tenant_id', $workCenter->tenant_id)
+            ->whereIn('asset_id', $machines->values()->all())
+            ->whereNull('deleted_at')
+            ->whereIn('status', ['scheduled', 'in_progress'])
+            ->whereIn('maintenance_type', ['preventive', 'condition_based', 'upgrade'])
+            ->where('downtime_hours', '>', 0)
+            ->whereDate('scheduled_date', '>=', $firstDay->subDay()->toDateString())
+            ->whereDate('scheduled_date', '<=', $lastDay->toDateString())
+            ->get(['asset_id', 'work_order_number', 'scheduled_date', 'started_at', 'downtime_hours']);
+
+        $windows = [];
+
+        foreach ($orders as $order) {
+            $from = $order->started_at !== null
+                ? CarbonImmutable::parse((string) $order->started_at, 'UTC')
+                : CarbonImmutable::parse(CarbonImmutable::parse((string) $order->scheduled_date)->toDateString().' '.$startTime, $timezone)->utc();
+            $seconds = (int) Money::round(Money::mul(Money::of((string) $order->downtime_hours), '3600'), 0);
+
+            foreach ($machines->filter(static fn (mixed $assetId): bool => (string) $assetId === (string) $order->asset_id)->keys() as $machineId) {
+                $windows[] = ['machine_id' => (string) $machineId, 'from' => $from, 'to' => $from->addSeconds($seconds), 'reference' => (string) $order->work_order_number];
+            }
+        }
+
+        return $windows;
+    }
+
+    private static function iso(CarbonImmutable $moment): string
+    {
+        return $moment->utc()->format('Y-m-d\TH:i:s\Z');
     }
 
     private static function key(CarbonImmutable $startsAt): string

@@ -82,8 +82,9 @@ final readonly class MesWireEventTranslator
     }
 
     /**
-     * A recomputed window is a shift-scoped snapshot; the scrap correction of one run has no window and no operation, so
-     * it cannot be attributed and is refused instead of being dropped without a trace.
+     * A recomputed window is a shift-scoped snapshot. The scrap correction of one run (`run_id`, `work_order_ref`, `total`,
+     * `scrap_total`) revises the order snapshot of that run: same key as `OeeOrderCompleted`, a higher revision, so the
+     * latest figures win and the count proposal is refreshed. Without the operation it cannot be attributed and is refused.
      *
      * @param  array<string, mixed>  $event
      * @param  array<string, mixed>  $payload
@@ -92,7 +93,24 @@ final readonly class MesWireEventTranslator
     private function revised(array $event, array $payload, int $occurredAt): array
     {
         if (! isset($payload['window_start'], $payload['window_end'])) {
-            throw new MesEventRejectedException('A scrap correction without a window cannot be attributed to an operation.', 'event.unsupported_shape');
+            $operation = $this->operationId($payload);
+
+            if ($operation === null || ! isset($payload['run_id'], $payload['total'], $payload['scrap_total'])) {
+                throw new MesEventRejectedException('A scrap correction needs the run, its totals and the work order reference of the operation.', 'event.unsupported_shape');
+            }
+
+            return $event + [
+                'production_order_operation_id' => $operation,
+                'scope' => 'Order',
+                'scope_key' => $this->limit((string) $payload['run_id']),
+                'revision' => $occurredAt,
+                'policy_version' => 0,
+                'as_of_event_time' => $payload['at'] ?? null,
+                'metrics' => [
+                    'good_count' => max((int) $payload['total'] - (int) $payload['scrap_total'], 0),
+                    'scrap_count' => (int) $payload['scrap_total'],
+                ],
+            ];
         }
 
         return $event + [

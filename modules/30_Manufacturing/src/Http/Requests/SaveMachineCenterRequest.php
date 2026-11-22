@@ -40,6 +40,19 @@ final class SaveMachineCenterRequest extends ManufacturingRequest
             'power_kw' => ['sometimes', 'numeric', 'decimal:0,2', 'min:0', 'max:999999'],
             'hourly_rate' => ['sometimes', ...self::Amount],
             'status' => ['sometimes', 'string', Rule::in(WorkCenterStatus::values())],
+            // Profile read by the MES Core (names of the enums are the ones of Mes.Application / Mes.Domain.Oee).
+            'mes_profile' => ['nullable', 'array:tag_roles,debounce_ms,stale_after_s,counter,oee_policy'],
+            'mes_profile.tag_roles' => ['sometimes', 'array', 'max:100'],
+            'mes_profile.tag_roles.*' => ['string', Rule::in(['Running', 'Alarm', 'Setup', 'Speed', 'TotalCounter', 'GoodCounter', 'Power', 'EnergyCumulative'])],
+            'mes_profile.debounce_ms' => ['sometimes', 'integer', 'min:0', 'max:600000'],
+            'mes_profile.stale_after_s' => ['sometimes', 'integer', 'min:1', 'max:86400'],
+            'mes_profile.counter' => ['sometimes', 'array:rollover_modulus,max_delta_per_sample'],
+            'mes_profile.counter.rollover_modulus' => ['nullable', 'integer', 'min:2'],
+            'mes_profile.counter.max_delta_per_sample' => ['sometimes', 'integer', 'min:1'],
+            'mes_profile.oee_policy' => ['sometimes', 'array:version,setup,gap'],
+            'mes_profile.oee_policy.version' => ['sometimes', 'integer', 'min:1'],
+            'mes_profile.oee_policy.setup' => ['sometimes', 'string', Rule::in(['AvailabilityLoss', 'PlannedExcluded'])],
+            'mes_profile.oee_policy.gap' => ['sometimes', 'string', Rule::in(['ExcludeFromPlanned', 'CountAsDowntime'])],
         ];
     }
 }

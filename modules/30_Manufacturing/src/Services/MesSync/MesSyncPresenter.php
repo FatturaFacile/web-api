@@ -9,6 +9,7 @@ use Modules\Manufacturing\Models\MfgMachineCenter;
 use Modules\Manufacturing\Models\MfgProductionOrderOperation;
 use Modules\Manufacturing\Models\MfgReasonCode;
 use Modules\Manufacturing\Models\MfgShiftInstance;
+use Modules\Manufacturing\Models\MfgWorkCenter;
 use Modules\Manufacturing\Support\IdealCycleTime;
 use Modules\Manufacturing\Support\Money;
 
@@ -59,8 +60,14 @@ final class MesSyncPresenter
     {
         $data = [];
 
+        $lines = MfgWorkCenter::query()->where('tenant_id', $tenantId)->pluck('work_center_code', 'id');
+
         foreach (MfgMachineCenter::query()->where('tenant_id', $tenantId)->whereIn('id', $ids)->get() as $machine) {
-            $data[(string) $machine->id] = [
+            $idealSeconds = (float) $machine->ideal_cycle_time_seconds_per_unit;
+
+            // The profile the MES Core builds its machine model from: the ideal cycle time and the line come from the
+            // machine data, the tag roles, signal conditioning and OEE policy from the configured `mes_profile`.
+            $data[(string) $machine->id] = array_filter([
                 'machine_id' => (string) $machine->id,
                 'machine_code' => $machine->machine_code,
                 'name' => $machine->name,
@@ -68,7 +75,9 @@ final class MesSyncPresenter
                 'asset_id' => $machine->asset_id,
                 'power_kw' => $machine->power_kw,
                 'status' => $machine->status,
-            ];
+                'line_code' => $lines[(string) $machine->work_center_id] ?? null,
+                'ideal_cycle_ms' => $idealSeconds > 0 ? $idealSeconds * 1000 : null,
+            ] + (is_array($machine->mes_profile) ? $machine->mes_profile : []), static fn (mixed $value, string $key): bool => $value !== null || $key === 'asset_id', ARRAY_FILTER_USE_BOTH);
         }
 
         return $data;
