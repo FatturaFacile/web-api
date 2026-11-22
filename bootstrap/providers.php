@@ -75,6 +75,7 @@ use Modules\Quality\Providers\QualityServiceProvider;
 use Modules\Quoting\Providers\QuotingServiceProvider;
 use Modules\Rebates\Providers\RebatesServiceProvider;
 use Modules\Returns\Providers\ReturnsServiceProvider;
+use Modules\ResourcePlanning\Providers\ResourcePlanningServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
@@ -182,6 +183,7 @@ return [
     AiCognitiveServiceProvider::class,
     HseServiceProvider::class,
     MrpPlanningServiceProvider::class,
+    ResourcePlanningServiceProvider::class,
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,
 ];

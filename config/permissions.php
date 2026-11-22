@@ -161,6 +161,13 @@ return [
         // publish the showcase; any member reads recipes, the showcase and the allergen book.
         'artisanal_gelato' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'production', 'technician', 'member']],
         'shift_planning_self' => ['read' => $anyMember, 'write' => $anyMember],
+        // Resource planning and capacity saturation (Mod 079): project managers, HR and production book resources, convert tentative
+        // bookings, rebalance overloads and manage the skill matrix; every member reads capacity, the skill matrix and utilization.
+        'resource_planning' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'hr', 'production', 'project_manager'],
+            'grants' => ['read' => ['resource_planning.*'], 'write' => ['resource_planning.*']],
+        ],
         'ocr_settings' => ['read' => $managers, 'write' => $managers],
         // Workplace health, safety and training (Mod 099). hse: the operational roles read the compliance matrix, the clearance verdict
         // and the physician judgments (outcome and prescriptions); the HSE team (hr, hse, admins) writes certificates, PPE and incidents.
