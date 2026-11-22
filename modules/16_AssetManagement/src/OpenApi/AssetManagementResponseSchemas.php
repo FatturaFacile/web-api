@@ -480,6 +480,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'downtime_hours', type: 'string', format: 'decimal'),
         new OA\Property(property: 'last_completed_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'mean_days_between_failures', type: 'number', nullable: true),
+        new OA\Property(property: 'mean_time_to_repair_hours', type: 'number', nullable: true),
     ]
 )]
 #[OA\Schema(

@@ -463,6 +463,13 @@ final readonly class MaintenanceManagementService implements MaintenanceManageme
             $mtbfDays = round($correctiveDates->first()->diffInDays($correctiveDates->last()) / ($correctiveDates->count() - 1), 1);
         }
 
+        $repairHours = (clone $completed)->whereIn('maintenance_type', ['corrective', 'emergency'])
+            ->whereNotNull('started_at')
+            ->get(['started_at', 'completed_at'])
+            ->map(static fn (MaintenanceWorkOrder $wo): float => max(0.0, $wo->started_at->diffInMinutes($wo->completed_at, true) / 60))
+            ->values();
+        $mttrHours = $repairHours->isEmpty() ? null : round((float) $repairHours->avg(), 2);
+
         return [
             'asset_id' => (string) $asset->id,
             'work_orders_total' => (clone $base)->count(),
@@ -476,6 +483,7 @@ final readonly class MaintenanceManagementService implements MaintenanceManageme
             'downtime_hours' => Money::round((string) (clone $completed)->sum('downtime_hours')),
             'last_completed_at' => (clone $completed)->max('completed_at'),
             'mean_days_between_failures' => $mtbfDays,
+            'mean_time_to_repair_hours' => $mttrHours,
         ];
     }
 
