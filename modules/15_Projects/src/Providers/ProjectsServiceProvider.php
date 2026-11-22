@@ -17,6 +17,7 @@ use Modules\Projects\Contracts\ProjectBudgetServiceInterface;
 use Modules\Projects\Contracts\ProjectChangeOrderServiceInterface;
 use Modules\Projects\Contracts\ProjectEvmAlertGatewayInterface;
 use Modules\Projects\Contracts\ProjectExpenseServiceInterface;
+use Modules\Projects\Contracts\ProjectFiscalBillingStrategyInterface;
 use Modules\Projects\Contracts\ProjectForecastServiceInterface;
 use Modules\Projects\Contracts\ProjectFxRateResolverInterface;
 use Modules\Projects\Contracts\ProjectRevenueRecognitionServiceInterface;
@@ -46,6 +47,8 @@ use Modules\Projects\Events\ProjectPaymentForecastEvent;
 use Modules\Projects\Events\ProjectPhaseCompletedEvent;
 use Modules\Projects\Events\ProjectReceivableReadyEvent;
 use Modules\Projects\Events\ProjectResumedEvent;
+use Modules\Projects\Events\ProjectRetainerLowBalanceEvent;
+use Modules\Projects\Events\ProjectRetentionReleasedEvent;
 use Modules\Projects\Events\ProjectRevenueReadyEvent;
 use Modules\Projects\Events\ProjectRevenueRecognitionReadyEvent;
 use Modules\Projects\Events\ProjectRevenueRecognizedEvent;
@@ -68,6 +71,7 @@ use Modules\Projects\Policies\ProjectPolicy;
 use Modules\Projects\Policies\ProjectTaskPolicy;
 use Modules\Projects\Policies\ProjectTimesheetPolicy;
 use Modules\Projects\Services\EarnedValueCalculationService;
+use Modules\Projects\Services\Fiscal\ItProjectFiscalBillingStrategy;
 use Modules\Projects\Services\GeneralLedgerFxRateResolver;
 use Modules\Projects\Services\JobCostingAccumulationService;
 use Modules\Projects\Services\NotificationEngineAlertGateway;
@@ -98,6 +102,8 @@ final class ProjectsServiceProvider extends ServiceProvider
         $this->app->singleton(ProjectExpenseServiceInterface::class, ProjectExpenseService::class);
         $this->app->singleton(ProjectFxRateResolverInterface::class, GeneralLedgerFxRateResolver::class);
         $this->app->singleton(ProjectEvmAlertGatewayInterface::class, NotificationEngineAlertGateway::class);
+        // Resolved per contract by ProjectFiscalBillingStrategyResolver; the interface binding is the Italian default.
+        $this->app->singleton(ProjectFiscalBillingStrategyInterface::class, ItProjectFiscalBillingStrategy::class);
     }
 
     public function boot(): void
@@ -152,6 +158,8 @@ final class ProjectsServiceProvider extends ServiceProvider
             ProjectPaymentForecastEvent::class,
             ProjectReceivableReadyEvent::class,
             ProjectEvmSnapshotComputedEvent::class,
+            ProjectRetainerLowBalanceEvent::class,
+            ProjectRetentionReleasedEvent::class,
         ];
 
         foreach ($domainEvents as $eventClass) {

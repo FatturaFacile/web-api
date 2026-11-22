@@ -68,10 +68,10 @@ return [
 
     'workspace_modules' => [
         'employee' => ['clock', 'shifts', 'leave', 'expenses', 'payslips', 'italian_payroll_self'],
-        'manager' => ['approvals_inbox'],
+        'manager' => ['approvals_inbox', 'project_profitability', 'project_billing'],
         'warehouse' => ['barcode_scanner', 'inventory_counts', 'pick_lists'],
         'field_technician' => ['work_orders', 'service_reports', 'appointments'],
         'sales_agent' => ['customer_360', 'quotes', 'appointments'],
-        'executive' => ['kpi_dashboard', 'executive_dss', 'analytical_accounting', 'approvals_inbox', 'copilot'],
+        'executive' => ['kpi_dashboard', 'executive_dss', 'analytical_accounting', 'project_profitability', 'project_billing', 'approvals_inbox', 'copilot'],
     ],
 ];
