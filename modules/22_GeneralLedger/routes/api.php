@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\GeneralLedger\Http\Controllers\AccountingTemplateController;
 use Modules\GeneralLedger\Http\Controllers\AccrualController;
 use Modules\GeneralLedger\Http\Controllers\ChartOfAccountController;
 use Modules\GeneralLedger\Http\Controllers\ChartTemplateController;
@@ -35,6 +36,7 @@ use Modules\GeneralLedger\Http\Controllers\VatPeriodSettlementController;
 use Modules\GeneralLedger\Http\Controllers\VatRegisterController;
 use Modules\GeneralLedger\Http\Controllers\VatTaxSettingController;
 use Modules\GeneralLedger\Http\Controllers\WithholdingSettlementController;
+use Modules\GeneralLedger\Http\Controllers\YearEndClosingWorkflowController;
 
 Route::prefix('api/v1/general-ledger')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:ledger'])
@@ -50,6 +52,8 @@ Route::prefix('api/v1/general-ledger')
         Route::post('fiscal-years/{id}/close', [FiscalYearController::class, 'closeYear']);
         Route::post('fiscal-years/{id}/reopen', [FiscalYearController::class, 'reopenYear'])->whereUuid('id');
         Route::post('fiscal-years/{id}/approve-agm', [FiscalYearController::class, 'approveAgm'])->whereUuid('id');
+        Route::get('fiscal-years/{id}/closing-workflow', [YearEndClosingWorkflowController::class, 'show'])->whereUuid('id');
+        Route::post('fiscal-years/{id}/closing-workflow/stages/{stage}', [YearEndClosingWorkflowController::class, 'run'])->whereUuid('id')->whereNumber('stage');
         Route::post('fiscal-years/{id}/carry-forward', [FinancialAnalysisController::class, 'carryForward'])->whereUuid('id');
 
         Route::apiResource('fiscal-periods', FiscalPeriodController::class)->except(['update', 'destroy']);
@@ -58,6 +62,15 @@ Route::prefix('api/v1/general-ledger')
         Route::get('fiscal-periods/{id}/close-checklist', [PeriodCloseController::class, 'show'])->whereUuid('id');
         Route::post('fiscal-periods/{id}/close-tasks', [PeriodCloseController::class, 'storeTask'])->whereUuid('id');
         Route::post('fiscal-periods/{id}/close-tasks/{taskId}/status', [PeriodCloseController::class, 'updateTaskStatus'])->whereUuid(['id', 'taskId']);
+
+        // Parametric journal templates (causali contabili)
+        Route::get('accounting-templates', [AccountingTemplateController::class, 'index']);
+        Route::post('accounting-templates', [AccountingTemplateController::class, 'store']);
+        Route::get('accounting-templates/{id}', [AccountingTemplateController::class, 'show'])->whereUuid('id');
+        Route::put('accounting-templates/{id}', [AccountingTemplateController::class, 'update'])->whereUuid('id');
+        Route::delete('accounting-templates/{id}', [AccountingTemplateController::class, 'destroy'])->whereUuid('id');
+        Route::post('accounting-templates/{id}/preview', [AccountingTemplateController::class, 'preview'])->whereUuid('id');
+        Route::post('accounting-templates/{id}/post', [AccountingTemplateController::class, 'post'])->whereUuid('id');
 
         // Double-Entry Journals
         Route::post('journals/validate-balance', [JournalEntryController::class, 'validateBalance']);

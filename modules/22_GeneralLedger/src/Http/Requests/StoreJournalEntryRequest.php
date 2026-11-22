@@ -7,6 +7,7 @@ namespace Modules\GeneralLedger\Http\Requests;
 use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\GeneralLedger\Enums\LedgerBook;
 
 final class StoreJournalEntryRequest extends FormRequest
 {
@@ -35,7 +36,9 @@ final class StoreJournalEntryRequest extends FormRequest
             'posting_date' => ['required', 'date'],
             'document_date' => ['nullable', 'date'],
             'auto_reverse_on' => ['nullable', 'date', 'after:posting_date'],
-            'ledger_type' => ['nullable', 'string', 'in:statutory,ifrs,management'],
+            'ledger_type' => ['nullable', 'string', 'in:statutory,tax,ifrs,management'],
+            'post_to_ledgers' => ['nullable', 'array', 'max:3'],
+            'post_to_ledgers.*' => ['string', Rule::in(LedgerBook::accepted())],
             'journal_type' => ['nullable', 'string', 'in:standard,reversing,opening,recurring,adjusting'],
             'description' => ['required', 'string', 'max:500'],
             'source_document_type' => ['nullable', 'string', 'max:50', Rule::notIn(self::SYSTEM_DOCUMENT_TYPES)],

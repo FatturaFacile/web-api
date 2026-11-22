@@ -31,4 +31,11 @@ return [
         'account_automatic_only' => 'Account :code accepts only automatic postings.',
         'cost_center_required' => 'Account :code requires a cost centre.',
     ],
+    'template' => [
+        'unbalanced' => 'The template lines do not balance for these amounts.',
+        'amount_required' => 'A positive amount is required.',
+        'rate_required' => 'This template taxes the amount: a tax rate is required.',
+        'account_unknown' => 'No account of this tenant was found for the parameter ":key".',
+        'system_readonly' => 'A system template cannot be changed or deleted.',
+    ],
 ];
