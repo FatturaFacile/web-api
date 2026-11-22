@@ -21,6 +21,7 @@ final class CannedResponseResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'locale' => $this->locale,
             'category' => $this->category,
             'body' => $this->body,
             'is_shared' => (bool) $this->is_shared,

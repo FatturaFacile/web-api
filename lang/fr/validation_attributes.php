@@ -3388,4 +3388,13 @@ return [
     'post_to_ledgers' => 'livres de comptabilisation',
     'names' => 'noms',
     'account' => 'compte',
+    'threshold_percent' => 'seuil en pourcentage',
+    'notify_user_ids' => 'utilisateurs à notifier',
+    'notify_team_lead' => 'notifier le responsable d\'équipe',
+    'escalation_chain_id' => 'chaîne d\'escalade',
+    'next_update_interval_minutes' => 'intervalle avant la prochaine mise à jour (minutes)',
+    'pause_on_on_hold' => 'suspendre lorsqu\'en attente',
+    'risk_percent' => 'pourcentage de risque',
+    'holiday_country' => 'pays des jours fériés',
+    'holiday_region' => 'canton ou région des jours fériés',
 ];

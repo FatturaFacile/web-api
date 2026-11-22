@@ -10672,6 +10672,8 @@ CREATE TABLE "esm_business_hours_calendars"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "holiday_country" varchar,
+  "holiday_region" varchar,
   foreign key("hr_holiday_calendar_id") references "hr_holiday_calendars"("id") on delete set null on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -10701,6 +10703,7 @@ CREATE TABLE "esm_canned_responses"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "locale" varchar,
   foreign key("owner_user_id") references "users"("id") on delete set null on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -11129,6 +11132,7 @@ CREATE TABLE "esm_knowledge_articles"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "locale" varchar,
   foreign key("knowledge_category_id") references "esm_knowledge_categories"("id") on delete set null on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("category_id") references "esm_service_categories"("id") on delete set null on update no action,
@@ -11424,6 +11428,7 @@ CREATE TABLE "esm_rma_orders"(
   "updated_by" varchar,
   "deleted_by" varchar,
   "return_delivery_note_id" varchar,
+  "ticket_id" varchar,
   foreign key("equipment_passport_id") references "esm_equipment_passports"("id") on delete restrict on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -11830,6 +11835,9 @@ CREATE TABLE "esm_sla_policies"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "escalation_chain_id" varchar,
+  "next_update_interval_minutes" integer,
+  "pause_on_on_hold" tinyint(1) not null default '0',
   foreign key("support_plan_id") references "esm_support_plans"("id") on delete set null on update no action,
   foreign key("service_category_id") references "esm_service_categories"("id") on delete set null on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -12123,6 +12131,11 @@ CREATE TABLE "esm_ticket_time_entries"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "service_contract_id" varchar,
+  "contract_transaction_id" varchar,
+  "contract_hours" numeric not null default '0',
+  "billable_hours" numeric not null default '0',
+  "billing_status" varchar not null default 'none',
   foreign key("technician_id") references "esm_service_technicians"("id") on delete cascade on update no action,
   foreign key("ticket_id") references "esm_tickets"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -12217,6 +12230,8 @@ CREATE TABLE "esm_tickets"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "next_update_due_at" datetime,
+  "next_update_breached_at" datetime,
   foreign key("split_from_ticket_id") references "esm_tickets"("id") on delete set null on update no action,
   foreign key("merged_into_ticket_id") references "esm_tickets"("id") on delete set null on update no action,
   foreign key("knowledge_article_id") references "esm_knowledge_articles"("id") on delete set null on update no action,
@@ -44671,6 +44686,89 @@ CREATE UNIQUE INDEX "uq_proj_evm_alert_state" on "project_evm_alert_states"(
 CREATE INDEX "project_evm_alert_states_tenant_id_index" on "project_evm_alert_states"(
   "tenant_id"
 );
+CREATE TABLE "esm_escalation_chains"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "esm_escalation_chains_tenant_id_code_unique" on "esm_escalation_chains"(
+  "tenant_id",
+  "code"
+);
+CREATE TABLE "esm_escalation_steps"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "chain_id" varchar not null,
+  "target" varchar not null,
+  "threshold_percent" integer not null,
+  "action" varchar not null,
+  "notify_user_ids" text,
+  "notify_team_lead" tinyint(1) not null default '0',
+  "team_id" varchar,
+  "priority" varchar,
+  "position" integer not null default '100',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("chain_id") references "esm_escalation_chains"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "esm_escalation_steps_tenant_id_chain_id_target_index" on "esm_escalation_steps"(
+  "tenant_id",
+  "chain_id",
+  "target"
+);
+CREATE TABLE "esm_ticket_escalation_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ticket_id" varchar not null,
+  "chain_id" varchar not null,
+  "step_id" varchar not null,
+  "target" varchar not null,
+  "threshold_percent" integer not null,
+  "action" varchar not null,
+  "elapsed_percent" integer not null,
+  "cycle_key" varchar not null default '',
+  "outcome" text,
+  "fired_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ticket_id") references "esm_tickets"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "esm_ticket_escalation_logs_ticket_id_step_id_cycle_key_unique" on "esm_ticket_escalation_logs"(
+  "ticket_id",
+  "step_id",
+  "cycle_key"
+);
+CREATE INDEX "esm_ticket_escalation_logs_tenant_id_ticket_id_index" on "esm_ticket_escalation_logs"(
+  "tenant_id",
+  "ticket_id"
+);
+CREATE INDEX "esm_tickets_tenant_id_next_update_due_at_index" on "esm_tickets"(
+  "tenant_id",
+  "next_update_due_at"
+);
+CREATE INDEX "esm_knowledge_articles_tenant_id_locale_index" on "esm_knowledge_articles"(
+  "tenant_id",
+  "locale"
+);
+CREATE INDEX "esm_rma_orders_tenant_id_ticket_id_index" on "esm_rma_orders"(
+  "tenant_id",
+  "ticket_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -45097,3 +45195,4 @@ INSERT INTO migrations VALUES(422,'2027_12_20_000200_create_year_end_closing_sta
 INSERT INTO migrations VALUES(423,'2027_12_20_000200_add_audit_columns_to_accounting_templates',4);
 INSERT INTO migrations VALUES(424,'2027_12_20_000300_add_audit_columns_to_gl_templates_and_closing_stages',5);
 INSERT INTO migrations VALUES(425,'2027_12_20_000100_create_project_evm_profitability_tables',6);
+INSERT INTO migrations VALUES(426,'2027_12_21_000100_add_helpdesk_sla_escalation_chains_and_ticket_time_billing',7);

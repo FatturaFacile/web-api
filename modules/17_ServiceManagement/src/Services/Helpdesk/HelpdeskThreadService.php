@@ -28,6 +28,7 @@ final readonly class HelpdeskThreadService
         private HelpdeskTicketService $tickets,
         private TicketMessageWriter $writer,
         private TicketActivityLog $activityLog,
+        private TicketSlaClock $slaClock,
     ) {}
 
     /**
@@ -57,6 +58,8 @@ final readonly class HelpdeskThreadService
                     $ticket->first_responded_at = now();
                     $this->activityLog->record($ticket, 'first_response', null, null, ['message_id' => $message->id], $author->id);
                 }
+
+                $this->slaClock->scheduleNextUpdate($ticket);
 
                 if ($statusAfter === null && $ticket->statusEnum() === TicketStatus::New) {
                     $statusAfter = TicketStatus::Open;

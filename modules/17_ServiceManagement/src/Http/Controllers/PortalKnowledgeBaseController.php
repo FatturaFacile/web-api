@@ -48,7 +48,8 @@ final class PortalKnowledgeBaseController extends Controller
         $query = KnowledgeArticle::query()
             ->where('tenant_id', $access->tenant_id)
             ->publiclyVisible()
-            ->when(isset($filters['knowledge_category_id']), fn ($q) => $q->where('knowledge_category_id', $filters['knowledge_category_id']));
+            ->when(isset($filters['knowledge_category_id']), fn ($q) => $q->where('knowledge_category_id', $filters['knowledge_category_id']))
+            ->when(isset($filters['locale']), fn ($q) => $q->where('locale', $filters['locale']));
 
         $query = ! empty($filters['q']) ? $query->search($filters['q']) : $query->orderByDesc('published_at');
 

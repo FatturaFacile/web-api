@@ -24,6 +24,7 @@ final class KnowledgeArticleResource extends JsonResource
             'id' => $this->id,
             'article_number' => $this->article_number,
             'title' => $this->title,
+            'locale' => $this->locale,
             'summary' => $this->summary,
             'content' => $this->content,
             'knowledge_category_id' => $this->knowledge_category_id,

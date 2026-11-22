@@ -3388,4 +3388,13 @@ return [
     'post_to_ledgers' => 'libri di registrazione',
     'names' => 'nomi',
     'account' => 'conto',
+    'threshold_percent' => 'soglia percentuale',
+    'notify_user_ids' => 'utenti da avvisare',
+    'notify_team_lead' => 'avvisa il responsabile del team',
+    'escalation_chain_id' => 'catena di escalation',
+    'next_update_interval_minutes' => 'intervallo del prossimo aggiornamento (minuti)',
+    'pause_on_on_hold' => 'pausa quando in attesa',
+    'risk_percent' => 'percentuale di rischio',
+    'holiday_country' => 'paese dei giorni festivi',
+    'holiday_region' => 'cantone o regione dei giorni festivi',
 ];

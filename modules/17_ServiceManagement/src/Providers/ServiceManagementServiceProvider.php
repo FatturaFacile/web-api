@@ -75,6 +75,7 @@ use Modules\ServiceManagement\Models\BusinessHoursCalendar;
 use Modules\ServiceManagement\Models\CannedResponse;
 use Modules\ServiceManagement\Models\ChangeRequest;
 use Modules\ServiceManagement\Models\DepotRepairRmaOrder;
+use Modules\ServiceManagement\Models\EscalationChain;
 use Modules\ServiceManagement\Models\HelpdeskSetting;
 use Modules\ServiceManagement\Models\Incident;
 use Modules\ServiceManagement\Models\KnowledgeArticle;
@@ -153,7 +154,7 @@ final class ServiceManagementServiceProvider extends ServiceProvider
 
         Gate::policy(KnowledgeArticle::class, KnowledgeArticlePolicy::class);
 
-        foreach ([SupportMailbox::class, RoutingRule::class, BusinessHoursCalendar::class, HelpdeskSetting::class, ServiceTeam::class, KnowledgeCategory::class] as $configurationModel) {
+        foreach ([SupportMailbox::class, RoutingRule::class, BusinessHoursCalendar::class, HelpdeskSetting::class, ServiceTeam::class, KnowledgeCategory::class, EscalationChain::class] as $configurationModel) {
             Gate::policy($configurationModel, HelpdeskConfigurationPolicy::class);
         }
 

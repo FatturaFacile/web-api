@@ -9,6 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\ServiceManagement\Enums\MessageVisibility;
 use Modules\ServiceManagement\Enums\TicketStatus;
+use Modules\ServiceManagement\Services\Helpdesk\HelpdeskLocales;
 use Modules\ServiceManagement\Services\Helpdesk\TicketListFilter;
 
 /**
@@ -36,6 +37,7 @@ final class SaveAgentToolRequest extends FormRequest
             return [...$common,
                 'title' => [$required, 'string', 'max:150'],
                 'category' => ['sometimes', 'nullable', 'string', 'max:80'],
+                'locale' => ['sometimes', 'nullable', 'string', Rule::in(HelpdeskLocales::All)],
                 'body' => [$required, 'string', 'max:20000'],
             ];
         }

@@ -9,6 +9,7 @@ use Modules\ServiceManagement\Http\Controllers\FieldServiceManagementController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskAutomationController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskNotificationController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskReportController;
+use Modules\ServiceManagement\Http\Controllers\HelpdeskSlaController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskTicketController;
 use Modules\ServiceManagement\Http\Controllers\ITSMController;
 use Modules\ServiceManagement\Http\Controllers\KnowledgeBaseController;
@@ -116,6 +117,22 @@ Route::prefix('api/v1/esm')
 
         // Helpdesk: reports
         Route::get('/helpdesk/reports', [HelpdeskReportController::class, 'show'])->name('api.v1.esm.helpdesk.reports');
+
+        // Helpdesk SLA and escalation (Mod 083, #195, #43)
+        Route::get('/helpdesk/escalation-chains', [HelpdeskSlaController::class, 'chains'])->name('api.v1.esm.helpdesk.escalation-chains.index');
+        Route::post('/helpdesk/escalation-chains', [HelpdeskSlaController::class, 'storeChain'])->name('api.v1.esm.helpdesk.escalation-chains.store');
+        Route::patch('/helpdesk/escalation-chains/{id}', [HelpdeskSlaController::class, 'updateChain'])->name('api.v1.esm.helpdesk.escalation-chains.update');
+        Route::delete('/helpdesk/escalation-chains/{id}', [HelpdeskSlaController::class, 'destroyChain'])->name('api.v1.esm.helpdesk.escalation-chains.destroy');
+        Route::put('/helpdesk/sla-policies/{id}/settings', [HelpdeskSlaController::class, 'updatePolicySettings'])->name('api.v1.esm.helpdesk.sla-policies.settings');
+        Route::get('/helpdesk/holidays', [HelpdeskSlaController::class, 'holidays'])->name('api.v1.esm.helpdesk.holidays');
+        Route::get('/helpdesk/breach-risk', [HelpdeskSlaController::class, 'breachRisk'])->name('api.v1.esm.helpdesk.breach-risk');
+        Route::get('/helpdesk/metrics', [HelpdeskSlaController::class, 'metrics'])->name('api.v1.esm.helpdesk.metrics');
+        Route::get('/tickets/{ticket}/customer-context', [HelpdeskSlaController::class, 'customerContext'])->name('api.v1.esm.tickets.customer-context');
+        Route::get('/tickets/{ticket}/escalations', [HelpdeskSlaController::class, 'escalations'])->name('api.v1.esm.tickets.escalations');
+        Route::get('/tickets/{ticket}/time-entries', [HelpdeskSlaController::class, 'timeEntries'])->name('api.v1.esm.tickets.time-entries.index');
+        Route::post('/tickets/{ticket}/time-entries', [HelpdeskSlaController::class, 'logTime'])->name('api.v1.esm.tickets.time-entries.store');
+        Route::post('/tickets/{ticket}/escalate/field-service', [HelpdeskSlaController::class, 'toFieldService'])->name('api.v1.esm.tickets.escalate.field-service');
+        Route::post('/tickets/{ticket}/escalate/rma', [HelpdeskSlaController::class, 'toRma'])->name('api.v1.esm.tickets.escalate.rma');
 
         // Helpdesk: knowledge base
         Route::get('/kb/categories', [KnowledgeBaseController::class, 'categories'])->name('api.v1.esm.kb.categories.index');
