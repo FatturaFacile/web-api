@@ -115,6 +115,7 @@ Route::prefix('api/v1/procurement')
 
         // 12. Framework agreements and call-offs
         Route::get('contracts/{id}/lines', [FrameworkAgreementController::class, 'lines'])->whereUuid('id')->name('procurement.contracts.lines.index');
+        Route::get('contracts/{id}/balance', [FrameworkAgreementController::class, 'balance'])->whereUuid('id')->name('procurement.contracts.balance');
         Route::post('contracts/{id}/lines', [FrameworkAgreementController::class, 'storeLine'])->whereUuid('id')->name('procurement.contracts.lines.store');
         Route::post('contracts/{id}/call-offs', [FrameworkAgreementController::class, 'callOff'])->whereUuid('id')->name('procurement.contracts.call-offs.store');
 

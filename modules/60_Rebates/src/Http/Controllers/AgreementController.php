@@ -83,7 +83,7 @@ final class AgreementController extends Controller
     ])]
     public function show(string $id): AgreementResource
     {
-        $agreement = RebateAgreement::query()->with(['tiers', 'contact'])->withSum(['accruals as open_rebate_sum' => static fn ($query) => $query->where('status', RebateAccrual::Accrued)], 'rebate_amount')->findOrFail($id);
+        $agreement = RebateAgreement::query()->with(['tiers', 'contact', 'contributions'])->withSum(['accruals as open_rebate_sum' => static fn ($query) => $query->where('status', RebateAccrual::Accrued)], 'rebate_amount')->findOrFail($id);
         $this->authorize('view', $agreement);
 
         return new AgreementResource($agreement);

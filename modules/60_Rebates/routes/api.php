@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use Modules\Rebates\Http\Controllers\AgreementController;
 use Modules\Rebates\Http\Controllers\PromotionController;
 use Modules\Rebates\Http\Controllers\SettlementController;
+use Modules\Rebates\Http\Controllers\SettlementProposalController;
+use Modules\Rebates\Http\Controllers\SupplierProgramController;
 
 $uuid = '[0-9a-fA-F-]{36}';
 
@@ -32,6 +34,24 @@ Route::prefix('api/v1/rebates')
         Route::post('/agreements/{id}/settle', [AgreementController::class, 'settle'])->name('agreements.settle');
 
         Route::get('/settlements', [SettlementController::class, 'index'])->name('settlements.index');
+
+        // Supplier rebate programmes (Mod 049): live progress, contributions, accrual runs and settlement proposals.
+        Route::get('/agreements/{id}/progress', [SupplierProgramController::class, 'progress'])->name('agreements.progress');
+        Route::get('/agreements/{id}/contributions', [SupplierProgramController::class, 'contributions'])->name('agreements.contributions.index');
+        Route::post('/agreements/{id}/contributions', [SupplierProgramController::class, 'storeContribution'])->name('agreements.contributions.store');
+        Route::put('/contributions/{id}', [SupplierProgramController::class, 'updateContribution'])->name('contributions.update');
+        Route::delete('/contributions/{id}', [SupplierProgramController::class, 'destroyContribution'])->name('contributions.destroy');
+        Route::get('/agreements/{id}/accrual-runs', [SupplierProgramController::class, 'runs'])->name('agreements.accrual-runs.index');
+        Route::post('/agreements/{id}/accrual-runs', [SupplierProgramController::class, 'createRun'])->name('agreements.accrual-runs.store');
+        Route::post('/accrual-runs/{id}/reverse', [SupplierProgramController::class, 'reverseRun'])->name('accrual-runs.reverse');
+
+        Route::get('/settlement-proposals', [SettlementProposalController::class, 'index'])->name('settlement-proposals.index');
+        Route::get('/settlement-proposals/{id}', [SettlementProposalController::class, 'show'])->name('settlement-proposals.show');
+        Route::post('/agreements/{id}/settlement-proposals', [SettlementProposalController::class, 'store'])->name('agreements.settlement-proposals.store');
+        Route::post('/settlement-proposals/{id}/submit', [SettlementProposalController::class, 'submit'])->name('settlement-proposals.submit');
+        Route::post('/settlement-proposals/{id}/approve', [SettlementProposalController::class, 'approve'])->name('settlement-proposals.approve');
+        Route::post('/settlement-proposals/{id}/execute', [SettlementProposalController::class, 'execute'])->name('settlement-proposals.execute');
+        Route::post('/settlement-proposals/{id}/cancel', [SettlementProposalController::class, 'cancel'])->name('settlement-proposals.cancel');
 
         Route::get('/promotions', [PromotionController::class, 'index'])->name('promotions.index');
         Route::post('/promotions', [PromotionController::class, 'store'])->name('promotions.store');

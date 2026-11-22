@@ -26,6 +26,14 @@ use Illuminate\Support\Carbon;
  * @property string $currency
  * @property string $status
  * @property string|null $notes
+ * @property string|null $supplier_contract_id
+ * @property string $rebate_type
+ * @property string|null $fixed_bonus_target
+ * @property string|null $fixed_bonus_amount
+ * @property string $accrual_frequency
+ * @property string|null $accrual_account_id
+ * @property string|null $income_account_id
+ * @property int $version
  */
 final class RebateAgreement extends BaseEnterpriseModel
 {
@@ -45,6 +53,21 @@ final class RebateAgreement extends BaseEnterpriseModel
     /** @var list<string> */
     public const array TierModes = [self::Retroactive, self::Incremental];
 
+    /** Tiered volume rebate (Premio a scaglioni): the scale of tiers earns a percentage and/or a flat amount. */
+    public const string TieredVolume = 'tiered_volume';
+
+    /** Fixed bonus unlocked when the qualifying spend reaches the target. */
+    public const string FixedBonus = 'fixed_bonus';
+
+    /** Marketing, co-marketing and listing contributions planned by date, independent from the volume. */
+    public const string MarketingContribution = 'marketing_contribution';
+
+    /** @var list<string> */
+    public const array RebateTypes = [self::TieredVolume, self::FixedBonus, self::MarketingContribution];
+
+    /** @var list<string> */
+    public const array AccrualFrequencies = ['monthly', 'quarterly', 'custom'];
+
     public const string Draft = 'draft';
 
     public const string Active = 'active';
@@ -60,7 +83,7 @@ final class RebateAgreement extends BaseEnterpriseModel
 
     protected function casts(): array
     {
-        return ['starts_on' => 'date', 'ends_on' => 'date'];
+        return ['starts_on' => 'date', 'ends_on' => 'date', 'fixed_bonus_target' => 'decimal:2', 'fixed_bonus_amount' => 'decimal:2', 'version' => 'integer'];
     }
 
     /**
@@ -93,6 +116,22 @@ final class RebateAgreement extends BaseEnterpriseModel
     public function settlements(): HasMany
     {
         return $this->hasMany(RebateSettlement::class, 'agreement_id')->orderByDesc('settled_on');
+    }
+
+    /**
+     * @return HasMany<RebateContribution, $this>
+     */
+    public function contributions(): HasMany
+    {
+        return $this->hasMany(RebateContribution::class, 'agreement_id')->orderBy('due_on');
+    }
+
+    /**
+     * @return HasMany<RebateAccrualRun, $this>
+     */
+    public function accrualRuns(): HasMany
+    {
+        return $this->hasMany(RebateAccrualRun::class, 'agreement_id')->orderByDesc('period_end')->orderByDesc('created_at');
     }
 
     public function isSales(): bool

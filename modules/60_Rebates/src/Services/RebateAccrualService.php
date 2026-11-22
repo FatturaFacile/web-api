@@ -6,13 +6,17 @@ namespace Modules\Rebates\Services;
 
 use App\Models\Invoice;
 use App\Models\PassiveInvoice;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
 use Modules\Rebates\Models\RebateAccrual;
+use Modules\Procurement\Models\PurchaseOrder;
 use Modules\Rebates\Models\RebateAgreement;
+use Modules\Rebates\Models\RebateContribution;
 use Modules\Rebates\Models\RebateSettlement;
 
 /**
@@ -30,9 +34,9 @@ final readonly class RebateAccrualService
     /**
      * @return array{accrual: RebateAccrual|null, base_amount: string, cumulative_rebate: string, previously_accrued: string, delta: string}
      */
-    public function calculate(RebateAgreement $agreement, Carbon $asOf): array
+    public function calculate(RebateAgreement $agreement, Carbon $asOf, ?string $runId = null): array
     {
-        return DB::transaction(function () use ($agreement, $asOf): array {
+        return DB::transaction(function () use ($agreement, $asOf, $runId): array {
             $locked = RebateAgreement::query()->whereKey($agreement->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->status !== RebateAgreement::Active) {
@@ -44,8 +48,7 @@ final readonly class RebateAccrualService
             }
 
             $volume = $this->volume($locked, $asOf);
-            $tiers = $locked->tiers->map(static fn ($tier): array => ['threshold_amount' => (string) $tier->threshold_amount, 'rate_percent' => (string) $tier->rate_percent])->all();
-            $earned = $this->calculator->rebateOn($tiers, $volume, $locked->tier_mode);
+            $earned = $this->earned($locked, $volume, $asOf);
             $previous = $this->accruedTotal($locked);
             $delta = Decimal::round2(Decimal::sub($earned['rebate'], $previous));
             $accrual = null;
@@ -60,7 +63,12 @@ final readonly class RebateAccrualService
                     'rebate_amount' => $delta,
                     'applied_rate_percent' => $earned['rate_percent'],
                     'status' => RebateAccrual::Accrued,
+                    'accrual_run_id' => $runId,
                 ]);
+            }
+
+            if ($accrual !== null) {
+                RebateContribution::query()->where('agreement_id', $locked->id)->where('status', RebateContribution::Planned)->whereDate('due_on', '<=', $asOf->toDateString())->update(['status' => RebateContribution::Accrued, 'accrual_id' => $accrual->id]);
             }
 
             return ['accrual' => $accrual, 'base_amount' => $volume, 'cumulative_rebate' => $earned['rebate'], 'previously_accrued' => $previous, 'delta' => $delta];
@@ -150,13 +158,52 @@ final readonly class RebateAccrualService
         return Decimal::round2(Decimal::sub($invoiced, $credited));
     }
 
-    private function purchaseVolume(RebateAgreement $agreement, Carbon $asOf): string
+    /**
+     * The rebate earned so far by the volume (and the contributions due) under the type of the agreement.
+     *
+     * @return array{rebate: string, rate_percent: string|null}
+     */
+    public function earned(RebateAgreement $agreement, string $volume, Carbon $asOf): array
     {
-        $query = static fn () => PassiveInvoice::query()
+        $tiers = $agreement->tiers->map(static fn ($tier): array => ['threshold_amount' => (string) $tier->threshold_amount, 'rate_percent' => (string) $tier->rate_percent, 'flat_amount' => $tier->flat_amount === null ? null : (string) $tier->flat_amount])->all();
+
+        $base = match ($agreement->rebate_type) {
+            RebateAgreement::FixedBonus => ['rebate' => $this->calculator->fixedBonusOn((string) ($agreement->fixed_bonus_target ?? '0'), (string) ($agreement->fixed_bonus_amount ?? '0'), $volume), 'rate_percent' => null],
+            RebateAgreement::MarketingContribution => ['rebate' => '0.00', 'rate_percent' => null],
+            default => $this->calculator->rebateOn($tiers, $volume, $agreement->tier_mode),
+        };
+
+        $contributions = (string) RebateContribution::query()->where('agreement_id', $agreement->id)->where('status', '!=', RebateContribution::Cancelled)->whereDate('due_on', '<=', $asOf->toDateString())->sum('amount');
+
+        return ['rebate' => Decimal::round2(Decimal::add($base['rebate'], $contributions)), 'rate_percent' => $base['rate_percent']];
+    }
+
+    /**
+     * The supplier invoices and credit notes that qualify for the agreement up to the date.
+     *
+     * @return Collection<int, PassiveInvoice>
+     */
+    public function qualifyingInvoices(RebateAgreement $agreement, Carbon $asOf): Collection
+    {
+        return $this->purchaseQuery($agreement, $asOf)->orderBy('date')->get();
+    }
+
+    /**
+     * @return Builder<PassiveInvoice>
+     */
+    private function purchaseQuery(RebateAgreement $agreement, Carbon $asOf): Builder
+    {
+        return PassiveInvoice::query()
             ->where('tenant_id', $agreement->tenant_id)
             ->where('supplier_id', $agreement->contact_id)
             ->whereDate('date', '>=', $agreement->starts_on->toDateString())
-            ->whereDate('date', '<=', $asOf->toDateString());
+            ->whereDate('date', '<=', $asOf->toDateString())
+            ->when($agreement->supplier_contract_id !== null, static fn (Builder $query) => $query->whereIn('purchase_order_id', PurchaseOrder::query()->where('supplier_contract_id', $agreement->supplier_contract_id)->select('id')));
+    }
+
+    private function purchaseVolume(RebateAgreement $agreement, Carbon $asOf): string
+    {
+        $query = fn () => $this->purchaseQuery($agreement, $asOf);
 
         $invoiced = (string) $query()->where('document_type', '!=', 'TD04')->sum('total_net');
         $credited = (string) $query()->where('document_type', 'TD04')->sum('total_net');
@@ -166,6 +213,6 @@ final readonly class RebateAccrualService
 
     private function accruedTotal(RebateAgreement $agreement): string
     {
-        return Decimal::round2((string) RebateAccrual::query()->where('agreement_id', $agreement->id)->sum('rebate_amount'));
+        return Decimal::round2((string) RebateAccrual::query()->where('agreement_id', $agreement->id)->where('status', '!=', RebateAccrual::Reversed)->sum('rebate_amount'));
     }
 }

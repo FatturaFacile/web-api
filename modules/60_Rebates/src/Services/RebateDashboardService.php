@@ -36,7 +36,7 @@ final class RebateDashboardService
 
         $settled = ['sales' => '0.00', 'purchase' => '0.00'];
 
-        foreach (RebateSettlement::query()->where('tenant_id', $tenantId)->get(['agreement_id', 'amount']) as $settlement) {
+        foreach (RebateSettlement::query()->where('tenant_id', $tenantId)->where('status', RebateSettlement::Settled)->get(['agreement_id', 'amount']) as $settlement) {
             $side = $direction[$settlement->agreement_id] ?? null;
 
             if ($side !== null) {

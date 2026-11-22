@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $agreement_id
  * @property string $threshold_amount
  * @property string $rate_percent
+ * @property string|null $flat_amount
  */
 final class RebateTier extends BaseEnterpriseModel
 {
@@ -22,7 +23,7 @@ final class RebateTier extends BaseEnterpriseModel
 
     protected function casts(): array
     {
-        return ['threshold_amount' => 'decimal:2', 'rate_percent' => 'decimal:4'];
+        return ['threshold_amount' => 'decimal:2', 'rate_percent' => 'decimal:4', 'flat_amount' => 'decimal:2'];
     }
 
     /**

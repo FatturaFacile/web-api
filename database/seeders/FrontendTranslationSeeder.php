@@ -24,6 +24,7 @@ use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HelpdeskSlaFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\HseFrontendTranslations;
+use Database\Seeders\Translations\SupplierRebatesFrontendTranslations;
 use Database\Seeders\Translations\IdentityFrontendTranslations;
 use Database\Seeders\Translations\InventoryCountingFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
@@ -119,7 +120,8 @@ class FrontendTranslationSeeder extends Seeder
             + ManufacturingCommandCenterFrontendTranslations::all($locale)
             + ProjectEvmFrontendTranslations::all($locale)
             + FieldServiceManagementFrontendTranslations::all($locale)
-            + HelpdeskSlaFrontendTranslations::all($locale);
+            + HelpdeskSlaFrontendTranslations::all($locale)
+            + SupplierRebatesFrontendTranslations::all($locale);
     }
 
     /**
