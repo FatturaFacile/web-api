@@ -75,6 +75,7 @@ use Modules\Rebates\Providers\RebatesServiceProvider;
 use Modules\Returns\Providers\ReturnsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
+use Modules\ArtisanalGelato\Providers\ArtisanalGelatoServiceProvider;
 use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
@@ -180,4 +181,5 @@ return [
     HseServiceProvider::class,
     MrpPlanningServiceProvider::class,
     DataResidencyServiceProvider::class,
+    ArtisanalGelatoServiceProvider::class,
 ];
