@@ -165,6 +165,24 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
         ],
+        "test:unit": "@php -d memory_limit=1536M vendor/bin/pest --parallel --no-coverage --testsuite=Unit",
+        "test:arch": "@php -d memory_limit=1536M vendor/bin/pest --no-coverage --testsuite=Architecture",
+        "test:fast": "@php -d memory_limit=1536M vendor/bin/pest --parallel --no-coverage --testsuite=Unit,Architecture",
+        "test:changed": "@php -d memory_limit=1536M vendor/bin/pest --parallel --no-coverage --dirty",
+        "test:module": "@php -d memory_limit=1536M vendor/bin/pest --no-coverage",
+        "lint": "@php vendor/bin/pint --test",
+        "lint:dirty": "@php vendor/bin/pint --dirty",
+        "analyse": "@php -d memory_limit=2G vendor/bin/phpstan analyse --memory-limit=2G",
+        "analyse:dirty": "@php scripts/dev/analyse-dirty.php",
+        "quality": [
+            "@lint",
+            "@analyse",
+            "@test:arch"
+        ],
+        "quality:full": [
+            "@quality",
+            "@test"
+        ],
         "test:pg": [
             "docker compose -f docker-compose.test.yml up -d --wait postgres-test",
             "@php artisan migrate:fresh --env=testing --force",
@@ -200,6 +218,7 @@
         }
     },
     "config": {
+        "process-timeout": 0,
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
