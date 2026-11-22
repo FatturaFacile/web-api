@@ -8,6 +8,7 @@ use Modules\Projects\Http\Controllers\ProjectBudgetController;
 use Modules\Projects\Http\Controllers\ProjectChangeOrderController;
 use Modules\Projects\Http\Controllers\ProjectController;
 use Modules\Projects\Http\Controllers\ProjectCostEntryController;
+use Modules\Projects\Http\Controllers\ProjectEvmController;
 use Modules\Projects\Http\Controllers\ProjectExpenseController;
 use Modules\Projects\Http\Controllers\ProjectForecastController;
 use Modules\Projects\Http\Controllers\ProjectMilestoneController;
@@ -49,6 +50,10 @@ Route::prefix('api/v1/projects')
         Route::post('/expenses/{expenseId}/reject', [ProjectExpenseController::class, 'reject'])->whereUuid('expenseId')->name('projects.expenses.reject');
         Route::post('/change-orders/{orderId}/approve', [ProjectChangeOrderController::class, 'approve'])->whereUuid('orderId')->name('projects.change-orders.approve');
         Route::post('/change-orders/{orderId}/reject', [ProjectChangeOrderController::class, 'reject'])->whereUuid('orderId')->name('projects.change-orders.reject');
+
+        // Profitability and earned value (Mod 082): company-wide S-curve and overhead allocation.
+        Route::get('/evm/scurve', [ProjectEvmController::class, 'scurve'])->name('projects.evm.scurve');
+        Route::post('/evm/overhead-allocations', [ProjectEvmController::class, 'allocateOverhead'])->name('projects.evm.overhead-allocations');
 
         // Project master data and lifecycle.
         Route::get('/', [ProjectController::class, 'index'])->name('projects.index');
@@ -102,5 +107,13 @@ Route::prefix('api/v1/projects')
             Route::post('/revenue-recognitions', [ProjectRevenueRecognitionController::class, 'store'])->name('projects.revenue-recognitions.store');
             Route::get('/forecast', [ProjectForecastController::class, 'show'])->name('projects.forecast.show');
             Route::get('/profitability', [ProjectForecastController::class, 'profitability'])->name('projects.profitability');
+
+            // Profitability and earned value management (Mod 082).
+            Route::post('/evm/compute', [ProjectEvmController::class, 'compute'])->name('projects.evm.compute');
+            Route::get('/evm/snapshots', [ProjectEvmController::class, 'snapshots'])->name('projects.evm.snapshots');
+            Route::put('/evm/etc', [ProjectEvmController::class, 'setManualEtc'])->name('projects.evm.etc');
+            Route::get('/evm/wbs-breakdown', [ProjectEvmController::class, 'wbsBreakdown'])->name('projects.evm.wbs-breakdown');
+            Route::get('/evm/waterfall', [ProjectEvmController::class, 'waterfall'])->name('projects.evm.waterfall');
+            Route::get('/evm/ledger', [ProjectEvmController::class, 'ledger'])->name('projects.evm.ledger');
         });
     });

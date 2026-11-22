@@ -44468,6 +44468,150 @@ CREATE INDEX "mfg_machine_state_events_machine_id_index" on "mfg_machine_state_e
 CREATE INDEX "mfg_machine_state_events_production_order_operation_id_index" on "mfg_machine_state_events"(
   "production_order_operation_id"
 );
+CREATE TABLE "project_cost_ledger_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "wbs_node_id" varchar,
+  "cost_center_id" varchar,
+  "source_type" varchar not null,
+  "source_document_id" varchar not null,
+  "source_document_reference" varchar,
+  "committed_amount" numeric not null default '0',
+  "actual_amount" numeric not null default '0',
+  "currency_code" varchar not null,
+  "exchange_rate" numeric not null default '1',
+  "base_currency_committed_amount" numeric not null default '0',
+  "base_currency_actual_amount" numeric not null default '0',
+  "posting_date" date not null,
+  "is_reconciled" tinyint(1) not null default '0',
+  "reconciliation_ref" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("project_id") references "projects"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_proj_cost_ledger_source" on "project_cost_ledger_entries"(
+  "project_id",
+  "source_type",
+  "source_document_id"
+);
+CREATE INDEX "idx_proj_cost_ledger_wbs" on "project_cost_ledger_entries"(
+  "tenant_id",
+  "project_id",
+  "wbs_node_id"
+);
+CREATE INDEX "idx_proj_cost_ledger_date" on "project_cost_ledger_entries"(
+  "project_id",
+  "posting_date"
+);
+CREATE INDEX "project_cost_ledger_entries_tenant_id_index" on "project_cost_ledger_entries"(
+  "tenant_id"
+);
+CREATE TABLE "project_financial_snapshots"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "wbs_node_id" varchar,
+  "snapshot_date" date not null,
+  "currency_code" varchar not null,
+  "budget_at_completion_bac" numeric not null default '0',
+  "planned_value_pv" numeric not null default '0',
+  "earned_value_ev" numeric not null default '0',
+  "actual_cost_ac" numeric not null default '0',
+  "committed_cost" numeric not null default '0',
+  "cost_variance_cv" numeric not null default '0',
+  "schedule_variance_sv" numeric not null default '0',
+  "cost_performance_index_cpi" numeric,
+  "schedule_performance_index_spi" numeric,
+  "estimate_at_completion_eac" numeric not null default '0',
+  "estimate_to_complete_etc" numeric not null default '0',
+  "variance_at_completion_vac" numeric not null default '0',
+  "budget_absorption_percent" numeric,
+  "recognized_revenue" numeric not null default '0',
+  "gross_margin_amount" numeric not null default '0',
+  "gross_margin_percent" numeric,
+  "manual_etc_override" numeric,
+  "snapshot_trigger" varchar not null default 'manual',
+  "calculation_version" varchar not null default '1.0',
+  "reconciliation" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("project_id") references "projects"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_proj_fin_snapshot_date" on "project_financial_snapshots"(
+  "tenant_id",
+  "project_id",
+  "snapshot_date"
+);
+CREATE INDEX "idx_proj_fin_snapshot_wbs" on "project_financial_snapshots"(
+  "project_id",
+  "wbs_node_id",
+  "snapshot_date"
+);
+CREATE INDEX "project_financial_snapshots_tenant_id_index" on "project_financial_snapshots"(
+  "tenant_id"
+);
+CREATE TABLE "project_etc_overrides"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "wbs_node_id" varchar,
+  "estimate_to_complete" numeric not null,
+  "reason" varchar,
+  "set_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("project_id") references "projects"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_proj_etc_override_node" on "project_etc_overrides"(
+  "project_id",
+  "wbs_node_id"
+);
+CREATE INDEX "project_etc_overrides_tenant_id_index" on "project_etc_overrides"(
+  "tenant_id"
+);
+CREATE TABLE "project_evm_alert_states"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "wbs_node_id" varchar,
+  "metric" varchar not null,
+  "node_key" varchar not null,
+  "severity" varchar not null,
+  "metric_value" numeric not null,
+  "threshold" numeric not null,
+  "is_open" tinyint(1) not null default '1',
+  "opened_at" datetime not null,
+  "resolved_at" datetime,
+  "last_notified_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("project_id") references "projects"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_proj_evm_alert_state" on "project_evm_alert_states"(
+  "project_id",
+  "node_key",
+  "metric"
+);
+CREATE INDEX "project_evm_alert_states_tenant_id_index" on "project_evm_alert_states"(
+  "tenant_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -44888,3 +45032,4 @@ INSERT INTO migrations VALUES(416,'2027_12_19_000100_add_posting_uuid_to_mfg_ope
 INSERT INTO migrations VALUES(417,'2027_12_19_000100_create_mrp_planning_tables',1);
 INSERT INTO migrations VALUES(418,'2027_12_19_000100_extend_manufacturing_production_engineering',1);
 INSERT INTO migrations VALUES(419,'2027_12_19_000200_create_mfg_mes_integration_tables',1);
+INSERT INTO migrations VALUES(420,'2027_12_20_000100_create_project_evm_profitability_tables',2);

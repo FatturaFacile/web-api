@@ -3368,4 +3368,9 @@ return [
     'after_seq' => 'letzte Sequenz',
     'updated_since' => 'aktualisiert seit',
     'access_date' => 'Zugriffsdatum',
+    'wbs_node_id' => 'PSP-Element',
+    'estimate_to_complete' => 'Restkostenschätzung',
+    'run_key' => 'Schlüssel des Umlagelaufs',
+    'pool_amount' => 'Gemeinkostenpool',
+    'project_ids' => 'Projekte',
 ];

@@ -138,7 +138,7 @@ final readonly class EarnedValueCalculationService implements EarnedValueCalcula
      *
      * @return array{0: string, 1: string}
      */
-    private function completionRatios(Project $project, CarbonImmutable $asOf): array
+    public function completionRatios(Project $project, CarbonImmutable $asOf): array
     {
         $tasks = ProjectTask::query()->where('project_id', $project->id)->where('estimated_hours', '>', 0)->get();
 
@@ -166,7 +166,7 @@ final readonly class EarnedValueCalculationService implements EarnedValueCalcula
     /**
      * Share of a period elapsed at the date, both ends included, between 0 and 1.
      */
-    private function elapsedRatio(mixed $start, mixed $end, CarbonImmutable $asOf): string
+    public function elapsedRatio(mixed $start, mixed $end, CarbonImmutable $asOf): string
     {
         if ($start === null || $end === null) {
             return '0';

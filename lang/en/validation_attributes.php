@@ -3368,4 +3368,9 @@ return [
     'after_seq' => 'last sequence',
     'updated_since' => 'updated since',
     'access_date' => 'access date',
+    'wbs_node_id' => 'WBS node',
+    'estimate_to_complete' => 'estimate to complete',
+    'run_key' => 'allocation run key',
+    'pool_amount' => 'overhead pool',
+    'project_ids' => 'projects',
 ];

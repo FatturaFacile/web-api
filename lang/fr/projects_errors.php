@@ -86,6 +86,10 @@ return [
         'already_exists' => 'Cette dépendance existe déjà.',
         'cycle' => 'Cette dépendance créerait un cycle dans le planning.',
     ],
+    'evm' => [
+        'no_driver_value' => 'Aucun projet n\'a de valeur pour le facteur de répartition choisi sur la période : les frais généraux ne peuvent pas être répartis.',
+        'node_not_in_project' => 'Le nœud WBS n\'appartient pas à ce projet.',
+    ],
     'timesheet' => [
         'approve_only_submitted' => 'La feuille de temps est :status : seules les feuilles de temps soumises peuvent être approuvées.',
         'reject_only_submitted' => 'La feuille de temps est :status : seules les feuilles de temps soumises peuvent être rejetées.',

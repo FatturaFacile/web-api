@@ -86,6 +86,10 @@ return [
         'already_exists' => 'This dependency already exists.',
         'cycle' => 'This dependency would create a cycle in the schedule.',
     ],
+    'evm' => [
+        'no_driver_value' => 'No project has a value for the chosen allocation driver in this period: the overhead cannot be allocated.',
+        'node_not_in_project' => 'The WBS node does not belong to this project.',
+    ],
     'timesheet' => [
         'approve_only_submitted' => 'Timesheet is :status: only submitted timesheets can be approved.',
         'reject_only_submitted' => 'Timesheet is :status: only submitted timesheets can be rejected.',

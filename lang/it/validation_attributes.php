@@ -3368,4 +3368,9 @@ return [
     'after_seq' => 'ultima sequenza',
     'updated_since' => 'aggiornato dal',
     'access_date' => 'data di accesso',
+    'wbs_node_id' => 'nodo WBS',
+    'estimate_to_complete' => 'stima a finire',
+    'run_key' => 'chiave dell\'esecuzione di ribaltamento',
+    'pool_amount' => 'importo dei costi generali',
+    'project_ids' => 'commesse',
 ];

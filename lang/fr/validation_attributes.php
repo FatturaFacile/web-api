@@ -3368,4 +3368,9 @@ return [
     'after_seq' => 'dernière séquence',
     'updated_since' => 'mis à jour depuis',
     'access_date' => 'date d\'accès',
+    'wbs_node_id' => 'nœud WBS',
+    'estimate_to_complete' => 'estimation à terminaison',
+    'run_key' => 'clé de l\'exécution de la répartition',
+    'pool_amount' => 'enveloppe de frais généraux',
+    'project_ids' => 'projets',
 ];
