@@ -339,7 +339,7 @@ test('maintenance plans, meter readings and the work order lifecycle with spare 
 
     $show = $this->getJson("/api/v1/eam/maintenance/work-orders/{$workOrderId}")->assertOk();
     expect($show->json('parts'))->toHaveCount(1);
-    $this->getJson("/api/v1/eam/assets/{$assetId}/maintenance-summary")->assertOk()->assertJsonPath('data.total_cost', '180.00')->assertJsonPath('data.downtime_hours', '3.50');
+    $this->getJson("/api/v1/eam/assets/{$assetId}/maintenance-summary")->assertOk()->assertJsonPath('data.total_cost', '180.00')->assertJsonPath('data.downtime_hours', '3.50')->assertJsonPath('data.mean_time_to_repair_hours', null);
 });
 
 test('work orders can be created, filtered and cancelled, and improvements capitalized', function (): void {
