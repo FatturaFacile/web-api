@@ -15,7 +15,7 @@ final class Customer360FrontendTranslations
      */
     public static function all(string $locale): array
     {
-        return [...self::lifecycle($locale), ...self::escalation($locale), ...match ($locale) {
+        return [...self::lifecycle($locale), ...self::quickActions($locale), ...self::escalation($locale), ...match ($locale) {
             'it' => [
                 'CRM.CUSTOMER360.ADDRESSES' => 'Indirizzi',
                 'CRM.CUSTOMER360.ADDRESS_TYPE' => 'Tipo di indirizzo',
@@ -270,6 +270,28 @@ final class Customer360FrontendTranslations
             ],
             default => [],
         }];
+    }
+
+    /**
+     * Strings of the quick actions (log a visit, create a follow-up) of the lifecycle panel.
+     *
+     * @return array<string, string>
+     */
+    private static function quickActions(string $locale): array
+    {
+        $labels = [
+            'it' => ['QA_LOG_VISIT' => 'Registra visita', 'QA_FOLLOW_UP' => 'Crea follow-up', 'QA_SUBJECT' => 'Oggetto', 'QA_DUE' => 'Scadenza', 'QA_SAVE' => 'Salva', 'QA_CANCEL' => 'Annulla', 'QA_SAVED' => 'Salvato', 'QA_FAILED' => 'Salvataggio non riuscito'],
+            'en' => ['QA_LOG_VISIT' => 'Log visit', 'QA_FOLLOW_UP' => 'Create follow-up', 'QA_SUBJECT' => 'Subject', 'QA_DUE' => 'Due date', 'QA_SAVE' => 'Save', 'QA_CANCEL' => 'Cancel', 'QA_SAVED' => 'Saved', 'QA_FAILED' => 'Could not save'],
+            'de' => ['QA_LOG_VISIT' => 'Besuch erfassen', 'QA_FOLLOW_UP' => 'Follow-up erstellen', 'QA_SUBJECT' => 'Betreff', 'QA_DUE' => 'Fällig am', 'QA_SAVE' => 'Speichern', 'QA_CANCEL' => 'Abbrechen', 'QA_SAVED' => 'Gespeichert', 'QA_FAILED' => 'Speichern fehlgeschlagen'],
+            'fr' => ['QA_LOG_VISIT' => 'Enregistrer une visite', 'QA_FOLLOW_UP' => 'Créer un suivi', 'QA_SUBJECT' => 'Objet', 'QA_DUE' => 'Échéance', 'QA_SAVE' => 'Enregistrer', 'QA_CANCEL' => 'Annuler', 'QA_SAVED' => 'Enregistré', 'QA_FAILED' => 'Échec de l\'enregistrement'],
+        ];
+
+        $out = [];
+        foreach ($labels[$locale] ?? [] as $key => $text) {
+            $out['CRM.CUSTOMER360.'.$key] = $text;
+        }
+
+        return $out;
     }
 
     /**
