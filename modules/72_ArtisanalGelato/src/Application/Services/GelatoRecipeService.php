@@ -229,9 +229,14 @@ final class GelatoRecipeService
      */
     private function ingredientNode(GelatoTechnicalIngredient $ingredient): array
     {
+        /** @var array<string, string> $name */
+        $name = (array) $ingredient->name;
+        /** @var list<string> $allergens */
+        $allergens = (array) $ingredient->allergens;
+
         return [
-            'name' => (array) $ingredient->name,
-            'allergens' => (array) $ingredient->allergens,
+            'name' => $name,
+            'allergens' => $allergens,
             'is_vegan' => (bool) $ingredient->is_vegan,
             'is_defrosted' => (bool) $ingredient->is_defrosted,
             'technical' => [

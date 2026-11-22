@@ -85,7 +85,7 @@ final readonly class SignAndCloseServiceReportHandler
             ], static fn (mixed $value): bool => $value !== null);
         }
 
-        return array_values($photos);
+        return $photos;
     }
 
     private function sign(SignAndCloseServiceReportCommand $command): DigitalServiceReport

@@ -106,7 +106,9 @@ final class PublishActiveShowcaseFlavorsAndIngredientBookHandler
         $names = [];
 
         foreach (GelatoBalancedRecipe::query()->whereIn('id', $recipeIds)->get() as $recipe) {
-            $names[$recipe->id] = (array) $recipe->name;
+            /** @var array<string, string> $name */
+            $name = (array) $recipe->name;
+            $names[(string) $recipe->id] = $name;
         }
 
         return $names;

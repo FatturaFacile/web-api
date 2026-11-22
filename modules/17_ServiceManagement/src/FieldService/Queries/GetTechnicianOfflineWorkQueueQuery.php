@@ -138,7 +138,7 @@ final readonly class GetTechnicianOfflineWorkQueueQuery
             'contract_number' => $contract->contract_number,
             'coverage_type' => (string) $contract->coverage_type,
             'status' => (string) $contract->status,
-            'start_date' => $contract->start_date?->toDateString(),
+            'start_date' => $contract->start_date->toDateString(),
             'end_date' => $contract->end_date?->toDateString(),
             'callout_fee_amount' => (string) $contract->callout_fee_amount,
             'hourly_labor_rate' => $contract->hourly_labor_rate === null ? null : (string) $contract->hourly_labor_rate,
