@@ -17,6 +17,7 @@ use Modules\Workflow\Models\WorkflowInstance;
  * @property Carbon|null $completed_at
  * @property Carbon|null $frozen_at
  * @property Carbon|null $approved_at
+ * @property Carbon|null $snapshot_at
  */
 final class InventoryCountSession extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
@@ -32,6 +33,9 @@ final class InventoryCountSession extends BaseEnterpriseModel implements Lockabl
             'freezes_stock' => 'boolean',
             'frozen_at' => 'datetime',
             'approved_at' => 'datetime',
+            'is_blind' => 'boolean',
+            'snapshot_at' => 'datetime',
+            'approval_level_required' => 'integer',
         ];
     }
 

@@ -50,6 +50,7 @@ return [
         'cpq_quotes' => env('FEATURE_MODULE_CPQ_QUOTES'),
         'swiss_fiscal' => env('FEATURE_MODULE_SWISS_FISCAL'),
         'shift_planning' => env('FEATURE_MODULE_SHIFT_PLANNING'),
+        'artisanal_gelato' => env('FEATURE_MODULE_ARTISANAL_GELATO'),
         'ai_cognitive' => env('FEATURE_MODULE_AI_COGNITIVE'),
         'data_residency' => env('FEATURE_MODULE_DATA_RESIDENCY'),
         'leases' => env('FEATURE_MODULE_LEASES'),

@@ -15,6 +15,7 @@ use Modules\AiCognitive\Providers\AiCognitiveServiceProvider;
 use Modules\AnalyticalAccounting\Providers\AnalyticalAccountingServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AnalyticsDss\Providers\AnalyticsDssServiceProvider;
+use Modules\ArtisanalGelato\Providers\ArtisanalGelatoServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
@@ -182,4 +183,5 @@ return [
     HseServiceProvider::class,
     MrpPlanningServiceProvider::class,
     DataResidencyServiceProvider::class,
+    ArtisanalGelatoServiceProvider::class,
 ];

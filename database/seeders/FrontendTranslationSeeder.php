@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
 use Database\Seeders\Translations\AnalyticalAccountingFrontendTranslations;
+use Database\Seeders\Translations\ArtisanalGelatoFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\BomManagementFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
@@ -15,12 +16,15 @@ use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
+use Database\Seeders\Translations\FieldServiceManagementFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
+use Database\Seeders\Translations\GeneralLedgerPrimaNotaFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\HseFrontendTranslations;
 use Database\Seeders\Translations\IdentityFrontendTranslations;
+use Database\Seeders\Translations\InventoryCountingFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Database\Seeders\Translations\ItalianPayrollFrontendTranslations;
 use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
@@ -91,6 +95,7 @@ class FrontendTranslationSeeder extends Seeder
             + AiForecastingFrontendTranslations::all($locale)
             + OcrInboxFrontendTranslations::all($locale)
             + BomManagementFrontendTranslations::all($locale)
+            + GeneralLedgerPrimaNotaFrontendTranslations::all($locale)
             + MesOperatorBoardFrontendTranslations::all($locale)
             + ManufacturingProductionFrontendTranslations::all($locale)
             + ExecutiveDssFrontendTranslations::all($locale)
@@ -98,7 +103,9 @@ class FrontendTranslationSeeder extends Seeder
             + ItalianPayrollFrontendTranslations::all($locale)
             + ShiftPlanningFrontendTranslations::all($locale)
             + AnalyticalAccountingFrontendTranslations::all($locale)
+            + ArtisanalGelatoFrontendTranslations::all($locale)
             + HseFrontendTranslations::all($locale)
+            + InventoryCountingFrontendTranslations::all($locale)
             + MrpPlanningFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)
             + CpqQuotesFrontendTranslations::all($locale)
@@ -109,7 +116,8 @@ class FrontendTranslationSeeder extends Seeder
             + RfqFrontendTranslations::all($locale)
             + PurchaseRequisitionFrontendTranslations::all($locale)
             + ManufacturingCommandCenterFrontendTranslations::all($locale)
-            + ProjectEvmFrontendTranslations::all($locale);
+            + ProjectEvmFrontendTranslations::all($locale)
+            + FieldServiceManagementFrontendTranslations::all($locale);
     }
 
     /**

@@ -12,6 +12,7 @@ use Carbon\CarbonImmutable;
 use Modules\ServiceManagement\FieldService\VanWarehouseResolver;
 use Modules\ServiceManagement\Models\DigitalServiceReport;
 use Modules\ServiceManagement\Models\SerializedEquipmentPassport;
+use Modules\ServiceManagement\Models\ServiceContract;
 use Modules\ServiceManagement\Models\ServiceTechnician;
 use Modules\ServiceManagement\Models\WorkOrder;
 
@@ -63,6 +64,12 @@ final readonly class GetTechnicianOfflineWorkQueueQuery
             ->whereIn('id', $workOrders->pluck('customer_id')->filter()->unique())
             ->get();
 
+        $contracts = ServiceContract::query()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('id', $workOrders->pluck('service_contract_id')->filter()->unique())
+            ->get()
+            ->keyBy('id');
+
         $van = $this->vans->forTechnician($technician);
 
         return [
@@ -85,6 +92,7 @@ final readonly class GetTechnicianOfflineWorkQueueQuery
                 'customer_id' => $wo->customer_id === null ? null : (string) $wo->customer_id,
                 'equipment_passport_id' => $wo->equipment_passport_id === null ? null : (string) $wo->equipment_passport_id,
                 'service_contract_id' => $wo->service_contract_id === null ? null : (string) $wo->service_contract_id,
+                'service_contract' => $this->contractRules($contracts[$wo->service_contract_id] ?? null),
                 'scheduled_start' => $wo->scheduled_start?->toIso8601String(),
                 'scheduled_end' => $wo->scheduled_end?->toIso8601String(),
                 'site' => (array) $wo->location,
@@ -111,6 +119,29 @@ final readonly class GetTechnicianOfflineWorkQueueQuery
                 'history' => $this->recentHistory((string) $p->id, $tenantId),
             ])->values()->all(),
             'van_stock' => $van === null ? [] : $this->vanCatalog($van),
+        ];
+    }
+
+    /**
+     * Coverage rules the offline client needs to flag covered vs chargeable parts and fees without connectivity.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function contractRules(?ServiceContract $contract): ?array
+    {
+        if ($contract === null) {
+            return null;
+        }
+
+        return [
+            'id' => (string) $contract->id,
+            'contract_number' => $contract->contract_number,
+            'coverage_type' => (string) $contract->coverage_type,
+            'status' => (string) $contract->status,
+            'start_date' => $contract->start_date?->toDateString(),
+            'end_date' => $contract->end_date?->toDateString(),
+            'callout_fee_amount' => (string) $contract->callout_fee_amount,
+            'hourly_labor_rate' => $contract->hourly_labor_rate === null ? null : (string) $contract->hourly_labor_rate,
         ];
     }
 

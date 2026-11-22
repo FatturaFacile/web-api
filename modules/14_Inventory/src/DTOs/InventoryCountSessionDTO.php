@@ -27,6 +27,8 @@ final readonly class InventoryCountSessionDTO
         public ?string $effectiveAt = null,
         public bool $freezesStock = false,
         public array $stockItemIds = [],
-        public ?string $planId = null
+        public ?string $planId = null,
+        public ?bool $isBlind = null,
+        public ?string $assignedTo = null
     ) {}
 }

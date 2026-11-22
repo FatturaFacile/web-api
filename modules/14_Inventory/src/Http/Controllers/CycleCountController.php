@@ -12,6 +12,7 @@ use Modules\Inventory\Http\Requests\CycleCountPlanRequest;
 use Modules\Inventory\Http\Requests\WmsQueryRequest;
 use Modules\Inventory\Http\Resources\InventoryCountSessionResource;
 use Modules\Inventory\Models\CycleCountPlan;
+use Modules\Inventory\Models\InventoryCountPolicy;
 use Modules\Inventory\Services\AbcClassificationService;
 use Modules\Inventory\Services\CycleCountPlanService;
 use OpenApi\Attributes as OA;
@@ -197,6 +198,8 @@ final class CycleCountController extends Controller
             'name' => (string) $plan->name,
             'abc_class' => $plan->abc_class,
             'interval_days' => (int) $plan->interval_days,
+            'warehouse_zone_id' => $plan->warehouse_zone_id !== null ? (string) $plan->warehouse_zone_id : null,
+            'cadence' => InventoryCountPolicy::cadenceLabel((int) $plan->interval_days),
             'freezes_stock' => (bool) $plan->freezes_stock,
             'is_active' => (bool) $plan->is_active,
             'last_run_at' => $plan->last_run_at?->toIso8601String(),

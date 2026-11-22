@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Inventory\Events\StockAdjustedEvent;
 use Modules\Inventory\Models\InventoryAdjustment;
+use Modules\Inventory\Models\InventoryCountApproval;
 use Modules\Inventory\Models\InventoryCountSession;
 use Modules\Inventory\Services\InventoryAdjustmentPoster;
 use Modules\Workflow\Models\WorkflowInstance;
@@ -36,6 +37,10 @@ final readonly class PostInventoryAdjustmentAction
     {
         return DB::transaction(function () use ($adjustment, $approvedBy): InventoryAdjustment {
             $adjustment = InventoryAdjustment::query()->whereKey($adjustment->getKey())->lockForUpdate()->firstOrFail();
+
+            if (InventoryCountApproval::query()->where('inventory_adjustment_id', $adjustment->id)->exists()) {
+                throw ValidationException::withMessages(['status' => __('inventory_errors.adjustment.managed_by_count_approvals')]);
+            }
 
             if ($adjustment->status !== 'pending_approval') {
                 throw ValidationException::withMessages(['status' => __('inventory_errors.adjustment.approve_only_pending', ['status' => $adjustment->status])]);

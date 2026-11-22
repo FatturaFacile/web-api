@@ -34,7 +34,7 @@ final readonly class GetDispatcherGanttAndMapBoardQuery
         $scheduled = WorkOrder::query()
             ->where('tenant_id', $tenantId)
             ->whereNotNull('assigned_technician_id')
-            ->whereIn('status', DispatchTechnicianWorkOrderHandler::BusyStatuses)
+            ->whereIn('status', [...DispatchTechnicianWorkOrderHandler::BusyStatuses, 'completed', 'invoiced'])
             ->where('scheduled_start', '<', $to)
             ->where('scheduled_end', '>', $from)
             ->orderBy('scheduled_start')
@@ -56,6 +56,8 @@ final readonly class GetDispatcherGanttAndMapBoardQuery
                     'warehouse_id' => $van === null ? null : (string) $van->id,
                     'ready' => $van !== null,
                     'distinct_products_in_stock' => count(array_filter($stock, static fn (float $q): bool => $q > 0)),
+                    // product id => available quantity, so the board can flag per work order whether the van covers its parts.
+                    'stock' => (object) array_filter($stock, static fn (float $q): bool => $q > 0),
                 ],
                 'blocks' => ($scheduled[$technician->id] ?? collect())->map(fn (WorkOrder $wo): array => $this->block($wo))->values()->all(),
             ];
@@ -83,6 +85,11 @@ final readonly class GetDispatcherGanttAndMapBoardQuery
             'work_order_number' => (string) $wo->work_order_number,
             'title' => (string) $wo->title,
             'work_type' => (string) $wo->work_type,
+            'work_order_type' => (string) $wo->work_type,
+            'customer_id' => $wo->customer_id === null ? null : (string) $wo->customer_id,
+            'service_contract_id' => $wo->service_contract_id === null ? null : (string) $wo->service_contract_id,
+            'equipment_passport_id' => $wo->equipment_passport_id === null ? null : (string) $wo->equipment_passport_id,
+            'assigned_technician_id' => $wo->assigned_technician_id === null ? null : (string) $wo->assigned_technician_id,
             'priority' => (string) $wo->priority,
             'status' => (string) $wo->status,
             'scheduled_start' => $wo->scheduled_start?->toIso8601String(),
