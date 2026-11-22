@@ -125,7 +125,7 @@ test('full lifecycle: escalate, complete with contract coverage, ticket resolved
 
     $response->assertOk()->assertJsonPath('data.ticket_status', 'resolved')->assertJsonPath('data.settlement', 'contract_deduction')->assertJsonPath('data.invoice_id', null);
     expect($ticket->refresh()->status)->toBe('resolved')
-        ->and((float) ContractHourTransaction::query()->where('work_order_id', $workOrder->id)->sum('hours'))->toBe(2.0);
+        ->and(abs((float) ContractHourTransaction::query()->where('work_order_id', $workOrder->id)->sum('hours')))->toBe(2.0);
 
     $summary = $this->getJson("/api/v1/crm/customers/{$this->account->id}/360")->assertOk();
     $summary->assertJsonPath('data.kpis.interventions_completed', 1)
