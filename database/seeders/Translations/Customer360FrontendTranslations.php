@@ -15,7 +15,7 @@ final class Customer360FrontendTranslations
      */
     public static function all(string $locale): array
     {
-        return [...self::lifecycle($locale), ...match ($locale) {
+        return [...self::lifecycle($locale), ...self::escalation($locale), ...match ($locale) {
             'it' => [
                 'CRM.CUSTOMER360.ADDRESSES' => 'Indirizzi',
                 'CRM.CUSTOMER360.ADDRESS_TYPE' => 'Tipo di indirizzo',
@@ -294,6 +294,29 @@ final class Customer360FrontendTranslations
         $out = [];
         foreach ($keys as $i => $key) {
             $out['CRM.CUSTOMER360.'.$key] = $labels[$locale][$i];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Ticket drawer action: escalate a helpdesk ticket to a field-service work order.
+     *
+     * @return array<string, string>
+     */
+    private static function escalation(string $locale): array
+    {
+        $labels = [
+            'it' => ['Intervento sul campo', 'Escalare a intervento sul campo', 'Verrà creato un ordine di lavoro collegato a questo ticket.', 'Ordine di lavoro creato.', 'Impossibile creare l\'ordine di lavoro.'],
+            'en' => ['Field service', 'Escalate to field service', 'A work order linked to this ticket will be created.', 'Work order created.', 'The work order could not be created.'],
+            'de' => ['Außendienst', 'An den Außendienst eskalieren', 'Es wird ein mit diesem Ticket verknüpfter Arbeitsauftrag erstellt.', 'Arbeitsauftrag erstellt.', 'Der Arbeitsauftrag konnte nicht erstellt werden.'],
+            'fr' => ['Intervention sur site', 'Escalader vers une intervention sur site', 'Un ordre de travail lié à ce ticket sera créé.', 'Ordre de travail créé.', 'Impossible de créer l\'ordre de travail.'],
+        ];
+        $keys = ['LBL_FIELD_SERVICE', 'DLG_FIELD_SERVICE_TITLE', 'DLG_FIELD_SERVICE_BODY', 'MSG_FIELD_SERVICE_CREATED', 'MSG_FIELD_SERVICE_FAILED'];
+
+        $out = [];
+        foreach ($keys as $i => $key) {
+            $out['TICKET_TOOLS.'.$key] = $labels[$locale][$i] ?? $labels['en'][$i];
         }
 
         return $out;
