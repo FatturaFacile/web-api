@@ -45,6 +45,7 @@ use Database\Seeders\Translations\ProjectPortfolioFrontendTranslations;
 use Database\Seeders\Translations\ProposalPortalFrontendTranslations;
 use Database\Seeders\Translations\PurchaseRequisitionFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
+use Database\Seeders\Translations\ResourcePlanningFrontendTranslations;
 use Database\Seeders\Translations\RfqFrontendTranslations;
 use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
 use Database\Seeders\Translations\ShiftPlanningFrontendTranslations;
@@ -121,7 +122,8 @@ class FrontendTranslationSeeder extends Seeder
             + ProjectEvmFrontendTranslations::all($locale)
             + ProjectPortfolioFrontendTranslations::all($locale)
             + FieldServiceManagementFrontendTranslations::all($locale)
-            + HelpdeskSlaFrontendTranslations::all($locale);
+            + HelpdeskSlaFrontendTranslations::all($locale)
+            + ResourcePlanningFrontendTranslations::all($locale);
     }
 
     /**
