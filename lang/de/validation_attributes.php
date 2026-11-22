@@ -3367,4 +3367,9 @@ return [
     'cursor' => 'Cursor',
     'updated_since' => 'aktualisiert seit',
     'access_date' => 'Zugriffsdatum',
+    'ledger' => 'Buch',
+    'columns' => 'Spalten',
+    'post_to_ledgers' => 'Bücher für die Buchung',
+    'names' => 'Namen',
+    'account' => 'Konto',
 ];

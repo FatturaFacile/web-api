@@ -17,7 +17,7 @@ use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use RoundingMode;
 
 /**
- * Reports read from the posted entries of the statutory ledger only: trial balance, account ledger (mastrino) with
+ * Reports read from the posted entries of one ledger book (statutory by default, tax or ifrs for the parallel books): trial balance, account ledger (mastrino) with
  * running balance, balance sheet, income statement and analysis by dimension, each with an optional comparison range.
  *
  * Conventions shared with LedgerBalanceReader: an entry counts when it is posted or reversed (a reversed entry and its
@@ -38,12 +38,12 @@ final class LedgerReportService
      * @param  array{cost_center_id?: ?string, profit_center_id?: ?string, project_id?: ?string}  $dimensions
      * @return array{from: string, to: string, compare_from: ?string, compare_to: ?string, accounts: list<array<string, mixed>>, totals: array<string, string>, is_balanced: bool}
      */
-    public function trialBalance(string $tenantId, CarbonImmutable $from, CarbonImmutable $to, ?CarbonImmutable $compareFrom = null, ?CarbonImmutable $compareTo = null, array $dimensions = []): array
+    public function trialBalance(string $tenantId, CarbonImmutable $from, CarbonImmutable $to, ?CarbonImmutable $compareFrom = null, ?CarbonImmutable $compareTo = null, array $dimensions = [], string $ledgerType = 'statutory'): array
     {
-        $opening = $this->sums($this->lines($tenantId, $dimensions)->whereDate('journal_entries.posting_date', '<', $from->toDateString()));
-        $period = $this->sums($this->lines($tenantId, $dimensions)->whereDate('journal_entries.posting_date', '>=', $from->toDateString())->whereDate('journal_entries.posting_date', '<=', $to->toDateString()));
+        $opening = $this->sums($this->lines($tenantId, $dimensions, $ledgerType)->whereDate('journal_entries.posting_date', '<', $from->toDateString()));
+        $period = $this->sums($this->lines($tenantId, $dimensions, $ledgerType)->whereDate('journal_entries.posting_date', '>=', $from->toDateString())->whereDate('journal_entries.posting_date', '<=', $to->toDateString()));
         $comparison = $compareFrom !== null && $compareTo !== null
-            ? $this->sums($this->lines($tenantId, $dimensions)->whereDate('journal_entries.posting_date', '>=', $compareFrom->toDateString())->whereDate('journal_entries.posting_date', '<=', $compareTo->toDateString()))
+            ? $this->sums($this->lines($tenantId, $dimensions, $ledgerType)->whereDate('journal_entries.posting_date', '>=', $compareFrom->toDateString())->whereDate('journal_entries.posting_date', '<=', $compareTo->toDateString()))
             : collect();
 
         $accountIds = $opening->keys()->merge($period->keys())->merge($comparison->keys())->unique()->values();
@@ -96,19 +96,49 @@ final class LedgerReportService
     }
 
     /**
+     * The two-column layout of a trial balance (bilancio di verifica a due sezioni): each account carries its closing
+     * balance on the debit or the credit side, and the totals of both sides.
+     *
+     * @param  array<string, mixed>  $report  the result of trialBalance()
+     * @return array<string, mixed>
+     */
+    public function twoColumnTrialBalance(array $report): array
+    {
+        $debit = '0';
+        $credit = '0';
+        $rows = [];
+
+        foreach ($report['accounts'] as $row) {
+            $balance = (string) $row['closing_balance'];
+            $isDebit = bccomp($balance, '0', self::Scale) >= 0;
+            $row['debit_balance'] = $isDebit ? $this->scaled($balance) : $this->scaled('0');
+            $row['credit_balance'] = $isDebit ? $this->scaled('0') : $this->scaled(ltrim($balance, '-'));
+            $debit = bcadd($debit, $row['debit_balance'], self::Scale);
+            $credit = bcadd($credit, $row['credit_balance'], self::Scale);
+            $rows[] = $row;
+        }
+
+        $report['accounts'] = $rows;
+        $report['totals'] = ['debit_balance' => $this->scaled($debit), 'credit_balance' => $this->scaled($credit)];
+        $report['is_balanced'] = bccomp($debit, $credit, self::Scale) === 0;
+
+        return $report;
+    }
+
+    /**
      * The lines of one account in a range, oldest first, with the balance before the range and the running balance
      * after each line. The running balance of a page already includes every earlier line of the range.
      *
      * @param  array{cost_center_id?: ?string, profit_center_id?: ?string, project_id?: ?string}  $dimensions
      * @return array{account: array<string, mixed>, from: string, to: string, opening_balance: string, closing_balance: string, total_debit: string, total_credit: string, lines: list<array<string, mixed>>, meta: array{current_page: int, last_page: int, per_page: int, total: int}}
      */
-    public function accountLedger(string $tenantId, ChartOfAccount $account, CarbonImmutable $from, CarbonImmutable $to, int $page, int $perPage, array $dimensions = []): array
+    public function accountLedger(string $tenantId, ChartOfAccount $account, CarbonImmutable $from, CarbonImmutable $to, int $page, int $perPage, array $dimensions = [], string $ledgerType = 'statutory'): array
     {
-        $opening = $this->balanceOf($this->sums($this->lines($tenantId, $dimensions)
+        $opening = $this->balanceOf($this->sums($this->lines($tenantId, $dimensions, $ledgerType)
             ->where('journal_lines.account_id', $account->id)
             ->whereDate('journal_entries.posting_date', '<', $from->toDateString()))->get((string) $account->id));
 
-        $inRange = fn (): Builder => $this->lines($tenantId, $dimensions)
+        $inRange = fn (): Builder => $this->lines($tenantId, $dimensions, $ledgerType)
             ->where('journal_lines.account_id', $account->id)
             ->whereDate('journal_entries.posting_date', '>=', $from->toDateString())->whereDate('journal_entries.posting_date', '<=', $to->toDateString());
 
@@ -676,7 +706,7 @@ final class LedgerReportService
      *
      * @param  array{cost_center_id?: ?string, profit_center_id?: ?string, project_id?: ?string}  $dimensions
      */
-    private function lines(string $tenantId, array $dimensions = []): Builder
+    private function lines(string $tenantId, array $dimensions = [], string $ledgerType = 'statutory'): Builder
     {
         $query = DB::table('journal_lines')
             ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
@@ -686,7 +716,7 @@ final class LedgerReportService
             ->whereNull('journal_entries.deleted_at')
             ->whereNull('journal_lines.deleted_at')
             ->whereIn('journal_entries.status', ['posted', 'reversed'])
-            ->where('journal_entries.ledger_type', 'statutory')
+            ->where('journal_entries.ledger_type', $ledgerType)
             ->where('journal_entries.journal_type', '!=', 'opening');
 
         foreach (['cost_center_id', 'profit_center_id', 'project_id'] as $dimension) {

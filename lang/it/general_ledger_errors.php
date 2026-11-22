@@ -31,4 +31,11 @@ return [
         'account_automatic_only' => 'Il conto :code accetta solo registrazioni automatiche.',
         'cost_center_required' => 'Il conto :code richiede un centro di costo.',
     ],
+    'template' => [
+        'unbalanced' => 'Le righe della causale non quadrano con questi importi.',
+        'amount_required' => 'È richiesto un importo positivo.',
+        'rate_required' => 'Questa causale applica l\'imposta: l\'aliquota è obbligatoria.',
+        'account_unknown' => 'Nessun conto di questo tenant trovato per il parametro ":key".',
+        'system_readonly' => 'Una causale di sistema non può essere modificata o eliminata.',
+    ],
 ];

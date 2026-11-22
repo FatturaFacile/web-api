@@ -3367,4 +3367,9 @@ return [
     'cursor' => 'cursore',
     'updated_since' => 'aggiornato dal',
     'access_date' => 'data di accesso',
+    'ledger' => 'libro contabile',
+    'columns' => 'colonne',
+    'post_to_ledgers' => 'libri di registrazione',
+    'names' => 'nomi',
+    'account' => 'conto',
 ];

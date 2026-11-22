@@ -45,6 +45,8 @@ final class LedgerReportController extends Controller
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Reports'],
         parameters: [
+            new OA\Parameter(name: 'ledger', in: 'query', required: false, description: 'Ledger book: 01 statutory (default), 02 tax, 03 international (ifrs).', schema: new OA\Schema(type: 'string', enum: ['01', '02', '03'])),
+            new OA\Parameter(name: 'columns', in: 'query', required: false, description: '4 (default): opening balance, period debit/credit, closing balance; 2: closing balance on the debit or credit side.', schema: new OA\Schema(type: 'integer', enum: [2, 4])),
             new OA\Parameter(ref: '#/components/parameters/GeneralLedgerReportFrom'),
             new OA\Parameter(ref: '#/components/parameters/GeneralLedgerReportTo'),
             new OA\Parameter(ref: '#/components/parameters/GeneralLedgerReportCompareFrom'),
@@ -64,7 +66,9 @@ final class LedgerReportController extends Controller
     {
         [$from, $to, $compareFrom, $compareTo] = $this->range($request);
 
-        return $this->successResponse($this->reports->trialBalance($this->tenantId(), $from, $to, $compareFrom, $compareTo, $request->dimensions()));
+        $report = $this->reports->trialBalance($this->tenantId(), $from, $to, $compareFrom, $compareTo, $request->dimensions(), $request->ledgerType());
+
+        return $this->successResponse((int) $request->validated('columns', 4) === 2 ? $this->reports->twoColumnTrialBalance($report) : $report);
     }
 
     /**
@@ -78,6 +82,7 @@ final class LedgerReportController extends Controller
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Reports'],
         parameters: [
+            new OA\Parameter(name: 'ledger', in: 'query', required: false, description: 'Ledger book: 01 statutory (default), 02 tax, 03 international (ifrs).', schema: new OA\Schema(type: 'string', enum: ['01', '02', '03'])),
             new OA\Parameter(name: 'account_id', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
             new OA\Parameter(ref: '#/components/parameters/GeneralLedgerReportFrom'),
             new OA\Parameter(ref: '#/components/parameters/GeneralLedgerReportTo'),
@@ -106,7 +111,8 @@ final class LedgerReportController extends Controller
             CarbonImmutable::parse((string) $request->validated('to')),
             (int) ($request->validated('page') ?? 1),
             (int) ($request->validated('per_page') ?? 100),
-            $request->dimensions()
+            $request->dimensions(),
+            $request->ledgerType()
         ));
     }
 

@@ -3367,4 +3367,9 @@ return [
     'cursor' => 'cursor',
     'updated_since' => 'updated since',
     'access_date' => 'access date',
+    'ledger' => 'ledger book',
+    'columns' => 'columns',
+    'post_to_ledgers' => 'ledger books to post to',
+    'names' => 'names',
+    'account' => 'account',
 ];

@@ -36,10 +36,10 @@ final class LedgerBalanceReader
      *
      * @return Collection<string, object>
      */
-    public function movements(string $tenantId, CarbonImmutable $from, CarbonImmutable $to): Collection
+    public function movements(string $tenantId, CarbonImmutable $from, CarbonImmutable $to, string $ledgerType = 'statutory'): Collection
     {
         return $this->byAccount(
-            $this->postedLines($tenantId)
+            $this->postedLines($tenantId, $ledgerType)
                 ->whereDate('journal_entries.posting_date', '>=', $from->toDateString())->whereDate('journal_entries.posting_date', '<=', $to->toDateString())
                 ->whereNotIn('journal_entries.journal_type', ['opening', 'closing'])
                 ->where(static fn (Builder $query): Builder => $query
@@ -55,10 +55,10 @@ final class LedgerBalanceReader
      *
      * @return Collection<string, object>
      */
-    public function cumulative(string $tenantId, CarbonImmutable $yearStart, CarbonImmutable $to): Collection
+    public function cumulative(string $tenantId, CarbonImmutable $yearStart, CarbonImmutable $to, string $ledgerType = 'statutory'): Collection
     {
         return $this->byAccount(
-            $this->postedLines($tenantId)
+            $this->postedLines($tenantId, $ledgerType)
                 ->whereDate('journal_entries.posting_date', '<=', $to->toDateString())
                 ->where('journal_entries.journal_type', '!=', 'opening')
                 ->where(static fn (Builder $query): Builder => $query
@@ -80,10 +80,10 @@ final class LedgerBalanceReader
      *
      * @return Collection<string, object>
      */
-    public function closedBalances(string $tenantId, CarbonImmutable $to): Collection
+    public function closedBalances(string $tenantId, CarbonImmutable $to, string $ledgerType = 'statutory'): Collection
     {
         return $this->byAccount(
-            $this->postedLines($tenantId)
+            $this->postedLines($tenantId, $ledgerType)
                 ->whereDate('journal_entries.posting_date', '<=', $to->toDateString())
                 ->where('journal_entries.journal_type', '!=', 'opening')
                 ->where(static fn (Builder $query): Builder => $query
@@ -123,7 +123,7 @@ final class LedgerBalanceReader
             : bcsub((string) $row->credit, (string) $row->debit, self::Scale);
     }
 
-    private function postedLines(string $tenantId): Builder
+    private function postedLines(string $tenantId, string $ledgerType = 'statutory'): Builder
     {
         return DB::table('journal_lines')
             ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
@@ -131,7 +131,7 @@ final class LedgerBalanceReader
             ->where('journal_entries.tenant_id', $tenantId)
             ->whereNull('journal_entries.deleted_at')
             ->whereIn('journal_entries.status', ['posted', 'reversed'])
-            ->where('journal_entries.ledger_type', 'statutory');
+            ->where('journal_entries.ledger_type', $ledgerType);
     }
 
     /**
