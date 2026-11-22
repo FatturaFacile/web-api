@@ -15,7 +15,7 @@ final class Customer360FrontendTranslations
      */
     public static function all(string $locale): array
     {
-        return match ($locale) {
+        return [...self::lifecycle($locale), ...match ($locale) {
             'it' => [
                 'CRM.CUSTOMER360.ADDRESSES' => 'Indirizzi',
                 'CRM.CUSTOMER360.ADDRESS_TYPE' => 'Tipo di indirizzo',
@@ -269,6 +269,33 @@ final class Customer360FrontendTranslations
                 'CRM.CUSTOMER360.DAYS_OVERDUE' => 'jours de retard',
             ],
             default => [],
-        };
+        }];
+    }
+
+    /**
+     * Strings of the cross-module lifecycle panel (health, KPIs, filtered timeline).
+     *
+     * @return array<string, string>
+     */
+    private static function lifecycle(string $locale): array
+    {
+        $labels = [
+            'it' => ['Ciclo di vita del cliente', 'Indice di salute', 'Rischio di abbandono', 'Valore nel tempo', 'Pipeline aperta', 'Scaduto da incassare', 'Ticket aperti', 'Violazioni SLA', 'Tempo medio di risoluzione (h)', 'Contratti attivi', 'Copertura contrattuale', 'Coperto', 'Esaurito', 'Nessuna', 'Ore residue', 'Interventi pianificati', 'Interventi completati', 'Cronologia', 'Tipo', 'Attività', 'Opportunità', 'Fattura', 'Ticket', 'Intervento sul campo', 'Contratto', 'Lead', 'Nessun account CRM collegato a questo cliente', 'Nuovo ticket', 'Nuova opportunità'],
+            'en' => ['Customer lifecycle', 'Health index', 'Churn risk', 'Lifetime value', 'Open pipeline', 'Overdue receivables', 'Open tickets', 'SLA breach rate', 'Mean time to resolution (h)', 'Active contracts', 'Contract coverage', 'Covered', 'Exhausted', 'None', 'Hours remaining', 'Scheduled interventions', 'Completed interventions', 'Timeline', 'Type', 'Activity', 'Opportunity', 'Invoice', 'Ticket', 'Field intervention', 'Contract', 'Lead', 'No CRM account is linked to this customer', 'New ticket', 'New opportunity'],
+            'de' => ['Kundenlebenszyklus', 'Gesundheitsindex', 'Abwanderungsrisiko', 'Kundenwert', 'Offene Pipeline', 'Überfällige Forderungen', 'Offene Tickets', 'SLA-Verletzungsquote', 'Mittlere Lösungszeit (h)', 'Aktive Verträge', 'Vertragsabdeckung', 'Abgedeckt', 'Aufgebraucht', 'Keine', 'Verbleibende Stunden', 'Geplante Einsätze', 'Abgeschlossene Einsätze', 'Verlauf', 'Typ', 'Aktivität', 'Verkaufschance', 'Rechnung', 'Ticket', 'Außendiensteinsatz', 'Vertrag', 'Lead', 'Diesem Kunden ist kein CRM-Konto zugeordnet', 'Neues Ticket', 'Neue Verkaufschance'],
+            'fr' => ['Cycle de vie du client', 'Indice de santé', 'Risque de départ', 'Valeur vie client', 'Pipeline ouvert', 'Créances échues', 'Tickets ouverts', 'Taux de violation SLA', 'Temps moyen de résolution (h)', 'Contrats actifs', 'Couverture contractuelle', 'Couvert', 'Épuisé', 'Aucune', 'Heures restantes', 'Interventions planifiées', 'Interventions terminées', 'Chronologie', 'Type', 'Activité', 'Opportunité', 'Facture', 'Ticket', 'Intervention sur site', 'Contrat', 'Lead', 'Aucun compte CRM n\'est lié à ce client', 'Nouveau ticket', 'Nouvelle opportunité'],
+        ];
+        $keys = ['LC_TITLE', 'LC_HEALTH', 'LC_CHURN', 'LC_LTV', 'LC_PIPELINE', 'LC_OVERDUE', 'LC_OPEN_TICKETS', 'LC_SLA_BREACH', 'LC_MTTR', 'LC_CONTRACTS', 'LC_COVERAGE', 'LC_COVERAGE_COVERED', 'LC_COVERAGE_EXHAUSTED', 'LC_COVERAGE_NONE', 'LC_HOURS_REMAINING', 'LC_INTERVENTIONS_OPEN', 'LC_INTERVENTIONS_DONE', 'LC_TIMELINE', 'LC_FILTER', 'LC_TYPE_ACTIVITY', 'LC_TYPE_OPPORTUNITY', 'LC_TYPE_INVOICE', 'LC_TYPE_TICKET', 'LC_TYPE_WORK_ORDER', 'LC_TYPE_CONTRACT', 'LC_TYPE_LEAD', 'LC_NO_ACCOUNT', 'LC_NEW_TICKET', 'LC_NEW_OPPORTUNITY'];
+
+        if (! isset($labels[$locale])) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($keys as $i => $key) {
+            $out['CRM.CUSTOMER360.'.$key] = $labels[$locale][$i];
+        }
+
+        return $out;
     }
 }
