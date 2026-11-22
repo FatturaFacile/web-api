@@ -1,11 +1,45 @@
 #!/bin/sh
+# Fast, scoped pre-commit: only staged PHP files are touched (Pint + PHPStan on that list, warm cache).
+# Full verification (whole-project PHPStan + parallel test suite) runs in .githooks/pre-push.
+# Works from Git Bash on Windows, Linux and macOS. Skip PHPStan once with SKIP_PHPSTAN=1.
 
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=d | grep '\.php$')
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.php$')
 
-if [ -n "$STAGED_FILES" ]; then
-    echo "🎨 Running Laravel Pint on staged files..."
-    ./vendor/bin/pint $STAGED_FILES
-    git add $STAGED_FILES
+[ -z "$STAGED" ] && exit 0
+
+PHP_BIN=${PHP_BIN:-php}
+
+# Files that also have unstaged edits must not be rewritten and re-staged (it would sneak unrelated hunks into the commit).
+PARTIAL=$(git diff --name-only -- $STAGED)
+CLEAN=""
+for file in $STAGED; do
+    case "
+$PARTIAL
+" in
+        *"
+$file
+"*) ;;
+        *) CLEAN="$CLEAN $file" ;;
+    esac
+done
+
+if [ -n "$CLEAN" ]; then
+    echo "pre-commit: Pint on staged files..."
+    "$PHP_BIN" ./vendor/bin/pint --quiet $CLEAN || exit 1
+    git add $CLEAN
+fi
+
+if [ -n "$PARTIAL" ]; then
+    echo "pre-commit: Pint check on partially staged files..."
+    "$PHP_BIN" ./vendor/bin/pint --test $PARTIAL || {
+        echo "pre-commit: format the partially staged files above, then stage them again." >&2
+        exit 1
+    }
+fi
+
+if [ -z "$SKIP_PHPSTAN" ]; then
+    echo "pre-commit: PHPStan on staged files..."
+    "$PHP_BIN" scripts/dev/analyse-dirty.php --staged || exit 1
 fi
 
 exit 0

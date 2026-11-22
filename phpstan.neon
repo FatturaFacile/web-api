@@ -24,7 +24,7 @@ parameters:
     tmpDir: storage/framework/cache/phpstan
 
     parallel:
-        maximumNumberOfProcesses: 4
+        maximumNumberOfProcesses: 12
 
     ignoreErrors:
         -
