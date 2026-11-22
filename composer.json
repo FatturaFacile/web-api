@@ -159,17 +159,17 @@
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test --parallel"
+            "@php scripts/dev/locked.php php -d memory_limit=1536M artisan test --parallel --processes=6"
         ],
         "test:serial": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test"
+            "@php scripts/dev/locked.php php artisan test"
         ],
-        "test:unit": "@php -d memory_limit=1536M vendor/bin/pest --parallel --no-coverage --testsuite=Unit",
-        "test:arch": "@php -d memory_limit=1536M vendor/bin/pest --no-coverage --testsuite=Architecture",
-        "test:fast": "@php -d memory_limit=1536M vendor/bin/pest --parallel --no-coverage --testsuite=Unit,Architecture",
-        "test:changed": "@php -d memory_limit=1536M vendor/bin/pest --parallel --no-coverage --dirty",
-        "test:module": "@php -d memory_limit=1536M vendor/bin/pest --no-coverage",
+        "test:unit": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=6 --no-coverage --testsuite=Unit",
+        "test:arch": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --no-coverage --testsuite=Architecture",
+        "test:fast": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=6 --no-coverage --testsuite=Unit,Architecture",
+        "test:changed": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=4 --no-coverage --dirty",
+        "test:module": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=4 --no-coverage",
         "lint": "@php vendor/bin/pint --test",
         "lint:dirty": "@php vendor/bin/pint --dirty",
         "analyse": "@php -d memory_limit=2G vendor/bin/phpstan analyse --memory-limit=2G",
