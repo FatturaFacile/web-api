@@ -372,6 +372,8 @@ test('the offline bundle carries the work queue, equipment history and the full 
 
     expect($bundle['open_work_order_ids'])->toBe([$workOrder->id])
         ->and($bundle['work_orders'][0]['checklist_template'])->not->toBeEmpty()
+        ->and($bundle['work_orders'][0]['service_contract']['id'])->toBe($contract->id)
+        ->and($bundle['work_orders'][0]['service_contract'])->toHaveKeys(['coverage_type', 'status', 'callout_fee_amount'])
         ->and($bundle['equipment'][0]['id'])->toBe($asset->id)
         ->and($bundle['customers'][0]['id'])->toBe($this->customer->id)
         ->and($bundle['van_stock'][0]['sku'])->toBe('FILTER-1')
@@ -391,6 +393,8 @@ test('the dispatcher board lists the queue, technician lanes with blocks, skills
         ->and($board['lanes'])->toHaveCount(1)
         ->and($board['lanes'][0]['skills'])->toBe(['hvac', 'electrical'])
         ->and($board['lanes'][0]['van']['ready'])->toBeTrue()
+        ->and($board['lanes'][0]['van'])->toHaveKey('stock')
+        ->and($board['unassigned'][0])->toHaveKeys(['work_order_type', 'customer_id', 'service_contract_id', 'equipment_passport_id'])
         ->and($board['lanes'][0]['blocks'])->toHaveCount(1);
 });
 

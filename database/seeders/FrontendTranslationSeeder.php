@@ -15,6 +15,7 @@ use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
+use Database\Seeders\Translations\FieldServiceManagementFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GeneralLedgerPrimaNotaFrontendTranslations;
@@ -113,7 +114,8 @@ class FrontendTranslationSeeder extends Seeder
             + RfqFrontendTranslations::all($locale)
             + PurchaseRequisitionFrontendTranslations::all($locale)
             + ManufacturingCommandCenterFrontendTranslations::all($locale)
-            + ProjectEvmFrontendTranslations::all($locale);
+            + ProjectEvmFrontendTranslations::all($locale)
+            + FieldServiceManagementFrontendTranslations::all($locale);
     }
 
     /**
