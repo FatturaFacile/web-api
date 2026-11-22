@@ -44469,6 +44469,58 @@ CREATE INDEX "mfg_machine_state_events_machine_id_index" on "mfg_machine_state_e
 CREATE INDEX "mfg_machine_state_events_production_order_operation_id_index" on "mfg_machine_state_events"(
   "production_order_operation_id"
 );
+CREATE TABLE "accounting_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "category" varchar not null default 'general',
+  "journal_type" varchar not null default 'standard',
+  "ledger_type" varchar not null default 'statutory',
+  "names" text not null,
+  "descriptions" text,
+  "parameters" text not null,
+  "lines" text not null,
+  "is_system" tinyint(1) not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_accounting_template_code" on "accounting_templates"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "accounting_templates_tenant_id_index" on "accounting_templates"(
+  "tenant_id"
+);
+CREATE TABLE "year_end_closing_stages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "fiscal_year_id" varchar not null,
+  "ledger_type" varchar not null,
+  "stage" integer not null,
+  "stage_key" varchar not null,
+  "journal_entry_id" varchar,
+  "summary" text,
+  "executed_by" varchar,
+  "executed_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("fiscal_year_id") references "fiscal_years"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_year_end_closing_stage" on "year_end_closing_stages"(
+  "fiscal_year_id",
+  "ledger_type",
+  "stage"
+);
+CREATE INDEX "year_end_closing_stages_tenant_id_index" on "year_end_closing_stages"(
+  "tenant_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -44889,4 +44941,9 @@ INSERT INTO migrations VALUES(416,'2027_12_19_000100_add_posting_uuid_to_mfg_ope
 INSERT INTO migrations VALUES(417,'2027_12_19_000100_create_mrp_planning_tables',1);
 INSERT INTO migrations VALUES(418,'2027_12_19_000100_extend_manufacturing_production_engineering',1);
 INSERT INTO migrations VALUES(419,'2027_12_19_000200_create_mfg_mes_integration_tables',1);
+<<<<<<< HEAD
 INSERT INTO migrations VALUES(420,'2027_12_19_000300_add_mes_profile_to_mfg_machine_centers',2);
+=======
+INSERT INTO migrations VALUES(420,'2027_12_20_000100_create_accounting_templates_table',2);
+INSERT INTO migrations VALUES(421,'2027_12_20_000200_create_year_end_closing_stages_table',2);
+>>>>>>> 38c5678c (feat(general-ledger): parallel ledger books, accounting templates and staged year-end workflow (#162))

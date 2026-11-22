@@ -6,6 +6,8 @@ namespace Modules\GeneralLedger\Http\Requests;
 
 use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Modules\GeneralLedger\Enums\LedgerBook;
 
 /**
  * Account, range, page and optional dimension filters of the account ledger (mastrino).
@@ -33,6 +35,7 @@ final class AccountLedgerReportRequest extends FormRequest
             'cost_center_id' => ['nullable', 'uuid', $this->tenantOwns('cost_centers')],
             'profit_center_id' => ['nullable', 'uuid', $this->tenantOwns('profit_centers')],
             'project_id' => ['nullable', 'uuid', $this->tenantOwns('projects')],
+            'ledger' => ['nullable', 'string', Rule::in(LedgerBook::accepted())],
         ];
     }
 
@@ -46,5 +49,15 @@ final class AccountLedgerReportRequest extends FormRequest
             'profit_center_id' => $this->validated('profit_center_id'),
             'project_id' => $this->validated('project_id'),
         ]);
+    }
+
+    /**
+     * The ledger type of the requested book (`01` statutory, `02` tax, `03` ifrs); statutory when not asked.
+     */
+    public function ledgerType(): string
+    {
+        $ledger = $this->validated('ledger');
+
+        return LedgerBook::resolve(is_string($ledger) ? $ledger : null)->ledgerType();
     }
 }

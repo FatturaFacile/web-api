@@ -18,6 +18,7 @@ final class GeneralLedgerDatabaseSeeder extends Seeder
             AccountTypeSeeder::class,
             JournalTypeSeeder::class,
             AccountingReferenceSeeder::class,
+            AccountingTemplateSeeder::class,
             AccountingTestingSeeder::class,
             AccountingDemoDataSeeder::class,
         ]);

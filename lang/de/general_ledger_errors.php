@@ -31,4 +31,11 @@ return [
         'account_automatic_only' => 'Konto :code akzeptiert nur automatische Buchungen.',
         'cost_center_required' => 'Konto :code erfordert eine Kostenstelle.',
     ],
+    'template' => [
+        'unbalanced' => 'Die Vorlagenzeilen sind mit diesen Beträgen nicht ausgeglichen.',
+        'amount_required' => 'Ein positiver Betrag ist erforderlich.',
+        'rate_required' => 'Diese Vorlage berechnet Steuer: ein Steuersatz ist erforderlich.',
+        'account_unknown' => 'Für den Parameter ":key" wurde kein Konto dieses Mandanten gefunden.',
+        'system_readonly' => 'Eine Systemvorlage kann nicht geändert oder gelöscht werden.',
+    ],
 ];
