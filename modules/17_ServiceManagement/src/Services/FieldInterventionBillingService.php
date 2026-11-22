@@ -10,15 +10,16 @@ use Modules\ServiceManagement\Contracts\TicketServiceInterface;
 use Modules\ServiceManagement\Contracts\WorkOrderAndFieldServiceInterface;
 use Modules\ServiceManagement\DTOs\CompleteWorkOrderDTO;
 use Modules\ServiceManagement\DTOs\ResolveTicketDTO;
-use Modules\ServiceManagement\Models\ContractHourTransaction;
+use Modules\ServiceManagement\Exceptions\HourBankException;
+use Modules\ServiceManagement\Models\ServiceContract;
 use Modules\ServiceManagement\Models\Ticket;
 use Modules\ServiceManagement\Models\WorkOrder;
 
 /**
  * Field intervention -> ticket + billing hand-off. Completing a signed intervention resolves the originating ticket
- * and settles the money side exactly once: labor hours booked on a covering maintenance contract (done by the
- * WorkOrderCompletedEvent listener) are deducted and not invoiced, anything else billable is drafted as a sales
- * invoice. Replaying the call on a completed work order never double-books or double-invoices.
+ * and settles the money side exactly once: labor hours are booked on the covering maintenance contract here (the hour
+ * bank is idempotent per work order, so the WorkOrderCompletedEvent listener cannot book them twice) and are not
+ * invoiced; when no contract covers them, anything billable is drafted as a sales invoice. Replaying the call on a completed work order never double-books or double-invoices.
  */
 final readonly class FieldInterventionBillingService
 {
@@ -31,6 +32,7 @@ final readonly class FieldInterventionBillingService
     public function __construct(
         private WorkOrderAndFieldServiceInterface $workOrders,
         private TicketServiceInterface $tickets,
+        private HourBankService $hourBank,
     ) {}
 
     /**
@@ -43,7 +45,7 @@ final readonly class FieldInterventionBillingService
 
             $ticket = $this->resolveTicket($workOrder, $dto, $actorUserId);
 
-            $hours = (string) ContractHourTransaction::query()->where('work_order_id', $workOrder->id)->sum('hours');
+            $hours = $this->deductContractHours($workOrder, $ticket);
             $deducted = bccomp($hours, '0', 2) > 0;
 
             $invoice = null;
@@ -64,9 +66,36 @@ final readonly class FieldInterventionBillingService
                 'ticket' => $ticket?->refresh(),
                 'settlement' => $settlement,
                 'invoice' => $invoice,
-                'hours_deducted' => number_format((float) $hours, 2, '.', ''),
+                'hours_deducted' => $hours,
             ];
         });
+    }
+
+    /**
+     * Books the labor hours of the work order on its covering contract. Returns the booked hours, or 0.00 when no
+     * active contract with an hour bank covers it or the balance is too low (the work is then billed instead).
+     */
+    private function deductContractHours(WorkOrder $workOrder, ?Ticket $ticket): string
+    {
+        $contractId = $workOrder->service_contract_id ?? $ticket?->service_contract_id;
+        $contract = $contractId !== null ? ServiceContract::query()->find($contractId) : null;
+        $hours = number_format((float) $workOrder->total_labor_hours, 2, '.', '');
+
+        if ($contract === null || bccomp((string) $contract->included_hours, '0', 2) <= 0 || bccomp($hours, '0', 2) <= 0) {
+            return '0.00';
+        }
+
+        try {
+            $this->hourBank->deduct($contract, $hours, [
+                'work_order_id' => (string) $workOrder->id,
+                'ticket_id' => $workOrder->ticket_id,
+                'reference' => $workOrder->work_order_number,
+            ]);
+        } catch (HourBankException) {
+            return '0.00';
+        }
+
+        return $hours;
     }
 
     private function resolveTicket(WorkOrder $workOrder, CompleteWorkOrderDTO $dto, ?string $actorUserId): ?Ticket
