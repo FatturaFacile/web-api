@@ -23,6 +23,6 @@ echo "pre-push: PHPStan (full project, cached)..."
 "$PHP_BIN" -d memory_limit=2G ./vendor/bin/phpstan analyse --memory-limit=2G --no-progress || exit 1
 
 echo "pre-push: parallel test suite..."
-"$PHP_BIN" -d memory_limit=1536M artisan test --parallel || exit 1
+"$PHP_BIN" scripts/dev/locked.php "$PHP_BIN" -d memory_limit=1536M artisan test --parallel --processes=6 || exit 1
 
 exit 0
