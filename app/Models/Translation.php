@@ -26,6 +26,14 @@ class Translation extends Model
 
     public const DEFAULT_LOCALE = 'it';
 
+    /**
+     * Regional variants and the language they derive from: the dictionary of a variant is that of its language with
+     * the regional spelling applied (see RegionalTranslations) and the tenant overrides saved under the variant.
+     *
+     * @var array<string, string>
+     */
+    public const REGIONAL_LOCALES = ['it-CH' => 'it', 'de-CH' => 'de', 'fr-CH' => 'fr', 'it-IT' => 'it'];
+
     protected $fillable = [
         'tenant_id',
         'locale',
@@ -42,7 +50,21 @@ class Translation extends Model
     {
         $normalized = strtolower(trim((string) $locale));
 
+        foreach (array_keys(self::REGIONAL_LOCALES) as $regional) {
+            if (strtolower($regional) === $normalized) {
+                return $regional;
+            }
+        }
+
         return in_array($normalized, self::SUPPORTED_LOCALES, true) ? $normalized : self::DEFAULT_LOCALE;
+    }
+
+    /**
+     * The language a locale derives from: itself for a language, the parent language for a regional variant.
+     */
+    public static function baseLocale(string $locale): string
+    {
+        return self::REGIONAL_LOCALES[$locale] ?? $locale;
     }
 
     /**

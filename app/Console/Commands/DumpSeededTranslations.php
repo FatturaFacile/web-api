@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Models\Translation;
+use App\Support\RegionalTranslations;
 use Database\Seeders\FrontendTranslationSeeder;
 use Database\Seeders\TranslationSeeder;
 use Illuminate\Console\Command;
@@ -19,7 +21,7 @@ class DumpSeededTranslations extends Command
     /**
      * @var string
      */
-    protected $signature = 'translations:dump {locale : it, en, de or fr}';
+    protected $signature = 'translations:dump {locale : it, en, de, fr or a regional variant: it-CH, de-CH, fr-CH, it-IT}';
 
     /**
      * @var string
@@ -29,14 +31,15 @@ class DumpSeededTranslations extends Command
     public function handle(): int
     {
         $locale = (string) $this->argument('locale');
+        $base = Translation::baseLocale($locale);
 
-        if (! in_array($locale, TranslationSeeder::LOCALES, true)) {
-            $this->components->error('Unsupported locale. Use one of: '.implode(', ', TranslationSeeder::LOCALES).'.');
+        if (! in_array($base, TranslationSeeder::LOCALES, true) || ($base !== $locale && ! array_key_exists($locale, Translation::REGIONAL_LOCALES))) {
+            $this->components->error('Unsupported locale. Use one of: '.implode(', ', [...TranslationSeeder::LOCALES, ...array_keys(Translation::REGIONAL_LOCALES)]).'.');
 
             return self::INVALID;
         }
 
-        $dictionary = (new TranslationSeeder)->dictionary($locale) + FrontendTranslationSeeder::dictionary($locale);
+        $dictionary = RegionalTranslations::derive($locale, (new TranslationSeeder)->dictionary($base) + FrontendTranslationSeeder::dictionary($base));
 
         $this->output->write(json_encode($dictionary, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
 

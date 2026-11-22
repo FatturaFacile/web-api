@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Models\Translation;
+use App\Support\RegionalTranslations;
 use Database\Seeders\FrontendTranslationSeeder;
 use Database\Seeders\TranslationSeeder;
 use Illuminate\Console\Command;
@@ -15,7 +17,7 @@ use ReflectionMethod;
  */
 class DumpTranslations extends Command
 {
-    protected $signature = 'translations:dump {locale : it, en, de or fr}';
+    protected $signature = 'translations:dump {locale : it, en, de, fr or a regional variant: it-CH, de-CH, fr-CH, it-IT}';
 
     protected $description = 'Print the seeded global translations of a locale as JSON';
 
@@ -29,16 +31,18 @@ class DumpTranslations extends Command
     public function handle(): int
     {
         $locale = (string) $this->argument('locale');
-        if (! isset(self::GETTERS[$locale])) {
+        $base = Translation::baseLocale($locale);
+        if (! isset(self::GETTERS[$base]) || ($base !== $locale && ! array_key_exists($locale, Translation::REGIONAL_LOCALES))) {
             $this->error('Unknown locale: '.$locale);
 
             return self::FAILURE;
         }
 
-        $method = new ReflectionMethod(TranslationSeeder::class, self::GETTERS[$locale]);
+        $method = new ReflectionMethod(TranslationSeeder::class, self::GETTERS[$base]);
         $method->setAccessible(true);
 
-        $this->line(json_encode([...$method->invoke(new TranslationSeeder), ...FrontendTranslationSeeder::dictionary($locale)], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        $dictionary = RegionalTranslations::derive($locale, [...$method->invoke(new TranslationSeeder), ...FrontendTranslationSeeder::dictionary($base)]);
+        $this->line(json_encode($dictionary, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
 
         return self::SUCCESS;
     }
