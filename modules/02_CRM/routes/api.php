@@ -10,6 +10,7 @@ use Modules\CRM\Http\Controllers\CampaignMemberController;
 use Modules\CRM\Http\Controllers\ConsentController;
 use Modules\CRM\Http\Controllers\ContactInteractionController;
 use Modules\CRM\Http\Controllers\CrmReportController;
+use Modules\CRM\Http\Controllers\Customer360Controller;
 use Modules\CRM\Http\Controllers\DuplicateController;
 use Modules\CRM\Http\Controllers\ForecastController;
 use Modules\CRM\Http\Controllers\LeadActivityEventController;
@@ -93,6 +94,10 @@ Route::prefix('api/v1/crm')->middleware(['api', 'auth:sanctum', 'tenant', 'local
     Route::get('accounts/party-links', [AccountController::class, 'partyLinks'])->name('crm.accounts.party-links');
     Route::get('accounts/{id}/health', [AccountController::class, 'health'])->name('crm.accounts.health');
     Route::apiResource('accounts', AccountController::class)->names('crm.accounts');
+
+    // 3a. Customer 360: cross-module summary and timeline of an account (issue #193)
+    Route::get('customers/{id}/360', [Customer360Controller::class, 'show'])->whereUuid('id')->name('crm.customers.360');
+    Route::get('customers/{id}/timeline', [Customer360Controller::class, 'timeline'])->whereUuid('id')->name('crm.customers.timeline');
 
     // 3b. Duplicate detection and audited contact/lead merge
     Route::get('duplicates', [DuplicateController::class, 'index'])->name('crm.duplicates.index');

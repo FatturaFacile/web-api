@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\ServiceManagement\Http\Controllers\AgentToolsController;
+use Modules\ServiceManagement\Http\Controllers\CustomerLifecycleController;
 use Modules\ServiceManagement\Http\Controllers\EquipmentPassportController;
 use Modules\ServiceManagement\Http\Controllers\FieldServiceManagementController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskAutomationController;
@@ -79,7 +80,8 @@ Route::prefix('api/v1/esm')
         Route::get('/tickets/{ticket}/activities', [HelpdeskTicketController::class, 'activities'])->name('api.v1.esm.tickets.activities');
 
         // Helpdesk: routing, business hours, settings
-        Route::post('/tickets/{ticket}/auto-assign', [HelpdeskTicketController::class, 'autoAssign'])->name('api.v1.esm.tickets.auto-assign');
+        Route::post('/tickets/{ticket}/escalate-to-field-service', [CustomerLifecycleController::class, 'escalateToFieldService'])->name('api.v1.esm.tickets.escalate-to-field-service');
+        Route::post('/tickets/{ticket}/auto-assign',[HelpdeskTicketController::class, 'autoAssign'])->name('api.v1.esm.tickets.auto-assign');
         Route::get('/helpdesk/routing-rules', [HelpdeskAutomationController::class, 'routingRules'])->name('api.v1.esm.helpdesk.routing-rules.index');
         Route::post('/helpdesk/routing-rules', [HelpdeskAutomationController::class, 'storeRoutingRule'])->name('api.v1.esm.helpdesk.routing-rules.store');
         Route::patch('/helpdesk/routing-rules/{id}', [HelpdeskAutomationController::class, 'updateRoutingRule'])->name('api.v1.esm.helpdesk.routing-rules.update');
@@ -230,7 +232,8 @@ Route::prefix('api/v1/fsm')
         Route::post('/work-orders', [FieldServiceManagementController::class, 'storeWorkOrder'])->name('api.v1.fsm.work-orders.store');
         Route::get('/work-orders/{workOrder}', [FieldServiceManagementController::class, 'showWorkOrder'])->name('api.v1.fsm.work-orders.show')->whereUuid('workOrder');
         Route::post('/work-orders/{workOrder}/dispatch', [FieldServiceManagementController::class, 'dispatch'])->name('api.v1.fsm.work-orders.dispatch')->whereUuid('workOrder');
-        Route::post('/work-orders/{workOrder}/status', [FieldServiceManagementController::class, 'advanceStatus'])->name('api.v1.fsm.work-orders.status')->whereUuid('workOrder');
+        Route::post('/work-orders/{workOrder}/complete-and-bill', [CustomerLifecycleController::class, 'completeAndBill'])->name('api.v1.fsm.work-orders.complete-and-bill')->whereUuid('workOrder');
+        Route::post('/work-orders/{workOrder}/status',[FieldServiceManagementController::class, 'advanceStatus'])->name('api.v1.fsm.work-orders.status')->whereUuid('workOrder');
         Route::post('/work-orders/{workOrder}/parts', [FieldServiceManagementController::class, 'recordPart'])->name('api.v1.fsm.work-orders.parts')->whereUuid('workOrder');
         Route::post('/work-orders/{workOrder}/service-report', [FieldServiceManagementController::class, 'signReport'])->name('api.v1.fsm.work-orders.service-report')->whereUuid('workOrder');
         Route::get('/service-reports/{report}/pdf', [FieldServiceManagementController::class, 'pdf'])->name('api.v1.fsm.service-reports.pdf')->whereUuid('report');
