@@ -135,3 +135,16 @@ test('every IAM route is decided by a permission key, except the ones of the own
 
     expect($open)->toBe([]);
 });
+
+test('the permission snapshot tells an impersonated access apart', function (): void {
+    config(['auth.token_mode.enabled' => true]);
+    impAct($this->owner, $this->tenant);
+    $plain = $this->postJson("/api/v1/settings/users/{$this->member->id}/impersonate", ['consent_reference' => 'ticket-7'])->json('data.token');
+
+    app('auth')->forgetGuards();
+    $this->withToken($plain)->withHeader('X-Tenant-Id', $this->tenant->id)->getJson('/api/v1/profile/permissions')
+        ->assertOk()->assertJsonPath('data.impersonation.active', true)->assertJsonPath('data.impersonation.actor_id', $this->owner->id);
+
+    impAct($this->member, $this->tenant);
+    $this->getJson('/api/v1/profile/permissions')->assertOk()->assertJsonPath('data.impersonation.active', false);
+});

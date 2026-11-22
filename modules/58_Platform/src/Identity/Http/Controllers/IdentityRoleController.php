@@ -13,6 +13,7 @@ use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Platform\Identity\Application\EffectivePermissionResolver;
+use Modules\Platform\Identity\Application\ImpersonationService;
 use Modules\Platform\Identity\Application\PermissionRegistry;
 use Modules\Platform\Identity\Application\RoleService;
 use Modules\Platform\Identity\Domain\Exceptions\PrivilegeEscalationException;
@@ -163,7 +164,29 @@ final class IdentityRoleController extends Controller
             'permissions' => $snapshot['permissions'],
             'field_policies' => $snapshot['field_policies'],
             'company_id' => $company,
+            'impersonation' => $this->impersonation($user),
         ]);
+    }
+
+    /**
+     * @return array{active: bool, actor_id: ?string, expires_at: ?string}
+     */
+    private function impersonation(User $user): array
+    {
+        $token = $user->currentAccessToken();
+        $name = (string) data_get($token, 'name', '');
+
+        if (! str_starts_with($name, ImpersonationService::TOKEN_PREFIX)) {
+            return ['active' => false, 'actor_id' => null, 'expires_at' => null];
+        }
+
+        $expiresAt = data_get($token, 'expires_at');
+
+        return [
+            'active' => true,
+            'actor_id' => substr($name, strlen(ImpersonationService::TOKEN_PREFIX)),
+            'expires_at' => $expiresAt instanceof \DateTimeInterface ? $expiresAt->format(DATE_ATOM) : null,
+        ];
     }
 
     private function tenantId(): string
