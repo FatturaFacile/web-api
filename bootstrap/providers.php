@@ -12,8 +12,10 @@ use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Academy\Providers\AcademyServiceProvider;
 use Modules\AiCognitive\Providers\AiCognitiveServiceProvider;
+use Modules\AnalyticalAccounting\Providers\AnalyticalAccountingServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AnalyticsDss\Providers\AnalyticsDssServiceProvider;
+use Modules\ArtisanalGelato\Providers\ArtisanalGelatoServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
@@ -75,7 +77,6 @@ use Modules\Rebates\Providers\RebatesServiceProvider;
 use Modules\Returns\Providers\ReturnsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
-use Modules\ArtisanalGelato\Providers\ArtisanalGelatoServiceProvider;
 use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
@@ -154,6 +155,7 @@ return [
     PlanningServiceProvider::class,
     BudgetingServiceProvider::class,
     ControllingServiceProvider::class,
+    AnalyticalAccountingServiceProvider::class,
     BusinessIntelligenceServiceProvider::class,
     MarketplaceServiceProvider::class,
     RebatesServiceProvider::class,

@@ -72,6 +72,6 @@ return [
         'warehouse' => ['barcode_scanner', 'inventory_counts', 'pick_lists'],
         'field_technician' => ['work_orders', 'service_reports', 'appointments'],
         'sales_agent' => ['customer_360', 'quotes', 'appointments'],
-        'executive' => ['kpi_dashboard', 'executive_dss', 'approvals_inbox', 'copilot'],
+        'executive' => ['kpi_dashboard', 'executive_dss', 'analytical_accounting', 'approvals_inbox', 'copilot'],
     ],
 ];

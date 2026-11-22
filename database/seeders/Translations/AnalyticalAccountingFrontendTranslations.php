@@ -1,0 +1,212 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders\Translations;
+
+/**
+ * UI strings of industrial and analytical cost accounting (Mod 018): center hierarchy, derivation rules, step-down
+ * apportionment console, contribution margin reports and the desktop and mobile clients. Each entry is [it, en, de, fr];
+ * the Italian text serves it-CH and it-IT, the German text de-CH and the French text fr-CH.
+ */
+final class AnalyticalAccountingFrontendTranslations
+{
+    /**
+     * @return array<string, array{0: string, 1: string, 2: string, 3: string}>
+     */
+    public static function definitions(): array
+    {
+        return [
+            'NAV.ANALYTICAL' => ['Contabilità analitica', 'Cost accounting', 'Kostenrechnung', 'Comptabilité analytique'],
+            'NAV.ANALYTICAL_CENTERS' => ['Centri di costo e di profitto', 'Cost and profit centers', 'Kosten- und Profitcenter', 'Centres de coûts et de profit'],
+            'NAV.ANALYTICAL_RULES' => ['Regole di derivazione', 'Derivation rules', 'Ableitungsregeln', 'Règles de dérivation'],
+            'NAV.ANALYTICAL_APPORTIONMENT' => ['Ribaltamento a cascata', 'Step-down apportionment', 'Stufenumlage', 'Répartition en cascade'],
+            'NAV.ANALYTICAL_REPORTS' => ['Margine di contribuzione', 'Contribution margin', 'Deckungsbeitrag', 'Marge de contribution'],
+            'PAGE_TITLE.ANALYTICAL_CENTERS' => ['Centri di costo e di profitto', 'Cost and profit centers', 'Kosten- und Profitcenter', 'Centres de coûts et de profit'],
+            'PAGE_TITLE.ANALYTICAL_RULES' => ['Regole di derivazione analitica', 'Analytical derivation rules', 'Analytische Ableitungsregeln', 'Règles de dérivation analytique'],
+            'PAGE_TITLE.ANALYTICAL_APPORTIONMENT' => ['Ribaltamento dei costi a cascata', 'Step-down cost apportionment', 'Kostenumlage im Stufenverfahren', 'Répartition des coûts en cascade'],
+            'PAGE_TITLE.ANALYTICAL_REPORTS' => ['Conto economico gestionale', 'Management income statement', 'Management-Erfolgsrechnung', 'Compte de résultat de gestion'],
+
+            'mobile.module.analytical_accounting' => ['Contabilità analitica', 'Cost accounting', 'Kostenrechnung', 'Comptabilité analytique'],
+
+            'ANALYTICAL.CENTERS_TITLE' => ['Centri di costo e di profitto', 'Cost and profit centers', 'Kosten- und Profitcenter', 'Centres de coûts et de profit'],
+            'ANALYTICAL.CENTERS_SUBTITLE' => ['Gerarchia libera dei centri, con responsabile e validità', 'Free center hierarchy with manager and validity', 'Freie Centerhierarchie mit Verantwortlichen und Gültigkeit', 'Hiérarchie libre des centres avec responsable et validité'],
+            'ANALYTICAL.NEW_CENTER' => ['Nuovo centro', 'New center', 'Neues Center', 'Nouveau centre'],
+            'ANALYTICAL.EDIT_CENTER' => ['Modifica centro', 'Edit center', 'Center bearbeiten', 'Modifier le centre'],
+            'ANALYTICAL.ADD_CHILD' => ['Sotto-centro', 'Add child', 'Untercenter', 'Sous-centre'],
+            'ANALYTICAL.EDIT' => ['Modifica', 'Edit', 'Bearbeiten', 'Modifier'],
+            'ANALYTICAL.DELETE' => ['Elimina', 'Delete', 'Löschen', 'Supprimer'],
+            'ANALYTICAL.DEACTIVATE' => ['Disattiva', 'Deactivate', 'Deaktivieren', 'Désactiver'],
+            'ANALYTICAL.CONFIRM_DEACTIVATE' => ['Disattivare il centro? Non accetterà più registrazioni.', 'Deactivate the center? It will no longer accept postings.', 'Center deaktivieren? Es nimmt keine Buchungen mehr an.', 'Désactiver le centre ? Il n’acceptera plus d’écritures.'],
+            'ANALYTICAL.CONFIRM_DELETE' => ['Eliminare? Un centro usato da registrazioni non può essere eliminato.', 'Delete? A center used by postings cannot be deleted.', 'Löschen? Ein Center mit Buchungen kann nicht gelöscht werden.', 'Supprimer ? Un centre utilisé par des écritures ne peut pas être supprimé.'],
+            'ANALYTICAL.DELETE_CENTER_ERROR' => ['Il centro non può essere eliminato: disattivalo', 'The center cannot be deleted: deactivate it instead', 'Das Center kann nicht gelöscht werden: deaktivieren Sie es', 'Le centre ne peut pas être supprimé : désactivez-le'],
+            'ANALYTICAL.CODE' => ['Codice', 'Code', 'Code', 'Code'],
+            'ANALYTICAL.NAME' => ['Nome', 'Name', 'Name', 'Nom'],
+            'ANALYTICAL.TYPE' => ['Tipo', 'Type', 'Typ', 'Type'],
+            'ANALYTICAL.CATEGORY' => ['Categoria', 'Category', 'Kategorie', 'Catégorie'],
+            'ANALYTICAL.PARENT' => ['Centro superiore', 'Parent center', 'Übergeordnetes Center', 'Centre parent'],
+            'ANALYTICAL.MANAGER' => ['Responsabile di centro', 'Center manager', 'Centerverantwortliche', 'Responsable de centre'],
+            'ANALYTICAL.VALIDITY' => ['Validità', 'Validity', 'Gültigkeit', 'Validité'],
+            'ANALYTICAL.VALID_FROM' => ['Valido dal', 'Valid from', 'Gültig ab', 'Valable dès'],
+            'ANALYTICAL.VALID_TO' => ['Valido fino al', 'Valid to', 'Gültig bis', 'Valable jusqu’au'],
+            'ANALYTICAL.DEFAULT_ELEMENT' => ['Elemento di costo predefinito', 'Default cost element', 'Standard-Kostenart', 'Élément de coût par défaut'],
+            'ANALYTICAL.STATUS' => ['Stato', 'Status', 'Status', 'Statut'],
+            'ANALYTICAL.ACTIVE' => ['Attivo', 'Active', 'Aktiv', 'Actif'],
+            'ANALYTICAL.INACTIVE' => ['Non attivo', 'Inactive', 'Inaktiv', 'Inactif'],
+            'ANALYTICAL.SAVE' => ['Salva', 'Save', 'Speichern', 'Enregistrer'],
+            'ANALYTICAL.SAVED' => ['Salvato', 'Saved', 'Gespeichert', 'Enregistré'],
+            'ANALYTICAL.SAVE_ERROR' => ['Impossibile salvare', 'Could not save', 'Speichern nicht möglich', 'Enregistrement impossible'],
+            'ANALYTICAL.LOAD_ERROR' => ['Impossibile caricare i dati', 'The data could not be loaded', 'Die Daten konnten nicht geladen werden', 'Les données n’ont pas pu être chargées'],
+            'ANALYTICAL.NO_DATA' => ['Nessun dato per i filtri scelti', 'No data for the chosen filters', 'Keine Daten für die gewählten Filter', 'Aucune donnée pour les filtres choisis'],
+
+            'ANALYTICAL.TYPE_COST_CENTER' => ['Centro di costo', 'Cost center', 'Kostenstelle', 'Centre de coûts'],
+            'ANALYTICAL.TYPE_PROFIT_CENTER' => ['Centro di profitto', 'Profit center', 'Profitcenter', 'Centre de profit'],
+            'ANALYTICAL.CATEGORY_STRUCTURAL' => ['Struttura', 'Structural', 'Struktur', 'Structure'],
+            'ANALYTICAL.CATEGORY_AUXILIARY' => ['Ausiliario', 'Auxiliary', 'Hilfsstelle', 'Auxiliaire'],
+            'ANALYTICAL.CATEGORY_PRODUCTION' => ['Produzione', 'Production', 'Produktion', 'Production'],
+            'ANALYTICAL.CATEGORY_LOGISTICS' => ['Logistica', 'Logistics', 'Logistik', 'Logistique'],
+            'ANALYTICAL.CATEGORY_COMMERCIAL' => ['Commerciale', 'Commercial', 'Vertrieb', 'Commercial'],
+            'ANALYTICAL.CATEGORY_PROFIT' => ['Profitto', 'Profit', 'Profit', 'Profit'],
+            'ANALYTICAL.ELEMENT_VARIABLE_DIRECT' => ['Costi variabili diretti', 'Direct variable costs', 'Direkte variable Kosten', 'Coûts variables directs'],
+            'ANALYTICAL.ELEMENT_FIXED_DIRECT' => ['Costi fissi diretti', 'Direct fixed costs', 'Direkte Fixkosten', 'Coûts fixes directs'],
+            'ANALYTICAL.ELEMENT_INDIRECT_AUXILIARY' => ['Costi indiretti / ausiliari', 'Indirect / auxiliary costs', 'Indirekte / Hilfskosten', 'Coûts indirects / auxiliaires'],
+            'ANALYTICAL.ELEMENT_REVENUE' => ['Ricavi', 'Revenue', 'Erlöse', 'Produits'],
+            'ANALYTICAL.ELEMENT_NON_OPERATING' => ['Non operativo', 'Non-operating', 'Betriebsfremd', 'Hors exploitation'],
+
+            'ANALYTICAL.RULES_TITLE' => ['Regole di derivazione', 'Derivation rules', 'Ableitungsregeln', 'Règles de dérivation'],
+            'ANALYTICAL.RULES_SUBTITLE' => ['Assegnano in automatico le dimensioni analitiche per causale, articolo o conto', 'Automatically assign the analytical dimensions by accounting cause, item or account', 'Weisen die analytischen Dimensionen automatisch nach Buchungsgrund, Artikel oder Konto zu', 'Attribuent automatiquement les dimensions analytiques par motif comptable, article ou compte'],
+            'ANALYTICAL.NEW_RULE' => ['Nuova regola', 'New rule', 'Neue Regel', 'Nouvelle règle'],
+            'ANALYTICAL.EDIT_RULE' => ['Modifica regola', 'Edit rule', 'Regel bearbeiten', 'Modifier la règle'],
+            'ANALYTICAL.PRIORITY' => ['Priorità', 'Priority', 'Priorität', 'Priorité'],
+            'ANALYTICAL.MATCHES' => ['Condizioni', 'Matches', 'Bedingungen', 'Conditions'],
+            'ANALYTICAL.DERIVES' => ['Deriva', 'Derives', 'Leitet ab', 'Dérive'],
+            'ANALYTICAL.ACCOUNT_ID' => ['Conto', 'Account', 'Konto', 'Compte'],
+            'ANALYTICAL.ACCOUNTING_CAUSE_ID' => ['Causale contabile', 'Accounting cause', 'Buchungsgrund', 'Motif comptable'],
+            'ANALYTICAL.PRODUCT_ID' => ['Articolo', 'Item', 'Artikel', 'Article'],
+            'ANALYTICAL.JOURNAL_TYPE' => ['Tipo di registrazione', 'Journal type', 'Journaltyp', 'Type de journal'],
+            'ANALYTICAL.TEST_RULES' => ['Prova le regole', 'Test the rules', 'Regeln testen', 'Tester les règles'],
+            'ANALYTICAL.RUN_TEST' => ['Prova', 'Test', 'Testen', 'Tester'],
+            'ANALYTICAL.NOTHING_DERIVED' => ['Nessuna dimensione derivata', 'No dimension derived', 'Keine Dimension abgeleitet', 'Aucune dimension dérivée'],
+            'ANALYTICAL.SOURCE_MANUAL' => ['Manuale', 'Manual', 'Manuell', 'Manuel'],
+            'ANALYTICAL.SOURCE_RULE' => ['Regola', 'Rule', 'Regel', 'Règle'],
+            'ANALYTICAL.SOURCE_MASTER_DEFAULT' => ['Predefinito del centro', 'Master default', 'Stammdaten-Standard', 'Valeur par défaut'],
+            'ANALYTICAL.SOURCE_APPORTIONMENT' => ['Ribaltamento', 'Apportionment', 'Umlage', 'Répartition'],
+
+            'ANALYTICAL.COST_CENTER' => ['Centro di costo', 'Cost center', 'Kostenstelle', 'Centre de coûts'],
+            'ANALYTICAL.PROFIT_CENTER' => ['Centro di profitto', 'Profit center', 'Profitcenter', 'Centre de profit'],
+            'ANALYTICAL.PROJECT' => ['Commessa / progetto', 'Project / job order', 'Projekt / Auftrag', 'Projet / commande'],
+            'ANALYTICAL.PRODUCT_LINE' => ['Linea di prodotto', 'Product line', 'Produktlinie', 'Ligne de produits'],
+            'ANALYTICAL.COST_ELEMENT' => ['Elemento di costo', 'Cost element', 'Kostenart', 'Élément de coût'],
+            'ANALYTICAL.MODE_PERCENTAGE' => ['Percentuali', 'Percentages', 'Prozente', 'Pourcentages'],
+            'ANALYTICAL.MODE_AMOUNT' => ['Importi', 'Amounts', 'Beträge', 'Montants'],
+            'ANALYTICAL.ADD_VECTOR' => ['Aggiungi ripartizione', 'Add allocation', 'Verteilung hinzufügen', 'Ajouter une répartition'],
+            'ANALYTICAL.PERCENTAGE' => ['Percentuale', 'Percentage', 'Prozent', 'Pourcentage'],
+            'ANALYTICAL.AMOUNT' => ['Importo', 'Amount', 'Betrag', 'Montant'],
+            'ANALYTICAL.VECTOR_REQUIRED' => ['Serve almeno una ripartizione', 'At least one allocation is required', 'Mindestens eine Verteilung ist erforderlich', 'Au moins une répartition est requise'],
+            'ANALYTICAL.VECTOR_MIXED_MODES' => ['Usa solo percentuali o solo importi', 'Use percentages only or amounts only', 'Nur Prozente oder nur Beträge verwenden', 'Utilisez uniquement des pourcentages ou des montants'],
+            'ANALYTICAL.VECTOR_TARGET_REQUIRED' => ['Ogni ripartizione ha bisogno di un centro o di una commessa', 'Every allocation needs a center or a project', 'Jede Verteilung braucht ein Center oder ein Projekt', 'Chaque répartition requiert un centre ou un projet'],
+            'ANALYTICAL.VECTOR_VALUE_REQUIRED' => ['Indica la percentuale o l’importo di ogni ripartizione', 'Enter the percentage or amount of every allocation', 'Prozent oder Betrag jeder Verteilung angeben', 'Indiquez le pourcentage ou le montant de chaque répartition'],
+            'ANALYTICAL.VECTOR_PERCENT_SUM' => ['Le percentuali devono dare 100', 'The percentages must add up to 100', 'Die Prozente müssen 100 ergeben', 'Les pourcentages doivent totaliser 100'],
+            'ANALYTICAL.VECTOR_AMOUNT_SUM' => ['Gli importi devono dare l’importo della riga', 'The amounts must add up to the line amount', 'Die Beträge müssen den Zeilenbetrag ergeben', 'Les montants doivent totaliser le montant de la ligne'],
+
+            'ANALYTICAL.APPORTION_TITLE' => ['Ribaltamento dei costi a cascata', 'Step-down cost apportionment', 'Kostenumlage im Stufenverfahren', 'Répartition des coûts en cascade'],
+            'ANALYTICAL.APPORTION_SUBTITLE' => ['Anteprima, controllo della catena e consolidamento mensile', 'Preview, chain check and monthly consolidation', 'Vorschau, Kettenprüfung und monatliche Konsolidierung', 'Aperçu, contrôle de la chaîne et consolidation mensuelle'],
+            'ANALYTICAL.STEP_1_CASCADE' => ['1. Sequenza della cascata', '1. Cascade sequence', '1. Reihenfolge der Stufen', '1. Séquence de la cascade'],
+            'ANALYTICAL.STEP_2_DRIVERS' => ['2. Valori dei driver del periodo', '2. Driver values of the period', '2. Treiberwerte der Periode', '2. Valeurs des clés de la période'],
+            'ANALYTICAL.STEP_3_RUN' => ['3. Anteprima e consolidamento', '3. Preview and consolidation', '3. Vorschau und Konsolidierung', '3. Aperçu et consolidation'],
+            'ANALYTICAL.SCHEDULE' => ['Piano di ribaltamento', 'Apportionment schedule', 'Umlageplan', 'Plan de répartition'],
+            'ANALYTICAL.SCHEDULE_NAME' => ['Nome del piano', 'Schedule name', 'Name des Plans', 'Nom du plan'],
+            'ANALYTICAL.ADD_STEP' => ['Aggiungi passo', 'Add step', 'Stufe hinzufügen', 'Ajouter une étape'],
+            'ANALYTICAL.STEP_ORDER' => ['Ordine', 'Order', 'Reihenfolge', 'Ordre'],
+            'ANALYTICAL.SENDER' => ['Centro che ribalta', 'Sending center', 'Sendendes Center', 'Centre émetteur'],
+            'ANALYTICAL.DRIVER' => ['Driver', 'Driver', 'Treiber', 'Clé de répartition'],
+            'ANALYTICAL.INCLUDE_DESCENDANTS' => ['Includi i sotto-centri', 'Include descendants', 'Untercenter einbeziehen', 'Inclure les sous-centres'],
+            'ANALYTICAL.FIXED_WEIGHTS' => ['Percentuali fisse (somma 100)', 'Fixed percentages (sum 100)', 'Feste Prozente (Summe 100)', 'Pourcentages fixes (somme 100)'],
+            'ANALYTICAL.DRIVER_AREA_SQM' => ['Superficie occupata (m²)', 'Occupied area (m²)', 'Belegte Fläche (m²)', 'Surface occupée (m²)'],
+            'ANALYTICAL.DRIVER_HEADCOUNT_FTE' => ['Dipendenti / FTE', 'Headcount / FTE', 'Mitarbeitende / FTE', 'Effectif / ETP'],
+            'ANALYTICAL.DRIVER_MACHINE_HOURS' => ['Ore macchina', 'Machine hours', 'Maschinenstunden', 'Heures machine'],
+            'ANALYTICAL.DRIVER_REVENUE_VOLUME' => ['Volume di fatturato', 'Revenue volume', 'Umsatzvolumen', 'Volume de chiffre d’affaires'],
+            'ANALYTICAL.DRIVER_FIXED_PERCENTAGE' => ['Percentuali fisse', 'Fixed percentages', 'Feste Prozentsätze', 'Pourcentages fixes'],
+            'ANALYTICAL.DRIVER_CUSTOM' => ['Driver personalizzato', 'Custom driver', 'Eigener Treiber', 'Clé personnalisée'],
+            'ANALYTICAL.PERIOD' => ['Periodo', 'Period', 'Periode', 'Période'],
+            'ANALYTICAL.SAVE_VALUES' => ['Salva i valori', 'Save values', 'Werte speichern', 'Enregistrer les valeurs'],
+            'ANALYTICAL.PREVIEW' => ['Anteprima', 'Preview', 'Vorschau', 'Aperçu'],
+            'ANALYTICAL.PREVIEW_ERROR' => ['Impossibile calcolare l’anteprima', 'The preview could not be calculated', 'Die Vorschau konnte nicht berechnet werden', 'L’aperçu n’a pas pu être calculé'],
+            'ANALYTICAL.CONSOLIDATE' => ['Consolida', 'Consolidate', 'Konsolidieren', 'Consolider'],
+            'ANALYTICAL.CONSOLIDATE_ERROR' => ['Impossibile consolidare il ribaltamento', 'The apportionment could not be consolidated', 'Die Umlage konnte nicht konsolidiert werden', 'La répartition n’a pas pu être consolidée'],
+            'ANALYTICAL.CONFIRM_CONSOLIDATE' => ['Consolidare? Le registrazioni analitiche saranno create e il periodo bloccato.', 'Consolidate? The analytical entries will be posted and the period locked.', 'Konsolidieren? Die analytischen Buchungen werden erstellt und die Periode gesperrt.', 'Consolider ? Les écritures analytiques seront créées et la période verrouillée.'],
+            'ANALYTICAL.REVERSE' => ['Storna', 'Reverse', 'Stornieren', 'Contre-passer'],
+            'ANALYTICAL.REVERSE_ERROR' => ['Impossibile stornare il ribaltamento', 'The apportionment could not be reversed', 'Die Umlage konnte nicht storniert werden', 'La répartition n’a pas pu être contre-passée'],
+            'ANALYTICAL.REVERSE_REASON' => ['Correzione di periodo', 'Period correction', 'Periodenkorrektur', 'Correction de période'],
+            'ANALYTICAL.CONFIRM_REVERSE' => ['Stornare il ribaltamento consolidato con scritture di rettifica?', 'Reverse the consolidated apportionment with compensating entries?', 'Die konsolidierte Umlage mit Gegenbuchungen stornieren?', 'Contre-passer la répartition consolidée par des écritures de compensation ?'],
+            'ANALYTICAL.RUN_NOT_PREVIEW' => ['Solo un’anteprima può essere consolidata', 'Only a preview can be consolidated', 'Nur eine Vorschau kann konsolidiert werden', 'Seul un aperçu peut être consolidé'],
+            'ANALYTICAL.RUN_NOT_CONSOLIDATED' => ['Solo un ribaltamento consolidato può essere stornato', 'Only a consolidated run can be reversed', 'Nur eine konsolidierte Umlage kann storniert werden', 'Seule une répartition consolidée peut être contre-passée'],
+            'ANALYTICAL.RUN_PREVIEW' => ['Anteprima', 'Preview', 'Vorschau', 'Aperçu'],
+            'ANALYTICAL.RUN_CONSOLIDATED' => ['Consolidato', 'Consolidated', 'Konsolidiert', 'Consolidé'],
+            'ANALYTICAL.RUN_REVERSED' => ['Stornato', 'Reversed', 'Storniert', 'Contre-passé'],
+            'ANALYTICAL.RUN_HISTORY' => ['Storico dei ribaltamenti', 'Apportionment history', 'Verlauf der Umlagen', 'Historique des répartitions'],
+            'ANALYTICAL.TRACE' => ['Traccia', 'Trace', 'Verlauf', 'Trace'],
+            'ANALYTICAL.TOTAL_POOL' => ['Costi da ribaltare', 'Pool to apportion', 'Umzulegende Kosten', 'Coûts à répartir'],
+            'ANALYTICAL.TOTAL_ALLOCATED' => ['Ribaltato', 'Allocated', 'Umgelegt', 'Réparti'],
+            'ANALYTICAL.TOTAL_UNALLOCATED' => ['Non ribaltato', 'Unallocated', 'Nicht umgelegt', 'Non réparti'],
+            'ANALYTICAL.STEP' => ['Passo', 'Step', 'Stufe', 'Étape'],
+            'ANALYTICAL.POOL' => ['Massa', 'Pool', 'Masse', 'Masse'],
+            'ANALYTICAL.UNBALANCED' => ['Non quadra', 'Unbalanced', 'Nicht ausgeglichen', 'Non équilibré'],
+            'ANALYTICAL.RECEIVER' => ['Centro ricevente', 'Receiving center', 'Empfangendes Center', 'Centre récepteur'],
+            'ANALYTICAL.DRIVER_VALUE' => ['Valore driver', 'Driver value', 'Treiberwert', 'Valeur de la clé'],
+            'ANALYTICAL.DRIVER_TOTAL' => ['Totale driver', 'Driver total', 'Treibersumme', 'Total de la clé'],
+            'ANALYTICAL.SHARE' => ['Quota', 'Share', 'Anteil', 'Part'],
+            'ANALYTICAL.ALLOCATED' => ['Importo ribaltato', 'Allocated amount', 'Umgelegter Betrag', 'Montant réparti'],
+            'ANALYTICAL.ROUNDING' => ['Arrotondamento', 'Rounding', 'Rundung', 'Arrondi'],
+            'ANALYTICAL.WARNING_EMPTY_POOL' => ['Nessun costo da ribaltare', 'Nothing to apportion', 'Nichts umzulegen', 'Rien à répartir'],
+            'ANALYTICAL.WARNING_ZERO_DRIVER_TOTAL' => ['Totale driver pari a zero', 'Driver total is zero', 'Treibersumme ist null', 'Total de la clé nul'],
+            'ANALYTICAL.WARNING_CLOSED_RECEIVER_EXCLUDED' => ['Centro già chiuso escluso dai riceventi', 'Closed center excluded from the receivers', 'Bereits abgeschlossenes Center von den Empfängern ausgeschlossen', 'Centre déjà clôturé exclu des récepteurs'],
+
+            'ANALYTICAL.REPORTS_TITLE' => ['Conto economico gestionale', 'Management income statement', 'Management-Erfolgsrechnung', 'Compte de résultat de gestion'],
+            'ANALYTICAL.REPORTS_SUBTITLE' => ['Margine di contribuzione a più livelli e confronto diretto / ribaltato', 'Multi-level contribution margin and direct versus apportioned comparison', 'Mehrstufiger Deckungsbeitrag und Vergleich direkt / umgelegt', 'Marge de contribution à plusieurs niveaux et comparaison direct / réparti'],
+            'ANALYTICAL.CONTRIBUTION_MARGIN' => ['Conto economico a margine di contribuzione', 'Contribution margin income statement', 'Deckungsbeitragsrechnung', 'Compte de résultat par marge de contribution'],
+            'ANALYTICAL.DIRECT_VS_APPORTIONED' => ['Costi diretti e ribaltati per centro', 'Direct and apportioned costs by center', 'Direkte und umgelegte Kosten je Center', 'Coûts directs et répartis par centre'],
+            'ANALYTICAL.FROM' => ['Dal', 'From', 'Von', 'Du'],
+            'ANALYTICAL.TO' => ['Al', 'To', 'Bis', 'Au'],
+            'ANALYTICAL.APPLY' => ['Applica', 'Apply', 'Anwenden', 'Appliquer'],
+            'ANALYTICAL.EXPORT_CSV' => ['Esporta CSV', 'Export CSV', 'CSV exportieren', 'Exporter en CSV'],
+            'ANALYTICAL.STATEMENT_MISMATCH' => ['I livelli di margine non quadrano con i blocchi di costo', 'The margin levels do not match the cost blocks', 'Die Deckungsbeitragsstufen stimmen nicht mit den Kostenblöcken überein', 'Les niveaux de marge ne correspondent pas aux blocs de coûts'],
+            'ANALYTICAL.LINE_REVENUES' => ['Ricavi operativi', 'Operating revenues', 'Betriebserlöse', 'Produits d’exploitation'],
+            'ANALYTICAL.LINE_VARIABLE_COSTS' => ['Costi variabili diretti', 'Direct variable costs', 'Direkte variable Kosten', 'Coûts variables directs'],
+            'ANALYTICAL.LINE_CM1' => ['Margine di contribuzione I', 'Contribution margin I', 'Deckungsbeitrag I', 'Marge de contribution I'],
+            'ANALYTICAL.LINE_FIXED_COSTS' => ['Costi fissi diretti', 'Direct fixed costs', 'Direkte Fixkosten', 'Coûts fixes directs'],
+            'ANALYTICAL.LINE_CM2' => ['Margine di contribuzione II', 'Contribution margin II', 'Deckungsbeitrag II', 'Marge de contribution II'],
+            'ANALYTICAL.LINE_INDIRECT_COSTS' => ['Costi indiretti', 'Indirect costs', 'Indirekte Kosten', 'Coûts indirects'],
+            'ANALYTICAL.LINE_APPORTIONED_COSTS' => ['Costi ribaltati', 'Apportioned costs', 'Umgelegte Kosten', 'Coûts répartis'],
+            'ANALYTICAL.LINE_OPERATING_RESULT' => ['Risultato operativo', 'Operating result', 'Betriebsergebnis', 'Résultat d’exploitation'],
+            'ANALYTICAL.DIRECT_COST' => ['Costi diretti', 'Direct costs', 'Direkte Kosten', 'Coûts directs'],
+            'ANALYTICAL.APPORTIONED_IN' => ['Ribaltati in entrata', 'Apportioned in', 'Umlage Eingang', 'Répartis en entrée'],
+            'ANALYTICAL.APPORTIONED_OUT' => ['Ribaltati in uscita', 'Apportioned out', 'Umlage Ausgang', 'Répartis en sortie'],
+            'ANALYTICAL.NET_COST' => ['Costo analitico netto', 'Net analytical cost', 'Netto-Kosten', 'Coût analytique net'],
+            'ANALYTICAL.VARIANCE' => ['Scostamento', 'Variance', 'Abweichung', 'Écart'],
+            'ANALYTICAL.SHARE_PCT' => ['Quota %', 'Share %', 'Anteil %', 'Part %'],
+
+            'ANALYTICAL.MOBILE_CENTERS' => ['Centri', 'Centers', 'Center', 'Centres'],
+            'ANALYTICAL.MOBILE_SUMMARY' => ['Riepilogo margine', 'Margin summary', 'Margenübersicht', 'Résumé de la marge'],
+            'ANALYTICAL.MOBILE_SPLIT' => ['Ripartizione analitica', 'Analytical split', 'Analytische Verteilung', 'Répartition analytique'],
+            'ANALYTICAL.MOBILE_OFFLINE' => ['Offline: le modifiche verranno sincronizzate', 'Offline: changes will be synchronized', 'Offline: Änderungen werden synchronisiert', 'Hors ligne : les modifications seront synchronisées'],
+            'ANALYTICAL.MOBILE_PENDING' => ['Modifiche in attesa', 'Pending changes', 'Ausstehende Änderungen', 'Modifications en attente'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function all(string $locale): array
+    {
+        $index = match ($locale) {
+            'it' => 0,
+            'en' => 1,
+            'de' => 2,
+            'fr' => 3,
+            default => 1,
+        };
+
+        return array_map(static fn (array $texts): string => $texts[$index], self::definitions());
+    }
+}

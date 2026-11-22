@@ -30,7 +30,7 @@ enum RecipeCategory: string
             self::SavoryGastronomic => ['pod' => [40, 120], 'pac' => [150, 250], 'milk_fat' => [4, 9], 'total_fat' => [5, 12], 'slng' => [6, 11], 'total_solids' => [30, 42], 'serving_temp' => [-13, -10]],
             self::SemifreddoColdPastry => ['pod' => [180, 260], 'pac' => [220, 290], 'milk_fat' => [8, 14], 'total_fat' => [10, 18], 'slng' => [6, 10], 'total_solids' => [38, 48], 'serving_temp' => [-14, -10]],
             self::GanacheChocolate => ['pod' => [200, 450], 'pac' => [150, 400], 'milk_fat' => [5, 20], 'total_fat' => [15, 35], 'slng' => [0, 6], 'total_solids' => [60, 80], 'serving_temp' => [16, 22]],
-        ];
+        };
     }
 
     /**
