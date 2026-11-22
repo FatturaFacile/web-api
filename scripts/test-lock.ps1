@@ -14,10 +14,14 @@
     TEST_LOCK_TIMEOUT_MIN  Max minutes to wait for the lock (default 90).
     TEST_LOCK_BYPASS=1     Skip the lock (CI, or a single-process run on an idle machine).
 #>
-param(
-    [Parameter(Mandatory = $true, ValueFromRemainingArguments = $true)]
-    [string[]] $Command
-)
+# Plain $args (no param block/[Parameter]): an advanced script would bind `-d` to the -Debug common
+# parameter and silently drop it from `php -d memory_limit=...`.
+[string[]] $Command = $args
+
+if ($Command.Count -eq 0) {
+    Write-Host 'Usage: test-lock.ps1 <command> [args...]'
+    exit 2
+}
 
 $ErrorActionPreference = 'Stop'
 

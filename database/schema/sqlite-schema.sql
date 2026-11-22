@@ -44485,6 +44485,9 @@ CREATE TABLE "accounting_templates"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -44509,6 +44512,9 @@ CREATE TABLE "year_end_closing_stages"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("fiscal_year_id") references "fiscal_years"("id") on delete cascade,
   primary key("id")
 );
@@ -44944,3 +44950,5 @@ INSERT INTO migrations VALUES(419,'2027_12_19_000200_create_mfg_mes_integration_
 INSERT INTO migrations VALUES(420,'2027_12_19_000300_add_mes_profile_to_mfg_machine_centers',2);
 INSERT INTO migrations VALUES(421,'2027_12_20_000100_create_accounting_templates_table',3);
 INSERT INTO migrations VALUES(422,'2027_12_20_000200_create_year_end_closing_stages_table',3);
+INSERT INTO migrations VALUES(423,'2027_12_20_000200_add_audit_columns_to_accounting_templates',4);
+INSERT INTO migrations VALUES(424,'2027_12_20_000300_add_audit_columns_to_gl_templates_and_closing_stages',5);
