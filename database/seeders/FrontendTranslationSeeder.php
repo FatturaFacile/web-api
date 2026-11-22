@@ -25,6 +25,7 @@ use Database\Seeders\Translations\ItalianPayrollFrontendTranslations;
 use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
+use Database\Seeders\Translations\ManufacturingCommandCenterFrontendTranslations;
 use Database\Seeders\Translations\MobileFeatureTranslations;
 use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
@@ -97,7 +98,8 @@ class FrontendTranslationSeeder extends Seeder
             + MobileFeatureTranslations::all($locale)
             + SecurityCenterFrontendTranslations::all($locale)
             + RfqFrontendTranslations::all($locale)
-            + PurchaseRequisitionFrontendTranslations::all($locale);
+            + PurchaseRequisitionFrontendTranslations::all($locale)
+            + ManufacturingCommandCenterFrontendTranslations::all($locale);
     }
 
     /**
