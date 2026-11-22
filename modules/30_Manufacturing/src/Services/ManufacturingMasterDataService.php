@@ -126,8 +126,8 @@ final readonly class ManufacturingMasterDataService
      */
     private function workCenterAttributes(array $data): array
     {
-        $attributes = array_intersect_key($data, array_flip(['work_center_code', 'name', 'description', 'department_code', 'status']));
-        foreach (['capacity_hours_per_day' => 2, 'efficiency_rate' => 2, 'availability_rate' => 2, 'hourly_cost_rate' => 4, 'hourly_overhead_rate' => 4] as $field => $decimals) {
+        $attributes = array_intersect_key($data, array_flip(['work_center_code', 'name', 'description', 'department_code', 'status', 'warehouse_id', 'cost_center_id', 'working_calendar_id', 'parent_work_center_id', 'parallel_capacity_units', 'currency_code', 'default_queue_wait_minutes', 'default_move_time_minutes', 'alternate_work_center_ids']));
+        foreach (['capacity_hours_per_day' => 2, 'efficiency_rate' => 2, 'availability_rate' => 2, 'hourly_cost_rate' => 4, 'hourly_overhead_rate' => 4, 'oee_target_percent' => 2, 'availability_target_percent' => 2, 'performance_target_percent' => 2, 'quality_target_percent' => 2, 'hourly_setup_cost_rate' => 4, 'hourly_machine_run_cost_rate' => 4] as $field => $decimals) {
             if (array_key_exists($field, $data) && $data[$field] !== null) {
                 $attributes[$field] = Money::round((string) $data[$field], $decimals);
             }

@@ -17334,6 +17334,20 @@ CREATE TABLE "mfg_machine_centers"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "manufacturer" varchar,
+  "model" varchar,
+  "serial_number" varchar,
+  "maintenance_schedule_id" varchar,
+  "is_industria_40_enabled" tinyint(1) not null default '0',
+  "is_transizione_50_enabled" tinyint(1) not null default '0',
+  "telemetry_device_id" varchar,
+  "telemetry_endpoint_key" varchar,
+  "telemetry_last_seen_at" datetime,
+  "telemetry_status" varchar,
+  "ideal_cycle_time_seconds_per_unit" numeric,
+  "parallel_capacity_units" integer not null default '1',
+  "efficiency_factor_percent" numeric,
+  "hourly_machine_run_cost_rate_override" numeric,
   "current_state" varchar,
   "state_since" datetime,
   foreign key("work_center_id") references "mfg_work_centers"("id") on delete cascade on update no action,
@@ -17834,54 +17848,6 @@ CREATE UNIQUE INDEX "mfg_operation_confirmations_tenant_id_confirmation_number_u
 CREATE INDEX "mfg_operation_confirmations_tenant_id_index" on "mfg_operation_confirmations"(
   "tenant_id"
 );
-CREATE TABLE "mfg_operations"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "routing_id" varchar not null,
-  "sequence" integer not null default('10'),
-  "operation_code" varchar not null,
-  "name" varchar not null,
-  "work_center_id" varchar not null,
-  "machine_center_id" varchar,
-  "setup_time_minutes" numeric not null default('0'),
-  "run_time_minutes_per_unit" numeric not null default('0'),
-  "labor_time_minutes_per_unit" numeric not null default('0'),
-  "queue_time_minutes" numeric not null default('0'),
-  "wait_time_minutes" numeric not null default('0'),
-  "teardown_time_minutes" numeric not null default('0'),
-  "standard_labor_rate" numeric not null default('0'),
-  "standard_machine_rate" numeric not null default('0'),
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "description" text,
-  "is_subcontracted" tinyint(1) not null default('0'),
-  "subcontractor_contact_id" varchar,
-  "subcontract_unit_cost" numeric not null default('0'),
-  "quality_plan_id" varchar,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("work_center_id") references "mfg_work_centers"("id") on delete cascade on update no action,
-  foreign key("routing_id") references "mfg_routings"("id") on delete cascade on update no action,
-  primary key("id")
-);
-
-CREATE INDEX "mfg_operations_machine_center_id_index" on "mfg_operations"(
-  "machine_center_id"
-);
-CREATE INDEX "mfg_operations_operation_code_index" on "mfg_operations"(
-  "operation_code"
-);
-CREATE INDEX "mfg_operations_routing_id_index" on "mfg_operations"(
-  "routing_id"
-);
-CREATE INDEX "mfg_operations_tenant_id_index" on "mfg_operations"(
-  "tenant_id"
-);
-CREATE INDEX "mfg_operations_work_center_id_index" on "mfg_operations"(
-  "work_center_id"
-);
 CREATE TABLE "mfg_production_costs"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -18337,6 +18303,7 @@ CREATE TABLE "mfg_routings"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "bom_id" varchar,
   primary key("id")
 );
 
@@ -18559,6 +18526,21 @@ CREATE TABLE "mfg_work_centers"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "warehouse_id" varchar,
+  "cost_center_id" varchar,
+  "working_calendar_id" varchar,
+  "parent_work_center_id" varchar,
+  "parallel_capacity_units" integer not null default '1',
+  "oee_target_percent" numeric not null default '80',
+  "availability_target_percent" numeric,
+  "performance_target_percent" numeric,
+  "quality_target_percent" numeric,
+  "hourly_setup_cost_rate" numeric not null default '0',
+  "hourly_machine_run_cost_rate" numeric not null default '0',
+  "currency_code" varchar not null default 'EUR',
+  "default_queue_wait_minutes" integer not null default '0',
+  "default_move_time_minutes" integer not null default '0',
+  "alternate_work_center_ids" text,
   primary key("id")
 );
 
@@ -44174,6 +44156,235 @@ CREATE UNIQUE INDEX "mrp_wc_alternatives_unique" on "mrp_work_center_alternative
   "work_center_id",
   "alternative_work_center_id"
 );
+CREATE INDEX "mfg_work_centers_warehouse_id_index" on "mfg_work_centers"(
+  "warehouse_id"
+);
+CREATE INDEX "mfg_work_centers_cost_center_id_index" on "mfg_work_centers"(
+  "cost_center_id"
+);
+CREATE INDEX "mfg_work_centers_working_calendar_id_index" on "mfg_work_centers"(
+  "working_calendar_id"
+);
+CREATE INDEX "mfg_work_centers_parent_work_center_id_index" on "mfg_work_centers"(
+  "parent_work_center_id"
+);
+CREATE INDEX "mfg_machine_centers_maintenance_schedule_id_index" on "mfg_machine_centers"(
+  "maintenance_schedule_id"
+);
+CREATE INDEX "mfg_routings_bom_id_index" on "mfg_routings"("bom_id");
+CREATE TABLE "mfg_operations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "routing_id" varchar not null,
+  "sequence" integer not null default('10'),
+  "operation_code" varchar not null,
+  "name" varchar not null,
+  "work_center_id" varchar not null,
+  "machine_center_id" varchar,
+  "setup_time_minutes" numeric not null default '0',
+  "run_time_minutes_per_unit" numeric not null default '0',
+  "labor_time_minutes_per_unit" numeric not null default('0'),
+  "queue_time_minutes" numeric not null default '0',
+  "wait_time_minutes" numeric not null default('0'),
+  "teardown_time_minutes" numeric not null default('0'),
+  "standard_labor_rate" numeric not null default('0'),
+  "standard_machine_rate" numeric not null default('0'),
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "description" text,
+  "is_subcontracted" tinyint(1) not null default('0'),
+  "subcontractor_contact_id" varchar,
+  "subcontract_unit_cost" numeric not null default('0'),
+  "quality_plan_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "operation_type" varchar not null default('internal_machining'),
+  "post_operation_wait_minutes" numeric not null default('0'),
+  "move_time_minutes" numeric not null default('0'),
+  "overlap_transfer_batch_qty" numeric,
+  "required_operators" integer not null default('1'),
+  "alternate_work_center_ids" text,
+  "linked_quality_control_point_id" varchar,
+  "work_instruction_doc_id" varchar,
+  foreign key("routing_id") references "mfg_routings"("id") on delete cascade on update no action,
+  foreign key("work_center_id") references "mfg_work_centers"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_operations_linked_quality_control_point_id_index" on "mfg_operations"(
+  "linked_quality_control_point_id"
+);
+CREATE INDEX "mfg_operations_machine_center_id_index" on "mfg_operations"(
+  "machine_center_id"
+);
+CREATE INDEX "mfg_operations_operation_code_index" on "mfg_operations"(
+  "operation_code"
+);
+CREATE INDEX "mfg_operations_routing_id_index" on "mfg_operations"(
+  "routing_id"
+);
+CREATE INDEX "mfg_operations_tenant_id_index" on "mfg_operations"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_operations_work_center_id_index" on "mfg_operations"(
+  "work_center_id"
+);
+CREATE INDEX "mfg_operations_work_instruction_doc_id_index" on "mfg_operations"(
+  "work_instruction_doc_id"
+);
+CREATE TABLE "mfg_working_calendars"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "timezone" varchar not null default 'Europe/Zurich',
+  "country_code" varchar not null default 'CH',
+  "region_code" varchar,
+  "inherit_holiday_calendar_id" varchar,
+  "is_default" tinyint(1) not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mfg_working_calendars_tenant_id_code_unique" on "mfg_working_calendars"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "mfg_working_calendars_tenant_id_index" on "mfg_working_calendars"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_working_calendars_inherit_holiday_calendar_id_index" on "mfg_working_calendars"(
+  "inherit_holiday_calendar_id"
+);
+CREATE TABLE "mfg_working_calendar_shifts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "working_calendar_id" varchar not null,
+  "day_of_week" integer not null,
+  "shift_code" varchar not null,
+  "start_time" varchar not null,
+  "end_time" varchar not null,
+  "crosses_midnight" tinyint(1) not null default '0',
+  "break_minutes" integer not null default '0',
+  "net_available_minutes" integer not null default '0',
+  "labor_multiplier" numeric not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("working_calendar_id") references "mfg_working_calendars"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_mfg_calendar_shift" on "mfg_working_calendar_shifts"(
+  "working_calendar_id",
+  "day_of_week",
+  "shift_code"
+);
+CREATE INDEX "mfg_working_calendar_shifts_tenant_id_index" on "mfg_working_calendar_shifts"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_working_calendar_shifts_working_calendar_id_index" on "mfg_working_calendar_shifts"(
+  "working_calendar_id"
+);
+CREATE TABLE "mfg_working_calendar_closures"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "working_calendar_id" varchar not null,
+  "starts_on" date not null,
+  "ends_on" date not null,
+  "reason" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("working_calendar_id") references "mfg_working_calendars"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "mfg_working_calendar_closures_tenant_id_index" on "mfg_working_calendar_closures"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_working_calendar_closures_working_calendar_id_index" on "mfg_working_calendar_closures"(
+  "working_calendar_id"
+);
+CREATE TABLE "mfg_routing_step_bom_components"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "operation_id" varchar not null,
+  "bom_component_id" varchar not null,
+  "backflush_on_completion" tinyint(1) not null default '1',
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("operation_id") references "mfg_operations"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_mfg_step_component" on "mfg_routing_step_bom_components"(
+  "operation_id",
+  "bom_component_id"
+);
+CREATE INDEX "mfg_routing_step_bom_components_tenant_id_index" on "mfg_routing_step_bom_components"(
+  "tenant_id"
+);
+CREATE INDEX "mfg_routing_step_bom_components_operation_id_index" on "mfg_routing_step_bom_components"(
+  "operation_id"
+);
+CREATE INDEX "mfg_routing_step_bom_components_bom_component_id_index" on "mfg_routing_step_bom_components"(
+  "bom_component_id"
+);
+CREATE TABLE "mfg_oee_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "work_center_id" varchar not null,
+  "machine_center_id" varchar,
+  "source" varchar not null default 'manual',
+  "period_start" datetime not null,
+  "period_end" datetime not null,
+  "planned_downtime_minutes" numeric not null default '0',
+  "unplanned_downtime_minutes" numeric not null default '0',
+  "loss_category" varchar,
+  "good_units" numeric not null default '0',
+  "scrap_units" numeric not null default '0',
+  "rework_units" numeric not null default '0',
+  "notes" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("work_center_id") references "mfg_work_centers"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_mfg_oee_period" on "mfg_oee_logs"(
+  "work_center_id",
+  "period_start"
+);
+CREATE INDEX "mfg_oee_logs_tenant_id_index" on "mfg_oee_logs"("tenant_id");
+CREATE INDEX "mfg_oee_logs_work_center_id_index" on "mfg_oee_logs"(
+  "work_center_id"
+);
+CREATE INDEX "mfg_oee_logs_machine_center_id_index" on "mfg_oee_logs"(
+  "machine_center_id"
+);
 CREATE TABLE "mfg_wip_transactions"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -44675,4 +44886,5 @@ INSERT INTO migrations VALUES(414,'2027_12_18_000100_upgrade_purchase_requisitio
 INSERT INTO migrations VALUES(415,'2027_12_19_000100_add_mes_integration_to_manufacturing',1);
 INSERT INTO migrations VALUES(416,'2027_12_19_000100_add_posting_uuid_to_mfg_operation_confirmations',1);
 INSERT INTO migrations VALUES(417,'2027_12_19_000100_create_mrp_planning_tables',1);
-INSERT INTO migrations VALUES(418,'2027_12_19_000200_create_mfg_mes_integration_tables',1);
+INSERT INTO migrations VALUES(418,'2027_12_19_000100_extend_manufacturing_production_engineering',1);
+INSERT INTO migrations VALUES(419,'2027_12_19_000200_create_mfg_mes_integration_tables',1);

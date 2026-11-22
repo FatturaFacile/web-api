@@ -157747,6 +157747,316 @@
                     }
                 },
                 {
+                    "name": "Paginated machines, optionally of one work centre",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/machines",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "machines"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Paginated machines, optionally of one work centre",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Creates a machine",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/machines",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "machines"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):\n  [FormRequestRulesEvaluator] No application encryption key has been specified. (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\laravel\\framework\\src\\Illuminate\\Encryption\\EncryptionServiceProvider.php:83)\n  [NodeRulesEvaluator] Cannot access protected constant Modules\\Manufacturing\\Http\\Requests\\SaveMachineCenterRequest::Amount (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\dedoc\\scramble\\src\\Support\\OperationExtensions\\RulesEvaluator\\ConstFetchEvaluator.php:42)",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "One machine",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/machines/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "machines",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "One machine",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Updates a machine",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/machines/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "machines",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):\n  [FormRequestRulesEvaluator] No application encryption key has been specified. (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\laravel\\framework\\src\\Illuminate\\Encryption\\EncryptionServiceProvider.php:83)\n  [NodeRulesEvaluator] Cannot access protected constant Modules\\Manufacturing\\Http\\Requests\\SaveMachineCenterRequest::Amount (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\dedoc\\scramble\\src\\Support\\OperationExtensions\\RulesEvaluator\\ConstFetchEvaluator.php:42)",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Deletes a machine that no routing operation prefers",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/machines/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "machines",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Deletes a machine that no routing operation prefers",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Records a telemetry ping (and optionally the counters of a period) of an Industria 4.0 / Transizione 5.0 machine",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/machines/:id/telemetry-ping",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "machines",
+                                ":id",
+                                "telemetry-ping"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Records a telemetry ping (and optionally the counters of a period) of an Industria 4.0 / Transizione 5.0 machine",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"telemetry_endpoint_key\": \"string\",\n    \"status\": \"online\",\n    \"recorded_at\": \"2026-01-31T12:00:00+00:00\",\n    \"period_start\": \"2026-01-31T12:00:00+00:00\",\n    \"period_end\": \"2026-01-31T12:00:00+00:00\",\n    \"unplanned_downtime_minutes\": 1.5,\n    \"loss_category\": \"equipment_failure\",\n    \"good_units\": 1.5,\n    \"scrap_units\": 1.5,\n    \"rework_units\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "The aggregated cockpit",
                     "request": {
                         "method": "GET",
@@ -159485,6 +159795,201 @@
                     }
                 },
                 {
+                    "name": "OEE of the period with targets, big losses and machine telemetry status (no series)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/oee/summary?from_datetime=&to_datetime=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "oee",
+                                "summary"
+                            ],
+                            "query": [
+                                {
+                                    "key": "work_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "machine_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from_datetime",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to_datetime",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "granularity",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "OEE of the period with targets, big losses and machine telemetry status (no series)",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "OEE per bucket (hour, shift, day, week or month) of the period",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/oee/timeseries?from_datetime=&to_datetime=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "oee",
+                                "timeseries"
+                            ],
+                            "query": [
+                                {
+                                    "key": "work_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "machine_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from_datetime",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to_datetime",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "granularity",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "OEE per bucket (hour, shift, day, week or month) of the period",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Records a production execution log",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/oee/logs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "oee",
+                                "logs"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):\n  [FormRequestRulesEvaluator] No application encryption key has been specified. (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\laravel\\framework\\src\\Illuminate\\Encryption\\EncryptionServiceProvider.php:83)\n  [NodeRulesEvaluator] Cannot access protected constant Modules\\Manufacturing\\Http\\Requests\\RecordOeeLogRequest::Quantity (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\dedoc\\scramble\\src\\Support\\OperationExtensions\\RulesEvaluator\\ConstFetchEvaluator.php:42)",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "Issues components to an order",
                     "request": {
                         "method": "POST",
@@ -160755,6 +161260,246 @@
                     }
                 },
                 {
+                    "name": "Redefines a routing: header and, when sent, the whole ordered operation list",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/routings/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "routings",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):\n  [FormRequestRulesEvaluator] No application encryption key has been specified. (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\laravel\\framework\\src\\Illuminate\\Encryption\\EncryptionServiceProvider.php:83)\n  [NodeRulesEvaluator] Cannot access protected constant Modules\\Manufacturing\\Http\\Requests\\CreateRoutingRequest::Minutes (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\dedoc\\scramble\\src\\Support\\OperationExtensions\\RulesEvaluator\\ConstFetchEvaluator.php:42)",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Deletes a routing that no production version uses",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/routings/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "routings",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Deletes a routing that no production version uses",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Copies the routing with its operations into its next revision, as a draft",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/routings/:id/clone-revision",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "routings",
+                                ":id",
+                                "clone-revision"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Copies the routing with its operations into its next revision, as a draft",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"revision\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Lead time (with overlap and calendar projection) and standard cost of a lot",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/routings/:id/calculate-lead-time-and-cost",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "routings",
+                                ":id",
+                                "calculate-lead-time-and-cost"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Lead time (with overlap and calendar projection) and standard cost of a lot",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"quantity\": 1.5,\n    \"include_overlap\": false,\n    \"start_datetime\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "Paginated job cards",
                     "request": {
                         "method": "GET",
@@ -161450,6 +162195,59 @@
                     }
                 },
                 {
+                    "name": "Deletes a work centre that has no sub work centres and is used by no routing operation",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/work-centers/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "work-centers",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Deletes a work centre that has no sub work centres and is used by no routing operation",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
                     "name": "Replaces the weekly calendar",
                     "request": {
                         "method": "PUT",
@@ -161647,6 +162445,394 @@
                             ]
                         },
                         "description": "Capacity and load per day",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "The work centre with its sub work centres and machines as a tree",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/work-centers/:id/hierarchy",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "work-centers",
+                                ":id",
+                                "hierarchy"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "The work centre with its sub work centres and machines as a tree",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Paginated working calendars",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/working-calendars",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "working-calendars"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Paginated working calendars",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Creates a working calendar",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/working-calendars",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "working-calendars"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Creates a working calendar",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"timezone\": \"string\",\n    \"country_code\": \"CH\",\n    \"region_code\": \"string\",\n    \"inherit_holiday_calendar_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"is_default\": false,\n    \"shifts\": [\n        {\n            \"day_of_week\": 1,\n            \"shift_code\": \"string\",\n            \"start_time\": \"string\",\n            \"end_time\": \"string\",\n            \"break_minutes\": 1,\n            \"labor_multiplier\": 1.5\n        }\n    ],\n    \"closures\": [\n        {\n            \"starts_on\": \"2026-01-31T12:00:00+00:00\",\n            \"ends_on\": \"2026-01-31T12:00:00+00:00\",\n            \"reason\": \"string\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "One working calendar",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/working-calendars/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "working-calendars",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "One working calendar",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Updates a working calendar; shifts and shutdowns, when sent, replace the existing ones",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/working-calendars/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "working-calendars",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Updates a working calendar; shifts and shutdowns, when sent, replace the existing ones",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"timezone\": \"string\",\n    \"country_code\": \"CH\",\n    \"region_code\": \"string\",\n    \"inherit_holiday_calendar_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"is_default\": false,\n    \"shifts\": [\n        {\n            \"day_of_week\": 1,\n            \"shift_code\": \"string\",\n            \"start_time\": \"string\",\n            \"end_time\": \"string\",\n            \"break_minutes\": 1,\n            \"labor_multiplier\": 1.5\n        }\n    ],\n    \"closures\": [\n        {\n            \"starts_on\": \"2026-01-31T12:00:00+00:00\",\n            \"ends_on\": \"2026-01-31T12:00:00+00:00\",\n            \"reason\": \"string\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Deletes a working calendar that no work centre uses",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/working-calendars/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "working-calendars",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Deletes a working calendar that no work centre uses",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "The days of a window with their type (shift, holiday, weekend, shutdown), holiday name and shifts",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/manufacturing/working-calendars/:id/preview-days?from=&to=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "manufacturing",
+                                "working-calendars",
+                                ":id",
+                                "preview-days"
+                            ],
+                            "query": [
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "work_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "The days of a window with their type (shift, holiday, weekend, shutdown), holiday name and shifts",
                         "auth": {
                             "type": "noauth"
                         }

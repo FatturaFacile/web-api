@@ -150682,6 +150682,271 @@
                 }
             }
         },
+        "/v1/manufacturing/machines": {
+            "get": {
+                "operationId": "mfg.machines.index",
+                "summary": "Paginated machines, optionally of one work centre",
+                "tags": [
+                    "MachineCenter"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `MfgMachineCenterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/MfgMachineCenterResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "mfg.machines.store",
+                "description": "⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):\n  [FormRequestRulesEvaluator] No application encryption key has been specified. (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\laravel\\framework\\src\\Illuminate\\Encryption\\EncryptionServiceProvider.php:83)\n  [NodeRulesEvaluator] Cannot access protected constant Modules\\Manufacturing\\Http\\Requests\\SaveMachineCenterRequest::Amount (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\dedoc\\scramble\\src\\Support\\OperationExtensions\\RulesEvaluator\\ConstFetchEvaluator.php:42)",
+                "summary": "Creates a machine",
+                "tags": [
+                    "MachineCenter"
+                ],
+                "responses": {
+                    "201": {
+                        "description": "`MfgMachineCenterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/MfgMachineCenterResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/machines/{id}": {
+            "get": {
+                "operationId": "mfg.machines.show",
+                "summary": "One machine",
+                "tags": [
+                    "MachineCenter"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`MfgMachineCenterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/MfgMachineCenterResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "mfg.machines.update",
+                "description": "⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):\n  [FormRequestRulesEvaluator] No application encryption key has been specified. (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\laravel\\framework\\src\\Illuminate\\Encryption\\EncryptionServiceProvider.php:83)\n  [NodeRulesEvaluator] Cannot access protected constant Modules\\Manufacturing\\Http\\Requests\\SaveMachineCenterRequest::Amount (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\dedoc\\scramble\\src\\Support\\OperationExtensions\\RulesEvaluator\\ConstFetchEvaluator.php:42)",
+                "summary": "Updates a machine",
+                "tags": [
+                    "MachineCenter"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`MfgMachineCenterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/MfgMachineCenterResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "mfg.machines.destroy",
+                "summary": "Deletes a machine that no routing operation prefers",
+                "tags": [
+                    "MachineCenter"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "409": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "The machine is used by a routing operation."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "properties": {
+                                                "machine": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string",
+                                                            "const": "The machine is used by a routing operation."
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "machine"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "errors"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/machines/{id}/telemetry-ping": {
+            "post": {
+                "operationId": "mfg.machines.telemetry_ping",
+                "summary": "Records a telemetry ping (and optionally the counters of a period) of an Industria 4.0 / Transizione 5.0 machine",
+                "tags": [
+                    "MachineCenter"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TelemetryPingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`MfgMachineCenterResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/MfgMachineCenterResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/eam/maintenance/plans": {
             "get": {
                 "operationId": "eam.maintenance.plans.index",
@@ -171000,6 +171265,664 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/oee/summary": {
+            "get": {
+                "operationId": "mfg.oee.summary",
+                "summary": "OEE of the period with targets, big losses and machine telemetry status (no series)",
+                "tags": [
+                    "Oee"
+                ],
+                "parameters": [
+                    {
+                        "name": "work_center_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "machine_center_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "from_datetime",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to_datetime",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "granularity",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "real_time",
+                                "shift",
+                                "daily",
+                                "weekly",
+                                "monthly",
+                                "custom_range",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "work_center_id": {
+                                                    "type": "string"
+                                                },
+                                                "machine_center_id": {
+                                                    "type": "null"
+                                                },
+                                                "from": {
+                                                    "type": "string"
+                                                },
+                                                "to": {
+                                                    "type": "string"
+                                                },
+                                                "granularity": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "real_time",
+                                                        "shift",
+                                                        "daily",
+                                                        "weekly",
+                                                        "monthly",
+                                                        "custom_range"
+                                                    ]
+                                                },
+                                                "summary": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "scheduled_minutes": {
+                                                            "type": "number"
+                                                        },
+                                                        "planned_production_minutes": {
+                                                            "type": "number"
+                                                        },
+                                                        "unplanned_downtime_minutes": {
+                                                            "type": "number"
+                                                        },
+                                                        "operating_minutes": {
+                                                            "type": "number"
+                                                        },
+                                                        "good_units": {
+                                                            "type": "number"
+                                                        },
+                                                        "scrap_units": {
+                                                            "type": "number"
+                                                        },
+                                                        "rework_units": {
+                                                            "type": "number"
+                                                        },
+                                                        "total_units": {
+                                                            "type": "number"
+                                                        },
+                                                        "ideal_cycle_minutes_per_unit": {
+                                                            "type": "number"
+                                                        },
+                                                        "availability": {
+                                                            "type": "number"
+                                                        },
+                                                        "performance": {
+                                                            "type": "number"
+                                                        },
+                                                        "quality": {
+                                                            "type": "number"
+                                                        },
+                                                        "oee": {
+                                                            "type": "number"
+                                                        },
+                                                        "availability_percent": {
+                                                            "type": "number"
+                                                        },
+                                                        "performance_percent": {
+                                                            "type": "number"
+                                                        },
+                                                        "quality_percent": {
+                                                            "type": "number"
+                                                        },
+                                                        "oee_percent": {
+                                                            "type": "number"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "scheduled_minutes",
+                                                        "planned_production_minutes",
+                                                        "unplanned_downtime_minutes",
+                                                        "operating_minutes",
+                                                        "good_units",
+                                                        "scrap_units",
+                                                        "rework_units",
+                                                        "total_units",
+                                                        "ideal_cycle_minutes_per_unit",
+                                                        "availability",
+                                                        "performance",
+                                                        "quality",
+                                                        "oee",
+                                                        "availability_percent",
+                                                        "performance_percent",
+                                                        "quality_percent",
+                                                        "oee_percent"
+                                                    ]
+                                                },
+                                                "targets_percent": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "oee": {
+                                                            "type": "number"
+                                                        },
+                                                        "availability": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "performance": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "quality": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "oee",
+                                                        "availability",
+                                                        "performance",
+                                                        "quality"
+                                                    ]
+                                                },
+                                                "meets_target": {
+                                                    "type": "boolean"
+                                                },
+                                                "gap_to_target_percent": {
+                                                    "type": "number"
+                                                },
+                                                "six_big_losses": {
+                                                    "type": "object",
+                                                    "additionalProperties": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "minutes": {
+                                                                "type": "number"
+                                                            },
+                                                            "factor": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "minutes",
+                                                            "factor"
+                                                        ]
+                                                    }
+                                                },
+                                                "machines": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "machine_center_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "machine_code": {
+                                                                "type": "string"
+                                                            },
+                                                            "industria_40": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "transizione_50": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "telemetry_status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "never",
+                                                                    "stale",
+                                                                    "online"
+                                                                ]
+                                                            },
+                                                            "telemetry_last_seen_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "machine_center_id",
+                                                            "machine_code",
+                                                            "industria_40",
+                                                            "transizione_50",
+                                                            "telemetry_status",
+                                                            "telemetry_last_seen_at"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "work_center_id",
+                                                "machine_center_id",
+                                                "from",
+                                                "to",
+                                                "granularity",
+                                                "summary",
+                                                "targets_percent",
+                                                "meets_target",
+                                                "gap_to_target_percent",
+                                                "six_big_losses",
+                                                "machines"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/oee/timeseries": {
+            "get": {
+                "operationId": "mfg.oee.timeseries",
+                "summary": "OEE per bucket (hour, shift, day, week or month) of the period",
+                "tags": [
+                    "Oee"
+                ],
+                "parameters": [
+                    {
+                        "name": "work_center_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "machine_center_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "from_datetime",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to_datetime",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "granularity",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "real_time",
+                                "shift",
+                                "daily",
+                                "weekly",
+                                "monthly",
+                                "custom_range",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "work_center_id": {
+                                                    "type": "string"
+                                                },
+                                                "machine_center_id": {
+                                                    "type": "null"
+                                                },
+                                                "from": {
+                                                    "type": "string"
+                                                },
+                                                "to": {
+                                                    "type": "string"
+                                                },
+                                                "granularity": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "real_time",
+                                                        "shift",
+                                                        "daily",
+                                                        "weekly",
+                                                        "monthly",
+                                                        "custom_range"
+                                                    ]
+                                                },
+                                                "summary": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "scheduled_minutes": {
+                                                            "type": "number"
+                                                        },
+                                                        "planned_production_minutes": {
+                                                            "type": "number"
+                                                        },
+                                                        "unplanned_downtime_minutes": {
+                                                            "type": "number"
+                                                        },
+                                                        "operating_minutes": {
+                                                            "type": "number"
+                                                        },
+                                                        "good_units": {
+                                                            "type": "number"
+                                                        },
+                                                        "scrap_units": {
+                                                            "type": "number"
+                                                        },
+                                                        "rework_units": {
+                                                            "type": "number"
+                                                        },
+                                                        "total_units": {
+                                                            "type": "number"
+                                                        },
+                                                        "ideal_cycle_minutes_per_unit": {
+                                                            "type": "number"
+                                                        },
+                                                        "availability": {
+                                                            "type": "number"
+                                                        },
+                                                        "performance": {
+                                                            "type": "number"
+                                                        },
+                                                        "quality": {
+                                                            "type": "number"
+                                                        },
+                                                        "oee": {
+                                                            "type": "number"
+                                                        },
+                                                        "availability_percent": {
+                                                            "type": "number"
+                                                        },
+                                                        "performance_percent": {
+                                                            "type": "number"
+                                                        },
+                                                        "quality_percent": {
+                                                            "type": "number"
+                                                        },
+                                                        "oee_percent": {
+                                                            "type": "number"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "scheduled_minutes",
+                                                        "planned_production_minutes",
+                                                        "unplanned_downtime_minutes",
+                                                        "operating_minutes",
+                                                        "good_units",
+                                                        "scrap_units",
+                                                        "rework_units",
+                                                        "total_units",
+                                                        "ideal_cycle_minutes_per_unit",
+                                                        "availability",
+                                                        "performance",
+                                                        "quality",
+                                                        "oee",
+                                                        "availability_percent",
+                                                        "performance_percent",
+                                                        "quality_percent",
+                                                        "oee_percent"
+                                                    ]
+                                                },
+                                                "targets_percent": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "oee": {
+                                                            "type": "number"
+                                                        },
+                                                        "availability": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "performance": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "quality": {
+                                                            "type": [
+                                                                "number",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "oee",
+                                                        "availability",
+                                                        "performance",
+                                                        "quality"
+                                                    ]
+                                                },
+                                                "meets_target": {
+                                                    "type": "boolean"
+                                                },
+                                                "gap_to_target_percent": {
+                                                    "type": "number"
+                                                },
+                                                "six_big_losses": {
+                                                    "type": "object",
+                                                    "additionalProperties": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "minutes": {
+                                                                "type": "number"
+                                                            },
+                                                            "factor": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "minutes",
+                                                            "factor"
+                                                        ]
+                                                    }
+                                                },
+                                                "series": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "array",
+                                                        "items": {}
+                                                    }
+                                                },
+                                                "machines": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "machine_center_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "machine_code": {
+                                                                "type": "string"
+                                                            },
+                                                            "industria_40": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "transizione_50": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "telemetry_status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "never",
+                                                                    "stale",
+                                                                    "online"
+                                                                ]
+                                                            },
+                                                            "telemetry_last_seen_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "machine_center_id",
+                                                            "machine_code",
+                                                            "industria_40",
+                                                            "transizione_50",
+                                                            "telemetry_status",
+                                                            "telemetry_last_seen_at"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "work_center_id",
+                                                "machine_center_id",
+                                                "from",
+                                                "to",
+                                                "granularity",
+                                                "summary",
+                                                "targets_percent",
+                                                "meets_target",
+                                                "gap_to_target_percent",
+                                                "six_big_losses",
+                                                "series",
+                                                "machines"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/oee/logs": {
+            "post": {
+                "operationId": "mfg.oee.logs.store",
+                "description": "⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):\n  [FormRequestRulesEvaluator] No application encryption key has been specified. (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\laravel\\framework\\src\\Illuminate\\Encryption\\EncryptionServiceProvider.php:83)\n  [NodeRulesEvaluator] Cannot access protected constant Modules\\Manufacturing\\Http\\Requests\\RecordOeeLogRequest::Quantity (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\dedoc\\scramble\\src\\Support\\OperationExtensions\\RulesEvaluator\\ConstFetchEvaluator.php:42)",
+                "summary": "Records a production execution log",
+                "tags": [
+                    "Oee"
+                ],
+                "responses": {
+                    "201": {
+                        "description": "`MfgOeeLogResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/MfgOeeLogResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -238526,6 +239449,414 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "mfg.routings.update",
+                "description": "⚠️ Cannot generate request documentation: Cannot evaluate validation rules (2 evaluators failed):\n  [FormRequestRulesEvaluator] No application encryption key has been specified. (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\laravel\\framework\\src\\Illuminate\\Encryption\\EncryptionServiceProvider.php:83)\n  [NodeRulesEvaluator] Cannot access protected constant Modules\\Manufacturing\\Http\\Requests\\CreateRoutingRequest::Minutes (at C:\\dev\\fattura-facile\\web-api\\.claude\\worktrees\\module-090-kpi-dashboards-efd4f2\\vendor\\dedoc\\scramble\\src\\Support\\OperationExtensions\\RulesEvaluator\\ConstFetchEvaluator.php:42)",
+                "summary": "Redefines a routing: header and, when sent, the whole ordered operation list",
+                "tags": [
+                    "Routing"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`MfgRoutingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/MfgRoutingResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "operations"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "mfg.routings.destroy",
+                "summary": "Deletes a routing that no production version uses",
+                "tags": [
+                    "Routing"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "409": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "The routing is used by a production version."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "properties": {
+                                                "routing": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string",
+                                                            "const": "The routing is used by a production version."
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "routing"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "errors"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/routings/{id}/clone-revision": {
+            "post": {
+                "operationId": "mfg.routings.clone_revision",
+                "summary": "Copies the routing with its operations into its next revision, as a draft",
+                "tags": [
+                    "Routing"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CloneRoutingRevisionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`MfgRoutingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/MfgRoutingResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "operations"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/routings/{id}/calculate-lead-time-and-cost": {
+            "post": {
+                "operationId": "mfg.routings.calculate",
+                "summary": "Lead time (with overlap and calendar projection) and standard cost of a lot",
+                "tags": [
+                    "Routing"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CalculateRoutingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "routing_id": {
+                                                    "type": "string"
+                                                },
+                                                "quantity": {
+                                                    "type": "string"
+                                                },
+                                                "include_overlap": {
+                                                    "type": "boolean"
+                                                },
+                                                "lead_time": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "total_minutes": {
+                                                            "type": "string"
+                                                        },
+                                                        "serial_minutes": {
+                                                            "type": "string"
+                                                        },
+                                                        "overlap_saving_minutes": {
+                                                            "type": "string"
+                                                        },
+                                                        "calendar": {
+                                                            "type": [
+                                                                "object",
+                                                                "null"
+                                                            ],
+                                                            "properties": {
+                                                                "start_at": {
+                                                                    "type": "string"
+                                                                },
+                                                                "finish_at": {
+                                                                    "type": "string"
+                                                                },
+                                                                "elapsed_minutes": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "start_at",
+                                                                "finish_at",
+                                                                "elapsed_minutes"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "total_minutes",
+                                                        "serial_minutes",
+                                                        "overlap_saving_minutes",
+                                                        "calendar"
+                                                    ]
+                                                },
+                                                "steps": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "operation_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "operation_seq": {
+                                                                "type": "string"
+                                                            },
+                                                            "operation_code": {
+                                                                "type": "string"
+                                                            },
+                                                            "operation_type": {
+                                                                "type": "string"
+                                                            },
+                                                            "work_center_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "cost_center_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "queue_minutes": {
+                                                                "type": "string"
+                                                            },
+                                                            "setup_minutes": {
+                                                                "type": "string"
+                                                            },
+                                                            "run_minutes": {
+                                                                "type": "string"
+                                                            },
+                                                            "post_operation_wait_minutes": {
+                                                                "type": "string"
+                                                            },
+                                                            "move_minutes": {
+                                                                "type": "string"
+                                                            },
+                                                            "duration_minutes": {
+                                                                "type": "string"
+                                                            },
+                                                            "start_offset_minutes": {
+                                                                "type": "string"
+                                                            },
+                                                            "end_offset_minutes": {
+                                                                "type": "string"
+                                                            },
+                                                            "overlap_applied": {
+                                                                "type": "string"
+                                                            },
+                                                            "cost": {
+                                                                "type": "string"
+                                                            },
+                                                            "start_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "end_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "operation_id",
+                                                            "operation_seq",
+                                                            "operation_code",
+                                                            "operation_type",
+                                                            "work_center_id",
+                                                            "cost_center_id",
+                                                            "queue_minutes",
+                                                            "setup_minutes",
+                                                            "run_minutes",
+                                                            "post_operation_wait_minutes",
+                                                            "move_minutes",
+                                                            "duration_minutes",
+                                                            "start_offset_minutes",
+                                                            "end_offset_minutes",
+                                                            "overlap_applied",
+                                                            "cost",
+                                                            "start_at",
+                                                            "end_at"
+                                                        ]
+                                                    }
+                                                },
+                                                "cost": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "total": {},
+                                                        "unit": {
+                                                            "type": "string"
+                                                        },
+                                                        "setup": {},
+                                                        "machine_run": {},
+                                                        "direct_labor": {},
+                                                        "overhead": {},
+                                                        "subcontracting": {},
+                                                        "material": {},
+                                                        "overhead_basis": {
+                                                            "type": "string",
+                                                            "const": "setup minutes + effective run minutes"
+                                                        },
+                                                        "by_cost_center": {}
+                                                    },
+                                                    "required": [
+                                                        "total",
+                                                        "unit",
+                                                        "setup",
+                                                        "machine_run",
+                                                        "direct_labor",
+                                                        "overhead",
+                                                        "subcontracting",
+                                                        "material",
+                                                        "overhead_basis",
+                                                        "by_cost_center"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "routing_id",
+                                                "quantity",
+                                                "include_overlap",
+                                                "lead_time",
+                                                "steps",
+                                                "cost"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -316005,6 +317336,71 @@
                         "$ref": "#/components/responses/ValidationException"
                     }
                 }
+            },
+            "delete": {
+                "operationId": "mfg.work_centers.destroy",
+                "summary": "Deletes a work centre that has no sub work centres and is used by no routing operation",
+                "tags": [
+                    "WorkCenter"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "409": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "The work centre has sub work centres or routing operations."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "properties": {
+                                                "work_center": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string",
+                                                            "const": "The work centre has sub work centres or routing operations."
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "work_center"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "errors"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
             }
         },
         "/v1/manufacturing/work-centers/{id}/calendar": {
@@ -316262,6 +317658,92 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/work-centers/{id}/hierarchy": {
+            "get": {
+                "operationId": "mfg.work_centers.hierarchy",
+                "summary": "The work centre with its sub work centres and machines as a tree",
+                "tags": [
+                    "WorkCenter"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "work_center_code": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "machines": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "children": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "object",
+                                                                "additionalProperties": {}
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "additionalProperties": {}
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "work_center_code",
+                                                "name",
+                                                "status",
+                                                "machines",
+                                                "children"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -319569,6 +321051,341 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/working-calendars": {
+            "get": {
+                "operationId": "mfg.working_calendars.index",
+                "summary": "Paginated working calendars",
+                "tags": [
+                    "WorkingCalendar"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `MfgWorkingCalendarResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/MfgWorkingCalendarResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "mfg.working_calendars.store",
+                "summary": "Creates a working calendar",
+                "tags": [
+                    "WorkingCalendar"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfigureWorkingCalendarRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`MfgWorkingCalendarResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/MfgWorkingCalendarResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "shifts",
+                                                        "closures"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/working-calendars/{id}": {
+            "get": {
+                "operationId": "mfg.working_calendars.show",
+                "summary": "One working calendar",
+                "tags": [
+                    "WorkingCalendar"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`MfgWorkingCalendarResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/MfgWorkingCalendarResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "mfg.working_calendars.update",
+                "summary": "Updates a working calendar; shifts and shutdowns, when sent, replace the existing ones",
+                "tags": [
+                    "WorkingCalendar"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfigureWorkingCalendarRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`MfgWorkingCalendarResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/MfgWorkingCalendarResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "shifts",
+                                                        "closures"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "mfg.working_calendars.destroy",
+                "summary": "Deletes a working calendar that no work centre uses",
+                "tags": [
+                    "WorkingCalendar"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "409": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "The calendar is used by a work centre."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "properties": {
+                                                "working_calendar_id": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string",
+                                                            "const": "The calendar is used by a work centre."
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "working_calendar_id"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "errors"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/manufacturing/working-calendars/{id}/preview-days": {
+            "get": {
+                "operationId": "mfg.working_calendars.preview_days",
+                "summary": "The days of a window with their type (shift, holiday, weekend, shutdown), holiday name and shifts",
+                "tags": [
+                    "WorkingCalendar"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "work_center_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -329674,6 +331491,33 @@
                 },
                 "title": "CalculateRequest"
             },
+            "CalculateRoutingRequest": {
+                "type": "object",
+                "description": "Validation of the lead time and standard cost simulation of a routing.",
+                "properties": {
+                    "quantity": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "maximum": 99999999999
+                    },
+                    "include_overlap": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "start_datetime": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "title": "CalculateRoutingRequest"
+            },
             "CalculateShortTimeClaimRequest": {
                 "type": "object",
                 "properties": {
@@ -332364,6 +334208,20 @@
                 },
                 "title": "ClockOutRequest"
             },
+            "CloneRoutingRevisionRequest": {
+                "type": "object",
+                "description": "Validation of a routing revision copy (the next revision when none is given).",
+                "properties": {
+                    "revision": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    }
+                },
+                "title": "CloneRoutingRevisionRequest"
+            },
             "CloseCaseRequest": {
                 "type": "object",
                 "description": "Payload to close a case as resolved or written off.",
@@ -334356,6 +336214,129 @@
                     "operator"
                 ],
                 "title": "ConfigureThresholdAlertRequest"
+            },
+            "ConfigureWorkingCalendarRequest": {
+                "type": "object",
+                "description": "Validation of a working calendar with its weekly shifts and planned shutdowns (PUT: every field optional; shifts and\nclosures, when sent, replace the existing ones).",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "country_code": {
+                        "type": "string",
+                        "enum": [
+                            "CH",
+                            "IT",
+                            "ch",
+                            "it"
+                        ]
+                    },
+                    "region_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "minLength": 2,
+                        "maxLength": 3
+                    },
+                    "inherit_holiday_calendar_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "is_default": {
+                        "type": "boolean"
+                    },
+                    "shifts": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "day_of_week": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 7
+                                },
+                                "shift_code": {
+                                    "type": "string",
+                                    "maxLength": 30
+                                },
+                                "start_time": {
+                                    "type": "string"
+                                },
+                                "end_time": {
+                                    "type": "string"
+                                },
+                                "break_minutes": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 720
+                                },
+                                "labor_multiplier": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 10
+                                }
+                            },
+                            "required": [
+                                "day_of_week",
+                                "shift_code",
+                                "start_time",
+                                "end_time"
+                            ]
+                        },
+                        "maxItems": 60
+                    },
+                    "closures": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "starts_on": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "ends_on": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "reason": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 200
+                                }
+                            },
+                            "required": [
+                                "starts_on",
+                                "ends_on"
+                            ]
+                        },
+                        "maxItems": 200
+                    }
+                },
+                "required": [
+                    "code",
+                    "name"
+                ],
+                "title": "ConfigureWorkingCalendarRequest"
             },
             "ConfirmCopilotActionRequest": {
                 "type": "object",
@@ -360077,6 +362058,134 @@
                 ],
                 "title": "MfgItemResource"
             },
+            "MfgMachineCenterResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "machine_code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "work_center_id": {
+                        "type": "string"
+                    },
+                    "fixed_asset_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "maintenance_schedule_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "manufacturer": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "model": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "serial_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_industria_40_enabled": {
+                        "type": "boolean"
+                    },
+                    "is_transizione_50_enabled": {
+                        "type": "boolean"
+                    },
+                    "telemetry_device_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "has_telemetry_endpoint_key": {
+                        "type": "boolean"
+                    },
+                    "telemetry_status": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "telemetry_last_seen_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "ideal_cycle_time_seconds_per_unit": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "parallel_capacity_units": {
+                        "type": "integer"
+                    },
+                    "efficiency_factor_percent": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "hourly_machine_run_cost_rate_override": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "machine_code",
+                    "name",
+                    "work_center_id",
+                    "fixed_asset_id",
+                    "maintenance_schedule_id",
+                    "manufacturer",
+                    "model",
+                    "serial_number",
+                    "is_industria_40_enabled",
+                    "is_transizione_50_enabled",
+                    "telemetry_device_id",
+                    "has_telemetry_endpoint_key",
+                    "telemetry_status",
+                    "telemetry_last_seen_at",
+                    "ideal_cycle_time_seconds_per_unit",
+                    "parallel_capacity_units",
+                    "efficiency_factor_percent",
+                    "hourly_machine_run_cost_rate_override",
+                    "status",
+                    "created_at"
+                ],
+                "title": "MfgMachineCenterResource"
+            },
             "MfgMaterialMovementResource": {
                 "type": "object",
                 "properties": {
@@ -360355,6 +362464,75 @@
                     "created_at"
                 ],
                 "title": "MfgNonConformanceResource"
+            },
+            "MfgOeeLogResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "work_center_id": {
+                        "type": "string"
+                    },
+                    "machine_center_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "source": {
+                        "type": "string"
+                    },
+                    "period_start": {
+                        "type": "string"
+                    },
+                    "period_end": {
+                        "type": "string"
+                    },
+                    "planned_downtime_minutes": {
+                        "type": "string"
+                    },
+                    "unplanned_downtime_minutes": {
+                        "type": "string"
+                    },
+                    "loss_category": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "good_units": {
+                        "type": "string"
+                    },
+                    "scrap_units": {
+                        "type": "string"
+                    },
+                    "rework_units": {
+                        "type": "string"
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "work_center_id",
+                    "machine_center_id",
+                    "source",
+                    "period_start",
+                    "period_end",
+                    "planned_downtime_minutes",
+                    "unplanned_downtime_minutes",
+                    "loss_category",
+                    "good_units",
+                    "scrap_units",
+                    "rework_units",
+                    "notes"
+                ],
+                "title": "MfgOeeLogResource"
             },
             "MfgOperationConfirmationResource": {
                 "type": "object",
@@ -361213,6 +363391,12 @@
                             "null"
                         ]
                     },
+                    "bom_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "operations_count": {
                         "type": "integer"
                     },
@@ -361268,6 +363452,70 @@
                                         "string",
                                         "null"
                                     ]
+                                },
+                                "operation_type": {
+                                    "type": "string"
+                                },
+                                "queue_time_minutes": {
+                                    "type": "string"
+                                },
+                                "post_operation_wait_minutes": {
+                                    "type": "string"
+                                },
+                                "move_time_minutes": {
+                                    "type": "string"
+                                },
+                                "overlap_transfer_batch_qty": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "required_operators": {
+                                    "type": "integer"
+                                },
+                                "alternate_work_center_ids": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "linked_quality_control_point_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "work_instruction_doc_id": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "bom_components": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "bom_component_id": {
+                                                "type": "string"
+                                            },
+                                            "backflush_on_completion": {
+                                                "type": "boolean"
+                                            },
+                                            "notes": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            }
+                                        },
+                                        "required": [
+                                            "bom_component_id",
+                                            "backflush_on_completion",
+                                            "notes"
+                                        ]
+                                    }
                                 }
                             },
                             "required": [
@@ -361283,7 +363531,17 @@
                                 "is_subcontracted",
                                 "subcontractor_contact_id",
                                 "subcontract_unit_cost",
-                                "quality_plan_id"
+                                "quality_plan_id",
+                                "operation_type",
+                                "queue_time_minutes",
+                                "post_operation_wait_minutes",
+                                "move_time_minutes",
+                                "overlap_transfer_batch_qty",
+                                "required_operators",
+                                "alternate_work_center_ids",
+                                "linked_quality_control_point_id",
+                                "work_instruction_doc_id",
+                                "bom_components"
                             ]
                         }
                     },
@@ -361305,6 +363563,7 @@
                     "effective_from",
                     "effective_to",
                     "notes",
+                    "bom_id",
                     "created_at"
                 ],
                 "title": "MfgRoutingResource"
@@ -361603,6 +363862,81 @@
                     "status": {
                         "type": "string"
                     },
+                    "efficiency_factor_percent": {
+                        "type": "string"
+                    },
+                    "hourly_labor_cost_rate": {
+                        "type": "string"
+                    },
+                    "warehouse_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "cost_center_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "working_calendar_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "parent_work_center_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "parallel_capacity_units": {
+                        "type": "integer"
+                    },
+                    "oee_target_percent": {
+                        "type": "string"
+                    },
+                    "availability_target_percent": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "performance_target_percent": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "quality_target_percent": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "hourly_setup_cost_rate": {
+                        "type": "string"
+                    },
+                    "hourly_machine_run_cost_rate": {
+                        "type": "string"
+                    },
+                    "currency_code": {
+                        "type": "string"
+                    },
+                    "default_queue_wait_minutes": {
+                        "type": "integer"
+                    },
+                    "default_move_time_minutes": {
+                        "type": "integer"
+                    },
+                    "alternate_work_center_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "calendar": {
                         "type": "array",
                         "items": {
@@ -361640,9 +363974,146 @@
                     "hourly_cost_rate",
                     "hourly_overhead_rate",
                     "status",
+                    "efficiency_factor_percent",
+                    "hourly_labor_cost_rate",
+                    "warehouse_id",
+                    "cost_center_id",
+                    "working_calendar_id",
+                    "parent_work_center_id",
+                    "parallel_capacity_units",
+                    "oee_target_percent",
+                    "availability_target_percent",
+                    "performance_target_percent",
+                    "quality_target_percent",
+                    "hourly_setup_cost_rate",
+                    "hourly_machine_run_cost_rate",
+                    "currency_code",
+                    "default_queue_wait_minutes",
+                    "default_move_time_minutes",
+                    "alternate_work_center_ids",
                     "created_at"
                 ],
                 "title": "MfgWorkCenterResource"
+            },
+            "MfgWorkingCalendarResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "country_code": {
+                        "type": "string"
+                    },
+                    "region_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "inherit_holiday_calendar_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_default": {
+                        "type": "boolean"
+                    },
+                    "shifts": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "day_of_week": {
+                                    "type": "integer"
+                                },
+                                "shift_code": {
+                                    "type": "string"
+                                },
+                                "start_time": {
+                                    "type": "string"
+                                },
+                                "end_time": {
+                                    "type": "string"
+                                },
+                                "crosses_midnight": {
+                                    "type": "boolean"
+                                },
+                                "break_minutes": {
+                                    "type": "integer"
+                                },
+                                "net_available_minutes": {
+                                    "type": "integer"
+                                },
+                                "labor_multiplier": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "day_of_week",
+                                "shift_code",
+                                "start_time",
+                                "end_time",
+                                "crosses_midnight",
+                                "break_minutes",
+                                "net_available_minutes",
+                                "labor_multiplier"
+                            ]
+                        }
+                    },
+                    "closures": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "starts_on": {
+                                    "type": "string"
+                                },
+                                "ends_on": {
+                                    "type": "string"
+                                },
+                                "reason": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "starts_on",
+                                "ends_on",
+                                "reason"
+                            ]
+                        }
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "name",
+                    "timezone",
+                    "country_code",
+                    "region_code",
+                    "inherit_holiday_calendar_id",
+                    "is_default",
+                    "created_at"
+                ],
+                "title": "MfgWorkingCalendarResource"
             },
             "MileageClaimRequest": {
                 "type": "object",
@@ -416681,6 +419152,94 @@
                 ],
                 "title": "TaskResource"
             },
+            "TelemetryPingRequest": {
+                "type": "object",
+                "description": "Validation of a machine telemetry ping, optionally with the counters of a period.",
+                "properties": {
+                    "telemetry_endpoint_key": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "status": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "online",
+                            "idle",
+                            "fault",
+                            null
+                        ]
+                    },
+                    "recorded_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "period_start": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "period_end": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "unplanned_downtime_minutes": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 9999999
+                    },
+                    "loss_category": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "equipment_failure",
+                            "setup_adjustment",
+                            "minor_stops",
+                            "reduced_speed",
+                            "process_defects",
+                            "startup_rejects",
+                            null
+                        ]
+                    },
+                    "good_units": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 99999999999
+                    },
+                    "scrap_units": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 99999999999
+                    },
+                    "rework_units": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 99999999999
+                    }
+                },
+                "required": [
+                    "telemetry_endpoint_key"
+                ],
+                "title": "TelemetryPingRequest"
+            },
             "Tenant": {
                 "type": "array",
                 "items": {
@@ -431398,6 +433957,10 @@
             "description": "Operations of the LoyaltyCard module."
         },
         {
+            "name": "MachineCenter",
+            "description": "Operations of the MachineCenter module."
+        },
+        {
             "name": "Maintenance",
             "description": "Operations of the Maintenance module."
         },
@@ -431592,6 +434155,10 @@
         {
             "name": "OcrSource",
             "description": "Operations of the OcrSource module."
+        },
+        {
+            "name": "Oee",
+            "description": "Operations of the Oee module."
         },
         {
             "name": "Offboarding",
@@ -433048,6 +435615,10 @@
         {
             "name": "WorkflowInstance",
             "description": "Operations of the WorkflowInstance module."
+        },
+        {
+            "name": "WorkingCalendar",
+            "description": "Operations of the WorkingCalendar module."
         },
         {
             "name": "WorkingTimeRules",

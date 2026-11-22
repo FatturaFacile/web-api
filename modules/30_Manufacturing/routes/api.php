@@ -8,6 +8,7 @@ use Modules\Manufacturing\Http\Controllers\BomEngineeringController;
 use Modules\Manufacturing\Http\Controllers\EdgeTelemetryController;
 use Modules\Manufacturing\Http\Controllers\EngineeringChangeController;
 use Modules\Manufacturing\Http\Controllers\ItemController;
+use Modules\Manufacturing\Http\Controllers\MachineCenterController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingCockpitController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingKpiController;
 use Modules\Manufacturing\Http\Controllers\ManufacturingSettingsController;
@@ -15,6 +16,7 @@ use Modules\Manufacturing\Http\Controllers\MesFeedbackController;
 use Modules\Manufacturing\Http\Controllers\MesOperatorBoardController;
 use Modules\Manufacturing\Http\Controllers\MesSyncController;
 use Modules\Manufacturing\Http\Controllers\MrpController;
+use Modules\Manufacturing\Http\Controllers\OeeController;
 use Modules\Manufacturing\Http\Controllers\ProductionExecutionController;
 use Modules\Manufacturing\Http\Controllers\ProductionOrderController;
 use Modules\Manufacturing\Http\Controllers\QualityController;
@@ -22,6 +24,7 @@ use Modules\Manufacturing\Http\Controllers\RoutingController;
 use Modules\Manufacturing\Http\Controllers\ShopFloorController;
 use Modules\Manufacturing\Http\Controllers\SubcontractController;
 use Modules\Manufacturing\Http\Controllers\WorkCenterController;
+use Modules\Manufacturing\Http\Controllers\WorkingCalendarController;
 use Modules\Manufacturing\Http\Middleware\VerifyMesSignature;
 
 /*
@@ -58,6 +61,29 @@ Route::prefix('api/v1/manufacturing')->middleware(['api', 'auth:sanctum', 'tenan
     Route::put('/work-centers/{id}/calendar', [WorkCenterController::class, 'setCalendar'])->whereUuid('id')->name('mfg.work_centers.calendar');
     Route::post('/work-centers/{id}/calendar-exceptions', [WorkCenterController::class, 'storeException'])->whereUuid('id')->name('mfg.work_centers.exceptions.store');
     Route::get('/work-centers/{id}/capacity', [WorkCenterController::class, 'capacity'])->whereUuid('id')->name('mfg.work_centers.capacity');
+    Route::get('/work-centers/{id}/hierarchy', [WorkCenterController::class, 'hierarchy'])->whereUuid('id')->name('mfg.work_centers.hierarchy');
+    Route::delete('/work-centers/{id}', [WorkCenterController::class, 'destroy'])->whereUuid('id')->name('mfg.work_centers.destroy');
+
+    // Working calendars
+    Route::get('/working-calendars', [WorkingCalendarController::class, 'index'])->name('mfg.working_calendars.index');
+    Route::post('/working-calendars', [WorkingCalendarController::class, 'store'])->name('mfg.working_calendars.store');
+    Route::get('/working-calendars/{id}', [WorkingCalendarController::class, 'show'])->whereUuid('id')->name('mfg.working_calendars.show');
+    Route::put('/working-calendars/{id}', [WorkingCalendarController::class, 'update'])->whereUuid('id')->name('mfg.working_calendars.update');
+    Route::delete('/working-calendars/{id}', [WorkingCalendarController::class, 'destroy'])->whereUuid('id')->name('mfg.working_calendars.destroy');
+    Route::get('/working-calendars/{id}/preview-days', [WorkingCalendarController::class, 'previewDays'])->whereUuid('id')->name('mfg.working_calendars.preview_days');
+
+    // Machines
+    Route::get('/machines', [MachineCenterController::class, 'index'])->name('mfg.machines.index');
+    Route::post('/machines', [MachineCenterController::class, 'store'])->name('mfg.machines.store');
+    Route::get('/machines/{id}', [MachineCenterController::class, 'show'])->whereUuid('id')->name('mfg.machines.show');
+    Route::put('/machines/{id}', [MachineCenterController::class, 'update'])->whereUuid('id')->name('mfg.machines.update');
+    Route::delete('/machines/{id}', [MachineCenterController::class, 'destroy'])->whereUuid('id')->name('mfg.machines.destroy');
+    Route::post('/machines/{id}/telemetry-ping', [MachineCenterController::class, 'telemetryPing'])->whereUuid('id')->name('mfg.machines.telemetry_ping');
+
+    // OEE
+    Route::get('/oee/summary', [OeeController::class, 'summary'])->name('mfg.oee.summary');
+    Route::get('/oee/timeseries', [OeeController::class, 'timeseries'])->name('mfg.oee.timeseries');
+    Route::post('/oee/logs', [OeeController::class, 'storeLog'])->name('mfg.oee.logs.store');
 
     // BOMs
     Route::get('/boms', [BomController::class, 'index'])->name('mfg.boms.index');
@@ -83,6 +109,10 @@ Route::prefix('api/v1/manufacturing')->middleware(['api', 'auth:sanctum', 'tenan
     Route::get('/routings', [RoutingController::class, 'index'])->name('mfg.routings.index');
     Route::post('/routings', [RoutingController::class, 'store'])->name('mfg.routings.store');
     Route::get('/routings/{id}', [RoutingController::class, 'show'])->whereUuid('id')->name('mfg.routings.show');
+    Route::put('/routings/{id}', [RoutingController::class, 'update'])->whereUuid('id')->name('mfg.routings.update');
+    Route::delete('/routings/{id}', [RoutingController::class, 'destroy'])->whereUuid('id')->name('mfg.routings.destroy');
+    Route::post('/routings/{id}/clone-revision', [RoutingController::class, 'cloneRevision'])->whereUuid('id')->name('mfg.routings.clone_revision');
+    Route::post('/routings/{id}/calculate-lead-time-and-cost', [RoutingController::class, 'calculate'])->whereUuid('id')->name('mfg.routings.calculate');
 
     // Engineering changes
     Route::get('/engineering-changes', [EngineeringChangeController::class, 'index'])->name('mfg.ecos.index');
