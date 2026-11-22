@@ -6,9 +6,15 @@ namespace Modules\Inventory\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * @property string|null $journal_entry_id
+ * @property Carbon|null $gl_posted_at
+ * @property Carbon|null $approved_at
+ */
 final class InventoryAdjustment extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
     protected $table = 'inventory_adjustments';
@@ -19,6 +25,7 @@ final class InventoryAdjustment extends BaseEnterpriseModel implements LockableB
             'net_valuation_change' => 'decimal:2',
             'is_locked' => 'boolean',
             'approved_at' => 'datetime',
+            'gl_posted_at' => 'datetime',
         ];
     }
 

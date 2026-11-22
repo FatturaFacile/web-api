@@ -8397,6 +8397,7 @@ CREATE TABLE "cycle_count_plans"(
   "deleted_at" datetime,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "warehouse_zone_id" varchar,
   foreign key("warehouse_id") references "warehouses"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -15773,6 +15774,8 @@ CREATE TABLE "inventory_adjustments"(
   "deleted_at" datetime,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "journal_entry_id" varchar,
+  "gl_posted_at" datetime,
   foreign key("warehouse_id") references "warehouses"("id") on delete restrict on update no action,
   primary key("id")
 );
@@ -15978,6 +15981,12 @@ CREATE TABLE "inventory_count_lines"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "unit_cost" numeric,
+  "system_value" numeric,
+  "variance_percentage" numeric,
+  "recount_required" tinyint(1) not null default '0',
+  "recount_reason" varchar,
+  "count_notes" text,
   foreign key("lot_id") references "stock_lots"("id") on delete set null on update no action,
   foreign key("stock_item_id") references "stock_items"("id") on delete restrict on update no action,
   foreign key("warehouse_bin_id") references "warehouse_bins"("id") on delete restrict on update no action,
@@ -16014,6 +16023,12 @@ CREATE TABLE "inventory_count_sessions"(
   "inventory_adjustment_id" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "is_blind" tinyint(1) not null default '1',
+  "freeze_scope" varchar not null default 'warehouse',
+  "snapshot_at" datetime,
+  "assigned_to" varchar,
+  "approval_level_required" integer,
+  "approval_mode" varchar,
   foreign key("warehouse_id") references "warehouses"("id") on delete restrict on update no action,
   primary key("id")
 );
@@ -25411,6 +25426,8 @@ CREATE TABLE "stock_items"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "abc_class_locked" tinyint(1) not null default '0',
+  "abc_override_reason" varchar,
   foreign key("product_id") references "products"("id") on delete set null on update no action,
   foreign key("category_id") references "stock_item_categories"("id") on delete restrict on update no action,
   primary key("id")
@@ -44671,6 +44688,529 @@ CREATE UNIQUE INDEX "uq_proj_evm_alert_state" on "project_evm_alert_states"(
 CREATE INDEX "project_evm_alert_states_tenant_id_index" on "project_evm_alert_states"(
   "tenant_id"
 );
+CREATE TABLE "gelato_technical_ingredients"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" text not null,
+  "category" varchar not null,
+  "pod" numeric not null default '0',
+  "pac" numeric not null default '0',
+  "milk_fat_percent" numeric not null default '0',
+  "other_fat_percent" numeric not null default '0',
+  "slng_percent" numeric not null default '0',
+  "total_solids_percent" numeric not null default '0',
+  "water_percent" numeric not null default '0',
+  "sugar_percent" numeric not null default '0',
+  "solute_class" varchar not null default 'none',
+  "fiber_percent" numeric not null default '0',
+  "protein_percent" numeric not null default '0',
+  "kcal_per_100g" numeric not null default '0',
+  "cost_per_kg" numeric not null default '0',
+  "brix" numeric,
+  "cocoa_butter_percent" numeric,
+  "cocoa_mass_percent" numeric,
+  "allergens" text not null,
+  "is_vegan" tinyint(1) not null default '1',
+  "is_defrosted" tinyint(1) not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gelato_technical_ingredients_tenant_id_code_index" on "gelato_technical_ingredients"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "gelato_technical_ingredients_tenant_id_category_index" on "gelato_technical_ingredients"(
+  "tenant_id",
+  "category"
+);
+CREATE TABLE "gelato_balanced_recipes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" text not null,
+  "category" varchar not null,
+  "kind" varchar not null,
+  "batch_weight_grams" numeric not null default '1000',
+  "serving_portion_grams" numeric not null default '80',
+  "tub_weight_grams" numeric not null default '2500',
+  "is_defrosted" tinyint(1) not null default '0',
+  "calculated_pod_percent" numeric not null default '0',
+  "calculated_pac_index" numeric not null default '0',
+  "milk_fat_percent" numeric not null default '0',
+  "other_fat_percent" numeric not null default '0',
+  "slng_percent" numeric not null default '0',
+  "slng_max_safe_threshold" numeric not null default '0',
+  "total_solids_percent" numeric not null default '0',
+  "ideal_serving_temp_celsius" numeric not null default '0',
+  "overrun_percent" numeric not null default '0',
+  "food_cost_per_kg" numeric not null default '0',
+  "metrics" text,
+  "allergens" text,
+  "dietary" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gelato_balanced_recipes_tenant_id_code_index" on "gelato_balanced_recipes"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "gelato_balanced_recipes_tenant_id_kind_index" on "gelato_balanced_recipes"(
+  "tenant_id",
+  "kind"
+);
+CREATE TABLE "gelato_recipe_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "recipe_id" varchar not null,
+  "ingredient_id" varchar,
+  "sub_recipe_id" varchar,
+  "grams" numeric not null,
+  "position" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("recipe_id") references "gelato_balanced_recipes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gelato_recipe_lines_tenant_id_recipe_id_index" on "gelato_recipe_lines"(
+  "tenant_id",
+  "recipe_id"
+);
+CREATE INDEX "gelato_recipe_lines_ingredient_id_index" on "gelato_recipe_lines"(
+  "ingredient_id"
+);
+CREATE INDEX "gelato_recipe_lines_sub_recipe_id_index" on "gelato_recipe_lines"(
+  "sub_recipe_id"
+);
+CREATE TABLE "gelato_pasteurization_churn_lots"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lot_code" varchar not null,
+  "kind" varchar not null,
+  "method" varchar not null default 'direct',
+  "recipe_id" varchar,
+  "parent_lot_id" varchar,
+  "status" varchar not null default 'in_progress',
+  "operator_id" varchar,
+  "equipment" varchar,
+  "mix_weight_grams" numeric not null default '0',
+  "mix_volume_liters" numeric not null default '0',
+  "gelato_volume_liters" numeric,
+  "overrun_percent" numeric,
+  "yield_grams" numeric,
+  "yield_tubs" integer,
+  "aged_since" datetime,
+  "aging_minutes" integer,
+  "haccp_readings" text,
+  "haccp_passed" tinyint(1),
+  "haccp_findings" text,
+  "started_at" datetime,
+  "completed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gelato_pasteurization_churn_lots_tenant_id_lot_code_index" on "gelato_pasteurization_churn_lots"(
+  "tenant_id",
+  "lot_code"
+);
+CREATE INDEX "gelato_pasteurization_churn_lots_tenant_id_kind_status_index" on "gelato_pasteurization_churn_lots"(
+  "tenant_id",
+  "kind",
+  "status"
+);
+CREATE INDEX "gelato_pasteurization_churn_lots_parent_lot_id_index" on "gelato_pasteurization_churn_lots"(
+  "parent_lot_id"
+);
+CREATE TABLE "gelato_lot_material_consumptions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lot_id" varchar not null,
+  "ingredient_id" varchar,
+  "source_lot_id" varchar,
+  "raw_lot_code" varchar,
+  "grams" numeric not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("lot_id") references "gelato_pasteurization_churn_lots"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gelato_lot_material_consumptions_tenant_id_lot_id_index" on "gelato_lot_material_consumptions"(
+  "tenant_id",
+  "lot_id"
+);
+CREATE INDEX "gelato_lot_material_consumptions_source_lot_id_index" on "gelato_lot_material_consumptions"(
+  "source_lot_id"
+);
+CREATE TABLE "gelato_chocolate_ganache_specs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "recipe_id" varchar not null,
+  "chocolate_type" varchar not null default 'dark',
+  "cocoa_butter_percent" numeric not null default '0',
+  "cocoa_mass_percent" numeric not null default '0',
+  "water_percent" numeric not null default '0',
+  "water_activity" numeric not null default '0',
+  "shelf_life_days" integer not null default '0',
+  "risk_band" varchar not null default 'low',
+  "tempering_curve" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gelato_chocolate_ganache_specs_tenant_id_recipe_id_index" on "gelato_chocolate_ganache_specs"(
+  "tenant_id",
+  "recipe_id"
+);
+CREATE TABLE "gelato_showcase_active_flavors"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "location_id" varchar,
+  "location_key" varchar not null default 'main',
+  "slot_number" integer not null,
+  "recipe_id" varchar not null,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gelato_showcase_active_flavors_tenant_id_location_key_slot_number_index" on "gelato_showcase_active_flavors"(
+  "tenant_id",
+  "location_key",
+  "slot_number"
+);
+CREATE TABLE "gelato_showcase_ingredient_books"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "location_key" varchar not null default 'main',
+  "jurisdiction" varchar not null default 'IT',
+  "version" integer not null,
+  "payload" text not null,
+  "published_at" datetime not null,
+  "published_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gelato_showcase_ingredient_books_tenant_id_location_key_version_index" on "gelato_showcase_ingredient_books"(
+  "tenant_id",
+  "location_key",
+  "version"
+);
+CREATE TABLE "gelato_assorted_box_and_cake_orders"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "order_number" varchar not null,
+  "kind" varchar not null,
+  "customer_name" varchar not null,
+  "customer_phone" varchar,
+  "components" text not null,
+  "total_price" numeric not null default '0',
+  "component_cost" numeric not null default '0',
+  "status" varchar not null default 'pre_order',
+  "pickup_at" datetime,
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gelato_assorted_box_and_cake_orders_tenant_id_status_pickup_at_index" on "gelato_assorted_box_and_cake_orders"(
+  "tenant_id",
+  "status",
+  "pickup_at"
+);
+CREATE TABLE "gelato_scale_readings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lot_id" varchar,
+  "ingredient_id" varchar,
+  "grams" numeric not null,
+  "source" varchar not null default 'manual',
+  "device" varchar,
+  "read_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gelato_scale_readings_tenant_id_lot_id_index" on "gelato_scale_readings"(
+  "tenant_id",
+  "lot_id"
+);
+CREATE TABLE "inventory_count_policies"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "abc_a_share" numeric not null default '80.00',
+  "abc_b_share" numeric not null default '95.00',
+  "abc_period_days" integer not null default '365',
+  "interval_days_a" integer not null default '30',
+  "interval_days_b" integer not null default '90',
+  "interval_days_c" integer not null default '180',
+  "new_item_class" varchar not null default 'C',
+  "blind_by_default" tinyint(1) not null default '1',
+  "reveal_first_count_on_recount" tinyint(1) not null default '0',
+  "recount_threshold_percent" numeric,
+  "recount_threshold_value" numeric,
+  "max_recount_rounds" integer not null default '2',
+  "approval_mode" varchar not null default 'workflow',
+  "auto_approve_within_tolerance" tinyint(1) not null default '1',
+  "level1_threshold_percent" numeric,
+  "level1_threshold_value" numeric,
+  "level2_threshold_percent" numeric,
+  "level2_threshold_value" numeric,
+  "enforce_segregation_of_duties" tinyint(1) not null default '1',
+  "inventory_account_code" varchar not null default '1200',
+  "gain_account_code" varchar not null default '4910',
+  "loss_account_code" varchar not null default '5100',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "inventory_count_policies_tenant_id_unique" on "inventory_count_policies"(
+  "tenant_id"
+);
+CREATE TABLE "inventory_abc_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "warehouse_id" varchar,
+  "period_days" integer not null,
+  "a_share" numeric not null,
+  "b_share" numeric not null,
+  "period_start" datetime not null,
+  "period_end" datetime not null,
+  "total_consumption_value" numeric not null default '0',
+  "item_count" integer not null default '0',
+  "class_a_count" integer not null default '0',
+  "class_b_count" integer not null default '0',
+  "class_c_count" integer not null default '0',
+  "applied" tinyint(1) not null default '1',
+  "run_by" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE INDEX "inventory_abc_runs_tenant_id_index" on "inventory_abc_runs"(
+  "tenant_id"
+);
+CREATE INDEX "inventory_abc_runs_warehouse_id_index" on "inventory_abc_runs"(
+  "warehouse_id"
+);
+CREATE TABLE "inventory_abc_run_items"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "inventory_abc_run_id" varchar not null,
+  "stock_item_id" varchar not null,
+  "rank" integer not null,
+  "consumption_value" numeric not null default '0',
+  "cumulative_share" numeric not null default '0',
+  "abc_class" varchar not null,
+  "previous_class" varchar,
+  "is_manual_override" tinyint(1) not null default '0',
+  "is_new_item" tinyint(1) not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("inventory_abc_run_id") references "inventory_abc_runs"("id") on delete cascade,
+  foreign key("stock_item_id") references "stock_items"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_abc_run_items_class" on "inventory_abc_run_items"(
+  "inventory_abc_run_id",
+  "abc_class"
+);
+CREATE INDEX "inventory_abc_run_items_tenant_id_index" on "inventory_abc_run_items"(
+  "tenant_id"
+);
+CREATE TABLE "inventory_abc_overrides"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "stock_item_id" varchar not null,
+  "previous_class" varchar,
+  "new_class" varchar,
+  "reason" varchar not null,
+  "set_by" varchar not null,
+  "set_at" datetime not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("stock_item_id") references "stock_items"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "inventory_abc_overrides_tenant_id_index" on "inventory_abc_overrides"(
+  "tenant_id"
+);
+CREATE INDEX "inventory_count_sessions_assigned_to_index" on "inventory_count_sessions"(
+  "assigned_to"
+);
+CREATE TABLE "inventory_count_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "inventory_count_session_id" varchar not null,
+  "inventory_count_line_id" varchar not null,
+  "round" integer not null default '0',
+  "counted_quantity" numeric not null,
+  "counted_by" varchar not null,
+  "counted_at" datetime not null,
+  "client_entry_id" varchar,
+  "device_id" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("inventory_count_session_id") references "inventory_count_sessions"("id") on delete cascade,
+  foreign key("inventory_count_line_id") references "inventory_count_lines"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_count_entry_client_id" on "inventory_count_entries"(
+  "tenant_id",
+  "client_entry_id"
+);
+CREATE INDEX "inventory_count_entries_tenant_id_index" on "inventory_count_entries"(
+  "tenant_id"
+);
+CREATE TABLE "inventory_count_approvals"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "inventory_count_session_id" varchar not null,
+  "inventory_adjustment_id" varchar not null,
+  "level" integer not null,
+  "required_role" varchar not null,
+  "status" varchar not null default 'pending',
+  "decided_by" varchar,
+  "decided_at" datetime,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("inventory_count_session_id") references "inventory_count_sessions"("id") on delete cascade,
+  foreign key("inventory_adjustment_id") references "inventory_adjustments"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_count_approval_level" on "inventory_count_approvals"(
+  "inventory_adjustment_id",
+  "level"
+);
+CREATE INDEX "inventory_count_approvals_tenant_id_index" on "inventory_count_approvals"(
+  "tenant_id"
+);
+CREATE TABLE "inventory_count_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "inventory_count_session_id" varchar not null,
+  "inventory_count_line_id" varchar,
+  "event" varchar not null,
+  "user_id" varchar,
+  "payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("inventory_count_session_id") references "inventory_count_sessions"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_count_events_session" on "inventory_count_events"(
+  "inventory_count_session_id",
+  "event"
+);
+CREATE INDEX "inventory_count_events_tenant_id_index" on "inventory_count_events"(
+  "tenant_id"
+);
+CREATE INDEX "inventory_adjustments_journal_entry_id_index" on "inventory_adjustments"(
+  "journal_entry_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -45097,3 +45637,5 @@ INSERT INTO migrations VALUES(422,'2027_12_20_000200_create_year_end_closing_sta
 INSERT INTO migrations VALUES(423,'2027_12_20_000200_add_audit_columns_to_accounting_templates',4);
 INSERT INTO migrations VALUES(424,'2027_12_20_000300_add_audit_columns_to_gl_templates_and_closing_stages',5);
 INSERT INTO migrations VALUES(425,'2027_12_20_000100_create_project_evm_profitability_tables',6);
+INSERT INTO migrations VALUES(426,'2027_12_21_000100_create_artisanal_gelato_tables',7);
+INSERT INTO migrations VALUES(427,'2027_12_21_000100_extend_inventory_counting_abc_blind_multilevel',7);

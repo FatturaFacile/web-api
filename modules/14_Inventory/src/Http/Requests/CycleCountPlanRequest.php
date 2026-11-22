@@ -29,6 +29,7 @@ final class CycleCountPlanRequest extends FormRequest
 
         return [
             'warehouse_id' => [$presence, 'uuid', $this->tenantExists('warehouses')],
+            'warehouse_zone_id' => ['sometimes', 'nullable', 'uuid', $this->tenantExists('warehouse_zones')],
             'name' => [$presence, 'string', 'max:150'],
             'abc_class' => ['sometimes', 'nullable', 'string', 'in:A,B,C'],
             'interval_days' => [$presence, 'integer', 'min:1', 'max:3660'],

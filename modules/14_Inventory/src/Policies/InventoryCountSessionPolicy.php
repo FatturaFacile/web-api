@@ -51,6 +51,36 @@ final class InventoryCountSessionPolicy
             && InventoryManagers::includes($user);
     }
 
+    /**
+     * One approval level of the differences (multi-level mode): level 1 is the warehouse manager, level 2 the finance
+     * approver. Segregation of duties is checked by the service.
+     */
+    public function approveLevel(User $user, InventoryCountSession $session, int $level): bool
+    {
+        return (string) $user->tenant_id === (string) $session->tenant_id
+            && $session->status === 'pending_approval'
+            && ($level === 1 ? InventoryManagers::includes($user) : InventoryManagers::isFinanceApprover($user));
+    }
+
+    /**
+     * Seeing the system quantities and variances of a count: a manager or the finance approver. Counters never do.
+     */
+    public function viewVariance(User $user, InventoryCountSession $session): bool
+    {
+        return (string) $user->tenant_id === (string) $session->tenant_id
+            && (InventoryManagers::includes($user) || InventoryManagers::isFinanceApprover($user));
+    }
+
+    /**
+     * Freezing, releasing the freeze and assigning counters: manager decisions on an open session.
+     */
+    public function administer(User $user, InventoryCountSession $session): bool
+    {
+        return (string) $user->tenant_id === (string) $session->tenant_id
+            && in_array($session->status, ['in_progress', 'pending_approval'], true)
+            && InventoryManagers::includes($user);
+    }
+
     public function cancel(User $user, InventoryCountSession $session): bool
     {
         return (string) $user->tenant_id === (string) $session->tenant_id

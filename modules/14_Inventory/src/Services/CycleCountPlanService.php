@@ -10,9 +10,11 @@ use Illuminate\Support\Facades\DB;
 use Modules\Inventory\DTOs\InventoryCountSessionDTO;
 use Modules\Inventory\Exceptions\StockRuleViolation;
 use Modules\Inventory\Models\CycleCountPlan;
+use Modules\Inventory\Models\InventoryCountPolicy;
 use Modules\Inventory\Models\InventoryCountSession;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockQuant;
+use Modules\Inventory\Models\Warehouse;
 
 /**
  * Runs cycle count plans: each run opens a count session for the items of the plan's ABC class that have stock in its
@@ -65,6 +67,7 @@ final readonly class CycleCountPlanService
                 scheduledDate: $today->toDateString(),
                 userId: $userId,
                 notes: "Cycle count plan {$locked->name}".($locked->abc_class !== null ? " (class {$locked->abc_class})" : ''),
+                zoneId: $locked->warehouse_zone_id !== null ? (string) $locked->warehouse_zone_id : null,
                 freezesStock: (bool) $locked->freezes_stock,
                 stockItemIds: $itemIds,
                 planId: (string) $locked->id,
@@ -73,6 +76,58 @@ final readonly class CycleCountPlanService
             $locked->update(['last_run_at' => Carbon::now(), 'next_run_on' => $today->addDays((int) $locked->interval_days)->toDateString()]);
 
             return $session;
+        });
+    }
+
+    /**
+     * Creates or updates one plan per ABC class for a warehouse (optionally one zone), with the cadence of the tenant's
+     * InventoryCountPolicy: class A monthly, B quarterly, C semi-annual by default (any interval in days is allowed).
+     * A plan that already exists keeps its next run date unless its interval changed; new plans are due at once.
+     *
+     * @return list<CycleCountPlan> the plans of the classes A, B, C
+     */
+    public function generateAbcPlans(string $warehouseId, string $userId, bool $freezesStock = false, ?string $zoneId = null): array
+    {
+        return DB::transaction(function () use ($warehouseId, $userId, $freezesStock, $zoneId): array {
+            $warehouse = Warehouse::query()->findOrFail($warehouseId);
+            $policy = InventoryCountPolicy::forTenant((string) $warehouse->tenant_id);
+            $today = $this->clock->today();
+            $plans = [];
+
+            foreach (['A', 'B', 'C'] as $class) {
+                $interval = $policy->intervalDaysFor($class);
+                $existing = CycleCountPlan::query()->where('warehouse_id', $warehouseId)->where('abc_class', $class)->where('warehouse_zone_id', $zoneId)->first();
+
+                if ($existing === null) {
+                    $plans[] = CycleCountPlan::create([
+                        'tenant_id' => $warehouse->tenant_id,
+                        'warehouse_id' => $warehouseId,
+                        'warehouse_zone_id' => $zoneId,
+                        'name' => "ABC class {$class} cycle count",
+                        'abc_class' => $class,
+                        'interval_days' => $interval,
+                        'freezes_stock' => $freezesStock,
+                        'is_active' => true,
+                        'next_run_on' => $today->toDateString(),
+                        'created_by' => $userId,
+                    ]);
+
+                    continue;
+                }
+
+                $changed = (int) $existing->interval_days !== $interval;
+                $existing->update([
+                    'interval_days' => $interval,
+                    'freezes_stock' => $freezesStock,
+                    'is_active' => true,
+                    'next_run_on' => $changed && $existing->last_run_at !== null
+                        ? Carbon::parse($existing->last_run_at)->addDays($interval)->toDateString()
+                        : ($existing->next_run_on?->toDateString() ?? $today->toDateString()),
+                ]);
+                $plans[] = $existing;
+            }
+
+            return $plans;
         });
     }
 
