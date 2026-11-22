@@ -208,6 +208,24 @@ final class FieldServiceManagementFrontendTranslations
             'FSM.REPORT.INVOICED' => ['Fattura creata', 'Invoice created', 'Rechnung erstellt', 'Facture créée'],
             'FSM.REPORT.INVOICE_FAILED' => ['Impossibile creare la fattura.', 'The invoice could not be created.', 'Die Rechnung konnte nicht erstellt werden.', 'La facture n’a pas pu être créée.'],
 
+            // Sign and close the service report
+            'FSM.REPORT.SIGN_OPEN' => ['Firma e chiudi rapporto', 'Sign and close report', 'Bericht unterschreiben und abschliessen', 'Signer et clôturer le rapport'],
+            'FSM.REPORT.SIGN_TITLE' => ['Firma e chiusura del rapporto di intervento', 'Sign and close the service report', 'Servicebericht unterschreiben und abschliessen', 'Signer et clôturer le rapport d\'intervention'],
+            'FSM.REPORT.SIGN_CONFIRM' => ['Firma e chiudi', 'Sign and close', 'Unterschreiben und abschliessen', 'Signer et clôturer'],
+            'FSM.REPORT.SIGN_DONE' => ['Rapporto firmato e intervento chiuso', 'Report signed and work order closed', 'Bericht unterschrieben und Auftrag abgeschlossen', 'Rapport signé et intervention clôturée'],
+            'FSM.REPORT.SIGN_FAILED' => ['Impossibile firmare il rapporto.', 'The report could not be signed.', 'Der Bericht konnte nicht unterschrieben werden.', 'Impossible de signer le rapport.'],
+            'FSM.REPORT.SIGN_TRAVEL_HOURS' => ['Ore di trasferta', 'Travel hours', 'Anfahrtsstunden', 'Heures de déplacement'],
+            'FSM.REPORT.SIGN_TRAVEL_KM' => ['Km di trasferta', 'Travel km', 'Anfahrt (km)', 'Km de déplacement'],
+            'FSM.REPORT.SIGN_METER_HOURS' => ['Lettura contatore (ore)', 'Meter reading (hours)', 'Zählerstand (Stunden)', 'Relevé du compteur (heures)'],
+            'FSM.REPORT.SIGN_METER_CYCLES' => ['Lettura contatore (cicli)', 'Meter reading (cycles)', 'Zählerstand (Zyklen)', 'Relevé du compteur (cycles)'],
+            'FSM.REPORT.SIGN_CHECK_ITEM' => ['Voce della checklist', 'Checklist item', 'Checklistenpunkt', 'Point de contrôle'],
+            'FSM.REPORT.SIGN_CHECK_RESULT' => ['Esito', 'Result', 'Ergebnis', 'Résultat'],
+            'FSM.REPORT.SIGN_CHECK_NOTES' => ['Note', 'Notes', 'Notizen', 'Remarques'],
+            'FSM.REPORT.SIGN_CHECK_ADD' => ['Aggiungi voce', 'Add item', 'Punkt hinzufügen', 'Ajouter un point'],
+            'FSM.REPORT.SIGN_CHECK_REMOVE' => ['Rimuovi', 'Remove', 'Entfernen', 'Supprimer'],
+            'FSM.REPORT.SIGN_GPS' => ['Rileva posizione', 'Capture location', 'Standort erfassen', 'Relever la position'],
+            'FSM.REPORT.SIGN_GPS_FAILED' => ['Posizione non disponibile.', 'Location unavailable.', 'Standort nicht verfügbar.', 'Position indisponible.'],
+
             // Equipment service history
             'FSM.EQUIP.TITLE' => ['Storico di assistenza delle apparecchiature', 'Equipment service history', 'Serviceverlauf der Geräte', 'Historique de service des équipements'],
             'FSM.EQUIP.SUBTITLE' => ['Rapporti firmati, ricambi sostituiti e contatori di ogni apparecchiatura', 'Signed reports, replaced parts and meters of each piece of equipment', 'Unterschriebene Berichte, ersetzte Teile und Zähler jedes Geräts', 'Rapports signés, pièces remplacées et compteurs de chaque équipement'],
