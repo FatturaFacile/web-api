@@ -24,6 +24,8 @@ use Modules\Projects\Models\Project;
 use Modules\Projects\Models\ProjectAuditEntry;
 use Modules\Projects\Models\ProjectEvmSnapshot;
 use Modules\Projects\Models\ProjectFinancialSummary;
+use Modules\Projects\Models\ProjectWbsBaseline;
+use Modules\Projects\Queries\GetProjectWbsGanttQuery;
 use Modules\Projects\Services\ProjectClosingService;
 use Modules\Projects\Services\ProjectLifecycleService;
 use Modules\Projects\Services\ProjectScheduleService;
@@ -114,6 +116,9 @@ final class ProjectController extends Controller
             companyId: $tenantId,
             revenueRecognitionMethod: $data['revenue_recognition_method'] ?? null,
             currency: strtoupper($data['currency'] ?? 'EUR'),
+            cupCode: $data['cup_code'] ?? null,
+            cigCode: $data['cig_code'] ?? null,
+            sdiReferenceBlock: $data['sdi_reference_block'] ?? 'contract',
         ), $tenantId);
 
         return response()->json(['message' => 'Project created', 'data' => new ProjectResource($project)], 201);
@@ -331,17 +336,22 @@ final class ProjectController extends Controller
     }
 
     /**
-     * Gantt data: tasks with planned, baseline and actual dates, dependencies and critical path.
+     * Gantt data: the task schedule (planned, baseline and actual dates, critical path) and the multilevel WBS (`nodes`,
+     * `dependencies`, `cpm`), with the variance against a WBS baseline when `baselineId` is given.
      */
     #[OA\Get(path: '/api/v1/projects/{id}/gantt', operationId: 'projectsGantt', summary: 'Project Gantt data', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Projects'],
-        parameters: [new OA\Parameter(ref: '#/components/parameters/ProjectsId')],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/ProjectsId'), new OA\Parameter(name: 'baselineId', in: 'query', required: false, description: 'Compare the WBS with this baseline', schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
             new OA\Response(response: 200, description: 'Gantt', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsGantt')])),
             new OA\Response(response: 404, ref: '#/components/responses/ProjectsNotFound'),
         ])]
-    public function gantt(string $id): JsonResponse
+    public function gantt(string $id, Request $request, GetProjectWbsGanttQuery $wbsGantt): JsonResponse
     {
-        return response()->json(['data' => $this->schedule->gantt(Project::findOrFail($id))]);
+        $project = Project::findOrFail($id);
+        $baselineId = $request->query('baselineId', $request->query('baseline_id'));
+        $baseline = $baselineId !== null && $baselineId !== '' ? ProjectWbsBaseline::query()->where('project_id', $project->id)->findOrFail((string) $baselineId) : null;
+
+        return response()->json(['data' => [...$this->schedule->gantt($project), ...$wbsGantt->handle($project, $baseline)]]);
     }
 
     /**

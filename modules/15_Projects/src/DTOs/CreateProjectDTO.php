@@ -33,5 +33,8 @@ final readonly class CreateProjectDTO
         public ?string $companyId = null,
         public ?string $revenueRecognitionMethod = null,
         public string $currency = 'EUR',
+        public ?string $cupCode = null,
+        public ?string $cigCode = null,
+        public string $sdiReferenceBlock = 'contract',
     ) {}
 }

@@ -41,6 +41,7 @@ final readonly class ProjectLifecycleService
     public function __construct(
         private EventDispatcher $dispatcher,
         private ProjectAuditTrail $audit,
+        private ProjectReferenceCodePropagator $referenceCodes,
     ) {}
 
     /**
@@ -119,6 +120,11 @@ final readonly class ProjectLifecycleService
 
             $before = $locked->only(array_keys($attributes));
             $locked->update($attributes);
+
+            if (array_key_exists('cup_code', $attributes) || array_key_exists('cig_code', $attributes)) {
+                $this->referenceCodes->propagateToPurchaseOrders($locked);
+            }
+
             $this->audit->record($locked, $actorUserId, 'project_updated', 'Project master data updated', $before, $locked->only(array_keys($attributes)));
 
             return $locked;

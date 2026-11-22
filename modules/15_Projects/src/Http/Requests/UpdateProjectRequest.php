@@ -26,6 +26,9 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'project_manager_user_id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'revenue_recognition_method', type: 'string', enum: Project::RecognitionMethods, nullable: true, description: 'Only while no cost is booked.'),
         new OA\Property(property: 'billing_method', type: 'string'),
+        new OA\Property(property: 'cup_code', type: 'string', maxLength: 15, nullable: true, description: 'CUP (Codice Unico di Progetto), passed on to purchase orders and e-invoices.'),
+        new OA\Property(property: 'cig_code', type: 'string', maxLength: 10, nullable: true, description: 'CIG (Codice Identificativo Gara), passed on to purchase orders and e-invoices.'),
+        new OA\Property(property: 'sdi_reference_block', type: 'string', enum: ['contract', 'convention'], description: 'FatturaPA block that carries CUP and CIG: DatiContratto or DatiConvenzione.'),
     ]
 )]
 final class UpdateProjectRequest extends FormRequest
@@ -52,6 +55,9 @@ final class UpdateProjectRequest extends FormRequest
             'project_manager_user_id' => ['sometimes', 'uuid', $this->tenantMember()],
             'revenue_recognition_method' => ['sometimes', 'nullable', 'string', Rule::in(Project::RecognitionMethods)],
             'billing_method' => ['sometimes', 'string', Rule::in(StoreProjectRequest::BillingMethods)],
+            'cup_code' => ['sometimes', 'nullable', 'string', 'regex:/^[A-Z0-9]{15}$/'],
+            'cig_code' => ['sometimes', 'nullable', 'string', 'regex:/^[A-Z0-9]{10}$/'],
+            'sdi_reference_block' => ['sometimes', 'nullable', 'string', Rule::in(['contract', 'convention'])],
         ];
     }
 }

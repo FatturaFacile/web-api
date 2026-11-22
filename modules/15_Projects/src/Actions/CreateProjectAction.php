@@ -57,6 +57,9 @@ final readonly class CreateProjectAction
                 'contract_value' => Money::amount($dto->contractValue),
                 'progress_percentage' => '0.00',
                 'health_status' => 'green',
+                'cup_code' => $dto->cupCode,
+                'cig_code' => $dto->cigCode,
+                'sdi_reference_block' => $dto->sdiReferenceBlock,
                 'created_by' => $dto->userId,
             ]);
 
