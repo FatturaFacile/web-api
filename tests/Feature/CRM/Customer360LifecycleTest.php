@@ -209,3 +209,18 @@ test('an account without a contact returns an empty 360 instead of failing', fun
         ->assertJsonPath('data.kpis.contract_coverage', 'none')
         ->assertJsonPath('data.kpis.lifetime_value', '0.00');
 });
+
+test('a completed intervention and a resolved ticket refresh the customer health profile', function (): void {
+    $ticket = lifecycleTicket(['response_breached_at' => now()->subDay()]);
+    $this->postJson("/api/v1/esm/tickets/{$ticket->id}/escalate-to-field-service")->assertCreated();
+    $workOrder = WorkOrder::query()->where('ticket_id', $ticket->id)->firstOrFail();
+    $workOrder->update(['status' => 'in_progress']);
+
+    expect(CustomerHealthProfile::query()->where('account_id', $this->account->id)->exists())->toBeFalse();
+
+    $this->postJson("/api/v1/fsm/work-orders/{$workOrder->id}/complete-and-bill", ['tax_rate' => '8.1', 'signed_by_customer_name' => 'Mario Rossi'])->assertOk();
+
+    $profile = CustomerHealthProfile::query()->where('account_id', $this->account->id)->first();
+    expect($profile)->not->toBeNull()
+        ->and($profile->evaluation_metrics['sla_breaches_90d'])->toBe(1);
+});

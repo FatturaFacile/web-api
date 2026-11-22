@@ -15,6 +15,7 @@ use Modules\CRM\Models\Account;
 use Modules\CRM\Models\Activity;
 use Modules\CRM\Models\CustomerHealthProfile;
 use Modules\CRM\Models\Opportunity;
+use Modules\ServiceManagement\Models\Ticket;
 
 final readonly class CustomerHealthService implements CustomerHealthServiceInterface
 {
@@ -71,6 +72,18 @@ final readonly class CustomerHealthService implements CustomerHealthServiceInter
             } elseif ($overdueReceivables > 0.0) {
                 $riskScore += 20.0;
             }
+            // Service quality: SLA breaches of the last 90 days weigh on the risk
+            $slaBreaches = $lockedAccount->contact_id === null ? 0 : Ticket::query()
+                ->where('tenant_id', $tenantId)
+                ->where('customer_id', $lockedAccount->contact_id)
+                ->where('created_at', '>=', now()->subDays(90))
+                ->where(fn ($query) => $query->whereNotNull('response_breached_at')->orWhereNotNull('resolution_breached_at'))
+                ->count();
+            if ($slaBreaches >= 3) {
+                $riskScore += 20.0;
+            } elseif ($slaBreaches > 0) {
+                $riskScore += 10.0;
+            }
             $riskScore = min(100.0, $riskScore);
 
             // 5. Composite Health Index (0-100)
@@ -110,6 +123,7 @@ final readonly class CustomerHealthService implements CustomerHealthServiceInter
                         'evaluated_at' => now()->toIso8601String(),
                         'completed_activities' => $completedActivities,
                         'days_since_interaction' => $daysSinceInteraction,
+                        'sla_breaches_90d' => $slaBreaches,
                     ],
                 ]
             );

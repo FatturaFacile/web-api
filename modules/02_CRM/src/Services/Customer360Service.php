@@ -50,7 +50,7 @@ final class Customer360Service
             'kpis' => array_merge(
                 $this->commercialKpis($tenantId, $account, $customerId),
                 $this->supportKpis($tenantId, $customerId),
-                $this->contractKpis($tenantId, $customerId),
+                $this->contractKpis($tenantId, $account, $customerId),
                 $this->fieldKpis($tenantId, $customerId),
             ),
         ];
@@ -145,13 +145,13 @@ final class Customer360Service
     /**
      * @return array<string, mixed>
      */
-    private function contractKpis(string $tenantId, ?string $customerId): array
+    private function contractKpis(string $tenantId, Account $account, ?string $customerId): array
     {
         if ($customerId === null) {
             return ['active_contracts' => 0, 'contract_coverage' => 'none', 'contract_hours_remaining' => '0.00', 'contracts_expiring_soon' => 0];
         }
 
-        $contracts = ServiceContract::query()->where('tenant_id', $tenantId)->where('customer_id', $customerId)->where('status', 'active')->get();
+        $contracts = ServiceContract::query()->where('tenant_id', $tenantId)->whereIn('customer_id', [$customerId, (string) $account->id])->where('status', 'active')->get();
         $remaining = $contracts->reduce(fn (string $carry, ServiceContract $contract): string => bcadd($carry, bcsub((string) $contract->included_hours, (string) $contract->consumed_hours, 2), 2), '0.00');
         $soon = now()->addDays(60);
 
@@ -217,7 +217,7 @@ final class Customer360Service
             'work_order' => $customerId === null ? $none : WorkOrder::query()->where('tenant_id', $tenantId)->where('customer_id', $customerId)
                 ->latest('created_at')->limit(self::SOURCE_LIMIT)->get()
                 ->map(fn (WorkOrder $row): array => $this->event($type, (string) $row->id, $row->actual_end ?? $row->created_at, (string) $row->title, $row->status, null, $row->work_order_number)),
-            'contract' => $customerId === null ? $none : ServiceContract::query()->where('tenant_id', $tenantId)->where('customer_id', $customerId)
+            'contract' => $customerId === null ? $none : ServiceContract::query()->where('tenant_id', $tenantId)->whereIn('customer_id', [$customerId, (string) $account->id])
                 ->latest('start_date')->limit(self::SOURCE_LIMIT)->get()
                 ->map(fn (ServiceContract $row): array => $this->event($type, (string) $row->id, $row->start_date, (string) $row->contract_number, $row->status, null, $row->contract_number)),
             default => $none,

@@ -50,9 +50,12 @@ use Modules\CRM\Events\ProjectOpportunityCreatedEvent;
 use Modules\CRM\Events\QuoteRequestedEvent;
 use Modules\CRM\Listeners\DispatchOutboxOnCRMEventListener;
 use Modules\CRM\Listeners\EnrollAutomationOnCrmEventListener;
+use Modules\CRM\Listeners\RefreshCustomerHealthListener;
 use Modules\CRM\Listeners\RecalculateLeadScoreListener;
 use Modules\CRM\Listeners\SalesEventListener;
 use Modules\CRM\Listeners\WorkflowApprovalCRMListener;
+use Modules\ServiceManagement\Events\TicketResolvedEvent;
+use Modules\ServiceManagement\Events\WorkOrderCompletedEvent;
 use Modules\CRM\Models\Account;
 use Modules\CRM\Models\AccountTerritory;
 use Modules\CRM\Models\Activity;
@@ -209,6 +212,10 @@ final class CRMServiceProvider extends ServiceProvider
         Event::listen(LeadCreatedEvent::class, [EnrollAutomationOnCrmEventListener::class, 'handleLeadCreated']);
         Event::listen(LeadQualifiedEvent::class, [EnrollAutomationOnCrmEventListener::class, 'handleLeadQualified']);
         Event::listen(ContactCreatedEvent::class, [EnrollAutomationOnCrmEventListener::class, 'handleContactCreated']);
+
+        // Post-sales outcomes keep the customer health score current (customer 360, issue #193).
+        Event::listen(TicketResolvedEvent::class, [RefreshCustomerHealthListener::class, 'handleTicketResolved']);
+        Event::listen(WorkOrderCompletedEvent::class, [RefreshCustomerHealthListener::class, 'handleWorkOrderCompleted']);
 
         // Engagement-based lead scoring follows logged and completed activities.
         Event::listen(ActivityLoggedEvent::class, RecalculateLeadScoreListener::class);
