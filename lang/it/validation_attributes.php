@@ -3313,4 +3313,7 @@ return [
     'allow_mixed_skus' => 'consenti SKU misti',
     'allow_mixed_lots' => 'consenti lotti misti',
     'block_reason' => 'motivo del blocco',
+    'cursor' => 'cursore',
+    'updated_since' => 'aggiornato dal',
+    'access_date' => 'data di accesso',
 ];

@@ -3313,4 +3313,7 @@ return [
     'allow_mixed_skus' => 'gemischte SKUs erlauben',
     'allow_mixed_lots' => 'gemischte Chargen erlauben',
     'block_reason' => 'Sperrgrund',
+    'cursor' => 'Cursor',
+    'updated_since' => 'aktualisiert seit',
+    'access_date' => 'Zugriffsdatum',
 ];
