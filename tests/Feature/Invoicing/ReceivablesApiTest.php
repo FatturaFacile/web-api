@@ -257,7 +257,7 @@ test('the risk score grows with the overdue share and the days past due', functi
     $late = $this->getJson(AR.'/customers/'.$this->customer->id.'/risk')->assertOk()->json('data');
 
     expect($calm['rating'])->toBe('low')->and($late['score'])->toBeGreaterThan($calm['score'])
-        ->and(collect($late['factors'])->firstWhere('key', 'max_days_past_due')['points'])->toBe(25.0);
+        ->and(collect($late['factors'])->firstWhere('key', 'max_days_past_due')['points'])->toEqual(25.0);
 });
 
 test('the provision applies the default rates by bucket and the configured ones win', function (): void {

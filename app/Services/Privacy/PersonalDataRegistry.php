@@ -68,6 +68,7 @@ use Modules\Invoicing\Models\SalesRepresentative;
 use Modules\Payroll\Models\PayrollEmployeeChild;
 use Modules\Payroll\Models\PayrollEmployeeProfile;
 use Modules\Payroll\Models\Payslip;
+use Modules\Procurement\Models\PurchaseOrderDropship;
 use Modules\Procurement\Models\Supplier;
 use Modules\Procurement\Models\SupplierContact;
 use Modules\Procurement\Models\SupplierQuote;
@@ -270,6 +271,7 @@ final class PersonalDataRegistry
             new PersonalDataEntry('sales_orders', [SalesOrder::class, \Modules\Invoicing\Models\SalesOrder::class], 'Sales orders', 'contact', ['billing_address', 'shipping_address'], $fiscal, $commercialNote, ['contact' => 'contact_id']),
             new PersonalDataEntry('delivery_notes', [DeliveryNote::class, SalesDeliveryNote::class], 'Delivery notes', 'contact', ['shipping_address', 'sender_address', 'carrier_license_plate'], $fiscal, $commercialNote, ['contact' => 'contact_id']),
             new PersonalDataEntry('purchase_orders', [PurchaseOrder::class, \Modules\Procurement\Models\PurchaseOrder::class], 'Purchase orders', 'contact', ['shipping_address'], $fiscal, $commercialNote),
+            new PersonalDataEntry('purchase_order_dropships', [PurchaseOrderDropship::class], 'Dropship recipients of purchase orders', 'contact', ['recipient_name', 'recipient_street', 'recipient_house_number', 'recipient_postal_code', 'recipient_city', 'recipient_phone', 'recipient_email'], $fiscal, $commercialNote),
             new PersonalDataEntry('service_reports', [ServiceReport::class], 'Service reports', 'contact', ['site_address'], $fiscal, $commercialNote, ['contact' => 'contact_id']),
             new PersonalDataEntry('service_report_signatures', [ServiceReportSignature::class], 'Signatures of service reports', 'identity', ['signer_email', 'ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('sp_onboardings', [SupplierOnboarding::class], 'Supplier onboarding', 'identity', ['invitation_email'], $fiscal, $commercialNote),

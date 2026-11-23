@@ -39769,34 +39769,6 @@ CREATE UNIQUE INDEX "esm_digital_service_reports_tenant_id_report_number_unique"
 CREATE UNIQUE INDEX "esm_digital_service_reports_work_order_id_unique" on "esm_digital_service_reports"(
   "work_order_id"
 );
-CREATE TABLE "esm_work_order_photos"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "work_order_id" varchar not null,
-  "client_uuid" varchar not null,
-  "path" varchar not null,
-  "stage" varchar,
-  "caption" varchar,
-  "captured_at" datetime,
-  "uploaded_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
-  foreign key("work_order_id") references "esm_work_orders"("id") on delete cascade on update no action,
-  primary key("id")
-);
-
-CREATE INDEX "esm_work_order_photos_work_order_id_index" on "esm_work_order_photos"(
-  "work_order_id"
-);
-CREATE UNIQUE INDEX "esm_work_order_photos_tenant_client_uuid_unique" on "esm_work_order_photos"(
-  "tenant_id",
-  "client_uuid"
-);
 CREATE TABLE "vat_settlement_periods"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -40501,6 +40473,12 @@ CREATE TABLE "audit_logs"(
   "current_hash" varchar not null,
   "hmac_signature" varchar not null,
   "occurred_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete restrict,
   primary key("id")
 );
@@ -40536,6 +40514,12 @@ CREATE TABLE "audit_worm_batches"(
   "manifest_path" varchar not null,
   "retention_until" datetime not null,
   "sealed_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete restrict,
   primary key("id")
 );
@@ -40549,6 +40533,12 @@ CREATE TABLE "audit_worm_batch_entries"(
   "tenant_id" varchar,
   "batch_id" varchar not null,
   "audit_log_id" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete restrict,
   foreign key("batch_id") references "audit_worm_batches"("id") on delete restrict,
   foreign key("audit_log_id") references "audit_logs"("id") on delete restrict
@@ -40894,6 +40884,11 @@ CREATE TABLE "preservation_audit_logs"(
   "ip_address" varchar,
   "user_agent" varchar,
   "created_at" datetime not null,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -40930,6 +40925,10 @@ CREATE TABLE "offline_audit_entries"(
   "received_at" datetime not null,
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -41837,6 +41836,11 @@ CREATE TABLE "ai_audit_trails"(
   "previous_hash" varchar,
   "hash" varchar not null,
   "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -42655,6 +42659,12 @@ CREATE TABLE "core_byok_key_access_audit"(
   "previous_entry_hash" varchar not null,
   "entry_hash" varchar not null,
   "occurred_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete restrict,
   primary key("id")
 );
@@ -42711,6 +42721,12 @@ CREATE TABLE "core_cross_border_blocked_attempts"(
   "decision_status" varchar not null,
   "reason" varchar not null,
   "occurred_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete restrict,
   primary key("id")
 );
@@ -42741,6 +42757,10 @@ CREATE TABLE "core_sovereignty_attestations"(
   "valid_until" datetime not null,
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete restrict,
   primary key("id")
 );
@@ -43750,6 +43770,11 @@ CREATE TABLE "purchase_requisition_approval_logs"(
   "metadata" text,
   "acted_at" datetime not null,
   "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete cascade,
   primary key("id")
 );
@@ -43904,6 +43929,13 @@ CREATE TABLE "mfg_mes_sync_changes"(
   "entity_id" varchar not null,
   "operation" varchar not null,
   "changed_at" datetime not null
+  ,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar
 );
 CREATE INDEX "mfg_mes_sync_changes_tenant_id_resource_seq_index" on "mfg_mes_sync_changes"(
   "tenant_id",
@@ -43921,6 +43953,10 @@ CREATE TABLE "mfg_mes_sync_floors"(
   "pruned_through_seq" integer not null default '0',
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -43932,6 +43968,12 @@ CREATE TABLE "mfg_mes_inbox"(
   "tenant_id" varchar,
   "event_type" varchar not null,
   "processed_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("event_id")
 );
 
@@ -43979,6 +44021,12 @@ CREATE TABLE "mfg_mes_oee_snapshot_revisions"(
   "revision" integer not null,
   "metrics" text not null,
   "received_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
@@ -44673,6 +44721,9 @@ CREATE TABLE "project_cost_ledger_entries"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("project_id") references "projects"("id") on delete cascade,
   primary key("id")
 );
@@ -44725,6 +44776,9 @@ CREATE TABLE "project_financial_snapshots"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("project_id") references "projects"("id") on delete cascade,
   primary key("id")
 );
@@ -44754,6 +44808,9 @@ CREATE TABLE "project_etc_overrides"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("project_id") references "projects"("id") on delete cascade,
   primary key("id")
 );
@@ -44783,6 +44840,9 @@ CREATE TABLE "project_evm_alert_states"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("project_id") references "projects"("id") on delete cascade,
   primary key("id")
 );
@@ -45327,6 +45387,9 @@ CREATE TABLE "esm_escalation_chains"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -45350,6 +45413,9 @@ CREATE TABLE "esm_escalation_steps"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("chain_id") references "esm_escalation_chains"("id") on delete cascade,
   primary key("id")
@@ -45376,6 +45442,9 @@ CREATE TABLE "esm_ticket_escalation_logs"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("ticket_id") references "esm_tickets"("id") on delete cascade,
   primary key("id")
@@ -45822,6 +45891,9 @@ CREATE TABLE "rebate_contributions"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("agreement_id") references "rebate_agreements"("id") on delete cascade,
   primary key("id")
@@ -45853,6 +45925,8 @@ CREATE TABLE "rebate_accrual_runs"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("agreement_id") references "rebate_agreements"("id") on delete cascade,
   primary key("id")
@@ -45878,6 +45952,9 @@ CREATE TABLE "rebate_accrual_lines"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("accrual_run_id") references "rebate_accrual_runs"("id") on delete cascade,
   primary key("id")
@@ -45902,6 +45979,9 @@ CREATE TABLE "rebate_settlement_lines"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("settlement_id") references "rebate_settlements"("id") on delete cascade,
   primary key("id")
@@ -45938,6 +46018,9 @@ CREATE TABLE "purchase_order_confirmations"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade,
   primary key("id")
@@ -45968,6 +46051,9 @@ CREATE TABLE "purchase_order_confirmation_lines"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("purchase_order_confirmation_id") references "purchase_order_confirmations"("id") on delete cascade,
   foreign key("purchase_order_line_id") references "purchase_order_lines"("id") on delete cascade,
@@ -45992,6 +46078,9 @@ CREATE TABLE "purchase_order_dispatches"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade,
   primary key("id")
@@ -46016,6 +46105,9 @@ CREATE TABLE "purchase_order_reminders"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade,
   primary key("id")
@@ -46053,6 +46145,9 @@ CREATE TABLE "purchase_order_dropships"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade,
   primary key("id")
@@ -46079,6 +46174,9 @@ CREATE TABLE "purchase_order_virtual_stock_movements"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("purchase_order_dropship_id") references "purchase_order_dropships"("id") on delete cascade,
   foreign key("purchase_order_line_id") references "purchase_order_lines"("id") on delete cascade,
@@ -46088,283 +46186,6 @@ CREATE TABLE "purchase_order_virtual_stock_movements"(
 CREATE INDEX "po_virtual_moves_tenant_line_idx" on "purchase_order_virtual_stock_movements"(
   "tenant_id",
   "purchase_order_line_id"
-);
-CREATE TABLE "project_wbs_nodes"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "company_id" varchar,
-  "project_id" varchar not null,
-  "parent_node_id" varchar,
-  "wbs_code" varchar not null default '',
-  "title" varchar not null,
-  "node_type" varchar not null default 'work_package',
-  "status" varchar not null default 'todo',
-  "required_role" varchar,
-  "planned_hours" numeric not null default '0',
-  "actual_hours" numeric not null default '0',
-  "planned_cost" numeric not null default '0',
-  "actual_cost" numeric not null default '0',
-  "planned_revenue" numeric not null default '0',
-  "start_date" date,
-  "end_date" date,
-  "percent_complete" numeric not null default '0',
-  "sort_order" integer not null default '0',
-  "early_start" date,
-  "early_finish" date,
-  "late_start" date,
-  "late_finish" date,
-  "total_float_days" integer,
-  "free_float_days" integer,
-  "is_critical" tinyint(1) not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("project_id") references "projects"("id") on delete cascade,
-  foreign key("parent_node_id") references "project_wbs_nodes"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "idx_wbs_nodes_tree" on "project_wbs_nodes"(
-  "project_id",
-  "parent_node_id",
-  "sort_order"
-);
-CREATE INDEX "idx_wbs_nodes_status" on "project_wbs_nodes"(
-  "project_id",
-  "status"
-);
-CREATE INDEX "project_wbs_nodes_tenant_id_index" on "project_wbs_nodes"(
-  "tenant_id"
-);
-CREATE INDEX "project_wbs_nodes_company_id_index" on "project_wbs_nodes"(
-  "company_id"
-);
-CREATE TABLE "project_wbs_dependencies"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "company_id" varchar,
-  "project_id" varchar not null,
-  "predecessor_node_id" varchar not null,
-  "successor_node_id" varchar not null,
-  "dependency_type" varchar not null default 'FS',
-  "lag_days" integer not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("project_id") references "projects"("id") on delete cascade,
-  foreign key("predecessor_node_id") references "project_wbs_nodes"("id") on delete cascade,
-  foreign key("successor_node_id") references "project_wbs_nodes"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "uq_wbs_dependency_pair" on "project_wbs_dependencies"(
-  "predecessor_node_id",
-  "successor_node_id"
-);
-CREATE INDEX "project_wbs_dependencies_tenant_id_index" on "project_wbs_dependencies"(
-  "tenant_id"
-);
-CREATE INDEX "project_wbs_dependencies_company_id_index" on "project_wbs_dependencies"(
-  "company_id"
-);
-CREATE TABLE "project_wbs_baselines"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "company_id" varchar,
-  "project_id" varchar not null,
-  "baseline_number" integer not null,
-  "name" varchar not null,
-  "captured_at" datetime not null,
-  "captured_by" varchar,
-  "snapshot_json" text not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("project_id") references "projects"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "uq_wbs_baseline_number" on "project_wbs_baselines"(
-  "project_id",
-  "baseline_number"
-);
-CREATE INDEX "project_wbs_baselines_tenant_id_index" on "project_wbs_baselines"(
-  "tenant_id"
-);
-CREATE INDEX "project_wbs_baselines_company_id_index" on "project_wbs_baselines"(
-  "company_id"
-);
-CREATE TABLE "receivable_items"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "customer_id" varchar not null,
-  "invoice_id" varchar,
-  "sequence" integer not null default '1',
-  "document_type" varchar not null default 'invoice',
-  "document_number" varchar,
-  "currency" varchar not null default 'EUR',
-  "original_amount" numeric not null,
-  "open_amount" numeric not null,
-  "issue_date" date not null,
-  "due_date" date not null,
-  "value_date" date,
-  "status" varchar not null default 'open',
-  "dispute_reason" varchar,
-  "disputed_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("customer_id") references "contacts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "receivable_items_source_unique" on "receivable_items"(
-  "tenant_id",
-  "invoice_id",
-  "sequence"
-);
-CREATE INDEX "receivable_items_tenant_id_customer_id_status_index" on "receivable_items"(
-  "tenant_id",
-  "customer_id",
-  "status"
-);
-CREATE INDEX "receivable_items_tenant_id_status_due_date_index" on "receivable_items"(
-  "tenant_id",
-  "status",
-  "due_date"
-);
-CREATE INDEX "receivable_items_invoice_id_index" on "receivable_items"(
-  "invoice_id"
-);
-CREATE TABLE "receivable_allocations"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "receivable_item_id" varchar not null,
-  "source_type" varchar not null,
-  "origin" varchar not null default 'manual',
-  "source_id" varchar,
-  "source_reference" varchar,
-  "amount" numeric not null,
-  "value_date" date not null,
-  "notes" text,
-  "allocated_by" varchar,
-  "reversed_at" datetime,
-  "reversed_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("receivable_item_id") references "receivable_items"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "receivable_allocations_tenant_id_receivable_item_id_index" on "receivable_allocations"(
-  "tenant_id",
-  "receivable_item_id"
-);
-CREATE INDEX "receivable_allocations_tenant_id_source_type_source_id_index" on "receivable_allocations"(
-  "tenant_id",
-  "source_type",
-  "source_id"
-);
-CREATE INDEX "receivable_allocations_source_id_index" on "receivable_allocations"(
-  "source_id"
-);
-CREATE TABLE "customer_credit_limits"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "customer_id" varchar not null,
-  "currency" varchar not null default 'EUR',
-  "granted_limit" numeric not null default '0',
-  "insured_limit" numeric not null default '0',
-  "insurer_name" varchar,
-  "policy_number" varchar,
-  "coverage_percentage" numeric not null default '0',
-  "max_overdue_days" integer,
-  "overdue_tolerance_amount" numeric not null default '0',
-  "reaction_policy" varchar not null default 'warning',
-  "valid_from" date not null,
-  "valid_to" date,
-  "is_active" tinyint(1) not null default '1',
-  "notes" text,
-  "created_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("customer_id") references "contacts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "customer_credit_limits_tenant_id_customer_id_valid_from_index" on "customer_credit_limits"(
-  "tenant_id",
-  "customer_id",
-  "valid_from"
-);
-CREATE TABLE "customer_credit_overrides"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "customer_id" varchar not null,
-  "scope" varchar not null default 'all',
-  "reason" text not null,
-  "authorized_by" varchar not null,
-  "expires_at" datetime,
-  "revoked_at" datetime,
-  "revoked_by" varchar,
-  "revoke_reason" text,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("customer_id") references "contacts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "customer_credit_overrides_tenant_id_customer_id_expires_at_index" on "customer_credit_overrides"(
-  "tenant_id",
-  "customer_id",
-  "expires_at"
-);
-CREATE TABLE "receivable_provision_rates"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "bucket_key" varchar not null,
-  "rate_percent" numeric not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "receivable_provision_rates_tenant_id_bucket_key_unique" on "receivable_provision_rates"(
-  "tenant_id",
-  "bucket_key"
-);
-CREATE TABLE "customer_statement_dispatches"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "customer_id" varchar not null,
-  "period_from" date not null,
-  "period_to" date not null,
-  "recipient" varchar not null,
-  "locale" varchar not null default 'en',
-  "status" varchar not null default 'queued',
-  "error" text,
-  "requested_by" varchar,
-  "sent_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("customer_id") references "contacts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "customer_statement_dispatches_tenant_id_customer_id_index" on "customer_statement_dispatches"(
-  "tenant_id",
-  "customer_id"
 );
 CREATE TABLE "project_billing_contracts"(
   "id" varchar not null,
@@ -46399,6 +46220,8 @@ CREATE TABLE "project_billing_contracts"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("project_id") references "projects"("id") on delete cascade,
   primary key("id")
 );
@@ -46432,6 +46255,8 @@ CREATE TABLE "project_retainer_ledger_entries"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("billing_contract_id") references "project_billing_contracts"("id") on delete cascade,
   primary key("id")
 );
@@ -46476,6 +46301,8 @@ CREATE TABLE "project_sal_certificates"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("billing_contract_id") references "project_billing_contracts"("id") on delete cascade,
   primary key("id")
 );
@@ -46507,6 +46334,8 @@ CREATE TABLE "project_retention_ledger_entries"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("billing_contract_id") references "project_billing_contracts"("id") on delete cascade,
   primary key("id")
 );
@@ -46540,6 +46369,9 @@ CREATE TABLE "project_wip_valuation_runs"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("project_id") references "projects"("id") on delete cascade,
   primary key("id")
 );
@@ -46565,6 +46397,9 @@ CREATE TABLE "rp_skills"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -46584,6 +46419,9 @@ CREATE TABLE "rp_employee_skill_profiles"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("employee_id") references "hr_employees"("id") on delete cascade,
   foreign key("skill_id") references "rp_skills"("id") on delete cascade,
@@ -46617,6 +46455,8 @@ CREATE TABLE "rp_resource_allocations"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("employee_id") references "hr_employees"("id") on delete cascade,
   primary key("id")
@@ -46656,6 +46496,9 @@ CREATE TABLE "rp_resource_capacity_snapshots"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("employee_id") references "hr_employees"("id") on delete cascade,
   primary key("id")
@@ -46681,6 +46524,9 @@ CREATE TABLE "rp_utilization_targets"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -46704,6 +46550,9 @@ CREATE TABLE "rp_local_holidays"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -46712,6 +46561,337 @@ CREATE INDEX "rp_local_holidays_tenant_id_country_region_code_index" on "rp_loca
   "tenant_id",
   "country",
   "region_code"
+);
+CREATE TABLE "customer_credit_limits"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "currency" varchar not null default('EUR'),
+  "granted_limit" numeric not null default('0'),
+  "insured_limit" numeric not null default('0'),
+  "insurer_name" varchar,
+  "policy_number" varchar,
+  "coverage_percentage" numeric not null default('0'),
+  "max_overdue_days" integer,
+  "overdue_tolerance_amount" numeric not null default('0'),
+  "reaction_policy" varchar not null default('warning'),
+  "valid_from" date not null,
+  "valid_to" date,
+  "is_active" tinyint(1) not null default('1'),
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("customer_id") references "contacts"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "customer_credit_limits_tenant_id_customer_id_valid_from_index" on "customer_credit_limits"(
+  "tenant_id",
+  "customer_id",
+  "valid_from"
+);
+CREATE TABLE "customer_credit_overrides"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "scope" varchar not null default('all'),
+  "reason" text not null,
+  "authorized_by" varchar not null,
+  "expires_at" datetime,
+  "revoked_at" datetime,
+  "revoked_by" varchar,
+  "revoke_reason" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("customer_id") references "contacts"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "customer_credit_overrides_tenant_id_customer_id_expires_at_index" on "customer_credit_overrides"(
+  "tenant_id",
+  "customer_id",
+  "expires_at"
+);
+CREATE TABLE "customer_statement_dispatches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "period_from" date not null,
+  "period_to" date not null,
+  "recipient" varchar not null,
+  "locale" varchar not null default('en'),
+  "status" varchar not null default('queued'),
+  "error" text,
+  "requested_by" varchar,
+  "sent_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("customer_id") references "contacts"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "customer_statement_dispatches_tenant_id_customer_id_index" on "customer_statement_dispatches"(
+  "tenant_id",
+  "customer_id"
+);
+CREATE TABLE "esm_work_order_photos"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "work_order_id" varchar not null,
+  "client_uuid" varchar not null,
+  "path" varchar not null,
+  "stage" varchar,
+  "caption" varchar,
+  "captured_at" datetime,
+  "uploaded_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("work_order_id") references "esm_work_orders"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "esm_work_order_photos_tenant_client_uuid_unique" on "esm_work_order_photos"(
+  "tenant_id",
+  "client_uuid"
+);
+CREATE INDEX "esm_work_order_photos_work_order_id_index" on "esm_work_order_photos"(
+  "work_order_id"
+);
+CREATE TABLE "project_wbs_baselines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "baseline_number" integer not null,
+  "name" varchar not null,
+  "captured_at" datetime not null,
+  "captured_by" varchar,
+  "snapshot_json" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("project_id") references "projects"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "project_wbs_baselines_company_id_index" on "project_wbs_baselines"(
+  "company_id"
+);
+CREATE INDEX "project_wbs_baselines_tenant_id_index" on "project_wbs_baselines"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "uq_wbs_baseline_number" on "project_wbs_baselines"(
+  "project_id",
+  "baseline_number"
+);
+CREATE TABLE "project_wbs_dependencies"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "predecessor_node_id" varchar not null,
+  "successor_node_id" varchar not null,
+  "dependency_type" varchar not null default('FS'),
+  "lag_days" integer not null default('0'),
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("successor_node_id") references "project_wbs_nodes"("id") on delete cascade on update no action,
+  foreign key("predecessor_node_id") references "project_wbs_nodes"("id") on delete cascade on update no action,
+  foreign key("project_id") references "projects"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "project_wbs_dependencies_company_id_index" on "project_wbs_dependencies"(
+  "company_id"
+);
+CREATE INDEX "project_wbs_dependencies_tenant_id_index" on "project_wbs_dependencies"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "uq_wbs_dependency_pair" on "project_wbs_dependencies"(
+  "predecessor_node_id",
+  "successor_node_id"
+);
+CREATE TABLE "project_wbs_nodes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "parent_node_id" varchar,
+  "wbs_code" varchar not null default(''),
+  "title" varchar not null,
+  "node_type" varchar not null default('work_package'),
+  "status" varchar not null default('todo'),
+  "required_role" varchar,
+  "planned_hours" numeric not null default('0'),
+  "actual_hours" numeric not null default('0'),
+  "planned_cost" numeric not null default('0'),
+  "actual_cost" numeric not null default('0'),
+  "planned_revenue" numeric not null default('0'),
+  "start_date" date,
+  "end_date" date,
+  "percent_complete" numeric not null default('0'),
+  "sort_order" integer not null default('0'),
+  "early_start" date,
+  "early_finish" date,
+  "late_start" date,
+  "late_finish" date,
+  "total_float_days" integer,
+  "free_float_days" integer,
+  "is_critical" tinyint(1) not null default('0'),
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("parent_node_id") references "project_wbs_nodes"("id") on delete cascade on update no action,
+  foreign key("project_id") references "projects"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "idx_wbs_nodes_status" on "project_wbs_nodes"(
+  "project_id",
+  "status"
+);
+CREATE INDEX "idx_wbs_nodes_tree" on "project_wbs_nodes"(
+  "project_id",
+  "parent_node_id",
+  "sort_order"
+);
+CREATE INDEX "project_wbs_nodes_company_id_index" on "project_wbs_nodes"(
+  "company_id"
+);
+CREATE INDEX "project_wbs_nodes_tenant_id_index" on "project_wbs_nodes"(
+  "tenant_id"
+);
+CREATE TABLE "receivable_allocations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "receivable_item_id" varchar not null,
+  "source_type" varchar not null,
+  "origin" varchar not null default('manual'),
+  "source_id" varchar,
+  "source_reference" varchar,
+  "amount" numeric not null,
+  "value_date" date not null,
+  "notes" text,
+  "allocated_by" varchar,
+  "reversed_at" datetime,
+  "reversed_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("receivable_item_id") references "receivable_items"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "receivable_allocations_source_id_index" on "receivable_allocations"(
+  "source_id"
+);
+CREATE INDEX "receivable_allocations_tenant_id_receivable_item_id_index" on "receivable_allocations"(
+  "tenant_id",
+  "receivable_item_id"
+);
+CREATE INDEX "receivable_allocations_tenant_id_source_type_source_id_index" on "receivable_allocations"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE TABLE "receivable_items"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "invoice_id" varchar,
+  "sequence" integer not null default('1'),
+  "document_type" varchar not null default('invoice'),
+  "document_number" varchar,
+  "currency" varchar not null default('EUR'),
+  "original_amount" numeric not null,
+  "open_amount" numeric not null,
+  "issue_date" date not null,
+  "due_date" date not null,
+  "value_date" date,
+  "status" varchar not null default('open'),
+  "dispute_reason" varchar,
+  "disputed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("customer_id") references "contacts"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "receivable_items_invoice_id_index" on "receivable_items"(
+  "invoice_id"
+);
+CREATE UNIQUE INDEX "receivable_items_source_unique" on "receivable_items"(
+  "tenant_id",
+  "invoice_id",
+  "sequence"
+);
+CREATE INDEX "receivable_items_tenant_id_customer_id_status_index" on "receivable_items"(
+  "tenant_id",
+  "customer_id",
+  "status"
+);
+CREATE INDEX "receivable_items_tenant_id_status_due_date_index" on "receivable_items"(
+  "tenant_id",
+  "status",
+  "due_date"
+);
+CREATE TABLE "receivable_provision_rates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "bucket_key" varchar not null,
+  "rate_percent" numeric not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "receivable_provision_rates_tenant_id_bucket_key_unique" on "receivable_provision_rates"(
+  "tenant_id",
+  "bucket_key"
 );
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
@@ -47153,3 +47333,4 @@ INSERT INTO migrations VALUES(436,'2027_12_22_000200_create_project_wbs_portfoli
 INSERT INTO migrations VALUES(437,'2027_12_23_000100_create_accounts_receivable_credit_tables',11);
 INSERT INTO migrations VALUES(438,'2027_12_23_000100_create_project_billing_contract_tables',11);
 INSERT INTO migrations VALUES(439,'2027_12_23_000100_create_resource_planning_tables',11);
+INSERT INTO migrations VALUES(440,'2027_12_24_000100_complete_audit_and_tenant_columns_on_recent_tables',12);
