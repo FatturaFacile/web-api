@@ -59,8 +59,8 @@ final class ApportionmentService
                 throw new InvalidArgumentException("Period {$draft->period_key} is already consolidated for this schedule: reverse it first.");
             }
             $schedule = $this->schedule($tenantId, (string) $draft->apportionment_schedule_id);
-            $draft->delete();
-            $run = $this->storeSnapshot($tenantId, $schedule, (string) $draft->period_key, 'CONSOLIDATED', $userId);
+            // The preview row is promoted in place so the run id the client holds stays valid.
+            $run = $this->storeSnapshot($tenantId, $schedule, (string) $draft->period_key, 'CONSOLIDATED', $userId, $draft);
             if ($run->allocations()->count() === 0) {
                 throw new InvalidArgumentException('Nothing to apportion for this period.');
             }
@@ -177,16 +177,24 @@ final class ApportionmentService
     /**
      * @param  'PREVIEW'|'CONSOLIDATED'  $status
      */
-    private function storeSnapshot(string $tenantId, ApportionmentSchedule $schedule, string $periodKey, string $status, ?string $userId): ApportionmentRun
+    private function storeSnapshot(string $tenantId, ApportionmentSchedule $schedule, string $periodKey, string $status, ?string $userId, ?ApportionmentRun $draft = null): ApportionmentRun
     {
         [$start, $end] = $this->bounds($periodKey);
         $result = $this->compute($tenantId, $schedule, $periodKey);
-        $run = ApportionmentRun::create([
+        $attributes = [
             'tenant_id' => $tenantId, 'apportionment_schedule_id' => $schedule->id, 'period_key' => $periodKey,
             'period_start' => $start->toDateString(), 'period_end' => $end->toDateString(), 'status' => $status,
             'total_pool' => Money::fromCents($result['total_pool_cents']), 'total_allocated' => Money::fromCents($result['total_allocated_cents']),
             'total_unallocated' => Money::fromCents($result['unallocated_cents']), 'warnings' => $result['warnings'], 'created_by' => $userId,
-        ]);
+        ];
+        if ($draft instanceof ApportionmentRun) {
+            ApportionmentRunStep::withTrashed()->where('apportionment_run_id', $draft->id)->forceDelete();
+            ApportionmentRunAllocation::withTrashed()->where('apportionment_run_id', $draft->id)->forceDelete();
+            $draft->forceFill($attributes)->save();
+            $run = $draft;
+        } else {
+            $run = ApportionmentRun::create($attributes);
+        }
         foreach ($result['steps'] as $step) {
             ApportionmentRunStep::create([
                 'tenant_id' => $tenantId, 'apportionment_run_id' => $run->id, 'step_order' => $step['step_order'],

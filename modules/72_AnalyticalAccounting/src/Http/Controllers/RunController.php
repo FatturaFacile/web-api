@@ -54,12 +54,13 @@ final class RunController extends Controller
         return (new RunResource($run->load(['steps', 'allocations'])))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
-    public function consolidate(string $id): RunResource
+    public function consolidate(string $id): JsonResponse
     {
         $this->authorize('runApportionment', ApportionmentRun::class);
         $run = $this->domain(fn (): ApportionmentRun => $this->apportionment->consolidate($this->tenantId(), $id, $this->userId()));
 
-        return new RunResource($run->load(['steps', 'allocations']));
+        // The snapshot is rebuilt as a new row (wasRecentlyCreated would yield 201): this is a state transition, so force 200.
+        return (new RunResource($run->load(['steps', 'allocations'])))->response()->setStatusCode(Response::HTTP_OK);
     }
 
     public function reverse(RunRequest $request, string $id): RunResource

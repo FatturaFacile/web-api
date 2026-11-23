@@ -50,6 +50,6 @@ final class ReceivablesAnalyticsController extends ReceivablesController
     {
         $this->authorizeManage();
 
-        return response()->json(['data' => $provision->saveRates($this->tenantId(), $request->validated('rates'))]);
+        return response()->json(['data' => $provision->saveRates($this->tenantId(), (array) ($request->validated('rates') ?? []))]);
     }
 }
