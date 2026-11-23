@@ -72,12 +72,12 @@ final class SafetyCertificateAdapter implements CertificatePort
         $latest = null;
 
         foreach ($expiries as $expiry) {
-            if ($expiry !== null && ($latest === null || $expiry > $latest)) {
+            if ($latest === null || $expiry > $latest) {
                 $latest = $expiry;
             }
         }
 
-        return $latest !== null && $latest->format('Y-m-d') >= $to->format('Y-m-d')
+        return $latest->format('Y-m-d') >= $to->format('Y-m-d')
             ? new CertificateValidity(CertificateValidity::Valid, $latest)
             : new CertificateValidity(CertificateValidity::Expired, $latest);
     }

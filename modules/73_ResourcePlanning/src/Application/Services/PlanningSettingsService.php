@@ -90,7 +90,7 @@ final class PlanningSettingsService
     {
         $days = $this->holidays->holidays($country, $region, $municipality, $year);
 
-        return array_values(array_map(static fn (string $date, HolidayDay $day): array => ['date' => $date, 'name' => $day->name, 'day_fraction' => $day->fraction], array_keys($days), $days));
+        return array_map(static fn (string $date, HolidayDay $day): array => ['date' => $date, 'name' => $day->name, 'day_fraction' => $day->fraction], array_keys($days), $days);
     }
 
     public function resolvedYear(?int $year): int

@@ -185,7 +185,7 @@ final class SkillCatalogService
                 'proficiency_level' => $profile->proficiency_level,
                 'valid_until_date' => $profile->valid_until_date?->format('Y-m-d'),
                 'is_valid' => $profile->isValidOn($today),
-                'requires_certification' => $skill?->requires_certification ?? false,
+                'requires_certification' => $skill->requires_certification ?? false,
                 'certification_code' => $code,
                 'certification_status' => $certificate === null ? 'not_required' : $certificate->status,
                 'certification_valid_until' => $certificate?->validUntil?->format('Y-m-d'),

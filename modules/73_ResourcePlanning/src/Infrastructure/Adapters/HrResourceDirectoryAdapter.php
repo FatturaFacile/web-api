@@ -61,7 +61,7 @@ final class HrResourceDirectoryAdapter implements ResourceDirectoryPort
         $departments = Department::query()->whereIn('id', $employees->pluck('department_id')->filter()->unique()->all())->pluck('name', 'id');
         $costCenters = CostCenter::query()->whereIn('id', $employees->pluck('cost_center_id')->filter()->unique()->all())->pluck('name', 'id');
         $timeProfiles = TimeRecordingProfile::query()->whereIn('user_id', $employees->pluck('user_id')->filter()->unique()->all())->get()->keyBy('user_id');
-        $tenantCountry = strtoupper((string) ($this->tenantContext->getTenant()?->country ?? 'IT'));
+        $tenantCountry = strtoupper((string) ($this->tenantContext->getTenant()->country ?? 'IT'));
 
         $profiles = [];
 

@@ -24,6 +24,7 @@ use Modules\Workflow\Models\WorkflowInstance;
  * @property Carbon|null $probation_end_date
  * @property Carbon|null $confirmation_date
  * @property array<array-key, string|array<string, mixed>>|null $equipment_assigned
+ * @property array<string, mixed>|null $metadata
  */
 final class Employee extends BaseEnterpriseModel implements AuditableEntityInterface, LockableByWorkflowInterface
 {

@@ -33,7 +33,7 @@ final readonly class SettlementProposalService
      */
     public function propose(RebateAgreement $agreement, array $data, ?string $userId): RebateSettlement
     {
-        return DB::transaction(function () use ($agreement, $data, $userId): RebateSettlement {
+        return DB::transaction(function () use ($agreement, $data): RebateSettlement {
             $locked = RebateAgreement::query()->whereKey($agreement->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->direction !== RebateAgreement::Purchase) {

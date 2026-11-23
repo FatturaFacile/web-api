@@ -89,7 +89,7 @@ final class GetBillableUtilizationReportHandler
         return match ($groupBy) {
             GetBillableUtilizationReportQuery::ByDepartment => [(string) $row->department_id, $this->departmentName($profiles, (string) $row->department_id), $departmentTarget ?? $default],
             GetBillableUtilizationReportQuery::ByCostCenter => [(string) $row->cost_center_id, $this->costCenterName($profiles, (string) $row->cost_center_id), $costCenterTarget ?? $default],
-            default => [$row->employee_id, $profile?->fullName ?? $row->employee_id, $departmentTarget ?? $costCenterTarget ?? $default],
+            default => [$row->employee_id, $profile->fullName ?? $row->employee_id, $departmentTarget ?? $costCenterTarget ?? $default],
         };
     }
 
@@ -108,7 +108,7 @@ final class GetBillableUtilizationReportHandler
      */
     private function departmentName(Collection $profiles, string $id): string
     {
-        return $id === '' ? 'unassigned' : ($profiles->first(static fn (ResourceProfile $profile): bool => $profile->departmentId === $id)?->departmentName ?? $id);
+        return $id === '' ? 'unassigned' : ($profiles->first(static fn (ResourceProfile $profile): bool => $profile->departmentId === $id)->departmentName ?? $id);
     }
 
     /**
@@ -116,7 +116,7 @@ final class GetBillableUtilizationReportHandler
      */
     private function costCenterName(Collection $profiles, string $id): string
     {
-        return $id === '' ? 'unassigned' : ($profiles->first(static fn (ResourceProfile $profile): bool => $profile->costCenterId === $id)?->costCenterName ?? $id);
+        return $id === '' ? 'unassigned' : ($profiles->first(static fn (ResourceProfile $profile): bool => $profile->costCenterId === $id)->costCenterName ?? $id);
     }
 
     /**
