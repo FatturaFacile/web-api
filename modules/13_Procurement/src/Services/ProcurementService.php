@@ -69,6 +69,7 @@ final class ProcurementService implements ProcurementServiceInterface
         private readonly SupplierReceiptStockService $stock,
         private readonly PurchaseOrderLineStockItemResolver $stockItems,
         private readonly ProcurementLedgerService $ledger,
+        private readonly PurchasePricingService $pricing,
     ) {}
 
     /**
@@ -324,6 +325,8 @@ final class ProcurementService implements ProcurementServiceInterface
                 'delivery_due_date' => $dto->expectedDeliveryDate,
                 'currency' => $dto->currency,
                 'exchange_rate' => Decimal::of($dto->exchangeRate, 6),
+                'exchange_rate_date' => $dto->exchangeRateDate,
+                'exchange_rate_source' => $dto->exchangeRateSource,
                 'payment_terms_code' => $dto->paymentTermsCode ?? $supplier->payment_terms_code,
                 'incoterms' => $dto->incoterms ?? $supplier->incoterms,
                 'shipping_address' => $dto->shippingAddress,
@@ -395,7 +398,20 @@ final class ProcurementService implements ProcurementServiceInterface
             };
 
             $taxRate = Decimal::of($line['tax_rate'] ?? $contractLine->tax_rate ?? '22', 2);
-            $lineNet = Decimal::mul($quantity, $price, 2);
+
+            // Cascading commercial discounts (line first, then the supplier default), applied to the gross price.
+            $cascade = $this->pricing->normalizeCascade($line['discount_cascade'] ?? $supplier->metadata['default_discount_cascade'] ?? null);
+            $grossPrice = $price;
+            $lineNet = $this->pricing->lineNet($quantity, $grossPrice, $cascade);
+
+            if ($cascade !== []) {
+                $listPrice ??= $grossPrice;
+                $price = $this->pricing->netUnitPrice($grossPrice, $cascade);
+            }
+
+            // Dual unit of measure: the order unit converts to the base stock unit.
+            $orderUom = $line['uom'] ?? $contractLine->uom ?? $catalog->uom ?? 'PCE';
+            $factor = $this->pricing->conversionFactor($line['uom_conversion_factor'] ?? null);
             $lineTax = Decimal::round(bcdiv(bcmul($lineNet, $taxRate, 8), '100', 8), 2);
 
             PurchaseOrderLine::create([
@@ -406,7 +422,14 @@ final class ProcurementService implements ProcurementServiceInterface
                 'supplier_contract_line_id' => $contractLine?->id,
                 'description' => $line['description'] ?? $contractLine->description ?? $catalog->name ?? 'Item',
                 'quantity_ordered' => $quantity,
-                'uom' => $line['uom'] ?? $contractLine->uom ?? $catalog->uom ?? 'PCE',
+                'uom' => $orderUom,
+                'base_uom' => $line['base_uom'] ?? $orderUom,
+                'uom_conversion_factor' => $factor,
+                'quantity_base_ordered' => $this->pricing->toBase($quantity, $factor),
+                'discount_cascade' => $cascade !== [] ? $cascade : null,
+                'discount_percent_effective' => $this->pricing->effectivePercent($cascade),
+                'sales_order_line_id' => $line['sales_order_line_id'] ?? null,
+                'source_line_id' => $line['source_line_id'] ?? null,
                 'unit_price' => $price,
                 'list_unit_price' => $listPrice !== null ? Decimal::of($listPrice, 4) : null,
                 'unit_weight' => isset($line['unit_weight']) ? Decimal::of($line['unit_weight'], 4) : null,
@@ -548,6 +571,7 @@ final class ProcurementService implements ProcurementServiceInterface
                 $closeAt = Decimal::sub($ordered, Decimal::mul($ordered, bcdiv($underTolerance, '100', 8), 4), 4);
                 $orderLine->update([
                     'quantity_received' => $newReceived,
+                    'quantity_base_received' => $this->pricing->toBase($newReceived, (string) $orderLine->uom_conversion_factor),
                     'is_closed' => Decimal::cmp($newReceived, $closeAt, 4) >= 0,
                 ]);
 

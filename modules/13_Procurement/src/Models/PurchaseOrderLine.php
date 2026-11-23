@@ -35,6 +35,17 @@ use Illuminate\Support\Carbon;
  * @property string|null $line_total_amount
  * @property Carbon|null $expected_delivery_date
  * @property bool $is_closed
+ * @property string|null $base_uom
+ * @property string $uom_conversion_factor
+ * @property string $quantity_base_ordered
+ * @property string $quantity_base_received
+ * @property string|null $quantity_confirmed
+ * @property list<float|int|string>|null $discount_cascade
+ * @property string $discount_percent_effective
+ * @property Carbon|null $confirmed_delivery_date
+ * @property Carbon|null $promised_delivery_date
+ * @property string|null $sales_order_line_id
+ * @property string|null $source_line_id
  * @property PurchaseOrder|null $purchaseOrder
  */
 final class PurchaseOrderLine extends BaseEnterpriseModel
@@ -75,6 +86,14 @@ final class PurchaseOrderLine extends BaseEnterpriseModel
             'line_tax_amount' => 'decimal:2',
             'line_total_amount' => 'decimal:2',
             'is_closed' => 'boolean',
+            'uom_conversion_factor' => 'decimal:6',
+            'quantity_base_ordered' => 'decimal:4',
+            'quantity_base_received' => 'decimal:4',
+            'quantity_confirmed' => 'decimal:4',
+            'discount_cascade' => 'array',
+            'discount_percent_effective' => 'decimal:4',
+            'confirmed_delivery_date' => 'date',
+            'promised_delivery_date' => 'date',
         ];
     }
 

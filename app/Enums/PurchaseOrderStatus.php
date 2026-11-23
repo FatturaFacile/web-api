@@ -10,7 +10,7 @@ use App\Enums\Concerns\DocumentStatusMachine;
  * Status of a purchase order (`purchase_orders.status`), written by the purchasing API of the app and by the procurement
  * module, which share the table.
  *
- * draft ─► pending_approval ─► approved ─► sent ─► partially_received ─► received ─► closed
+ * draft ─► pending_approval ─► approved ─► sent ─► confirmed (supplier order confirmation) ─► partially_received ─► received ─► closed
  *   │             │   └─► rejected ─► draft          │                                  │
  *   └─► approved (no approval required)               └──────────────► closed ◄──────────┘ (closed reopens)
  *   any status before a receipt ─► cancelled
@@ -27,6 +27,7 @@ enum PurchaseOrderStatus: string
     case Approved = 'approved';
     case Rejected = 'rejected';
     case Sent = 'sent';
+    case Confirmed = 'confirmed';
     case PartiallyReceived = 'partially_received';
     case Received = 'received';
     case Closed = 'closed';
@@ -41,8 +42,9 @@ enum PurchaseOrderStatus: string
             self::Draft => [self::PendingApproval, self::Approved, self::Sent, self::Cancelled],
             self::PendingApproval => [self::Approved, self::Rejected, self::Draft, self::Cancelled],
             self::Rejected => [self::Draft, self::Cancelled],
-            self::Approved => [self::Sent, self::PartiallyReceived, self::Received, self::Closed, self::Cancelled],
-            self::Sent => [self::PartiallyReceived, self::Received, self::Closed, self::Cancelled],
+            self::Approved => [self::Sent, self::Confirmed, self::PartiallyReceived, self::Received, self::Closed, self::Cancelled],
+            self::Sent => [self::Confirmed, self::PartiallyReceived, self::Received, self::Closed, self::Cancelled],
+            self::Confirmed => [self::PartiallyReceived, self::Received, self::Closed, self::Cancelled],
             self::PartiallyReceived => [self::Received, self::Closed],
             self::Received => [self::PartiallyReceived, self::Closed],
             self::Closed => [self::Approved, self::PartiallyReceived],
@@ -57,7 +59,7 @@ enum PurchaseOrderStatus: string
      */
     public static function receivableValues(): array
     {
-        return [self::Approved->value, self::Sent->value, self::PartiallyReceived->value];
+        return [self::Approved->value, self::Sent->value, self::Confirmed->value, self::PartiallyReceived->value];
     }
 
     /**
@@ -67,6 +69,6 @@ enum PurchaseOrderStatus: string
      */
     public static function committedValues(): array
     {
-        return [self::Approved->value, self::Sent->value, self::PartiallyReceived->value, self::Received->value, self::Closed->value];
+        return [self::Approved->value, self::Sent->value, self::Confirmed->value, self::PartiallyReceived->value, self::Received->value, self::Closed->value];
     }
 }

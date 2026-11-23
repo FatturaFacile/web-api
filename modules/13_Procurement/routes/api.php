@@ -13,6 +13,7 @@ use Modules\Procurement\Http\Controllers\ProcurementAnalyticsController;
 use Modules\Procurement\Http\Controllers\ProcurementConfigurationController;
 use Modules\Procurement\Http\Controllers\ProcurementOperationsController;
 use Modules\Procurement\Http\Controllers\PurchaseOrderController;
+use Modules\Procurement\Http\Controllers\PurchaseOrderFulfilmentController;
 use Modules\Procurement\Http\Controllers\PurchasePriceCheckController;
 use Modules\Procurement\Http\Controllers\PurchaseReceiptController;
 use Modules\Procurement\Http\Controllers\PurchaseRequisitionController;
@@ -44,6 +45,11 @@ Route::prefix('api/v1/procurement')
         Route::post('requisitions/{id}/reject', [PurchaseRequisitionController::class, 'reject'])->name('procurement.requisitions.reject');
         Route::post('requisitions/{id}/cancel', [PurchaseRequisitionController::class, 'cancel'])->name('procurement.requisitions.cancel');
 
+        // 3b. Mod 046: static purchase-order routes (declared before the resource so they are not read as an id)
+        Route::get('purchase-orders/overdue', [PurchaseOrderFulfilmentController::class, 'overdue'])->name('procurement.orders.overdue');
+        Route::post('purchase-orders/reminders/run', [PurchaseOrderFulfilmentController::class, 'runReminders'])->name('procurement.orders.reminders.run');
+        Route::post('purchase-orders/pricing-preview', [PurchaseOrderFulfilmentController::class, 'pricingPreview'])->name('procurement.orders.pricing-preview');
+
         // 4. Purchase Orders (Full REST API Resource + Custom Lifecycle Operations)
         Route::apiResource('purchase-orders', PurchaseOrderController::class)->names('procurement.orders');
         Route::post('purchase-orders/{id}/submit-approval', [PurchaseOrderController::class, 'submitApproval'])->name('procurement.orders.submit-approval');
@@ -52,6 +58,19 @@ Route::prefix('api/v1/procurement')
         Route::post('purchase-orders/{id}/cancel', [PurchaseOrderController::class, 'cancel'])->name('procurement.orders.cancel');
         Route::post('purchase-orders/{id}/close', [PurchaseOrderController::class, 'close'])->name('procurement.orders.close');
         Route::post('purchase-orders/{id}/reopen', [PurchaseOrderController::class, 'reopen'])->name('procurement.orders.reopen');
+
+        // 4b. Mod 046: dispatch, supplier confirmations, reminders and dropshipment
+        Route::post('purchase-orders/{id}/dispatch', [PurchaseOrderFulfilmentController::class, 'dispatchOrder'])->whereUuid('id')->name('procurement.orders.dispatch');
+        Route::get('purchase-orders/{id}/dispatches', [PurchaseOrderFulfilmentController::class, 'dispatches'])->whereUuid('id')->name('procurement.orders.dispatches');
+        Route::post('purchase-orders/{id}/confirmations', [PurchaseOrderFulfilmentController::class, 'storeConfirmation'])->whereUuid('id')->name('procurement.orders.confirmations.store');
+        Route::get('purchase-orders/{id}/confirmations', [PurchaseOrderFulfilmentController::class, 'confirmations'])->whereUuid('id')->name('procurement.orders.confirmations.index');
+        Route::post('purchase-orders/{id}/reminders', [PurchaseOrderFulfilmentController::class, 'remind'])->whereUuid('id')->name('procurement.orders.reminders.store');
+        Route::get('purchase-orders/{id}/reminders', [PurchaseOrderFulfilmentController::class, 'reminders'])->whereUuid('id')->name('procurement.orders.reminders.index');
+        Route::get('dropshipments', [PurchaseOrderFulfilmentController::class, 'dropshipments'])->name('procurement.dropshipments.index');
+        Route::post('dropshipments', [PurchaseOrderFulfilmentController::class, 'storeDropship'])->name('procurement.dropshipments.store');
+        Route::get('dropshipments/{id}', [PurchaseOrderFulfilmentController::class, 'showDropship'])->whereUuid('id')->name('procurement.dropshipments.show');
+        Route::post('dropshipments/{id}/ddt', [PurchaseOrderFulfilmentController::class, 'issueDdt'])->whereUuid('id')->name('procurement.dropshipments.ddt');
+        Route::post('dropshipments/{id}/deliveries', [PurchaseOrderFulfilmentController::class, 'recordDelivery'])->whereUuid('id')->name('procurement.dropshipments.deliveries');
 
         // 5. Goods Receipts & Warehouse Receiving (GRN)
         Route::get('goods-receipts', [PurchaseReceiptController::class, 'index'])->name('procurement.receipts.index');

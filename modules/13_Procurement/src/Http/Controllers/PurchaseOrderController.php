@@ -145,7 +145,9 @@ final class PurchaseOrderController extends Controller
             incoterms: $request->input('incoterms'),
             shippingAddress: (array) $request->input('shipping_address', []),
             notes: $request->input('notes'),
-            creatorUserId: (string) auth()->id()
+            creatorUserId: (string) auth()->id(),
+            exchangeRateDate: $request->input('exchange_rate_date'),
+            exchangeRateSource: $request->input('exchange_rate_source'),
         );
 
         $order = $action->execute($dto);

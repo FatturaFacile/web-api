@@ -70,7 +70,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'po_number', type: 'string', example: 'PO-2027-0001', description: 'Gapless number of the purchase_order series, shared with the purchasing API of the app'),
         new OA\Property(property: 'supplier_id', type: 'string', format: 'uuid'),
-        new OA\Property(property: 'status', type: 'string', enum: ['draft', 'pending_approval', 'approved', 'rejected', 'sent', 'partially_received', 'received', 'closed', 'cancelled'], example: 'approved'),
+        new OA\Property(property: 'status', type: 'string', enum: ['draft', 'pending_approval', 'approved', 'rejected', 'sent', 'confirmed', 'partially_received', 'received', 'closed', 'cancelled'], example: 'approved'),
         new OA\Property(property: 'order_type', type: 'string', nullable: true, enum: ['standard', 'blanket_release', 'subcontract']),
         new OA\Property(property: 'order_date', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'expected_delivery_date', type: 'string', format: 'date', nullable: true),

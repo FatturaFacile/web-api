@@ -103,6 +103,24 @@ final class PurchaseOrderPolicy
         return in_array($order->status, PurchaseOrderStatus::receivableValues(), true);
     }
 
+    public function dispatch(User $user, PurchaseOrder $order): bool
+    {
+        return $this->checkTenant($user, $order)
+            && in_array($order->status, [PurchaseOrderStatus::Approved->value, PurchaseOrderStatus::Sent->value, PurchaseOrderStatus::Confirmed->value, PurchaseOrderStatus::PartiallyReceived->value], true);
+    }
+
+    public function confirm(User $user, PurchaseOrder $order): bool
+    {
+        return $this->checkTenant($user, $order)
+            && in_array($order->status, [PurchaseOrderStatus::Approved->value, PurchaseOrderStatus::Sent->value, PurchaseOrderStatus::Confirmed->value], true);
+    }
+
+    public function remind(User $user, PurchaseOrder $order): bool
+    {
+        return $this->checkTenant($user, $order)
+            && in_array($order->status, [PurchaseOrderStatus::Sent->value, PurchaseOrderStatus::Confirmed->value, PurchaseOrderStatus::PartiallyReceived->value], true);
+    }
+
     private function checkTenant(User $user, PurchaseOrder $order): bool
     {
         if (! empty($user->tenant_id) && ! empty($order->tenant_id) && (string) $user->tenant_id !== (string) $order->tenant_id) {

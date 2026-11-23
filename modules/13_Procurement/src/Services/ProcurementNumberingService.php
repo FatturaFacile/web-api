@@ -24,6 +24,8 @@ final readonly class ProcurementNumberingService
 
     public const string LandedCost = 'landed_cost';
 
+    public const string DropshipDdt = 'dropship_ddt';
+
     public function __construct(private DocumentNumberingService $numbering) {}
 
     /**

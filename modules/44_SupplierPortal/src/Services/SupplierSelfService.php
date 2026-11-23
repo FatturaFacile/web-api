@@ -32,7 +32,7 @@ final readonly class SupplierSelfService
      *
      * @var list<string>
      */
-    public const array VisibleOrderStatuses = ['sent', 'partially_received', 'received', 'closed', 'cancelled'];
+    public const array VisibleOrderStatuses = ['sent', 'confirmed', 'partially_received', 'received', 'closed', 'cancelled'];
 
     public function __construct(private RfqService $rfqs, private SupplierPortalLedger $ledger) {}
 

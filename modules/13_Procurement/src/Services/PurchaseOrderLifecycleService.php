@@ -39,7 +39,7 @@ final readonly class PurchaseOrderLifecycleService
                 throw new ProcurementRuleViolation("An order in status {$locked->status} cannot be edited.", 'status');
             }
 
-            $header = array_intersect_key($data, array_flip(['expected_delivery_date', 'payment_terms_code', 'incoterms', 'shipping_address', 'notes', 'project_id', 'cost_center_id', 'department_id', 'branch_id', 'currency', 'exchange_rate']));
+            $header = array_intersect_key($data, array_flip(['expected_delivery_date', 'payment_terms_code', 'incoterms', 'shipping_address', 'notes', 'project_id', 'cost_center_id', 'department_id', 'branch_id', 'currency', 'exchange_rate', 'exchange_rate_date', 'exchange_rate_source']));
 
             if (isset($data['order_date'])) {
                 $header['date'] = $data['order_date'];
