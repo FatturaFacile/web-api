@@ -31,6 +31,7 @@ class DocumentNumberingService
         'ddt_transfer' => 'DDT-TR-',
         'ddt_subcontract' => 'DDT-CL-',
         'ddt_consignment' => 'DDT-CD-',
+        'dropship_ddt' => 'DDT-DS-',
         'stock_transfer' => 'TRF-',
         'work_order' => 'WO-',
         'workshop_estimate' => 'EST-',

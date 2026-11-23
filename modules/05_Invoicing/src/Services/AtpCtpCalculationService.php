@@ -43,7 +43,7 @@ final readonly class AtpCtpCalculationService
      *
      * @var list<string>
      */
-    private const array InboundStatuses = ['approved', 'sent', 'partially_received'];
+    private const array InboundStatuses = ['approved', 'sent', 'confirmed', 'partially_received'];
 
     /**
      * @var list<string>

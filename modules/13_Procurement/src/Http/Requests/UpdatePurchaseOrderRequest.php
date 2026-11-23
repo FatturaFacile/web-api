@@ -35,6 +35,8 @@ final class UpdatePurchaseOrderRequest extends FormRequest
             'expected_delivery_date' => ['sometimes', 'date_format:Y-m-d'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'exchange_rate' => ['sometimes', 'decimal:0,6', 'gt:0'],
+            'exchange_rate_date' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
+            'exchange_rate_source' => ['sometimes', 'nullable', 'string', 'in:manual,ecb,snb,bank'],
             'project_id' => ['nullable', 'uuid', $this->tenantOwns('projects')],
             'cost_center_id' => ['nullable', 'uuid', $this->tenantExists('cost_centers')],
             'department_id' => ['nullable', 'uuid'],

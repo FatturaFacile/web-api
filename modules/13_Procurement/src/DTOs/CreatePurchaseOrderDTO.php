@@ -31,6 +31,8 @@ final readonly class CreatePurchaseOrderDTO
         public ?string $notes = null,
         public ?string $tenantId = null,
         public ?string $companyId = null,
-        public ?string $creatorUserId = null
+        public ?string $creatorUserId = null,
+        public ?string $exchangeRateDate = null,
+        public ?string $exchangeRateSource = null,
     ) {}
 }

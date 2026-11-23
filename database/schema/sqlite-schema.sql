@@ -23059,6 +23059,17 @@ CREATE TABLE "purchase_order_lines"(
   "deleted_by" varchar,
   "rfq_line_id" varchar,
   "supplier_bid_line_id" varchar,
+  "base_uom" varchar,
+  "uom_conversion_factor" numeric not null default '1',
+  "quantity_base_ordered" numeric not null default '0',
+  "quantity_base_received" numeric not null default '0',
+  "quantity_confirmed" numeric,
+  "discount_cascade" text,
+  "discount_percent_effective" numeric not null default '0',
+  "confirmed_delivery_date" date,
+  "promised_delivery_date" date,
+  "sales_order_line_id" varchar,
+  "source_line_id" varchar,
   foreign key("supplier_catalog_id") references "supplier_catalogs"("id") on delete set null on update no action,
   foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade on update no action,
   primary key("id")
@@ -23126,6 +23137,18 @@ CREATE TABLE "purchase_orders"(
   "deleted_by" varchar,
   "cup_code" varchar,
   "cig_code" varchar,
+  "sales_order_id" varchar,
+  "is_dropship" tinyint(1) not null default '0',
+  "source_type" varchar,
+  "source_id" varchar,
+  "dispatch_channel" varchar,
+  "supplier_confirmation_number" varchar,
+  "confirmed_at" datetime,
+  "promised_delivery_date" date,
+  "exchange_rate_date" date,
+  "exchange_rate_source" varchar,
+  "reminder_count" integer not null default '0',
+  "last_reminder_at" datetime,
   foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete set null on update no action,
   foreign key("supplier_contract_id") references "supplier_contracts"("id") on delete set null on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -24710,6 +24733,8 @@ CREATE TABLE "sales_orders"(
   "invoiced_percentage" numeric not null default '0',
   "incoterm" varchar,
   "incoterm_place" varchar,
+  "billing_authorized_at" datetime,
+  "billing_authorization_reference" varchar,
   foreign key("quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("contact_id") references "contacts"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -27161,6 +27186,9 @@ CREATE TABLE "supplier_contracts"(
   "notice_deadline" date,
   "notice_given_at" datetime,
   "deleted_by" varchar,
+  "minimum_spend_amount" numeric,
+  "alert_threshold_percent" numeric not null default '80',
+  "currency" varchar not null default 'EUR',
   foreign key("supplier_id") references "suppliers"("id") on delete restrict on update no action,
   primary key("id")
 );
@@ -37804,6 +37832,14 @@ CREATE TABLE "rebate_agreements"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "supplier_contract_id" varchar,
+  "rebate_type" varchar not null default 'tiered_volume',
+  "fixed_bonus_target" numeric,
+  "fixed_bonus_amount" numeric,
+  "accrual_frequency" varchar not null default 'monthly',
+  "accrual_account_id" varchar,
+  "income_account_id" varchar,
+  "version" integer not null default '1',
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("contact_id") references "contacts"("id") on delete cascade,
   primary key("id")
@@ -37836,6 +37872,7 @@ CREATE TABLE "rebate_tiers"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "flat_amount" numeric,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("agreement_id") references "rebate_agreements"("id") on delete cascade,
   primary key("id")
@@ -37862,6 +37899,19 @@ CREATE TABLE "rebate_settlements"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "status" varchar not null default 'settled',
+  "execution_mode" varchar,
+  "gross_amount" numeric,
+  "tax_rate" numeric,
+  "tax_amount" numeric,
+  "passive_invoice_id" varchar,
+  "set_off_amount" numeric,
+  "journal_entry_id" varchar,
+  "submitted_at" datetime,
+  "approved_by" varchar,
+  "approved_at" datetime,
+  "cancelled_at" datetime,
+  "version" integer not null default '1',
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("agreement_id") references "rebate_agreements"("id") on delete cascade,
   primary key("id")
@@ -37894,6 +37944,9 @@ CREATE TABLE "rebate_accruals"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "accrual_run_id" varchar,
+  "journal_entry_id" varchar,
+  "source" varchar not null default 'volume',
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("agreement_id") references "rebate_agreements"("id") on delete cascade,
   foreign key("settlement_id") references "rebate_settlements"("id") on delete set null,
@@ -46369,6 +46422,295 @@ CREATE INDEX "customer_statement_dispatches_tenant_id_customer_id_index" on "cus
   "tenant_id",
   "customer_id"
 );
+CREATE INDEX "rebate_agreements_supplier_contract_id_index" on "rebate_agreements"(
+  "supplier_contract_id"
+);
+CREATE INDEX "rebate_accruals_accrual_run_id_index" on "rebate_accruals"(
+  "accrual_run_id"
+);
+CREATE INDEX "rebate_settlements_passive_invoice_id_index" on "rebate_settlements"(
+  "passive_invoice_id"
+);
+CREATE TABLE "rebate_contributions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "agreement_id" varchar not null,
+  "kind" varchar not null default 'marketing',
+  "description" varchar not null,
+  "amount" numeric not null,
+  "due_on" date not null,
+  "status" varchar not null default 'planned',
+  "accrual_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("agreement_id") references "rebate_agreements"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "rebate_contributions_tenant_id_agreement_id_status_index" on "rebate_contributions"(
+  "tenant_id",
+  "agreement_id",
+  "status"
+);
+CREATE INDEX "rebate_contributions_tenant_id_index" on "rebate_contributions"(
+  "tenant_id"
+);
+CREATE TABLE "rebate_accrual_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "agreement_id" varchar not null,
+  "period_start" date not null,
+  "period_end" date not null,
+  "status" varchar not null default 'posted',
+  "base_amount" numeric not null default '0',
+  "cumulative_rebate" numeric not null default '0',
+  "delta_amount" numeric not null default '0',
+  "journal_entry_id" varchar,
+  "reversal_journal_entry_id" varchar,
+  "reversed_at" datetime,
+  "reversal_reason" varchar,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("agreement_id") references "rebate_agreements"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "rebate_accrual_runs_tenant_id_agreement_id_period_end_index" on "rebate_accrual_runs"(
+  "tenant_id",
+  "agreement_id",
+  "period_end"
+);
+CREATE INDEX "rebate_accrual_runs_tenant_id_index" on "rebate_accrual_runs"(
+  "tenant_id"
+);
+CREATE TABLE "rebate_accrual_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "accrual_run_id" varchar not null,
+  "passive_invoice_id" varchar,
+  "invoice_number" varchar,
+  "document_type" varchar,
+  "invoice_date" date,
+  "net_amount" numeric not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("accrual_run_id") references "rebate_accrual_runs"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "rebate_accrual_lines_tenant_id_index" on "rebate_accrual_lines"(
+  "tenant_id"
+);
+CREATE INDEX "rebate_accrual_lines_passive_invoice_id_index" on "rebate_accrual_lines"(
+  "passive_invoice_id"
+);
+CREATE TABLE "rebate_settlement_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "settlement_id" varchar not null,
+  "line_type" varchar not null,
+  "passive_invoice_id" varchar,
+  "reference" varchar,
+  "reference_date" date,
+  "net_amount" numeric not null default '0',
+  "rebate_amount" numeric not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("settlement_id") references "rebate_settlements"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "rebate_settlement_lines_tenant_id_settlement_id_index" on "rebate_settlement_lines"(
+  "tenant_id",
+  "settlement_id"
+);
+CREATE INDEX "rebate_settlement_lines_tenant_id_index" on "rebate_settlement_lines"(
+  "tenant_id"
+);
+CREATE INDEX "purchase_orders_sales_order_id_index" on "purchase_orders"(
+  "sales_order_id"
+);
+CREATE INDEX "purchase_orders_promised_delivery_date_index" on "purchase_orders"(
+  "promised_delivery_date"
+);
+CREATE INDEX "purchase_order_lines_sales_order_line_id_index" on "purchase_order_lines"(
+  "sales_order_line_id"
+);
+CREATE TABLE "purchase_order_confirmations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "purchase_order_id" varchar not null,
+  "confirmation_number" varchar not null,
+  "confirmed_at" date not null,
+  "confirmed_by" varchar,
+  "has_variance" tinyint(1) not null default '0',
+  "requires_review" tinyint(1) not null default '0',
+  "price_variance_total" numeric not null default '0',
+  "quantity_variance_total" numeric not null default '0',
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "purchase_order_confirmations_tenant_id_purchase_order_id_index" on "purchase_order_confirmations"(
+  "tenant_id",
+  "purchase_order_id"
+);
+CREATE TABLE "purchase_order_confirmation_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "purchase_order_confirmation_id" varchar not null,
+  "purchase_order_line_id" varchar not null,
+  "ordered_quantity" numeric not null,
+  "confirmed_quantity" numeric not null,
+  "ordered_unit_price" numeric not null,
+  "confirmed_unit_price" numeric not null,
+  "requested_delivery_date" date,
+  "confirmed_delivery_date" date,
+  "quantity_variance" numeric not null default '0',
+  "quantity_variance_base" numeric not null default '0',
+  "price_variance" numeric not null default '0',
+  "price_variance_percent" numeric not null default '0',
+  "line_total_variance" numeric not null default '0',
+  "delivery_delay_days" integer not null default '0',
+  "variance_reason" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("purchase_order_confirmation_id") references "purchase_order_confirmations"("id") on delete cascade,
+  foreign key("purchase_order_line_id") references "purchase_order_lines"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "po_conf_lines_tenant_line_idx" on "purchase_order_confirmation_lines"(
+  "tenant_id",
+  "purchase_order_line_id"
+);
+CREATE TABLE "purchase_order_dispatches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "purchase_order_id" varchar not null,
+  "channel" varchar not null,
+  "status" varchar not null default 'sent',
+  "recipient" varchar,
+  "message_reference" varchar,
+  "dispatched_at" datetime not null,
+  "dispatched_by" varchar,
+  "metadata" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "purchase_order_dispatches_tenant_id_purchase_order_id_index" on "purchase_order_dispatches"(
+  "tenant_id",
+  "purchase_order_id"
+);
+CREATE TABLE "purchase_order_reminders"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "purchase_order_id" varchar not null,
+  "level" integer not null default '1',
+  "channel" varchar not null default 'email',
+  "trigger" varchar not null default 'auto',
+  "days_overdue" integer not null,
+  "overdue_line_ids" text,
+  "message_reference" varchar,
+  "sent_at" datetime not null,
+  "sent_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "purchase_order_reminders_tenant_id_purchase_order_id_index" on "purchase_order_reminders"(
+  "tenant_id",
+  "purchase_order_id"
+);
+CREATE TABLE "purchase_order_dropships"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "purchase_order_id" varchar not null,
+  "sales_order_id" varchar,
+  "status" varchar not null default 'pending',
+  "recipient_name" varchar not null,
+  "recipient_street" varchar not null,
+  "recipient_house_number" varchar,
+  "recipient_postal_code" varchar not null,
+  "recipient_city" varchar not null,
+  "recipient_region" varchar,
+  "recipient_country_code" varchar not null,
+  "recipient_phone" varchar,
+  "recipient_email" varchar,
+  "delivery_notes" text,
+  "ddt_number" varchar,
+  "ddt_issued_at" datetime,
+  "ddt_payload" text,
+  "supplier_shipment_reference" varchar,
+  "delivery_proof_reference" varchar,
+  "delivered_at" datetime,
+  "billing_authorized" tinyint(1) not null default '0',
+  "billing_authorized_at" datetime,
+  "billing_authorization_reference" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "purchase_order_dropships_tenant_id_purchase_order_id_unique" on "purchase_order_dropships"(
+  "tenant_id",
+  "purchase_order_id"
+);
+CREATE INDEX "purchase_order_dropships_sales_order_id_index" on "purchase_order_dropships"(
+  "sales_order_id"
+);
+CREATE TABLE "purchase_order_virtual_stock_movements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "purchase_order_dropship_id" varchar not null,
+  "purchase_order_line_id" varchar not null,
+  "direction" varchar not null,
+  "quantity_base" numeric not null,
+  "base_uom" varchar,
+  "unit_cost_base" numeric not null default '0',
+  "valued_amount" numeric not null default '0',
+  "moved_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("purchase_order_dropship_id") references "purchase_order_dropships"("id") on delete cascade,
+  foreign key("purchase_order_line_id") references "purchase_order_lines"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "po_virtual_moves_tenant_line_idx" on "purchase_order_virtual_stock_movements"(
+  "tenant_id",
+  "purchase_order_line_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -46804,3 +47146,6 @@ INSERT INTO migrations VALUES(431,'2027_12_23_000100_create_project_billing_cont
 INSERT INTO migrations VALUES(432,'2027_12_22_000200_create_project_wbs_portfolio_tables',10);
 INSERT INTO migrations VALUES(433,'2027_12_23_000100_create_resource_planning_tables',10);
 INSERT INTO migrations VALUES(434,'2027_12_23_000100_create_accounts_receivable_credit_tables',11);
+INSERT INTO migrations VALUES(435,'2027_11_22_100000_extend_rebates_for_supplier_programs',12);
+INSERT INTO migrations VALUES(436,'2027_11_22_100100_add_blanket_thresholds_to_supplier_contracts',12);
+INSERT INTO migrations VALUES(437,'2027_12_20_000100_create_purchase_order_confirmation_dropship_tables',12);

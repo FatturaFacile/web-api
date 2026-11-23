@@ -19,7 +19,7 @@ final readonly class ThreeWayMatchDiscovery
      *
      * @var list<string>
      */
-    private const array OpenStatuses = ['approved', 'sent', 'partially_received', 'received'];
+    private const array OpenStatuses = ['approved', 'sent', 'confirmed', 'partially_received', 'received'];
 
     public function __construct(private ThreeWayMatchEvaluator $evaluator = new ThreeWayMatchEvaluator) {}
 

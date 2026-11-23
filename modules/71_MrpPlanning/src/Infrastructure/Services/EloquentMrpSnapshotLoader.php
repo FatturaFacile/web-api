@@ -58,7 +58,7 @@ use Modules\MrpPlanning\Infrastructure\Models\MrpWorkCenterAlternative;
 final class EloquentMrpSnapshotLoader implements MrpSnapshotLoaderInterface
 {
     /** Purchase order statuses whose open lines are expected receipts. */
-    private const array OpenPurchaseStatuses = ['sent', 'partially_received'];
+    private const array OpenPurchaseStatuses = ['sent', 'confirmed', 'partially_received'];
 
     private const array OpenSalesStatuses = ['confirmed', 'in_production'];
 

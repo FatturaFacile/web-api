@@ -11,6 +11,7 @@ use App\Models\User;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Modules\Procurement\Services\ProcurementApprovalService;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
@@ -64,6 +65,18 @@ use Modules\Workflow\Models\WorkflowInstance;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $order_date
+ * @property string|null $sales_order_id
+ * @property bool $is_dropship
+ * @property string|null $source_type
+ * @property string|null $source_id
+ * @property string|null $dispatch_channel
+ * @property string|null $supplier_confirmation_number
+ * @property Carbon|null $confirmed_at
+ * @property Carbon|null $promised_delivery_date
+ * @property Carbon|null $exchange_rate_date
+ * @property string|null $exchange_rate_source
+ * @property int $reminder_count
+ * @property Carbon|null $last_reminder_at
  */
 final class PurchaseOrder extends BaseEnterpriseModel implements LockableByWorkflowInterface, ReactsToWorkflowOutcome
 {
@@ -114,6 +127,12 @@ final class PurchaseOrder extends BaseEnterpriseModel implements LockableByWorkf
             'approved_at' => 'datetime',
             'sent_at' => 'datetime',
             'closed_at' => 'datetime',
+            'is_dropship' => 'boolean',
+            'confirmed_at' => 'datetime',
+            'promised_delivery_date' => 'date',
+            'exchange_rate_date' => 'date',
+            'reminder_count' => 'integer',
+            'last_reminder_at' => 'datetime',
         ];
     }
 
@@ -214,5 +233,37 @@ final class PurchaseOrder extends BaseEnterpriseModel implements LockableByWorkf
     {
         return $this->hasMany(PurchaseRequisitionDocumentLink::class, 'target_document_id')
             ->where('target_document_type', DocumentLinkTargetType::PoMod046->value);
+    }
+
+    /**
+     * @return HasMany<PurchaseOrderConfirmation, $this>
+     */
+    public function confirmations(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderConfirmation::class, 'purchase_order_id');
+    }
+
+    /**
+     * @return HasMany<PurchaseOrderDispatch, $this>
+     */
+    public function dispatches(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderDispatch::class, 'purchase_order_id');
+    }
+
+    /**
+     * @return HasMany<PurchaseOrderReminder, $this>
+     */
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderReminder::class, 'purchase_order_id');
+    }
+
+    /**
+     * @return HasOne<PurchaseOrderDropship, $this>
+     */
+    public function dropship(): HasOne
+    {
+        return $this->hasOne(PurchaseOrderDropship::class, 'purchase_order_id');
     }
 }

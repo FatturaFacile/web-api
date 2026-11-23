@@ -51,6 +51,7 @@ use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
 use Modules\Procurement\Events\PurchaseOrderCancelledEvent;
 use Modules\Procurement\Events\PurchaseOrderCommittedEvent;
 use Modules\Procurement\Events\PurchaseOrderCreatedEvent;
+use Modules\Procurement\Events\PurchaseOrderMilestoneEvent;
 use Modules\Procurement\Events\PurchaseRequisitionApprovedEvent;
 use Modules\Procurement\Events\PurchaseRequisitionCreatedEvent;
 use Modules\Procurement\Events\PurchaseReturnCreatedEvent;
@@ -169,6 +170,7 @@ final class ProcurementServiceProvider extends ServiceProvider
         Event::listen(PurchaseOrderCreatedEvent::class, DispatchOutboxOnProcurementEventListener::class);
         Event::listen(PurchaseOrderApprovedEvent::class, DispatchOutboxOnProcurementEventListener::class);
         Event::listen(PurchaseOrderCancelledEvent::class, DispatchOutboxOnProcurementEventListener::class);
+        Event::listen(PurchaseOrderMilestoneEvent::class, DispatchOutboxOnProcurementEventListener::class);
         Event::listen(PurchaseOrderCommittedEvent::class, DispatchOutboxOnProcurementEventListener::class);
         Event::listen(GoodsReceivedEvent::class, DispatchOutboxOnProcurementEventListener::class);
         Event::listen(InventoryReceiptRequestedEvent::class, DispatchOutboxOnProcurementEventListener::class);
