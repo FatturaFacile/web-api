@@ -33,7 +33,7 @@ it('holds capacity for an open opportunity with a tentative booking', function (
     $response = rpAllocate($this, $employee, RP_CLEAN_WEEK, '2027-02-12', 4, ['crm_opportunity_id' => $opportunity])->assertCreated();
 
     $response->assertJsonPath('data.allocation.booking_type', 'SoftTentative')
-        ->assertJsonPath('data.allocation.total_allocated_hours', 20.0)
+        ->assertJsonPath('data.allocation.total_allocated_hours', 20)
         ->assertJsonPath('data.allocation.crm_opportunity_name', 'Warehouse automation')
         ->assertJsonPath('data.allocation.employee_name', 'Anna Rossi')
         ->assertJsonPath('data.allocation.is_overloaded', false)
@@ -61,7 +61,7 @@ it('commits an employee to an active project and a WBS node, and refuses what Mo
         ->assertCreated()
         ->assertJsonPath('data.allocation.project_name', 'Plant retrofit')
         ->assertJsonPath('data.allocation.wbs_node_title', 'Commissioning')
-        ->assertJsonPath('data.allocation.total_allocated_hours', 30.0);
+        ->assertJsonPath('data.allocation.total_allocated_hours', 30);
 
     rpAllocate($this, $employee, RP_CLEAN_WEEK, '2027-02-12', 1, ['booking_type' => 'HardCommitted', 'project_id' => rpProject($tenant, 'draft')])
         ->assertUnprocessable()
@@ -80,7 +80,7 @@ it('counts only the days the employee works: no weekend and no holiday', functio
     // Monday to Sunday of the Ascension week: Thursday is a public holiday, so Monday, Tuesday, Wednesday and Friday count.
     rpAllocate($this, $employee, RP_ASCENSION_WEEK, '2027-05-09', 6, ['crm_opportunity_id' => rpOpportunity($tenant)])
         ->assertCreated()
-        ->assertJsonPath('data.allocation.total_allocated_hours', 24.0);
+        ->assertJsonPath('data.allocation.total_allocated_hours', 24);
 
     rpAllocate($this, $employee, '2027-05-08', '2027-05-09', 6, ['crm_opportunity_id' => rpOpportunity($tenant)])
         ->assertUnprocessable()
@@ -96,7 +96,7 @@ it('flags the overload above 100 percent of the net capacity, tentative bookings
 
     $second = rpAllocate($this, $employee, RP_CLEAN_WEEK, '2027-02-12', 4, ['crm_opportunity_id' => rpOpportunity($tenant)])->assertCreated();
     $second->assertJsonPath('data.overload.is_overloaded', true)
-        ->assertJsonPath('data.overload.peak_load_percent', 125.0)
+        ->assertJsonPath('data.overload.peak_load_percent', 125)
         ->assertJsonPath('data.overload.weeks.0.week_start', RP_CLEAN_WEEK);
 
     $list = $this->getJson('/api/v1/resource-planning/allocations?from=2027-02-01&to=2027-02-28')->assertOk()->json('data');
@@ -178,11 +178,11 @@ it('splits an allocation in two and can send the second part to a colleague', fu
     expect($parts)->toHaveCount(2)
         ->and($parts[0]['end_date'])->toBe('2027-02-09')
         ->and($parts[0]['employee_name'])->toBe('Anna Rossi')
-        ->and($parts[0]['total_allocated_hours'])->toBe(16.0)
+        ->and($parts[0]['total_allocated_hours'])->toEqual(16.0)
         ->and($parts[1]['start_date'])->toBe('2027-02-10')
         ->and($parts[1]['end_date'])->toBe('2027-02-12')
         ->and($parts[1]['employee_name'])->toBe('Bruno Bianchi')
-        ->and($parts[1]['total_allocated_hours'])->toBe(24.0)
+        ->and($parts[1]['total_allocated_hours'])->toEqual(24.0)
         ->and($parts[1]['crm_opportunity_id'])->toBe($parts[0]['crm_opportunity_id']);
 
     $this->postJson("/api/v1/resource-planning/allocations/{$parts[1]['id']}/rebalance", ['strategy' => 'split', 'split_date' => '2027-02-08'])
@@ -197,8 +197,8 @@ it('resizes the dates and the hours of an allocation', function (): void {
     $this->postJson("/api/v1/resource-planning/allocations/{$allocation}/rebalance", ['strategy' => 'resize', 'end_date' => '2027-02-10', 'allocated_hours_per_day' => 4])
         ->assertOk()
         ->assertJsonPath('data.allocation.end_date', '2027-02-10')
-        ->assertJsonPath('data.allocation.allocated_hours_per_day', 4.0)
-        ->assertJsonPath('data.allocation.total_allocated_hours', 12.0);
+        ->assertJsonPath('data.allocation.allocated_hours_per_day', 4)
+        ->assertJsonPath('data.allocation.total_allocated_hours', 12);
 
     $this->postJson("/api/v1/resource-planning/allocations/{$allocation}/rebalance", ['strategy' => 'resize', 'end_date' => '2027-02-01'])
         ->assertUnprocessable()
@@ -225,12 +225,12 @@ it('keeps the weekly snapshots in step with the bookings', function (): void {
     $snapshot = $this->getJson('/api/v1/resource-planning/capacity/snapshots?from='.RP_CLEAN_WEEK.'&to='.RP_CLEAN_WEEK."&employee_id={$employee}")->assertOk()->json('data.0');
 
     expect($snapshot['week_start_date'])->toBe(RP_CLEAN_WEEK)
-        ->and($snapshot['contractual_hours'])->toBe(40.0)
-        ->and($snapshot['leave_and_holiday_hours'])->toBe(0.0)
-        ->and($snapshot['net_available_hours'])->toBe(40.0)
-        ->and($snapshot['billable_booked_hours'])->toBe(25.0)
-        ->and($snapshot['internal_booked_hours'])->toBe(10.0)
-        ->and($snapshot['utilization_rate_percent'])->toBe(87.5);
+        ->and($snapshot['contractual_hours'])->toEqual(40.0)
+        ->and($snapshot['leave_and_holiday_hours'])->toEqual(0.0)
+        ->and($snapshot['net_available_hours'])->toEqual(40.0)
+        ->and($snapshot['billable_booked_hours'])->toEqual(25.0)
+        ->and($snapshot['internal_booked_hours'])->toEqual(10.0)
+        ->and($snapshot['utilization_rate_percent'])->toEqual(87.5);
 
     $this->postJson('/api/v1/resource-planning/capacity/snapshots/recalculate', ['from' => RP_CLEAN_WEEK, 'to' => '2027-02-21', 'employee_id' => $employee])
         ->assertOk()
