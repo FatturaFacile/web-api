@@ -141,7 +141,7 @@ test('only an open ticket of the tenant can be handed off, and only by someone w
     $closed = Ticket::factory()->create(['tenant_id' => $this->tenant->id, 'status' => 'closed']);
     $merged = Ticket::factory()->create(['tenant_id' => $this->tenant->id, 'status' => 'open', 'merged_into_ticket_id' => $this->ticket->id]);
     $locked = Ticket::factory()->create(['tenant_id' => $this->tenant->id, 'status' => 'open', 'is_locked' => true]);
-    $foreign = Ticket::factory()->create(['tenant_id' => $this->other->id, 'status' => 'open']);
+    $foreign = app(TenantContext::class)->runWithTenant($this->other, fn () => Ticket::factory()->create(['tenant_id' => $this->other->id, 'status' => 'open']));
 
     $this->postJson("/api/v1/esm/tickets/{$closed->id}/escalate/field-service")->assertUnprocessable();
     $this->postJson("/api/v1/esm/tickets/{$merged->id}/escalate/field-service")->assertUnprocessable();

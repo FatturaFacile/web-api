@@ -12411,6 +12411,7 @@ CREATE TABLE "esm_work_orders"(
   "actual_arrival" datetime,
   "client_uuid" varchar,
   "preventive_cycle_key" varchar,
+  "billing_type" varchar not null default 'contract_included',
   foreign key("assigned_technician_id") references "esm_service_technicians"("id") on delete set null on update no action,
   foreign key("service_team_id") references "esm_service_teams"("id") on delete set null on update no action,
   foreign key("ticket_id") references "esm_tickets"("id") on delete set null on update no action,
@@ -45311,6 +45312,7 @@ CREATE TABLE "esm_ticket_escalation_logs"(
   "fired_at" datetime not null,
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("ticket_id") references "esm_tickets"("id") on delete cascade,
   primary key("id")
@@ -46166,3 +46168,5 @@ INSERT INTO migrations VALUES(427,'2027_12_21_000100_extend_inventory_counting_a
 INSERT INTO migrations VALUES(428,'2027_12_22_000100_create_esm_work_order_photos_table',7);
 INSERT INTO migrations VALUES(429,'2027_12_21_000100_add_helpdesk_sla_escalation_chains_and_ticket_time_billing',8);
 INSERT INTO migrations VALUES(430,'2027_12_21_000100_create_analytical_accounting_tables',8);
+INSERT INTO migrations VALUES(431,'2027_12_22_000100_add_soft_deletes_to_esm_ticket_escalation_logs',9);
+INSERT INTO migrations VALUES(432,'2027_12_22_000200_add_billing_type_to_esm_work_orders',10);
