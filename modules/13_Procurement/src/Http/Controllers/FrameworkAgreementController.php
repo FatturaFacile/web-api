@@ -13,6 +13,7 @@ use Modules\Procurement\Http\Requests\StoreContractLineRequest;
 use Modules\Procurement\Http\Resources\PurchaseOrderResource;
 use Modules\Procurement\Http\Resources\SupplierContractLineResource;
 use Modules\Procurement\Models\SupplierContract;
+use Modules\Procurement\Services\BlanketAgreementBalanceService;
 use Modules\Procurement\Services\FrameworkAgreementService;
 use OpenApi\Attributes as OA;
 
@@ -24,7 +25,7 @@ final class FrameworkAgreementController extends Controller
 {
     use ProcurementControllerHelpers;
 
-    public function __construct(private readonly FrameworkAgreementService $agreements) {}
+    public function __construct(private readonly FrameworkAgreementService $agreements, private readonly BlanketAgreementBalanceService $balances) {}
 
     /**
      * Lines of an agreement.
@@ -46,6 +47,29 @@ final class FrameworkAgreementController extends Controller
     public function lines(string $id): AnonymousResourceCollection
     {
         return SupplierContractLineResource::collection(SupplierContract::query()->findOrFail($id)->lines()->orderBy('price_valid_from')->get());
+    }
+
+    /**
+     * Live balance of the agreement: ceiling, minimum spend, ordered, received and invoiced amounts and alerts.
+     */
+    #[OA\Get(
+        path: '/api/v1/procurement/contracts/{id}/balance',
+        operationId: 'procurementContractBalance',
+        description: 'Ceiling (plafond) and guaranteed minimum spend of the blanket agreement against the call-off orders: ordered, received and invoiced amounts, remaining ceiling, shortfall to the minimum, per-line committed quantities and threshold alerts.',
+        summary: 'Blanket agreement balance',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Procurement Framework Agreements'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/ProcRecordId')],
+        responses: [
+            new OA\Response(response: 200, description: 'Balance of the agreement', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(response: 404, description: 'Agreement not found'),
+        ]
+    )]
+    public function balance(string $id): JsonResponse
+    {
+        $contract = SupplierContract::query()->findOrFail($id);
+
+        return response()->json(['data' => $this->balances->balance($contract)]);
     }
 
     /**

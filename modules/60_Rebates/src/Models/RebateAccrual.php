@@ -22,12 +22,21 @@ use Illuminate\Support\Carbon;
  * @property string|null $applied_rate_percent
  * @property string $status
  * @property string|null $settlement_id
+ * @property string|null $accrual_run_id
+ * @property string|null $journal_entry_id
+ * @property string $source
  */
 final class RebateAccrual extends BaseEnterpriseModel
 {
     public const string Accrued = 'accrued';
 
+    /** Included in a settlement proposal that is not executed yet. */
+    public const string Proposed = 'proposed';
+
     public const string Settled = 'settled';
+
+    /** Cancelled by the reversal of its accrual run. */
+    public const string Reversed = 'reversed';
 
     protected $table = 'rebate_accruals';
 

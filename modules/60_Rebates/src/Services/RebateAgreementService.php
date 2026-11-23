@@ -17,7 +17,7 @@ use Modules\Rebates\Models\RebateTier;
 final class RebateAgreementService
 {
     /** Fields that define the rebate: locked once the agreement is no longer a draft. */
-    private const array StructuralFields = ['direction', 'contact_id', 'tier_mode', 'starts_on', 'currency', 'tiers'];
+    private const array StructuralFields = ['direction', 'contact_id', 'tier_mode', 'starts_on', 'currency', 'tiers', 'rebate_type', 'supplier_contract_id', 'fixed_bonus_target', 'fixed_bonus_amount'];
 
     /**
      * @param  array<string, mixed>  $data
@@ -27,9 +27,9 @@ final class RebateAgreementService
         return DB::transaction(function () use ($tenantId, $data): RebateAgreement {
             $this->assertCodeFree($tenantId, (string) $data['code'], null);
             $agreement = RebateAgreement::create([...$this->fields($data), 'tenant_id' => $tenantId, 'status' => RebateAgreement::Draft]);
-            $this->syncTiers($agreement, $data['tiers']);
+            $this->syncTiers($agreement, $data['tiers'] ?? []);
 
-            return $agreement->load('tiers');
+            return $agreement->refresh()->load('tiers');
         });
     }
 
@@ -43,11 +43,15 @@ final class RebateAgreementService
                 throw ValidationException::withMessages(['agreement' => [__('rebate_errors.agreement.locked')]]);
             }
 
+            if (isset($data['version']) && (int) $data['version'] !== $agreement->version) {
+                throw ValidationException::withMessages(['version' => [__('rebate_errors.agreement.version_conflict')]]);
+            }
+
             if (isset($data['code'])) {
                 $this->assertCodeFree((string) $agreement->tenant_id, (string) $data['code'], (string) $agreement->id);
             }
 
-            $agreement->update($this->fields($data));
+            $agreement->update([...$this->fields($data), 'version' => $agreement->version + 1]);
 
             if (isset($data['tiers'])) {
                 $this->syncTiers($agreement, $data['tiers']);
@@ -67,8 +71,16 @@ final class RebateAgreementService
             throw ValidationException::withMessages(['agreement' => [__('rebate_errors.agreement.not_draft')]]);
         }
 
-        if (! $agreement->tiers()->exists()) {
+        if ($agreement->rebate_type === RebateAgreement::TieredVolume && ! $agreement->tiers()->exists()) {
             throw ValidationException::withMessages(['tiers' => [__('rebate_errors.agreement.tiers_required')]]);
+        }
+
+        if ($agreement->rebate_type === RebateAgreement::FixedBonus && ($agreement->fixed_bonus_target === null || $agreement->fixed_bonus_amount === null)) {
+            throw ValidationException::withMessages(['fixed_bonus_target' => [__('rebate_errors.agreement.bonus_required')]]);
+        }
+
+        if ($agreement->rebate_type === RebateAgreement::MarketingContribution && ! $agreement->contributions()->exists()) {
+            throw ValidationException::withMessages(['contributions' => [__('rebate_errors.agreement.contributions_required')]]);
         }
 
         $agreement->update(['status' => RebateAgreement::Active]);
@@ -105,11 +117,11 @@ final class RebateAgreementService
      */
     private function fields(array $data): array
     {
-        return array_diff_key($data, ['tiers' => true]);
+        return array_diff_key($data, ['tiers' => true, 'version' => true]);
     }
 
     /**
-     * @param  list<array{threshold_amount: string|int|float, rate_percent: string|int|float}>  $tiers
+     * @param  list<array{threshold_amount: string|int|float, rate_percent: string|int|float, flat_amount?: string|int|float|null}>  $tiers
      */
     private function syncTiers(RebateAgreement $agreement, array $tiers): void
     {
@@ -121,6 +133,7 @@ final class RebateAgreementService
                 'agreement_id' => $agreement->id,
                 'threshold_amount' => $tier['threshold_amount'],
                 'rate_percent' => $tier['rate_percent'],
+                'flat_amount' => $tier['flat_amount'] ?? null,
             ]);
         }
     }

@@ -20,6 +20,6 @@ final class TierResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return ['id' => $this->id, 'threshold_amount' => $this->threshold_amount, 'rate_percent' => $this->rate_percent];
+        return ['id' => $this->id, 'threshold_amount' => $this->threshold_amount, 'rate_percent' => $this->rate_percent, 'flat_amount' => $this->flat_amount];
     }
 }
