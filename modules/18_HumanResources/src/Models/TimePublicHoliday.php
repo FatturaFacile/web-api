@@ -6,10 +6,13 @@ namespace Modules\HumanResources\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
+use Illuminate\Support\Carbon;
 
 /**
  * A public holiday added by hand, or a half day (art. 20a LL), on top of the cantonal calendar: a row with a null
  * tenant is generic data, visible to every company.
+ *
+ * @property Carbon $holiday_date
  */
 final class TimePublicHoliday extends BaseEnterpriseModel
 {

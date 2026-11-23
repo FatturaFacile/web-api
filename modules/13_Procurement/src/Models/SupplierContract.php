@@ -24,6 +24,7 @@ use Modules\Workflow\Models\WorkflowInstance;
  * @property string $contract_type
  * @property string $total_committed_amount
  * @property string $consumed_amount
+ * @property string|null $minimum_spend_amount
  * @property Carbon $starts_at
  * @property Carbon $ends_at
  * @property string $status

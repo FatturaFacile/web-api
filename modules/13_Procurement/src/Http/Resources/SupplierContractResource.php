@@ -6,7 +6,11 @@ namespace Modules\Procurement\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Procurement\Models\SupplierContract;
 
+/**
+ * @mixin SupplierContract
+ */
 final class SupplierContractResource extends JsonResource
 {
     /**
@@ -24,8 +28,8 @@ final class SupplierContractResource extends JsonResource
             'minimum_spend_amount' => $this->minimum_spend_amount === null ? null : (float) $this->minimum_spend_amount,
             'alert_threshold_percent' => (float) ($this->alert_threshold_percent ?? 80),
             'currency' => $this->currency ?? 'EUR',
-            'starts_at' => $this->starts_at?->toDateString(),
-            'ends_at' => $this->ends_at?->toDateString(),
+            'starts_at' => $this->starts_at->toDateString(),
+            'ends_at' => $this->ends_at->toDateString(),
             'status' => $this->status,
             'is_locked' => (bool) $this->is_locked,
             'supplier_id' => $this->supplier_id,

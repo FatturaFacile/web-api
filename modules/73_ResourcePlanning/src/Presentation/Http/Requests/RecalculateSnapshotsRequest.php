@@ -29,7 +29,7 @@ final class RecalculateSnapshotsRequest extends FormRequest
 
         return [
             'from' => ['required', 'date_format:Y-m-d'],
-            'to' => array_values(array_filter(['required', 'date_format:Y-m-d', 'after_or_equal:from', $latest === null ? null : 'before_or_equal:'.$latest])),
+            'to' => array_filter(['required', 'date_format:Y-m-d', 'after_or_equal:from', $latest === null ? null : 'before_or_equal:'.$latest]),
             'employee_id' => ['nullable', 'uuid', Rule::exists('hr_employees', 'id')->where('tenant_id', $tenantId)],
         ];
     }

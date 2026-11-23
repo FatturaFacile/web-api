@@ -30,6 +30,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $passive_invoice_id
  * @property string|null $set_off_amount
  * @property string|null $journal_entry_id
+ * @property Carbon|null $submitted_at
+ * @property string|null $approved_by
+ * @property Carbon|null $approved_at
  * @property int $version
  */
 final class RebateSettlement extends BaseEnterpriseModel
