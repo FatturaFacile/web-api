@@ -60,9 +60,9 @@ jobs:
           --health-retries 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           # Runtime is 9.x; the ASP.NET Core 9 runtime ships with this SDK line. Newer SDKs build net9.0 fine.
           dotnet-version: |
@@ -70,7 +70,7 @@ jobs:
             10.0.x
 
       - name: Cache NuGet
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: nuget-mes-${{ runner.os }}-${{ hashFiles('services/mes/**/*.csproj') }}
@@ -97,7 +97,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mes-test-results
           path: services/mes/TestResults/*.trx
