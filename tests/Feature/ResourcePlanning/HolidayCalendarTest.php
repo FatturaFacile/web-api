@@ -61,7 +61,7 @@ it('lets the half days and the corrections of the tenant override the calendar',
 
     $holidays = rpHolidays($this, 'country=CH&region=TI&year=2027');
 
-    expect($holidays['2027-12-24']['day_fraction'])->toBe(0.5)->and($holidays['2027-12-25']['day_fraction'])->toBe(1.0);
+    expect($holidays['2027-12-24']['day_fraction'])->toEqual(0.5)->and($holidays['2027-12-25']['day_fraction'])->toEqual(1.0);
 });
 
 it('records and removes the local holidays of the tenant', function (): void {
@@ -75,7 +75,7 @@ it('records and removes the local holidays of the tenant', function (): void {
         ->json('data.id');
 
     expect($this->getJson('/api/v1/resource-planning/local-holidays')->assertOk()->json('data'))->toHaveCount(1)
-        ->and(rpHolidays($this, 'country=IT&region=VA&municipality=Luino&year=2027')['2027-09-23']['day_fraction'])->toBe(0.5)
+        ->and(rpHolidays($this, 'country=IT&region=VA&municipality=Luino&year=2027')['2027-09-23']['day_fraction'])->toEqual(0.5)
         ->and(rpHolidays($this, 'country=IT&region=VA&municipality=Gavirate&year=2027'))->not->toHaveKey('2027-09-23')
         ->and(rpHolidays($this, 'country=IT&region=MI&year=2027'))->not->toHaveKey('2027-09-23');
 

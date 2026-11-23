@@ -63,9 +63,9 @@ it('suggests only the employees with the proficiency and a valid safety certific
         ->and($candidates[0]['employee_name'])->toBe('Anna Rossi')
         ->and($candidates[0]['eligible'])->toBeTrue()
         ->and($candidates[0]['matched_skills'][0]['certification_status'])->toBe('valid')
-        ->and($candidates[0]['available_hours'])->toBe(40.0)
-        ->and($candidates[0]['requested_hours'])->toBe(20.0)
-        ->and($candidates[0]['residual_hours_per_day'])->toBe(8.0);
+        ->and($candidates[0]['available_hours'])->toEqual(40.0)
+        ->and($candidates[0]['requested_hours'])->toEqual(20.0)
+        ->and($candidates[0]['residual_hours_per_day'])->toEqual(8.0);
 });
 
 it('explains why the others are not eligible', function (): void {
@@ -97,13 +97,13 @@ it('measures the residual availability net of what is already booked', function 
     $candidates = collect(rpSearch($this, $crew['skill'], 3, ['include_ineligible' => true])->assertOk()->json('data'))->keyBy('employee_name');
 
     expect($candidates['Anna Rossi']['eligible'])->toBeFalse()
-        ->and($candidates['Anna Rossi']['residual_hours_per_day'])->toBe(2.0)
-        ->and($candidates['Anna Rossi']['peak_load_after_percent'])->toBe(125.0)
+        ->and($candidates['Anna Rossi']['residual_hours_per_day'])->toEqual(2.0)
+        ->and($candidates['Anna Rossi']['peak_load_after_percent'])->toEqual(125.0)
         ->and(collect($candidates['Anna Rossi']['blockers'])->pluck('code')->all())->toBe(['insufficient_availability']);
 
     // Asking for the 2 hours that are left makes Anna eligible again.
     $fits = rpSearch($this, $crew['skill'], 3, ['allocated_hours_per_day' => 2])->assertOk()->json('data');
-    expect($fits)->toHaveCount(1)->and($fits[0]['employee_name'])->toBe('Anna Rossi')->and($fits[0]['peak_load_after_percent'])->toBe(100.0);
+    expect($fits)->toHaveCount(1)->and($fits[0]['employee_name'])->toBe('Anna Rossi')->and($fits[0]['peak_load_after_percent'])->toEqual(100.0);
 });
 
 it('does not count the holidays and the leave of the window as availability', function (): void {
@@ -115,8 +115,8 @@ it('does not count the holidays and the leave of the window as availability', fu
     $candidates = rpSearch($this, $crew['skill'], 3, ['start_date' => RP_ASCENSION_WEEK, 'end_date' => '2027-05-07'])->assertOk()->json('data');
 
     expect($candidates[0]['employee_name'])->toBe('Anna Rossi')
-        ->and($candidates[0]['available_hours'])->toBe(16.0)
-        ->and($candidates[0]['requested_hours'])->toBe(8.0);
+        ->and($candidates[0]['available_hours'])->toEqual(16.0)
+        ->and($candidates[0]['requested_hours'])->toEqual(8.0);
 });
 
 it('refuses a skill whose validity ends before the window and a revoked certificate', function (): void {
