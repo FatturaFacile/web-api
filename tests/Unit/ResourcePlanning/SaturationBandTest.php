@@ -21,16 +21,20 @@ it('computes the load as the booked share of the net capacity', function (): voi
         ->and(SaturationBand::loadPercent(1, 100))->toBe(999.0);
 });
 
-it('bands the load: green below 80, yellow from 80 to 100, red above 100', function (float $load, SaturationBand $band): void {
-    expect(SaturationBand::fromLoad(40, $load * 0.4, $load))->toBe($band);
-})->with([
-    'idle' => [0.0, SaturationBand::Green],
-    'below the yellow threshold' => [79.99, SaturationBand::Green],
-    'at the yellow threshold' => [80.0, SaturationBand::Yellow],
-    'full' => [100.0, SaturationBand::Yellow],
-    'just over' => [100.01, SaturationBand::Red],
-    'overloaded' => [150.0, SaturationBand::Red],
-]);
+it('bands the load: green below 80, yellow from 80 to 100, red above 100', function (): void {
+    $expected = [
+        [0.0, SaturationBand::Green],
+        [79.99, SaturationBand::Green],
+        [80.0, SaturationBand::Yellow],
+        [100.0, SaturationBand::Yellow],
+        [100.01, SaturationBand::Red],
+        [150.0, SaturationBand::Red],
+    ];
+
+    foreach ($expected as [$load, $band]) {
+        expect(SaturationBand::fromLoad(40, $load * 0.4, $load))->toBe($band);
+    }
+});
 
 it('has no band for a period without capacity and without bookings', function (): void {
     expect(SaturationBand::fromLoad(0, 0, 0))->toBe(SaturationBand::None)
