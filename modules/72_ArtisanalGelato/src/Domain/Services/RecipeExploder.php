@@ -91,7 +91,8 @@ final class RecipeExploder
             if (! empty($line['sub_recipe_id'])) {
                 $this->walk((string) $line['sub_recipe_id'], $share, $recipes, $ingredients, $weights, [...$path, $recipeId], $defrosted);
             } elseif (! empty($line['ingredient_id'])) {
-                $weights[$line['ingredient_id']] = ($weights[$line['ingredient_id']] ?? 0.0) + $share;
+                $ingredientId = (string) $line['ingredient_id'];
+                $weights[$ingredientId] = ($weights[$ingredientId] ?? 0.0) + $share;
             }
         }
     }

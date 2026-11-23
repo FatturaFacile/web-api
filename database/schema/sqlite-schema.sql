@@ -12411,6 +12411,7 @@ CREATE TABLE "esm_work_orders"(
   "actual_arrival" datetime,
   "client_uuid" varchar,
   "preventive_cycle_key" varchar,
+  "billing_type" varchar not null default 'contract_included',
   foreign key("assigned_technician_id") references "esm_service_technicians"("id") on delete set null on update no action,
   foreign key("service_team_id") references "esm_service_teams"("id") on delete set null on update no action,
   foreign key("ticket_id") references "esm_tickets"("id") on delete set null on update no action,
@@ -23135,8 +23136,6 @@ CREATE TABLE "purchase_orders"(
   "workflow_instance_id" varchar,
   "rfq_id" varchar,
   "deleted_by" varchar,
-  "cup_code" varchar,
-  "cig_code" varchar,
   "sales_order_id" varchar,
   "is_dropship" tinyint(1) not null default '0',
   "source_type" varchar,
@@ -23149,6 +23148,8 @@ CREATE TABLE "purchase_orders"(
   "exchange_rate_source" varchar,
   "reminder_count" integer not null default '0',
   "last_reminder_at" datetime,
+  "cup_code" varchar,
+  "cig_code" varchar,
   foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete set null on update no action,
   foreign key("supplier_contract_id") references "supplier_contracts"("id") on delete set null on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -45374,6 +45375,7 @@ CREATE TABLE "esm_ticket_escalation_logs"(
   "fired_at" datetime not null,
   "created_at" datetime,
   "updated_at" datetime,
+  "deleted_at" datetime,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("ticket_id") references "esm_tickets"("id") on delete cascade,
   primary key("id")
@@ -45798,630 +45800,6 @@ CREATE INDEX "apportionment_run_allocations_source_center_id_index" on "apportio
 CREATE INDEX "apportionment_run_allocations_target_center_id_index" on "apportionment_run_allocations"(
   "target_center_id"
 );
-CREATE TABLE "project_billing_contracts"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "company_id" varchar,
-  "project_id" varchar not null,
-  "customer_id" varchar not null,
-  "billing_model" varchar not null,
-  "fiscal_jurisdiction" varchar not null,
-  "currency_code" varchar not null,
-  "contract_total_value" numeric not null default '0',
-  "advance_payment_percent" numeric not null default '0',
-  "advance_payment_amount" numeric not null default '0',
-  "advance_recouped_amount" numeric not null default '0',
-  "retention_guarantee_percent" numeric not null default '0',
-  "retention_release_rule" varchar not null default 'manual',
-  "retention_release_date" date,
-  "cap_amount" numeric,
-  "markup_percent" numeric not null default '0',
-  "rate_card_id" varchar,
-  "prepaid_hours_allowance" numeric not null default '0',
-  "prepaid_amount_allowance" numeric not null default '0',
-  "low_balance_alert_threshold_percent" numeric not null default '10',
-  "low_balance_alerted_at" datetime,
-  "cig" varchar,
-  "cup" varchar,
-  "contract_reference" varchar,
-  "contract_date" date,
-  "billing_status" varchar not null default 'draft',
-  "version" integer not null default '1',
-  "created_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("project_id") references "projects"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "uq_proj_billing_contract_project" on "project_billing_contracts"(
-  "project_id"
-);
-CREATE INDEX "idx_proj_billing_contract_status" on "project_billing_contracts"(
-  "tenant_id",
-  "billing_status"
-);
-CREATE INDEX "project_billing_contracts_tenant_id_index" on "project_billing_contracts"(
-  "tenant_id"
-);
-CREATE TABLE "project_retainer_ledger_entries"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "company_id" varchar,
-  "project_id" varchar not null,
-  "billing_contract_id" varchar not null,
-  "entry_type" varchar not null,
-  "source_type" varchar,
-  "source_id" varchar,
-  "entry_date" date not null,
-  "hours" numeric not null default '0',
-  "amount" numeric not null default '0',
-  "balance_hours_after" numeric not null default '0',
-  "balance_amount_after" numeric not null default '0',
-  "note" varchar,
-  "created_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("billing_contract_id") references "project_billing_contracts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "uq_proj_retainer_source" on "project_retainer_ledger_entries"(
-  "billing_contract_id",
-  "source_type",
-  "source_id"
-);
-CREATE INDEX "idx_proj_retainer_date" on "project_retainer_ledger_entries"(
-  "billing_contract_id",
-  "entry_date"
-);
-CREATE INDEX "project_retainer_ledger_entries_tenant_id_index" on "project_retainer_ledger_entries"(
-  "tenant_id"
-);
-CREATE TABLE "project_sal_certificates"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "company_id" varchar,
-  "project_id" varchar not null,
-  "billing_contract_id" varchar not null,
-  "sal_number" integer not null,
-  "period_start_date" date not null,
-  "period_end_date" date not null,
-  "previous_completion_percent" numeric not null default '0',
-  "cumulative_completion_percent" numeric not null default '0',
-  "cumulative_gross_earned_value" numeric not null default '0',
-  "previous_sal_cumulative_billed" numeric not null default '0',
-  "current_period_gross_sal" numeric not null default '0',
-  "advance_deduction_amount" numeric not null default '0',
-  "guarantee_retention_withheld" numeric not null default '0',
-  "invoice_amount" numeric not null default '0',
-  "net_billable_amount" numeric not null default '0',
-  "is_final" tinyint(1) not null default '0',
-  "status" varchar not null default 'draft',
-  "customer_approved_at" datetime,
-  "customer_approved_by" varchar,
-  "sales_invoice_id" varchar,
-  "notes" varchar,
-  "created_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("billing_contract_id") references "project_billing_contracts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "idx_proj_sal_number" on "project_sal_certificates"(
-  "project_id",
-  "sal_number"
-);
-CREATE INDEX "idx_proj_sal_status" on "project_sal_certificates"(
-  "billing_contract_id",
-  "status"
-);
-CREATE INDEX "project_sal_certificates_tenant_id_index" on "project_sal_certificates"(
-  "tenant_id"
-);
-CREATE TABLE "project_retention_ledger_entries"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "company_id" varchar,
-  "project_id" varchar not null,
-  "billing_contract_id" varchar not null,
-  "sal_certificate_id" varchar,
-  "entry_type" varchar not null,
-  "amount" numeric not null,
-  "entry_date" date not null,
-  "reason" varchar,
-  "billing_event_id" varchar,
-  "created_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("billing_contract_id") references "project_billing_contracts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "idx_proj_retention_type" on "project_retention_ledger_entries"(
-  "billing_contract_id",
-  "entry_type"
-);
-CREATE INDEX "project_retention_ledger_entries_tenant_id_index" on "project_retention_ledger_entries"(
-  "tenant_id"
-);
-CREATE TABLE "project_wip_valuation_runs"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "company_id" varchar,
-  "project_id" varchar not null,
-  "revenue_recognition_id" varchar,
-  "period_end_date" date not null,
-  "valuation_method" varchar not null,
-  "accounting_standard" varchar not null,
-  "cumulative_actual_cost_to_date" numeric not null default '0',
-  "estimated_total_cost_at_completion" numeric not null default '0',
-  "completion_ratio" numeric not null default '0',
-  "recognized_revenue_to_date" numeric not null default '0',
-  "billed_to_date" numeric not null default '0',
-  "wip_asset_or_deferred_revenue_diff" numeric not null default '0',
-  "expected_loss_provision" numeric not null default '0',
-  "gl_journal_entry_id" varchar,
-  "status" varchar not null default 'draft',
-  "run_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("project_id") references "projects"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "uq_proj_wip_run_period" on "project_wip_valuation_runs"(
-  "project_id",
-  "period_end_date"
-);
-CREATE INDEX "idx_proj_wip_run_tenant_period" on "project_wip_valuation_runs"(
-  "tenant_id",
-  "period_end_date"
-);
-CREATE INDEX "project_wip_valuation_runs_tenant_id_index" on "project_wip_valuation_runs"(
-  "tenant_id"
-);
-CREATE TABLE "project_wbs_nodes"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "company_id" varchar,
-  "project_id" varchar not null,
-  "parent_node_id" varchar,
-  "wbs_code" varchar not null default '',
-  "title" varchar not null,
-  "node_type" varchar not null default 'work_package',
-  "status" varchar not null default 'todo',
-  "required_role" varchar,
-  "planned_hours" numeric not null default '0',
-  "actual_hours" numeric not null default '0',
-  "planned_cost" numeric not null default '0',
-  "actual_cost" numeric not null default '0',
-  "planned_revenue" numeric not null default '0',
-  "start_date" date,
-  "end_date" date,
-  "percent_complete" numeric not null default '0',
-  "sort_order" integer not null default '0',
-  "early_start" date,
-  "early_finish" date,
-  "late_start" date,
-  "late_finish" date,
-  "total_float_days" integer,
-  "free_float_days" integer,
-  "is_critical" tinyint(1) not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("project_id") references "projects"("id") on delete cascade,
-  foreign key("parent_node_id") references "project_wbs_nodes"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "idx_wbs_nodes_tree" on "project_wbs_nodes"(
-  "project_id",
-  "parent_node_id",
-  "sort_order"
-);
-CREATE INDEX "idx_wbs_nodes_status" on "project_wbs_nodes"(
-  "project_id",
-  "status"
-);
-CREATE INDEX "project_wbs_nodes_tenant_id_index" on "project_wbs_nodes"(
-  "tenant_id"
-);
-CREATE INDEX "project_wbs_nodes_company_id_index" on "project_wbs_nodes"(
-  "company_id"
-);
-CREATE TABLE "project_wbs_dependencies"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "company_id" varchar,
-  "project_id" varchar not null,
-  "predecessor_node_id" varchar not null,
-  "successor_node_id" varchar not null,
-  "dependency_type" varchar not null default 'FS',
-  "lag_days" integer not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("project_id") references "projects"("id") on delete cascade,
-  foreign key("predecessor_node_id") references "project_wbs_nodes"("id") on delete cascade,
-  foreign key("successor_node_id") references "project_wbs_nodes"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "uq_wbs_dependency_pair" on "project_wbs_dependencies"(
-  "predecessor_node_id",
-  "successor_node_id"
-);
-CREATE INDEX "project_wbs_dependencies_tenant_id_index" on "project_wbs_dependencies"(
-  "tenant_id"
-);
-CREATE INDEX "project_wbs_dependencies_company_id_index" on "project_wbs_dependencies"(
-  "company_id"
-);
-CREATE TABLE "project_wbs_baselines"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "company_id" varchar,
-  "project_id" varchar not null,
-  "baseline_number" integer not null,
-  "name" varchar not null,
-  "captured_at" datetime not null,
-  "captured_by" varchar,
-  "snapshot_json" text not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("project_id") references "projects"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "uq_wbs_baseline_number" on "project_wbs_baselines"(
-  "project_id",
-  "baseline_number"
-);
-CREATE INDEX "project_wbs_baselines_tenant_id_index" on "project_wbs_baselines"(
-  "tenant_id"
-);
-CREATE INDEX "project_wbs_baselines_company_id_index" on "project_wbs_baselines"(
-  "company_id"
-);
-CREATE TABLE "rp_skills"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "category" varchar not null,
-  "skill_name" varchar not null,
-  "requires_certification" tinyint(1) not null default '0',
-  "certification_code" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "rp_skills_tenant_id_category_skill_name_unique" on "rp_skills"(
-  "tenant_id",
-  "category",
-  "skill_name"
-);
-CREATE TABLE "rp_employee_skill_profiles"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "employee_id" varchar not null,
-  "skill_id" varchar not null,
-  "proficiency_level" integer not null,
-  "valid_until_date" date,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("employee_id") references "hr_employees"("id") on delete cascade,
-  foreign key("skill_id") references "rp_skills"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "rp_employee_skill_profiles_tenant_id_employee_id_skill_id_unique" on "rp_employee_skill_profiles"(
-  "tenant_id",
-  "employee_id",
-  "skill_id"
-);
-CREATE TABLE "rp_resource_allocations"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "project_id" varchar,
-  "wbs_node_id" varchar,
-  "employee_id" varchar not null,
-  "role_id" varchar,
-  "booking_type" varchar not null,
-  "start_date" date not null,
-  "end_date" date not null,
-  "allocated_hours_per_day" numeric not null,
-  "total_allocated_hours" numeric not null default '0',
-  "is_billable" tinyint(1) not null default '1',
-  "crm_opportunity_id" varchar,
-  "is_overloaded" tinyint(1) not null default '0',
-  "peak_load_percent" numeric not null default '0',
-  "notes" text,
-  "created_by" varchar,
-  "converted_to_hard_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("employee_id") references "hr_employees"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "rp_alloc_employee_window" on "rp_resource_allocations"(
-  "tenant_id",
-  "employee_id",
-  "start_date",
-  "end_date"
-);
-CREATE INDEX "rp_resource_allocations_project_id_index" on "rp_resource_allocations"(
-  "project_id"
-);
-CREATE INDEX "rp_resource_allocations_wbs_node_id_index" on "rp_resource_allocations"(
-  "wbs_node_id"
-);
-CREATE INDEX "rp_resource_allocations_crm_opportunity_id_index" on "rp_resource_allocations"(
-  "crm_opportunity_id"
-);
-CREATE TABLE "rp_resource_capacity_snapshots"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "employee_id" varchar not null,
-  "week_start_date" date not null,
-  "contractual_hours" numeric not null default '0',
-  "leave_and_holiday_hours" numeric not null default '0',
-  "net_available_hours" numeric not null default '0',
-  "billable_booked_hours" numeric not null default '0',
-  "billable_committed_hours" numeric not null default '0',
-  "internal_booked_hours" numeric not null default '0',
-  "tentative_booked_hours" numeric not null default '0',
-  "utilization_rate_percent" numeric not null default '0',
-  "department_id" varchar,
-  "cost_center_id" varchar,
-  "computed_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("employee_id") references "hr_employees"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "rp_snapshot_employee_week" on "rp_resource_capacity_snapshots"(
-  "tenant_id",
-  "employee_id",
-  "week_start_date"
-);
-CREATE INDEX "rp_resource_capacity_snapshots_department_id_index" on "rp_resource_capacity_snapshots"(
-  "department_id"
-);
-CREATE INDEX "rp_resource_capacity_snapshots_cost_center_id_index" on "rp_resource_capacity_snapshots"(
-  "cost_center_id"
-);
-CREATE TABLE "rp_utilization_targets"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "department_id" varchar,
-  "cost_center_id" varchar,
-  "target_percent" numeric not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "rp_target_scope" on "rp_utilization_targets"(
-  "tenant_id",
-  "department_id",
-  "cost_center_id"
-);
-CREATE TABLE "rp_local_holidays"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "country" varchar not null,
-  "region_code" varchar,
-  "municipality" varchar,
-  "month" integer not null,
-  "day" integer not null,
-  "year" integer,
-  "name" varchar not null,
-  "day_fraction" numeric not null default '1',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "rp_local_holidays_tenant_id_country_region_code_index" on "rp_local_holidays"(
-  "tenant_id",
-  "country",
-  "region_code"
-);
-CREATE TABLE "receivable_items"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "customer_id" varchar not null,
-  "invoice_id" varchar,
-  "sequence" integer not null default '1',
-  "document_type" varchar not null default 'invoice',
-  "document_number" varchar,
-  "currency" varchar not null default 'EUR',
-  "original_amount" numeric not null,
-  "open_amount" numeric not null,
-  "issue_date" date not null,
-  "due_date" date not null,
-  "value_date" date,
-  "status" varchar not null default 'open',
-  "dispute_reason" varchar,
-  "disputed_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("customer_id") references "contacts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "receivable_items_source_unique" on "receivable_items"(
-  "tenant_id",
-  "invoice_id",
-  "sequence"
-);
-CREATE INDEX "receivable_items_tenant_id_customer_id_status_index" on "receivable_items"(
-  "tenant_id",
-  "customer_id",
-  "status"
-);
-CREATE INDEX "receivable_items_tenant_id_status_due_date_index" on "receivable_items"(
-  "tenant_id",
-  "status",
-  "due_date"
-);
-CREATE INDEX "receivable_items_invoice_id_index" on "receivable_items"(
-  "invoice_id"
-);
-CREATE TABLE "receivable_allocations"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "receivable_item_id" varchar not null,
-  "source_type" varchar not null,
-  "origin" varchar not null default 'manual',
-  "source_id" varchar,
-  "source_reference" varchar,
-  "amount" numeric not null,
-  "value_date" date not null,
-  "notes" text,
-  "allocated_by" varchar,
-  "reversed_at" datetime,
-  "reversed_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("receivable_item_id") references "receivable_items"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "receivable_allocations_tenant_id_receivable_item_id_index" on "receivable_allocations"(
-  "tenant_id",
-  "receivable_item_id"
-);
-CREATE INDEX "receivable_allocations_tenant_id_source_type_source_id_index" on "receivable_allocations"(
-  "tenant_id",
-  "source_type",
-  "source_id"
-);
-CREATE INDEX "receivable_allocations_source_id_index" on "receivable_allocations"(
-  "source_id"
-);
-CREATE TABLE "customer_credit_limits"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "customer_id" varchar not null,
-  "currency" varchar not null default 'EUR',
-  "granted_limit" numeric not null default '0',
-  "insured_limit" numeric not null default '0',
-  "insurer_name" varchar,
-  "policy_number" varchar,
-  "coverage_percentage" numeric not null default '0',
-  "max_overdue_days" integer,
-  "overdue_tolerance_amount" numeric not null default '0',
-  "reaction_policy" varchar not null default 'warning',
-  "valid_from" date not null,
-  "valid_to" date,
-  "is_active" tinyint(1) not null default '1',
-  "notes" text,
-  "created_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("customer_id") references "contacts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "customer_credit_limits_tenant_id_customer_id_valid_from_index" on "customer_credit_limits"(
-  "tenant_id",
-  "customer_id",
-  "valid_from"
-);
-CREATE TABLE "customer_credit_overrides"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "customer_id" varchar not null,
-  "scope" varchar not null default 'all',
-  "reason" text not null,
-  "authorized_by" varchar not null,
-  "expires_at" datetime,
-  "revoked_at" datetime,
-  "revoked_by" varchar,
-  "revoke_reason" text,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("customer_id") references "contacts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "customer_credit_overrides_tenant_id_customer_id_expires_at_index" on "customer_credit_overrides"(
-  "tenant_id",
-  "customer_id",
-  "expires_at"
-);
-CREATE TABLE "receivable_provision_rates"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "bucket_key" varchar not null,
-  "rate_percent" numeric not null,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "receivable_provision_rates_tenant_id_bucket_key_unique" on "receivable_provision_rates"(
-  "tenant_id",
-  "bucket_key"
-);
-CREATE TABLE "customer_statement_dispatches"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "customer_id" varchar not null,
-  "period_from" date not null,
-  "period_to" date not null,
-  "recipient" varchar not null,
-  "locale" varchar not null default 'en',
-  "status" varchar not null default 'queued',
-  "error" text,
-  "requested_by" varchar,
-  "sent_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("customer_id") references "contacts"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "customer_statement_dispatches_tenant_id_customer_id_index" on "customer_statement_dispatches"(
-  "tenant_id",
-  "customer_id"
-);
 CREATE INDEX "rebate_agreements_supplier_contract_id_index" on "rebate_agreements"(
   "supplier_contract_id"
 );
@@ -46710,6 +46088,630 @@ CREATE TABLE "purchase_order_virtual_stock_movements"(
 CREATE INDEX "po_virtual_moves_tenant_line_idx" on "purchase_order_virtual_stock_movements"(
   "tenant_id",
   "purchase_order_line_id"
+);
+CREATE TABLE "project_wbs_nodes"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "parent_node_id" varchar,
+  "wbs_code" varchar not null default '',
+  "title" varchar not null,
+  "node_type" varchar not null default 'work_package',
+  "status" varchar not null default 'todo',
+  "required_role" varchar,
+  "planned_hours" numeric not null default '0',
+  "actual_hours" numeric not null default '0',
+  "planned_cost" numeric not null default '0',
+  "actual_cost" numeric not null default '0',
+  "planned_revenue" numeric not null default '0',
+  "start_date" date,
+  "end_date" date,
+  "percent_complete" numeric not null default '0',
+  "sort_order" integer not null default '0',
+  "early_start" date,
+  "early_finish" date,
+  "late_start" date,
+  "late_finish" date,
+  "total_float_days" integer,
+  "free_float_days" integer,
+  "is_critical" tinyint(1) not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("project_id") references "projects"("id") on delete cascade,
+  foreign key("parent_node_id") references "project_wbs_nodes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_wbs_nodes_tree" on "project_wbs_nodes"(
+  "project_id",
+  "parent_node_id",
+  "sort_order"
+);
+CREATE INDEX "idx_wbs_nodes_status" on "project_wbs_nodes"(
+  "project_id",
+  "status"
+);
+CREATE INDEX "project_wbs_nodes_tenant_id_index" on "project_wbs_nodes"(
+  "tenant_id"
+);
+CREATE INDEX "project_wbs_nodes_company_id_index" on "project_wbs_nodes"(
+  "company_id"
+);
+CREATE TABLE "project_wbs_dependencies"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "predecessor_node_id" varchar not null,
+  "successor_node_id" varchar not null,
+  "dependency_type" varchar not null default 'FS',
+  "lag_days" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("project_id") references "projects"("id") on delete cascade,
+  foreign key("predecessor_node_id") references "project_wbs_nodes"("id") on delete cascade,
+  foreign key("successor_node_id") references "project_wbs_nodes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_wbs_dependency_pair" on "project_wbs_dependencies"(
+  "predecessor_node_id",
+  "successor_node_id"
+);
+CREATE INDEX "project_wbs_dependencies_tenant_id_index" on "project_wbs_dependencies"(
+  "tenant_id"
+);
+CREATE INDEX "project_wbs_dependencies_company_id_index" on "project_wbs_dependencies"(
+  "company_id"
+);
+CREATE TABLE "project_wbs_baselines"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "baseline_number" integer not null,
+  "name" varchar not null,
+  "captured_at" datetime not null,
+  "captured_by" varchar,
+  "snapshot_json" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("project_id") references "projects"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_wbs_baseline_number" on "project_wbs_baselines"(
+  "project_id",
+  "baseline_number"
+);
+CREATE INDEX "project_wbs_baselines_tenant_id_index" on "project_wbs_baselines"(
+  "tenant_id"
+);
+CREATE INDEX "project_wbs_baselines_company_id_index" on "project_wbs_baselines"(
+  "company_id"
+);
+CREATE TABLE "receivable_items"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "customer_id" varchar not null,
+  "invoice_id" varchar,
+  "sequence" integer not null default '1',
+  "document_type" varchar not null default 'invoice',
+  "document_number" varchar,
+  "currency" varchar not null default 'EUR',
+  "original_amount" numeric not null,
+  "open_amount" numeric not null,
+  "issue_date" date not null,
+  "due_date" date not null,
+  "value_date" date,
+  "status" varchar not null default 'open',
+  "dispute_reason" varchar,
+  "disputed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "receivable_items_source_unique" on "receivable_items"(
+  "tenant_id",
+  "invoice_id",
+  "sequence"
+);
+CREATE INDEX "receivable_items_tenant_id_customer_id_status_index" on "receivable_items"(
+  "tenant_id",
+  "customer_id",
+  "status"
+);
+CREATE INDEX "receivable_items_tenant_id_status_due_date_index" on "receivable_items"(
+  "tenant_id",
+  "status",
+  "due_date"
+);
+CREATE INDEX "receivable_items_invoice_id_index" on "receivable_items"(
+  "invoice_id"
+);
+CREATE TABLE "receivable_allocations"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "receivable_item_id" varchar not null,
+  "source_type" varchar not null,
+  "origin" varchar not null default 'manual',
+  "source_id" varchar,
+  "source_reference" varchar,
+  "amount" numeric not null,
+  "value_date" date not null,
+  "notes" text,
+  "allocated_by" varchar,
+  "reversed_at" datetime,
+  "reversed_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("receivable_item_id") references "receivable_items"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "receivable_allocations_tenant_id_receivable_item_id_index" on "receivable_allocations"(
+  "tenant_id",
+  "receivable_item_id"
+);
+CREATE INDEX "receivable_allocations_tenant_id_source_type_source_id_index" on "receivable_allocations"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "receivable_allocations_source_id_index" on "receivable_allocations"(
+  "source_id"
+);
+CREATE TABLE "customer_credit_limits"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "customer_id" varchar not null,
+  "currency" varchar not null default 'EUR',
+  "granted_limit" numeric not null default '0',
+  "insured_limit" numeric not null default '0',
+  "insurer_name" varchar,
+  "policy_number" varchar,
+  "coverage_percentage" numeric not null default '0',
+  "max_overdue_days" integer,
+  "overdue_tolerance_amount" numeric not null default '0',
+  "reaction_policy" varchar not null default 'warning',
+  "valid_from" date not null,
+  "valid_to" date,
+  "is_active" tinyint(1) not null default '1',
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "customer_credit_limits_tenant_id_customer_id_valid_from_index" on "customer_credit_limits"(
+  "tenant_id",
+  "customer_id",
+  "valid_from"
+);
+CREATE TABLE "customer_credit_overrides"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "customer_id" varchar not null,
+  "scope" varchar not null default 'all',
+  "reason" text not null,
+  "authorized_by" varchar not null,
+  "expires_at" datetime,
+  "revoked_at" datetime,
+  "revoked_by" varchar,
+  "revoke_reason" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "customer_credit_overrides_tenant_id_customer_id_expires_at_index" on "customer_credit_overrides"(
+  "tenant_id",
+  "customer_id",
+  "expires_at"
+);
+CREATE TABLE "receivable_provision_rates"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "bucket_key" varchar not null,
+  "rate_percent" numeric not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "receivable_provision_rates_tenant_id_bucket_key_unique" on "receivable_provision_rates"(
+  "tenant_id",
+  "bucket_key"
+);
+CREATE TABLE "customer_statement_dispatches"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "customer_id" varchar not null,
+  "period_from" date not null,
+  "period_to" date not null,
+  "recipient" varchar not null,
+  "locale" varchar not null default 'en',
+  "status" varchar not null default 'queued',
+  "error" text,
+  "requested_by" varchar,
+  "sent_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "customer_statement_dispatches_tenant_id_customer_id_index" on "customer_statement_dispatches"(
+  "tenant_id",
+  "customer_id"
+);
+CREATE TABLE "project_billing_contracts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "customer_id" varchar not null,
+  "billing_model" varchar not null,
+  "fiscal_jurisdiction" varchar not null,
+  "currency_code" varchar not null,
+  "contract_total_value" numeric not null default '0',
+  "advance_payment_percent" numeric not null default '0',
+  "advance_payment_amount" numeric not null default '0',
+  "advance_recouped_amount" numeric not null default '0',
+  "retention_guarantee_percent" numeric not null default '0',
+  "retention_release_rule" varchar not null default 'manual',
+  "retention_release_date" date,
+  "cap_amount" numeric,
+  "markup_percent" numeric not null default '0',
+  "rate_card_id" varchar,
+  "prepaid_hours_allowance" numeric not null default '0',
+  "prepaid_amount_allowance" numeric not null default '0',
+  "low_balance_alert_threshold_percent" numeric not null default '10',
+  "low_balance_alerted_at" datetime,
+  "cig" varchar,
+  "cup" varchar,
+  "contract_reference" varchar,
+  "contract_date" date,
+  "billing_status" varchar not null default 'draft',
+  "version" integer not null default '1',
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("project_id") references "projects"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_proj_billing_contract_project" on "project_billing_contracts"(
+  "project_id"
+);
+CREATE INDEX "idx_proj_billing_contract_status" on "project_billing_contracts"(
+  "tenant_id",
+  "billing_status"
+);
+CREATE INDEX "project_billing_contracts_tenant_id_index" on "project_billing_contracts"(
+  "tenant_id"
+);
+CREATE TABLE "project_retainer_ledger_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "billing_contract_id" varchar not null,
+  "entry_type" varchar not null,
+  "source_type" varchar,
+  "source_id" varchar,
+  "entry_date" date not null,
+  "hours" numeric not null default '0',
+  "amount" numeric not null default '0',
+  "balance_hours_after" numeric not null default '0',
+  "balance_amount_after" numeric not null default '0',
+  "note" varchar,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("billing_contract_id") references "project_billing_contracts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_proj_retainer_source" on "project_retainer_ledger_entries"(
+  "billing_contract_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "idx_proj_retainer_date" on "project_retainer_ledger_entries"(
+  "billing_contract_id",
+  "entry_date"
+);
+CREATE INDEX "project_retainer_ledger_entries_tenant_id_index" on "project_retainer_ledger_entries"(
+  "tenant_id"
+);
+CREATE TABLE "project_sal_certificates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "billing_contract_id" varchar not null,
+  "sal_number" integer not null,
+  "period_start_date" date not null,
+  "period_end_date" date not null,
+  "previous_completion_percent" numeric not null default '0',
+  "cumulative_completion_percent" numeric not null default '0',
+  "cumulative_gross_earned_value" numeric not null default '0',
+  "previous_sal_cumulative_billed" numeric not null default '0',
+  "current_period_gross_sal" numeric not null default '0',
+  "advance_deduction_amount" numeric not null default '0',
+  "guarantee_retention_withheld" numeric not null default '0',
+  "invoice_amount" numeric not null default '0',
+  "net_billable_amount" numeric not null default '0',
+  "is_final" tinyint(1) not null default '0',
+  "status" varchar not null default 'draft',
+  "customer_approved_at" datetime,
+  "customer_approved_by" varchar,
+  "sales_invoice_id" varchar,
+  "notes" varchar,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("billing_contract_id") references "project_billing_contracts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_proj_sal_number" on "project_sal_certificates"(
+  "project_id",
+  "sal_number"
+);
+CREATE INDEX "idx_proj_sal_status" on "project_sal_certificates"(
+  "billing_contract_id",
+  "status"
+);
+CREATE INDEX "project_sal_certificates_tenant_id_index" on "project_sal_certificates"(
+  "tenant_id"
+);
+CREATE TABLE "project_retention_ledger_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "billing_contract_id" varchar not null,
+  "sal_certificate_id" varchar,
+  "entry_type" varchar not null,
+  "amount" numeric not null,
+  "entry_date" date not null,
+  "reason" varchar,
+  "billing_event_id" varchar,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("billing_contract_id") references "project_billing_contracts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_proj_retention_type" on "project_retention_ledger_entries"(
+  "billing_contract_id",
+  "entry_type"
+);
+CREATE INDEX "project_retention_ledger_entries_tenant_id_index" on "project_retention_ledger_entries"(
+  "tenant_id"
+);
+CREATE TABLE "project_wip_valuation_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "project_id" varchar not null,
+  "revenue_recognition_id" varchar,
+  "period_end_date" date not null,
+  "valuation_method" varchar not null,
+  "accounting_standard" varchar not null,
+  "cumulative_actual_cost_to_date" numeric not null default '0',
+  "estimated_total_cost_at_completion" numeric not null default '0',
+  "completion_ratio" numeric not null default '0',
+  "recognized_revenue_to_date" numeric not null default '0',
+  "billed_to_date" numeric not null default '0',
+  "wip_asset_or_deferred_revenue_diff" numeric not null default '0',
+  "expected_loss_provision" numeric not null default '0',
+  "gl_journal_entry_id" varchar,
+  "status" varchar not null default 'draft',
+  "run_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("project_id") references "projects"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_proj_wip_run_period" on "project_wip_valuation_runs"(
+  "project_id",
+  "period_end_date"
+);
+CREATE INDEX "idx_proj_wip_run_tenant_period" on "project_wip_valuation_runs"(
+  "tenant_id",
+  "period_end_date"
+);
+CREATE INDEX "project_wip_valuation_runs_tenant_id_index" on "project_wip_valuation_runs"(
+  "tenant_id"
+);
+CREATE TABLE "rp_skills"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "category" varchar not null,
+  "skill_name" varchar not null,
+  "requires_certification" tinyint(1) not null default '0',
+  "certification_code" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "rp_skills_tenant_id_category_skill_name_unique" on "rp_skills"(
+  "tenant_id",
+  "category",
+  "skill_name"
+);
+CREATE TABLE "rp_employee_skill_profiles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "employee_id" varchar not null,
+  "skill_id" varchar not null,
+  "proficiency_level" integer not null,
+  "valid_until_date" date,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("employee_id") references "hr_employees"("id") on delete cascade,
+  foreign key("skill_id") references "rp_skills"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "rp_employee_skill_profiles_tenant_id_employee_id_skill_id_unique" on "rp_employee_skill_profiles"(
+  "tenant_id",
+  "employee_id",
+  "skill_id"
+);
+CREATE TABLE "rp_resource_allocations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "project_id" varchar,
+  "wbs_node_id" varchar,
+  "employee_id" varchar not null,
+  "role_id" varchar,
+  "booking_type" varchar not null,
+  "start_date" date not null,
+  "end_date" date not null,
+  "allocated_hours_per_day" numeric not null,
+  "total_allocated_hours" numeric not null default '0',
+  "is_billable" tinyint(1) not null default '1',
+  "crm_opportunity_id" varchar,
+  "is_overloaded" tinyint(1) not null default '0',
+  "peak_load_percent" numeric not null default '0',
+  "notes" text,
+  "created_by" varchar,
+  "converted_to_hard_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("employee_id") references "hr_employees"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "rp_alloc_employee_window" on "rp_resource_allocations"(
+  "tenant_id",
+  "employee_id",
+  "start_date",
+  "end_date"
+);
+CREATE INDEX "rp_resource_allocations_project_id_index" on "rp_resource_allocations"(
+  "project_id"
+);
+CREATE INDEX "rp_resource_allocations_wbs_node_id_index" on "rp_resource_allocations"(
+  "wbs_node_id"
+);
+CREATE INDEX "rp_resource_allocations_crm_opportunity_id_index" on "rp_resource_allocations"(
+  "crm_opportunity_id"
+);
+CREATE TABLE "rp_resource_capacity_snapshots"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "employee_id" varchar not null,
+  "week_start_date" date not null,
+  "contractual_hours" numeric not null default '0',
+  "leave_and_holiday_hours" numeric not null default '0',
+  "net_available_hours" numeric not null default '0',
+  "billable_booked_hours" numeric not null default '0',
+  "billable_committed_hours" numeric not null default '0',
+  "internal_booked_hours" numeric not null default '0',
+  "tentative_booked_hours" numeric not null default '0',
+  "utilization_rate_percent" numeric not null default '0',
+  "department_id" varchar,
+  "cost_center_id" varchar,
+  "computed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("employee_id") references "hr_employees"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "rp_snapshot_employee_week" on "rp_resource_capacity_snapshots"(
+  "tenant_id",
+  "employee_id",
+  "week_start_date"
+);
+CREATE INDEX "rp_resource_capacity_snapshots_department_id_index" on "rp_resource_capacity_snapshots"(
+  "department_id"
+);
+CREATE INDEX "rp_resource_capacity_snapshots_cost_center_id_index" on "rp_resource_capacity_snapshots"(
+  "cost_center_id"
+);
+CREATE TABLE "rp_utilization_targets"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "department_id" varchar,
+  "cost_center_id" varchar,
+  "target_percent" numeric not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "rp_target_scope" on "rp_utilization_targets"(
+  "tenant_id",
+  "department_id",
+  "cost_center_id"
+);
+CREATE TABLE "rp_local_holidays"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "country" varchar not null,
+  "region_code" varchar,
+  "municipality" varchar,
+  "month" integer not null,
+  "day" integer not null,
+  "year" integer,
+  "name" varchar not null,
+  "day_fraction" numeric not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "rp_local_holidays_tenant_id_country_region_code_index" on "rp_local_holidays"(
+  "tenant_id",
+  "country",
+  "region_code"
 );
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
@@ -47142,10 +47144,12 @@ INSERT INTO migrations VALUES(427,'2027_12_21_000100_extend_inventory_counting_a
 INSERT INTO migrations VALUES(428,'2027_12_22_000100_create_esm_work_order_photos_table',7);
 INSERT INTO migrations VALUES(429,'2027_12_21_000100_add_helpdesk_sla_escalation_chains_and_ticket_time_billing',8);
 INSERT INTO migrations VALUES(430,'2027_12_21_000100_create_analytical_accounting_tables',8);
-INSERT INTO migrations VALUES(431,'2027_12_23_000100_create_project_billing_contract_tables',9);
-INSERT INTO migrations VALUES(432,'2027_12_22_000200_create_project_wbs_portfolio_tables',10);
-INSERT INTO migrations VALUES(433,'2027_12_23_000100_create_resource_planning_tables',10);
-INSERT INTO migrations VALUES(434,'2027_12_23_000100_create_accounts_receivable_credit_tables',11);
-INSERT INTO migrations VALUES(435,'2027_11_22_100000_extend_rebates_for_supplier_programs',12);
-INSERT INTO migrations VALUES(436,'2027_11_22_100100_add_blanket_thresholds_to_supplier_contracts',12);
-INSERT INTO migrations VALUES(437,'2027_12_20_000100_create_purchase_order_confirmation_dropship_tables',12);
+INSERT INTO migrations VALUES(431,'2027_12_22_000100_add_soft_deletes_to_esm_ticket_escalation_logs',9);
+INSERT INTO migrations VALUES(432,'2027_12_22_000200_add_billing_type_to_esm_work_orders',10);
+INSERT INTO migrations VALUES(433,'2027_11_22_100000_extend_rebates_for_supplier_programs',11);
+INSERT INTO migrations VALUES(434,'2027_11_22_100100_add_blanket_thresholds_to_supplier_contracts',11);
+INSERT INTO migrations VALUES(435,'2027_12_20_000100_create_purchase_order_confirmation_dropship_tables',11);
+INSERT INTO migrations VALUES(436,'2027_12_22_000200_create_project_wbs_portfolio_tables',11);
+INSERT INTO migrations VALUES(437,'2027_12_23_000100_create_accounts_receivable_credit_tables',11);
+INSERT INTO migrations VALUES(438,'2027_12_23_000100_create_project_billing_contract_tables',11);
+INSERT INTO migrations VALUES(439,'2027_12_23_000100_create_resource_planning_tables',11);

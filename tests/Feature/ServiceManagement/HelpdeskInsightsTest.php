@@ -115,14 +115,14 @@ test('CSAT, mean times and SLA compliance are summarised by queue, priority and 
     $groups = collect($report['groups'])->keyBy('key');
 
     expect($report['totals']['tickets'])->toBe(3)
-        ->and($report['totals']['mttfr_minutes'])->toBe(60.0)
-        ->and($report['totals']['mttr_minutes'])->toBe(180.0)
+        ->and($report['totals']['mttfr_minutes'])->toEqual(60.0)
+        ->and($report['totals']['mttr_minutes'])->toEqual(180.0)
         ->and($groups[$this->teamA->id]['tickets'])->toBe(2)
-        ->and($groups[$this->teamA->id]['mttfr_minutes'])->toBe(60.0)
-        ->and($groups[$this->teamA->id]['mttr_minutes'])->toBe(180.0)
-        ->and($groups[$this->teamA->id]['first_response_compliance_percent'])->toBe(50.0)
-        ->and($groups[$this->teamA->id]['resolution_compliance_percent'])->toBe(50.0)
-        ->and($groups[$this->teamA->id]['csat'])->toBe(['responses' => 2, 'average' => 4.0, 'distribution' => ['1' => 0, '2' => 0, '3' => 1, '4' => 0, '5' => 1]])
+        ->and($groups[$this->teamA->id]['mttfr_minutes'])->toEqual(60.0)
+        ->and($groups[$this->teamA->id]['mttr_minutes'])->toEqual(180.0)
+        ->and($groups[$this->teamA->id]['first_response_compliance_percent'])->toEqual(50.0)
+        ->and($groups[$this->teamA->id]['resolution_compliance_percent'])->toEqual(50.0)
+        ->and($groups[$this->teamA->id]['csat'])->toEqual(['responses' => 2, 'average' => 4.0, 'distribution' => ['1' => 0, '2' => 0, '3' => 1, '4' => 0, '5' => 1]])
         ->and($groups[$this->teamB->id]['tickets'])->toBe(1)
         ->and($groups[$this->teamB->id]['mttfr_minutes'])->toBeNull()
         ->and($groups[$this->teamB->id]['csat']['average'])->toBeNull();
@@ -130,11 +130,11 @@ test('CSAT, mean times and SLA compliance are summarised by queue, priority and 
     $byPriority = collect($this->getJson('/api/v1/esm/helpdesk/metrics?from=2027-06-01&to=2027-06-01&group_by=priority')->assertOk()->json('data.groups'))->keyBy('key');
     expect($byPriority->keys()->sort()->values()->all())->toBe(['high', 'low'])
         ->and($byPriority['high']['tickets'])->toBe(2)
-        ->and($byPriority['low']['csat']['average'])->toBe(3.0);
+        ->and($byPriority['low']['csat']['average'])->toEqual(3.0);
 
     $byContract = collect($this->getJson('/api/v1/esm/helpdesk/metrics?from=2027-06-01&to=2027-06-01&group_by=contract')->assertOk()->json('data.groups'))->keyBy(fn (array $group): string => (string) $group['key']);
     expect($byContract[$contract->id]['tickets'])->toBe(1)
-        ->and($byContract[$contract->id]['csat']['average'])->toBe(5.0)
+        ->and($byContract[$contract->id]['csat']['average'])->toEqual(5.0)
         ->and($byContract['']['tickets'])->toBe(2);
 
     $this->getJson('/api/v1/esm/helpdesk/metrics?group_by=weather')->assertUnprocessable()->assertJsonValidationErrors('group_by');

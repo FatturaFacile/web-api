@@ -235,6 +235,7 @@ final class GelatoReferenceSeeder extends Seeder
     {
         $rows = [];
         // [code, it|en|de|fr, sugar, cocoa_mass, cocoa_butter(added), milk powder slng, milk fat, extra allergens]
+        /** @var list<array{string, string, int, int, int, int, int, string}> $couvertures */
         $couvertures = [
             ['CHOC_DARK_99', 'Cioccolato fondente 99%|Dark chocolate 99%|Zartbitterschokolade 99%|Chocolat noir 99%', 1, 90, 9, 0, 0, 'soy'],
             ['CHOC_DARK_85', 'Cioccolato fondente 85%|Dark chocolate 85%|Zartbitterschokolade 85%|Chocolat noir 85%', 14, 70, 15, 0, 0, 'soy'],

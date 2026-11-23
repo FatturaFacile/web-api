@@ -196,7 +196,7 @@ test('a replay with the same idempotency key returns the first entry and books t
 
     $first = $this->postJson($url, ['minutes' => 60, 'idempotency_key' => 'queue-1'])->assertCreated()->json('data.id');
     $again = $this->withHeader('Idempotency-Key', 'queue-1')->postJson($url, ['minutes' => 60])->assertOk()->json('data.id');
-    $other = $this->postJson($url, ['minutes' => 60, 'idempotency_key' => 'queue-2'])->assertCreated()->json('data.id');
+    $other = $this->withoutHeader('Idempotency-Key')->postJson($url, ['minutes' => 60, 'idempotency_key' => 'queue-2'])->assertCreated()->json('data.id');
 
     expect($again)->toBe($first)
         ->and($other)->not->toBe($first)

@@ -63,6 +63,7 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
                 'status' => 'draft',
                 'customer_id' => $customerId,
                 'service_contract_id' => $dto->serviceContractId,
+                'billing_type' => $dto->billingType,
                 'asset_id' => $dto->assetId,
                 'ticket_id' => $dto->ticketId,
                 'project_id' => $dto->projectId,

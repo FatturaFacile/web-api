@@ -178,6 +178,7 @@ final class HelpdeskSlaController extends Controller
     #[OA\Post(path: '/api/v1/esm/tickets/{ticket}/escalate/field-service', operationId: 'escalateEsmTicketToFieldService', summary: 'Hand a ticket off to a field service work order', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['ESM Helpdesk SLA'], parameters: [new OA\Parameter(ref: '#/components/parameters/HelpdeskTicketPath')], responses: [new OA\Response(response: 201, description: 'Work order created, or the one created before'), new OA\Response(response: 422, description: 'The ticket cannot be handed off')])]
     public function toFieldService(HandoffToFieldServiceRequest $request, Ticket $ticket, TicketHandoffService $handoff): JsonResponse
     {
+        $this->ensureTicketOfTenant($ticket);
         $this->authorize('escalate', $ticket);
 
         $workOrder = $handoff->toFieldService($ticket, $request->validated(), $request->user()?->id);
@@ -188,6 +189,7 @@ final class HelpdeskSlaController extends Controller
     #[OA\Post(path: '/api/v1/esm/tickets/{ticket}/escalate/rma', operationId: 'escalateEsmTicketToRma', summary: 'Hand a ticket off to an RMA return', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['ESM Helpdesk SLA'], parameters: [new OA\Parameter(ref: '#/components/parameters/HelpdeskTicketPath')], responses: [new OA\Response(response: 201, description: 'RMA issued, or the one issued before'), new OA\Response(response: 422, description: 'The ticket cannot be handed off')])]
     public function toRma(HandoffToRmaRequest $request, Ticket $ticket, TicketHandoffService $handoff): JsonResponse
     {
+        $this->ensureTicketOfTenant($ticket);
         $this->authorize('escalate', $ticket);
 
         $result = $handoff->toRma($ticket, $request->validated(), $request->user()?->id);
@@ -201,5 +203,15 @@ final class HelpdeskSlaController extends Controller
     private function tenantId(): string
     {
         return (string) $this->tenantContext->getTenantId();
+    }
+
+    /**
+     * A ticket of another tenant is reported as missing, whoever the caller is.
+     */
+    private function ensureTicketOfTenant(Ticket $ticket): void
+    {
+        $tenantId = app(TenantContext::class)->getTenantId();
+
+        abort_if($tenantId !== null && (string) $ticket->tenant_id !== $tenantId, 404);
     }
 }
