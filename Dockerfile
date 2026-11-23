@@ -1,4 +1,4 @@
-FROM php:8.5-fpm-alpine AS base
+FROM php:8.6-fpm-alpine AS base
 
 RUN apk add --no-cache \
     curl \
