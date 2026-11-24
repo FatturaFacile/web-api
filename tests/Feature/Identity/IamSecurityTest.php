@@ -180,6 +180,7 @@ test('role and assignment changes land in the audit ledger and notify the member
 });
 
 test('break-glass: only an owner with a second factor keeps the password login when the tenant is SSO-only', function (): void {
+    config(['auth.token_mode.enabled' => true]);
     TenantSecurityPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'sso_only' => true]);
     $password = 'Cc3!'.Str::random(16);
     $owner = secUser($this->tenant, 'owner');

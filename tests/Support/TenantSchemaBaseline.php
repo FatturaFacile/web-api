@@ -93,6 +93,7 @@ final class TenantSchemaBaseline
         'regions',
         'rp_local_holidays',
         'shipping_carriers',
+        'swiss_vat_tax_codes',
         'task_status_translations',
         'task_statuses',
         'time_public_holidays',

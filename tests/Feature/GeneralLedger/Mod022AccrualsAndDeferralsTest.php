@@ -397,6 +397,7 @@ test('year-end summary, 1-click 31/12 closing, 01/01 reversal symmetry, tenant i
         'total_gross' => 365,
         'status' => 'issued',
     ]);
+    $salesInv2027->forceFill(['status' => 'issued'])->save();
     InvoiceItem::create([
         'tenant_id' => $this->tenant->id,
         'invoice_id' => $salesInv2027->id,

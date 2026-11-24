@@ -21,6 +21,9 @@ final class OutputLabelService
 {
     public const FNC1 = "\xF1";
 
+    /** Symbology identifier of a GS1-128 symbol, the printable equivalent of the leading FNC1. */
+    public const SYMBOLOGY_IDENTIFIER = ']C1';
+
     /**
      * @return array{production_order_id: string, lot_id: string, lot_number: string, gtin: string, expiration_date: string|null, human_readable: string, data: string, symbology: string, format: string, content: string}
      */
@@ -60,7 +63,8 @@ final class OutputLabelService
             'gtin' => $gtin,
             'expiration_date' => $lot->expiration_date?->toDateString(),
             'human_readable' => $human,
-            'data' => $data,
+            // FNC1 is a single non-UTF-8 byte (0xF1): the JSON carries the GS1 symbology identifier ]C1 in its place.
+            'data' => self::SYMBOLOGY_IDENTIFIER.substr($data, strlen(self::FNC1)),
             'symbology' => 'gs1-128',
             'format' => $format,
             'content' => $this->draw($data, $format),

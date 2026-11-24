@@ -23,7 +23,7 @@ use Modules\GeneralLedger\Services\Tax\Decimal;
  *
  * @phpstan-type PlanItem array{open_item_id: string, supplier_id: string, kind: string, document_number: string, due_date: string, selection_reason: string, open_amount: string, skonto_percentage: string|null, skonto_deadline: string|null, skonto_amount: string, credit_applied_amount: string, cash_amount: string, credit_used_amount: string, creditor_iban: string|null}
  * @phpstan-type PlanOffset array{debit_item_id: string, credit_item_id: string, amount: string}
- * @phpstan-type PlanTransfer array{supplier_id: string, creditor_iban: string|null, currency: string, gross_amount: string, skonto_amount: string, credit_netted_amount: string, amount: string, item_ids: list<string>, document_numbers: list<string>}
+ * @phpstan-type PlanTransfer array{supplier_id: string, creditor_iban: string|null, currency: string, gross_amount: string, skonto_amount: string, credit_netted_amount: string, amount: string, items_count: int, item_ids: list<string>, document_numbers: list<string>}
  * @phpstan-type PlanExcluded array{open_item_id: string, document_number: string, supplier_id: string, reason: string}
  * @phpstan-type Plan array{items: list<PlanItem>, offsets: list<PlanOffset>, transfers: list<PlanTransfer>, excluded: list<PlanExcluded>, totals: array{debit_total: string, credit_netted_total: string, skonto_total: string, net_total: string, items_count: int, transfers_count: int}}
  */
@@ -198,11 +198,12 @@ final class PaymentRunPlanner
 
         foreach ($rows as $row) {
             $key = $row['supplier_id'].'|'.$row['creditor_iban'].'|'.$currency;
-            $group = $groups[$key] ?? ['supplier_id' => $row['supplier_id'], 'creditor_iban' => $row['creditor_iban'], 'currency' => $currency, 'gross_amount' => '0.00', 'skonto_amount' => '0.00', 'credit_netted_amount' => '0.00', 'amount' => '0.00', 'item_ids' => [], 'document_numbers' => []];
+            $group = $groups[$key] ?? ['supplier_id' => $row['supplier_id'], 'creditor_iban' => $row['creditor_iban'], 'currency' => $currency, 'gross_amount' => '0.00', 'skonto_amount' => '0.00', 'credit_netted_amount' => '0.00', 'amount' => '0.00', 'items_count' => 0, 'item_ids' => [], 'document_numbers' => []];
             $group['gross_amount'] = Decimal::round2(Decimal::add($group['gross_amount'], $row['open_amount']));
             $group['skonto_amount'] = Decimal::round2(Decimal::add($group['skonto_amount'], $row['skonto_amount']));
             $group['credit_netted_amount'] = Decimal::round2(Decimal::add($group['credit_netted_amount'], $row['credit_applied_amount']));
             $group['amount'] = Decimal::round2(Decimal::add($group['amount'], $row['cash_amount']));
+            $group['items_count']++;
             $group['item_ids'][] = $row['open_item_id'];
             $group['document_numbers'][] = $row['document_number'];
             $groups[$key] = $group;

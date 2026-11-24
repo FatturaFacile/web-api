@@ -31,6 +31,6 @@ final class MfgMachineReading extends BaseEnterpriseModel
 
     protected function casts(): array
     {
-        return ['occurred_at' => 'datetime', 'payload' => 'array'];
+        return ['value' => 'decimal:4', 'occurred_at' => 'datetime', 'payload' => 'array'];
     }
 }

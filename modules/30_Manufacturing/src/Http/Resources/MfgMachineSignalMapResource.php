@@ -32,7 +32,8 @@ final class MfgMachineSignalMapResource extends JsonResource
             'scale_factor' => $this->scale_factor,
             'offset_value' => $this->offset_value,
             'value_path' => $this->value_path,
-            'state_map' => $this->state_map,
+            // An object, so JsonResource::filter() does not renumber the integer keys (raw device values) into a list.
+            'state_map' => $this->state_map ? (object) $this->state_map : null,
             'unit' => $this->unit,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at?->toIso8601String(),

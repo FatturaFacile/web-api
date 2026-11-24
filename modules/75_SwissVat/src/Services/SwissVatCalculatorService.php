@@ -76,7 +76,7 @@ final class SwissVatCalculatorService
         $isSss = $method === SwissVatMethod::Saldosteuersatz;
         $roundingMode = (string) ($input['rounding_mode'] ?? 'chf_005');
         $sssPrimary = (string) ($input['sss_rate_primary'] ?? '6.20');
-        $sssSecondary = $input['sss_rate_secondary'] !== null && $input['sss_rate_secondary'] !== ''
+        $sssSecondary = isset($input['sss_rate_secondary']) && $input['sss_rate_secondary'] !== ''
             ? (string) $input['sss_rate_secondary']
             : null;
 

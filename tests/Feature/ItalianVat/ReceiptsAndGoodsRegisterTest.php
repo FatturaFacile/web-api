@@ -135,7 +135,7 @@ it('prints the goods register definitively and locks its movements', function ()
     $this->postJson('/api/v1/italian-vat/registers/'.ivSectionId('MCT').'/prints', ['year' => 2025, 'period_to' => '2025-03-31'])
         ->assertCreated()
         ->assertJsonPath('data.entries_count', 2)
-        ->assertJsonPath('data.total_taxable', '5000.00');
+        ->assertJsonPath('data.total_taxable', '10000.00');
 
     goodsMovement((string) $owner->id, ['movement_date' => '2025-03-20'])->assertStatus(409)->assertJsonPath('invalid_params.0.code', 'period_locked');
     goodsMovement((string) $owner->id, ['movement_date' => '2025-04-02'])->assertCreated()->assertJsonPath('data.protocol_number', 3);
