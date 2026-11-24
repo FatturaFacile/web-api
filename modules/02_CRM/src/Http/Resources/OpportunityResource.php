@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\CRM\Http\Resources;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\CRM\Models\Opportunity;
+use Modules\CRM\Models\OpportunityStage;
 
 /**
  * @mixin Opportunity
@@ -15,6 +17,9 @@ final class OpportunityResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $stage = $this->stage instanceof OpportunityStage ? $this->stage : null;
+        $owner = $this->owner instanceof User ? $this->owner : null;
+
         return [
             'id' => $this->id,
             'opportunity_number' => $this->opportunity_number,
@@ -37,7 +42,7 @@ final class OpportunityResource extends JsonResource
             'stage_id' => $this->stage_id,
             'board_position' => (int) $this->board_position,
             'owner_user_id' => $this->owner_user_id,
-            'owner' => $this->relationLoaded('owner') && $this->owner ? ['id' => (string) $this->owner->id, 'name' => $this->owner->name] : null,
+            'owner' => $this->relationLoaded('owner') && $owner !== null ? ['id' => (string) $owner->getKey(), 'name' => $owner->name] : null,
             'competitor' => $this->competitor,
             'discount_percentage' => (float) $this->discount_percentage,
             'approval_status' => $this->approval_status,
@@ -50,8 +55,8 @@ final class OpportunityResource extends JsonResource
             'stage' => $this->stage ? [
                 'id' => $this->stage->id,
                 'code' => $this->stage->code,
-                'name' => $this->stage->label(),
-                'default_probability' => (float) $this->stage->default_probability,
+                'name' => $stage?->label(),
+                'default_probability' => (float) $stage?->default_probability,
                 'is_won' => (bool) $this->stage->is_won,
                 'is_lost' => (bool) $this->stage->is_lost,
             ] : null,
