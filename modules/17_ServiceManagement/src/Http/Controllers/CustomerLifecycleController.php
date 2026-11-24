@@ -33,7 +33,7 @@ final class CustomerLifecycleController extends Controller
      */
     #[OA\Post(
         path: '/api/v1/esm/tickets/{ticket}/escalate-to-field-service',
-        operationId: 'escalateEsmTicketToFieldService',
+        operationId: 'escalateEsmTicketToFieldServiceFromLifecycle',
         description: 'Creates a field service work order from an on-site ticket. The work order inherits the customer, installed asset, maintenance contract, SLA resolution deadline, priority, service address and the diagnostic notes, and the ticket is escalated. Replaying the call returns the open work order of the ticket (200) instead of creating a second one (201).',
         summary: 'Escalate a ticket to field service',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],

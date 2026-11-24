@@ -87,7 +87,7 @@ final class SalesReportController extends Controller
      */
     #[OA\Get(
         path: '/api/v1/invoicing/reports/receivables-aging',
-        operationId: 'getInvoicingReceivablesAging',
+        operationId: 'getInvoicingReportReceivablesAging',
         description: 'What customers still owe on issued documents at a date (today on the company clock by default), per customer and currency, in the buckets current, 1-30, 31-60, 61-90 and over 90 days past due of each installment.',
         summary: 'Receivables aging',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
