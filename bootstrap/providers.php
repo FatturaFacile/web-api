@@ -12,6 +12,7 @@ use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Academy\Providers\AcademyServiceProvider;
 use Modules\AccountsPayable\Providers\AccountsPayableServiceProvider;
+use Modules\AgentCommissions\Providers\AgentCommissionsServiceProvider;
 use Modules\AiCognitive\Providers\AiCognitiveServiceProvider;
 use Modules\AnalyticalAccounting\Providers\AnalyticalAccountingServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
@@ -194,6 +195,7 @@ return [
     SwissVatServiceProvider::class,
     LeaveManagementServiceProvider::class,
     MarketingAutomationServiceProvider::class,
+    AgentCommissionsServiceProvider::class,
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,
 ];
