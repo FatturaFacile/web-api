@@ -34,7 +34,7 @@ jobs:
       - name: Setup PHP Environment
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: '8.6'
           extensions: dom, curl, libxml, mbstring, xml, ctype, iconv, intl, pdo, sqlite, pdo_sqlite, pdo_pgsql, xmlreader, redis, bcmath, zip
           coverage: none
 
@@ -60,7 +60,7 @@ jobs:
       - name: Setup PHP with PCOV Coverage Driver
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: '8.6'
           extensions: dom, curl, libxml, mbstring, xml, ctype, iconv, intl, pdo, sqlite, pdo_sqlite, pdo_pgsql, xmlreader, redis, bcmath, zip, pcov
           coverage: pcov
           ini-values: memory_limit=10G, max_memory_limit=10G, pcov.directory=${{ github.workspace }}, pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
@@ -85,7 +85,7 @@ jobs:
       - name: Setup PHP Environment
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: '8.6'
           coverage: none
 
       - name: Check for Known Vulnerabilities (composer audit)

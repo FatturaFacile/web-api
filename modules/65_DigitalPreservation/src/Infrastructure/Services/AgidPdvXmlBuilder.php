@@ -22,7 +22,7 @@ use Modules\DigitalPreservation\Infrastructure\Models\PreservationConfiguration;
  */
 final class AgidPdvXmlBuilder
 {
-    public const string Namespace = 'urn:agid:conservazione:pdv:v1.2';
+    public const string XmlNamespace = 'urn:agid:conservazione:pdv:v1.2';
 
     public const string Version = '1.2';
 
@@ -38,7 +38,7 @@ final class AgidPdvXmlBuilder
         $dom->formatOutput = true;
         $dom->preserveWhiteSpace = false;
 
-        $root = $dom->createElementNS(self::Namespace, 'PacchettoDiVersamento');
+        $root = $dom->createElementNS(self::XmlNamespace, 'PacchettoDiVersamento');
         $dom->appendChild($root);
         $root->setAttribute('DataGenerazione', $generatedAt->toIso8601String());
         $root->setAttribute('Giurisdizione', $batch->jurisdiction->value);
@@ -188,7 +188,7 @@ final class AgidPdvXmlBuilder
 
     private function child(DOMDocument $dom, DOMElement $parent, string $name): DOMElement
     {
-        $node = $dom->createElementNS(self::Namespace, $name);
+        $node = $dom->createElementNS(self::XmlNamespace, $name);
         $parent->appendChild($node);
 
         return $node;
@@ -207,7 +207,7 @@ final class AgidPdvXmlBuilder
      */
     public static function schema(): string
     {
-        $ns = self::Namespace;
+        $ns = self::XmlNamespace;
 
         return <<<XSD
 <?xml version="1.0" encoding="UTF-8"?>

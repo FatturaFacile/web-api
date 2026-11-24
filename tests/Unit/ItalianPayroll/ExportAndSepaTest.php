@@ -70,7 +70,7 @@ it('produces a pain.001.001.03 file with SALA purpose and exact totals', functio
     $document = new DOMDocument;
     $document->loadXML($xml);
     $xpath = new DOMXPath($document);
-    $xpath->registerNamespace('p', SalaryPain001Generator::Namespace);
+    $xpath->registerNamespace('p', SalaryPain001Generator::XmlNamespace);
 
     expect($document->documentElement->namespaceURI)->toBe('urn:iso:std:iso:20022:tech:xsd:pain.001.001.03')
         ->and($xpath->evaluate('string(//p:PmtTpInf/p:CtgyPurp/p:Cd)'))->toBe('SALA')

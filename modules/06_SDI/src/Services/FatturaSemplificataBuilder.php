@@ -19,7 +19,7 @@ use Modules\SDI\Enums\RegimeFiscale;
  */
 final class FatturaSemplificataBuilder
 {
-    public const string Namespace = 'http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.0';
+    public const string XmlNamespace = 'http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.0';
 
     public const float Cap = 400.0;
 
@@ -49,7 +49,7 @@ final class FatturaSemplificataBuilder
 
         $dom = new DOMDocument('1.0', 'UTF-8');
         $dom->formatOutput = true;
-        $root = $dom->createElementNS(self::Namespace, 'p:FatturaElettronicaSemplificata');
+        $root = $dom->createElementNS(self::XmlNamespace, 'p:FatturaElettronicaSemplificata');
         $root->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:ds', 'http://www.w3.org/2000/09/xmldsig#');
         $root->setAttribute('versione', 'FSM10');
         $dom->appendChild($root);

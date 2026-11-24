@@ -1,6 +1,6 @@
 # FatturaFacile Enterprise ERP — Community Edition 1.0
 
-[![PHP Version](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php)](https://php.net)
+[![PHP Version](https://img.shields.io/badge/PHP-8.6-777BB4?logo=php)](https://php.net)
 [![Laravel Framework](https://img.shields.io/badge/Laravel-13.x-FF2D20?logo=laravel)](https://laravel.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791?logo=postgresql)](https://postgresql.org)
 [![Architecture](https://img.shields.io/badge/Architecture-Modular%20DDD%20%2F%20Multi--Tenant-blue)]()
@@ -118,7 +118,7 @@ graph TD
 
 ### System Requirements
 
-- **PHP**: `^8.5` (Strict typing `declare(strict_types=1)`, Constructor Property Promotion).
+- **PHP**: `^8.6` (Strict typing `declare(strict_types=1)`, Constructor Property Promotion).
   - **Required Extensions**: `dom`, `pdo`, `pdo_pgsql`, `pdo_mysql`, `mbstring`, `zip`, `exif`, `pcntl`, `bcmath`, `gd`, `intl`, `openssl`, `xmlwriter`, `curl`, and `redis` (`phpredis`).
 - **Composer**: `^2.6`
 - **Node.js**: `^22.0` (with Corepack) for frontend asset building with Vite.
@@ -139,7 +139,7 @@ graph TD
 | **Mailers** | SMTP / Log / Postmark / Resend | Mailpit (`127.0.0.1:1025`) for local dev |
 | **API Documentation** | L5-Swagger & Scramble | OpenAPI 3.1 (`darkaonline/l5-swagger`, `dedoc/scramble`) |
 | **Code Quality** | Laravel Pint & Larastan | Pint `^1.27`, PHPStan / Larastan `^3.14` (Level 5) |
-| **Testing** | Pest PHP & PHPUnit | Pest `^4.7`, PHPUnit `^12.5` |
+| **Testing** | Pest PHP & PHPUnit | Pest `^5.3`, PHPUnit `^13.4` |
 
 ---
 
@@ -150,7 +150,7 @@ graph TD
 │   ├── Actions/                # Reusable single-action domain operations
 │   ├── Console/Commands/       # Artisan commands (erp:bootstrap, docs:export, etc.)
 │   ├── DTOs/                   # Data Transfer Objects
-│   ├── Enums/                  # Native PHP 8.5 typed enums
+│   ├── Enums/                  # Native PHP 8.6 typed enums
 │   ├── Events/ & Listeners/    # Application events and event handlers
 │   ├── Http/                   # Controllers, FormRequests, Middleware, Resources
 │   ├── Jobs/                   # Asynchronous background jobs

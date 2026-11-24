@@ -49,11 +49,11 @@ jobs:
           git config --global core.autocrlf false
           find . -type f -name "*.php" -not -path "./vendor/*" -exec dos2unix {} + 2>/dev/null || true
 
-      # Provision PHP 8.5 runtime with all enterprise extensions; coverage is disabled for fast CI runs
-      - name: Setup PHP 8.5 Runtime
+      # Provision PHP 8.6 runtime with all enterprise extensions; coverage is disabled for fast CI runs
+      - name: Setup PHP 8.6 Runtime
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: '8.6'
           extensions: dom, curl, libxml, mbstring, zip, pdo_sqlite, xmlreader, redis, bcmath
           coverage: none
           # Swagger and the OpenAPI coverage tests scan the whole API
@@ -152,10 +152,10 @@ jobs:
           git config --global core.autocrlf false
           find . -type f -name "*.php" -not -path "./vendor/*" -exec dos2unix {} + 2>/dev/null || true
 
-      - name: Setup PHP 8.5 Runtime with PCOV
+      - name: Setup PHP 8.6 Runtime with PCOV
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: '8.6'
           extensions: dom, curl, libxml, mbstring, zip, pdo_sqlite, xmlreader, redis, bcmath, pcov
           coverage: pcov
           # pcov collects only app/ and modules/ (the <source> of phpunit.xml): any other path is excluded

@@ -219,7 +219,7 @@
       <path value="$PROJECT_DIR$/vendor/laravel/framework" />
     </include_path>
   </component>
-  <component name="PhpProjectSharedConfiguration" php_language_level="8.5">
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.6">
     <option name="suggestChangeDefaultLanguageLevel" value="false" />
   </component>
   <component name="PhpStan">
