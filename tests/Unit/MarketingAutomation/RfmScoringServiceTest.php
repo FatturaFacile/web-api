@@ -22,18 +22,22 @@ test('frequency and monetary scores are quintiles of the population', function (
         ->and($service->quantileScore($population, 100))->toBe(5);
 });
 
-test('the matrix cell decides the label of the customer', function (int $r, int $f, int $m, RfmLabel $label): void {
-    expect((new RfmScoringService)->label($r, $f, $m))->toBe($label);
-})->with([
-    'champions' => [5, 5, 5, RfmLabel::Champions],
-    'loyal' => [3, 4, 3, RfmLabel::Loyal],
-    'new customers' => [5, 1, 2, RfmLabel::NewCustomers],
-    'promising' => [4, 2, 1, RfmLabel::Promising],
-    'at risk, good customer going silent' => [2, 4, 4, RfmLabel::AtRisk],
-    'at risk, very good customer already lost' => [1, 5, 5, RfmLabel::AtRisk],
-    'hibernating' => [2, 1, 1, RfmLabel::Hibernating],
-    'lost' => [1, 1, 2, RfmLabel::Lost],
-]);
+test('the matrix cell decides the label of the customer', function (): void {
+    $cases = [
+        [5, 5, 5, RfmLabel::Champions],
+        [3, 4, 3, RfmLabel::Loyal],
+        [5, 1, 2, RfmLabel::NewCustomers],
+        [4, 2, 1, RfmLabel::Promising],
+        [2, 4, 4, RfmLabel::AtRisk],
+        [1, 5, 5, RfmLabel::AtRisk],
+        [2, 1, 1, RfmLabel::Hibernating],
+        [1, 1, 2, RfmLabel::Lost],
+    ];
+
+    foreach ($cases as [$r, $f, $m, $label]) {
+        expect((new RfmScoringService)->label($r, $f, $m))->toBe($label);
+    }
+});
 
 test('ROI is margin minus cost over cost and never divides by zero', function (): void {
     $metrics = new MetricsService;
