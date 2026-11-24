@@ -177,7 +177,7 @@ test('the canton or province filter uses the address of the customer', function 
     foreach ([$ticino => 'TI', $zurich => 'ZH'] as $id => $canton) {
         maInvoice($tenant, $id, Carbon::now()->toDateString(), 500);
         maConsent($tenant, $id);
-        DB::table('contact_addresses')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'contact_id' => $id, 'street' => 'Via Test 1', 'state_canton' => $canton, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('contact_addresses')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'contact_id' => $id, 'street' => 'Via Test 1', 'postal_code' => '6900', 'city' => 'Lugano', 'state_canton' => $canton, 'created_at' => now(), 'updated_at' => now()]);
     }
 
     $result = app(SegmentEvaluationService::class)->evaluate(maSegment((string) $tenant->id, ['geographic_canton_or_province' => ['ti']]));
