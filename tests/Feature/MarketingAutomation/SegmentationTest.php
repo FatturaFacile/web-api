@@ -69,7 +69,7 @@ test('customers with an open collection case, an open dispute or an overdue bala
     }
 
     DB::table('credit_collection_cases')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'customer_id' => $caseCustomer, 'case_number' => 'C-1', 'status' => 'open', 'priority' => 'normal', 'outstanding_amount' => 10, 'currency' => 'CHF', 'opened_on' => $today, 'created_at' => now(), 'updated_at' => now()]);
-    DB::table('credit_disputes')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'customer_id' => $disputeCustomer, 'reason_code' => 'quality', 'status' => 'open', 'opened_on' => $today, 'created_at' => now(), 'updated_at' => now()]);
+    DB::table('credit_disputes')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'customer_id' => $disputeCustomer, 'reason_code' => 'quality', 'disputed_amount' => 10, 'status' => 'open', 'opened_on' => $today, 'created_at' => now(), 'updated_at' => now()]);
     DB::table('customer_credit_profiles')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'customer_id' => $overdueCustomer, 'overdue_amount' => 50, 'created_at' => now(), 'updated_at' => now()]);
 
     $result = app(SegmentEvaluationService::class)->evaluate(maSegment((string) $tenant->id));
@@ -177,7 +177,7 @@ test('the canton or province filter uses the address of the customer', function 
     foreach ([$ticino => 'TI', $zurich => 'ZH'] as $id => $canton) {
         maInvoice($tenant, $id, Carbon::now()->toDateString(), 500);
         maConsent($tenant, $id);
-        DB::table('contact_addresses')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'contact_id' => $id, 'state_canton' => $canton, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('contact_addresses')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'contact_id' => $id, 'street' => 'Via Test 1', 'state_canton' => $canton, 'created_at' => now(), 'updated_at' => now()]);
     }
 
     $result = app(SegmentEvaluationService::class)->evaluate(maSegment((string) $tenant->id, ['geographic_canton_or_province' => ['ti']]));
