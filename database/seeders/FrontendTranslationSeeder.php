@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use Database\Seeders\Translations\AcademyFrontendTranslations;
 use Database\Seeders\Translations\AccountsPayableFrontendTranslations;
 use Database\Seeders\Translations\AccrualsDeferralsFrontendTranslations;
+use Database\Seeders\Translations\AgentCommissionsFrontendTranslations;
 use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
 use Database\Seeders\Translations\AnalyticalAccountingFrontendTranslations;
@@ -149,7 +150,8 @@ class FrontendTranslationSeeder extends Seeder
             + LeaveManagementFrontendTranslations::all($locale)
             + AccrualsDeferralsFrontendTranslations::all($locale)
             + FixedAssetsFrontendTranslations::all($locale)
-            + AcademyFrontendTranslations::all($locale);
+            + AcademyFrontendTranslations::all($locale)
+            + AgentCommissionsFrontendTranslations::all($locale);
     }
 
     /**

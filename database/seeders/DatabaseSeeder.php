@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
 
             TranslationSeeder::class,
             FrontendTranslationSeeder::class,
+            AgentCommissionsReferenceSeeder::class,
             CpqLocalizationSeeder::class,
             ErpLookupsSeeder::class,
             ComprehensiveLookupMasterSeeder::class,
