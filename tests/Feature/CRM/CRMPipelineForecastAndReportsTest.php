@@ -84,7 +84,7 @@ test('the opportunity pipeline moves through stages to won and lost via the API'
 
     $this->postJson('/api/v1/crm/opportunities/'.$won->json('id').'/stage', ['target_stage_code' => 'negotiation'])->assertOk()->assertJsonPath('status', 'open');
     $this->postJson('/api/v1/crm/opportunities/'.$won->json('id').'/stage', ['target_stage_code' => 'closed_won'])->assertOk()->assertJsonPath('status', 'won');
-    $this->postJson('/api/v1/crm/opportunities/'.$lost->json('id').'/stage', ['target_stage_code' => 'closed_lost', 'win_loss_reason' => 'Price'])->assertOk()->assertJsonPath('status', 'lost');
+    $this->postJson('/api/v1/crm/opportunities/'.$lost->json('id').'/stage', ['target_stage_code' => 'closed_lost', 'win_loss_reason' => 'Price', 'competitor' => 'Rival SA'])->assertOk()->assertJsonPath('status', 'lost');
 
     $this->getJson('/api/v1/crm/reports/conversion')->assertOk()
         ->assertJsonPath('opportunities.won', 1)

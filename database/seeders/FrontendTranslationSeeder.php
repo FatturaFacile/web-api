@@ -38,10 +38,10 @@ use Database\Seeders\Translations\ItalianVatWorkbenchFrontendTranslations;
 use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\LeaveManagementFrontendTranslations;
-use Database\Seeders\Translations\MarketingAutomationFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
 use Database\Seeders\Translations\ManufacturingCommandCenterFrontendTranslations;
 use Database\Seeders\Translations\ManufacturingProductionFrontendTranslations;
+use Database\Seeders\Translations\MarketingAutomationFrontendTranslations;
 use Database\Seeders\Translations\MesOperatorBoardFrontendTranslations;
 use Database\Seeders\Translations\MobileFeatureTranslations;
 use Database\Seeders\Translations\MobileFrontendTranslations;
@@ -59,6 +59,7 @@ use Database\Seeders\Translations\ReceivablesFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
 use Database\Seeders\Translations\ResourcePlanningFrontendTranslations;
 use Database\Seeders\Translations\RfqFrontendTranslations;
+use Database\Seeders\Translations\SalesPipelineFrontendTranslations;
 use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
 use Database\Seeders\Translations\ShiftPlanningFrontendTranslations;
 use Database\Seeders\Translations\SupplierRebatesFrontendTranslations;
@@ -100,6 +101,7 @@ class FrontendTranslationSeeder extends Seeder
         return $base
             + HrAtsFrontendTranslations::all($locale)
             + LeadFrontendTranslations::all($locale)
+            + SalesPipelineFrontendTranslations::all($locale)
             + Customer360FrontendTranslations::all($locale)
             + CopilotFrontendTranslations::all($locale)
             + AiCognitiveFrontendTranslations::all($locale)

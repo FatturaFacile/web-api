@@ -3608,4 +3608,13 @@ return [
     'expected_credit_amount' => 'erwarteter Gutschriftbetrag',
     'include_unreferenced' => 'Rechnungen ohne Bestellbezug einbeziehen',
     'queue' => 'Warteschlange',
+    'loss_reason_code' => 'Verlustgrund',
+    'loss_notes' => 'Verlustdetails',
+    'pipeline_id' => 'Pipeline',
+    'per_column' => 'Opportunities pro Spalte',
+    'requires_competitor' => 'erfordert einen Wettbewerber',
+    'business_line' => 'Geschäftsbereich',
+    'market' => 'Markt',
+    'install_standard_stages' => 'Standardphasen',
+    'append' => 'anhängen',
 ];

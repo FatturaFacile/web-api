@@ -28,6 +28,7 @@ final class StoreOpportunityRequest extends FormRequest
             'amount' => ['required', 'numeric', 'min:0'],
             'currency' => ['nullable', 'string', 'size:3'],
             'stage_code' => ['nullable', 'string', 'max:50'],
+            'pipeline_id' => ['nullable', 'uuid', $this->tenantOwns('crm_pipelines')],
             'forecast_category' => ['nullable', 'string', 'in:pipeline,best_case,commit,closed,omitted'],
             'expected_close_date' => ['nullable', 'date'],
             'owner_user_id' => ['nullable', 'uuid', $this->tenantMember()],

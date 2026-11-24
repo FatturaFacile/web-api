@@ -17,6 +17,16 @@ interface OpportunityServiceInterface
 
     public function calculateExpectedRevenue(Opportunity $opp): float;
 
+    /**
+     * Reorders a deal inside its current column.
+     */
+    public function reposition(Opportunity $opp, int $position, string $actorUserId): Opportunity;
+
+    /**
+     * Replaces the quick note of a deal, or appends a timestamped line to it.
+     */
+    public function updateNotes(Opportunity $opp, string $notes, bool $append, string $actorUserId): Opportunity;
+
     public function requestQuote(Opportunity $opp, string $actorUserId): SalesQuote;
 
     /**

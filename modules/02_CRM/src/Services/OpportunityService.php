@@ -7,11 +7,14 @@ namespace Modules\CRM\Services;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use Modules\CRM\Contracts\OpportunityServiceInterface;
 use Modules\CRM\DTOs\CreateOpportunityDTO;
 use Modules\CRM\DTOs\UpdateOpportunityStageDTO;
+use Modules\CRM\Events\OpportunityBoardUpdated;
 use Modules\CRM\Events\OpportunityCreatedEvent;
 use Modules\CRM\Events\OpportunityLostEvent;
 use Modules\CRM\Events\OpportunityStageChangedEvent;
@@ -19,9 +22,12 @@ use Modules\CRM\Events\OpportunityWonEvent;
 use Modules\CRM\Events\ProjectOpportunityCreatedEvent;
 use Modules\CRM\Events\QuoteRequestedEvent;
 use Modules\CRM\Models\Account;
+use Modules\CRM\Models\LossReason;
 use Modules\CRM\Models\Opportunity;
 use Modules\CRM\Models\OpportunityLineItem;
 use Modules\CRM\Models\OpportunityStage;
+use Modules\CRM\Models\OpportunityStageHistory;
+use Modules\CRM\Support\WeightedValue;
 use Modules\Invoicing\Contracts\SalesQuoteServiceInterface;
 use Modules\Invoicing\Models\SalesQuote;
 use Modules\Projects\Models\Project;
@@ -40,19 +46,11 @@ final readonly class OpportunityService implements OpportunityServiceInterface
     public function createOpportunity(CreateOpportunityDTO $dto, string $actorUserId): Opportunity
     {
         return DB::transaction(function () use ($dto, $actorUserId) {
-            $stage = OpportunityStage::where('tenant_id', $dto->tenantId)
-                ->where('code', $dto->stageCode ?? 'discovery')
-                ->first();
-
-            if ($stage === null) {
-                $stage = OpportunityStage::where('tenant_id', $dto->tenantId)
-                    ->orderBy('sequence')
-                    ->firstOrFail();
-            }
+            $stage = $this->resolveCreationStage($dto);
 
             $probability = (float) $stage->default_probability;
             $amount = (float) $dto->amount;
-            $expectedRevenue = round(($amount * $probability) / 100.0, 2);
+            $expectedRevenue = (float) WeightedValue::compute($amount, $probability);
             $oppNumber = 'OPP-'.date('Ymd').'-'.strtoupper(Str::random(4));
             $closeDate = $dto->expectedCloseDate ?: date('Y-m-d', strtotime('+30 days'));
 
@@ -64,6 +62,8 @@ final readonly class OpportunityService implements OpportunityServiceInterface
                 'lead_id' => $dto->leadId,
                 'campaign_id' => $dto->campaignId,
                 'stage_id' => $stage->id,
+                'pipeline_id' => $stage->pipeline_id,
+                'board_position' => $this->nextBoardPosition($dto->tenantId, (string) $stage->id),
                 'owner_user_id' => $dto->ownerUserId ?? $actorUserId,
                 'opportunity_number' => $oppNumber,
                 'name' => $dto->name,
@@ -71,7 +71,7 @@ final readonly class OpportunityService implements OpportunityServiceInterface
                 'expected_revenue' => $expectedRevenue,
                 'currency' => $dto->currency,
                 'probability' => $probability,
-                'forecast_category' => $dto->forecastCategory ?? 'pipeline',
+                'forecast_category' => $dto->forecastCategory ?? (in_array($stage->forecast_category, ['best_case', 'commit'], true) ? $stage->forecast_category : 'pipeline'),
                 'expected_close_date' => $closeDate,
                 'status' => 'open',
                 'discount_percentage' => $dto->discountPercentage,
@@ -157,6 +157,19 @@ final readonly class OpportunityService implements OpportunityServiceInterface
             $this->dispatcher->publish($event);
             event($event);
 
+            OpportunityStageHistory::create([
+                'id' => (string) Str::uuid7(),
+                'tenant_id' => $opp->tenant_id,
+                'opportunity_id' => $opp->id,
+                'from_stage_id' => null,
+                'to_stage_id' => $stage->id,
+                'changed_by_user_id' => $this->isUuid($actorUserId) ? $actorUserId : null,
+                'amount' => $opp->amount,
+                'probability' => $opp->probability,
+                'weighted_amount' => $opp->expected_revenue,
+            ]);
+            $this->broadcastBoard($opp, 'created', $actorUserId);
+
             return $opp->fresh();
         });
     }
@@ -170,7 +183,11 @@ final readonly class OpportunityService implements OpportunityServiceInterface
                 ->where('code', $dto->targetStageCode)
                 ->firstOrFail();
 
-            $previousStageCode = $lockedOpp->stage ? (string) $lockedOpp->stage->code : 'unknown';
+            $this->assertSamePipeline($lockedOpp, $targetStage);
+            $loss = $targetStage->is_lost ? $this->assertLossData((string) $lockedOpp->tenant_id, $dto) : null;
+
+            $previousStage = $lockedOpp->stage;
+            $previousStageCode = $previousStage ? (string) $previousStage->code : 'unknown';
 
             // Check workflow approval trigger on stage transition
             $workflowCode = $this->checkWorkflowRequirement($lockedOpp, (string) $targetStage->code);
@@ -203,7 +220,7 @@ final readonly class OpportunityService implements OpportunityServiceInterface
 
             $probability = $dto->probability !== null ? (float) $dto->probability : (float) $targetStage->default_probability;
             $amount = $dto->amount !== null ? (float) $dto->amount : (float) $lockedOpp->amount;
-            $expectedRevenue = round(($amount * $probability) / 100.0, 2);
+            $expectedRevenue = (float) WeightedValue::compute($amount, $probability);
 
             $status = 'open';
             $actualCloseDate = $dto->actualCloseDate;
@@ -220,7 +237,8 @@ final readonly class OpportunityService implements OpportunityServiceInterface
                 $actualCloseDate = $actualCloseDate ?: date('Y-m-d');
             }
 
-            $forecastCategory = $dto->forecastCategory ?: ($targetStage->is_won ? 'closed' : ($targetStage->is_lost ? 'omitted' : $lockedOpp->forecast_category));
+            $stageCategory = in_array($targetStage->forecast_category, ['best_case', 'commit'], true) ? $targetStage->forecast_category : null;
+            $forecastCategory = $dto->forecastCategory ?: ($targetStage->is_won ? 'closed' : ($targetStage->is_lost ? 'omitted' : ($stageCategory ?? (in_array($lockedOpp->status, ['won', 'lost'], true) ? 'pipeline' : $lockedOpp->forecast_category))));
 
             $lockedOpp->update([
                 'stage_id' => $targetStage->id,
@@ -230,8 +248,26 @@ final readonly class OpportunityService implements OpportunityServiceInterface
                 'forecast_category' => $forecastCategory,
                 'status' => $status,
                 'actual_close_date' => $actualCloseDate,
-                'win_loss_reason' => $dto->winLossReason ?? $lockedOpp->win_loss_reason,
-                'competitor' => $dto->competitor ?? $lockedOpp->competitor,
+                'win_loss_reason' => $loss !== null ? $loss['reason'] : ($status === 'open' ? null : ($dto->winLossReason ?? $lockedOpp->win_loss_reason)),
+                'loss_reason_code' => $loss['code'] ?? null,
+                'loss_notes' => $loss['notes'] ?? null,
+                'competitor' => $loss !== null ? $loss['competitor'] : ($status === 'open' ? null : ($dto->competitor ?? $lockedOpp->competitor)),
+                'pipeline_id' => $lockedOpp->pipeline_id ?? $targetStage->pipeline_id,
+                'board_position' => $this->placeOnBoard($lockedOpp, $targetStage, $dto->position),
+            ]);
+
+            OpportunityStageHistory::create([
+                'id' => (string) Str::uuid7(),
+                'tenant_id' => $lockedOpp->tenant_id,
+                'opportunity_id' => $lockedOpp->id,
+                'from_stage_id' => $previousStage?->id,
+                'to_stage_id' => $targetStage->id,
+                'changed_by_user_id' => $this->isUuid($actorUserId) ? $actorUserId : null,
+                'amount' => $amount,
+                'probability' => $probability,
+                'weighted_amount' => $expectedRevenue,
+                'loss_reason_code' => $loss['code'] ?? null,
+                'winning_competitor' => $loss['competitor'] ?? null,
             ]);
 
             // Audit Trail
@@ -296,13 +332,53 @@ final readonly class OpportunityService implements OpportunityServiceInterface
                 event($lostEvent);
             }
 
+            $this->broadcastBoard($lockedOpp, $targetStage->is_lost ? 'lost' : ($targetStage->is_won ? 'won' : 'moved'), $actorUserId);
+
             return $lockedOpp->fresh();
+        });
+    }
+
+    public function reposition(Opportunity $opp, int $position, string $actorUserId): Opportunity
+    {
+        return DB::transaction(function () use ($opp, $position, $actorUserId): Opportunity {
+            $locked = Opportunity::where('id', $opp->id)->lockForUpdate()->firstOrFail();
+            $stage = OpportunityStage::findOrFail($locked->stage_id);
+            $locked->update(['board_position' => $this->placeOnBoard($locked, $stage, $position)]);
+            $this->broadcastBoard($locked, 'reordered', $actorUserId);
+
+            return $locked->fresh();
+        });
+    }
+
+    public function updateNotes(Opportunity $opp, string $notes, bool $append, string $actorUserId): Opportunity
+    {
+        return DB::transaction(function () use ($opp, $notes, $append, $actorUserId): Opportunity {
+            $locked = Opportunity::where('id', $opp->id)->lockForUpdate()->firstOrFail();
+            $before = $locked->only(['notes', 'notes_updated_at']);
+            $text = trim($notes);
+            $value = $append && trim((string) $locked->notes) !== ''
+                ? rtrim((string) $locked->notes).'
+['.now()->format('Y-m-d H:i').'] '.$text
+                : $text;
+
+            $locked->update(['notes' => $value, 'notes_updated_at' => now()]);
+
+            $this->auditLedger->record(
+                action: 'OPPORTUNITY_NOTES_UPDATED',
+                model: $locked,
+                payloadBefore: $before,
+                payloadAfter: $locked->only(['notes', 'notes_updated_at']),
+                moduleCode: 'MODULE_02_CRM'
+            );
+            $this->broadcastBoard($locked, 'noted', $actorUserId);
+
+            return $locked->fresh();
         });
     }
 
     public function calculateExpectedRevenue(Opportunity $opp): float
     {
-        return round(((float) $opp->amount * (float) $opp->probability) / 100.0, 2);
+        return (float) WeightedValue::compute((string) $opp->amount, (string) $opp->probability);
     }
 
     public function requestQuote(Opportunity $opp, string $actorUserId): SalesQuote
@@ -500,5 +576,139 @@ final readonly class OpportunityService implements OpportunityServiceInterface
         }
 
         return null;
+    }
+
+    /**
+     * The stage a new deal starts in: the named stage (optionally inside the chosen pipeline), else the first open
+     * stage of the pipeline (or of the tenant when no pipeline is given).
+     */
+    private function resolveCreationStage(CreateOpportunityDTO $dto): OpportunityStage
+    {
+        $base = OpportunityStage::where('tenant_id', $dto->tenantId)->where('is_active', true);
+
+        if ($dto->pipelineId !== null) {
+            $inPipeline = (clone $base)->where('pipeline_id', $dto->pipelineId);
+            $stage = (clone $inPipeline)->where('code', $dto->stageCode ?? 'discovery')->first()
+                ?? (clone $inPipeline)->where('is_won', false)->where('is_lost', false)->orderBy('sequence')->first();
+
+            if ($stage === null) {
+                throw ValidationException::withMessages(['pipeline_id' => [__('crm_pipeline.pipeline_has_no_stage')]]);
+            }
+
+            return $stage;
+        }
+
+        return (clone $base)->where('code', $dto->stageCode ?? 'discovery')->first()
+            ?? (clone $base)->orderBy('sequence')->firstOrFail();
+    }
+
+    private function nextBoardPosition(string $tenantId, string $stageId): int
+    {
+        return ((int) Opportunity::where('tenant_id', $tenantId)->where('stage_id', $stageId)->max('board_position')) + 1;
+    }
+
+    /**
+     * A deal belongs to one pipeline: it can only move between the stages of that pipeline.
+     */
+    private function assertSamePipeline(Opportunity $opp, OpportunityStage $target): void
+    {
+        if ($opp->pipeline_id !== null && $target->pipeline_id !== null && $opp->pipeline_id !== $target->pipeline_id) {
+            throw ValidationException::withMessages(['target_stage_code' => [__('crm_pipeline.stage_in_other_pipeline')]]);
+        }
+    }
+
+    /**
+     * Closing as lost requires the structured questionnaire: a loss reason (from the seeded catalog when the tenant has
+     * one) and the winning competitor.
+     *
+     * @return array{code: string|null, reason: string, competitor: string, notes: string|null}
+     */
+    private function assertLossData(string $tenantId, UpdateOpportunityStageDTO $dto): array
+    {
+        $errors = [];
+        $competitor = trim((string) $dto->competitor);
+        $code = $dto->lossReasonCode !== null && trim($dto->lossReasonCode) !== '' ? trim($dto->lossReasonCode) : null;
+        $reason = null;
+
+        $hasCatalog = LossReason::where('tenant_id', $tenantId)->where('is_active', true)->exists();
+
+        if ($code !== null) {
+            $catalogReason = LossReason::where('tenant_id', $tenantId)->where('is_active', true)->where('code', $code)->first();
+            if ($catalogReason === null) {
+                $errors['loss_reason_code'] = [__('crm_pipeline.loss_reason_invalid')];
+            } else {
+                $reason = $catalogReason->label();
+                if ($catalogReason->requires_competitor && $competitor === '') {
+                    $errors['competitor'] = [__('crm_pipeline.winning_competitor_required')];
+                }
+            }
+        } elseif ($hasCatalog || trim((string) $dto->winLossReason) === '') {
+            $errors['loss_reason_code'] = [__('crm_pipeline.loss_reason_required')];
+        } else {
+            $reason = trim((string) $dto->winLossReason);
+        }
+
+        if ($competitor === '') {
+            $errors['competitor'] = [__('crm_pipeline.winning_competitor_required')];
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        $notes = $dto->lossNotes !== null && trim($dto->lossNotes) !== '' ? trim($dto->lossNotes) : null;
+
+        return ['code' => $code, 'reason' => $notes ?? (string) $reason, 'competitor' => $competitor, 'notes' => $notes];
+    }
+
+    /**
+     * Puts the deal at the requested position of the target column (or at its end) and renumbers the column.
+     */
+    private function placeOnBoard(Opportunity $opp, OpportunityStage $target, ?int $position): int
+    {
+        $siblings = Opportunity::where('tenant_id', $opp->tenant_id)
+            ->where('stage_id', $target->id)
+            ->where('id', '!=', $opp->id)
+            ->orderBy('board_position')
+            ->orderBy('created_at')
+            ->get(['id', 'board_position']);
+
+        $index = $position === null ? $siblings->count() : max(0, min($position, $siblings->count()));
+        $ordered = $siblings->pluck('id')->all();
+        array_splice($ordered, $index, 0, [(string) $opp->id]);
+
+        foreach ($ordered as $order => $id) {
+            if ($id !== (string) $opp->id) {
+                Opportunity::where('id', $id)->update(['board_position' => $order]);
+            }
+        }
+
+        return $index;
+    }
+
+    private function isUuid(string $value): bool
+    {
+        return Str::isUuid($value);
+    }
+
+    private function broadcastBoard(Opportunity $opp, string $change, string $actorUserId): void
+    {
+        $event = new OpportunityBoardUpdated(
+            tenantId: (string) $opp->tenant_id,
+            opportunityId: (string) $opp->id,
+            change: $change,
+            pipelineId: $opp->pipeline_id !== null ? (string) $opp->pipeline_id : null,
+            stageId: $opp->stage_id !== null ? (string) $opp->stage_id : null,
+            actorUserId: $this->isUuid($actorUserId) ? $actorUserId : null,
+        );
+
+        // A broadcast outage (WebSocket server down) must never fail the deal change itself.
+        DB::afterCommit(static function () use ($event): void {
+            try {
+                event($event);
+            } catch (\Throwable $exception) {
+                Log::warning('CRM board broadcast failed', ['error' => $exception->getMessage()]);
+            }
+        });
     }
 }

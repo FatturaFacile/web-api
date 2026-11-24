@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Modules\CRM\Providers;
 
 use App\Models\Contact;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -145,6 +147,7 @@ final class CRMServiceProvider extends ServiceProvider
         $this->registerPolicies();
         $this->registerEventListeners();
         $this->registerRateLimiters();
+        $this->registerBroadcastChannels();
         Contact::observe(ContactCreatedObserver::class);
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
         $this->loadRoutesFrom(__DIR__.'/../../routes/extension.php');
@@ -152,6 +155,19 @@ final class CRMServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([LinkAccountsToContactsCommand::class, ProcessCrmAutomationCommand::class]);
         }
+    }
+
+    /**
+     * Real-time sales board channel of a tenant: any member who can read the CRM.
+     */
+    private function registerBroadcastChannels(): void
+    {
+        Broadcast::channel('tenant.{tenantId}.crm-pipeline', static function (User $user, string $tenantId): bool {
+            $roles = (array) config('permissions.modules.crm.read', []);
+            $membership = $user->tenants()->where('tenants.id', $tenantId)->first();
+
+            return $membership !== null && (in_array('*', $roles, true) || in_array($membership->pivot->role, $roles, true));
+        });
     }
 
     private function registerRateLimiters(): void

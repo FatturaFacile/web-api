@@ -13,6 +13,9 @@ final readonly class UpdateOpportunityStageDTO
         public ?string $forecastCategory = null,
         public ?string $winLossReason = null,
         public ?string $competitor = null,
-        public ?string $actualCloseDate = null
+        public ?string $actualCloseDate = null,
+        public ?string $lossReasonCode = null,
+        public ?string $lossNotes = null,
+        public ?int $position = null
     ) {}
 }

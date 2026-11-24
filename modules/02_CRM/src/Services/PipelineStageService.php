@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\CRM\Models\Opportunity;
 use Modules\CRM\Models\OpportunityStage;
+use Modules\CRM\Support\WeightedValue;
 
 /**
  * Tenant-configurable sales pipeline. Each stage carries the win probability used for weighted pipeline and forecast;
@@ -63,6 +64,9 @@ final readonly class PipelineStageService
             'tenant_id' => $tenantId,
             'code' => $data['code'],
             'name' => $data['name'],
+            'pipeline_id' => $data['pipeline_id'] ?? null,
+            'forecast_category' => $data['forecast_category'] ?? 'pipeline',
+            'translations' => $data['translations'] ?? null,
             'sequence' => $data['sequence'] ?? 10,
             'default_probability' => $data['default_probability'],
             'is_won' => $data['is_won'] ?? false,
@@ -89,7 +93,7 @@ final readonly class PipelineStageService
 
         return DB::transaction(function () use ($stage, $data): array {
             $before = $stage->toArray();
-            $stage->update(array_intersect_key($data, array_flip(['name', 'sequence', 'default_probability', 'is_won', 'is_lost', 'stale_days', 'is_active'])));
+            $stage->update(array_intersect_key($data, array_flip(['name', 'forecast_category', 'translations', 'sequence', 'default_probability', 'is_won', 'is_lost', 'stale_days', 'is_active'])));
 
             $repriced = 0;
             if (! empty($data['reprice_open_opportunities']) && array_key_exists('default_probability', $data)) {
@@ -102,7 +106,7 @@ final readonly class PipelineStageService
                     ->each(function (Opportunity $opportunity) use ($probability, &$repriced): void {
                         $opportunity->update([
                             'probability' => $probability,
-                            'expected_revenue' => round(((float) $opportunity->amount * $probability) / 100.0, 2),
+                            'expected_revenue' => (float) WeightedValue::compute((string) $opportunity->amount, $probability),
                         ]);
                         $repriced++;
                     });

@@ -3608,4 +3608,13 @@ return [
     'expected_credit_amount' => 'importo della nota di credito atteso',
     'include_unreferenced' => 'includi fatture senza riferimento d\'ordine',
     'queue' => 'coda',
+    'loss_reason_code' => 'motivo di perdita',
+    'loss_notes' => 'dettagli della perdita',
+    'pipeline_id' => 'pipeline',
+    'per_column' => 'trattative per colonna',
+    'requires_competitor' => 'richiede un competitor',
+    'business_line' => 'linea di business',
+    'market' => 'mercato',
+    'install_standard_stages' => 'fasi standard',
+    'append' => 'aggiungi in coda',
 ];

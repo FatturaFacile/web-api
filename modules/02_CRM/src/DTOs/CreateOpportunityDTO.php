@@ -15,7 +15,7 @@ final readonly class CreateOpportunityDTO
         public float $amount,
         public string $currency = 'EUR',
         public ?string $stageCode = 'discovery',
-        public ?string $forecastCategory = 'pipeline',
+        public ?string $forecastCategory = null,
         public ?string $expectedCloseDate = null,
         public ?string $ownerUserId = null,
         public ?string $campaignId = null,
@@ -23,6 +23,7 @@ final readonly class CreateOpportunityDTO
         public float $discountPercentage = 0.00,
         public array $lineItems = [],
         public array $tags = [],
-        public array $metadata = []
+        public array $metadata = [],
+        public ?string $pipelineId = null
     ) {}
 }

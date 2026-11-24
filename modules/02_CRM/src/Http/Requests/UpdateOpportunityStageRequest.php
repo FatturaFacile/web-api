@@ -22,6 +22,8 @@ final class UpdateOpportunityStageRequest extends FormRequest
             'forecast_category' => ['nullable', 'string', 'in:pipeline,best_case,commit,closed,omitted'],
             'win_loss_reason' => ['nullable', 'string', 'max:255'],
             'competitor' => ['nullable', 'string', 'max:150'],
+            'loss_reason_code' => ['nullable', 'string', 'max:50'],
+            'loss_notes' => ['nullable', 'string', 'max:2000'],
             'actual_close_date' => ['nullable', 'date'],
         ];
     }

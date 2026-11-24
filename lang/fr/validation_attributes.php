@@ -3608,4 +3608,13 @@ return [
     'expected_credit_amount' => 'montant de l\'avoir attendu',
     'include_unreferenced' => 'inclure les factures sans référence de commande',
     'queue' => 'file',
+    'loss_reason_code' => 'motif de perte',
+    'loss_notes' => 'détails de la perte',
+    'pipeline_id' => 'pipeline',
+    'per_column' => 'opportunités par colonne',
+    'requires_competitor' => 'exige un concurrent',
+    'business_line' => 'ligne d\'activité',
+    'market' => 'marché',
+    'install_standard_stages' => 'étapes standard',
+    'append' => 'ajouter à la suite',
 ];

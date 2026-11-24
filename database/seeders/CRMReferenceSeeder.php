@@ -13,6 +13,7 @@ final class CRMReferenceSeeder extends Seeder
         $this->call([
             LeadSourceSeeder::class,
             OpportunityStageSeeder::class,
+            SalesPipelineSeeder::class,
             CampaignTypeSeeder::class,
             CustomerCategorySeeder::class,
             CustomerHealthSeeder::class,
