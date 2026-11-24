@@ -14,6 +14,7 @@ use Modules\GeneralLedger\Services\PaymentLedgerService;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Invoicing\Services\DeclarationOfIntentService;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
+use Modules\Procurement\Services\GrIrAccountingService;
 use Modules\SDI\Enums\TipoRitenuta;
 
 /**
@@ -74,9 +75,11 @@ final readonly class PostPassiveInvoiceAction
         $net = $invoice->total_net !== null ? abs((float) $invoice->total_net) : round($gross - $tax, 2);
         ['tax' => $withholdingTax, 'contributions' => $contributions] = $this->withheld($invoice);
 
+        $clearing = app(GrIrAccountingService::class)->clearingFor($invoice);
+
         $event = new PurchaseLiabilityReadyEvent(
             matchLogId: (string) $invoice->id,
-            purchaseOrderId: '',
+            purchaseOrderId: $clearing['purchase_order_id'] ?? '',
             supplierId: (string) $invoice->supplier_id,
             netAmount: $net,
             taxAmount: $tax,
@@ -93,6 +96,7 @@ final readonly class PostPassiveInvoiceAction
             contributionAmount: $contributions,
             costAllocations: $this->costAllocations($invoice, $net),
             stampDutyAmount: $this->chargedStampDuty($invoice, $gross, $net, $tax),
+            grIrAmount: $clearing !== null ? min((float) $clearing['amount'], $net) : null,
         );
 
         $this->dispatcher->publish($event);

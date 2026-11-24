@@ -46,6 +46,8 @@ use Modules\Procurement\Events\GoodsReceivedEvent;
 use Modules\Procurement\Events\InventoryAdjustmentRequestEvent;
 use Modules\Procurement\Events\InventoryReceiptRequestedEvent;
 use Modules\Procurement\Events\InventoryReservationRequestedEvent;
+use Modules\Procurement\Events\InvoiceMatchBlockedEvent;
+use Modules\Procurement\Events\InvoiceMatchClearedEvent;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
 use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
 use Modules\Procurement\Events\PurchaseOrderCancelledEvent;
@@ -69,6 +71,7 @@ use Modules\Procurement\Listeners\CommitBudgetOnPurchaseOrderApprovedListener;
 use Modules\Procurement\Listeners\DispatchOutboxOnProcurementEventListener;
 use Modules\Procurement\Listeners\EnforceSupplierSuspensionListener;
 use Modules\Procurement\Listeners\EscalateWorkflowOnThreeWayMatchFailedListener;
+use Modules\Procurement\Listeners\NotifyPurchasingOfBlockedInvoiceListener;
 use Modules\Procurement\Listeners\UpdateAvlOnSupplierApprovedListener;
 use Modules\Procurement\Listeners\WorkflowApprovalProcurementListener;
 use Modules\Procurement\Models\PurchaseOrder;
@@ -181,6 +184,9 @@ final class ProcurementServiceProvider extends ServiceProvider
         Event::listen(ThreeWayMatchPassedEvent::class, DispatchOutboxOnProcurementEventListener::class);
         Event::listen(ThreeWayMatchDiscrepancyDetectedEvent::class, DispatchOutboxOnProcurementEventListener::class);
         Event::listen(PurchaseLiabilityReadyEvent::class, DispatchOutboxOnProcurementEventListener::class);
+        Event::listen(InvoiceMatchBlockedEvent::class, DispatchOutboxOnProcurementEventListener::class);
+        Event::listen(InvoiceMatchClearedEvent::class, DispatchOutboxOnProcurementEventListener::class);
+        Event::listen(InvoiceMatchBlockedEvent::class, NotifyPurchasingOfBlockedInvoiceListener::class);
 
         // Process automations. Approval workflows start on submission (ProcurementApprovalService), not on creation.
         Event::listen(PurchaseOrderApprovedEvent::class, CommitBudgetOnPurchaseOrderApprovedListener::class);

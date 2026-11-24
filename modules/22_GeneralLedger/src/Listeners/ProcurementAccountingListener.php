@@ -292,6 +292,22 @@ final class ProcurementAccountingListener
             'description' => "Clear GR/IR: Invoice {$event->vendorInvoiceNumber}",
         ];
 
+        // A matched invoice clears the accrual of the goods received (GR/IR); what it bills beyond that is a cost.
+        if ($event->purchaseOrderId !== '' && $event->grIrAmount !== null) {
+            $net = LedgerAmount::of($event->netAmount, 2);
+            $cleared = Decimal::round2(min($net, LedgerAmount::of($event->grIrAmount, 2)));
+            $lines = [$line($defaultAccountId, $cleared)];
+            $variance = bcsub($net, $cleared, 2);
+
+            if (bccomp($variance, '0', 2) !== 0) {
+                $varianceLine = $line($this->accounts->purchaseExpense($event->tenantId)->id, $variance);
+                $varianceLine['description'] = "Purchase price variance: Invoice {$event->vendorInvoiceNumber}";
+                $lines[] = $varianceLine;
+            }
+
+            return $lines;
+        }
+
         $allocations = $event->purchaseOrderId === '' ? $event->costAllocations : [];
         $lines = array_map(static fn (array $allocation): array => $line($allocation['account_id'], LedgerAmount::of($allocation['amount'], 2)), $allocations);
         $allocated = array_reduce($allocations, static fn (string $sum, array $allocation): string => bcadd($sum, LedgerAmount::of($allocation['amount'], 2), 2), '0.00');

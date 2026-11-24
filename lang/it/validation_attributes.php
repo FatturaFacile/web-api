@@ -3601,4 +3601,11 @@ return [
     'allocation_driver_id' => 'driver di allocazione',
     'fixed_weights_json' => 'pesi fissi',
     'target_filter_json' => 'filtro dei destinatari',
+    'quantity_tolerance_percent' => 'tolleranza percentuale sulla quantità',
+    'quantity_tolerance_amount' => 'tolleranza sulla quantità',
+    'item_category' => 'categoria articolo',
+    'match_type' => 'tipo di riconciliazione',
+    'expected_credit_amount' => 'importo della nota di credito atteso',
+    'include_unreferenced' => 'includi fatture senza riferimento d\'ordine',
+    'queue' => 'coda',
 ];

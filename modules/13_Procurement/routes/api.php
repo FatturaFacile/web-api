@@ -8,6 +8,9 @@ use App\Http\Controllers\Api\V1\Procurement\RfqController;
 use Illuminate\Support\Facades\Route;
 use Modules\Procurement\Http\Controllers\FrameworkAgreementController;
 use Modules\Procurement\Http\Controllers\InvoiceApprovalController;
+use Modules\Procurement\Http\Controllers\InvoiceMatchingController;
+use Modules\Procurement\Http\Controllers\InvoiceMatchResolutionController;
+use Modules\Procurement\Http\Controllers\InvoiceMatchToleranceRuleController;
 use Modules\Procurement\Http\Controllers\LandedCostController;
 use Modules\Procurement\Http\Controllers\ProcurementAnalyticsController;
 use Modules\Procurement\Http\Controllers\ProcurementConfigurationController;
@@ -166,6 +169,22 @@ Route::prefix('api/v1/procurement')
         Route::get('supplier-invoices/{id}/approval', [InvoiceApprovalController::class, 'show'])->whereUuid('id')->name('procurement.invoice-approval.show');
         Route::post('supplier-invoices/{id}/submit-approval', [InvoiceApprovalController::class, 'submit'])->whereUuid('id')->name('procurement.invoice-approval.submit');
 
+        // 19. Mod 048 invoice matching (2-way / 3-way), tolerance rules and exception resolution
+        Route::get('invoice-matching/summary', [InvoiceMatchingController::class, 'summary'])->name('procurement.invoice-matching.summary');
+        Route::get('invoice-matching/runs', [InvoiceMatchingController::class, 'index'])->name('procurement.invoice-matching.runs.index');
+        Route::get('invoice-matching/runs/{id}', [InvoiceMatchingController::class, 'show'])->whereUuid('id')->name('procurement.invoice-matching.runs.show');
+        Route::get('invoice-matching/runs/{id}/gr-ir', [InvoiceMatchingController::class, 'grIr'])->whereUuid('id')->name('procurement.invoice-matching.runs.gr-ir');
+        Route::get('invoice-matching/invoices/{id}/history', [InvoiceMatchingController::class, 'history'])->whereUuid('id')->name('procurement.invoice-matching.invoices.history');
+        Route::post('invoice-matching/run', [InvoiceMatchingController::class, 'run'])->name('procurement.invoice-matching.run');
+        Route::post('invoice-matching/batch-run', [InvoiceMatchingController::class, 'batch'])->name('procurement.invoice-matching.batch-run');
+        Route::post('invoice-matching/runs/{id}/request-credit-note', [InvoiceMatchResolutionController::class, 'requestCreditNote'])->whereUuid('id')->name('procurement.invoice-matching.runs.request-credit-note');
+        Route::post('invoice-matching/runs/{id}/rematch', [InvoiceMatchResolutionController::class, 'rematch'])->whereUuid('id')->name('procurement.invoice-matching.runs.rematch');
+        Route::post('invoice-matching/runs/{id}/partial-resolution', [InvoiceMatchResolutionController::class, 'partialResolution'])->whereUuid('id')->name('procurement.invoice-matching.runs.partial-resolution');
+        Route::get('invoice-matching/tolerance-rules', [InvoiceMatchToleranceRuleController::class, 'index'])->name('procurement.invoice-matching.rules.index');
+        Route::post('invoice-matching/tolerance-rules', [InvoiceMatchToleranceRuleController::class, 'store'])->name('procurement.invoice-matching.rules.store');
+        Route::put('invoice-matching/tolerance-rules/{id}', [InvoiceMatchToleranceRuleController::class, 'update'])->whereUuid('id')->name('procurement.invoice-matching.rules.update');
+        Route::delete('invoice-matching/tolerance-rules/{id}', [InvoiceMatchToleranceRuleController::class, 'destroy'])->whereUuid('id')->name('procurement.invoice-matching.rules.destroy');
+
         // 18. Mod 044 Purchase Requisitions (RDA / PR) — Core & Conversion
         Route::get('purchase-requisitions', [Mod044PurchaseRequisitionController::class, 'index'])->name('procurement.mod044-requisitions.index');
         Route::post('purchase-requisitions', [Mod044PurchaseRequisitionController::class, 'store'])->name('procurement.mod044-requisitions.store');
@@ -213,4 +232,13 @@ Route::prefix('api/v1/invoice-approvals')
         Route::get('matrices', [InvoiceApprovalController::class, 'matrices'])->name('invoice-approvals.matrices.index');
         Route::post('matrices', [InvoiceApprovalController::class, 'storeMatrix'])->name('invoice-approvals.matrices.store');
         Route::delete('matrices/{id}', [InvoiceApprovalController::class, 'destroyMatrix'])->whereUuid('id')->name('invoice-approvals.matrices.destroy');
+    });
+
+// Mod 048: overriding the payment block of a discrepant invoice is a supervisor / CFO decision (accounts_payable_approval).
+Route::prefix('api/v1/procurement')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:procurement', 'module.access:accounts_payable_approval,write'])
+    ->group(function (): void {
+        Route::post('invoice-matching/runs/{id}/override', [InvoiceMatchResolutionController::class, 'override'])
+            ->whereUuid('id')
+            ->name('procurement.invoice-matching.runs.override');
     });

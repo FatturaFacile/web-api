@@ -23114,6 +23114,7 @@ CREATE TABLE "purchase_order_lines"(
   "promised_delivery_date" date,
   "sales_order_line_id" varchar,
   "source_line_id" varchar,
+  "receipt_required" tinyint(1) not null default '1',
   foreign key("supplier_catalog_id") references "supplier_catalogs"("id") on delete set null on update no action,
   foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade on update no action,
   primary key("id")
@@ -27107,6 +27108,7 @@ CREATE TABLE "supplier_catalogs"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "item_category" varchar,
   foreign key("supplier_id") references "suppliers"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -48212,6 +48214,173 @@ CREATE INDEX "mfg_machine_readings_machine_id_index" on "mfg_machine_readings"(
 CREATE INDEX "mfg_machine_readings_production_order_operation_id_index" on "mfg_machine_readings"(
   "production_order_operation_id"
 );
+CREATE INDEX "supplier_catalogs_item_category_index" on "supplier_catalogs"(
+  "item_category"
+);
+CREATE TABLE "invoice_match_tolerance_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "scope" varchar not null,
+  "supplier_id" varchar,
+  "item_category" varchar,
+  "match_type" varchar,
+  "priority" integer not null default '100',
+  "price_tolerance_percent" numeric not null default '0',
+  "price_tolerance_amount" numeric not null default '0',
+  "quantity_tolerance_percent" numeric not null default '0',
+  "quantity_tolerance_amount" numeric not null default '0',
+  "currency" varchar,
+  "is_active" tinyint(1) not null default '1',
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE INDEX "imtr_tenant_scope_active" on "invoice_match_tolerance_rules"(
+  "tenant_id",
+  "scope",
+  "is_active"
+);
+CREATE INDEX "invoice_match_tolerance_rules_tenant_id_index" on "invoice_match_tolerance_rules"(
+  "tenant_id"
+);
+CREATE INDEX "invoice_match_tolerance_rules_supplier_id_index" on "invoice_match_tolerance_rules"(
+  "supplier_id"
+);
+CREATE TABLE "invoice_matching_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "passive_invoice_id" varchar not null,
+  "purchase_order_id" varchar,
+  "supplier_id" varchar,
+  "match_type" varchar not null,
+  "status" varchar not null,
+  "trigger" varchar not null,
+  "reference_source" varchar not null,
+  "reference_value" varchar,
+  "currency" varchar,
+  "ordered_total" numeric not null default '0',
+  "received_total" numeric not null default '0',
+  "invoiced_total" numeric not null default '0',
+  "variance_amount" numeric not null default '0',
+  "variance_percent" numeric not null default '0',
+  "gr_ir_amount" numeric not null default '0',
+  "price_variance_amount" numeric not null default '0',
+  "line_count" integer not null default '0',
+  "discrepancy_count" integer not null default '0',
+  "is_current" tinyint(1) not null default '1',
+  "reasons" text,
+  "tolerance_snapshot" text,
+  "evaluated_at" datetime not null,
+  "evaluated_by" varchar,
+  "blocked_at" datetime,
+  "released_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  primary key("id")
+);
+
+CREATE INDEX "imr_tenant_status_eval" on "invoice_matching_runs"(
+  "tenant_id",
+  "status",
+  "evaluated_at"
+);
+CREATE INDEX "imr_invoice_current" on "invoice_matching_runs"(
+  "passive_invoice_id",
+  "is_current"
+);
+CREATE INDEX "invoice_matching_runs_tenant_id_index" on "invoice_matching_runs"(
+  "tenant_id"
+);
+CREATE INDEX "invoice_matching_runs_passive_invoice_id_index" on "invoice_matching_runs"(
+  "passive_invoice_id"
+);
+CREATE INDEX "invoice_matching_runs_purchase_order_id_index" on "invoice_matching_runs"(
+  "purchase_order_id"
+);
+CREATE INDEX "invoice_matching_runs_status_index" on "invoice_matching_runs"(
+  "status"
+);
+CREATE TABLE "invoice_match_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "passive_invoice_line_id" varchar,
+  "purchase_order_line_id" varchar,
+  "line_number" integer not null default '1',
+  "description" varchar,
+  "status" varchar not null,
+  "receipt_required" tinyint(1) not null default '1',
+  "ordered_quantity" numeric not null default '0',
+  "received_quantity" numeric not null default '0',
+  "previously_invoiced_quantity" numeric not null default '0',
+  "invoiced_quantity" numeric not null default '0',
+  "ordered_unit_price" numeric not null default '0',
+  "invoiced_unit_price" numeric not null default '0',
+  "quantity_variance" numeric not null default '0',
+  "price_variance" numeric not null default '0',
+  "price_variance_percent" numeric not null default '0',
+  "amount_variance" numeric not null default '0',
+  "allowed_quantity_variance" numeric not null default '0',
+  "allowed_amount_variance" numeric not null default '0',
+  "gr_ir_amount" numeric not null default '0',
+  "tolerance_rule_id" varchar,
+  "reasons" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("run_id") references "invoice_matching_runs"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "invoice_match_lines_tenant_id_index" on "invoice_match_lines"(
+  "tenant_id"
+);
+CREATE INDEX "invoice_match_lines_purchase_order_line_id_index" on "invoice_match_lines"(
+  "purchase_order_line_id"
+);
+CREATE TABLE "invoice_match_resolutions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "passive_invoice_id" varchar not null,
+  "action" varchar not null,
+  "from_status" varchar,
+  "to_status" varchar,
+  "reason" text,
+  "actor_id" varchar,
+  "context" text,
+  "resolved_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("run_id") references "invoice_matching_runs"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "invoice_match_resolutions_tenant_id_index" on "invoice_match_resolutions"(
+  "tenant_id"
+);
+CREATE INDEX "invoice_match_resolutions_passive_invoice_id_index" on "invoice_match_resolutions"(
+  "passive_invoice_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -48662,3 +48831,4 @@ INSERT INTO migrations VALUES(446,'2027_05_01_001670_enhance_eam_fixed_assets_ch
 INSERT INTO migrations VALUES(447,'2027_12_28_000100_create_receivable_provision_postings_table',16);
 INSERT INTO migrations VALUES(448,'2027_12_29_000100_link_gelato_ingredients_to_inventory',16);
 INSERT INTO migrations VALUES(449,'2027_12_30_000200_create_mfg_machine_signal_tables',16);
+INSERT INTO migrations VALUES(450,'2027_12_31_000100_create_invoice_matching_mod048_tables',17);

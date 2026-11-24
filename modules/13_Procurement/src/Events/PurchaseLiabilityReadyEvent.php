@@ -32,6 +32,8 @@ final readonly class PurchaseLiabilityReadyEvent implements DomainEventInterface
         public array $costAllocations = [],
         /** Stamp duty the supplier charged in the document total, a cost outside the VAT base. */
         public float $stampDutyAmount = 0.0,
+        /** Accrual (GR/IR) the invoice clears; the rest of the net amount is a cost. Null clears the whole net amount. */
+        public ?float $grIrAmount = null,
     ) {}
 
     public function getEventId(): string
