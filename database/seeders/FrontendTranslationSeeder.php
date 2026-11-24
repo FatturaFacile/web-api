@@ -37,6 +37,7 @@ use Database\Seeders\Translations\ItalianVatWorkbenchFrontendTranslations;
 use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\LeaveManagementFrontendTranslations;
+use Database\Seeders\Translations\MarketingAutomationFrontendTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
 use Database\Seeders\Translations\ManufacturingCommandCenterFrontendTranslations;
 use Database\Seeders\Translations\ManufacturingProductionFrontendTranslations;
@@ -147,6 +148,7 @@ class FrontendTranslationSeeder extends Seeder
             + SwissQrBillSlipFrontendTranslations::all($locale)
             + SwissVatFrontendTranslations::all($locale)
             + LeaveManagementFrontendTranslations::all($locale)
+            + MarketingAutomationFrontendTranslations::all($locale)
             + AccrualsDeferralsFrontendTranslations::all($locale)
             + FixedAssetsFrontendTranslations::all($locale)
             + AcademyFrontendTranslations::all($locale);

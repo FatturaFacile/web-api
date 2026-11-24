@@ -51,6 +51,7 @@ return [
         'swiss_fiscal' => env('FEATURE_MODULE_SWISS_FISCAL'),
         'swiss_vat' => env('FEATURE_MODULE_SWISS_VAT'),
         'leave_management' => env('FEATURE_MODULE_LEAVE_MANAGEMENT'),
+        'marketing_automation' => env('FEATURE_MODULE_MARKETING_AUTOMATION'),
         'shift_planning' => env('FEATURE_MODULE_SHIFT_PLANNING'),
         'resource_planning' => env('FEATURE_MODULE_RESOURCE_PLANNING'),
         'italian_vat' => env('FEATURE_MODULE_ITALIAN_VAT'),
