@@ -63,7 +63,7 @@ final class Campaign extends BaseEnterpriseModel
 
     public function steps(): HasMany
     {
-        return $this->hasMany(JourneyStep::class, 'campaign_id');
+        return $this->hasMany(JourneyStep::class, 'campaign_id')->orderByDesc('is_entry')->orderBy('id');
     }
 
     public function metric(): HasOne

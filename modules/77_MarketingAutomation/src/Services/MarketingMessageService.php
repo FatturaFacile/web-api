@@ -245,9 +245,13 @@ final readonly class MarketingMessageService
         return str_contains($html, '</body>') ? str_replace('</body>', $footer.'</body>', $html) : $html.$footer;
     }
 
-    private function locale(string ...$candidates): string
+    private function locale(?string ...$candidates): string
     {
         foreach ($candidates as $candidate) {
+            if ($candidate === null) {
+                continue;
+            }
+
             $code = strtolower(substr($candidate, 0, 2));
             if (in_array($code, SegmentEvaluationService::LOCALES, true)) {
                 return $code;

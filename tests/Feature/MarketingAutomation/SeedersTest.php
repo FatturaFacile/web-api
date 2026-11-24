@@ -29,7 +29,7 @@ it('provides every blueprint text in it, de, fr and en', function (): void {
     foreach ($blueprints as $row) {
         $texts = json_decode((string) $row->texts, true);
         foreach (MA_LOCALES as $locale) {
-            expect($texts)->toHaveKey($locale, "{$row->kind}:{$row->code} lacks {$locale}");
+            expect(isset($texts[$locale]))->toBeTrue("{$row->kind}:{$row->code} lacks {$locale}");
             foreach ($texts[$locale] as $field => $value) {
                 expect(trim((string) $value))->not->toBe('', "{$row->kind}:{$row->code}.{$field} empty in {$locale}");
             }

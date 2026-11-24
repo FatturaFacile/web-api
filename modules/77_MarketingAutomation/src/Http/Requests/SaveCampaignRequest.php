@@ -57,6 +57,24 @@ final class SaveCampaignRequest extends FormRequest
     }
 
     /**
+     * The designer document is free-form (subject, preheader, mjml and the props of every block): the nested rules only
+     * check its shape, so the whole checked document is kept instead of just the validated sub-keys.
+     *
+     * @param  array-key|null  $key
+     * @return ($key is null ? array<string, mixed> : mixed)
+     */
+    public function validated($key = null, $default = null): mixed
+    {
+        $data = parent::validated();
+
+        if (array_key_exists('template_mjml_json', $data)) {
+            $data['template_mjml_json'] = $this->input('template_mjml_json');
+        }
+
+        return $key === null ? $data : data_get($data, $key, $default);
+    }
+
+    /**
      * The variants of an A/B test must add up to 100 %.
      *
      * @return array<int, callable>

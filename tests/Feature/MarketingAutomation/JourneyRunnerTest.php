@@ -229,7 +229,6 @@ test('trigger audiences: warranty expiring, abandoned quote and post-fair leads'
 });
 
 test('the scheduled jobs run for a tenant', function (): void {
-    Queue::fake();
     [$tenant] = maSetup('CH');
     $segment = Segment::withoutGlobalScopes()->create(['tenant_id' => (string) $tenant->id, 'name' => 'Auto', 'criteria' => [], 'auto_refresh_hourly' => true]);
 

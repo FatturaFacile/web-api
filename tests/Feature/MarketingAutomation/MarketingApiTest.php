@@ -104,7 +104,7 @@ test('campaigns: create, update, tenant isolation, delete only drafts', function
     expect($created->json('data.status'))->toBe('draft')
         ->and($created->json('data.attribution_model'))->toBe('first_touch')
         ->and($created->json('data.metric.roi_state'))->toBe('no_revenue')
-        ->and($created->json('data.metric.campaign_cost'))->toBe(250.0);
+        ->and($created->json('data.metric.campaign_cost'))->toEqual(250.0);
 
     maActingAs($otherUser, $other)->getJson(MA_BASE.'/campaigns/'.$id)->assertNotFound();
     maActingAs($user, $tenant)->putJson(MA_BASE.'/campaigns/'.$id, ['campaign_cost' => 0])->assertOk()->assertJsonPath('data.metric.roi_state', 'no_cost')->assertJsonPath('data.metric.calculated_roi_percentage', null);
@@ -302,9 +302,9 @@ test('the dashboard exposes the KPIs per campaign and in total', function (): vo
         ->and($data['campaigns'])->toHaveCount(1)
         ->and($data['totals']['sent_count'])->toBe(1)
         ->and($data['totals']['unique_clicks_count'])->toBe(1)
-        ->and($data['totals']['attributed_net_revenue_amount'])->toBe(800.0)
-        ->and($data['totals']['attributed_gross_margin_amount'])->toBe(500.0)
-        ->and($data['totals']['calculated_roi_percentage'])->toBe(400.0)
+        ->and($data['totals']['attributed_net_revenue_amount'])->toEqual(800.0)
+        ->and($data['totals']['attributed_gross_margin_amount'])->toEqual(500.0)
+        ->and($data['totals']['calculated_roi_percentage'])->toEqual(400.0)
         ->and($data['campaigns'][0]['roi_state'])->toBe('computed');
 
     $logs = maActingAs($user, $tenant)->getJson(MA_BASE.'/campaigns/'.$campaign->id.'/logs')->assertOk();
@@ -325,5 +325,5 @@ test('A/B statistics name the winner by the configured criterion', function (): 
     expect($stats['criteria'])->toBe('click_rate')
         ->and($stats['winner'])->toBe('B')
         ->and($stats['variants'][0]['variant'])->toBe('B')
-        ->and($stats['variants'][0]['click_rate'])->toBe(50.0);
+        ->and($stats['variants'][0]['click_rate'])->toEqual(50.0);
 });
