@@ -3622,4 +3622,11 @@ return [
     'threshold_from' => 'seuil inférieur',
     'threshold_to' => 'seuil supérieur',
     'mandate_type' => 'type de mandat',
+    'quantity_tolerance_percent' => 'tolérance de quantité en pourcentage',
+    'quantity_tolerance_amount' => 'tolérance de quantité',
+    'item_category' => 'catégorie d\'article',
+    'match_type' => 'type de rapprochement',
+    'expected_credit_amount' => 'montant de l\'avoir attendu',
+    'include_unreferenced' => 'inclure les factures sans référence de commande',
+    'queue' => 'file',
 ];

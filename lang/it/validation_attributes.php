@@ -3622,4 +3622,11 @@ return [
     'threshold_from' => 'soglia iniziale',
     'threshold_to' => 'soglia finale',
     'mandate_type' => 'tipo di mandato',
+    'quantity_tolerance_percent' => 'tolleranza percentuale sulla quantità',
+    'quantity_tolerance_amount' => 'tolleranza sulla quantità',
+    'item_category' => 'categoria articolo',
+    'match_type' => 'tipo di riconciliazione',
+    'expected_credit_amount' => 'importo della nota di credito atteso',
+    'include_unreferenced' => 'includi fatture senza riferimento d\'ordine',
+    'queue' => 'coda',
 ];

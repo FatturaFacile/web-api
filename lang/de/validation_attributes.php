@@ -3622,4 +3622,11 @@ return [
     'threshold_from' => 'untere Schwelle',
     'threshold_to' => 'obere Schwelle',
     'mandate_type' => 'Mandatsart',
+    'quantity_tolerance_percent' => 'prozentuale Mengentoleranz',
+    'quantity_tolerance_amount' => 'Mengentoleranz',
+    'item_category' => 'Artikelkategorie',
+    'match_type' => 'Abgleichstyp',
+    'expected_credit_amount' => 'erwarteter Gutschriftbetrag',
+    'include_unreferenced' => 'Rechnungen ohne Bestellbezug einbeziehen',
+    'queue' => 'Warteschlange',
 ];

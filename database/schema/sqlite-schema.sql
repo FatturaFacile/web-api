@@ -23114,6 +23114,7 @@ CREATE TABLE "purchase_order_lines"(
   "promised_delivery_date" date,
   "sales_order_line_id" varchar,
   "source_line_id" varchar,
+  "receipt_required" tinyint(1) not null default '1',
   foreign key("supplier_catalog_id") references "supplier_catalogs"("id") on delete set null on update no action,
   foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade on update no action,
   primary key("id")
@@ -27107,6 +27108,7 @@ CREATE TABLE "supplier_catalogs"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "item_category" varchar,
   foreign key("supplier_id") references "suppliers"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -48212,329 +48214,172 @@ CREATE INDEX "mfg_machine_readings_machine_id_index" on "mfg_machine_readings"(
 CREATE INDEX "mfg_machine_readings_production_order_operation_id_index" on "mfg_machine_readings"(
   "production_order_operation_id"
 );
-CREATE TABLE "agc_zones"(
+CREATE INDEX "supplier_catalogs_item_category_index" on "supplier_catalogs"(
+  "item_category"
+);
+CREATE TABLE "invoice_match_tolerance_rules"(
   "id" varchar not null,
   "tenant_id" varchar,
-  "code" varchar not null,
   "name" varchar not null,
-  "country" varchar,
-  "regions" text,
-  "is_active" tinyint(1) not null default '1',
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "agc_zones_code_uq" on "agc_zones"("tenant_id", "code");
-CREATE TABLE "agc_agent_profiles"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "sales_representative_id" varchar not null,
-  "agent_type" varchar not null default 'direct',
-  "fiscal_regime" varchar not null default 'enasarco',
-  "enasarco_mandate" varchar,
-  "parent_agent_profile_id" varchar,
-  "parent_split_mode" varchar,
-  "parent_split_value" numeric,
-  "accrual_basis" varchar not null default 'invoiced',
-  "default_rate" numeric,
-  "settlement_channel" varchar not null default 'invoice',
-  "has_own_organization" tinyint(1) not null default '1',
-  "vat_applies" tinyint(1) not null default '1',
-  "firr_enabled" tinyint(1) not null default '1',
-  "enasarco_registration_number" varchar,
-  "tax_code" varchar,
-  "vat_number" varchar,
-  "contract_start" date,
-  "contract_end" date,
-  "notes" text,
-  "is_active" tinyint(1) not null default '1',
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("sales_representative_id") references "sales_representatives"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "agc_profiles_rep_uq" on "agc_agent_profiles"(
-  "tenant_id",
-  "sales_representative_id"
-);
-CREATE INDEX "agc_profiles_parent_idx" on "agc_agent_profiles"(
-  "tenant_id",
-  "parent_agent_profile_id"
-);
-CREATE TABLE "agc_commission_rules"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "agent_profile_id" varchar,
-  "name" varchar not null,
-  "product_category_id" varchar,
-  "customer_id" varchar,
-  "zone_id" varchar,
-  "rate_type" varchar not null default 'percentage',
-  "rate" numeric not null default '0',
-  "fixed_amount" numeric,
-  "accrual_basis" varchar,
+  "scope" varchar not null,
+  "supplier_id" varchar,
+  "item_category" varchar,
+  "match_type" varchar,
   "priority" integer not null default '100',
-  "valid_from" date,
-  "valid_to" date,
+  "price_tolerance_percent" numeric not null default '0',
+  "price_tolerance_amount" numeric not null default '0',
+  "quantity_tolerance_percent" numeric not null default '0',
+  "quantity_tolerance_amount" numeric not null default '0',
+  "currency" varchar,
   "is_active" tinyint(1) not null default '1',
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
+  "notes" text,
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   primary key("id")
 );
 
-CREATE INDEX "agc_rules_agent_idx" on "agc_commission_rules"(
+CREATE INDEX "imtr_tenant_scope_active" on "invoice_match_tolerance_rules"(
   "tenant_id",
-  "agent_profile_id",
+  "scope",
   "is_active"
 );
-CREATE TABLE "agc_commission_rule_tiers"(
+CREATE INDEX "invoice_match_tolerance_rules_tenant_id_index" on "invoice_match_tolerance_rules"(
+  "tenant_id"
+);
+CREATE INDEX "invoice_match_tolerance_rules_supplier_id_index" on "invoice_match_tolerance_rules"(
+  "supplier_id"
+);
+CREATE TABLE "invoice_matching_runs"(
   "id" varchar not null,
   "tenant_id" varchar,
-  "rule_id" varchar not null,
-  "threshold_from" numeric not null default '0',
-  "threshold_to" numeric,
-  "rate" numeric not null,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
+  "company_id" varchar,
+  "passive_invoice_id" varchar not null,
+  "purchase_order_id" varchar,
+  "supplier_id" varchar,
+  "match_type" varchar not null,
+  "status" varchar not null,
+  "trigger" varchar not null,
+  "reference_source" varchar not null,
+  "reference_value" varchar,
+  "currency" varchar,
+  "ordered_total" numeric not null default '0',
+  "received_total" numeric not null default '0',
+  "invoiced_total" numeric not null default '0',
+  "variance_amount" numeric not null default '0',
+  "variance_percent" numeric not null default '0',
+  "gr_ir_amount" numeric not null default '0',
+  "price_variance_amount" numeric not null default '0',
+  "line_count" integer not null default '0',
+  "discrepancy_count" integer not null default '0',
+  "is_current" tinyint(1) not null default '1',
+  "reasons" text,
+  "tolerance_snapshot" text,
+  "evaluated_at" datetime not null,
+  "evaluated_by" varchar,
+  "blocked_at" datetime,
+  "released_at" datetime,
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "agc_tiers_rule_idx" on "agc_commission_rule_tiers"(
-  "tenant_id",
-  "rule_id"
-);
-CREATE TABLE "agc_fiscal_parameters"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "code" varchar not null,
-  "mandate_type" varchar,
-  "year" integer,
-  "value" numeric,
-  "payload" text,
-  "label_key" varchar,
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
 
-CREATE INDEX "agc_fiscal_lookup_idx" on "agc_fiscal_parameters"(
+CREATE INDEX "imr_tenant_status_eval" on "invoice_matching_runs"(
   "tenant_id",
-  "code",
-  "mandate_type",
-  "year"
+  "status",
+  "evaluated_at"
 );
-CREATE TABLE "agc_entries"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "agent_profile_id" varchar not null,
-  "role" varchar not null default 'primary',
-  "invoice_id" varchar not null,
-  "invoice_item_id" varchar not null,
-  "source_entry_id" varchar,
-  "rule_id" varchar,
-  "accrual_basis" varchar not null,
-  "currency" varchar not null default 'EUR',
-  "accrued_on" date not null,
-  "base_amount" numeric not null,
-  "rate" numeric,
-  "commission_amount" numeric not null,
-  "credited_amount" numeric not null default '0',
-  "eligible_amount" numeric not null default '0',
-  "settled_amount" numeric not null default '0',
-  "collected_ratio" numeric not null default '0',
-  "reconciled_ratio" numeric not null default '0',
-  "status" varchar not null default 'pending_collection',
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
+CREATE INDEX "imr_invoice_current" on "invoice_matching_runs"(
+  "passive_invoice_id",
+  "is_current"
 );
-
-CREATE UNIQUE INDEX "agc_entries_item_uq" on "agc_entries"(
-  "tenant_id",
-  "invoice_item_id",
-  "agent_profile_id",
-  "role"
+CREATE INDEX "invoice_matching_runs_tenant_id_index" on "invoice_matching_runs"(
+  "tenant_id"
 );
-CREATE INDEX "agc_entries_agent_idx" on "agc_entries"(
-  "tenant_id",
-  "agent_profile_id",
+CREATE INDEX "invoice_matching_runs_passive_invoice_id_index" on "invoice_matching_runs"(
+  "passive_invoice_id"
+);
+CREATE INDEX "invoice_matching_runs_purchase_order_id_index" on "invoice_matching_runs"(
+  "purchase_order_id"
+);
+CREATE INDEX "invoice_matching_runs_status_index" on "invoice_matching_runs"(
   "status"
 );
-CREATE INDEX "agc_entries_invoice_idx" on "agc_entries"(
-  "tenant_id",
-  "invoice_id"
-);
-CREATE TABLE "agc_entry_movements"(
+CREATE TABLE "invoice_match_lines"(
   "id" varchar not null,
   "tenant_id" varchar,
-  "entry_id" varchar not null,
-  "kind" varchar not null,
-  "amount" numeric not null,
-  "occurred_on" date not null,
-  "note" varchar,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
+  "run_id" varchar not null,
+  "passive_invoice_line_id" varchar,
+  "purchase_order_line_id" varchar,
+  "line_number" integer not null default '1',
+  "description" varchar,
+  "status" varchar not null,
+  "receipt_required" tinyint(1) not null default '1',
+  "ordered_quantity" numeric not null default '0',
+  "received_quantity" numeric not null default '0',
+  "previously_invoiced_quantity" numeric not null default '0',
+  "invoiced_quantity" numeric not null default '0',
+  "ordered_unit_price" numeric not null default '0',
+  "invoiced_unit_price" numeric not null default '0',
+  "quantity_variance" numeric not null default '0',
+  "price_variance" numeric not null default '0',
+  "price_variance_percent" numeric not null default '0',
+  "amount_variance" numeric not null default '0',
+  "allowed_quantity_variance" numeric not null default '0',
+  "allowed_amount_variance" numeric not null default '0',
+  "gr_ir_amount" numeric not null default '0',
+  "tolerance_rule_id" varchar,
+  "reasons" text,
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "agc_movements_entry_idx" on "agc_entry_movements"(
-  "tenant_id",
-  "entry_id"
-);
-CREATE TABLE "agc_agent_year_balances"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "agent_profile_id" varchar not null,
-  "year" integer not null,
-  "commission_ytd" numeric not null default '0',
-  "enasarco_base_ytd" numeric not null default '0',
-  "enasarco_agent_ytd" numeric not null default '0',
-  "enasarco_company_ytd" numeric not null default '0',
-  "firr_ytd" numeric not null default '0',
-  "massimale" numeric,
-  "minimale" numeric,
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("run_id") references "invoice_matching_runs"("id") on delete cascade,
   primary key("id")
 );
 
-CREATE UNIQUE INDEX "agc_balances_uq" on "agc_agent_year_balances"(
-  "tenant_id",
-  "agent_profile_id",
-  "year"
+CREATE INDEX "invoice_match_lines_tenant_id_index" on "invoice_match_lines"(
+  "tenant_id"
 );
-CREATE TABLE "agc_statements"(
+CREATE INDEX "invoice_match_lines_purchase_order_line_id_index" on "invoice_match_lines"(
+  "purchase_order_line_id"
+);
+CREATE TABLE "invoice_match_resolutions"(
   "id" varchar not null,
   "tenant_id" varchar,
-  "agent_profile_id" varchar not null,
-  "number" varchar not null,
-  "period_type" varchar not null default 'custom',
-  "period_start" date not null,
-  "period_end" date not null,
-  "status" varchar not null default 'draft',
-  "currency" varchar not null default 'EUR',
-  "base_total" numeric not null default '0',
-  "own_commission_total" numeric not null default '0',
-  "override_commission_total" numeric not null default '0',
-  "clawback_total" numeric not null default '0',
-  "gross_commission" numeric not null default '0',
-  "enasarco_base" numeric not null default '0',
-  "enasarco_agent" numeric not null default '0',
-  "enasarco_company" numeric not null default '0',
-  "firr_accrual" numeric not null default '0',
-  "withholding_base" numeric not null default '0',
-  "withholding_amount" numeric not null default '0',
-  "vat_amount" numeric not null default '0',
-  "net_payable" numeric not null default '0',
-  "blocked_amount" numeric not null default '0',
-  "massimale_reached" tinyint(1) not null default '0',
-  "fiscal_snapshot" text,
-  "approved_by" varchar,
-  "approved_at" datetime,
-  "self_billing_number" varchar,
-  "self_billing_date" date,
-  "self_billing_payload" text,
-  "paid_at" datetime,
-  "payment_reference" varchar,
-  "sent_at" datetime,
-  "sent_to" varchar,
-  "sent_count" integer not null default '0',
+  "run_id" varchar not null,
+  "passive_invoice_id" varchar not null,
+  "action" varchar not null,
+  "from_status" varchar,
+  "to_status" varchar,
+  "reason" text,
+  "actor_id" varchar,
+  "context" text,
+  "resolved_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("run_id") references "invoice_matching_runs"("id") on delete cascade,
   primary key("id")
 );
 
-CREATE UNIQUE INDEX "agc_statements_number_uq" on "agc_statements"(
-  "tenant_id",
-  "number"
+CREATE INDEX "invoice_match_resolutions_tenant_id_index" on "invoice_match_resolutions"(
+  "tenant_id"
 );
-CREATE INDEX "agc_statements_agent_idx" on "agc_statements"(
-  "tenant_id",
-  "agent_profile_id",
-  "period_start"
-);
-CREATE INDEX "agc_statements_status_idx" on "agc_statements"(
-  "tenant_id",
-  "status"
-);
-CREATE TABLE "agc_statement_lines"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "statement_id" varchar not null,
-  "entry_id" varchar not null,
-  "invoice_id" varchar not null,
-  "invoice_number" varchar,
-  "invoice_date" date,
-  "customer_name" varchar,
-  "role" varchar not null default 'primary',
-  "accrual_basis" varchar not null,
-  "base_amount" numeric not null default '0',
-  "rate" numeric,
-  "commission_amount" numeric not null,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "agc_lines_statement_idx" on "agc_statement_lines"(
-  "tenant_id",
-  "statement_id"
-);
-CREATE INDEX "agc_lines_entry_idx" on "agc_statement_lines"(
-  "tenant_id",
-  "entry_id"
+CREATE INDEX "invoice_match_resolutions_passive_invoice_id_index" on "invoice_match_resolutions"(
+  "passive_invoice_id"
 );
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
@@ -48986,4 +48831,4 @@ INSERT INTO migrations VALUES(446,'2027_05_01_001670_enhance_eam_fixed_assets_ch
 INSERT INTO migrations VALUES(447,'2027_12_28_000100_create_receivable_provision_postings_table',16);
 INSERT INTO migrations VALUES(448,'2027_12_29_000100_link_gelato_ingredients_to_inventory',16);
 INSERT INTO migrations VALUES(449,'2027_12_30_000200_create_mfg_machine_signal_tables',16);
-INSERT INTO migrations VALUES(450,'2027_12_31_000100_create_agent_commissions_mod041_tables',17);
+INSERT INTO migrations VALUES(450,'2027_12_31_000100_create_invoice_matching_mod048_tables',17);

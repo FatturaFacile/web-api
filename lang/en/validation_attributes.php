@@ -3622,4 +3622,11 @@ return [
     'threshold_from' => 'lower threshold',
     'threshold_to' => 'upper threshold',
     'mandate_type' => 'mandate type',
+    'quantity_tolerance_percent' => 'quantity tolerance percentage',
+    'quantity_tolerance_amount' => 'quantity tolerance',
+    'item_category' => 'item category',
+    'match_type' => 'matching type',
+    'expected_credit_amount' => 'expected credit amount',
+    'include_unreferenced' => 'include invoices without order reference',
+    'queue' => 'queue',
 ];

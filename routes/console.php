@@ -45,6 +45,7 @@ use Modules\Platform\Jobs\EvaluateNotificationAlertRulesJob;
 use Modules\PracticeManagement\Jobs\ExpireFeeProposalsJob;
 use Modules\Procurement\Jobs\CheckExpiringSupplierContractsJob;
 use Modules\Procurement\Jobs\EvaluateSupplierOtifScoresJob;
+use Modules\Procurement\Jobs\RunInvoiceMatchingJob;
 use Modules\Procurement\Jobs\SendOverdueOrderRemindersJob;
 use Modules\Projects\Jobs\ComputeProjectEvmSnapshotsJob;
 use Modules\ServiceManagement\Jobs\GeneratePreventiveMaintenanceWorkOrdersJob;
@@ -149,6 +150,7 @@ $forEachTenant('inventory:valuation', static fn (Tenant $tenant): object => new 
 $forEachTenant('procurement:expiring-contracts', static fn (Tenant $tenant): object => new CheckExpiringSupplierContractsJob($tenant->id))->dailyAt('05:10');
 $forEachTenant('procurement:supplier-otif', static fn (Tenant $tenant): object => new EvaluateSupplierOtifScoresJob($tenant->id))->monthlyOn(1, '05:20');
 $forEachTenant('procurement:overdue-order-reminders', static fn (Tenant $tenant): object => new SendOverdueOrderRemindersJob($tenant->id))->dailyAt('07:30');
+$forEachTenant('procurement:invoice-matching', static fn (Tenant $tenant): object => new RunInvoiceMatchingJob($tenant->id))->hourly();
 $forEachTenant('hr:expiring-certifications', static fn (Tenant $tenant): object => new ScanExpiringCertificationsJob($tenant->id))->dailyAt('05:30');
 $forEachTenant('eam:expiring-coverage', static fn (Tenant $tenant): object => new NotifyExpiringAssetCoverageJob($tenant->id))->dailyAt('05:35');
 $forEachTenant('platform:notification-alert-rules', static fn (Tenant $tenant): object => new EvaluateNotificationAlertRulesJob($tenant->id))->everyFifteenMinutes();

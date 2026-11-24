@@ -50,7 +50,7 @@ final class CapacityController extends Controller
         )));
     }
 
-    #[OA\Get(path: '/api/v1/resource-planning/resources', operationId: 'listPlanningResources', summary: 'Employees that can be planned', description: 'The employees with an active contract, with their contractual hours, FTE, cost dimensions and working location.', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Resource Planning'], responses: [new OA\Response(response: 200, description: 'The employees')])]
+    #[OA\Get(path: '/api/v1/resource-planning/resources', operationId: 'listResourcePlanningEmployees', summary: 'Employees that can be planned', description: 'The employees with an active contract, with their contractual hours, FTE, cost dimensions and working location.', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Resource Planning'], responses: [new OA\Response(response: 200, description: 'The employees')])]
     public function resources(PlanningWindowRequest $request, ResourceDirectoryPort $directory): JsonResponse
     {
         return $this->successResponse(array_map(static fn (ResourceProfile $profile): array => $profile->toLookup(), $directory->resources(null, $request->validated('department_id'), CarbonImmutable::today())));
