@@ -1,11 +1,11 @@
 services:
     laravel.test:
         build:
-            context: './vendor/laravel/sail/runtimes/8.5'
+            context: './vendor/laravel/sail/runtimes/8.6'
             dockerfile: Dockerfile
             args:
                 WWWGROUP: '${WWWGROUP}'
-        image: 'sail-8.5/app'
+        image: 'sail-8.6/app'
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
@@ -28,7 +28,7 @@ services:
             - mailpit
     pgsql:
         image: 'postgres:16-alpine'
-        command: ["postgres", "-c", "max_locks_per_transaction=256"]
+        command: [ "postgres", "-c", "max_locks_per_transaction=256" ]
         ports:
             - '${FORWARD_DB_PORT:-5432}:5432'
         environment:

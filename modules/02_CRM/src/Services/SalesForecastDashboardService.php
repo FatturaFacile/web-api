@@ -99,7 +99,7 @@ final readonly class SalesForecastDashboardService
         $sort = static function (array $rows): array {
             usort($rows, static fn (array $a, array $b): int => [$b['count'], $b['amount']] <=> [$a['count'], $a['amount']]);
 
-            return array_values($rows);
+            return $rows;
         };
 
         return [

@@ -9,9 +9,15 @@ use App\Models\User;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Modules\Invoicing\Models\SalesQuote;
 use Modules\Projects\Models\Project;
 
+/**
+ * @property Carbon|null $expected_close_date
+ * @property Carbon|null $actual_close_date
+ * @property Carbon|null $notes_updated_at
+ */
 final class Opportunity extends BaseEnterpriseModel
 {
     protected $table = 'crm_opportunities';

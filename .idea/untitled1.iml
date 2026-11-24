@@ -82,6 +82,32 @@
       <sourceFolder url="file://$MODULE_DIR$/modules/32_Logistics/src" isTestSource="false" packagePrefix="Modules\Logistics\" />
       <sourceFolder url="file://$MODULE_DIR$/modules/33_CorporateGroup/src" isTestSource="false" packagePrefix="Modules\CorporateGroup\" />
       <sourceFolder url="file://$MODULE_DIR$/modules/63_Pricing/src" isTestSource="false" packagePrefix="Modules\Pricing\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/62_Copilot/src" isTestSource="false" packagePrefix="Modules\Copilot\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/64_Controlling/src" isTestSource="false" packagePrefix="Modules\Controlling\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/65_DigitalPreservation/src" isTestSource="false" packagePrefix="Modules\DigitalPreservation\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/66_Academy/src" isTestSource="false" packagePrefix="Modules\Academy\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/66_Forecasting/src" isTestSource="false" packagePrefix="Modules\Forecasting\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/67_OcrExtraction/src" isTestSource="false" packagePrefix="Modules\OcrExtraction\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/68_AiCognitive/src" isTestSource="false" packagePrefix="Modules\AiCognitive\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/68_AnalyticsDss/src" isTestSource="false" packagePrefix="Modules\AnalyticsDss\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/68_KpiDashboards/src" isTestSource="false" packagePrefix="Modules\KpiDashboards\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/69_DataResidency/src" isTestSource="false" packagePrefix="Modules\DataResidency\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/69_Hse/src" isTestSource="false" packagePrefix="Modules\Hse\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/69_ItalianPayroll/src" isTestSource="false" packagePrefix="Modules\ItalianPayroll\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/69_Quoting/src" isTestSource="false" packagePrefix="Modules\Quoting\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/69_SwissFiscal/src" isTestSource="false" packagePrefix="Modules\SwissFiscal\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/70_ShiftPlanning/src" isTestSource="false" packagePrefix="Modules\ShiftPlanning\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/71_MrpPlanning/src" isTestSource="false" packagePrefix="Modules\MrpPlanning\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/72_AnalyticalAccounting/src" isTestSource="false" packagePrefix="Modules\AnalyticalAccounting\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/72_ArtisanalGelato/src" isTestSource="false" packagePrefix="Modules\ArtisanalGelato\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/73_ResourcePlanning/src" isTestSource="false" packagePrefix="Modules\ResourcePlanning\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/74_ItalianVat/src" isTestSource="false" packagePrefix="Modules\ItalianVat\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/75_AccountsPayable/src" isTestSource="false" packagePrefix="Modules\AccountsPayable\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/75_SwissVat/src" isTestSource="false" packagePrefix="Modules\SwissVat\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/76_LeaveManagement/src" isTestSource="false" packagePrefix="Modules\LeaveManagement\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/77_AgentCommissions/src" isTestSource="false" packagePrefix="Modules\AgentCommissions\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/77_MarketingAutomation/src" isTestSource="false" packagePrefix="Modules\MarketingAutomation\" />
+      <sourceFolder url="file://$MODULE_DIR$/tests/Architecture" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/bootstrap/cache" />
       <excludeFolder url="file://$MODULE_DIR$/storage/app" />
       <excludeFolder url="file://$MODULE_DIR$/storage/framework" />

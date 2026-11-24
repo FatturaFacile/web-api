@@ -260,7 +260,7 @@ final readonly class OpportunityService implements OpportunityServiceInterface
                 'id' => (string) Str::uuid7(),
                 'tenant_id' => $lockedOpp->tenant_id,
                 'opportunity_id' => $lockedOpp->id,
-                'from_stage_id' => $previousStage?->id,
+                'from_stage_id' => $previousStage?->getKey(),
                 'to_stage_id' => $targetStage->id,
                 'changed_by_user_id' => $this->isUuid($actorUserId) ? $actorUserId : null,
                 'amount' => $amount,
@@ -698,7 +698,7 @@ final readonly class OpportunityService implements OpportunityServiceInterface
             opportunityId: (string) $opp->id,
             change: $change,
             pipelineId: $opp->pipeline_id !== null ? (string) $opp->pipeline_id : null,
-            stageId: $opp->stage_id !== null ? (string) $opp->stage_id : null,
+            stageId: (string) $opp->stage_id,
             actorUserId: $this->isUuid($actorUserId) ? $actorUserId : null,
         );
 

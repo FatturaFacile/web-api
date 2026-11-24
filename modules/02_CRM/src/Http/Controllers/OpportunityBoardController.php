@@ -59,7 +59,7 @@ final class OpportunityBoardController extends Controller
         $tenantId = (string) $this->tenantContext->getTenantId();
         $opportunity = Opportunity::where('tenant_id', $tenantId)->findOrFail($id);
         $target = OpportunityStage::where('tenant_id', $tenantId)->findOrFail($request->input('stage_id'));
-        $actorId = (string) ($request->user()?->id ?? 'system');
+        $actorId = (string) $request->user()->id;
         $sourceStageId = (string) $opportunity->stage_id;
 
         $updated = $target->id === $opportunity->stage_id
@@ -115,7 +115,7 @@ final class OpportunityBoardController extends Controller
             $opportunity,
             (string) $request->input('notes'),
             $request->boolean('append'),
-            (string) ($request->user()?->id ?? 'system'),
+            (string) $request->user()->id,
         );
 
         return response()->json((new OpportunityResource($updated->load(['account', 'stage', 'owner'])))->resolve());
