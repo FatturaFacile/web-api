@@ -30,6 +30,7 @@ use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\HseFrontendTranslations;
 use Database\Seeders\Translations\IdentityFrontendTranslations;
 use Database\Seeders\Translations\InventoryCountingFrontendTranslations;
+use Database\Seeders\Translations\InvoiceMatchingFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Database\Seeders\Translations\ItalianPayrollFrontendTranslations;
 use Database\Seeders\Translations\ItalianVatFrontendTranslations;
@@ -143,6 +144,7 @@ class FrontendTranslationSeeder extends Seeder
             + ItalianVatFrontendTranslations::all($locale)
             + ItalianVatWorkbenchFrontendTranslations::all($locale)
             + AccountsPayableFrontendTranslations::all($locale)
+            + InvoiceMatchingFrontendTranslations::all($locale)
             + PayablesFrontendTranslations::all($locale)
             + SwissQrBillSlipFrontendTranslations::all($locale)
             + SwissVatFrontendTranslations::all($locale)

@@ -3601,4 +3601,11 @@ return [
     'allocation_driver_id' => 'clé de répartition',
     'fixed_weights_json' => 'pondérations fixes',
     'target_filter_json' => 'filtre des destinataires',
+    'quantity_tolerance_percent' => 'tolérance de quantité en pourcentage',
+    'quantity_tolerance_amount' => 'tolérance de quantité',
+    'item_category' => 'catégorie d\'article',
+    'match_type' => 'type de rapprochement',
+    'expected_credit_amount' => 'montant de l\'avoir attendu',
+    'include_unreferenced' => 'inclure les factures sans référence de commande',
+    'queue' => 'file',
 ];

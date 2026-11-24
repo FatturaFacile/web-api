@@ -3601,4 +3601,11 @@ return [
     'allocation_driver_id' => 'allocation driver',
     'fixed_weights_json' => 'fixed weights',
     'target_filter_json' => 'target filter',
+    'quantity_tolerance_percent' => 'quantity tolerance percentage',
+    'quantity_tolerance_amount' => 'quantity tolerance',
+    'item_category' => 'item category',
+    'match_type' => 'matching type',
+    'expected_credit_amount' => 'expected credit amount',
+    'include_unreferenced' => 'include invoices without order reference',
+    'queue' => 'queue',
 ];

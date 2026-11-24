@@ -3601,4 +3601,11 @@ return [
     'allocation_driver_id' => 'Umlageschlüssel',
     'fixed_weights_json' => 'feste Gewichte',
     'target_filter_json' => 'Zielfilter',
+    'quantity_tolerance_percent' => 'prozentuale Mengentoleranz',
+    'quantity_tolerance_amount' => 'Mengentoleranz',
+    'item_category' => 'Artikelkategorie',
+    'match_type' => 'Abgleichstyp',
+    'expected_credit_amount' => 'erwarteter Gutschriftbetrag',
+    'include_unreferenced' => 'Rechnungen ohne Bestellbezug einbeziehen',
+    'queue' => 'Warteschlange',
 ];

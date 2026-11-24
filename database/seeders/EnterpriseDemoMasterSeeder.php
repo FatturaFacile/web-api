@@ -65,6 +65,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
         $this->call([
             CRMDemoDataSeeder::class,
             ProcurementDemoDataSeeder::class,
+            InvoiceMatchingDemoSeeder::class,
             InventoryDemoDataSeeder::class,
             AssetDemoDataSeeder::class,
             ProjectDemoDataSeeder::class,
