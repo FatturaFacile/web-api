@@ -81,7 +81,7 @@ const SCHEDULE_NON_CLEANUPS = [
     'contracts:expire-signature-requests', 'facility:release-no-shows', 'facility:generate-inspections', 'hospitality:release-expired-blocks',
     'practice:expire-fee-proposals', 'communication:due-campaigns', 'subscriptions:indexation',
     'exports:run-scheduled', 'business-intelligence:run-snapshots', 'marketplace:check-health', 'supplier-portal:alert-expiring-documents',
-    'crm:process-automation', 'esm:loaners:scan-overdue', 'billing:process-recurring', 'audit:archive-worm', 'mfg:mes-shift-instances',
+    'crm:process-automation', 'esm:loaners:scan-overdue', 'billing:process-recurring', 'audit:archive-worm', 'mfg:mes-shift-instances', 'projects:evm-snapshots',
 ];
 
 beforeEach(function (): void {

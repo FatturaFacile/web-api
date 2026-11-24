@@ -167,7 +167,7 @@ it('monitors the erosion of the plafond with an alert level for each declaration
 
     $expired = $this->getJson('/api/v1/italian-vat/plafond/monitor?year=2025&as_of=2026-02-01')->assertOk();
 
-    expect(collect($expired->json('data.declarations'))->pluck('status')->unique()->all())->toBe(['expired', 'revoked']);
+    expect(collect($expired->json('data.declarations'))->pluck('status')->unique()->values()->all())->toBe(['expired', 'revoked']);
 });
 
 it('does not see or revoke the declarations of another tenant', function (): void {

@@ -16,6 +16,8 @@ final class StoreProjectTemplateRequest extends FormRequest
 {
     use TenantScopedRules;
 
+    private const int MAX_DEPTH = 8;
+
     public function authorize(): bool
     {
         return true;
@@ -35,13 +37,36 @@ final class StoreProjectTemplateRequest extends FormRequest
             'source_project_id' => ['nullable', 'uuid', 'required_without:structure', $this->tenantOwns('projects')],
             'structure' => ['nullable', 'array', 'required_without:source_project_id'],
             'structure.nodes' => ['required_with:structure', 'array', 'min:1'],
-            'structure.nodes.*.title' => ['required', 'string', 'max:255'],
-            'structure.nodes.*.node_type' => ['nullable', 'string'],
+            ...$this->nodeRules('structure.nodes.*'),
             'structure.dependencies' => ['nullable', 'array'],
             'structure.dependencies.*.predecessor' => ['required', 'string'],
             'structure.dependencies.*.successor' => ['required', 'string'],
             'structure.dependencies.*.type' => ['nullable', 'string', Rule::in(['FS', 'SS', 'FF', 'SF'])],
             'structure.dependencies.*.lag_days' => ['nullable', 'integer', 'between:-3650,3650'],
         ];
+    }
+
+    /**
+     * Rules of a template node and, recursively, of its children (down to MAX_DEPTH levels), so that every field of the
+     * tree (`ref` included, which the dependencies point to) survives validation.
+     *
+     * @return array<string, list<mixed>>
+     */
+    private function nodeRules(string $prefix, int $depth = 1): array
+    {
+        $rules = [
+            "{$prefix}.ref" => ['nullable', 'string', 'max:100'],
+            "{$prefix}.title" => ['required', 'string', 'max:255'],
+            "{$prefix}.node_type" => ['nullable', 'string'],
+            "{$prefix}.required_role" => ['nullable', 'string', 'max:100'],
+            "{$prefix}.start_offset_days" => ['nullable', 'integer', 'between:0,3650'],
+            "{$prefix}.duration_days" => ['nullable', 'integer', 'between:0,3650'],
+            "{$prefix}.planned_hours" => ['nullable', 'numeric', 'min:0'],
+            "{$prefix}.planned_cost" => ['nullable', 'numeric', 'min:0'],
+            "{$prefix}.planned_revenue" => ['nullable', 'numeric', 'min:0'],
+            "{$prefix}.children" => ['nullable', 'array'],
+        ];
+
+        return $depth >= self::MAX_DEPTH ? $rules : [...$rules, ...$this->nodeRules("{$prefix}.children.*", $depth + 1)];
     }
 }

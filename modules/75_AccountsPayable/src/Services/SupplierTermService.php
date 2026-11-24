@@ -37,7 +37,7 @@ final class SupplierTermService
      */
     public function create(string $tenantId, array $data): ApSupplierTerm
     {
-        return ApSupplierTerm::query()->create(['tenant_id' => $tenantId, 'supplier_id' => $data['supplier_id']] + $this->attributes($data));
+        return ApSupplierTerm::query()->create(['tenant_id' => $tenantId, 'supplier_id' => $data['supplier_id']] + $this->attributes($data))->refresh();
     }
 
     /**

@@ -83,7 +83,7 @@ final readonly class ParallelDepreciationScheduleService
             $fiscalClosing = $fiscalClose;
             $fiscalAccum = $fiscalAcc;
 
-            $year = (int) substr($code, 0, 4);
+            $year = (int) substr((string) $code, 0, 4);
             $taxCredit = $type === 'yearly' ? ($incentive['annual_installments'][$year] ?? '0.00') : '0.00';
             $extraDeduction = $this->incentives->extraDeductionForCharge($asset, $fiscalDepr);
 
