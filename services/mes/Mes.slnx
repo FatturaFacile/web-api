@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Edge.Gateway/Edge.Gateway.csproj" />
+    <Project Path="src/Mes.Application/Mes.Application.csproj" />
+    <Project Path="src/Mes.Domain/Mes.Domain.csproj" />
+    <Project Path="src/Mes.Infrastructure.Connectors/Mes.Infrastructure.Connectors.csproj" />
+    <Project Path="src/Mes.Infrastructure.LaravelSync/Mes.Infrastructure.LaravelSync.csproj" />
+    <Project Path="src/Mes.Infrastructure.Persistence/Mes.Infrastructure.Persistence.csproj" />
+    <Project Path="src/Mes.Presentation/Mes.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Mes.Tests/Mes.Tests.csproj" />
+  </Folder>
+</Solution>

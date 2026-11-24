@@ -1,0 +1,70 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'building' => [
+        'has_spaces' => 'The building still has spaces: remove or move them first.',
+    ],
+    'space' => [
+        'kind_has_children' => 'A space that contains other spaces cannot become a floor, desk, parking spot or meeting room.',
+        'has_children' => 'The space contains other spaces: remove them first.',
+        'has_future_bookings' => 'The space has bookings still to come: cancel them first.',
+        'floor_has_no_parent' => 'A floor sits directly under the building and has no parent.',
+        'parent_not_found' => 'The parent space does not exist.',
+        'parent_other_building' => 'The parent space belongs to another building.',
+        'parent_is_leaf' => 'A space of kind :kind cannot contain other spaces.',
+        'cycle' => 'A space cannot be placed inside itself or inside one of its own children.',
+        'kind_not_bookable' => 'A space of kind :kind cannot be booked.',
+        'capacity_required' => 'A bookable space needs a capacity of at least 1.',
+    ],
+    'booking' => [
+        'not_bookable' => 'The space is not bookable.',
+        'in_past' => 'The booking cannot start in the past.',
+        'too_long' => 'A booking of this kind of space lasts at most :minutes minutes.',
+        'too_far' => 'This kind of space cannot be booked more than :days days ahead.',
+        'over_capacity' => 'The space holds at most :capacity people.',
+        'daily_limit' => 'You can hold at most :limit booking(s) of this kind of space per day.',
+        'conflict' => 'The space is already booked in this interval.',
+        'cancel_only_booked' => 'The booking is :status: only a booking that has not been used can be cancelled.',
+        'checkin_only_booked' => 'The booking is :status: only a booking that is still open can be checked in.',
+        'checkin_window' => 'Check-in is possible from a few minutes before the start until the booking ends.',
+        'own_only' => 'You can only book for yourself.',
+    ],
+    'series' => [
+        'no_occurrences' => 'The recurrence produces no booking in the chosen period.',
+        'too_many' => 'A recurring booking can generate at most :max bookings.',
+        'nothing_bookable' => 'No occurrence of the series can be booked.',
+        'already_cancelled' => 'The series is already cancelled.',
+        'span' => 'A recurring booking can span at most :days days.',
+        'end_before_start' => 'The end time must be after the start time.',
+    ],
+    'request' => [
+        'locked' => 'The request is :status and cannot be changed.',
+        'transition' => 'A request that is :from cannot move to :to.',
+        'work_order_not_found' => 'The maintenance work order does not exist in this company.',
+        'work_order_exists' => 'The request already has a maintenance work order.',
+        'asset_required' => 'Choose the asset the work order is for.',
+        'asset_not_found' => 'The asset does not exist in this company.',
+        'space_not_found' => 'The space does not exist.',
+        'building_mismatch' => 'The space is not in the chosen building.',
+    ],
+    'inspection' => [
+        'start_only_scheduled' => 'The inspection is :status: only a scheduled inspection can be started.',
+        'locked' => 'The inspection is :status and cannot be changed.',
+        'unknown_item' => 'The checklist has no item :keys.',
+        'not_numeric' => 'The answer to ":item" must be a number.',
+        'required_missing' => 'Answer every required item: :items.',
+    ],
+    'meter' => [
+        'unit_locked' => 'Kind and unit cannot change once the meter has readings.',
+        'inactive' => 'The meter is not active.',
+        'not_chronological' => 'The reading must be dated after the last one (:date).',
+        'only_latest' => 'Only the latest reading of the meter can be removed.',
+        'below_previous' => 'The value is below the previous reading (:previous). Declare a roll-over or a meter replacement.',
+        'no_rollover_value' => 'Set the roll-over value of the meter before recording a roll-over.',
+        'rollover_not_below' => 'A roll-over reading must be below the previous one (:previous).',
+        'above_rollover' => 'The previous reading is above the roll-over value (:rollover) of the meter.',
+        'unit_for_kind' => 'The unit :unit does not fit a :kind meter.',
+    ],
+];

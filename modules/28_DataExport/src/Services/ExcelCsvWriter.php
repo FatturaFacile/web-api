@@ -1,0 +1,58 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\DataExport\Services;
+
+use App\Services\Security\CsvFormulaNeutralizer;
+
+/**
+ * CSV that Excel opens correctly in an Italian locale: semicolons, a UTF-8 byte order mark and CRLF. Text cells that a
+ * spreadsheet would run as a formula are neutralised.
+ */
+final class ExcelCsvWriter
+{
+    /**
+     * @param  list<string>  $header
+     * @param  iterable<array<int, mixed>>  $rows
+     */
+    public function write(array $header, iterable $rows): string
+    {
+        $lines = [$this->line($header)];
+
+        foreach ($rows as $row) {
+            $lines[] = $this->line($row);
+        }
+
+        return "\xEF\xBB\xBF".implode("\r\n", $lines)."\r\n";
+    }
+
+    /**
+     * More lines of a file started by {@see write()}, for files written a page at a time.
+     *
+     * @param  iterable<array<int, mixed>>  $rows
+     */
+    public function rows(iterable $rows): string
+    {
+        $text = '';
+
+        foreach ($rows as $row) {
+            $text .= $this->line($row)."\r\n";
+        }
+
+        return $text;
+    }
+
+    /**
+     * @param  array<int, mixed>  $cells
+     */
+    private function line(array $cells): string
+    {
+        return implode(';', array_map($this->cell(...), $cells));
+    }
+
+    private function cell(mixed $value): string
+    {
+        return '"'.str_replace('"', '""', CsvFormulaNeutralizer::neutralize($value)).'"';
+    }
+}

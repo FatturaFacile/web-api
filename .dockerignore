@@ -1,0 +1,57 @@
+# Git & CI/CD
+.git
+.github
+.gitignore
+
+# IDE, Editor & Linter tooling
+.idea
+.vscode
+.editorconfig
+.spectral.yaml
+qodana.yaml
+
+# Ambiente e credenziali (mai includere nel build context)
+.env
+.env.*
+!.env.example
+
+# Dipendenze e log di pacchetti
+node_modules/
+vendor/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentazione, analisi e script operativi
+analisi/
+docs/
+scripts/
+dockers/
+*.md
+
+# Test suite e cache PHPUnit
+tests/
+phpunit.xml
+phpunit.xml.dist
+.phpunit.cache/
+.phpunit.result.cache
+
+# Docker file stessi
+Dockerfile*
+.dockerignore
+compose.yaml
+compose*.yml
+docker-compose*.yml
+
+# Storage applicativo e cache di runtime
+storage/logs/*
+!storage/logs/.gitignore
+storage/framework/cache/*
+!storage/framework/cache/.gitignore
+storage/framework/sessions/*
+!storage/framework/sessions/.gitignore
+storage/framework/views/*
+!storage/framework/views/.gitignore
+storage/app/backups/*
+storage/app/private/*
+storage/pail/

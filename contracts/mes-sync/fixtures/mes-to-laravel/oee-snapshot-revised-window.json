@@ -1,0 +1,26 @@
+{
+    "description": "A batch with one OeeSnapshotRevised message as the OutboxRelay of the MES Core sends it.",
+    "method": "POST",
+    "path": "/api/v1/manufacturing/mes-events",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "kid": "k1",
+    "secret": "contract-test-secret",
+    "t": 1798000000,
+    "body": "{\"events\":[{\"id\":\"018f0000-0000-7000-8000-0000000000d2\",\"type\":\"OeeSnapshotRevised\",\"dedupe_key\":\"revise:018f0000-0000-7000-8000-0000000000a1:2026-12-22T06:00:00\\u002B00:00:2026-12-22T07:00:00\\u002B00:00:3600000:3000000:0:0:0:0:120:1\",\"occurred_at\":\"2026-12-23T04:26:00.1234567+00:00\",\"payload\":{\"machine_id\":\"018f0000-0000-7000-8000-0000000000a1\",\"window_start\":\"2026-12-22T06:00:00\\u002B00:00\",\"window_end\":\"2026-12-22T07:00:00\\u002B00:00\",\"policy_version\":1,\"oee\":{\"planned_ms\":28800000,\"run_ms\":25200000,\"setup_ms\":1200000,\"alarm_ms\":600000,\"down_ms\":1200000,\"unknown_ms\":600000,\"ideal_work_ms\":21000000,\"ideal_good_ms\":20500000,\"total_count\":17500,\"good_count\":17100,\"has_quality_data\":true,\"availability\":0.875,\"performance\":0.8333,\"quality\":0.9762,\"oee\":0.7118,\"coverage_pct\":100.0,\"null_reasons\":[]}}}]}",
+    "signature": "t=1798000000,kid=k1,v1=023136dd2c74f75cb29a0ed641d633596d30cba9d468ace237c47ba7927a81de",
+    "expect": {
+        "http": 207,
+        "first_delivery": [
+            {
+                "id": "018f0000-0000-7000-8000-0000000000d2",
+                "status": "applied"
+            }
+        ],
+        "redelivery": [
+            {
+                "id": "018f0000-0000-7000-8000-0000000000d2",
+                "status": "duplicate"
+            }
+        ]
+    }
+}

@@ -1,0 +1,560 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Pdf;
+
+use App\Contracts\PdfGenerator;
+use App\Exceptions\QrBillGenerationException;
+use App\Models\Contact;
+use App\Models\ContactAddress;
+use App\Models\DeliveryNote;
+use App\Models\DocumentTemplate;
+use App\Models\Invoice;
+use App\Models\Quote;
+use App\Models\SalesOrder;
+use App\Models\ServiceReport;
+use App\Models\Tenant;
+use App\Models\Translation;
+use App\Models\User;
+use App\Models\WorkOrder;
+use App\Rules\PngSignature;
+use App\Services\SwissQrBill\SwissQrBillService;
+use App\Services\Tenancy\TenantContext;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Support\Traits\Localizable;
+use InvalidArgumentException;
+use Modules\SDI\Enums\RegimeFiscale;
+
+/**
+ * Turns sales documents into PDFs: normalises each document type into view data, renders it through the
+ * {@see PdfGenerator} and names the file. Works without a tenant context, so queued jobs can use it.
+ */
+class DocumentPdfService
+{
+    use Localizable;
+
+    public function __construct(
+        private readonly PdfGenerator $generator,
+        private readonly SwissQrBillService $qrBills,
+    ) {}
+
+    /**
+     * @param  array{hide_prices?: bool, locale?: ?string, show_technical_details?: bool}  $options  `locale` renders with the DB translations of that language
+     */
+    public function render(Model $document, array $options = []): RenderedPdf
+    {
+        $locale = $options['locale'] ?? null;
+        if ($locale === null) {
+            return $this->renderDocument($document, $options);
+        }
+
+        $previous = app()->getLocale();
+        app()->setLocale($locale);
+        try {
+            return $this->renderDocument($document, $options);
+        } finally {
+            app()->setLocale($previous);
+        }
+    }
+
+    /**
+     * Layers the API-managed `PDF.*` translations (translations table) over the lang files for the active locale,
+     * e.g. PDF.DELIVERY.SHIP_TO => pdf.delivery.ship_to.
+     */
+    private function loadDatabaseTranslations(?string $tenantId): void
+    {
+        $locale = app()->getLocale();
+        $lines = [];
+        $rows = Translation::query()
+            ->where('locale', $locale)
+            ->where('key', 'like', 'PDF.%')
+            ->where(fn ($q) => $q->whereNull('tenant_id')->when($tenantId !== null, fn ($q2) => $q2->orWhere('tenant_id', $tenantId)))
+            ->orderByRaw('tenant_id is not null')
+            ->get(['key', 'value']);
+
+        foreach ($rows as $row) {
+            // Translator::addLines() expects `<group>.<item>` keys: PDF.DELIVERY.SHIP_TO => pdf.delivery.ship_to
+            $lines[strtolower((string) $row->key)] = (string) $row->value;
+        }
+
+        if ($lines !== []) {
+            $translator = app('translator');
+            // Load the lang file group first: addLines() would otherwise mark the group as loaded and skip the file.
+            $translator->load('*', 'pdf', $locale);
+            $translator->addLines($lines, $locale);
+        }
+    }
+
+    /**
+     * @param  array{hide_prices?: bool, locale?: ?string, show_technical_details?: bool}  $options
+     */
+    private function renderDocument(Model $document, array $options): RenderedPdf
+    {
+        $tenantContext = app(TenantContext::class);
+        $tenantId = $document->getAttribute('tenant_id');
+        $tenant = $document->relationLoaded('tenant') ? $document->getRelation('tenant') : ($tenantId ? Tenant::find($tenantId) : null);
+
+        $renderCallback = fn (): RenderedPdf => $this->withLocale($options['locale'] ?? $this->documentLanguage($document), function () use ($document, $options, $tenantId): RenderedPdf {
+            $this->loadDatabaseTranslations($tenantId !== null ? (string) $tenantId : null);
+            [$view, $data, $type, $number] = match (true) {
+                $document instanceof Invoice => $this->invoice($document),
+                $document instanceof Quote => $this->quote($document, $options),
+                $document instanceof SalesOrder => $this->salesOrder($document),
+                $document instanceof DeliveryNote => $this->deliveryNote($document, $options),
+                $document instanceof WorkOrder => $this->workOrder($document),
+                $document instanceof ServiceReport => $this->serviceReport($document),
+                default => throw new InvalidArgumentException('Unsupported document class: '.$document::class),
+            };
+
+            return new RenderedPdf(
+                $this->generator->render($view, $data),
+                Str::studly($type).'-'.trim((string) preg_replace('/[^A-Za-z0-9._-]+/', '-', $number), '-').'.pdf'
+            );
+        });
+
+        if ($tenant !== null && $tenantContext->getTenantId() !== $tenant->id) {
+            return $tenantContext->runWithTenant($tenant, $renderCallback);
+        }
+
+        return $renderCallback();
+    }
+
+    /**
+     * The language of the customer of the document, or the current one when it states none.
+     */
+    private function documentLanguage(Model $document): string
+    {
+        $contact = $document instanceof WorkOrder ? $document->client : $document->getAttribute('contact');
+
+        return $contact?->document_language ?: App::getLocale();
+    }
+
+    /**
+     * The wording the law wants on the document, in the language of the customer.
+     *
+     * @return list<string>
+     */
+    private function legalNotes(Invoice $invoice): array
+    {
+        $notes = [];
+
+        if ($invoice->jurisdiction === 'IT' && RegimeFiscale::ofTenant($invoice->tenant)->isForfettario()) {
+            $notes[] = __('pdf.legal.forfettario');
+        }
+
+        if ($invoice->declarationOfIntent !== null) {
+            $notes[] = __('pdf.legal.declaration_of_intent', [
+                'protocol' => $invoice->declarationOfIntent->protocol_number,
+                'date' => $invoice->declarationOfIntent->receipt_date->format('d/m/Y'),
+            ]);
+        }
+
+        return $notes;
+    }
+
+    /**
+     * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
+     */
+    private function invoice(Invoice $invoice): array
+    {
+        $invoice->loadMissing(['tenant', 'contact.addresses', 'items', 'qrBillData', 'declarationOfIntent']);
+
+        $type = match ($invoice->invoice_type) {
+            'credit_note' => 'credit_note',
+            'proforma' => 'proforma',
+            default => 'invoice',
+        };
+
+        [$qr, $qrError] = $invoice->invoice_type === 'ch_qr_bill' ? $this->swissQrBill($invoice) : [null, null];
+
+        return [$invoice->invoice_type === 'ch_qr_bill' ? 'documents.ch_qr_bill' : 'documents.invoice', array_merge($this->common($invoice, $invoice->contact, $type, $invoice->invoice_number), [
+            'date' => $invoice->date->toDateString(),
+            'due_date' => $invoice->due_date?->toDateString(),
+            'currency' => $invoice->currency,
+            'notes' => $invoice->notes,
+            'lines' => $this->lines($invoice->items),
+            'show_prices' => true,
+            'totals' => [
+                'net' => (float) $invoice->total_net,
+                'fund' => $invoice->fund_enabled ? (float) $invoice->fund_amount : 0.0,
+                'tax' => (float) $invoice->total_tax,
+                'gross' => (float) $invoice->total_gross,
+                'rounding' => (float) $invoice->rounding_amount,
+                'stamp_duty' => $invoice->stamp_duty_applied ? (float) $invoice->stamp_duty_amount : 0.0,
+                'withholding_tax' => $invoice->withholding_tax_enabled ? (float) $invoice->withholding_tax_amount : 0.0,
+                'enasarco' => $invoice->enasarco_enabled ? (float) $invoice->enasarco_amount : 0.0,
+                'split_payment' => $invoice->split_payment ? (float) $invoice->total_tax : 0.0,
+                'due' => (float) $invoice->amountDue(),
+                'paid' => (float) $invoice->total_paid,
+                'balance' => (float) $invoice->outstandingAmount(),
+            ],
+            'payment' => [
+                'method' => $invoice->payment_method,
+                'terms' => $invoice->payment_terms,
+                'bank_name' => $invoice->bank_name,
+                'iban' => $invoice->bank_iban ?? $invoice->tenant?->iban,
+            ],
+            'qr' => $qr,
+            'qr_error' => $qrError,
+            'legal_notes' => $this->legalNotes($invoice),
+        ]), $type, $invoice->invoice_number];
+    }
+
+    /**
+     * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
+     */
+    private function quote(Quote $quote, array $options = []): array
+    {
+        $quote->loadMissing(['tenant', 'contact.addresses', 'items']);
+
+        return ['documents.quote', array_merge($this->common($quote, $quote->contact, 'quote', $quote->quote_number), [
+            'date' => $quote->date->toDateString(),
+            'valid_until' => $quote->valid_until?->toDateString(),
+            'currency' => $quote->currency,
+            'notes' => $quote->notes,
+            'custom_text' => $quote->custom_text,
+            'lines' => $this->lines($quote->items),
+            'show_prices' => true,
+            'totals' => ['net' => (float) $quote->total_net, 'tax' => (float) $quote->total_tax, 'gross' => (float) $quote->total_gross],
+            'signature' => [
+                'signed_by' => $quote->signed_by,
+                'signed_at' => $quote->signed_at?->toDateString(),
+                'image' => $quote->signature_data !== null ? $this->dataUri(PngSignature::decode($quote->signature_data)) : null,
+            ],
+            'cpq' => $this->quoteCpq($quote, $options),
+        ]), 'quote', $quote->quote_number];
+    }
+
+    /**
+     * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
+     */
+    private function salesOrder(SalesOrder $order): array
+    {
+        $order->loadMissing(['tenant', 'contact.addresses', 'items']);
+
+        return ['documents.quote', array_merge($this->common($order, $order->contact, 'sales_order', $order->order_number), [
+            'date' => $order->date->toDateString(),
+            'valid_until' => $order->due_date?->toDateString(),
+            'currency' => $order->currency,
+            'notes' => $order->notes,
+            'custom_text' => null,
+            'lines' => $this->lines($order->items),
+            'show_prices' => true,
+            'totals' => ['net' => (float) $order->total_net, 'tax' => (float) $order->total_tax, 'gross' => (float) $order->total_gross],
+            'signature' => null,
+        ]), 'sales_order', $order->order_number];
+    }
+
+    /**
+     * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
+     */
+    /**
+     * @param  array{hide_prices?: bool, locale?: ?string, show_technical_details?: bool}  $options
+     * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
+     */
+    private function deliveryNote(DeliveryNote $note, array $options = []): array
+    {
+        $note->loadMissing(['tenant', 'contact.addresses', 'items']);
+        $lines = $this->lines($note->items);
+        $showPrices = (bool) $note->show_prices && ! ($options['hide_prices'] ?? false);
+
+        $net = round(array_sum(array_map(fn (array $line): float => $line['quantity'] * $line['unit_price'], $lines)), 2);
+        $tax = round(array_sum(array_map(fn (array $line): float => $line['quantity'] * $line['unit_price'] * $line['tax_rate'] / 100, $lines)), 2);
+
+        return ['documents.delivery-note', array_merge($this->common($note, $note->contact, 'delivery_note', $note->ddt_number), [
+            'date' => $note->date->toDateString(),
+            'currency' => $note->currency ?? 'EUR',
+            'notes' => $note->notes,
+            'lines' => $lines,
+            'show_prices' => $showPrices,
+            'totals' => $showPrices ? ['net' => $net, 'tax' => $tax, 'gross' => round($net + $tax, 2)] : null,
+            'shipping_address' => $note->shipping_address,
+            'transport' => [
+                'reason' => $note->transport_reason,
+                'goods_appearance' => $note->goods_appearance,
+                'packages_count' => $note->packages_count,
+                'gross_weight_kg' => $note->gross_weight_kg !== null ? (float) $note->gross_weight_kg : null,
+                'carrier' => $note->carrier_name,
+                'courier' => $note->courier,
+                'license_plate' => $note->carrier_license_plate,
+                'departure_time' => $note->departure_time?->format('Y-m-d H:i'),
+                'carriage_terms' => $note->carriage_terms,
+                'transport_by' => $note->transport_by,
+                'carrier_vat_number' => $note->carrier_vat_number,
+                'incoterms' => $note->incoterms,
+                'net_weight_kg' => $note->net_weight_kg !== null ? (float) $note->net_weight_kg : null,
+                'volume_m3' => $note->volume_m3 !== null ? (float) $note->volume_m3 : null,
+                'tracking_number' => $note->tracking_number,
+                'tracking_code' => $note->tracking_code,
+                'awb_number' => $note->awb_number,
+                'shipment_flow' => $note->shipment_flow ?? 'direct',
+                'final_recipient_name' => $note->final_recipient_name,
+            ],
+            'sender_override' => $this->senderOverride($note),
+            'jurisdiction' => $note->tenant?->country === 'CH' ? 'CH' : 'IT',
+        ]), 'delivery_note', $note->ddt_number];
+    }
+
+    /**
+     * Sender printed on a triangular / dropshipping DDT instead of the issuer: blank (obscured) or a custom name and address.
+     *
+     * @return array{name: ?string, address_lines: array<int, string>}|null
+     */
+    private function senderOverride(DeliveryNote $note): ?array
+    {
+        return match ($note->sender_display ?? 'company') {
+            'blank' => ['name' => null, 'address_lines' => []],
+            'custom' => [
+                'name' => $note->sender_name,
+                'address_lines' => array_values(array_filter(array_map('trim', preg_split('/\R/', (string) $note->sender_address) ?: []))),
+            ],
+            default => null,
+        };
+    }
+
+    /**
+     * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
+     */
+    private function workOrder(WorkOrder $workOrder): array
+    {
+        $workOrder->loadMissing(['tenant', 'client.addresses', 'lines']);
+        $lines = $this->lines($workOrder->lines);
+        $net = round(array_sum(array_column($lines, 'line_total')), 2);
+        $tax = round(array_sum(array_map(fn (array $line): float => $line['line_total'] * $line['tax_rate'] / 100, $lines)), 2);
+
+        $signatureImage = null;
+
+        $disk = (string) config('filesystems.private_disk', config('filesystems.default', 'local'));
+        if ($workOrder->client_signature_path !== null && Storage::disk($disk)->exists($workOrder->client_signature_path)) {
+            $signatureImage = $this->dataUri(Storage::disk($disk)->get($workOrder->client_signature_path));
+        }
+
+        return ['documents.work-order', array_merge($this->common($workOrder, $workOrder->client, 'work_order', $workOrder->work_order_number), [
+            'date' => $workOrder->date?->toDateString(),
+            'currency' => 'EUR',
+            'notes' => $workOrder->notes,
+            'lines' => $lines,
+            'show_prices' => true,
+            'totals' => ['net' => $net, 'tax' => $tax, 'gross' => round($net + $tax, 2)],
+            'technician' => $workOrder->technician_user_id !== null ? User::find($workOrder->technician_user_id)?->name : null,
+            'intervention_address' => $workOrder->intervention_address,
+            'started_at' => $workOrder->started_at?->format('Y-m-d H:i'),
+            'ended_at' => $workOrder->ended_at?->format('Y-m-d H:i'),
+            'labor_hours' => (float) $workOrder->labor_hours,
+            'signature' => [
+                'signed_by' => $workOrder->client_signed_by,
+                'signed_at' => $workOrder->signed_at?->toDateString(),
+                'image' => $signatureImage,
+            ],
+        ]), 'work_order', $workOrder->work_order_number];
+    }
+
+    /**
+     * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
+     */
+    private function serviceReport(ServiceReport $report): array
+    {
+        $report->loadMissing(['tenant', 'contact.addresses', 'lines.lineType', 'technician', 'signatures']);
+        $lines = $this->lines($report->lines);
+
+        $signature = $report->signatures->firstWhere('signer_type', 'customer') ?? $report->signatures->first();
+        $signatureImage = null;
+        $disk = config('filesystems.private_disk', config('filesystems.default', 'local'));
+
+        if ($signature && Storage::disk($disk)->exists($signature->signature_path)) {
+            $signatureImage = $this->dataUri(Storage::disk($disk)->get($signature->signature_path));
+        }
+
+        $currency = $report->contact?->currency ?? $report->tenant?->default_currency ?? 'EUR';
+
+        return ['documents.service-report', array_merge($this->common($report, $report->contact, 'service_report', $report->report_number), [
+            'date' => $report->report_date?->toDateString(),
+            'report_date' => $report->report_date?->toDateString(),
+            'currency' => $currency,
+            'notes' => $report->customer_notes,
+            'customer_notes' => $report->customer_notes,
+            'lines' => $lines,
+            'show_prices' => true,
+            'totals' => ['net' => (float) $report->total_net, 'tax' => (float) $report->total_tax, 'gross' => (float) $report->total_gross],
+            'technician' => $report->technician?->name,
+            'site_address' => $report->site_address,
+            'time_start' => $report->time_start,
+            'time_end' => $report->time_end,
+            'total_hours' => (float) $report->total_hours,
+            'travel_distance_km' => (float) $report->travel_distance_km,
+            'signature' => [
+                'signer_name' => $signature?->signer_name,
+                'signer_role' => $signature?->signer_role,
+                'signed_at' => $signature?->signed_at?->toDateTimeString(),
+                'signature_hash' => $signature?->signature_hash,
+                'image' => $signatureImage,
+            ],
+        ]), 'service_report', $report->report_number];
+    }
+
+    /**
+     * Build the Swiss QR-bill for an invoice. A paid invoice needs no payment slip; any other failure is logged and
+     * reported to the template, so the rest of the document still renders.
+     *
+     * @return array{0: ?array<string, mixed>, 1: ?string} the slip data and the failure reason
+     */
+    private function swissQrBill(Invoice $invoice): array
+    {
+        try {
+            return [$this->qrBills->generate($invoice)->toViewArray(), null];
+        } catch (QrBillGenerationException $e) {
+            if ($e->reason === QrBillGenerationException::INVALID_AMOUNT) {
+                return [null, null];
+            }
+
+            Log::warning('Swiss QR-bill could not be generated for invoice {number}: {reason}', [
+                'invoice_id' => $invoice->id,
+                'number' => $invoice->invoice_number,
+                'reason' => $e->reason,
+                'violations' => $e->violations,
+            ]);
+
+            return [null, $e->reason];
+        }
+    }
+
+    /**
+     * Data shared by every template: issuer, customer and billing address.
+     *
+     * @return array<string, mixed>
+     */
+    private function common(Model $document, ?Contact $contact, string $type, string $number): array
+    {
+        $address = $contact?->addresses->firstWhere('type', 'billing') ?? $contact?->addresses->first();
+
+        return [
+            'type' => $type,
+            'number' => $number,
+            'branding' => DocumentTemplate::brandingFor($document->getAttribute('tenant_id'), $type),
+            'tenant' => $document->tenant,
+            'tenant_address_lines' => $this->tenantAddressLines($document->tenant?->settings['preferences']['company'] ?? []),
+            'contact' => $contact,
+            'contact_name' => $contact?->company_name ?: ($contact !== null ? trim($contact->first_name.' '.$contact->last_name) : null),
+            'address_lines' => $address instanceof ContactAddress ? $this->addressLines($address) : [],
+        ];
+    }
+
+    /**
+     * Issuer address lines from the `company` tenant preferences (structured fields or two combined lines).
+     *
+     * @param  array<string, mixed>  $company
+     * @return array<int, string>
+     */
+    private function tenantAddressLines(array $company): array
+    {
+        $lines = isset($company['street'])
+            ? [trim($company['street'].' '.($company['house_number'] ?? '')), trim(($company['postal_code'] ?? '').' '.($company['city'] ?? ''))]
+            : [(string) ($company['address_line_1'] ?? ''), (string) ($company['address_line_2'] ?? '')];
+
+        return array_values(array_filter(array_map('trim', $lines)));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function addressLines(ContactAddress $address): array
+    {
+        return array_values(array_filter([
+            trim($address->street.' '.$address->house_number),
+            trim($address->postal_code.' '.$address->city.($address->state_canton ? ' ('.$address->state_canton.')' : '')),
+            $address->country,
+        ]));
+    }
+
+    /**
+     * @param  iterable<int, Model>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function lines(iterable $items): array
+    {
+        $lines = [];
+
+        foreach ($items as $item) {
+            $quantity = (float) $item->quantity;
+            $unitPrice = (float) ($item->unit_price ?? 0);
+
+            $lines[] = [
+                'type' => $item->getAttribute('type'),
+                'description' => $item->description,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'tax_rate' => (float) ($item->tax_rate ?? 0),
+                'discount_percentage' => (float) ($item->getAttribute('discount_percentage') ?? 0),
+                'line_total' => $item->getAttribute('line_total') !== null ? (float) $item->line_total : round($quantity * $unitPrice, 2),
+            ];
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Technical and commercial parts of a CPQ quote: the configured variant of each line, optional lines, the VAT
+     * breakdown, and the audit certificate of the e-signature. `show_technical_details` false collapses the lines
+     * into one package price.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
+     */
+    private function quoteCpq(Quote $quote, array $options): array
+    {
+        $showDetails = (bool) ($options['show_technical_details'] ?? true);
+        $lines = [];
+        $vat = [];
+
+        foreach ($quote->items as $item) {
+            $selection = is_array($item->configuration_snapshot) ? ($item->configuration_snapshot['labels'] ?? []) : [];
+            $billable = ! $item->is_optional || $item->is_selected;
+            $lines[] = [
+                'description' => (string) $item->description,
+                'specs' => is_array($selection) ? array_values(array_map('strval', $selection)) : [],
+                'is_optional' => (bool) $item->is_optional,
+                'is_selected' => (bool) $item->is_selected,
+                'quantity' => (float) $item->quantity,
+                'line_total' => (float) $item->line_total,
+            ];
+
+            if ($billable) {
+                $rate = number_format((float) $item->tax_rate, 2, '.', '');
+                $vat[$rate]['rate'] = (float) $rate;
+                $vat[$rate]['taxable'] = round(($vat[$rate]['taxable'] ?? 0.0) + (float) $item->line_total, 2);
+            }
+        }
+
+        foreach ($vat as $rate => $row) {
+            $vat[$rate]['tax'] = round($row['taxable'] * $row['rate'] / 100, 2);
+        }
+
+        ksort($vat);
+        $signature = $quote->signatureRequests()->where('status', 'signed')->latest('signed_at')->first();
+
+        return [
+            'show_details' => $showDetails,
+            'lines' => $lines,
+            'vat' => array_values($vat),
+            'package_total' => (float) $quote->total_net,
+            'audit' => $signature === null ? null : [
+                'signer_name' => $signature->signer_name,
+                'signer_role' => $signature->signer_role,
+                'purchase_order_number' => $signature->purchase_order_number,
+                'signed_at' => $signature->signed_at?->toIso8601String(),
+                'ip_address' => $signature->ip_address,
+                'payload_hash' => $signature->payload_hash,
+            ],
+        ];
+    }
+
+    private function dataUri(?string $png): ?string
+    {
+        return $png !== null && $png !== '' ? 'data:image/png;base64,'.base64_encode($png) : null;
+    }
+}

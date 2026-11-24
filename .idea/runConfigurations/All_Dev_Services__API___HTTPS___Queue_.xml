@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="All Dev Services (API + HTTPS + Queue)" type="CompoundRunConfigurationType">
+    <toRun name="Laravel Queue" type="PhpLocalRunConfigurationType" />
+    <toRun name="Laravel Serve" type="PhpLocalRunConfigurationType" />
+    <toRun name="Caddy HTTPS" type="ShConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>

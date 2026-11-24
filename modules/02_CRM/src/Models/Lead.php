@@ -1,0 +1,167 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\CRM\Models;
+
+use App\Models\Contact;
+use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+use Modules\CRM\Contracts\LeadNormalizerInterface;
+
+/**
+ * A prospect captured before qualification; converted into an account, a contact of the party master and an
+ * optional opportunity.
+ *
+ * @property array<string, mixed>|list<array<string, mixed>>|null $score_breakdown
+ * @property array<string, mixed>|null $custom_fields
+ * @property array<int, string>|null $tags
+ * @property string|null $rating
+ * @property Carbon|null $score_calculated_at
+ * @property Carbon|null $scored_at
+ * @property Carbon|null $last_activity_at
+ * @property Carbon|null $assigned_at
+ * @property Carbon|null $converted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
+final class Lead extends BaseEnterpriseModel
+{
+    protected $table = 'crm_leads';
+
+    protected static function booted(): void
+    {
+        self::saving(function (Lead $lead): void {
+            if (! app()->bound(LeadNormalizerInterface::class)) {
+                return;
+            }
+
+            $normalizer = app(LeadNormalizerInterface::class);
+
+            if ($lead->isDirty('phone') || ($lead->phone_e164 === null && ! empty($lead->phone))) {
+                $lead->phone_e164 = $normalizer->normalizePhone($lead->phone, $lead->country ?: null);
+            }
+
+            if ($lead->isDirty('vat_number') && $lead->vat_number !== null) {
+                $lead->vat_number = $normalizer->normalizeVat($lead->vat_number);
+            }
+
+            if ($lead->isDirty('company_name') || ($lead->company_name_normalized === null && ! empty($lead->company_name))) {
+                $lead->company_name_normalized = $normalizer->normalizeCompanyName($lead->company_name);
+            }
+
+            if ($lead->isDirty('email') && $lead->email !== null) {
+                $lead->email = $normalizer->normalizeEmail($lead->email);
+            }
+        });
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'score' => 'integer',
+            'estimated_budget' => 'decimal:2',
+            'annual_revenue_estimate' => 'decimal:2',
+            'employee_count' => 'integer',
+            'converted_at' => 'datetime',
+            'scored_at' => 'datetime',
+            'last_activity_at' => 'datetime',
+            'tags' => 'array',
+            'custom_fields' => 'array',
+            'score_breakdown' => 'array',
+            'score_calculated_at' => 'datetime',
+            'assigned_at' => 'datetime',
+        ];
+    }
+
+    /**
+     * Calculated grid columns: `display_name` is the text the lead list shows (full name, else the company name).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'display_name' => "COALESCE(NULLIF(TRIM(COALESCE(crm_leads.first_name, '') || ' ' || COALESCE(crm_leads.last_name, '')), ''), crm_leads.company_name)",
+        ];
+    }
+
+    /**
+     * @return BelongsTo<LeadSource, $this>
+     */
+    public function leadSource(): BelongsTo
+    {
+        return $this->belongsTo(LeadSource::class, 'lead_source_id');
+    }
+
+    public function campaign(): BelongsTo
+    {
+        return $this->belongsTo(Campaign::class, 'campaign_id');
+    }
+
+    public function convertedContact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class, 'converted_contact_id');
+    }
+
+    public function convertedAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'converted_account_id');
+    }
+
+    public function convertedOpportunity(): BelongsTo
+    {
+        return $this->belongsTo(Opportunity::class, 'converted_opportunity_id');
+    }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(Activity::class, 'related_id')->where('related_type', 'lead');
+    }
+
+    /**
+     * @return HasMany<LeadActivityEvent, $this>
+     */
+    public function activityEvents(): HasMany
+    {
+        return $this->hasMany(LeadActivityEvent::class, 'lead_id');
+    }
+
+    /**
+     * @return HasMany<LeadDuplicateCandidate, $this>
+     */
+    public function duplicateCandidates(): HasMany
+    {
+        return $this->hasMany(LeadDuplicateCandidate::class, 'lead_id');
+    }
+
+    /**
+     * @return BelongsTo<Lead, $this>
+     */
+    public function mergedInto(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'merged_into_lead_id');
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return trim("{$this->first_name} {$this->last_name}");
+    }
+
+    public function displayLabel(): string
+    {
+        $parts = array_filter([
+            $this->full_name !== '' ? $this->full_name : null,
+            $this->company_name,
+        ]);
+        $label = implode(' - ', $parts);
+
+        if (! empty($this->email)) {
+            $label = $label !== '' ? "{$label} <{$this->email}>" : (string) $this->email;
+        }
+
+        return $label !== '' ? $label : (string) $this->id;
+    }
+}

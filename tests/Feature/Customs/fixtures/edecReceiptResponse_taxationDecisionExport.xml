@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<receiptRequestResponse xmlns="http://www.e-dec.ch/xml/schema/edecReceiptResponse/v3" xsi:schemaLocation="http://www.e-dec.ch/xml/schema/edecReceiptResponse/v3 http://www.ezv.admin.ch/pdf_linker.php?doc=edecReceiptResponse_v_3_0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="3.0">
+	<requestorTraderIdentificationNumber>1000029</requestorTraderIdentificationNumber>
+	<requestorCorrelationID>abc123</requestorCorrelationID>
+	<taxationDecisionExport>
+		<documentInformation>
+			<documentType>taxationDecisionExport</documentType>
+			<documentTitle>VERANLAGUNGSVERFÜGUNG AUSFUHR</documentTitle>
+			<documentDate>2015-07-08</documentDate>
+			<documentTime>11:31:47</documentTime>
+			<documentNumber>15CHEE000003395546</documentNumber>
+			<documentVersion>1</documentVersion>
+			<documentLanguage>de</documentLanguage>
+		</documentInformation>
+		<traderDeclarationNumber>081-1436261203921</traderDeclarationNumber>
+		<traderReference>test_aza</traderReference>
+		<accessCode>9ooPYdqF9655UtT3</accessCode>
+		<acceptanceDate>2015-07-07</acceptanceDate>
+		<acceptanceTime>11:31:18</acceptanceTime>
+		<declarationType>1</declarationType>
+		<correctionCode>1</correctionCode>
+		<deliveryDestination>NL</deliveryDestination>
+		<transportMeans>
+			<transportMode>3</transportMode>
+			<transportationCountry>DE</transportationCountry>
+			<transportationNumber>K-108AB28</transportationNumber>
+		</transportMeans>
+		<transportInContainer>1</transportInContainer>
+		<container>
+			<containerNumber>DE- 452398</containerNumber>
+		</container>
+		<customsOffice>
+			<customsOfficeNumber>CH001251</customsOfficeNumber>
+			<name>Basel St. Jakob DA Wolf EVO</name>
+			<street>St. Jakobs-Strasse 226</street>
+			<postalCode>4052</postalCode>
+			<city>BASEL</city>
+			<country>CH</country>
+		</customsOffice>
+		<consignor>
+			<name>TC081</name>
+			<street>Holzikofenweg 36</street>
+			<addressSupplement3>Adresszusatz 3</addressSupplement3>
+			<postalCode>3003</postalCode>
+			<city>Bern</city>
+			<country>CH</country>
+			<traderIdentificationNumber>1000031</traderIdentificationNumber>
+		</consignor>
+		<consignee>
+			<name>dutch Export gmbh</name>
+			<street>Nowhere. 11</street>
+			<addressSupplement3>Adresszusatz 3</addressSupplement3>
+			<postalCode>10000</postalCode>
+			<city>Dordrecht</city>
+			<country>DE</country>
+			<traderIdentificationNumber>CH12345678</traderIdentificationNumber>
+			<consigneeReference>asdfasdfasdf</consigneeReference>
+		</consignee>
+		<declarant>
+			<traderIdentificationNumber>1000029</traderIdentificationNumber>
+			<declarantNumber>123456</declarantNumber>
+			<name>Test ZV Spediteur</name>
+			<street>Holzikofenweg 36</street>
+			<postalCode>3003</postalCode>
+			<city>Bern</city>
+			<country>CH</country>
+		</declarant>
+		<carrier>
+			<name>Transporteur Bebi</name>
+			<street>Holzikofenweg 36</street>
+			<addressSupplement3>Adresszusatz 3</addressSupplement3>
+			<postalCode>3003</postalCode>
+			<city>Bern</city>
+			<country>CH</country>
+			<carrierReference>asdfasdf123</carrierReference>
+		</carrier>
+		<authorizedConsignee>
+			<name>Transporteur Bebi</name>
+			<addressSupplement1>Adresszusatz 1</addressSupplement1>
+			<addressSupplement2>Adresszusatz 2</addressSupplement2>
+			<street>Holzikofenweg 36</street>
+			<addressSupplement3>Adresszusatz 3</addressSupplement3>
+			<postalCode>3003</postalCode>
+			<city>Bern</city>
+			<country>CH</country>
+			<traderIdentificationNumber>CH12345678</traderIdentificationNumber>
+			<authorizedConsigneeReference>asdfasdf123</authorizedConsigneeReference>
+		</authorizedConsignee>
+		<VATNumber>198164</VATNumber>
+		<invoiceCurrencyType>1</invoiceCurrencyType>
+		<numberOfGoodsItems>1</numberOfGoodsItems>
+		<goodsItem>
+			<customsItemNumber>1</customsItemNumber>
+			<description>Uhr mit spez. Schlüöüöüäöüäöüäöäüssel</description>
+			<commodityCode>9101.9100</commodityCode>
+			<statisticalCode>153</statisticalCode>
+			<grossMass>30100</grossMass>
+			<netMass>0.5</netMass>
+			<additionalUnit>1</additionalUnit>
+			<permitObligation>1</permitObligation>
+			<nonCustomsLawObligation>2</nonCustomsLawObligation>
+			<statistic>
+				<customsClearanceType>1</customsClearanceType>
+				<commercialGood>1</commercialGood>
+				<statisticalValue>24000</statisticalValue>
+				<statisticalValueConfirmation>1</statisticalValueConfirmation>
+			</statistic>
+			<repairAndRefinement>
+				<direction>1</direction>
+			</repairAndRefinement>
+			<packaging>
+				<packagingType>BE</packagingType>
+				<quantity>340</quantity>
+				<packagingReferenceNumber>Container 007</packagingReferenceNumber>
+			</packaging>
+			<producedDocument>
+				<documentType>862</documentType>
+				<documentReferenceNumber>Nr. 1337</documentReferenceNumber>
+				<issueDate>2005-04-25</issueDate>
+			</producedDocument>
+		</goodsItem>
+		<legalAdvisory>
+			<sequenceNumber>1</sequenceNumber>
+			<title>Hinweis:</title>
+			<text>Diese Veranlagung wurde auf einem Testsystem erstellt und ist rechtlich nicht verbindlich.</text>
+		</legalAdvisory>
+		<legalAdvisory>
+			<sequenceNumber>2</sequenceNumber>
+			<title>Rechtsmittelbelehrung:</title>
+			<text>Diese Veranlagungsverfügung kann innert 60 Tagen ab Ausstellungsdatum durch eine Verwaltungsbeschwerde bei der Zollkreisdirektion Basel angefochten werden.</text>
+		</legalAdvisory>
+		<legalAdvisory>
+			<sequenceNumber>3</sequenceNumber>
+			<title>Hinweis elektronische Veranlagungsverfügung (eVV):</title>
+			<text>Diese Veranlagungsverfügung wurde elektronisch eröffnet und ist mit einer digitalen Signatur versehen. Sie dient als Nachweis für die ordnungsgemässe Zollveranlagung der darin erwähnten Waren.
+ Unter dem Link https://e-dec-web-a.ezv.admin.ch/edecZugangscodeGui/ können Sie die elektronische Veranlagungsverfügung herunterladen. Sie benötigen dazu die vorstehend erwähnte Zollanmeldungsnummer und den Zugangscode.
+Veranlagungsverfügungen müssen aufbewahrt werden.
+Der Nachweis steuerentlastender Tatsachen (Steuerbefreiung wegen Ausfuhr) gegenüber der Eidgenössischen Steuerverwaltung obliegt der steuerpflichtigen Person. Eindeutige Belege eignen sich am besten für den Nachweis. Eindeutig sind unversehrt elektronisch archivierte eVV. Aus zollrechtlicher Sicht kann die Aufbewahrung elektronisch oder in Papierform erfolgen.
+Weiterführende Informationen zur eVV finden Sie im Internet unter www.ezv.admin.ch (eVV Allgemein) und www.estv.admin.ch (elektronische Archivierung).
+langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer Zusatztext</text>
+		</legalAdvisory>
+	</taxationDecisionExport>
+</receiptRequestResponse>

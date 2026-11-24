@@ -1,0 +1,222 @@
+name: Enterprise ERP CI Pipeline
+
+on:
+  # First link of the main chain: CI -> Qodana + deploy (workflow_run)
+  push:
+    # dev pushes run this pipeline through deploy-dev.yml (workflow_call)
+    branches: [ main ]
+  pull_request:
+    branches: [ main, dev ]
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-lint:
+    name: Code Quality & Automated Tests
+    runs-on: ubuntu-24.04
+
+    # Global environment variables shared across all steps and database connections
+    env:
+      # Tests run on SQLite in memory (phpunit.xml); no database server is needed.
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+
+    services:
+      # In-memory Redis store for cache, session state, and rate-limiting testing
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # Check out repository under $GITHUB_WORKSPACE, enforcing LF line endings to avoid Pint indentation mismatches
+      - name: Checkout Codebase
+        uses: actions/checkout@v7
+
+      # Ensure UNIX line endings across all PHP files to prevent false-positive Pint rule violations
+      - name: Normalize Line Endings (CRLF to LF)
+        run: |
+          git config --global core.autocrlf false
+          find . -type f -name "*.php" -not -path "./vendor/*" -exec dos2unix {} + 2>/dev/null || true
+
+      # Provision PHP 8.5 runtime with all enterprise extensions; coverage is disabled for fast CI runs
+      - name: Setup PHP 8.5 Runtime
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: dom, curl, libxml, mbstring, zip, pdo_sqlite, xmlreader, redis, bcmath
+          coverage: none
+          # Swagger and the OpenAPI coverage tests scan the whole API
+          ini-values: memory_limit=2G
+          tools: composer:v2
+
+      # Validate composer.json and composer.lock consistency
+      - name: Validate Composer Configuration
+        run: composer validate --strict
+
+      # Determine Composer cache directory for strict immutable caching
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      # Cache Composer dependencies based on composer.lock hash
+      - name: Cache Composer Dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      # Install exact project dependencies according to composer.lock with optimized autoloader
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
+
+      # Check for known security vulnerabilities in PHP dependencies
+      - name: Composer Security Audit
+        run: composer audit
+
+      # Enforce strict code formatting standards via Laravel Pint (fails on any style violation)
+      - name: Run Laravel Pint Code Formatter Check
+        run: ./vendor/bin/pint --test
+
+      # Static analysis at level 5 (phpstan.neon); phpstan-baseline.neon holds the errors that predate it, so only new
+      # ones fail the build.
+      - name: Larastan
+        run: ./vendor/bin/phpstan analyse --memory-limit=2G --no-progress
+
+      # Prepare environment configuration (the test suite migrates its own in-memory SQLite database)
+      - name: Setup Environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # Verify the OpenAPI (Swagger) documentation can be generated, as the deploy does after the build
+      - name: Generate Swagger Documentation
+        run: |
+          php artisan l5-swagger:generate
+          test -s storage/api-docs/api-docs.json
+
+      # Verify architectural boundary invariants (Clean Architecture / Domain rules)
+      - name: Run Pest Architecture Boundary Tests
+        run: ./vendor/bin/pest tests/Architecture --no-coverage
+
+      # Execute comprehensive application test suite in parallel (4 processes)
+      - name: Run Pest Test Suite (Parallel)
+        run: ./vendor/bin/pest --parallel --processes=4 --compact --no-coverage
+
+  # Coverage runs in 4 parallel shards; each uploads its clover report and coverage-merge joins them. A single
+  # `pest --coverage` run serialises the data of all the tests in one string and exhausts PHP's memory.
+  coverage:
+    name: Code Coverage (PCOV) shard ${{ matrix.shard }}/4
+    runs-on: ubuntu-24.04
+    needs: test-and-lint
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+
+    env:
+      # Tests run on SQLite in memory (phpunit.xml); no database server is needed.
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v7
+
+      - name: Normalize Line Endings (CRLF to LF)
+        run: |
+          git config --global core.autocrlf false
+          find . -type f -name "*.php" -not -path "./vendor/*" -exec dos2unix {} + 2>/dev/null || true
+
+      - name: Setup PHP 8.5 Runtime with PCOV
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: dom, curl, libxml, mbstring, zip, pdo_sqlite, xmlreader, redis, bcmath, pcov
+          coverage: pcov
+          # pcov collects only app/ and modules/ (the <source> of phpunit.xml): any other path is excluded
+          ini-values: memory_limit=10G, max_memory_limit=10G, pcov.directory=${{ github.workspace }}, pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
+          tools: composer:v2
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer Dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
+
+      - name: Setup Environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run Pest Coverage with PCOV (shard ${{ matrix.shard }}/4)
+        run: ./vendor/bin/pest --shard=${{ matrix.shard }}/4 --compact --coverage-clover=clover-${{ matrix.shard }}.xml
+
+      - name: Upload shard coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: clover-${{ matrix.shard }}
+          path: clover-${{ matrix.shard }}.xml
+          retention-days: 7
+
+  coverage-merge:
+    name: Code Coverage & Module Thresholds
+    runs-on: ubuntu-24.04
+    needs: coverage
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v7
+
+      - name: Download shard coverage
+        uses: actions/download-artifact@v8
+        with:
+          pattern: clover-*
+          merge-multiple: true
+
+      # A line is covered if at least one shard covers it. Global minimum 70%; add --module-min NAME=N for a module.
+      - name: Merge coverage and check thresholds
+        run: |
+          set -o pipefail
+          python3 scripts/merge-coverage.py --min 70 --output clover.xml clover-*.xml | tee coverage-summary.txt
+
+      - name: Upload merged coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-clover
+          path: |
+            clover.xml
+            coverage-summary.txt
+          retention-days: 30

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="WEB_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/tests/Feature" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/tests/Unit" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/app" isTestSource="false" packagePrefix="App\" />
+      <sourceFolder url="file://$MODULE_DIR$/database/factories" isTestSource="false" packagePrefix="Database\Factories\" />
+      <sourceFolder url="file://$MODULE_DIR$/database/seeders" isTestSource="false" packagePrefix="Database\Seeders\" />
+      <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" packagePrefix="Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/analisi/1/fatturino/app" isTestSource="false" packagePrefix="App\" />
+      <sourceFolder url="file://$MODULE_DIR$/analisi/1/fatturino/database/factories" isTestSource="false" packagePrefix="Database\Factories\" />
+      <sourceFolder url="file://$MODULE_DIR$/analisi/1/fatturino/database/seeders" isTestSource="false" packagePrefix="Database\Seeders\" />
+      <sourceFolder url="file://$MODULE_DIR$/analisi/1/fatturino/tests" isTestSource="true" packagePrefix="Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules" isTestSource="false" packagePrefix="Modules\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/02_CRM/src" isTestSource="false" packagePrefix="Modules\CRM\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/05_Invoicing/src" isTestSource="false" packagePrefix="Modules\Invoicing\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/13_Procurement/src" isTestSource="false" packagePrefix="Modules\Procurement\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/14_Inventory/src" isTestSource="false" packagePrefix="Modules\Inventory\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/15_Projects/src" isTestSource="false" packagePrefix="Modules\Projects\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/16_AssetManagement/src" isTestSource="false" packagePrefix="Modules\AssetManagement\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/17_ServiceManagement/src" isTestSource="false" packagePrefix="Modules\ServiceManagement\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/18_HumanResources/src" isTestSource="false" packagePrefix="Modules\HumanResources\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/19_SubscriptionBilling/src" isTestSource="false" packagePrefix="Modules\SubscriptionBilling\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/21_Workflow/src" isTestSource="false" packagePrefix="Modules\Workflow\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/22_GeneralLedger/src" isTestSource="false" packagePrefix="Modules\GeneralLedger\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/24_Treasury/src" isTestSource="false" packagePrefix="Modules\Treasury\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/30_Manufacturing/src" isTestSource="false" packagePrefix="Modules\Manufacturing\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/ai-gateway/src" isTestSource="false" packagePrefix="Enterprise\AiGateway\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/audit-ledger/src" isTestSource="false" packagePrefix="Enterprise\AuditLedger\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/enterprise-foundation/src" isTestSource="false" packagePrefix="Enterprise\Foundation\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/event-bus/src" isTestSource="false" packagePrefix="Enterprise\EventBus\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/feature-flags/src" isTestSource="false" packagePrefix="Enterprise\FeatureFlags\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/multi-tenant/src" isTestSource="false" packagePrefix="Enterprise\MultiTenant\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/openapi/src" isTestSource="false" packagePrefix="Enterprise\OpenApi\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/06_SDI/src" isTestSource="false" packagePrefix="Modules\SDI\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/18_Payroll/src" isTestSource="false" packagePrefix="Modules\Payroll\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/20_Analytics/src" isTestSource="false" packagePrefix="Modules\Analytics\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/23_Communication/src" isTestSource="false" packagePrefix="Modules\Communication\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/25_Documents/src" isTestSource="false" packagePrefix="Modules\Documents\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/26_Contracts/src" isTestSource="false" packagePrefix="Modules\Contracts\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/26_FiscalRetail/src" isTestSource="false" packagePrefix="Modules\FiscalRetail\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/27_Assistant/src" isTestSource="false" packagePrefix="Modules\Assistant\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/27_HealthExpenses/src" isTestSource="false" packagePrefix="Modules\HealthExpenses\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/28_DataExport/src" isTestSource="false" packagePrefix="Modules\DataExport\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/28_EDocumentNetworks/src" isTestSource="false" packagePrefix="Modules\EDocumentNetworks\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/29_Integrations/src" isTestSource="false" packagePrefix="Modules\Integrations\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/29_WorkspaceSync/src" isTestSource="false" packagePrefix="Modules\WorkspaceSync\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/31_Associations/src" isTestSource="false" packagePrefix="Modules\Associations\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/32_Customs/src" isTestSource="false" packagePrefix="Modules\Customs\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/32_DocumentTrust/src" isTestSource="false" packagePrefix="Modules\DocumentTrust\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/33_Workshop/src" isTestSource="false" packagePrefix="Modules\Workshop\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/34_ConstructionTrades/src" isTestSource="false" packagePrefix="Modules\ConstructionTrades\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/35_Childcare/src" isTestSource="false" packagePrefix="Modules\Childcare\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/36_PracticeManagement/src" isTestSource="false" packagePrefix="Modules\PracticeManagement\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/37_Hospitality/src" isTestSource="false" packagePrefix="Modules\Hospitality\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/38_Visitors/src" isTestSource="false" packagePrefix="Modules\Visitors\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/39_Intrastat/src" isTestSource="false" packagePrefix="Modules\Intrastat\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/40_Quality/src" isTestSource="false" packagePrefix="Modules\Quality\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/41_TravelExpense/src" isTestSource="false" packagePrefix="Modules\TravelExpense\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/42_Governance/src" isTestSource="false" packagePrefix="Modules\Governance\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/43_Facility/src" isTestSource="false" packagePrefix="Modules\Facility\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/44_SupplierPortal/src" isTestSource="false" packagePrefix="Modules\SupplierPortal\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/45_LeaseAccounting/src" isTestSource="false" packagePrefix="Modules\LeaseAccounting\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/46_Configurator/src" isTestSource="false" packagePrefix="Modules\Configurator\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/47_Sustainability/src" isTestSource="false" packagePrefix="Modules\Sustainability\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/48_Fleet/src" isTestSource="false" packagePrefix="Modules\Fleet\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/49_Returns/src" isTestSource="false" packagePrefix="Modules\Returns\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/50_Wms/src" isTestSource="false" packagePrefix="Modules\Wms\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/51_Transportation/src" isTestSource="false" packagePrefix="Modules\Transportation\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/52_Planning/src" isTestSource="false" packagePrefix="Modules\Planning\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/53_Budgeting/src" isTestSource="false" packagePrefix="Modules\Budgeting\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/54_CreditManagement/src" isTestSource="false" packagePrefix="Modules\CreditManagement\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/55_TalentLearning/src" isTestSource="false" packagePrefix="Modules\TalentLearning\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/56_BusinessIntelligence/src" isTestSource="false" packagePrefix="Modules\BusinessIntelligence\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/57_Marketplace/src" isTestSource="false" packagePrefix="Modules\Marketplace\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/58_Platform/src" isTestSource="false" packagePrefix="Modules\Platform\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/59_Collaboration/src" isTestSource="false" packagePrefix="Modules\Collaboration\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/60_Rebates/src" isTestSource="false" packagePrefix="Modules\Rebates\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/61_Events/src" isTestSource="false" packagePrefix="Modules\Events\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/62_Plm/src" isTestSource="false" packagePrefix="Modules\Plm\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/32_Logistics/src" isTestSource="false" packagePrefix="Modules\Logistics\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/33_CorporateGroup/src" isTestSource="false" packagePrefix="Modules\CorporateGroup\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/63_Pricing/src" isTestSource="false" packagePrefix="Modules\Pricing\" />
+      <excludeFolder url="file://$MODULE_DIR$/bootstrap/cache" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/app" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/framework" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/brianium/paratest" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/brick/math" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/carbonphp/carbon-doctrine-types" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/composer" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/dflydev/dot-access-data" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/doctrine/deprecations" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/doctrine/inflector" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/doctrine/lexer" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/dragonmantank/cron-expression" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/egulias/email-validator" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/fakerphp/faker" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/fidry/cpu-core-counter" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/filp/whoops" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/fruitcake/php-cors" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/graham-campbell/result-type" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/guzzlehttp/guzzle" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/guzzlehttp/promises" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/guzzlehttp/psr7" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/guzzlehttp/uri-template" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/hamcrest/hamcrest-php" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/jean85/pretty-package-versions" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/agent-detector" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/pail" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/pao" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/pint" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/prompts" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/sail" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/sanctum" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/sentinel" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/serializable-closure" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/telescope" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/tinker" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/league/commonmark" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/league/config" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/league/flysystem" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/league/flysystem-local" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/league/mime-type-detection" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/league/uri" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/league/uri-interfaces" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/mockery/mockery" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/monolog/monolog" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/myclabs/deep-copy" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/nesbot/carbon" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/nette/schema" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/nette/utils" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/nikic/php-parser" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/nunomaduro/collision" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/nunomaduro/termwind" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/pestphp/pest" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/pestphp/pest-plugin" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/pestphp/pest-plugin-arch" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/pestphp/pest-plugin-laravel" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/pestphp/pest-plugin-mutate" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/pestphp/pest-plugin-profanity" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phar-io/manifest" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phar-io/version" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phpdocumentor/reflection-common" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phpdocumentor/reflection-docblock" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phpdocumentor/type-resolver" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phpoption/phpoption" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phpstan/phpdoc-parser" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phpunit/php-code-coverage" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phpunit/php-file-iterator" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phpunit/php-invoker" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phpunit/php-text-template" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phpunit/php-timer" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/phpunit/phpunit" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/psr/clock" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/psr/container" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/psr/event-dispatcher" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/psr/http-client" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/psr/http-factory" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/psr/http-message" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/psr/log" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/psr/simple-cache" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/psy/psysh" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/ramsey/collection" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/ramsey/uuid" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/cli-parser" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/comparator" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/complexity" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/diff" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/environment" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/exporter" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/global-state" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/lines-of-code" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/object-enumerator" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/object-reflector" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/recursion-context" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/type" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/version" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/laravel-package-tools" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/laravel-permission" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/laravel-query-builder" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/staabm/side-effects-detector" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/clock" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/console" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/css-selector" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/deprecation-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/error-handler" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/event-dispatcher" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/event-dispatcher-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/finder" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/http-foundation" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/http-kernel" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/mailer" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/mime" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-ctype" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-intl-grapheme" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-intl-idn" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-intl-normalizer" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-mbstring" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-php80" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-php82" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-php84" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-php85" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-php86" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-time" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-uuid" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/process" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/routing" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/service-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/string" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/translation" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/translation-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/uid" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/var-dumper" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/yaml" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/ta-tikoma/phpunit-architecture-test" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/theseer/tokenizer" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/tijsverkoyen/css-to-inline-styles" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/vlucas/phpdotenv" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/voku/portable-ascii" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/webmozart/assert" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/_laravel_idea" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/dedoc/scramble" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/boost" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/mcp" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/roster" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/fonts" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/bacon/bacon-qr-code" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/barryvdh/laravel-dompdf" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/dasprid/enum" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/dompdf/dompdf" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/dompdf/php-font-lib" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/dompdf/php-svg-lib" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/endroid/qr-code" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/kmukku/php-iso11649" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/masterminds/html5" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/picqer/php-barcode-generator" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sabberworm/php-css-parser" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sprain/swiss-qr-bill" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/intl" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-intl-icu" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/validator" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/darkaonline/l5-swagger" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/radebatz/type-info-extras" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/swagger-api/swagger-ui" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/type-info" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/zircote/swagger-php" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/api-docs" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude" />
+      <excludeFolder url="file://$MODULE_DIR$/.ai" />
+      <excludeFolder url="file://$MODULE_DIR$/.codex" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

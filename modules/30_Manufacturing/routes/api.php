@@ -1,0 +1,214 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Support\Facades\Route;
+use Modules\Manufacturing\Http\Controllers\BomController;
+use Modules\Manufacturing\Http\Controllers\BomEngineeringController;
+use Modules\Manufacturing\Http\Controllers\EdgeTelemetryController;
+use Modules\Manufacturing\Http\Controllers\EngineeringChangeController;
+use Modules\Manufacturing\Http\Controllers\ItemController;
+use Modules\Manufacturing\Http\Controllers\MachineCenterController;
+use Modules\Manufacturing\Http\Controllers\MachineSignalMapController;
+use Modules\Manufacturing\Http\Controllers\ManufacturingCockpitController;
+use Modules\Manufacturing\Http\Controllers\ManufacturingKpiController;
+use Modules\Manufacturing\Http\Controllers\ManufacturingSettingsController;
+use Modules\Manufacturing\Http\Controllers\MesEventsController;
+use Modules\Manufacturing\Http\Controllers\MesFeedbackController;
+use Modules\Manufacturing\Http\Controllers\MesOperatorBoardController;
+use Modules\Manufacturing\Http\Controllers\MesSyncController;
+use Modules\Manufacturing\Http\Controllers\MrpController;
+use Modules\Manufacturing\Http\Controllers\OeeController;
+use Modules\Manufacturing\Http\Controllers\ProductionExecutionController;
+use Modules\Manufacturing\Http\Controllers\ProductionOrderController;
+use Modules\Manufacturing\Http\Controllers\QualityController;
+use Modules\Manufacturing\Http\Controllers\RoutingController;
+use Modules\Manufacturing\Http\Controllers\ShopFloorController;
+use Modules\Manufacturing\Http\Controllers\SubcontractController;
+use Modules\Manufacturing\Http\Controllers\WorkCenterController;
+use Modules\Manufacturing\Http\Controllers\WorkingCalendarController;
+use Modules\Manufacturing\Http\Middleware\VerifyMesSignature;
+
+/*
+| Manufacturing. module.access:manufacturing lets every member read (GET) and only the roles with write access of
+| config/permissions.php change anything; the policies add the record's company and, for sensitive actions (BOM
+| release, engineering change decisions, order close, ledger accounts), the manager roles.
+*/
+Route::prefix('api/v1/manufacturing')->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:manufacturing'])->group(function (): void {
+    // Items
+    Route::get('/items', [ItemController::class, 'index'])->name('mfg.items.index');
+    Route::post('/items', [ItemController::class, 'store'])->name('mfg.items.store');
+    Route::get('/items/{id}', [ItemController::class, 'show'])->whereUuid('id')->name('mfg.items.show');
+    Route::put('/items/{id}', [ItemController::class, 'update'])->whereUuid('id')->name('mfg.items.update');
+    Route::post('/items/{id}/cost-rollup', [ItemController::class, 'costRollup'])->whereUuid('id')->name('mfg.items.cost_rollup');
+    Route::get('/items/{id}/where-used', [ItemController::class, 'whereUsed'])->whereUuid('id')->name('mfg.items.where_used');
+
+    // MES operator board (#183)
+    Route::get('/mes/board', [MesOperatorBoardController::class, 'board'])->name('mfg.mes.board');
+    Route::post('/mes/phases/take-over', [MesOperatorBoardController::class, 'takeOver'])->name('mfg.mes.take_over');
+    Route::get('/mes/phases/{id}/traceability', [MesOperatorBoardController::class, 'traceability'])->whereUuid('id')->name('mfg.mes.traceability');
+    Route::post('/mes/phases/{id}/start-setup', [MesOperatorBoardController::class, 'startSetup'])->whereUuid('id')->name('mfg.mes.start_setup');
+    Route::post('/mes/phases/{id}/start-production', [MesOperatorBoardController::class, 'startProduction'])->whereUuid('id')->name('mfg.mes.start_production');
+    Route::post('/mes/phases/{id}/suspend', [MesOperatorBoardController::class, 'suspend'])->whereUuid('id')->name('mfg.mes.suspend');
+    Route::post('/mes/phases/{id}/resume', [MesOperatorBoardController::class, 'resume'])->whereUuid('id')->name('mfg.mes.resume');
+    Route::post('/mes/phases/{id}/declarations', [MesOperatorBoardController::class, 'declareProduction'])->whereUuid('id')->name('mfg.mes.declarations');
+    Route::post('/mes/phases/{id}/material-consumptions', [MesOperatorBoardController::class, 'consumeMaterial'])->whereUuid('id')->name('mfg.mes.consumptions');
+    Route::post('/mes/phases/{id}/close', [MesOperatorBoardController::class, 'close'])->whereUuid('id')->name('mfg.mes.close');
+
+    // Work centres
+    Route::get('/work-centers', [WorkCenterController::class, 'index'])->name('mfg.work_centers.index');
+    Route::post('/work-centers', [WorkCenterController::class, 'store'])->name('mfg.work_centers.store');
+    Route::get('/work-centers/{id}', [WorkCenterController::class, 'show'])->whereUuid('id')->name('mfg.work_centers.show');
+    Route::put('/work-centers/{id}', [WorkCenterController::class, 'update'])->whereUuid('id')->name('mfg.work_centers.update');
+    Route::put('/work-centers/{id}/calendar', [WorkCenterController::class, 'setCalendar'])->whereUuid('id')->name('mfg.work_centers.calendar');
+    Route::post('/work-centers/{id}/calendar-exceptions', [WorkCenterController::class, 'storeException'])->whereUuid('id')->name('mfg.work_centers.exceptions.store');
+    Route::get('/work-centers/{id}/capacity', [WorkCenterController::class, 'capacity'])->whereUuid('id')->name('mfg.work_centers.capacity');
+    Route::get('/work-centers/{id}/hierarchy', [WorkCenterController::class, 'hierarchy'])->whereUuid('id')->name('mfg.work_centers.hierarchy');
+    Route::delete('/work-centers/{id}', [WorkCenterController::class, 'destroy'])->whereUuid('id')->name('mfg.work_centers.destroy');
+
+    // Working calendars
+    Route::get('/working-calendars', [WorkingCalendarController::class, 'index'])->name('mfg.working_calendars.index');
+    Route::post('/working-calendars', [WorkingCalendarController::class, 'store'])->name('mfg.working_calendars.store');
+    Route::get('/working-calendars/{id}', [WorkingCalendarController::class, 'show'])->whereUuid('id')->name('mfg.working_calendars.show');
+    Route::put('/working-calendars/{id}', [WorkingCalendarController::class, 'update'])->whereUuid('id')->name('mfg.working_calendars.update');
+    Route::delete('/working-calendars/{id}', [WorkingCalendarController::class, 'destroy'])->whereUuid('id')->name('mfg.working_calendars.destroy');
+    Route::get('/working-calendars/{id}/preview-days', [WorkingCalendarController::class, 'previewDays'])->whereUuid('id')->name('mfg.working_calendars.preview_days');
+
+    // Machines
+    Route::get('/machines', [MachineCenterController::class, 'index'])->name('mfg.machines.index');
+    Route::post('/machines', [MachineCenterController::class, 'store'])->name('mfg.machines.store');
+    Route::get('/machines/{id}', [MachineCenterController::class, 'show'])->whereUuid('id')->name('mfg.machines.show');
+    Route::put('/machines/{id}', [MachineCenterController::class, 'update'])->whereUuid('id')->name('mfg.machines.update');
+    Route::delete('/machines/{id}', [MachineCenterController::class, 'destroy'])->whereUuid('id')->name('mfg.machines.destroy');
+    Route::post('/machines/{id}/telemetry-ping', [MachineCenterController::class, 'telemetryPing'])->whereUuid('id')->name('mfg.machines.telemetry_ping');
+
+    // OEE
+    Route::get('/oee/summary', [OeeController::class, 'summary'])->name('mfg.oee.summary');
+    Route::get('/oee/timeseries', [OeeController::class, 'timeseries'])->name('mfg.oee.timeseries');
+    Route::post('/oee/logs', [OeeController::class, 'storeLog'])->name('mfg.oee.logs.store');
+
+    // BOMs
+    Route::get('/boms', [BomController::class, 'index'])->name('mfg.boms.index');
+    Route::post('/boms', [BomController::class, 'store'])->name('mfg.boms.store');
+    Route::get('/boms/{id}', [BomController::class, 'show'])->whereUuid('id')->name('mfg.boms.show');
+    Route::put('/boms/{id}', [BomController::class, 'update'])->whereUuid('id')->name('mfg.boms.update');
+    Route::get('/boms/{id}/explode', [BomController::class, 'explode'])->whereUuid('id')->name('mfg.boms.explode');
+    Route::post('/boms/{id}/revise', [BomController::class, 'revise'])->whereUuid('id')->name('mfg.boms.revise');
+    Route::post('/boms/{id}/activate', [BomController::class, 'activate'])->whereUuid('id')->name('mfg.boms.activate');
+
+    // Multi-level BOM management
+    Route::post('/boms/revisions', [BomEngineeringController::class, 'createOrRevise'])->name('mfg.boms.revisions');
+    Route::post('/boms/mass-replace', [BomEngineeringController::class, 'massReplace'])->name('mfg.boms.mass_replace');
+    Route::post('/boms/import', [BomEngineeringController::class, 'import'])->name('mfg.boms.import');
+    Route::get('/boms/{id}/explosion', [BomEngineeringController::class, 'explosion'])->whereUuid('id')->name('mfg.boms.explosion');
+    Route::get('/boms/{id}/diff/{otherId}', [BomEngineeringController::class, 'diff'])->whereUuid(['id', 'otherId'])->name('mfg.boms.diff');
+    Route::put('/boms/{id}/co-products', [BomEngineeringController::class, 'replaceCoProducts'])->whereUuid('id')->name('mfg.boms.co_products');
+    Route::get('/boms/{id}/cost-allocation', [BomEngineeringController::class, 'costAllocation'])->whereUuid('id')->name('mfg.boms.cost_allocation');
+    Route::get('/boms/{id}/preferential-origin', [BomEngineeringController::class, 'preferentialOrigin'])->whereUuid('id')->name('mfg.boms.preferential_origin');
+    Route::get('/items/{id}/implosion', [BomEngineeringController::class, 'implosion'])->whereUuid('id')->name('mfg.items.implosion');
+
+    // Routings
+    Route::get('/routings', [RoutingController::class, 'index'])->name('mfg.routings.index');
+    Route::post('/routings', [RoutingController::class, 'store'])->name('mfg.routings.store');
+    Route::get('/routings/{id}', [RoutingController::class, 'show'])->whereUuid('id')->name('mfg.routings.show');
+    Route::put('/routings/{id}', [RoutingController::class, 'update'])->whereUuid('id')->name('mfg.routings.update');
+    Route::delete('/routings/{id}', [RoutingController::class, 'destroy'])->whereUuid('id')->name('mfg.routings.destroy');
+    Route::post('/routings/{id}/clone-revision', [RoutingController::class, 'cloneRevision'])->whereUuid('id')->name('mfg.routings.clone_revision');
+    Route::post('/routings/{id}/calculate-lead-time-and-cost', [RoutingController::class, 'calculate'])->whereUuid('id')->name('mfg.routings.calculate');
+
+    // Engineering changes
+    Route::get('/engineering-changes', [EngineeringChangeController::class, 'index'])->name('mfg.ecos.index');
+    Route::post('/engineering-changes', [EngineeringChangeController::class, 'store'])->name('mfg.ecos.store');
+    Route::get('/engineering-changes/{id}', [EngineeringChangeController::class, 'show'])->whereUuid('id')->name('mfg.ecos.show');
+    Route::post('/engineering-changes/{id}/submit', [EngineeringChangeController::class, 'submit'])->whereUuid('id')->name('mfg.ecos.submit');
+    Route::post('/engineering-changes/{id}/approve', [EngineeringChangeController::class, 'approve'])->whereUuid('id')->name('mfg.ecos.approve');
+    Route::post('/engineering-changes/{id}/reject', [EngineeringChangeController::class, 'reject'])->whereUuid('id')->name('mfg.ecos.reject');
+    Route::post('/engineering-changes/{id}/implement', [EngineeringChangeController::class, 'implement'])->whereUuid('id')->name('mfg.ecos.implement');
+
+    // Production orders
+    Route::get('/production-orders', [ProductionOrderController::class, 'index'])->name('mfg.production_orders.index');
+    Route::post('/production-orders', [ProductionOrderController::class, 'store'])->name('mfg.production_orders.store');
+    Route::prefix('/production-orders/{id}')->whereUuid('id')->group(function (): void {
+        Route::get('/', [ProductionOrderController::class, 'show'])->name('mfg.production_orders.show');
+        Route::post('/reschedule', [ProductionOrderController::class, 'reschedule'])->name('mfg.production_orders.reschedule');
+        Route::post('/release', [ProductionOrderController::class, 'release'])->name('mfg.production_orders.release');
+        Route::post('/start', [ProductionOrderController::class, 'start'])->name('mfg.production_orders.start');
+        Route::post('/complete', [ProductionOrderController::class, 'complete'])->name('mfg.production_orders.complete');
+        Route::post('/close', [ProductionOrderController::class, 'close'])->name('mfg.production_orders.close');
+        Route::post('/cancel', [ProductionOrderController::class, 'cancel'])->name('mfg.production_orders.cancel');
+        Route::post('/issues', [ProductionExecutionController::class, 'issue'])->name('mfg.production_orders.issues');
+        Route::post('/operations/{operationId}/confirmations', [ProductionExecutionController::class, 'confirm'])->whereUuid('operationId')->name('mfg.production_orders.confirmations');
+        Route::post('/receipts', [ProductionExecutionController::class, 'receive'])->name('mfg.production_orders.receipts');
+        Route::get('/output-label', [ProductionExecutionController::class, 'outputLabel'])->name('mfg.production_orders.output_label');
+        Route::get('/transactions', [ProductionExecutionController::class, 'transactions'])->name('mfg.production_orders.transactions');
+        Route::get('/cost-rollup', [ProductionExecutionController::class, 'costs'])->name('mfg.production_orders.cost_rollup');
+        Route::post('/subcontract-orders', [SubcontractController::class, 'send'])->name('mfg.production_orders.subcontract');
+    });
+
+    // Subcontracting
+    Route::get('/subcontract-orders', [SubcontractController::class, 'index'])->name('mfg.subcontract_orders.index');
+    Route::get('/subcontract-orders/{id}', [SubcontractController::class, 'show'])->whereUuid('id')->name('mfg.subcontract_orders.show');
+    Route::post('/subcontract-orders/{id}/receive', [SubcontractController::class, 'receive'])->whereUuid('id')->name('mfg.subcontract_orders.receive');
+    Route::post('/subcontract-orders/{id}/cancel', [SubcontractController::class, 'cancel'])->whereUuid('id')->name('mfg.subcontract_orders.cancel');
+
+    // MRP
+    Route::get('/mrp/runs', [MrpController::class, 'index'])->name('mfg.mrp.runs.index');
+    Route::post('/mrp/runs', [MrpController::class, 'run'])->name('mfg.mrp.runs.store');
+    Route::get('/mrp/runs/{id}', [MrpController::class, 'show'])->whereUuid('id')->name('mfg.mrp.runs.show');
+    Route::get('/mrp/planned-orders', [MrpController::class, 'plannedOrders'])->name('mfg.mrp.planned_orders');
+    Route::get('/mrp/purchase-suggestions', [MrpController::class, 'purchaseSuggestions'])->name('mfg.mrp.purchase_suggestions');
+    Route::get('/mrp/shortages', [MrpController::class, 'shortages'])->name('mfg.mrp.shortages');
+    Route::post('/mrp/planned-orders/{id}/convert', [MrpController::class, 'convertPlannedOrder'])->whereUuid('id')->name('mfg.mrp.planned_orders.convert');
+    Route::post('/mrp/planned-orders/{id}/reschedule', [MrpController::class, 'reschedulePlannedOrder'])->whereUuid('id')->name('mfg.mrp.planned_orders.reschedule');
+    Route::post('/mrp/planned-orders/{id}/procurement-link', [MrpController::class, 'linkProcurement'])->whereUuid('id')->name('mfg.mrp.planned_orders.procurement_link');
+    Route::get('/mrp/forecasts', [MrpController::class, 'forecasts'])->name('mfg.mrp.forecasts.index');
+    Route::post('/mrp/forecasts', [MrpController::class, 'storeForecast'])->name('mfg.mrp.forecasts.store');
+    Route::delete('/mrp/forecasts/{id}', [MrpController::class, 'destroyForecast'])->whereUuid('id')->name('mfg.mrp.forecasts.destroy');
+
+    // Shop floor
+    Route::get('/shop-floor/executions', [ShopFloorController::class, 'index'])->name('mfg.shop_floor.executions');
+    Route::post('/shop-floor/executions', [ShopFloorController::class, 'recordExecution'])->name('mfg.shop_floor.record_execution');
+    Route::post('/shop-floor/executions/{id}/complete', [ShopFloorController::class, 'completeExecution'])->whereUuid('id')->name('mfg.shop_floor.complete_execution');
+    Route::post('/shop-floor/executions/{id}/downtime', [ShopFloorController::class, 'recordDowntime'])->whereUuid('id')->name('mfg.shop_floor.record_downtime');
+
+    // Quality
+    Route::get('/quality/plans', [QualityController::class, 'plans'])->name('mfg.quality.plans');
+    Route::post('/quality/plans', [QualityController::class, 'storePlan'])->name('mfg.quality.plans.store');
+    Route::get('/quality/inspections', [QualityController::class, 'inspections'])->name('mfg.quality.inspections');
+    Route::post('/quality/inspections', [QualityController::class, 'recordInspection'])->name('mfg.quality.record_inspection');
+    Route::get('/quality/non-conformances', [QualityController::class, 'nonConformances'])->name('mfg.quality.non_conformances');
+    Route::post('/quality/non-conformances', [QualityController::class, 'storeNonConformance'])->name('mfg.quality.non_conformances.store');
+    Route::post('/quality/non-conformances/{id}/resolve', [QualityController::class, 'resolveNonConformance'])->whereUuid('id')->name('mfg.quality.non_conformances.resolve');
+
+    // Settings and KPIs
+    Route::get('/settings/accounting', [ManufacturingSettingsController::class, 'show'])->name('mfg.settings.accounting');
+    Route::put('/settings/accounting', [ManufacturingSettingsController::class, 'update'])->name('mfg.settings.accounting.update');
+    Route::get('/kpis', ManufacturingKpiController::class)->name('mfg.kpis');
+    Route::get('/cockpit', [ManufacturingCockpitController::class, 'cockpit'])->name('mfg.cockpit');
+    Route::get('/machines/stream', [ManufacturingCockpitController::class, 'machineStream'])->name('mfg.machines.stream');
+    Route::get('/production-orders/{id}/genealogy', [ManufacturingCockpitController::class, 'genealogy'])->whereUuid('id')->name('mfg.production_orders.genealogy');
+    Route::get('/edge/gateways', [EdgeTelemetryController::class, 'gateways'])->name('mfg.edge.gateways');
+    Route::post('/edge/gateways', [EdgeTelemetryController::class, 'storeGateway'])->name('mfg.edge.gateways.store');
+    Route::get('/machine-signal-maps', [MachineSignalMapController::class, 'index'])->name('mfg.machine_signal_maps.index');
+    Route::post('/machine-signal-maps', [MachineSignalMapController::class, 'store'])->name('mfg.machine_signal_maps.store');
+    Route::put('/machine-signal-maps/{id}', [MachineSignalMapController::class, 'update'])->whereUuid('id')->name('mfg.machine_signal_maps.update');
+    Route::delete('/machine-signal-maps/{id}', [MachineSignalMapController::class, 'destroy'])->whereUuid('id')->name('mfg.machine_signal_maps.destroy');
+});
+
+// Edge gateways authenticate with the HMAC-SHA256 signature of the body, which also selects the tenant.
+Route::prefix('api/v1/manufacturing/edge')->middleware(['api', 'throttle:600,1'])->group(function (): void {
+    Route::post('/telemetry', [EdgeTelemetryController::class, 'ingest'])->name('mfg.edge.telemetry');
+    Route::post('/gateway-messages', [EdgeTelemetryController::class, 'ingestMessages'])->name('mfg.edge.gateway_messages');
+});
+
+/*
+| MES Core integration (issue #184). The MES Core is a service, not a user: these routes have no Sanctum session and no
+| `tenant` group. VerifyMesSignature authenticates the HMAC signature, binds the request to a tenant the signing key may
+| address and sets the tenant context. Inbound events are deduplicated by the inbox and the snapshot revision.
+*/
+Route::prefix('api/v1/manufacturing')->middleware(['api', VerifyMesSignature::class])->group(function (): void {
+    Route::get('/mes-sync/{resource}', [MesSyncController::class, 'index'])->where('resource', 'machines|work-orders|shift-calendars|reason-codes')->name('mfg.mes_sync.index');
+    Route::get('/mes-sync/{resource}/manifest', [MesSyncController::class, 'manifest'])->where('resource', 'machines|work-orders|shift-calendars|reason-codes')->name('mfg.mes_sync.manifest');
+    Route::post('/mes-feedback/events', [MesFeedbackController::class, 'store'])->name('mfg.mes_feedback.events');
+    Route::post('/mes-events', [MesEventsController::class, 'store'])->name('mfg.mes_events.store');
+});

@@ -1,0 +1,69 @@
+/vendor/
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Laravel 4 specific
+bootstrap/compiled.php
+app/storage/
+
+# Laravel 5 & Lumen specific
+public/storage
+public/hot
+
+# Laravel 5 & Lumen specific with changed public path
+public_html/storage
+public_html/hot
+
+storage/*.key
+.env
+Homestead.yaml
+Homestead.json
+/.vagrant
+.phpunit.result.cache
+/.phpunit.cache
+
+/public/build
+/storage/pail
+.env.backup
+.env.production
+.phpactor.json
+auth.json
+
+# Generated client SDKs (scripts/generate-clients.sh)
+/clients/
+.claude-build/
+.claude/settings.local.json
+.claude/*.local.md
+
+# Local dev TLS certs
+certs/*.crt
+certs/*.key
+certs/*.pem
+deploy/local/certs/*.crt
+deploy/local/certs/*.key
+deploy/local/certs/*.pem
+
+database/database.sqlite
+database/testing.sqlite
+database/*.sqlite
+database/*.sqlite3
+storage/*.sqlite
+storage/*.sqlite3
+
+# AI tools: keep the shared config, ignore scratch files and local state
+.claude/*
+!.claude/settings.json
+!.claude/run-pest.sh
+!.claude/agents/
+!.claude/skills/
+!.claude/commands/
+*.tmp
+.tmp-*
+ed[0-9]*.php
+ed[0-9]*.cjs
+_r.php
+plm[0-9]*.json
+
+/certs/localhost.crt
+/certs/localhost.key

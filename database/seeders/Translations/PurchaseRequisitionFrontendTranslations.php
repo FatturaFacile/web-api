@@ -1,0 +1,485 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders\Translations;
+
+/**
+ * UI strings of Mod 044 (Purchase Requisitions / RDA, Real-Time Cost Center Budget Check,
+ * Multi-Level Approval Tracker, Email 1-Click Approval, and Buyer Conversion Workbench).
+ * Each entry is [it, en, de, fr]. Placeholders are written {name}.
+ */
+final class PurchaseRequisitionFrontendTranslations
+{
+    /**
+     * @return array<string, array{0: string, 1: string, 2: string, 3: string}>
+     */
+    public static function definitions(): array
+    {
+        return [
+            'NAV.PROC_REQUISITIONS' => [
+                'Richieste di Acquisto (RDA)',
+                'Purchase Requisitions (PR)',
+                'Bestellanforderungen (BANF)',
+                'Demandes d\'achat (DA)',
+            ],
+
+            'PR.TITLE' => [
+                'Richieste di Acquisto (RDA)',
+                'Purchase Requisitions (PR)',
+                'Bestellanforderungen (BANF)',
+                'Demandes d\'achat (DA)',
+            ],
+            'PR.SUBTITLE' => [
+                'Crea richieste interne, verifica i budget dei centri di costo, approva e converti in RDO o ODA.',
+                'Create internal requisitions, check cost center budgets, approve and convert to RFQs or POs.',
+                'Interne Anforderungen erstellen, Kostenstellenbudgets prüfen, genehmigen und in RFQ oder Bestellungen umwandeln.',
+                'Créez des demandes internes, vérifiez les budgets par centre de coûts, approuvez et convertissez en RFQ ou commandes.',
+            ],
+            'PR.CREATE_TITLE' => [
+                'Nuova Richiesta di Acquisto',
+                'New Purchase Requisition',
+                'Neue Bestellanforderung',
+                'Nouvelle demande d\'achat',
+            ],
+            'PR.EDIT_TITLE' => [
+                'Modifica Richiesta di Acquisto',
+                'Edit Purchase Requisition',
+                'Bestellanforderung bearbeiten',
+                'Modifier la demande d\'achat',
+            ],
+            'PR.BACK_TO_LIST' => [
+                'Torna alle RDA',
+                'Back to Requisitions',
+                'Zurück zu den Anforderungen',
+                'Retour aux demandes d\'achat',
+            ],
+            'PR.NEW' => ['Nuova RDA', 'New Requisition', 'Neue Anforderung', 'Nouvelle DA'],
+            'PR.REFRESH' => ['Aggiorna', 'Refresh', 'Aktualisieren', 'Actualiser'],
+            'PR.LOAD_ERROR' => [
+                'Impossibile caricare le richieste di acquisto',
+                'Unable to load purchase requisitions',
+                'Bestellanforderungen konnten nicht geladen werden',
+                'Impossible de charger les demandes d\'achat',
+            ],
+            'PR.EMPTY' => [
+                'Nessuna richiesta di acquisto trovata',
+                'No purchase requisitions found',
+                'Keine Bestellanforderungen gefunden',
+                'Aucune demande d\'achat trouvée',
+            ],
+            'PR.ACTION_ERROR' => [
+                'Operazione non riuscita',
+                'Operation failed',
+                'Vorgang fehlgeschlagen',
+                'L\'opération a échoué',
+            ],
+            'PR.SUBMIT_SUCCESS' => [
+                'Richiesta inviata per approvazione',
+                'Requisition submitted for approval',
+                'Anforderung zur Genehmigung eingereicht',
+                'Demande soumise pour approbation',
+            ],
+            'PR.DELETE_SUCCESS' => [
+                'Bozza RDA eliminata',
+                'Requisition draft deleted',
+                'Anforderungsentwurf gelöscht',
+                'Brouillon de demande supprimé',
+            ],
+            'PR.DELETE_CONFIRM' => [
+                'Eliminare definitivamente questa bozza di richiesta di acquisto?',
+                'Delete this purchase requisition draft permanently?',
+                'Diesen Bestellanforderungsentwurf endgültig löschen?',
+                'Supprimer définitivement ce brouillon de demande d\'achat ?',
+            ],
+            'PR.RESET_FILTERS' => [
+                'Ripristina filtri',
+                'Reset filters',
+                'Filter zurücksetzen',
+                'Réinitialiser les filtres',
+            ],
+
+            'PR.TAB_MY_REQUISITIONS' => [
+                'Le mie RDA',
+                'My Requisitions',
+                'Meine Anforderungen',
+                'Mes demandes',
+            ],
+            'PR.TAB_ALL_DEPARTMENT' => [
+                'Tutte le RDA del reparto',
+                'All Department Requisitions',
+                'Alle Abteilungsanforderungen',
+                'Toutes les demandes du service',
+            ],
+            'PR.TAB_PENDING_APPROVAL' => [
+                'In attesa della mia approvazione',
+                'Pending My Approval',
+                'Meine ausstehenden Genehmigungen',
+                'En attente de mon approbation',
+            ],
+
+            'PR.SEARCH_PLACEHOLDER' => [
+                'Cerca per numero RDA, oggetto o richiedente...',
+                'Search by PR number, title, or requester...',
+                'Nach BANF-Nummer, Titel oder Anforderer suchen...',
+                'Rechercher par n° DA, titre ou demandeur...',
+            ],
+            'PR.FILTER_STATUS' => ['Stato', 'Status', 'Status', 'Statut'],
+            'PR.FILTER_COST_CENTER' => ['Centro di costo', 'Cost Center', 'Kostenstelle', 'Centre de coûts'],
+            'PR.FILTER_PROJECT' => ['Commessa / Progetto', 'Project / Job Order', 'Projekt / Auftrag', 'Projet / Affaire'],
+            'PR.FILTER_URGENCY' => ['Urgenza', 'Urgency', 'Dringlichkeit', 'Urgence'],
+            'PR.FILTER_REQUESTER' => ['Richiedente', 'Requester', 'Anforderer', 'Demandeur'],
+            'PR.FILTER_DATE_RANGE' => ['Intervallo date', 'Date range', 'Datumsbereich', 'Plage de dates'],
+
+            'PR.COL_NUMBER' => ['Numero RDA', 'PR Number', 'BANF-Nummer', 'N° DA'],
+            'PR.COL_DATE' => ['Data consegna', 'Delivery Date', 'Lieferdatum', 'Date souhaitée'],
+            'PR.COL_REQUESTER' => ['Richiedente', 'Requester', 'Anforderer', 'Demandeur'],
+            'PR.COL_COST_CENTER_PROJECT' => ['Centro di costo / Commessa', 'Cost Center / Project', 'Kostenstelle / Projekt', 'Centre de coûts / Projet'],
+            'PR.COL_URGENCY' => ['Urgenza', 'Urgency', 'Dringlichkeit', 'Urgence'],
+            'PR.COL_ESTIMATED_TOTAL' => ['Totale stimato', 'Estimated Total', 'Geschätzte Summe', 'Total estimé'],
+            'PR.COL_STATUS' => ['Stato', 'Status', 'Status', 'Statut'],
+            'PR.COL_LINKED_DOCS' => ['Documenti collegati', 'Linked Documents', 'Verknüpfte Belege', 'Documents liés'],
+            'PR.COL_ACTIONS' => ['Azioni', 'Actions', 'Aktionen', 'Actions'],
+
+            'PR.STATUS_DRAFT' => ['Bozza', 'Draft', 'Entwurf', 'Brouillon'],
+            'PR.STATUS_PENDING_BUDGET_CHECK' => ['Verifica budget in corso', 'Checking Budget', 'Budgetprüfung läuft', 'Vérification du budget'],
+            'PR.STATUS_PENDING_APPROVAL' => ['In approvazione', 'Pending Approval', 'In Genehmigung', 'En attente d\'approbation'],
+            'PR.STATUS_BUDGET_EXCEEDED_BLOCKED' => ['Bloccata: budget superato', 'Budget Exceeded (Blocked)', 'Gesperrt: Budget überschritten', 'Bloquée : budget dépassé'],
+            'PR.STATUS_APPROVED' => ['Approvata', 'Approved', 'Genehmigt', 'Approuvée'],
+            'PR.STATUS_REJECTED' => ['Rifiutata', 'Rejected', 'Abgelehnt', 'Rejetée'],
+            'PR.STATUS_PARTIALLY_CONVERTED' => ['Parzialmente convertita', 'Partially Converted', 'Teilweise umgewandelt', 'Partiellement convertie'],
+            'PR.STATUS_CONVERTED' => ['Convertita', 'Converted', 'Umgewandelt', 'Convertie'],
+            'PR.STATUS_CANCELLED' => ['Annullata', 'Cancelled', 'Storniert', 'Annulée'],
+
+            'PR.URGENCY_LOW' => ['Bassa', 'Low', 'Niedrig', 'Faible'],
+            'PR.URGENCY_NORMAL' => ['Normale', 'Normal', 'Normal', 'Normale'],
+            'PR.URGENCY_HIGH' => ['Alta', 'High', 'Hoch', 'Élevée'],
+            'PR.URGENCY_CRITICAL' => ['Critica', 'Critical', 'Kritisch', 'Critique'],
+
+            'PR.CHANNEL_WEB' => ['Web', 'Web', 'Web', 'Web'],
+            'PR.CHANNEL_MOBILE' => ['Mobile', 'Mobile', 'Mobil', 'Mobile'],
+            'PR.CHANNEL_EMAIL_ONE_CLICK' => ['Email 1-Click', 'Email 1-Click', 'E-Mail 1-Klick', 'E-mail 1-Clic'],
+            'PR.CHANNEL_PUSH_ONE_CLICK' => ['Push 1-Click', 'Push 1-Click', 'Push 1-Klick', 'Push 1-Clic'],
+
+            'PR.LOG_ACTION_CREATED' => ['Creata', 'Created', 'Erstellt', 'Créée'],
+            'PR.LOG_ACTION_SUBMITTED' => ['Inviata', 'Submitted', 'Eingereicht', 'Soumise'],
+            'PR.LOG_ACTION_BUDGET_CHECKED' => ['Budget verificato', 'Budget Checked', 'Budget geprüft', 'Budget vérifié'],
+            'PR.LOG_ACTION_APPROVED' => ['Approvata', 'Approved', 'Genehmigt', 'Approuvée'],
+            'PR.LOG_ACTION_REJECTED' => ['Rifiutata', 'Rejected', 'Abgelehnt', 'Rejetée'],
+            'PR.LOG_ACTION_BUDGET_BLOCKED' => ['Bloccata per budget', 'Budget Blocked', 'Budget-Sperre', 'Bloquée pour budget'],
+            'PR.LOG_ACTION_RECALLED' => ['Richiamata', 'Recalled', 'Zurückgerufen', 'Rappelée'],
+            'PR.LOG_ACTION_CONVERTED' => ['Convertita', 'Converted', 'Umgewandelt', 'Convertie'],
+            'PR.LOG_ACTION_CANCELLED' => ['Annullata', 'Cancelled', 'Storniert', 'Annulée'],
+            'PR.LOG_ACTION_UPDATED' => ['Aggiornata', 'Updated', 'Aktualisiert', 'Mise à jour'],
+
+            'PR.ACTION_PREVIEW' => ['Anteprima', 'Preview', 'Vorschau', 'Aperçu'],
+            'PR.ACTION_EDIT' => ['Modifica', 'Edit', 'Bearbeiten', 'Modifier'],
+            'PR.ACTION_APPROVE' => ['Approva', 'Approve', 'Genehmigen', 'Approuver'],
+            'PR.ACTION_REJECT' => ['Rifiuta', 'Reject', 'Ablehnen', 'Rejeter'],
+            'PR.ACTION_DELETE' => ['Elimina', 'Delete', 'Löschen', 'Supprimer'],
+            'PR.ACTION_SUBMIT' => ['Invia per approvazione', 'Submit for Approval', 'Zur Genehmigung einreichen', 'Soumettre pour approbation'],
+            'PR.ACTION_CONVERT' => ['Converti in RDO / ODA', 'Convert to RFQ / PO', 'In RFQ / Bestellung umwandeln', 'Convertir en RFQ / Commande'],
+            'PR.ACTION_CANCEL' => ['Annulla', 'Cancel', 'Abbrechen', 'Annuler'],
+
+            'PR.LINK_TYPE_RFQ' => ['RDO (Mod 045)', 'RFQ (Mod 045)', 'RFQ (Mod 045)', 'RFQ (Mod 045)'],
+            'PR.LINK_TYPE_PO' => ['ODA (Mod 046)', 'PO (Mod 046)', 'Bestellung (Mod 046)', 'Commande (Mod 046)'],
+
+            'PR.FIELD.TITLE' => ['Oggetto della richiesta', 'Requisition Title', 'Anforderungstitel', 'Objet de la demande'],
+            'PR.FIELD.COST_CENTER' => ['Centro di costo', 'Cost Center', 'Kostenstelle', 'Centre de coûts'],
+            'PR.FIELD.PROJECT' => ['Commessa / Progetto (opzionale)', 'Project / Job Order (optional)', 'Projekt / Auftrag (optional)', 'Projet / Affaire (optionnel)'],
+            'PR.FIELD.URGENCY' => ['Livello di urgenza', 'Urgency Level', 'Dringlichkeitsstufe', 'Niveau d\'urgence'],
+            'PR.FIELD.DELIVERY_DATE' => ['Data consegna richiesta', 'Requested Delivery Date', 'Gewünschtes Lieferdatum', 'Date de livraison souhaitée'],
+            'PR.FIELD.CURRENCY' => ['Valuta', 'Currency', 'Währung', 'Devise'],
+            'PR.FIELD.JUSTIFICATION' => ['Motivazione economica', 'Economic Justification', 'Wirtschaftliche Begründung', 'Justification économique'],
+
+            'PR.FORM.SUBTITLE' => [
+                'Inserimento rapido articoli da catalogo o testo libero con controllo budget istantaneo.',
+                'Fast line entry from catalog or free text with real-time cost center budget validation.',
+                'Schnelle Positionserfassung aus Katalog oder Freitext mit Echtzeit-Budgetprüfung.',
+                'Saisie rapide d\'articles du catalogue ou texte libre avec contrôle budgétaire en temps réel.',
+            ],
+            'PR.FORM.HEADER_SECTION' => ['Testata e imputazione analitica', 'Header & Analytical Coding', 'Kopfdaten & Kontierung', 'En-tête et imputation analytique'],
+            'PR.FORM.TITLE_PLACEHOLDER' => [
+                'es. Rinnovo licenze CAD / Materiale linea produttiva B',
+                'e.g. Q4 CAD License Renewal / Production Line B Materials',
+                'z. B. CAD-Lizenzverlängerung Q4 / Material Produktionslinie B',
+                'ex. Renouvellement licences CAO / Matériel ligne B',
+            ],
+            'PR.FORM.SELECT_COST_CENTER' => ['Seleziona centro di costo...', 'Select cost center...', 'Kostenstelle auswählen...', 'Sélectionner un centre de coûts...'],
+            'PR.FORM.SELECT_PROJECT' => ['Seleziona commessa (opzionale)...', 'Select project (optional)...', 'Projekt auswählen (optional)...', 'Sélectionner un projet (optionnel)...'],
+            'PR.FORM.JUSTIFICATION_PLACEHOLDER' => [
+                'Descrivi la necessità operativa e il ritorno economico o rischio di fermo.',
+                'Explain the operational need, economic rationale, or downtime risk.',
+                'Beschreiben Sie den betrieblichen Bedarf und den wirtschaftlichen Nutzen.',
+                'Décrivez le besoin opérationnel et la justification économique.',
+            ],
+            'PR.FORM.REQUIRED_FIELD' => ['Campo obbligatorio', 'This field is required', 'Pflichtfeld', 'Champ obligatoire'],
+            'PR.FORM.VALIDATION_SUMMARY' => [
+                'Controlla i campi obbligatori evidenziati prima di procedere.',
+                'Please complete all required header and line fields before continuing.',
+                'Bitte füllen Sie alle markierten Pflichtfelder aus.',
+                'Veuillez remplir tous les champs obligatoires avant de continuer.',
+            ],
+            'PR.FORM.LINES_SECTION' => ['Righe della richiesta', 'Requisition Line Items', 'Anforderungspositionen', 'Lignes de demande'],
+            'PR.FORM.KEYBOARD_HINT' => ['Invio su prezzo: nuova riga · Alt+N: aggiungi', 'Enter on price: next row · Alt+N: add line', 'Enter bei Preis: neue Zeile · Alt+N: hinzufügen', 'Entrée sur prix : ligne suivante · Alt+N : ajouter'],
+            'PR.FORM.ADD_LINE' => ['Aggiungi riga', 'Add Line', 'Position hinzufügen', 'Ajouter une ligne'],
+            'PR.FORM.LINE_COUNT' => ['Numero righe', 'Line items', 'Positionen', 'Nombre de lignes'],
+            'PR.FORM.ESTIMATED_TOTAL' => ['Totale stimato', 'Estimated Total', 'Geschätzter Gesamtbetrag', 'Total estimé'],
+            'PR.FORM.SAVE_DRAFT' => ['Salva bozza', 'Save Draft', 'Entwurf speichern', 'Enregistrer le brouillon'],
+            'PR.FORM.DRAFT_SAVED' => ['Bozza RDA salvata', 'Requisition draft saved', 'Anforderungsentwurf gespeichert', 'Brouillon de demande enregistré'],
+            'PR.FORM.SUBMIT_FOR_APPROVAL' => ['Invia per approvazione', 'Submit for Approval', 'Zur Genehmigung einreichen', 'Soumettre pour approbation'],
+
+            'PR.LINE.ITEM' => ['Articolo / Descrizione', 'Item / Description', 'Artikel / Beschreibung', 'Article / Description'],
+            'PR.LINE.MODE_CATALOG' => ['Catalogo', 'Catalog', 'Katalog', 'Catalogue'],
+            'PR.LINE.MODE_FREE_TEXT' => ['Testo libero', 'Free Text', 'Freitext', 'Texte libre'],
+            'PR.LINE.OVERRIDE' => ['Imputazione riga', 'Line Coding', 'Positionskontierung', 'Imputation ligne'],
+            'PR.LINE.OVERRIDE_ACTIVE' => ['Override attivo', 'Override active', 'Abweichende Kontierung', 'Imputation spécifique'],
+            'PR.LINE.OVERRIDE_TOGGLE' => ['Centro / Commessa', 'Cost Center / Project', 'Kostenstelle / Projekt', 'Centre / Projet'],
+            'PR.LINE.REMOVE' => ['Rimuovi riga', 'Remove line', 'Position entfernen', 'Supprimer la ligne'],
+            'PR.LINE.CATALOG_ITEM' => ['Articolo a catalogo', 'Catalog Item', 'Katalogartikel', 'Article du catalogue'],
+            'PR.LINE.CATALOG_SEARCH_PLACEHOLDER' => [
+                'Cerca codice SKU o descrizione...',
+                'Search SKU or item name...',
+                'Nach SKU oder Artikelbezeichnung suchen...',
+                'Rechercher par code SKU ou libellé...',
+            ],
+            'PR.LINE.ITEM_CODE' => ['Codice articolo', 'Item Code', 'Artikelnummer', 'Code article'],
+            'PR.LINE.ITEM_CODE_PLACEHOLDER' => ['SKU / Rif.', 'SKU / Ref.', 'SKU / Ref.', 'SKU / Réf.'],
+            'PR.LINE.DESCRIPTION' => ['Descrizione', 'Description', 'Beschreibung', 'Description'],
+            'PR.LINE.DESCRIPTION_PLACEHOLDER' => [
+                'Descrizione articolo o servizio...',
+                'Item or service description...',
+                'Artikel- oder Leistungsbeschreibung...',
+                'Description de l\'article ou du service...',
+            ],
+            'PR.LINE.QTY' => ['Quantità', 'Quantity', 'Menge', 'Quantité'],
+            'PR.LINE.QTY_REQUESTED' => ['Q.tà richiesta', 'Requested Qty', 'Angeforderte Menge', 'Qté demandée'],
+            'PR.LINE.QTY_CONVERTED' => ['Q.tà convertita', 'Converted Qty', 'Umgewandelte Menge', 'Qté convertie'],
+            'PR.LINE.QTY_REMAINING' => ['Q.tà residua', 'Remaining Qty', 'Restmenge', 'Qté restante'],
+            'PR.LINE.UOM' => ['UdM', 'UoM', 'ME', 'UdM'],
+            'PR.LINE.UNIT_PRICE' => ['Prezzo unitario stimato', 'Est. Unit Price', 'Geschätzter Einzelpreis', 'Prix unitaire estimé'],
+            'PR.LINE.SUBTOTAL' => ['Subtotale', 'Subtotal', 'Zwischensumme', 'Sous-total'],
+            'PR.LINE.OVERRIDE_COST_CENTER' => ['Override centro di costo', 'Cost Center Override', 'Abweichende Kostenstelle', 'Centre de coûts spécifique'],
+            'PR.LINE.OVERRIDE_PROJECT' => ['Override commessa', 'Project Override', 'Abweichendes Projekt', 'Projet spécifique'],
+            'PR.LINE.INHERIT_HEADER' => ['Eredita da testata', 'Inherit from header', 'Aus Kopfdaten übernehmen', 'Hériter de l\'en-tête'],
+            'PR.LINE.NOTES' => ['Note riga', 'Line Notes', 'Positionsnotiz', 'Notes de ligne'],
+
+            'PR.BUDGET.CARD_TITLE' => [
+                'Verifica Budget Centro di Costo',
+                'Live Cost Center Budget Check',
+                'Echtzeit-Kostenstellenbudgetprüfung',
+                'Contrôle budgétaire en temps réel',
+            ],
+            'PR.BUDGET.STATUS_OK' => ['Capiente', 'Within Budget', 'Im Budget', 'Dans le budget'],
+            'PR.BUDGET.STATUS_WARNING' => ['Attenzione soglia', 'Budget Warning', 'Budgetwarnung', 'Alerte seuil budget'],
+            'PR.BUDGET.STATUS_HARD_BLOCK' => ['Blocco budget', 'Hard Blocked', 'Budget-Sperre', 'Blocage strict'],
+            'PR.BUDGET.SELECT_COST_CENTER_HINT' => [
+                'Seleziona un centro di costo per calcolare la disponibilità residua in tempo reale.',
+                'Select a Cost Center to evaluate real-time available budget.',
+                'Wählen Sie eine Kostenstelle, um das verfügbare Restbudget in Echtzeit zu prüfen.',
+                'Sélectionnez un centre de coûts pour évaluer le budget disponible en temps réel.',
+            ],
+            'PR.BUDGET.CHECK_UNAVAILABLE' => [
+                'Controllo budget temporaneamente non disponibile',
+                'Real-time budget check unavailable',
+                'Budgetprüfung derzeit nicht verfügbar',
+                'Vérification budgétaire temporairement indisponible',
+            ],
+            'PR.BUDGET.ALLOCATED' => ['Budget stanziato', 'Allocated Budget', 'Zugewiesenes Budget', 'Budget alloué'],
+            'PR.BUDGET.COMMITTED' => ['Già impegnato', 'Committed', 'Bereits gebunden', 'Déjà engagé'],
+            'PR.BUDGET.AVAILABLE_RESIDUAL' => ['Residuo disponibile', 'Available Residual', 'Verfügbares Restbudget', 'Solde disponible'],
+            'PR.BUDGET.POST_PR_BALANCE' => ['Saldo post-RDA', 'Post-PR Balance', 'Saldo nach BANF', 'Solde après DA'],
+            'PR.BUDGET.UTILIZATION' => ['Utilizzo previsto', 'Projected Utilization', 'Geplante Auslastung', 'Utilisation prévue'],
+            'PR.BUDGET.PR_ESTIMATED_AMOUNT' => ['Importo stimato RDA', 'Estimated PR Amount', 'Geschätzter BANF-Betrag', 'Montant estimé DA'],
+            'PR.BUDGET.ALERT_OK_TITLE' => ['Budget disponibile sufficiente', 'Budget Available', 'Ausreichendes Budget verfügbar', 'Budget disponible suffisant'],
+            'PR.BUDGET.ALERT_OK_DESC' => [
+                'L\'importo richiesto rientra nella capienza residua del centro di costo.',
+                'This requisition fits within the remaining available budget for the cost center.',
+                'Der angeforderte Betrag liegt innerhalb des verfügbaren Restbudgets der Kostenstelle.',
+                'Le montant demandé respecte le solde budgétaire disponible pour ce centre de coûts.',
+            ],
+            'PR.BUDGET.ALERT_WARNING_TITLE' => ['Soglia di attenzione budget superata', 'Budget Threshold Warning', 'Budget-Warnschwelle überschritten', 'Seuil d\'alerte budgétaire dépassé'],
+            'PR.BUDGET.ALERT_WARNING_DESC' => [
+                'La richiesta supera la soglia di avviso o eccede il residuo in modalità avviso.',
+                'This requisition exceeds the soft warning threshold; additional approval may be required.',
+                'Diese Anforderung überschreitet die Warnschwelle; eine erweiterte Freigabe kann nötig sein.',
+                'Cette demande dépasse le seuil d\'alerte ; une approbation supplémentaire peut être requise.',
+            ],
+            'PR.BUDGET.ALERT_HARD_BLOCK_TITLE' => ['Budget insufficiente — Invio bloccato', 'Budget Exceeded — Submission Blocked', 'Budget überschritten — Einreichung gesperrt', 'Budget dépassé — Soumission bloquée'],
+            'PR.BUDGET.ALERT_HARD_BLOCK_DESC' => [
+                'La policy del centro di costo blocca le richieste oltre il budget residuo. Riduci gli importi o salva in bozza.',
+                'Cost center policy blocks submissions exceeding residual budget. Reduce line amounts or save as draft.',
+                'Die Kostenstellenrichtlinie blockiert Einreichungen über dem Restbudget. Beträge reduzieren oder als Entwurf speichern.',
+                'La politique du centre de coûts bloque les soumissions dépassant le solde disponible. Réduisez le montant ou enregistrez en brouillon.',
+            ],
+            'PR.BUDGET.SUBMIT_BLOCKED_HINT' => [
+                'Invio disabilitato per superamento rigido del budget.',
+                'Submission is disabled due to a hard budget block.',
+                'Einreichung wegen harter Budget-Sperre deaktiviert.',
+                'Soumission désactivée en raison d\'un blocage budgétaire strict.',
+            ],
+
+            'PR.DETAIL.TITLE' => ['Dettaglio Richiesta di Acquisto', 'Purchase Requisition Detail', 'Bestellanforderungsdetails', 'Détail de la demande d\'achat'],
+            'PR.DETAIL.SUBTITLE' => [
+                'Riepilogo articoli, verifica budget, catena approvativa e documenti collegati.',
+                'Line summary, budget snapshot, multi-level approval tracker, and linked documents.',
+                'Positionsübersicht, Budget-Snapshot, Genehmigungskette und verknüpfte Belege.',
+                'Récapitulatif des lignes, budget, chaîne d\'approbation et documents liés.',
+            ],
+            'PR.DETAIL.DRAWER_TITLE' => ['Anteprima Richiesta di Acquisto', 'Purchase Requisition Overview', 'Vorschau Bestellanforderung', 'Aperçu de la demande d\'achat'],
+            'PR.DETAIL.CREATED_AT' => ['Creata il', 'Created At', 'Erstellt am', 'Créée le'],
+            'PR.DETAIL.LINES_TITLE' => ['Articoli richiesti', 'Requested Line Items', 'Angeforderte Positionen', 'Lignes demandées'],
+            'PR.DETAIL.LINKED_DOCUMENTS_TITLE' => ['Documenti di approvvigionamento collegati', 'Linked Procurement Documents', 'Verknüpfte Einkaufsbelege', 'Documents d\'achat liés'],
+            'PR.DETAIL.NO_LINKED_DOCUMENTS' => [
+                'Nessuna RDO o ordine d\'acquisto ancora generato da questa richiesta.',
+                'No RFQ or Purchase Order has been generated from this requisition yet.',
+                'Für diese Anforderung wurden noch keine Offertanfragen oder Bestellungen erstellt.',
+                'Aucune RFQ ni commande n\'a encore été générée depuis cette demande.',
+            ],
+            'PR.DETAIL.ONE_CLICK_APPROVE' => ['Approva in 1 clic', '1-Click Approve', '1-Klick-Genehmigung', 'Approuver en 1 clic'],
+            'PR.DETAIL.APPROVE_SUCCESS' => ['Richiesta di acquisto approvata', 'Purchase requisition approved', 'Bestellanforderung genehmigt', 'Demande d\'achat approuvée'],
+            'PR.DETAIL.REJECT_SUCCESS' => ['Richiesta di acquisto rifiutata', 'Purchase requisition rejected', 'Bestellanforderung abgelehnt', 'Demande d\'achat rejetée'],
+
+            'PR.APPROVAL.CHAIN_TITLE' => ['Catena di delega approvativa', 'Multi-Level Approval Chain', 'Mehrstufige Genehmigungskette', 'Chaîne de délégation d\'approbation'],
+            'PR.APPROVAL.NO_STEPS' => ['Nessun livello approvativo ancora assegnato', 'No approval tiers assigned yet', 'Noch keine Genehmigungsstufen zugewiesen', 'Aucun niveau d\'approbation assigné'],
+            'PR.APPROVAL.AUDIT_LOG_TITLE' => ['Registro cronologico immutabile', 'Immutable Audit Log Timeline', 'Unveränderliches Prüfprotokoll', 'Journal d\'audit immuable'],
+            'PR.APPROVAL.NO_LOGS' => ['Nessun evento registrato', 'No audit events recorded yet', 'Noch keine Ereignisse protokolliert', 'Aucun événement enregistré'],
+            'PR.APPROVAL.THRESHOLD_LABEL' => ['Soglia {amount}', 'Threshold {amount}', 'Schwellenwert {amount}', 'Seuil {amount}'],
+            'PR.APPROVAL.STEP_PENDING' => ['In attesa', 'Pending', 'Ausstehend', 'En attente'],
+            'PR.APPROVAL.STEP_IN_PROGRESS' => ['In corso', 'Awaiting Decision', 'Entscheidung ausstehend', 'En cours de décision'],
+            'PR.APPROVAL.STEP_APPROVED' => ['Approvato', 'Approved', 'Genehmigt', 'Approuvé'],
+            'PR.APPROVAL.STEP_REJECTED' => ['Rifiutato', 'Rejected', 'Abgelehnt', 'Rejeté'],
+            'PR.APPROVAL.STEP_SKIPPED' => ['Saltato', 'Skipped', 'Übersprungen', 'Ignoré'],
+
+            'PR.REJECT_MODAL.TITLE' => ['Rifiuta Richiesta di Acquisto', 'Reject Purchase Requisition', 'Bestellanforderung ablehnen', 'Rejeter la demande d\'achat'],
+            'PR.REJECT_MODAL.CONFIRM' => ['Conferma rifiuto', 'Confirm Rejection', 'Ablehnung bestätigen', 'Confirmer le rejet'],
+            'PR.REJECT_MODAL.REASON_LABEL' => ['Motivazione del rifiuto', 'Rejection Reason', 'Ablehnungsgrund', 'Motif du rejet'],
+            'PR.REJECT_MODAL.REASON_PLACEHOLDER' => [
+                'Indica il motivo del rifiuto per il richiedente (minimo 5 caratteri)...',
+                'Provide a clear rejection reason for the requester (minimum 5 characters)...',
+                'Geben Sie dem Anforderer einen klaren Ablehnungsgrund an (mind. 5 Zeichen)...',
+                'Indiquez un motif de rejet clair au demandeur (5 caractères minimum)...',
+            ],
+            'PR.REJECT_MODAL.REASON_ERROR' => [
+                'Inserisci una motivazione obbligatoria di almeno 5 caratteri.',
+                'A rejection reason of at least 5 characters is required.',
+                'Ein Ablehnungsgrund mit mindestens 5 Zeichen ist erforderlich.',
+                'Un motif de rejet d\'au moins 5 caractères est requis.',
+            ],
+
+            'PR.ONE_CLICK.TITLE' => ['Approvazione Rapida Email (1-Click)', '1-Click Email Approval Handler', '1-Klick-E-Mail-Genehmigung', 'Approbation rapide par e-mail (1-Clic)'],
+            'PR.ONE_CLICK.LANGUAGE' => ['Lingua', 'Language', 'Sprache', 'Langue'],
+            'PR.ONE_CLICK.PROCESSING' => ['Elaborazione dell\'azione in corso...', 'Processing your approval decision...', 'Ihre Entscheidung wird verarbeitet...', 'Traitement de votre décision en cours...'],
+            'PR.ONE_CLICK.INVALID_LINK' => [
+                'Il collegamento di approvazione rapida non è valido o è incompleto.',
+                'This 1-click approval link is invalid or incomplete.',
+                'Dieser 1-Klick-Genehmigungslink ist ungültig oder unvollständig.',
+                'Ce lien d\'approbation en 1 clic est invalide ou incomplet.',
+            ],
+            'PR.ONE_CLICK.REJECT_TITLE' => ['Conferma Rifiuto Richiesta', 'Confirm Requisition Rejection', 'Ablehnung bestätigen', 'Confirmer le rejet de la demande'],
+            'PR.ONE_CLICK.REJECT_HINT' => [
+                'Puoi aggiungere facoltativamente una nota esplicativa prima di confermare il rifiuto.',
+                'Optionally add a comment explaining your decision before confirming the rejection.',
+                'Fügen Sie optional einen Kommentar hinzu, bevor Sie die Ablehnung bestätigen.',
+                'Ajoutez éventuellement un commentaire avant de confirmer le rejet.',
+            ],
+            'PR.ONE_CLICK.COMMENT_LABEL' => ['Commento (opzionale)', 'Comment (optional)', 'Kommentar (optional)', 'Commentaire (optionnel)'],
+            'PR.ONE_CLICK.COMMENT_PLACEHOLDER' => [
+                'Motivazione o istruzioni per il richiedente...',
+                'Optional reason or instructions for the requester...',
+                'Optionaler Grund oder Hinweise für den Anforderer...',
+                'Motif ou instructions facultatives pour le demandeur...',
+            ],
+            'PR.ONE_CLICK.CONFIRM_REJECT' => ['Conferma Rifiuto', 'Confirm Rejection', 'Ablehnung bestätigen', 'Confirmer le rejet'],
+            'PR.ONE_CLICK.APPROVED_TITLE' => ['Richiesta Approvata con Successo', 'Requisition Approved', 'Anforderung erfolgreich genehmigt', 'Demande approuvée avec succès'],
+            'PR.ONE_CLICK.APPROVED_DESC' => [
+                'La richiesta {number} è stata approvata tramite azione rapida.',
+                'Purchase requisition {number} has been approved via 1-click action.',
+                'Die Bestellanforderung {number} wurde per 1-Klick genehmigt.',
+                'La demande d\'achat {number} a été approuvée en 1 clic.',
+            ],
+            'PR.ONE_CLICK.REJECTED_TITLE' => ['Richiesta Rifiutata', 'Requisition Rejected', 'Anforderung abgelehnt', 'Demande rejetée'],
+            'PR.ONE_CLICK.REJECTED_DESC' => [
+                'La richiesta {number} è stata rifiutata.',
+                'Purchase requisition {number} has been rejected.',
+                'Die Bestellanforderung {number} wurde abgelehnt.',
+                'La demande d\'achat {number} a été rejetée.',
+            ],
+            'PR.ONE_CLICK.NEXT_APPROVER' => ['Prossimo approvatore', 'Next Approver', 'Nächster Genehmiger', 'Prochain approbateur'],
+            'PR.ONE_CLICK.ACTED_AT' => ['Data operazione', 'Action Timestamp', 'Zeitstempel', 'Horodatage'],
+            'PR.ONE_CLICK.VIEW_REQUISITION' => ['Apri richiesta nell\'ERP', 'Open Requisition in ERP', 'Anforderung im ERP öffnen', 'Ouvrir la demande dans l\'ERP'],
+            'PR.ONE_CLICK.ERROR_TITLE' => ['Impossibile Completare l\'Azione', 'Unable to Process Action', 'Aktion konnte nicht ausgeführt werden', 'Impossible de traiter l\'action'],
+            'PR.ONE_CLICK.ERROR_DESC' => [
+                'Il token potrebbe essere scaduto, già utilizzato o non autorizzato.',
+                'The action token may be expired, already consumed, or unauthorized.',
+                'Das Aktionstoken ist möglicherweise abgelaufen, bereits verwendet oder nicht autorisiert.',
+                'Le jeton d\'action a peut-être expiré, déjà été utilisé ou n\'est pas autorisé.',
+            ],
+
+            'PR.CONVERT.TITLE' => ['Workbench Conversione Buyer (RDA → RDO / ODA)', 'Buyer Conversion Workbench (PR → RFQ / PO)', 'Einkäufer-Konvertierung (BANF → RFQ / Bestellung)', 'Atelier de conversion acheteur (DA → RFQ / Commande)'],
+            'PR.CONVERT.SUBTITLE' => [
+                'Raggruppa righe approvate da più RDA o dividi quantità parziali in una nuova RDO o Ordine di Acquisto.',
+                'Group approved lines across requisitions or split partial quantities into a new RFQ or Purchase Order.',
+                'Genehmigte Positionen mehrerer Anforderungen bündeln oder Teilmengen in eine RFQ oder Bestellung umwandeln.',
+                'Regroupez les lignes approuvées ou fractionnez les quantités partielles vers une nouvelle RFQ ou commande.',
+            ],
+            'PR.CONVERT.OPEN_WORKBENCH' => ['Workbench Conversione', 'Conversion Workbench', 'Konvertierungs-Workbench', 'Atelier de conversion'],
+            'PR.CONVERT.SEARCH_PLACEHOLDER' => [
+                'Filtra per numero RDA, SKU, articolo o richiedente...',
+                'Filter by PR number, SKU, item description, or requester...',
+                'Nach BANF-Nr., SKU, Artikel oder Anforderer filtern...',
+                'Filtrer par n° DA, SKU, article ou demandeur...',
+            ],
+            'PR.CONVERT.SHOW_ALL_APPROVED' => ['Mostra tutte le RDA approvate', 'Show all approved PRs', 'Alle genehmigten BANFs anzeigen', 'Afficher toutes les DA approuvées'],
+            'PR.CONVERT.SELECT_ALL' => ['Seleziona tutto', 'Select all', 'Alle auswählen', 'Tout sélectionner'],
+            'PR.CONVERT.CONVERT_QTY' => ['Q.tà da convertire', 'Convert Qty', 'Umzuwandelnde Menge', 'Qté à convertir'],
+            'PR.CONVERT.ERR_EXCEEDS_REMAINING' => [
+                'La quantità supera il residuo ({max}).',
+                'Quantity exceeds remaining ({max}).',
+                'Menge überschreitet Restmenge ({max}).',
+                'La quantité dépasse le reliquat ({max}).',
+            ],
+            'PR.CONVERT.ERR_POSITIVE_QTY' => [
+                'Inserisci una quantità maggiore di zero.',
+                'Quantity must be greater than zero.',
+                'Die Menge muss größer als null sein.',
+                'La quantité doit être supérieure à zéro.',
+            ],
+            'PR.CONVERT.PARTIAL_SPLIT_BADGE' => ['Split parziale', 'Partial split', 'Teilumwandlung', 'Fractionnement partiel'],
+            'PR.CONVERT.EMPTY' => [
+                'Nessuna riga approvata con quantità residua da convertire.',
+                'No approved requisition lines with remaining convertible quantity.',
+                'Keine genehmigten Positionen mit verbleibender Menge vorhanden.',
+                'Aucune ligne de demande approuvée avec une quantité restante à convertir.',
+            ],
+            'PR.CONVERT.ACTION_CARD_TITLE' => ['Riepilogo conversione', 'Conversion Summary', 'Konvertierungszusammenfassung', 'Résumé de conversion'],
+            'PR.CONVERT.SELECTED_LINES' => ['Righe selezionate', 'Selected lines', 'Ausgewählte Positionen', 'Lignes sélectionnées'],
+            'PR.CONVERT.DISTINCT_PRS' => ['RDA coinvolte', 'Source requisitions', 'Quell-Anforderungen', 'DA concernées'],
+            'PR.CONVERT.ESTIMATED_VALUE' => ['Valore stimato', 'Estimated value', 'Geschätzter Wert', 'Valeur estimée'],
+            'PR.CONVERT.TARGET_TYPE' => ['Documento di destinazione', 'Target Document', 'Zieldokument', 'Document cible'],
+            'PR.CONVERT.TARGET_RFQ' => ['Richiesta di Offerta (RDO — Mod 045)', 'Request for Quotation (RFQ — Mod 045)', 'Offertanfrage (RFQ — Mod 045)', 'Demande d\'offre (RFQ — Mod 045)'],
+            'PR.CONVERT.TARGET_PO' => ['Ordine di Acquisto diretto (ODA — Mod 046)', 'Direct Purchase Order (PO — Mod 046)', 'Direktbestellung (PO — Mod 046)', 'Commande d\'achat directe (PO — Mod 046)'],
+            'PR.CONVERT.SUPPLIER_LABEL' => ['Fornitore per l\'ordine', 'Order Supplier', 'Lieferant für Bestellung', 'Fournisseur de la commande'],
+            'PR.CONVERT.SELECT_SUPPLIER' => ['Seleziona fornitore qualificato...', 'Select qualified supplier...', 'Qualifizierten Lieferanten wählen...', 'Sélectionner un fournisseur qualifié...'],
+            'PR.CONVERT.BTN_CREATE_RFQ' => ['Genera RDO da righe selezionate', 'Create RFQ from Selected Lines', 'RFQ aus Auswahl erstellen', 'Créer une RFQ depuis la sélection'],
+            'PR.CONVERT.BTN_CREATE_PO' => ['Genera ODA da righe selezionate', 'Create PO from Selected Lines', 'Bestellung aus Auswahl erstellen', 'Créer une commande depuis la sélection'],
+            'PR.CONVERT.SUCCESS_RFQ' => ['Richiesta di Offerta creata dalle righe RDA selezionate', 'RFQ created from selected requisition lines', 'Offertanfrage aus ausgewählten Positionen erstellt', 'RFQ créée à partir des lignes sélectionnées'],
+            'PR.CONVERT.SUCCESS_PO' => ['Ordine di Acquisto creato dalle righe RDA selezionate', 'Purchase Order created from selected requisition lines', 'Bestellung aus ausgewählten Positionen erstellt', 'Commande d\'achat créée à partir des lignes sélectionnées'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function all(string $locale): array
+    {
+        $index = match ($locale) {
+            'it' => 0,
+            'de' => 2,
+            'fr' => 3,
+            default => 1,
+        };
+
+        return array_map(static fn (array $values): string => $values[$index], self::definitions());
+    }
+}

@@ -1,0 +1,5 @@
+# Windsurf Rules
+- Follow [AGENTS.md](AGENTS.md) as the single source of truth for all architecture, coding, i18n (`it`, `de`, `fr`, `en`), DB, git, and quality-gate rules.
+- Enforce PHP 8.5 strict types, thin controllers (`FormRequest`/`JsonResource`), tenant isolation, and SQLite + PostgreSQL dual compatibility.
+- Use SQLite `:memory:` locally (`DB_FOREIGN_KEYS=true`); never require local PostgreSQL.
+- Verify with `./vendor/bin/pint --test && ./vendor/bin/phpstan analyse --memory-limit=2G && php artisan test` before pushing to `dev`.

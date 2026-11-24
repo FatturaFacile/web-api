@@ -1,0 +1,69 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\AssetManagement\DTOs;
+
+/**
+ * Registration data of a new fixed asset, including its acquisition source and coverage data.
+ */
+final readonly class RegisterAssetDTO
+{
+    /**
+     * @param  array<string, mixed>  $specifications
+     * @param  array<string, mixed>  $metadata
+     */
+    public function __construct(
+        public string $tenantId,
+        public string $companyId,
+        public string $name,
+        public string $categoryId,
+        public string|int|float $acquisitionCost,
+        public string $acquisitionType = 'purchase',
+        public ?string $assetClassId = null,
+        public ?string $locationId = null,
+        public ?string $parentAssetId = null,
+        public ?string $custodianUserId = null,
+        public ?string $projectId = null,
+        public ?string $supplierId = null,
+        public ?string $purchaseOrderId = null,
+        public ?string $purchaseReceiptId = null,
+        public ?string $inventoryItemId = null,
+        public ?string $assetNumber = null,
+        public ?string $barcodeTag = null,
+        public ?string $serialNumber = null,
+        public ?string $description = null,
+        public ?string $acquisitionDate = null,
+        public string|int|float $salvageValue = 0.0,
+        public ?string $depreciationMethod = null,
+        public ?int $usefulLifeYears = null,
+        public string|int|float $totalExpectedUnits = 0.0,
+        public string|int|float $replacementCost = 0.0,
+        public string $currency = 'EUR',
+        public string $condition = 'new',
+        public array $specifications = [],
+        public array $metadata = [],
+        public ?string $costCenterId = null,
+        public ?string $purchaseInvoiceId = null,
+        public ?string $purchaseInvoiceLineId = null,
+        public ?string $purchaseOrderItemId = null,
+        public ?string $capitalizationAccountId = null,
+        public ?string $warrantyExpiryDate = null,
+        public ?string $warrantyProvider = null,
+        public ?string $insuranceProvider = null,
+        public ?string $insurancePolicyNumber = null,
+        public string|int|float|null $insuredValue = null,
+        public ?string $insuranceExpiryDate = null,
+        public ?string $proRataConvention = null,
+        public ?string $inServiceDate = null,
+        public ?string $purchaseInvoiceNumber = null,
+        public ?string $fiscalJurisdiction = null,
+        public ?string $fiscalRateId = null,
+        public ?string $fiscalSectorCode = null,
+        public string $incentiveRegime = 'none',
+        public string|int|float|null $incentiveRatePercent = null,
+        public ?int $incentiveInstallmentYears = null,
+        public ?string $incentiveInterconnectionDate = null,
+        public bool $immediateExpensingApplied = false,
+    ) {}
+}

@@ -1,0 +1,41 @@
+name: main-source
+
+# Pull requests into main are only accepted from this repository's dev branch.
+# Uses pull_request_target and never checks out or runs PR code.
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  main-source:
+    name: main-source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require dev as the source branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$HEAD_REF" = "dev" ] && [ "$HEAD_REPO" = "$GH_REPO" ]; then
+            echo "OK: PR comes from $GH_REPO:dev"
+            exit 0
+          fi
+          marker='<!-- main-source -->'
+          body="$marker
+          Pull requests into \`main\` are only accepted from the \`dev\` branch of this repository. Please retarget this PR to \`dev\`."
+          id=$(gh api "repos/$GH_REPO/issues/$PR/comments" --paginate \
+            --jq "[.[] | select(.body | contains(\"$marker\"))][0].id // empty")
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GH_REPO/issues/comments/$id" -f body="$body" >/dev/null
+          else
+            gh pr comment "$PR" --body "$body"
+          fi
+          echo "::error::PRs into main must come from dev (got $HEAD_REPO:$HEAD_REF). Retarget this PR to dev."
+          exit 1

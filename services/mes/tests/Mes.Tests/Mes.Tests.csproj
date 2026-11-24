@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Mes.Domain\Mes.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Mes.Application\Mes.Application.csproj" />
+    <ProjectReference Include="..\..\src\Mes.Infrastructure.Connectors\Mes.Infrastructure.Connectors.csproj" />
+    <ProjectReference Include="..\..\src\Mes.Infrastructure.Persistence\Mes.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\Mes.Infrastructure.LaravelSync\Mes.Infrastructure.LaravelSync.csproj" />
+    <ProjectReference Include="..\..\src\Mes.Presentation\Mes.Presentation.csproj" />
+    <ProjectReference Include="..\..\src\Edge.Gateway\Edge.Gateway.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="7.2.0" />
+    <PackageReference Include="FsCheck.Xunit" Version="3.6.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
+    <PackageReference Include="MQTTnet.Server" Version="5.2.0.1603" />
+    <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Server" Version="1.5.378.196" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.17.0" />
+    <PackageReference Include="Testcontainers.Redis" Version="4.17.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Golden fixtures shared with the Laravel Pest suite (contracts/mes-sync/fixtures): the contract between the services. -->
+    <None Include="..\..\..\..\contracts\mes-sync\fixtures\**\*.json" Link="contract-fixtures\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,39 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\EDocumentNetworks\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\EDocumentNetworks\Models\EDocumentTransmission;
+
+/**
+ * API representation of the transmission.
+ *
+ * @mixin EDocumentTransmission
+ */
+final class TransmissionResource extends JsonResource
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => (string) $this->id,
+            'network' => $this->network,
+            'document_reference' => $this->document_reference,
+            'recipient_identifier' => $this->recipient_identifier,
+            'payload_sha256' => $this->payload_sha256,
+            'status' => $this->status,
+            'external_id' => $this->external_id,
+            'driver' => $this->driver,
+            'error_message' => $this->error_message,
+            'attempts' => (int) $this->attempts,
+            'last_attempt_at' => $this->last_attempt_at?->toIso8601String(),
+            'can_retry' => $this->canRetry(),
+            'created_at' => $this->created_at?->toIso8601String(),
+        ];
+    }
+}

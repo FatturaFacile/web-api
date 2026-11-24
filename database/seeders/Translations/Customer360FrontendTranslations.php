@@ -1,0 +1,346 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders\Translations;
+
+/**
+ * Frontend strings of the CRM Customer 360 view: addresses, contact persons, corporate hierarchy, privacy consents,
+ * interaction log and open items (it, en, de, fr). Merged by FrontendTranslationSeeder::dictionary().
+ */
+final class Customer360FrontendTranslations
+{
+    /**
+     * @return array<string, string>
+     */
+    public static function all(string $locale): array
+    {
+        return [...self::lifecycle($locale), ...self::quickActions($locale), ...self::escalation($locale), ...match ($locale) {
+            'it' => [
+                'CRM.CUSTOMER360.ADDRESSES' => 'Indirizzi',
+                'CRM.CUSTOMER360.ADDRESS_TYPE' => 'Tipo di indirizzo',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_LEGAL' => 'Sede legale',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_BILLING' => 'Fatturazione',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_SHIPPING' => 'Spedizione',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_SITE' => 'Sede operativa',
+                'CRM.CUSTOMER360.ADD_ADDRESS' => 'Aggiungi indirizzo',
+                'CRM.CUSTOMER360.DEFAULT' => 'Predefinito',
+                'CRM.CUSTOMER360.SET_DEFAULT' => 'Imposta come predefinito',
+                'CRM.CUSTOMER360.PERSONS' => 'Persone di contatto',
+                'CRM.CUSTOMER360.ROLE' => 'Ruolo',
+                'CRM.CUSTOMER360.ROLE_ADMINISTRATION' => 'Amministrazione',
+                'CRM.CUSTOMER360.ROLE_PURCHASING' => 'Acquisti',
+                'CRM.CUSTOMER360.ROLE_LOGISTICS' => 'Logistica',
+                'CRM.CUSTOMER360.ROLE_TECHNICAL' => 'Tecnico',
+                'CRM.CUSTOMER360.ROLE_MANAGEMENT' => 'Direzione',
+                'CRM.CUSTOMER360.ROLE_SALES' => 'Vendite',
+                'CRM.CUSTOMER360.ROLE_OTHER' => 'Altro',
+                'CRM.CUSTOMER360.PRIMARY' => 'Principale',
+                'CRM.CUSTOMER360.SET_PRIMARY' => 'Imposta come principale',
+                'CRM.CUSTOMER360.ADD_PERSON' => 'Aggiungi persona',
+                'CRM.CUSTOMER360.HIERARCHY' => 'Gerarchia aziendale',
+                'CRM.CUSTOMER360.PARENT' => 'Società capogruppo',
+                'CRM.CUSTOMER360.HIERARCHY_TYPE' => 'Tipo di gerarchia',
+                'CRM.CUSTOMER360.HIERARCHY_HOLDING' => 'Holding',
+                'CRM.CUSTOMER360.HIERARCHY_SUBSIDIARY' => 'Controllata',
+                'CRM.CUSTOMER360.HIERARCHY_BRANCH' => 'Filiale',
+                'CRM.CUSTOMER360.CONSENTS' => 'Consensi privacy',
+                'CRM.CUSTOMER360.PROCESSING_RESTRICTED' => 'Trattamento limitato',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL' => 'Canale',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_EMAIL' => 'Email',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_SMS' => 'SMS',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_PHONE' => 'Telefono',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_POST' => 'Posta',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE' => 'Finalità',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_MARKETING' => 'Marketing',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_NEWSLETTER' => 'Newsletter',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_PROFILING' => 'Profilazione',
+                'CRM.CUSTOMER360.CONSENT_SOURCE' => 'Origine',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_WEB_FORM' => 'Modulo web',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_PHONE' => 'Telefono',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_IN_PERSON' => 'Di persona',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_API' => 'API',
+                'CRM.CUSTOMER360.CONSENT_GRANTED' => 'Concesso',
+                'CRM.CUSTOMER360.CONSENT_WITHDRAWN' => 'Revocato',
+                'CRM.CUSTOMER360.CONSENT_GRANT' => 'Registra consenso',
+                'CRM.CUSTOMER360.CONSENT_WITHDRAW' => 'Registra revoca',
+                'CRM.CUSTOMER360.CONSENT_HISTORY' => 'Storico dei consensi',
+                'CRM.CUSTOMER360.INTERACTION_LOG' => 'Registro interazioni',
+                'CRM.CUSTOMER360.INTERACTION_TYPE' => 'Tipo di interazione',
+                'CRM.CUSTOMER360.INTERACTION_CALL' => 'Chiamata',
+                'CRM.CUSTOMER360.INTERACTION_EMAIL' => 'Email',
+                'CRM.CUSTOMER360.INTERACTION_NOTE' => 'Nota',
+                'CRM.CUSTOMER360.INTERACTION_MEETING' => 'Incontro',
+                'CRM.CUSTOMER360.INTERACTION_SUBJECT' => 'Oggetto',
+                'CRM.CUSTOMER360.INTERACTION_NOTES' => 'Note',
+                'CRM.CUSTOMER360.LOG_INTERACTION' => 'Registra interazione',
+                'CRM.CUSTOMER360.LOAD_MORE' => 'Carica altro',
+                'CRM.CUSTOMER360.OPEN_ITEMS' => 'Partite aperte',
+                'CRM.CUSTOMER360.DUE_DATE' => 'Scadenza',
+                'CRM.CUSTOMER360.DAYS_OVERDUE' => 'giorni di ritardo',
+            ],
+            'en' => [
+                'CRM.CUSTOMER360.ADDRESSES' => 'Addresses',
+                'CRM.CUSTOMER360.ADDRESS_TYPE' => 'Address type',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_LEGAL' => 'Legal address',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_BILLING' => 'Billing',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_SHIPPING' => 'Shipping',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_SITE' => 'Site',
+                'CRM.CUSTOMER360.ADD_ADDRESS' => 'Add address',
+                'CRM.CUSTOMER360.DEFAULT' => 'Default',
+                'CRM.CUSTOMER360.SET_DEFAULT' => 'Make default',
+                'CRM.CUSTOMER360.PERSONS' => 'Contact persons',
+                'CRM.CUSTOMER360.ROLE' => 'Role',
+                'CRM.CUSTOMER360.ROLE_ADMINISTRATION' => 'Administration',
+                'CRM.CUSTOMER360.ROLE_PURCHASING' => 'Purchasing',
+                'CRM.CUSTOMER360.ROLE_LOGISTICS' => 'Logistics',
+                'CRM.CUSTOMER360.ROLE_TECHNICAL' => 'Technical',
+                'CRM.CUSTOMER360.ROLE_MANAGEMENT' => 'Management',
+                'CRM.CUSTOMER360.ROLE_SALES' => 'Sales',
+                'CRM.CUSTOMER360.ROLE_OTHER' => 'Other',
+                'CRM.CUSTOMER360.PRIMARY' => 'Primary',
+                'CRM.CUSTOMER360.SET_PRIMARY' => 'Make primary',
+                'CRM.CUSTOMER360.ADD_PERSON' => 'Add person',
+                'CRM.CUSTOMER360.HIERARCHY' => 'Corporate hierarchy',
+                'CRM.CUSTOMER360.PARENT' => 'Parent company',
+                'CRM.CUSTOMER360.HIERARCHY_TYPE' => 'Hierarchy type',
+                'CRM.CUSTOMER360.HIERARCHY_HOLDING' => 'Holding',
+                'CRM.CUSTOMER360.HIERARCHY_SUBSIDIARY' => 'Subsidiary',
+                'CRM.CUSTOMER360.HIERARCHY_BRANCH' => 'Branch',
+                'CRM.CUSTOMER360.CONSENTS' => 'Privacy consents',
+                'CRM.CUSTOMER360.PROCESSING_RESTRICTED' => 'Processing restricted',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL' => 'Channel',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_EMAIL' => 'Email',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_SMS' => 'SMS',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_PHONE' => 'Phone',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_POST' => 'Post',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE' => 'Purpose',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_MARKETING' => 'Marketing',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_NEWSLETTER' => 'Newsletter',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_PROFILING' => 'Profiling',
+                'CRM.CUSTOMER360.CONSENT_SOURCE' => 'Source',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_WEB_FORM' => 'Web form',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_PHONE' => 'Phone',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_IN_PERSON' => 'In person',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_API' => 'API',
+                'CRM.CUSTOMER360.CONSENT_GRANTED' => 'Granted',
+                'CRM.CUSTOMER360.CONSENT_WITHDRAWN' => 'Withdrawn',
+                'CRM.CUSTOMER360.CONSENT_GRANT' => 'Record consent',
+                'CRM.CUSTOMER360.CONSENT_WITHDRAW' => 'Record withdrawal',
+                'CRM.CUSTOMER360.CONSENT_HISTORY' => 'Consent history',
+                'CRM.CUSTOMER360.INTERACTION_LOG' => 'Interaction log',
+                'CRM.CUSTOMER360.INTERACTION_TYPE' => 'Interaction type',
+                'CRM.CUSTOMER360.INTERACTION_CALL' => 'Call',
+                'CRM.CUSTOMER360.INTERACTION_EMAIL' => 'Email',
+                'CRM.CUSTOMER360.INTERACTION_NOTE' => 'Note',
+                'CRM.CUSTOMER360.INTERACTION_MEETING' => 'Meeting',
+                'CRM.CUSTOMER360.INTERACTION_SUBJECT' => 'Subject',
+                'CRM.CUSTOMER360.INTERACTION_NOTES' => 'Notes',
+                'CRM.CUSTOMER360.LOG_INTERACTION' => 'Log interaction',
+                'CRM.CUSTOMER360.LOAD_MORE' => 'Load more',
+                'CRM.CUSTOMER360.OPEN_ITEMS' => 'Open items',
+                'CRM.CUSTOMER360.DUE_DATE' => 'Due date',
+                'CRM.CUSTOMER360.DAYS_OVERDUE' => 'days overdue',
+            ],
+            'de' => [
+                'CRM.CUSTOMER360.ADDRESSES' => 'Adressen',
+                'CRM.CUSTOMER360.ADDRESS_TYPE' => 'Adresstyp',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_LEGAL' => 'Rechtsadresse',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_BILLING' => 'Rechnungsadresse',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_SHIPPING' => 'Lieferadresse',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_SITE' => 'Standort',
+                'CRM.CUSTOMER360.ADD_ADDRESS' => 'Adresse hinzufügen',
+                'CRM.CUSTOMER360.DEFAULT' => 'Standard',
+                'CRM.CUSTOMER360.SET_DEFAULT' => 'Als Standard festlegen',
+                'CRM.CUSTOMER360.PERSONS' => 'Ansprechpersonen',
+                'CRM.CUSTOMER360.ROLE' => 'Rolle',
+                'CRM.CUSTOMER360.ROLE_ADMINISTRATION' => 'Verwaltung',
+                'CRM.CUSTOMER360.ROLE_PURCHASING' => 'Einkauf',
+                'CRM.CUSTOMER360.ROLE_LOGISTICS' => 'Logistik',
+                'CRM.CUSTOMER360.ROLE_TECHNICAL' => 'Technik',
+                'CRM.CUSTOMER360.ROLE_MANAGEMENT' => 'Geschäftsleitung',
+                'CRM.CUSTOMER360.ROLE_SALES' => 'Verkauf',
+                'CRM.CUSTOMER360.ROLE_OTHER' => 'Andere',
+                'CRM.CUSTOMER360.PRIMARY' => 'Hauptkontakt',
+                'CRM.CUSTOMER360.SET_PRIMARY' => 'Als Hauptkontakt festlegen',
+                'CRM.CUSTOMER360.ADD_PERSON' => 'Person hinzufügen',
+                'CRM.CUSTOMER360.HIERARCHY' => 'Konzernstruktur',
+                'CRM.CUSTOMER360.PARENT' => 'Muttergesellschaft',
+                'CRM.CUSTOMER360.HIERARCHY_TYPE' => 'Hierarchietyp',
+                'CRM.CUSTOMER360.HIERARCHY_HOLDING' => 'Holding',
+                'CRM.CUSTOMER360.HIERARCHY_SUBSIDIARY' => 'Tochtergesellschaft',
+                'CRM.CUSTOMER360.HIERARCHY_BRANCH' => 'Niederlassung',
+                'CRM.CUSTOMER360.CONSENTS' => 'Datenschutz-Einwilligungen',
+                'CRM.CUSTOMER360.PROCESSING_RESTRICTED' => 'Bearbeitung eingeschränkt',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL' => 'Kanal',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_EMAIL' => 'E-Mail',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_SMS' => 'SMS',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_PHONE' => 'Telefon',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_POST' => 'Post',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE' => 'Zweck',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_MARKETING' => 'Marketing',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_NEWSLETTER' => 'Newsletter',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_PROFILING' => 'Profiling',
+                'CRM.CUSTOMER360.CONSENT_SOURCE' => 'Quelle',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_WEB_FORM' => 'Webformular',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_PHONE' => 'Telefon',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_IN_PERSON' => 'Persönlich',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_API' => 'API',
+                'CRM.CUSTOMER360.CONSENT_GRANTED' => 'Erteilt',
+                'CRM.CUSTOMER360.CONSENT_WITHDRAWN' => 'Widerrufen',
+                'CRM.CUSTOMER360.CONSENT_GRANT' => 'Einwilligung erfassen',
+                'CRM.CUSTOMER360.CONSENT_WITHDRAW' => 'Widerruf erfassen',
+                'CRM.CUSTOMER360.CONSENT_HISTORY' => 'Verlauf der Einwilligungen',
+                'CRM.CUSTOMER360.INTERACTION_LOG' => 'Interaktionsprotokoll',
+                'CRM.CUSTOMER360.INTERACTION_TYPE' => 'Interaktionstyp',
+                'CRM.CUSTOMER360.INTERACTION_CALL' => 'Anruf',
+                'CRM.CUSTOMER360.INTERACTION_EMAIL' => 'E-Mail',
+                'CRM.CUSTOMER360.INTERACTION_NOTE' => 'Notiz',
+                'CRM.CUSTOMER360.INTERACTION_MEETING' => 'Treffen',
+                'CRM.CUSTOMER360.INTERACTION_SUBJECT' => 'Betreff',
+                'CRM.CUSTOMER360.INTERACTION_NOTES' => 'Notizen',
+                'CRM.CUSTOMER360.LOG_INTERACTION' => 'Interaktion erfassen',
+                'CRM.CUSTOMER360.LOAD_MORE' => 'Mehr laden',
+                'CRM.CUSTOMER360.OPEN_ITEMS' => 'Offene Posten',
+                'CRM.CUSTOMER360.DUE_DATE' => 'Fälligkeit',
+                'CRM.CUSTOMER360.DAYS_OVERDUE' => 'Tage überfällig',
+            ],
+            'fr' => [
+                'CRM.CUSTOMER360.ADDRESSES' => 'Adresses',
+                'CRM.CUSTOMER360.ADDRESS_TYPE' => 'Type d\'adresse',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_LEGAL' => 'Adresse légale',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_BILLING' => 'Facturation',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_SHIPPING' => 'Livraison',
+                'CRM.CUSTOMER360.ADDRESS_TYPE_SITE' => 'Site',
+                'CRM.CUSTOMER360.ADD_ADDRESS' => 'Ajouter une adresse',
+                'CRM.CUSTOMER360.DEFAULT' => 'Par défaut',
+                'CRM.CUSTOMER360.SET_DEFAULT' => 'Définir par défaut',
+                'CRM.CUSTOMER360.PERSONS' => 'Personnes de contact',
+                'CRM.CUSTOMER360.ROLE' => 'Rôle',
+                'CRM.CUSTOMER360.ROLE_ADMINISTRATION' => 'Administration',
+                'CRM.CUSTOMER360.ROLE_PURCHASING' => 'Achats',
+                'CRM.CUSTOMER360.ROLE_LOGISTICS' => 'Logistique',
+                'CRM.CUSTOMER360.ROLE_TECHNICAL' => 'Technique',
+                'CRM.CUSTOMER360.ROLE_MANAGEMENT' => 'Direction',
+                'CRM.CUSTOMER360.ROLE_SALES' => 'Ventes',
+                'CRM.CUSTOMER360.ROLE_OTHER' => 'Autre',
+                'CRM.CUSTOMER360.PRIMARY' => 'Principal',
+                'CRM.CUSTOMER360.SET_PRIMARY' => 'Définir comme principal',
+                'CRM.CUSTOMER360.ADD_PERSON' => 'Ajouter une personne',
+                'CRM.CUSTOMER360.HIERARCHY' => 'Hiérarchie d\'entreprise',
+                'CRM.CUSTOMER360.PARENT' => 'Société mère',
+                'CRM.CUSTOMER360.HIERARCHY_TYPE' => 'Type de hiérarchie',
+                'CRM.CUSTOMER360.HIERARCHY_HOLDING' => 'Holding',
+                'CRM.CUSTOMER360.HIERARCHY_SUBSIDIARY' => 'Filiale',
+                'CRM.CUSTOMER360.HIERARCHY_BRANCH' => 'Succursale',
+                'CRM.CUSTOMER360.CONSENTS' => 'Consentements',
+                'CRM.CUSTOMER360.PROCESSING_RESTRICTED' => 'Traitement limité',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL' => 'Canal',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_EMAIL' => 'E-mail',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_SMS' => 'SMS',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_PHONE' => 'Téléphone',
+                'CRM.CUSTOMER360.CONSENT_CHANNEL_POST' => 'Courrier',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE' => 'Finalité',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_MARKETING' => 'Marketing',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_NEWSLETTER' => 'Newsletter',
+                'CRM.CUSTOMER360.CONSENT_PURPOSE_PROFILING' => 'Profilage',
+                'CRM.CUSTOMER360.CONSENT_SOURCE' => 'Source',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_WEB_FORM' => 'Formulaire web',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_PHONE' => 'Téléphone',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_IN_PERSON' => 'En personne',
+                'CRM.CUSTOMER360.CONSENT_SOURCE_API' => 'API',
+                'CRM.CUSTOMER360.CONSENT_GRANTED' => 'Accordé',
+                'CRM.CUSTOMER360.CONSENT_WITHDRAWN' => 'Retiré',
+                'CRM.CUSTOMER360.CONSENT_GRANT' => 'Enregistrer le consentement',
+                'CRM.CUSTOMER360.CONSENT_WITHDRAW' => 'Enregistrer le retrait',
+                'CRM.CUSTOMER360.CONSENT_HISTORY' => 'Historique des consentements',
+                'CRM.CUSTOMER360.INTERACTION_LOG' => 'Journal des interactions',
+                'CRM.CUSTOMER360.INTERACTION_TYPE' => 'Type d\'interaction',
+                'CRM.CUSTOMER360.INTERACTION_CALL' => 'Appel',
+                'CRM.CUSTOMER360.INTERACTION_EMAIL' => 'E-mail',
+                'CRM.CUSTOMER360.INTERACTION_NOTE' => 'Note',
+                'CRM.CUSTOMER360.INTERACTION_MEETING' => 'Réunion',
+                'CRM.CUSTOMER360.INTERACTION_SUBJECT' => 'Objet',
+                'CRM.CUSTOMER360.INTERACTION_NOTES' => 'Notes',
+                'CRM.CUSTOMER360.LOG_INTERACTION' => 'Enregistrer l\'interaction',
+                'CRM.CUSTOMER360.LOAD_MORE' => 'Charger plus',
+                'CRM.CUSTOMER360.OPEN_ITEMS' => 'Postes ouverts',
+                'CRM.CUSTOMER360.DUE_DATE' => 'Échéance',
+                'CRM.CUSTOMER360.DAYS_OVERDUE' => 'jours de retard',
+            ],
+            default => [],
+        }];
+    }
+
+    /**
+     * Strings of the quick actions (log a visit, create a follow-up) of the lifecycle panel.
+     *
+     * @return array<string, string>
+     */
+    private static function quickActions(string $locale): array
+    {
+        $labels = [
+            'it' => ['QA_LOG_VISIT' => 'Registra visita', 'QA_FOLLOW_UP' => 'Crea follow-up', 'QA_SUBJECT' => 'Oggetto', 'QA_DUE' => 'Scadenza', 'QA_SAVE' => 'Salva', 'QA_CANCEL' => 'Annulla', 'QA_SAVED' => 'Salvato', 'QA_FAILED' => 'Salvataggio non riuscito'],
+            'en' => ['QA_LOG_VISIT' => 'Log visit', 'QA_FOLLOW_UP' => 'Create follow-up', 'QA_SUBJECT' => 'Subject', 'QA_DUE' => 'Due date', 'QA_SAVE' => 'Save', 'QA_CANCEL' => 'Cancel', 'QA_SAVED' => 'Saved', 'QA_FAILED' => 'Could not save'],
+            'de' => ['QA_LOG_VISIT' => 'Besuch erfassen', 'QA_FOLLOW_UP' => 'Follow-up erstellen', 'QA_SUBJECT' => 'Betreff', 'QA_DUE' => 'Fällig am', 'QA_SAVE' => 'Speichern', 'QA_CANCEL' => 'Abbrechen', 'QA_SAVED' => 'Gespeichert', 'QA_FAILED' => 'Speichern fehlgeschlagen'],
+            'fr' => ['QA_LOG_VISIT' => 'Enregistrer une visite', 'QA_FOLLOW_UP' => 'Créer un suivi', 'QA_SUBJECT' => 'Objet', 'QA_DUE' => 'Échéance', 'QA_SAVE' => 'Enregistrer', 'QA_CANCEL' => 'Annuler', 'QA_SAVED' => 'Enregistré', 'QA_FAILED' => 'Échec de l\'enregistrement'],
+        ];
+
+        $out = [];
+        foreach ($labels[$locale] ?? [] as $key => $text) {
+            $out['CRM.CUSTOMER360.'.$key] = $text;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Strings of the cross-module lifecycle panel (health, KPIs, filtered timeline).
+     *
+     * @return array<string, string>
+     */
+    private static function lifecycle(string $locale): array
+    {
+        $labels = [
+            'it' => ['Ciclo di vita del cliente', 'Indice di salute', 'Rischio di abbandono', 'Valore nel tempo', 'Pipeline aperta', 'Scaduto da incassare', 'Ticket aperti', 'Violazioni SLA', 'Tempo medio di risoluzione (h)', 'Contratti attivi', 'Copertura contrattuale', 'Coperto', 'Esaurito', 'Nessuna', 'Ore residue', 'Interventi pianificati', 'Interventi completati', 'Cronologia', 'Tipo', 'Attività', 'Opportunità', 'Fattura', 'Ticket', 'Intervento sul campo', 'Contratto', 'Lead', 'Nessun account CRM collegato a questo cliente', 'Nuovo ticket', 'Nuova opportunità'],
+            'en' => ['Customer lifecycle', 'Health index', 'Churn risk', 'Lifetime value', 'Open pipeline', 'Overdue receivables', 'Open tickets', 'SLA breach rate', 'Mean time to resolution (h)', 'Active contracts', 'Contract coverage', 'Covered', 'Exhausted', 'None', 'Hours remaining', 'Scheduled interventions', 'Completed interventions', 'Timeline', 'Type', 'Activity', 'Opportunity', 'Invoice', 'Ticket', 'Field intervention', 'Contract', 'Lead', 'No CRM account is linked to this customer', 'New ticket', 'New opportunity'],
+            'de' => ['Kundenlebenszyklus', 'Gesundheitsindex', 'Abwanderungsrisiko', 'Kundenwert', 'Offene Pipeline', 'Überfällige Forderungen', 'Offene Tickets', 'SLA-Verletzungsquote', 'Mittlere Lösungszeit (h)', 'Aktive Verträge', 'Vertragsabdeckung', 'Abgedeckt', 'Aufgebraucht', 'Keine', 'Verbleibende Stunden', 'Geplante Einsätze', 'Abgeschlossene Einsätze', 'Verlauf', 'Typ', 'Aktivität', 'Verkaufschance', 'Rechnung', 'Ticket', 'Außendiensteinsatz', 'Vertrag', 'Lead', 'Diesem Kunden ist kein CRM-Konto zugeordnet', 'Neues Ticket', 'Neue Verkaufschance'],
+            'fr' => ['Cycle de vie du client', 'Indice de santé', 'Risque de départ', 'Valeur vie client', 'Pipeline ouvert', 'Créances échues', 'Tickets ouverts', 'Taux de violation SLA', 'Temps moyen de résolution (h)', 'Contrats actifs', 'Couverture contractuelle', 'Couvert', 'Épuisé', 'Aucune', 'Heures restantes', 'Interventions planifiées', 'Interventions terminées', 'Chronologie', 'Type', 'Activité', 'Opportunité', 'Facture', 'Ticket', 'Intervention sur site', 'Contrat', 'Lead', 'Aucun compte CRM n\'est lié à ce client', 'Nouveau ticket', 'Nouvelle opportunité'],
+        ];
+        $keys = ['LC_TITLE', 'LC_HEALTH', 'LC_CHURN', 'LC_LTV', 'LC_PIPELINE', 'LC_OVERDUE', 'LC_OPEN_TICKETS', 'LC_SLA_BREACH', 'LC_MTTR', 'LC_CONTRACTS', 'LC_COVERAGE', 'LC_COVERAGE_COVERED', 'LC_COVERAGE_EXHAUSTED', 'LC_COVERAGE_NONE', 'LC_HOURS_REMAINING', 'LC_INTERVENTIONS_OPEN', 'LC_INTERVENTIONS_DONE', 'LC_TIMELINE', 'LC_FILTER', 'LC_TYPE_ACTIVITY', 'LC_TYPE_OPPORTUNITY', 'LC_TYPE_INVOICE', 'LC_TYPE_TICKET', 'LC_TYPE_WORK_ORDER', 'LC_TYPE_CONTRACT', 'LC_TYPE_LEAD', 'LC_NO_ACCOUNT', 'LC_NEW_TICKET', 'LC_NEW_OPPORTUNITY'];
+
+        if (! isset($labels[$locale])) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($keys as $i => $key) {
+            $out['CRM.CUSTOMER360.'.$key] = $labels[$locale][$i];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Ticket drawer action: escalate a helpdesk ticket to a field-service work order.
+     *
+     * @return array<string, string>
+     */
+    private static function escalation(string $locale): array
+    {
+        $labels = [
+            'it' => ['Intervento sul campo', 'Escalare a intervento sul campo', 'Verrà creato un ordine di lavoro collegato a questo ticket.', 'Ordine di lavoro creato.', 'Impossibile creare l\'ordine di lavoro.'],
+            'en' => ['Field service', 'Escalate to field service', 'A work order linked to this ticket will be created.', 'Work order created.', 'The work order could not be created.'],
+            'de' => ['Außendienst', 'An den Außendienst eskalieren', 'Es wird ein mit diesem Ticket verknüpfter Arbeitsauftrag erstellt.', 'Arbeitsauftrag erstellt.', 'Der Arbeitsauftrag konnte nicht erstellt werden.'],
+            'fr' => ['Intervention sur site', 'Escalader vers une intervention sur site', 'Un ordre de travail lié à ce ticket sera créé.', 'Ordre de travail créé.', 'Impossible de créer l\'ordre de travail.'],
+        ];
+        $keys = ['LBL_FIELD_SERVICE', 'DLG_FIELD_SERVICE_TITLE', 'DLG_FIELD_SERVICE_BODY', 'MSG_FIELD_SERVICE_CREATED', 'MSG_FIELD_SERVICE_FAILED'];
+
+        $out = [];
+        foreach ($keys as $i => $key) {
+            $out['TICKET_TOOLS.'.$key] = $labels[$locale][$i] ?? $labels['en'][$i];
+        }
+
+        return $out;
+    }
+}

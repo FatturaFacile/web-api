@@ -1,0 +1,196 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use App\Models\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\Workflow\Contracts\ReactsToWorkflowOutcome;
+use Modules\Workflow\Models\WorkflowInstance;
+
+/**
+ * @property Carbon $date
+ * @property Carbon|null $due_date
+ */
+class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
+{
+    use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+
+    /**
+     * Approval states in which the invoice cannot be paid: on the way to approval, refused, or blocked because it does
+     * not match the purchase order and the goods received (three-way match beyond tolerance).
+     *
+     * @var list<string>
+     */
+    public const PaymentBlockingStatuses = ['pending', 'in_approval', 'rejected', self::MatchBlockedStatus];
+
+    /**
+     * Approval status of an invoice blocked by the three-way match; the status it had is kept aside.
+     */
+    public const MatchBlockedStatus = 'match_blocked';
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = ['xml_payload'];
+
+    protected $fillable = [
+        'tenant_id',
+        'supplier_id',
+        'invoice_number',
+        'date',
+        'due_date',
+        'total_amount',
+        'currency',
+        'sdi_lot_id',
+        'is_reconciled',
+        'xml_payload',
+        'qr_raw_payload',
+        'document_type',
+        'total_net',
+        'total_tax',
+        'payment_status',
+        'document_hash',
+        'sdi_file_name',
+        'total_paid',
+        'gl_journal_entry_id',
+        'exchange_rate',
+        'withholding_tax_amount',
+        'withholdings',
+        'stamp_duty_amount',
+        'declaration_of_intent_id',
+        'cost_account_id',
+        'cost_account_source',
+        'approval_status',
+        'cost_center_id',
+        'approval_workflow_instance_id',
+        'approval_submitted_by',
+        'approval_decided_at',
+        'purchase_order_id',
+        'match_status',
+        'approval_status_before_block',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'date' => 'date',
+            'due_date' => 'date',
+            'is_reconciled' => 'boolean',
+            'total_amount' => 'decimal:2',
+            'total_net' => 'decimal:2',
+            'total_tax' => 'decimal:2',
+            'total_paid' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
+            'withholding_tax_amount' => 'decimal:2',
+            'withholdings' => 'array',
+            'stamp_duty_amount' => 'decimal:2',
+            'approval_decided_at' => 'datetime',
+        ];
+    }
+
+    public function isPaymentBlocked(): bool
+    {
+        return in_array($this->approval_status, self::PaymentBlockingStatuses, true);
+    }
+
+    /**
+     * Runs inside the transaction of the decision, so the payment block can never lag behind the workflow. A cancelled
+     * workflow leaves the invoice waiting for a new submission: cancelling must not open the payment.
+     */
+    public function onWorkflowOutcome(WorkflowInstance $instance, string $outcome): void
+    {
+        $statusKey = $this->approval_status === self::MatchBlockedStatus ? 'approval_status_before_block' : 'approval_status';
+
+        $this->update([
+            $statusKey => match ($outcome) {
+                'approved' => 'approved',
+                'rejected' => 'rejected',
+                default => 'pending',
+            },
+            'approval_decided_at' => $outcome === 'cancelled' ? null : now(),
+        ]);
+    }
+
+    /**
+     * Blocks the payment because the three-way match failed, keeping the approval status aside.
+     */
+    public function blockForMatch(string $matchStatus): void
+    {
+        $this->update([
+            'match_status' => $matchStatus,
+            'approval_status_before_block' => $this->approval_status === self::MatchBlockedStatus ? $this->approval_status_before_block : $this->approval_status,
+            'approval_status' => self::MatchBlockedStatus,
+        ]);
+    }
+
+    /**
+     * Lifts the block of the three-way match: the invoice gets back the approval status it had.
+     */
+    public function releaseMatchBlock(string $matchStatus): void
+    {
+        $this->update([
+            'match_status' => $matchStatus,
+            'approval_status' => $this->approval_status === self::MatchBlockedStatus ? ($this->approval_status_before_block ?? 'not_required') : $this->approval_status,
+            'approval_status_before_block' => null,
+        ]);
+    }
+
+    /**
+     * What is paid to the supplier: the withholding goes to the tax authority or to the fund instead.
+     */
+    public function amountDue(): string
+    {
+        return Decimal::round2(Decimal::sub((string) ($this->total_amount ?? '0'), (string) ($this->withholding_tax_amount ?? '0')));
+    }
+
+    /**
+     * Name of the supplier contact (company name, or first and last name): only known once the supplier is loaded.
+     *
+     * @return Attribute<non-falsy-string|null, never>
+     */
+    protected function supplierName(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            $supplier = $this->relationLoaded('supplier') ? $this->supplier : null;
+            if ($supplier === null) {
+                return null;
+            }
+
+            return $supplier->company_name ?: (trim($supplier->first_name.' '.$supplier->last_name) ?: null);
+        });
+    }
+
+    /**
+     * @return BelongsTo<Contact, $this>
+     */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class);
+    }
+
+    /**
+     * @return HasMany<PassiveInvoiceLine, $this>
+     */
+    public function lines(): HasMany
+    {
+        return $this->hasMany(PassiveInvoiceLine::class)->orderBy('line_number');
+    }
+
+    /**
+     * @return HasMany<SupplierPayment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(SupplierPayment::class);
+    }
+}

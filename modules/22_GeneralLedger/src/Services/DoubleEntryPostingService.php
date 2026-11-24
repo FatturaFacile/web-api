@@ -1,0 +1,800 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\GeneralLedger\Services;
+
+use Carbon\CarbonImmutable;
+use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
+use Enterprise\EventBus\Services\EventDispatcher;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
+use Modules\GeneralLedger\Enums\PostingAccountRole;
+use Modules\GeneralLedger\Events\BankPostingReadyEvent;
+use Modules\GeneralLedger\Events\JournalPostedEvent;
+use Modules\GeneralLedger\Events\JournalReversedEvent;
+use Modules\GeneralLedger\Events\PayableReadyEvent;
+use Modules\GeneralLedger\Events\ReceivableReadyEvent;
+use Modules\GeneralLedger\Exceptions\FiscalPeriodException;
+use Modules\GeneralLedger\Exceptions\LedgerConflictException;
+use Modules\GeneralLedger\Exceptions\LedgerPostingException;
+use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Models\CustomerLedger;
+use Modules\GeneralLedger\Models\FiscalPeriod;
+use Modules\GeneralLedger\Models\JournalEntry;
+use Modules\GeneralLedger\Models\JournalLine;
+use Modules\GeneralLedger\Models\SupplierLedger;
+use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
+use Modules\GeneralLedger\Services\Tax\VatLedgerReader;
+use RoundingMode;
+
+/**
+ * The one way into the journal. Every line keeps its amounts in the transaction currency (`debit_amount`,
+ * `credit_amount`, `currency`, `exchange_rate`) and gets its debit and credit in the accounting (functional) currency
+ * of the tenant (`functional_debit`, `functional_credit`), which is what every balance and report sums:
+ *
+ * - a line in the accounting currency (or without a currency) has rate 1 and the same amounts;
+ * - a line in another currency is converted at the rate the caller states (accounting units per foreign unit, as the
+ *   documents freeze it) or, when it states none, at the rate of the exchange-rate service on the posting date; without
+ *   either the posting is refused: no rate is assumed;
+ * - each functional amount is rounded to the 4 decimals of the ledger.
+ *
+ * An entry must balance in the accounting currency. Lines all in one currency must also balance exactly in that
+ * currency, as before. When the per-line conversion leaves a residual of at most 0.01 the entry gets a rounding line in
+ * the accounting currency on the rounding account of the default posting accounts (PostingAccountResolver); a bigger
+ * residual, or a residual without a rounding account, refuses the posting.
+ */
+final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterface
+{
+    /** The widest conversion residual of one entry that a rounding line may absorb. */
+    public const string MAX_CONVERSION_ROUNDING = '0.01';
+
+    private const string UNBALANCED = 'Journal entry lines must balance with positive debit/credit values.';
+
+    public function __construct(
+        private readonly EventDispatcher $dispatcher,
+        private readonly AuditLedgerInterface $auditLedger,
+        private readonly PostingAccountResolver $postingAccounts = new PostingAccountResolver,
+        private readonly AccountingExchangeRate $exchangeRates = new AccountingExchangeRate,
+    ) {}
+
+    /**
+     * Whether the lines can make an entry: no negative amount, something to post, and balanced. Lines all in one
+     * currency (or without currency) must balance exactly in it; lines in several currencies must balance once
+     * converted at their stated rates, up to the rounding the posting absorbs. The posting itself checks again with the
+     * accounting currency of the tenant and the rates of the exchange-rate service.
+     */
+    public function validateBalance(array $lines): bool
+    {
+        if (empty($lines)) {
+            return false;
+        }
+
+        $totalDebit = '0';
+        $totalCredit = '0';
+        $functionalDebit = '0';
+        $functionalCredit = '0';
+        $currencies = [];
+
+        foreach ($lines as $line) {
+            $debit = $this->ledgerAmount($line['debit_amount'] ?? 0);
+            $credit = $this->ledgerAmount($line['credit_amount'] ?? 0);
+
+            if (Decimal::isNegative($debit) || Decimal::isNegative($credit)) {
+                return false;
+            }
+
+            $rate = $this->exchangeRate($line['exchange_rate'] ?? null) ?? '1.000000';
+            $currencies[strtoupper((string) ($line['currency'] ?? ''))] = true;
+            $totalDebit = Decimal::add($totalDebit, $debit);
+            $totalCredit = Decimal::add($totalCredit, $credit);
+            $functionalDebit = Decimal::add($functionalDebit, $this->ledgerAmount(Decimal::mul($debit, $rate)));
+            $functionalCredit = Decimal::add($functionalCredit, $this->ledgerAmount(Decimal::mul($credit, $rate)));
+        }
+
+        if (count($currencies) <= 1) {
+            return Decimal::compare($totalDebit, $totalCredit) === 0 && Decimal::isPositive($totalDebit);
+        }
+
+        return Decimal::compare(Decimal::abs(Decimal::sub($functionalDebit, $functionalCredit)), self::MAX_CONVERSION_ROUNDING) <= 0
+            && Decimal::isPositive($functionalDebit);
+    }
+
+    public function createAndPost(array $data, ?string $actorUserId = null): JournalEntry
+    {
+        if (($data['journal_type'] ?? '') === 'closing') {
+            throw new LedgerPostingException('Closing entries are generated only by the fiscal year closing.');
+        }
+
+        return $this->persist($data, $actorUserId, false);
+    }
+
+    public function postYearEndClosing(array $data, string $actorUserId): JournalEntry
+    {
+        return $this->persist(['journal_type' => 'closing'] + $data, $actorUserId, true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function persist(array $data, ?string $actorUserId, bool $isYearEndClosing): JournalEntry
+    {
+        $data['company_id'] = ! empty($data['company_id']) ? $data['company_id'] : null;
+        $actorUuid = ! empty($actorUserId) ? (Str::isUuid($actorUserId) ? $actorUserId : (string) Str::uuid7()) : null;
+
+        return DB::transaction(function () use ($data, $actorUuid, $isYearEndClosing) {
+            $lines = $data['lines'] ?? [];
+
+            if (! is_array($lines) || $lines === []) {
+                throw new LedgerPostingException(self::UNBALANCED);
+            }
+
+            $fiscalPeriod = $this->sharedLockedPeriod((string) $data['fiscal_period_id']);
+
+            if ((string) $fiscalPeriod->tenant_id !== (string) $data['tenant_id']) {
+                throw FiscalPeriodException::foreignPeriod((string) $fiscalPeriod->period_name);
+            }
+
+            $postingDate = isset($data['posting_date'])
+                ? CarbonImmutable::parse($data['posting_date'])->toDateString()
+                : $this->dateWithin($fiscalPeriod);
+            $this->assertDateInPeriod($postingDate, $fiscalPeriod);
+
+            if ($fiscalPeriod->isLockedFor('GL') && ! $isYearEndClosing) {
+                throw new LedgerPostingException("Fiscal period [{$fiscalPeriod->period_name}] is locked for General Ledger postings.");
+            }
+
+            $lines = $this->inAccountingCurrency((string) $data['tenant_id'], $lines, $postingDate);
+
+            $totalAmount = '0';
+            foreach ($lines as $line) {
+                $totalAmount = Decimal::add($totalAmount, $line['functional_debit']);
+            }
+
+            $entry = JournalEntry::create([
+                'id' => (string) Str::uuid7(),
+                'tenant_id' => $data['tenant_id'],
+                'company_id' => $data['company_id'] ?? null,
+                'batch_id' => $data['batch_id'] ?? null,
+                'fiscal_period_id' => $fiscalPeriod->id,
+                'entry_number' => $data['entry_number'] ?? 'JE-'.date('Ymd').'-'.strtoupper(Str::random(6)),
+                'posting_date' => $postingDate,
+                'document_date' => $data['document_date'] ?? $postingDate,
+                'ledger_type' => $data['ledger_type'] ?? 'statutory',
+                'journal_type' => $data['journal_type'] ?? 'standard',
+                'description' => $data['description'] ?? 'Journal Entry',
+                'source_document_type' => $data['source_document_type'] ?? null,
+                'source_document_id' => $data['source_document_id'] ?? null,
+                'document_number' => $data['document_number'] ?? null,
+                'workflow_instance_id' => $data['workflow_instance_id'] ?? null,
+                'recurring_journal_id' => $data['recurring_journal_id'] ?? null,
+                'auto_reverse_on' => isset($data['auto_reverse_on']) ? CarbonImmutable::parse($data['auto_reverse_on'])->toDateString() : null,
+                'status' => $data['status'] ?? 'posted',
+                'total_amount' => $this->ledgerAmount($totalAmount),
+                'created_by' => $actorUuid,
+                'posted_at' => ($data['status'] ?? 'posted') === 'posted' ? now() : null,
+                'posted_by' => ($data['status'] ?? 'posted') === 'posted' ? $actorUuid : null,
+            ]);
+
+            $lineNumber = 1;
+            foreach ($lines as $line) {
+                $account = $this->tenantAccount((string) $entry->tenant_id, (string) $line['account_id']);
+                $debit = $line['debit_amount'];
+                $credit = $line['credit_amount'];
+                $currency = $line['currency'];
+                $rate = $line['exchange_rate'];
+                $functionalAmt = Decimal::isPositive($debit) ? $line['functional_debit'] : $line['functional_credit'];
+
+                $journalLine = JournalLine::create([
+                    'id' => (string) Str::uuid7(),
+                    'tenant_id' => $entry->tenant_id,
+                    'journal_entry_id' => $entry->id,
+                    'posting_date' => $entry->posting_date,
+                    'line_number' => $lineNumber++,
+                    'account_id' => $account->id,
+                    'cost_center_id' => $line['cost_center_id'] ?? null,
+                    'profit_center_id' => $line['profit_center_id'] ?? null,
+                    'project_id' => $line['project_id'] ?? null,
+                    'partner_type' => $line['partner_type'] ?? null,
+                    'partner_id' => $line['partner_id'] ?? null,
+                    'description' => $line['description'] ?? $entry->description,
+                    'debit_amount' => $debit,
+                    'credit_amount' => $credit,
+                    'currency' => $currency,
+                    'exchange_rate' => $rate,
+                    'amount_in_functional_currency' => $functionalAmt,
+                    'functional_debit' => $line['functional_debit'],
+                    'functional_credit' => $line['functional_credit'],
+                    'vat_code_id' => $line['vat_code_id'] ?? null,
+                    'vat_base_amount' => $this->ledgerAmount($line['vat_base_amount'] ?? 0),
+                    'vat_tax_amount' => $this->ledgerAmount($line['vat_tax_amount'] ?? 0),
+                    'vat_rate_percent' => $line['vat_rate_percent'] ?? null,
+                    'vat_treatment' => $line['vat_treatment'] ?? null,
+                    'is_cleared' => (bool) ($line['is_cleared'] ?? false) || ! empty($line['settles_entry_id']),
+                    'clearing_reference' => $line['settles_entry_id'] ?? $line['clearing_reference'] ?? null,
+                    'competence_start_date' => $line['competence_start_date'] ?? null,
+                    'competence_end_date' => $line['competence_end_date'] ?? null,
+                ]);
+
+                // Subledger & Treasury integrations
+                if ($entry->status === 'posted') {
+                    $this->processSubledgerAndTreasury($entry, $journalLine, $account, $line['due_date'] ?? null, (bool) ($data['bank_balance_managed'] ?? false));
+                    $this->settleOpenItems($entry, $journalLine, $line['settles_entry_id'] ?? null);
+                }
+            }
+
+            if ($entry->status === 'posted') {
+                $this->auditLedger->record(
+                    action: 'created',
+                    model: $entry,
+                    payloadBefore: null,
+                    payloadAfter: $entry->toArray(),
+                    moduleCode: 'MODULE_22_GENERAL_LEDGER'
+                );
+
+                $event = new JournalPostedEvent(
+                    journalEntryId: (string) $entry->id,
+                    entryNumber: (string) $entry->entry_number,
+                    fiscalPeriodId: (string) $entry->fiscal_period_id,
+                    totalAmount: (float) $entry->total_amount,
+                    ledgerType: (string) $entry->ledger_type,
+                    journalType: (string) $entry->journal_type,
+                    postingDate: (string) $entry->posting_date,
+                    tenantId: (string) $entry->tenant_id,
+                    companyId: (string) ($entry->company_id ?? '')
+                );
+
+                $this->dispatcher->publish($event);
+                event($event);
+            }
+
+            return $entry->load('lines');
+        });
+    }
+
+    public function postDraft(string $journalEntryId, ?string $actorUserId = null): JournalEntry
+    {
+        $actorUuid = ! empty($actorUserId) ? (Str::isUuid($actorUserId) ? $actorUserId : (string) Str::uuid7()) : null;
+
+        return DB::transaction(function () use ($journalEntryId, $actorUuid) {
+            /** @var JournalEntry $entry */
+            $entry = JournalEntry::where('id', $journalEntryId)->lockForUpdate()->firstOrFail();
+
+            if ($entry->status === 'posted') {
+                return $entry;
+            }
+
+            if (! in_array($entry->status, ['draft', 'pending_approval'], true)) {
+                throw new LedgerConflictException("Journal entry in status [{$entry->status}] cannot be posted: only drafts and entries waiting for approval can.");
+            }
+
+            $fiscalPeriod = $this->sharedLockedPeriod((string) $entry->fiscal_period_id);
+            $this->assertDateInPeriod(CarbonImmutable::parse($entry->posting_date)->toDateString(), $fiscalPeriod);
+
+            if ($fiscalPeriod->isLockedFor('GL')) {
+                throw new LedgerPostingException("Fiscal period [{$fiscalPeriod->period_name}] is locked for postings.");
+            }
+
+            if (! $entry->isBalanced()) {
+                throw new LedgerPostingException('Journal entry lines must balance before posting.');
+            }
+
+            $before = $entry->toArray();
+
+            $entry->update([
+                'status' => 'posted',
+                'posted_at' => now(),
+                'posted_by' => $actorUuid,
+            ]);
+
+            foreach ($entry->lines as $line) {
+                $account = ChartOfAccount::find($line->account_id);
+                if ($account) {
+                    $this->processSubledgerAndTreasury($entry, $line, $account);
+                }
+            }
+
+            $this->auditLedger->record(
+                action: 'posted',
+                model: $entry,
+                payloadBefore: $before,
+                payloadAfter: $entry->toArray(),
+                moduleCode: 'MODULE_22_GENERAL_LEDGER'
+            );
+
+            $event = new JournalPostedEvent(
+                journalEntryId: (string) $entry->id,
+                entryNumber: (string) $entry->entry_number,
+                fiscalPeriodId: (string) $entry->fiscal_period_id,
+                totalAmount: (float) $entry->total_amount,
+                ledgerType: (string) $entry->ledger_type,
+                journalType: (string) $entry->journal_type,
+                postingDate: (string) $entry->posting_date,
+                tenantId: (string) $entry->tenant_id,
+                companyId: (string) ($entry->company_id ?? '')
+            );
+
+            $this->dispatcher->publish($event);
+            event($event);
+
+            return $entry;
+        });
+    }
+
+    public function reverseJournal(string $journalEntryId, string $reversalDate, ?string $reason = null, ?string $actorUserId = null, bool $bankBalanceManaged = false): JournalEntry
+    {
+        $actorUuid = ! empty($actorUserId) ? (Str::isUuid($actorUserId) ? $actorUserId : (string) Str::uuid7()) : null;
+
+        return DB::transaction(function () use ($journalEntryId, $reversalDate, $reason, $actorUuid, $bankBalanceManaged) {
+            /** @var JournalEntry $original */
+            $original = JournalEntry::where('id', $journalEntryId)->lockForUpdate()->firstOrFail();
+
+            if ($original->status !== 'posted') {
+                throw new LedgerConflictException('Only posted journal entries can be reversed.');
+            }
+
+            if (in_array($original->source_document_type, [VatLedgerReader::SOURCE_SETTLEMENT, VatLedgerReader::SOURCE_SETTLEMENT_PAYMENT], true)) {
+                throw new LedgerConflictException('The entry of a posted VAT settlement cannot be reversed: correct the next period.');
+            }
+
+            // Find target period for reversal date
+            $targetPeriod = FiscalPeriod::where('tenant_id', $original->tenant_id)
+                ->whereDate('start_date', '<=', $reversalDate)
+                ->whereDate('end_date', '>=', $reversalDate)
+                ->sharedLock()
+                ->first();
+
+            if (! $targetPeriod) {
+                throw FiscalPeriodException::missing(CarbonImmutable::parse($reversalDate)->toDateString());
+            }
+
+            if ($targetPeriod->isLockedFor('GL')) {
+                throw new LedgerPostingException("Target fiscal period [{$targetPeriod->period_name}] is locked for reversals.");
+            }
+
+            $reversalEntry = JournalEntry::create([
+                'id' => (string) Str::uuid7(),
+                'tenant_id' => $original->tenant_id,
+                'company_id' => $original->company_id,
+                'batch_id' => $original->batch_id,
+                'fiscal_period_id' => $targetPeriod->id,
+                'entry_number' => 'REV-'.$original->entry_number,
+                'posting_date' => $reversalDate,
+                'document_date' => $reversalDate,
+                'ledger_type' => $original->ledger_type,
+                'journal_type' => 'reversing',
+                'reversal_journal_entry_id' => $original->id,
+                'description' => 'Reversal of '.$original->entry_number.($reason ? ': '.$reason : ''),
+                'source_document_type' => $original->source_document_type,
+                'source_document_id' => $original->source_document_id,
+                'document_number' => $original->document_number,
+                'status' => 'posted',
+                'total_amount' => $original->total_amount,
+                'created_by' => $actorUuid,
+                'posted_at' => now(),
+                'posted_by' => $actorUuid,
+            ]);
+
+            $lineNum = 1;
+            foreach ($original->lines as $line) {
+                $reversalLine = JournalLine::create([
+                    'id' => (string) Str::uuid7(),
+                    'tenant_id' => $original->tenant_id,
+                    'journal_entry_id' => $reversalEntry->id,
+                    'posting_date' => $reversalDate,
+                    'line_number' => $lineNum++,
+                    'account_id' => $line->account_id,
+                    'cost_center_id' => $line->cost_center_id,
+                    'profit_center_id' => $line->profit_center_id,
+                    'project_id' => $line->project_id,
+                    'partner_type' => $line->partner_type,
+                    'partner_id' => $line->partner_id,
+                    'description' => 'Reversal: '.$line->description,
+                    // Swap Dr and Cr
+                    'debit_amount' => $line->credit_amount,
+                    'credit_amount' => $line->debit_amount,
+                    'currency' => $line->currency,
+                    'exchange_rate' => $line->exchange_rate,
+                    'amount_in_functional_currency' => $line->amount_in_functional_currency,
+                    'functional_debit' => $line->functional_credit,
+                    'functional_credit' => $line->functional_debit,
+                    'vat_code_id' => $line->vat_code_id,
+                    'vat_base_amount' => $line->vat_base_amount,
+                    'vat_tax_amount' => $line->vat_tax_amount,
+                    'vat_rate_percent' => $line->vat_rate_percent,
+                    'vat_treatment' => $line->vat_treatment,
+                    'is_cleared' => true,
+                    'clearing_reference' => mb_substr('REV-'.$original->entry_number, 0, 50),
+                ]);
+
+                $this->reverseSubledger($original, $reversalEntry, $line, $reversalLine);
+
+                $account = ChartOfAccount::find($line->account_id);
+
+                if ($account !== null && ! $bankBalanceManaged) {
+                    $this->emitBankPosting($reversalEntry, $reversalLine, $account);
+                }
+            }
+
+            $before = $original->toArray();
+            $original->update([
+                'status' => 'reversed',
+                'reversal_date' => $reversalDate,
+                'reversal_journal_entry_id' => $reversalEntry->id,
+                'reversed_at' => now(),
+                'reversed_by' => $actorUuid,
+            ]);
+
+            $this->auditLedger->record(
+                action: 'reversed',
+                model: $original,
+                payloadBefore: $before,
+                payloadAfter: $original->toArray(),
+                moduleCode: 'MODULE_22_GENERAL_LEDGER'
+            );
+
+            $event = new JournalReversedEvent(
+                originalJournalEntryId: (string) $original->id,
+                reversalJournalEntryId: (string) $reversalEntry->id,
+                reversalEntryNumber: (string) $reversalEntry->entry_number,
+                totalAmount: (float) $original->total_amount,
+                reversalDate: $reversalDate,
+                tenantId: (string) $original->tenant_id,
+                companyId: (string) ($original->company_id ?? '')
+            );
+
+            $this->dispatcher->publish($event);
+            event($event);
+
+            return $reversalEntry->load('lines');
+        });
+    }
+
+    /**
+     * Amount at the scale of the ledger columns. Floats are read at that scale, so their binary noise never reaches
+     * the comparison.
+     */
+    private function ledgerAmount(mixed $value): string
+    {
+        $text = is_float($value) ? number_format($value, 4, '.', '') : (string) ($value ?? '0');
+
+        return bcround(Decimal::normalize($text === '' ? '0' : $text), 4, RoundingMode::HalfAwayFromZero);
+    }
+
+    /**
+     * The account of a line, read in the chart of accounts of the entry's tenant. The posting may run in a console or
+     * queue context where no tenant scope applies, so the tenant is checked explicitly: an account of another tenant
+     * never receives a line.
+     *
+     * @throws LedgerPostingException when the account does not exist in the tenant's chart of accounts
+     */
+    private function tenantAccount(string $tenantId, string $accountId): ChartOfAccount
+    {
+        $account = ChartOfAccount::withoutGlobalScopes()->whereKey($accountId)->whereNull('deleted_at')->first();
+
+        if ($account === null || (string) $account->tenant_id !== $tenantId) {
+            throw new LedgerPostingException("Ledger account [{$accountId}] does not belong to the chart of accounts of this tenant.");
+        }
+
+        return $account;
+    }
+
+    /**
+     * Exchange rate stated on a line at the scale of the column (6 decimals): accounting-currency units per unit of the
+     * line currency. Null when the line states none, or a rate that is not positive.
+     */
+    private function exchangeRate(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $text = is_float($value) ? number_format($value, 6, '.', '') : (string) $value;
+        $rate = bcround(Decimal::normalize($text), 6, RoundingMode::HalfAwayFromZero);
+
+        return Decimal::isPositive($rate) ? $rate : null;
+    }
+
+    /**
+     * The lines of an entry with their currency, rate and functional debit and credit resolved, plus the rounding line
+     * the conversion needs, if any (see the class description).
+     *
+     * @param  array<int, array<string, mixed>>  $lines
+     * @return list<array<string, mixed>>
+     *
+     * @throws LedgerPostingException when a foreign line has no rate, the lines do not balance, or the conversion
+     *                                residual is too wide or has no rounding account to go to
+     */
+    private function inAccountingCurrency(string $tenantId, array $lines, string $postingDate): array
+    {
+        $accounting = TenantAccountingCurrency::of($tenantId);
+        $resolved = [];
+        $currencies = [];
+        $totals = ['debit' => '0', 'credit' => '0', 'functional_debit' => '0', 'functional_credit' => '0'];
+
+        foreach ($lines as $line) {
+            $debit = $this->ledgerAmount($line['debit_amount'] ?? 0);
+            $credit = $this->ledgerAmount($line['credit_amount'] ?? 0);
+
+            if (Decimal::isNegative($debit) || Decimal::isNegative($credit)) {
+                throw new LedgerPostingException(self::UNBALANCED);
+            }
+
+            $currency = strtoupper(trim((string) ($line['currency'] ?? '')));
+            $currency = $currency !== '' ? $currency : $accounting;
+
+            if ($currency === $accounting) {
+                $rate = '1.000000';
+                $functionalDebit = $debit;
+                $functionalCredit = $credit;
+            } else {
+                $rate = $this->exchangeRate($line['exchange_rate'] ?? null)
+                    ?? $this->exchangeRates->rateOn($tenantId, $currency, $postingDate)
+                    ?? throw new LedgerPostingException("No exchange rate to convert {$currency} into the accounting currency {$accounting} on {$postingDate}: state the rate of the line or synchronise the exchange rates.");
+                $functionalDebit = $this->ledgerAmount(Decimal::mul($debit, $rate));
+                $functionalCredit = $this->ledgerAmount(Decimal::mul($credit, $rate));
+            }
+
+            $currencies[$currency] = true;
+            $totals['debit'] = Decimal::add($totals['debit'], $debit);
+            $totals['credit'] = Decimal::add($totals['credit'], $credit);
+            $totals['functional_debit'] = Decimal::add($totals['functional_debit'], $functionalDebit);
+            $totals['functional_credit'] = Decimal::add($totals['functional_credit'], $functionalCredit);
+
+            $resolved[] = array_merge($line, [
+                'debit_amount' => $debit,
+                'credit_amount' => $credit,
+                'currency' => $currency,
+                'exchange_rate' => $rate,
+                'functional_debit' => $functionalDebit,
+                'functional_credit' => $functionalCredit,
+            ]);
+        }
+
+        if (! Decimal::isPositive($totals['functional_debit']) || (count($currencies) === 1 && Decimal::compare($totals['debit'], $totals['credit']) !== 0)) {
+            throw new LedgerPostingException(self::UNBALANCED);
+        }
+
+        $residual = Decimal::sub($totals['functional_debit'], $totals['functional_credit']);
+
+        if (Decimal::isZero($residual)) {
+            return $resolved;
+        }
+
+        if (Decimal::compare(Decimal::abs($residual), self::MAX_CONVERSION_ROUNDING) > 0) {
+            throw new LedgerPostingException('Journal entry lines must balance in the accounting currency '.$accounting.': they differ by '.bcadd($residual, '0', 4).'.');
+        }
+
+        $amount = $this->ledgerAmount(Decimal::abs($residual));
+        $debitSide = Decimal::isNegative($residual);
+        $resolved[] = [
+            'account_id' => (string) $this->postingAccounts->require($tenantId, PostingAccountRole::Rounding)->id,
+            'debit_amount' => $debitSide ? $amount : '0.0000',
+            'credit_amount' => $debitSide ? '0.0000' : $amount,
+            'currency' => $accounting,
+            'exchange_rate' => '1.000000',
+            'functional_debit' => $debitSide ? $amount : '0.0000',
+            'functional_credit' => $debitSide ? '0.0000' : $amount,
+            'description' => 'Rounding of the conversion into the accounting currency',
+        ];
+
+        return $resolved;
+    }
+
+    /**
+     * A caller that names the period but no date books today, or the nearest day of that period.
+     */
+    private function dateWithin(FiscalPeriod $period): string
+    {
+        $today = now()->toDateString();
+        $start = CarbonImmutable::parse($period->start_date)->toDateString();
+        $end = CarbonImmutable::parse($period->end_date)->toDateString();
+
+        return max($start, min($today, $end));
+    }
+
+    /**
+     * The period of a posting, read FOR SHARE. The closing takes the period FOR UPDATE, so a posting waits for a closing
+     * in progress and then reads the committed status (and locks), and a closing waits for the postings in progress:
+     * a posting can no longer land in a period that is being closed. Postings of the same period do not block each other.
+     */
+    private function sharedLockedPeriod(string $fiscalPeriodId): FiscalPeriod
+    {
+        return FiscalPeriod::whereKey($fiscalPeriodId)->sharedLock()->firstOrFail();
+    }
+
+    private function assertDateInPeriod(string $postingDate, FiscalPeriod $period): void
+    {
+        $start = CarbonImmutable::parse($period->start_date)->toDateString();
+        $end = CarbonImmutable::parse($period->end_date)->toDateString();
+
+        if ($postingDate < $start || $postingDate > $end) {
+            throw FiscalPeriodException::dateOutsidePeriod($postingDate, (string) $period->period_name);
+        }
+    }
+
+    /**
+     * Closes the open item of the entry a payment settles. The item of the payment itself is then fully consumed.
+     */
+    private function settleOpenItems(JournalEntry $entry, JournalLine $line, ?string $settledEntryId): void
+    {
+        if ($settledEntryId === null || $settledEntryId === '') {
+            return;
+        }
+
+        $ledger = $line->partner_type === 'supplier' ? SupplierLedger::class : CustomerLedger::class;
+        // An entry that settles two documents (a credit note offset against an invoice) has two items: the one already
+        // settled by the first line must not be taken again for the second.
+        $paymentItem = $ledger::query()->where('journal_entry_id', $entry->id)->where('status', '!=', 'settled')->orderByDesc('created_at')->lockForUpdate()->first();
+        $item = $ledger::query()->where('journal_entry_id', $settledEntryId)->lockForUpdate()->first();
+
+        if ($paymentItem === null || $item === null) {
+            return;
+        }
+
+        $open = Decimal::add((string) $item->open_amount, (string) $paymentItem->open_amount);
+        $item->update(['open_amount' => $this->ledgerAmount($open), 'status' => Decimal::isZero($open) ? 'settled' : 'partially_paid']);
+        $paymentItem->update(['open_amount' => 0, 'status' => 'settled']);
+    }
+
+    /**
+     * Mirrors in the subledgers what the reversal does in the ledger: a reversed payment reopens the item it had
+     * settled; any other entry loses its open items, and only what had already been settled stays as a counter item.
+     */
+    private function reverseSubledger(JournalEntry $original, JournalEntry $reversal, JournalLine $line, JournalLine $reversalLine): void
+    {
+        $ledger = match ($line->partner_type) {
+            'customer' => CustomerLedger::class,
+            'supplier' => SupplierLedger::class,
+            default => null,
+        };
+
+        if ($ledger === null || $line->partner_id === null) {
+            return;
+        }
+
+        $isCustomer = $line->partner_type === 'customer';
+        $partnerColumn = $isCustomer ? 'customer_id' : 'supplier_id';
+        $counterAmount = $isCustomer
+            ? Decimal::sub((string) $line->credit_amount, (string) $line->debit_amount)
+            : Decimal::sub((string) $line->debit_amount, (string) $line->credit_amount);
+        $item = $ledger::query()->where('journal_entry_id', $original->id)->where($partnerColumn, $line->partner_id)->lockForUpdate()->first();
+        $counterOpen = $counterAmount;
+
+        if ($item !== null && $line->clearing_reference !== null && Str::isUuid($line->clearing_reference)) {
+            $settled = $ledger::query()->where('journal_entry_id', $line->clearing_reference)->lockForUpdate()->first();
+
+            if ($settled !== null) {
+                $open = Decimal::add((string) $settled->open_amount, $counterAmount);
+                $untouched = Decimal::compare($open, (string) $settled->original_amount) === 0;
+                $settled->update(['open_amount' => $this->ledgerAmount($open), 'status' => $untouched ? 'open' : (Decimal::isZero($open) ? 'settled' : 'partially_paid')]);
+                $counterOpen = '0';
+            }
+        } elseif ($item !== null) {
+            $counterOpen = Decimal::add($counterAmount, (string) $item->open_amount);
+            $item->update(['open_amount' => 0, 'status' => 'settled']);
+        }
+
+        $ledger::create([
+            'id' => (string) Str::uuid7(),
+            'tenant_id' => $reversal->tenant_id,
+            'company_id' => $reversal->company_id,
+            $partnerColumn => $line->partner_id,
+            'journal_entry_id' => $reversal->id,
+            'posting_date' => $reversal->posting_date,
+            'due_date' => $reversal->posting_date,
+            'original_amount' => $this->ledgerAmount($counterAmount),
+            'open_amount' => $this->ledgerAmount($counterOpen),
+            'currency' => $reversalLine->currency,
+            'status' => Decimal::isZero($counterOpen) ? 'settled' : 'open',
+        ]);
+    }
+
+    private function emitBankPosting(JournalEntry $entry, JournalLine $line, ChartOfAccount $account): void
+    {
+        if ($account->reconciliation_type !== 'bank' && ! str_contains(strtolower($account->name), 'bank')) {
+            return;
+        }
+
+        $isDebit = Decimal::isPositive((string) $line->debit_amount);
+        $amt = (float) ($isDebit ? (string) $line->debit_amount : (string) $line->credit_amount);
+        $dir = $isDebit ? 'debit' : 'credit';
+
+        $ev = new BankPostingReadyEvent(
+            journalLineId: (string) $line->id,
+            bankAccountId: (string) $account->id,
+            amount: $amt,
+            direction: $dir,
+            valueDate: (string) $entry->posting_date,
+            journalEntryId: (string) $entry->id,
+            tenantId: (string) $entry->tenant_id,
+            companyId: (string) ($entry->company_id ?? '')
+        );
+        $this->dispatcher->publish($ev);
+        event($ev);
+    }
+
+    private function processSubledgerAndTreasury(JournalEntry $entry, JournalLine $line, ChartOfAccount $account, ?string $dueDate = null, bool $bankBalanceManaged = false): void
+    {
+        $dueDate ??= date('Y-m-d', strtotime((string) $entry->posting_date.' +30 days'));
+
+        // 1. Accounts Receivable / Customer Subledger
+        if ($account->reconciliation_type === 'customer' || $line->partner_type === 'customer') {
+            if ($line->partner_id) {
+                $amount = Decimal::isPositive((string) $line->debit_amount) ? $this->ledgerAmount((string) $line->debit_amount) : $this->ledgerAmount(Decimal::neg((string) $line->credit_amount));
+
+                $subItem = CustomerLedger::create([
+                    'id' => (string) Str::uuid7(),
+                    'tenant_id' => $entry->tenant_id,
+                    'company_id' => $entry->company_id,
+                    'customer_id' => $line->partner_id,
+                    'journal_entry_id' => $entry->id,
+                    'posting_date' => $entry->posting_date,
+                    'due_date' => $dueDate,
+                    'original_amount' => $amount,
+                    'open_amount' => $amount,
+                    'currency' => $line->currency,
+                    'status' => 'open',
+                ]);
+
+                if (Decimal::isPositive($amount)) {
+                    $ev = new ReceivableReadyEvent(
+                        customerLedgerId: (string) $subItem->id,
+                        customerId: (string) $line->partner_id,
+                        openAmount: (float) $amount,
+                        currency: $line->currency,
+                        dueDate: (string) $subItem->due_date,
+                        journalEntryId: (string) $entry->id,
+                        tenantId: (string) $entry->tenant_id,
+                        companyId: (string) (! empty($entry->company_id) ? $entry->company_id : $entry->tenant_id)
+                    );
+                    $this->dispatcher->publish($ev);
+                    event($ev);
+                }
+            }
+        }
+
+        // 2. Accounts Payable / Supplier Subledger
+        if ($account->reconciliation_type === 'supplier' || $line->partner_type === 'supplier') {
+            if ($line->partner_id) {
+                $amount = Decimal::isPositive((string) $line->credit_amount) ? $this->ledgerAmount((string) $line->credit_amount) : $this->ledgerAmount(Decimal::neg((string) $line->debit_amount));
+
+                $subItem = SupplierLedger::create([
+                    'id' => (string) Str::uuid7(),
+                    'tenant_id' => $entry->tenant_id,
+                    'company_id' => $entry->company_id,
+                    'supplier_id' => $line->partner_id,
+                    'journal_entry_id' => $entry->id,
+                    'posting_date' => $entry->posting_date,
+                    'due_date' => $dueDate,
+                    'original_amount' => $amount,
+                    'open_amount' => $amount,
+                    'currency' => $line->currency,
+                    'status' => 'open',
+                ]);
+
+                if (Decimal::isPositive($amount)) {
+                    $ev = new PayableReadyEvent(
+                        supplierLedgerId: (string) $subItem->id,
+                        supplierId: (string) $line->partner_id,
+                        openAmount: (float) $amount,
+                        currency: $line->currency,
+                        dueDate: (string) $subItem->due_date,
+                        journalEntryId: (string) $entry->id,
+                        tenantId: (string) $entry->tenant_id,
+                        companyId: (string) (! empty($entry->company_id) ? $entry->company_id : $entry->tenant_id)
+                    );
+                    $this->dispatcher->publish($ev);
+                    event($ev);
+                }
+            }
+        }
+
+        // 3. Bank Postings / Treasury
+        if (! $bankBalanceManaged) {
+            $this->emitBankPosting($entry, $line, $account);
+        }
+    }
+}

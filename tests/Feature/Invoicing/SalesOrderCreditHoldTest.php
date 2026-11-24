@@ -1,0 +1,154 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Models\Contact;
+use App\Models\Product;
+use App\Models\Tenant;
+use App\Models\Warehouse;
+use App\Services\Inventory\StockService;
+use App\Services\Tenancy\TenantContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Modules\Invoicing\Contracts\CustomerCreditServiceInterface;
+use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
+use Modules\Invoicing\Models\DeclarationOfIntent;
+use Modules\Invoicing\Models\SalesOrderHold;
+
+uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    $this->tenant = Tenant::firstOrCreate(
+        ['id' => (string) Str::uuid7()],
+        ['name' => 'Credit Hold Test Tenant', 'legal_name' => 'Credit Hold Test Tenant Srl']
+    );
+    app(TenantContext::class)->setTenant($this->tenant);
+
+    $this->customer = Contact::firstOrCreate(
+        ['tenant_id' => (string) $this->tenant->id, 'company_name' => 'Credit Sensitive Client Srl'],
+        ['id' => (string) Str::uuid7(), 'type' => 'client', 'country' => 'IT']
+    );
+
+    $this->product = Product::firstOrCreate(
+        ['tenant_id' => (string) $this->tenant->id, 'sku' => 'PRD-CREDIT-01'],
+        ['id' => (string) Str::uuid7(), 'name' => 'High Value Server Hardware', 'sale_price' => 10000.00, 'cost_price' => 6000.00, 'tax_rate' => 22.0]
+    );
+
+    $this->orderService = app(SalesOrderServiceInterface::class);
+    $this->creditService = app(CustomerCreditServiceInterface::class);
+});
+
+test('places sales order on credit hold when order total exceeds customer credit limit', function (): void {
+    // Set a strict credit limit of 15,000 EUR
+    $this->creditService->updateCreditLimit((string) $this->customer->id, 15000.00, 'credit-manager', (string) $this->tenant->id);
+
+    // Create an order of 2 servers: 2 * 10,000 = 20,000 + 22% tax = 24,400 EUR (exceeds 15,000)
+    $order = $this->orderService->createOrder([
+        'tenant_id' => (string) $this->tenant->id,
+        'contact_id' => (string) $this->customer->id,
+        'order_number' => 'SO-CREDIT-HOLD-01',
+    ], [
+        [
+            'product_id' => (string) $this->product->id,
+            'description' => 'High Value Server Hardware',
+            'quantity' => 2.0,
+            'unit_price' => 10000.00,
+            'tax_rate' => 22.0,
+        ],
+    ]);
+
+    // Submit order -> should trigger credit check and place hold
+    $submittedOrder = $this->orderService->submitOrder($order, 'sales-rep');
+
+    expect($submittedOrder->status)->toBe('on_hold');
+    expect($submittedOrder->credit_status)->toBe('on_hold');
+    expect($submittedOrder->credit_hold_reason)->toContain('credit limit');
+
+    $activeHold = SalesOrderHold::where('sales_order_id', (string) $order->id)->where('status', 'active')->first();
+    expect($activeHold)->not->toBeNull();
+    expect($activeHold->hold_type)->toBe('credit_limit');
+});
+
+test('releases credit hold and transitions order to confirmed status', function (): void {
+    $this->creditService->updateCreditLimit((string) $this->customer->id, 10000.00, 'credit-manager', (string) $this->tenant->id);
+
+    $order = $this->orderService->createOrder([
+        'tenant_id' => (string) $this->tenant->id,
+        'contact_id' => (string) $this->customer->id,
+        'order_number' => 'SO-RELEASE-01',
+    ], [
+        [
+            'product_id' => (string) $this->product->id,
+            'description' => 'High Value Server Hardware',
+            'quantity' => 1.0,
+            'unit_price' => 10000.00,
+            'tax_rate' => 22.0,
+        ],
+    ]);
+
+    $this->orderService->submitOrder($order, 'sales-rep');
+    $hold = SalesOrderHold::where('sales_order_id', (string) $order->id)->first();
+
+    expect($hold)->not->toBeNull();
+
+    // Manager releases the hold
+    $releasedHold = $this->creditService->releaseHold($hold, 'risk-officer', 'Exception approved by CFO');
+
+    expect($releasedHold->status)->toBe('released');
+    expect($releasedHold->release_notes)->toBe('Exception approved by CFO');
+
+    $freshOrder = $order->fresh();
+    expect($freshOrder->status)->toBe('confirmed');
+    expect($freshOrder->credit_status)->toBe('approved');
+});
+
+test('reserves inventory and updates line item reservation quantities', function (): void {
+    // Reservations are made by the inventory module on the stock of a tracked product in a warehouse.
+    $warehouse = Warehouse::create(['tenant_id' => $this->tenant->id, 'code' => 'MAIN', 'name' => 'Main warehouse', 'is_primary' => true]);
+    $this->product->update(['track_inventory' => true]);
+    app(StockService::class)->record((string) $this->product->id, 'in', 5.0, null, $warehouse);
+
+    $order = $this->orderService->createOrder([
+        'tenant_id' => (string) $this->tenant->id,
+        'contact_id' => (string) $this->customer->id,
+        'order_number' => 'SO-RESERVE-01',
+    ], [
+        [
+            'product_id' => (string) $this->product->id,
+            'description' => 'High Value Server Hardware',
+            'quantity' => 3.0,
+            'unit_price' => 10000.00,
+            'tax_rate' => 22.0,
+        ],
+    ]);
+
+    $reservedOrder = $this->orderService->reserveInventory($order);
+
+    expect($reservedOrder->inventory_status)->toBe('reserved');
+    $item = $reservedOrder->items->first();
+    expect((float) $item->quantity_reserved)->toBe(3.0);
+});
+
+test('refuses to confirm an order that the plafond of the declaration of intent cannot cover', function (): void {
+    DeclarationOfIntent::create([
+        'tenant_id' => (string) $this->tenant->id,
+        'contact_id' => (string) $this->customer->id,
+        'direction' => DeclarationOfIntent::RECEIVED,
+        'protocol_number' => '2500000000000000001-000001',
+        'receipt_date' => now()->subDay()->toDateString(),
+        'year' => (int) now()->year,
+        'plafond_amount' => '5000.00',
+        'consumed_amount' => '1000.00',
+        'valid_from' => now()->subMonth()->toDateString(),
+        'valid_to' => now()->addMonth()->toDateString(),
+    ]);
+
+    $order = $this->orderService->createOrder([
+        'tenant_id' => (string) $this->tenant->id,
+        'contact_id' => (string) $this->customer->id,
+        'order_number' => 'SO-PLAFOND-01',
+    ], [['product_id' => (string) $this->product->id, 'description' => 'Server', 'quantity' => 1.0, 'unit_price' => 10000.00, 'tax_rate' => 22.0]]);
+
+    expect(fn () => $this->orderService->submitOrder($order, 'sales-rep'))->toThrow(ValidationException::class);
+});

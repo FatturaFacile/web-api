@@ -1,0 +1,188 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders\Translations;
+
+/**
+ * UI strings of the manufacturing workspace (Issue 178): plant control tower, MRP Gantt with finite-capacity rescheduling, the
+ * shop-floor kiosk and the genealogy and cost variance inspector. Each entry is [it, en, de, fr]. Placeholders are written {name}.
+ */
+final class ManufacturingCommandCenterFrontendTranslations
+{
+    /**
+     * @return array<string, array{0: string, 1: string, 2: string, 3: string}>
+     */
+    public static function definitions(): array
+    {
+        return [
+            'NAV.MFG_CONTROL_TOWER' => ['Torre di controllo', 'Plant control tower', 'Leitstand', 'Tour de contrôle'],
+            'NAV.MFG_MRP_GANTT' => ['Gantt MRP e capacità', 'MRP and capacity Gantt', 'MRP- und Kapazitäts-Gantt', 'Gantt MRP et capacité'],
+            'NAV.MFG_KIOSK' => ['Kiosk operatore', 'Operator kiosk', 'Bediener-Kiosk', 'Borne opérateur'],
+            'NAV.MFG_GENEALOGY' => ['Genealogia e varianze', 'Genealogy and variances', 'Genealogie und Abweichungen', 'Généalogie et écarts'],
+
+            'MFG_CC.TOWER_TITLE' => ['Torre di controllo dello stabilimento', 'Plant control tower', 'Leitstand der Fertigung', 'Tour de contrôle de l’usine'],
+            'MFG_CC.TOWER_SUBTITLE' => ['OEE, pipeline MTO/MTS/ATO, stato macchine, colli di bottiglia e WIP rispetto allo standard.', 'OEE, MTO/MTS/ATO pipeline, machine status, bottlenecks and WIP against standard.', 'OEE, MTO/MTS/ATO-Pipeline, Maschinenstatus, Engpässe und WIP gegenüber Standard.', 'OEE, pipeline MTO/MTS/ATO, état des machines, goulots et en-cours par rapport au standard.'],
+            'MFG_CC.WINDOW_DAYS' => ['Finestra (giorni)', 'Window (days)', 'Zeitfenster (Tage)', 'Fenêtre (jours)'],
+            'MFG_CC.LIVE_UPDATE' => ['Aggiornamento automatico', 'Live update', 'Automatische Aktualisierung', 'Mise à jour automatique'],
+            'MFG_CC.REFRESH' => ['Aggiorna', 'Refresh', 'Aktualisieren', 'Actualiser'],
+            'MFG_CC.POLLING_EVERY' => ['Aggiornamento ogni {seconds} s', 'Updating every {seconds} s', 'Aktualisierung alle {seconds} s', 'Mise à jour toutes les {seconds} s'],
+            'MFG_CC.CONNECTION_SSE' => ['Aggiornamento in tempo reale (stream del server)', 'Real-time updates (server stream)', 'Echtzeit-Aktualisierung (Server-Stream)', 'Mise à jour en temps réel (flux du serveur)'],
+            'MFG_CC.POLLING_OFF' => ['Aggiornamento automatico disattivato', 'Live update is off', 'Automatische Aktualisierung ist aus', 'Mise à jour automatique désactivée'],
+            'MFG_CC.LOAD_ERROR' => ['Impossibile caricare i dati', 'The data could not be loaded', 'Die Daten konnten nicht geladen werden', 'Les données n’ont pas pu être chargées'],
+            'MFG_CC.NO_DATA' => ['Nessun dato disponibile', 'No data available', 'Keine Daten verfügbar', 'Aucune donnée disponible'],
+            'MFG_CC.STALE_GATEWAYS' => ['{count} gateway edge non inviano dati da oltre 10 minuti', '{count} edge gateways have sent no data for over 10 minutes', '{count} Edge-Gateways haben seit über 10 Minuten keine Daten gesendet', '{count} passerelles edge n’ont envoyé aucune donnée depuis plus de 10 minutes'],
+            'MFG_CC.PIPELINE' => ['Pipeline ordini aperti', 'Open order pipeline', 'Pipeline offener Aufträge', 'Pipeline des ordres ouverts'],
+            'MFG_CC.STRATEGY_MTO' => ['MTO · su commessa', 'MTO · make to order', 'MTO · Auftragsfertigung', 'MTO · sur commande'],
+            'MFG_CC.STRATEGY_MTS' => ['MTS · a magazzino', 'MTS · make to stock', 'MTS · Lagerfertigung', 'MTS · sur stock'],
+            'MFG_CC.STRATEGY_ATO' => ['ATO · assemblaggio su ordine', 'ATO · assemble to order', 'ATO · Montage auf Auftrag', 'ATO · assemblage sur commande'],
+            'MFG_CC.OPEN_ORDERS' => ['{count} ordini rilasciati o in lavorazione', '{count} released or in-progress orders', '{count} freigegebene oder laufende Aufträge', '{count} ordres lancés ou en cours'],
+            'MFG_CC.MACHINE_MATRIX' => ['Matrice stato macchine', 'Machine status matrix', 'Maschinenstatus-Matrix', 'Matrice d’état des machines'],
+            'MFG_CC.STATE' => ['Stato', 'State', 'Status', 'État'],
+            'MFG_CC.MACHINES' => ['Macchine', 'Machines', 'Maschinen', 'Machines'],
+            'MFG_CC.MACHINE_RUNNING' => ['In produzione', 'Running', 'In Produktion', 'En production'],
+            'MFG_CC.MACHINE_SETUP' => ['Attrezzaggio', 'Setup', 'Rüsten', 'Réglage'],
+            'MFG_CC.MACHINE_IDLE' => ['Ferma', 'Idle', 'Stillstand', 'À l’arrêt'],
+            'MFG_CC.MACHINE_FAULT' => ['Guasto', 'Fault', 'Störung', 'Panne'],
+            'MFG_CC.MACHINE_MAINTENANCE' => ['Manutenzione', 'Maintenance', 'Wartung', 'Maintenance'],
+            'MFG_CC.ALERTS' => ['Allarmi', 'Alerts', 'Alarme', 'Alertes'],
+            'MFG_CC.WIP_VS_STANDARD' => ['WIP rispetto al costo standard', 'WIP against standard cost', 'WIP gegenüber Standardkosten', 'En-cours par rapport au coût standard'],
+            'MFG_CC.WIP_CHART_LABEL' => ['Valore WIP {wip} contro costo standard {standard}', 'WIP value {wip} against standard cost {standard}', 'WIP-Wert {wip} gegenüber Standardkosten {standard}', 'Valeur des en-cours {wip} contre coût standard {standard}'],
+            'MFG_CC.WIP_VALUATION' => ['Valore WIP', 'WIP valuation', 'WIP-Bewertung', 'Valorisation des en-cours'],
+            'MFG_CC.STANDARD_COST' => ['Costo standard', 'Standard cost', 'Standardkosten', 'Coût standard'],
+            'MFG_CC.VARIANCE' => ['Scostamento', 'Variance', 'Abweichung', 'Écart'],
+            'MFG_CC.BOTTLENECKS' => ['Colli di bottiglia (oltre 85%)', 'Bottlenecks (above 85%)', 'Engpässe (über 85 %)', 'Goulots (au-dessus de 85 %)'],
+            'MFG_CC.NO_BOTTLENECKS' => ['Nessun centro di lavoro sopra l’85% di utilizzo', 'No work centre above 85% utilization', 'Kein Arbeitsplatz über 85 % Auslastung', 'Aucun poste de charge au-dessus de 85 % d’utilisation'],
+            'MFG_CC.WORK_CENTER' => ['Centro di lavoro', 'Work centre', 'Arbeitsplatz', 'Poste de charge'],
+            'MFG_CC.UTILIZATION' => ['Utilizzo', 'Utilization', 'Auslastung', 'Utilisation'],
+            'MFG_CC.MRP_EXCEPTIONS' => ['Eccezioni MRP', 'MRP exceptions', 'MRP-Ausnahmen', 'Exceptions MRP'],
+            'MFG_CC.SHORTAGES_COUNT' => ['{count} carenze nell’ultima esecuzione MRP', '{count} shortages in the latest MRP run', '{count} Fehlmengen im letzten MRP-Lauf', '{count} manquants dans le dernier calcul MRP'],
+            'MFG_CC.REQUIRED_DATE' => ['Data richiesta', 'Required date', 'Bedarfsdatum', 'Date de besoin'],
+            'MFG_CC.NET_SHORTAGE' => ['Carenza netta', 'Net shortage', 'Nettofehlmenge', 'Manquant net'],
+            'MFG_CC.ACTION' => ['Azione consigliata', 'Recommended action', 'Empfohlene Maßnahme', 'Action recommandée'],
+            'MFG_CC.KPIS' => ['Indicatori della finestra', 'Window indicators', 'Kennzahlen des Zeitfensters', 'Indicateurs de la fenêtre'],
+            'MFG_CC.ORDERS_COMPLETED' => ['Ordini completati', 'Orders completed', 'Abgeschlossene Aufträge', 'Ordres terminés'],
+            'MFG_CC.ON_TIME' => ['Puntualità', 'On time', 'Termintreue', 'Ponctualité'],
+            'MFG_CC.LEAD_TIME_DAYS' => ['Lead time medio (giorni)', 'Average lead time (days)', 'Durchschnittliche Durchlaufzeit (Tage)', 'Délai moyen (jours)'],
+            'MFG_CC.SCRAP_RATE' => ['Tasso di scarto', 'Scrap rate', 'Ausschussquote', 'Taux de rebut'],
+            'MFG_CC.CLOSED_VARIANCE' => ['Scostamento ordini chiusi', 'Variance of closed orders', 'Abweichung geschlossener Aufträge', 'Écart des ordres clôturés'],
+            'MFG_CC.OEE' => ['OEE per centro di lavoro', 'OEE per work centre', 'OEE je Arbeitsplatz', 'OEE par poste de charge'],
+            'MFG_CC.OEE_GAUGE_LABEL' => ['OEE di {code}: {value}%', 'OEE of {code}: {value}%', 'OEE von {code}: {value} %', 'OEE de {code} : {value} %'],
+            'MFG_CC.NO_OEE' => ['Nessun dato OEE nella finestra', 'No OEE data in the window', 'Keine OEE-Daten im Zeitfenster', 'Aucune donnée OEE dans la fenêtre'],
+
+            'MFG_CC.GANTT_TITLE' => ['Gantt MRP e capacità finita', 'MRP and finite-capacity Gantt', 'MRP- und Kapazitäts-Gantt', 'Gantt MRP et capacité finie'],
+            'MFG_CC.GANTT_SUBTITLE' => ['Trascina un ordine per riprogrammarlo: lo spostamento viene controllato sulla capacità dei centri di lavoro.', 'Drag an order to reschedule it: the move is checked against the capacity of its work centres.', 'Auftrag ziehen, um ihn umzuplanen: die Verschiebung wird gegen die Kapazität der Arbeitsplätze geprüft.', 'Faites glisser un ordre pour le reprogrammer : le déplacement est vérifié sur la capacité des postes de charge.'],
+            'MFG_CC.GANTT_KEYBOARD_HELP' => ['Con la tastiera: frecce sinistra e destra spostano di un giorno, Invio conferma, Esc annulla.', 'With the keyboard: left and right arrows move by one day, Enter confirms, Escape cancels.', 'Mit der Tastatur: Pfeil links und rechts verschieben um einen Tag, Eingabe bestätigt, Escape bricht ab.', 'Au clavier : les flèches gauche et droite déplacent d’un jour, Entrée confirme, Échap annule.'],
+            'MFG_CC.LEGEND_PLANNED_ORDER' => ['Ordine pianificato', 'Planned order', 'Geplanter Auftrag', 'Ordre planifié'],
+            'MFG_CC.LEGEND_RELEASED_ORDER' => ['Ordine rilasciato', 'Released order', 'Freigegebener Auftrag', 'Ordre lancé'],
+            'MFG_CC.LEGEND_MRP' => ['Ordine pianificato MRP (trascinabile)', 'MRP planned order (draggable)', 'MRP-Planauftrag (verschiebbar)', 'Ordre planifié MRP (déplaçable)'],
+            'MFG_CC.BOOK_ANYWAY' => ['Registra comunque (sovraccarico)', 'Book anyway (overload)', 'Trotzdem buchen (Überlast)', 'Enregistrer quand même (surcharge)'],
+            'MFG_CC.TODAY' => ['Oggi', 'Today', 'Heute', 'Aujourd’hui'],
+            'MFG_CC.ORDER' => ['Ordine', 'Order', 'Auftrag', 'Ordre'],
+            'MFG_CC.NO_ORDERS' => ['Nessun ordine da pianificare', 'No orders to schedule', 'Keine Aufträge zu planen', 'Aucun ordre à planifier'],
+            'MFG_CC.RESCHEDULED' => ['Ordine riprogrammato', 'Order rescheduled', 'Auftrag umgeplant', 'Ordre reprogrammé'],
+            'MFG_CC.RESCHEDULE_REFUSED' => ['Spostamento rifiutato', 'Move refused', 'Verschiebung abgelehnt', 'Déplacement refusé'],
+            'MFG_CC.RESCHEDULE_ERROR' => ['Impossibile riprogrammare l’ordine', 'The order could not be rescheduled', 'Der Auftrag konnte nicht umgeplant werden', 'L’ordre n’a pas pu être reprogrammé'],
+            'MFG_CC.ISSUE_STATUS' => ['Solo gli ordini pianificati o rilasciati possono essere spostati.', 'Only planned or released orders can be moved.', 'Nur geplante oder freigegebene Aufträge können verschoben werden.', 'Seuls les ordres planifiés ou lancés peuvent être déplacés.'],
+            'MFG_CC.ISSUE_RANGE' => ['La data di fine precede la data di inizio.', 'The end date is before the start date.', 'Das Enddatum liegt vor dem Startdatum.', 'La date de fin précède la date de début.'],
+            'MFG_CC.ISSUE_OVERLOAD' => ['Sovraccarico su {center}: servono {required} h, ne restano {free} h.', 'Overload on {center}: {required} h needed, {free} h free.', 'Überlast auf {center}: {required} h benötigt, {free} h frei.', 'Surcharge sur {center} : {required} h nécessaires, {free} h libres.'],
+            'MFG_CC.ISSUE_NO_CAPACITY' => ['Nessuna capacità disponibile su {center} in questo periodo (servono {required} h).', 'No capacity available on {center} in this period ({required} h needed).', 'Keine Kapazität auf {center} in diesem Zeitraum ({required} h benötigt).', 'Aucune capacité disponible sur {center} pour cette période ({required} h nécessaires).'],
+            'MFG_CC.PLANNED_ORDERS' => ['Ordini pianificati MRP', 'MRP planned orders', 'MRP-Planaufträge', 'Ordres planifiés MRP'],
+            'MFG_CC.NO_PLANNED' => ['Nessun ordine pianificato aperto', 'No open planned orders', 'Keine offenen Planaufträge', 'Aucun ordre planifié ouvert'],
+            'MFG_CC.BATCH_RELEASE' => ['Converti e rilascia ({count})', 'Convert and release ({count})', 'Umwandeln und freigeben ({count})', 'Convertir et lancer ({count})'],
+            'MFG_CC.SELECT_ALL' => ['Seleziona tutti gli ordini di produzione', 'Select all make orders', 'Alle Fertigungsaufträge auswählen', 'Sélectionner tous les ordres de fabrication'],
+            'MFG_CC.SELECT' => ['Seleziona', 'Select', 'Auswählen', 'Sélectionner'],
+            'MFG_CC.PLANNED_ORDER' => ['Ordine pianificato', 'Planned order', 'Planauftrag', 'Ordre planifié'],
+            'MFG_CC.ITEM' => ['Articolo', 'Item', 'Artikel', 'Article'],
+            'MFG_CC.TYPE' => ['Tipo', 'Type', 'Typ', 'Type'],
+            'MFG_CC.MAKE' => ['Produzione', 'Make', 'Fertigung', 'Fabrication'],
+            'MFG_CC.BUY' => ['Acquisto', 'Buy', 'Einkauf', 'Achat'],
+            'MFG_CC.QUANTITY' => ['Quantità', 'Quantity', 'Menge', 'Quantité'],
+            'MFG_CC.START' => ['Inizio', 'Start', 'Beginn', 'Début'],
+            'MFG_CC.DUE' => ['Scadenza', 'Due', 'Fällig', 'Échéance'],
+            'MFG_CC.PEGGING' => ['Pegging', 'Pegging', 'Pegging', 'Pegging'],
+            'MFG_CC.SHORTAGE_OF' => ['carenza del', 'shortage on', 'Fehlmenge am', 'manquant au'],
+            'MFG_CC.BATCH_RESULT' => ['Esito del rilascio in blocco', 'Batch release result', 'Ergebnis der Sammelfreigabe', 'Résultat du lancement groupé'],
+            'MFG_CC.BATCH_OK' => ['convertito e rilasciato', 'converted and released', 'umgewandelt und freigegeben', 'converti et lancé'],
+            'MFG_CC.BATCH_CONVERTED_ONLY' => ['convertito ma non rilasciato', 'converted but not released', 'umgewandelt, aber nicht freigegeben', 'converti mais non lancé'],
+            'MFG_CC.BATCH_FAILED' => ['non convertito', 'not converted', 'nicht umgewandelt', 'non converti'],
+            'MFG_CC.BATCH_SUMMARY' => ['{ok} ordini rilasciati su {total}', '{ok} of {total} orders released', '{ok} von {total} Aufträgen freigegeben', '{ok} ordres lancés sur {total}'],
+            'MFG_CC.SHORTAGES' => ['Carenze MRP', 'MRP shortages', 'MRP-Fehlmengen', 'Manquants MRP'],
+
+            'MFG_CC.KIOSK_TITLE' => ['Kiosk operatore', 'Operator kiosk', 'Bediener-Kiosk', 'Borne opérateur'],
+            'MFG_CC.KIOSK_PICK_ORDER' => ['Scegli l’ordine di produzione', 'Pick the production order', 'Fertigungsauftrag wählen', 'Choisissez l’ordre de fabrication'],
+            'MFG_CC.KIOSK_PICK_OPERATION' => ['Scegli l’operazione', 'Pick the operation', 'Arbeitsgang wählen', 'Choisissez l’opération'],
+            'MFG_CC.KIOSK_NO_ORDERS' => ['Nessun ordine rilasciato o in lavorazione', 'No released or in-progress orders', 'Keine freigegebenen oder laufenden Aufträge', 'Aucun ordre lancé ou en cours'],
+            'MFG_CC.KIOSK_BACK' => ['Indietro', 'Back', 'Zurück', 'Retour'],
+            'MFG_CC.KIOSK_TIMER' => ['Tempo di lavorazione', 'Run time', 'Laufzeit', 'Temps de production'],
+            'MFG_CC.KIOSK_START' => ['Avvia', 'Start', 'Start', 'Démarrer'],
+            'MFG_CC.KIOSK_PAUSE' => ['Pausa', 'Pause', 'Pause', 'Pause'],
+            'MFG_CC.KIOSK_GOOD' => ['Pezzi buoni', 'Good pieces', 'Gutteile', 'Pièces bonnes'],
+            'MFG_CC.KIOSK_SCRAP' => ['Pezzi di scarto', 'Scrap pieces', 'Ausschussteile', 'Pièces rebutées'],
+            'MFG_CC.KIOSK_MINUS_ONE' => ['Togli uno', 'Remove one', 'Eins abziehen', 'Retirer un'],
+            'MFG_CC.KIOSK_PLUS_ONE' => ['Aggiungi uno', 'Add one', 'Eins hinzufügen', 'Ajouter un'],
+            'MFG_CC.KIOSK_PLUS_TEN' => ['Aggiungi dieci', 'Add ten', 'Zehn hinzufügen', 'Ajouter dix'],
+            'MFG_CC.KIOSK_SCRAP_REASON' => ['Motivo dello scarto', 'Scrap reason', 'Ausschussgrund', 'Motif du rebut'],
+            'MFG_CC.KIOSK_REASON_DEFECT' => ['Difetto', 'Defect', 'Fehler', 'Défaut'],
+            'MFG_CC.KIOSK_REASON_MATERIAL' => ['Materiale', 'Material', 'Material', 'Matière'],
+            'MFG_CC.KIOSK_REASON_SETUP' => ['Attrezzaggio', 'Setup', 'Rüsten', 'Réglage'],
+            'MFG_CC.KIOSK_REASON_OTHER' => ['Altro', 'Other', 'Sonstiges', 'Autre'],
+            'MFG_CC.KIOSK_FINAL' => ['Ultima conferma dell’operazione', 'Final confirmation of the operation', 'Letzte Rückmeldung des Arbeitsgangs', 'Dernière confirmation de l’opération'],
+            'MFG_CC.KIOSK_BOOK' => ['Registra', 'Book', 'Buchen', 'Enregistrer'],
+            'MFG_CC.KIOSK_RETRY' => ['Riprova la registrazione', 'Retry the booking', 'Buchung wiederholen', 'Réessayer l’enregistrement'],
+            'MFG_CC.KIOSK_BOOKED' => ['Conferma registrata', 'Confirmation booked', 'Rückmeldung gebucht', 'Confirmation enregistrée'],
+            'MFG_CC.KIOSK_REPLAYED' => ['Conferma già registrata: nessuna doppia registrazione', 'Confirmation already booked: nothing was booked twice', 'Rückmeldung bereits gebucht: nichts doppelt gebucht', 'Confirmation déjà enregistrée : rien n’a été enregistré deux fois'],
+            'MFG_CC.KIOSK_BOOK_FAILED' => ['Registrazione non riuscita; premi di nuovo per riprovare senza doppioni', 'Booking failed; press again to retry without duplicates', 'Buchung fehlgeschlagen; erneut drücken, um ohne Doppelbuchung zu wiederholen', 'Échec de l’enregistrement ; appuyez à nouveau pour réessayer sans doublon'],
+            'MFG_CC.KIOSK_START_NOT_RECORDED' => ['Avvio non registrato sul server: il timer continua', 'Start not recorded on the server: the timer keeps running', 'Start nicht auf dem Server erfasst: der Timer läuft weiter', 'Démarrage non enregistré sur le serveur : le chronomètre continue'],
+
+            'MFG_CC.GENEALOGY_TITLE' => ['Genealogia e varianze di costo', 'Genealogy and cost variances', 'Genealogie und Kostenabweichungen', 'Généalogie et écarts de coûts'],
+            'MFG_CC.GENEALOGY_SUBTITLE' => ['Lotti prodotti, tracciabilità a monte e a valle, macchine e operatori, scostamenti per elemento di costo.', 'Output lots, backward and forward traceability, machines and operators, variance per cost element.', 'Ausgangschargen, Rückwärts- und Vorwärtsverfolgung, Maschinen und Bediener, Abweichung je Kostenart.', 'Lots produits, traçabilité amont et aval, machines et opérateurs, écart par élément de coût.'],
+            'MFG_CC.PICK_ORDER' => ['Ordine di produzione', 'Production order', 'Fertigungsauftrag', 'Ordre de fabrication'],
+            'MFG_CC.OUTPUT_LOT' => ['Lotto prodotto', 'Output lot', 'Ausgangscharge', 'Lot produit'],
+            'MFG_CC.OUTPUT_LOTS' => ['Lotti prodotti', 'Output lots', 'Ausgangschargen', 'Lots produits'],
+            'MFG_CC.NO_LOTS' => ['Nessun lotto prodotto per questo ordine', 'No output lots for this order', 'Keine Ausgangschargen für diesen Auftrag', 'Aucun lot produit pour cet ordre'],
+            'MFG_CC.BACKWARD' => ['A monte: lotti dei fornitori', 'Backward: supplier lots', 'Rückwärts: Lieferantenchargen', 'Amont : lots fournisseurs'],
+            'MFG_CC.FORWARD' => ['A valle: lotti derivati e consegne', 'Forward: derived lots and deliveries', 'Vorwärts: abgeleitete Chargen und Lieferungen', 'Aval : lots dérivés et livraisons'],
+            'MFG_CC.SUPPLIER_LOT' => ['lotto fornitore', 'supplier lot', 'Lieferantencharge', 'lot fournisseur'],
+            'MFG_CC.EXPIRES' => ['scade il', 'expires', 'läuft ab am', 'expire le'],
+            'MFG_CC.DELIVERY' => ['DDT', 'Delivery note', 'Lieferschein', 'Bon de livraison'],
+            'MFG_CC.OPERATIONS' => ['Operazioni, macchine e operatori', 'Operations, machines and operators', 'Arbeitsgänge, Maschinen und Bediener', 'Opérations, machines et opérateurs'],
+            'MFG_CC.NO_OPERATIONS' => ['Nessuna esecuzione registrata', 'No executions recorded', 'Keine Ausführungen erfasst', 'Aucune exécution enregistrée'],
+            'MFG_CC.MACHINE' => ['Macchina', 'Machine', 'Maschine', 'Machine'],
+            'MFG_CC.OPERATOR' => ['Operatore', 'Operator', 'Bediener', 'Opérateur'],
+            'MFG_CC.STARTED' => ['Inizio', 'Started', 'Gestartet', 'Début'],
+            'MFG_CC.COMPLETED' => ['Fine', 'Completed', 'Beendet', 'Fin'],
+            'MFG_CC.MACHINE_EVENTS' => ['Eventi di stato macchina', 'Machine state events', 'Maschinenstatus-Ereignisse', 'Événements d’état machine'],
+            'MFG_CC.NO_EVENTS' => ['Nessun evento macchina', 'No machine events', 'Keine Maschinenereignisse', 'Aucun événement machine'],
+            'MFG_CC.WHEN' => ['Quando', 'When', 'Wann', 'Quand'],
+            'MFG_CC.COST_VARIANCE' => ['Varianza di costo', 'Cost variance', 'Kostenabweichung', 'Écart de coût'],
+            'MFG_CC.COST_BASIS' => ['Standard sulla quantità ricevuta ({received} di {target}), importi in {currency}', 'Standard on the received quantity ({received} of {target}), amounts in {currency}', 'Standard auf die erhaltene Menge ({received} von {target}), Beträge in {currency}', 'Standard sur la quantité reçue ({received} sur {target}), montants en {currency}'],
+            'MFG_CC.CLOSED' => ['Chiuso', 'Closed', 'Abgeschlossen', 'Clôturé'],
+            'MFG_CC.COST_ELEMENT' => ['Elemento di costo', 'Cost element', 'Kostenart', 'Élément de coût'],
+            'MFG_CC.COST_MATERIAL' => ['Materiali', 'Material', 'Material', 'Matières'],
+            'MFG_CC.COST_LABOR' => ['Manodopera', 'Labour', 'Arbeit', 'Main-d’œuvre'],
+            'MFG_CC.COST_OVERHEAD' => ['Spese generali', 'Overhead', 'Gemeinkosten', 'Frais généraux'],
+            'MFG_CC.COST_SUBCONTRACT' => ['Lavorazioni esterne', 'Subcontracting', 'Fremdbearbeitung', 'Sous-traitance'],
+            'MFG_CC.STANDARD_OUTPUT' => ['Standard sull’output', 'Standard on output', 'Standard auf Ausbringung', 'Standard sur la production'],
+            'MFG_CC.ACTUAL' => ['Effettivo', 'Actual', 'Ist', 'Réel'],
+            'MFG_CC.VARIANCE_BAR' => ['Scostamento grafico', 'Variance bar', 'Abweichungsbalken', 'Barre d’écart'],
+            'MFG_CC.TOTAL' => ['Totale', 'Total', 'Summe', 'Total'],
+            'MFG_CC.WIP_BALANCE' => ['Saldo WIP', 'WIP balance', 'WIP-Saldo', 'Solde des en-cours'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function all(string $locale): array
+    {
+        $index = match ($locale) {
+            'it' => 0,
+            'de' => 2,
+            'fr' => 3,
+            default => 1,
+        };
+
+        return array_map(static fn (array $values): string => $values[$index], self::definitions());
+    }
+}

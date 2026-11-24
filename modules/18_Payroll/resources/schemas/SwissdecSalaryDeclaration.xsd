@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.swissdec.ch/schema/sd/20200220/SalaryDeclaration"
+           xmlns:sd="http://www.swissdec.ch/schema/sd/20200220/SalaryDeclaration"
+           elementFormDefault="qualified">
+
+    <xs:element name="SalaryDeclaration" type="sd:SalaryDeclarationType"/>
+
+    <xs:complexType name="SalaryDeclarationType">
+        <xs:sequence>
+            <xs:element name="Company" type="sd:CompanyType"/>
+            <xs:element name="GeneralSalaryDeclarationDescription" type="sd:GeneralSalaryDeclarationDescriptionType"/>
+        </xs:sequence>
+        <xs:attribute name="schemaVersion" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="CompanyType">
+        <xs:sequence>
+            <xs:element name="CompanyDescription" type="sd:CompanyDescriptionType"/>
+            <xs:element name="Person" type="sd:PersonType" minOccurs="1" maxOccurs="unbounded"/>
+            <xs:element name="Institutions" type="sd:InstitutionsType"/>
+            <xs:element name="SalaryTotals" type="sd:SalaryTotalsType"/>
+            <xs:element name="SalaryCounters" type="sd:SalaryCountersType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="CompanyDescriptionType">
+        <xs:sequence>
+            <xs:element name="Name">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="HR-RC-Name" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="UID-BFS">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="UID" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AccountingTimeType">
+        <xs:sequence>
+            <xs:element name="from" type="xs:date"/>
+            <xs:element name="until" type="xs:date"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PersonType">
+        <xs:sequence>
+            <xs:element name="Particulars" type="sd:ParticularsType"/>
+            <xs:element name="Work" type="sd:WorkType"/>
+            <xs:element name="AHV-AVS-Salaries" type="sd:AhvAvsSalariesType"/>
+            <xs:element name="UVG-LAA-Salaries" type="sd:UvgLaaSalariesType" minOccurs="0"/>
+            <xs:element name="UVGZ-LAAC-Salaries" type="sd:UvgzLaacSalariesType" minOccurs="0"/>
+            <xs:element name="KTG-AMC-Salaries" type="sd:KtgAmcSalariesType" minOccurs="0"/>
+            <xs:element name="BVG-LPP-Salaries" type="sd:BvgLppSalariesType" minOccurs="0"/>
+            <xs:element name="FAK-CAF-Salaries" type="sd:FakCafSalariesType" minOccurs="0"/>
+            <xs:element name="TaxAtSourceSalaries" type="sd:TaxAtSourceSalariesType" minOccurs="0"/>
+            <xs:element name="TaxSalaries" type="sd:TaxSalariesType" minOccurs="0"/>
+            <xs:element name="StatisticSalaries" type="sd:StatisticSalariesType" minOccurs="0"/>
+            <xs:element name="TaxCrossborderSalaries" type="sd:TaxCrossborderSalariesType" minOccurs="0"/>
+            <xs:element name="GrossTotal" type="xs:decimal"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ParticularsType">
+        <xs:sequence>
+            <xs:element name="Social-InsuranceIdentification">
+                <xs:complexType>
+                    <xs:choice>
+                        <xs:element name="SV-AS-Number" type="xs:string"/>
+                        <xs:element name="Unknown" type="xs:string"/>
+                    </xs:choice>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="EmployeeNumber" type="xs:string" minOccurs="0"/>
+            <xs:element name="Lastname" type="xs:string" minOccurs="0"/>
+            <xs:element name="Firstname" type="xs:string" minOccurs="0"/>
+            <xs:element name="Sex" type="xs:string" minOccurs="0"/>
+            <xs:element name="DateOfBirth" type="xs:date" minOccurs="0"/>
+            <xs:element name="Nationality" type="xs:string" minOccurs="0"/>
+            <xs:element name="ResidenceCategory" type="xs:string" minOccurs="0"/>
+            <xs:element name="CivilStatus" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Status" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="Address" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Street" type="xs:string" minOccurs="0"/>
+                        <xs:element name="ZIP-Code" type="xs:string" minOccurs="0"/>
+                        <xs:element name="City" type="xs:string" minOccurs="0"/>
+                        <xs:element name="Country" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="WorkType">
+        <xs:sequence>
+            <xs:element name="EntryDate" type="xs:date" minOccurs="0"/>
+            <xs:element name="WithdrawalDate" type="xs:date" minOccurs="0"/>
+            <xs:element name="WorkingTime" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Steady" minOccurs="0">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="WeeklyHours" type="xs:decimal" minOccurs="0"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="ActivityRate" type="xs:decimal" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AhvAvsSalariesType">
+        <xs:sequence>
+            <xs:element name="AHV-AVS-Salary">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="AccountingTime" type="sd:AccountingTimeType"/>
+                        <xs:element name="AHV-AVS-Income" type="xs:decimal"/>
+                        <xs:element name="ALV-AC-Income" type="xs:decimal"/>
+                        <xs:element name="ALVZ-ACS-Income" type="xs:decimal" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="UvgLaaSalariesType">
+        <xs:sequence>
+            <xs:element name="UVG-LAA-Salary">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="AccountingTime" type="sd:AccountingTimeType"/>
+                        <xs:element name="WorkplaceID" type="xs:string"/>
+                        <xs:element name="UVG-LAA-Code" type="xs:string"/>
+                        <xs:element name="UVG-LAA-BaseSalary" type="xs:decimal"/>
+                        <xs:element name="UVG-LAA-ContributorySalary" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="UvgzLaacSalariesType">
+        <xs:sequence>
+            <xs:element name="UVGZ-LAAC-Salary">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="AccountingTime" type="sd:AccountingTimeType"/>
+                        <xs:element name="UVGZ-LAAC-Code" type="xs:string"/>
+                        <xs:element name="UVGZ-LAAC-BaseSalary" type="xs:decimal"/>
+                        <xs:element name="UVGZ-LAAC-ContributorySalary" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="KtgAmcSalariesType">
+        <xs:sequence>
+            <xs:element name="KTG-AMC-Salary">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="AccountingTime" type="sd:AccountingTimeType"/>
+                        <xs:element name="KTG-AMC-Code" type="xs:string"/>
+                        <xs:element name="KTG-AMC-ReferenceAHV-AVS-Salary" type="xs:decimal"/>
+                        <xs:element name="KTG-AMC-ContributorySalary" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="BvgLppSalariesType">
+        <xs:sequence>
+            <xs:element name="BVG-LPP-Salary">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="AccountingTime" type="sd:AccountingTimeType"/>
+                        <xs:element name="BVG-LPP-Code" type="xs:string"/>
+                        <xs:element name="BVG-LPP-AnnualBasis" type="xs:decimal"/>
+                        <xs:element name="BVG-LPP-EmployeeContribution" type="xs:decimal"/>
+                        <xs:element name="BVG-LPP-EmployerContribution" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="FakCafSalariesType">
+        <xs:sequence>
+            <xs:element name="FAK-CAF-Salary">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="AccountingTime" type="sd:AccountingTimeType"/>
+                        <xs:element name="FAK-CAF-WorkplaceCanton" type="xs:string"/>
+                        <xs:element name="FAK-CAF-ContributorySalary" type="xs:decimal"/>
+                        <xs:element name="FAK-CAF-FamilyIncomeSupplement" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TaxAtSourceSalariesType">
+        <xs:sequence>
+            <xs:element name="TaxAtSourceSalary" minOccurs="1" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Month" type="xs:integer"/>
+                        <xs:element name="TaxAtSourceCategory">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="CategoryPredefined" type="xs:string" minOccurs="0"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="CantonCH" type="xs:string"/>
+                        <xs:element name="TaxableEarning" type="xs:decimal"/>
+                        <xs:element name="TaxAtSource" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TaxSalariesType">
+        <xs:sequence>
+            <xs:element name="TaxSalary">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Period" type="sd:AccountingTimeType"/>
+                        <xs:element name="FreeTransport" type="xs:boolean"/>
+                        <xs:element name="CanteenLunchChecks" type="xs:boolean"/>
+                        <xs:element name="Income" type="xs:decimal"/>
+                        <xs:element name="FringeBenefits" type="xs:decimal"/>
+                        <xs:element name="SporadicBenefits" type="xs:decimal"/>
+                        <xs:element name="CapitalPayment" type="xs:decimal"/>
+                        <xs:element name="OtherBenefits" type="xs:decimal"/>
+                        <xs:element name="GrossIncome" type="xs:decimal"/>
+                        <xs:element name="AHV-ALV-NBUV-AVS-AC-AANP-Contribution" type="xs:decimal"/>
+                        <xs:element name="BVG-LPP-Contribution">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="Regular" type="xs:decimal"/>
+                                    <xs:element name="Purchase" type="xs:decimal"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="NetIncome" type="xs:decimal"/>
+                        <xs:element name="DeductionAtSource" type="xs:decimal"/>
+                        <xs:element name="Charges">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="Effective" type="xs:decimal"/>
+                                    <xs:element name="LumpSum" type="xs:decimal"/>
+                                    <xs:element name="Total" type="xs:decimal"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Remark" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="StatisticSalariesType">
+        <xs:sequence>
+            <xs:element name="StatisticSalary">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Month" type="xs:integer"/>
+                        <xs:element name="Contract" type="xs:string"/>
+                        <xs:element name="PayType" type="xs:string"/>
+                        <xs:element name="WeeklyHours" type="xs:decimal"/>
+                        <xs:element name="ActivityRate" type="xs:decimal"/>
+                        <xs:element name="GrossWage" type="xs:decimal"/>
+                        <xs:element name="ThirteenthSalary" type="xs:decimal"/>
+                        <xs:element name="Overtime" type="xs:decimal"/>
+                        <xs:element name="SporadicBenefits" type="xs:decimal"/>
+                        <xs:element name="SocialContributions" type="xs:decimal"/>
+                        <xs:element name="FamilyAllowances" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TaxCrossborderSalariesType">
+        <xs:sequence>
+            <xs:element name="TaxCrossborderSalary">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="AccountingTime" type="sd:AccountingTimeType"/>
+                        <xs:element name="ResidenceCountry" type="xs:string"/>
+                        <xs:element name="WorkplaceCanton" type="xs:string"/>
+                        <xs:element name="TaxID" type="xs:string" minOccurs="0"/>
+                        <xs:element name="BirthPlace" type="xs:string" minOccurs="0"/>
+                        <xs:element name="FrontierRegime" type="xs:string"/>
+                        <xs:element name="TaxableEarning" type="xs:decimal"/>
+                        <xs:element name="TaxAtSource" type="xs:decimal"/>
+                        <xs:element name="SocialContributions" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="InstitutionsType">
+        <xs:sequence>
+            <xs:element name="AHV-AVS" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="AK-CC-CustomerNumber" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="UVG-LAA" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="InsurerName" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="UVGZ-LAAC" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="InsurerName" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="KTG-AMC" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="InsurerName" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="BVG-LPP" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="InsurerName" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="FAK-CAF" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="AK-CC-CustomerNumber" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="TaxAtSource" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Canton" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="Tax" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Canton" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="Statistic" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="BFS-WorkplaceID" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="TaxCrossborder" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Canton" type="xs:string" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SalaryTotalsType">
+        <xs:sequence>
+            <xs:element name="AHV-AVS-Totals">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Total-AHV-AVS-Incomes" type="xs:decimal"/>
+                        <xs:element name="Total-ALV-AC-Incomes" type="xs:decimal"/>
+                        <xs:element name="Total-ALVZ-ACS-Incomes" type="xs:decimal" minOccurs="0"/>
+                        <xs:element name="Total-FAK-CAF-Incomes" type="xs:decimal" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="UVG-LAA-Totals" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Total-UVG-LAA-BaseSalary" type="xs:decimal"/>
+                        <xs:element name="Total-UVG-LAA-ContributorySalary" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="UVGZ-LAAC-Totals" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Total-UVGZ-LAAC-BaseSalary" type="xs:decimal"/>
+                        <xs:element name="Total-UVGZ-LAAC-ContributorySalary" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="KTG-AMC-Totals" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Total-KTG-AMC-ReferenceAHV-AVS-Salary" type="xs:decimal"/>
+                        <xs:element name="Total-KTG-AMC-ContributorySalary" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="BVG-LPP-Totals" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Total-BVG-LPP-AnnualBasis" type="xs:decimal"/>
+                        <xs:element name="Total-BVG-LPP-EmployeeContributions" type="xs:decimal"/>
+                        <xs:element name="Total-BVG-LPP-EmployerContributions" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="FAK-CAF-Totals" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Total-FAK-CAF-ContributorySalary" type="xs:decimal"/>
+                        <xs:element name="Total-FAK-CAF-FamilyIncomeSupplement" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="TaxAtSourceTotals" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Total-TaxableEarning" type="xs:decimal"/>
+                        <xs:element name="Total-TaxAtSource" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="TaxTotals" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Total-GrossIncome" type="xs:decimal"/>
+                        <xs:element name="Total-NetIncome" type="xs:decimal"/>
+                        <xs:element name="Total-DeductionAtSource" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="TaxCrossborderTotals" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Total-CrossborderTaxableEarning" type="xs:decimal"/>
+                        <xs:element name="Total-CrossborderTaxAtSource" type="xs:decimal"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SalaryCountersType">
+        <xs:sequence>
+            <xs:element name="NumberOf-AHV-AVS-Salary-Tags" type="xs:nonNegativeInteger"/>
+            <xs:element name="NumberOf-UVG-LAA-Salary-Tags" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="NumberOf-UVGZ-LAAC-Salary-Tags" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="NumberOf-KTG-AMC-Salary-Tags" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="NumberOf-BVG-LPP-Salary-Tags" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="NumberOf-FAK-CAF-Salary-Tags" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="NumberOf-TaxAtSource-Salary-Tags" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="NumberOf-Tax-Salary-Tags" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="NumberOf-Statistic-Salary-Tags" type="xs:nonNegativeInteger" minOccurs="0"/>
+            <xs:element name="NumberOf-TaxCrossborder-Salary-Tags" type="xs:nonNegativeInteger" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="GeneralSalaryDeclarationDescriptionType">
+        <xs:sequence>
+            <xs:element name="CreationDate" type="xs:string"/>
+            <xs:element name="AccountingPeriod" type="xs:integer"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

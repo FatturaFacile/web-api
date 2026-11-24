@@ -1,0 +1,96 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\GeneralLedger\Enums;
+
+/**
+ * The function an account performs in the automatic postings of a tenant. Each tenant chooses its own account for
+ * each role in its chart of accounts: the application ships no account code. Documents and closings read the account
+ * through the PostingAccountResolver.
+ */
+enum PostingAccountRole: string
+{
+    case SalesRevenue = 'sales_revenue';
+    case PurchaseExpense = 'purchase_expense';
+    case OutputVat = 'output_vat';
+    case InputVat = 'input_vat';
+    case Receivables = 'receivables';
+    case Payables = 'payables';
+    case RetainedEarnings = 'retained_earnings';
+    case FxUnrealisedGain = 'fx_unrealised_gain';
+    case FxUnrealisedGainProvision = 'fx_unrealised_gain_provision';
+    case FxUnrealisedLoss = 'fx_unrealised_loss';
+    case FxRealisedGain = 'fx_realised_gain';
+    case FxRealisedLoss = 'fx_realised_loss';
+    case Rounding = 'rounding';
+    case CashDiscountReceived = 'cash_discount_received';
+    case PrepaidExpense = 'prepaid_expense';
+    case DeferredRevenue = 'deferred_revenue';
+    case AccruedRevenue = 'accrued_revenue';
+    case AccruedExpense = 'accrued_expense';
+    case BadDebtExpense = 'bad_debt_expense';
+    case BadDebtProvision = 'bad_debt_provision';
+
+    /**
+     * Account types of the chart of accounts that can fill the role. A revenue role on an asset account would put the
+     * postings in the wrong statement, so it is refused when the setting is saved.
+     *
+     * @return list<string>
+     */
+    public function allowedAccountTypes(): array
+    {
+        return match ($this) {
+            self::SalesRevenue => ['revenue'],
+            self::PurchaseExpense => ['expense', 'cogs'],
+            self::OutputVat, self::Payables => ['liability'],
+            self::InputVat, self::Receivables => ['asset'],
+            self::RetainedEarnings => ['equity'],
+            self::FxUnrealisedGain, self::FxRealisedGain => ['revenue'],
+            self::FxUnrealisedGainProvision => ['liability', 'equity'],
+            self::FxUnrealisedLoss, self::FxRealisedLoss, self::BadDebtExpense => ['expense'],
+            self::Rounding, self::CashDiscountReceived => ['revenue', 'expense'],
+            self::PrepaidExpense, self::AccruedRevenue, self::BadDebtProvision => ['asset'],
+            self::DeferredRevenue, self::AccruedExpense => ['liability'],
+        };
+    }
+
+    /**
+     * Where the tenant may already have set the account code before this setting existed, as a path of
+     * `tenants.settings.preferences`: the accounting preferences of the settings page, and the Treasury ledger defaults
+     * for the exchange differences (the same accounts the bank revaluation uses). Null when there is no such place.
+     *
+     * @return list<string>|null
+     */
+    public function preferencePath(): ?array
+    {
+        return match ($this) {
+            self::SalesRevenue => ['accounting', 'accounts', 'revenue_account_code'],
+            self::PurchaseExpense => ['accounting', 'accounts', 'cost_account_code'],
+            self::OutputVat => ['accounting', 'accounts', 'output_vat_account_code'],
+            self::InputVat => ['accounting', 'accounts', 'input_vat_account_code'],
+            self::Receivables => ['accounting', 'accounts', 'receivables_account_code'],
+            self::Payables => ['accounting', 'accounts', 'payables_account_code'],
+            self::Rounding => ['accounting', 'accounts', 'rounding_account_code'],
+            self::CashDiscountReceived => ['accounting', 'accounts', 'cash_discount_account_code'],
+            self::PrepaidExpense => ['accounting', 'accounts', 'prepaid_expense_account_code'],
+            self::DeferredRevenue => ['accounting', 'accounts', 'deferred_revenue_account_code'],
+            self::AccruedRevenue => ['accounting', 'accounts', 'accrued_revenue_account_code'],
+            self::AccruedExpense => ['accounting', 'accounts', 'accrued_expense_account_code'],
+            self::BadDebtExpense => ['accounting', 'accounts', 'bad_debt_expense_account_code'],
+            self::BadDebtProvision => ['accounting', 'accounts', 'bad_debt_provision_account_code'],
+            self::FxUnrealisedGain => ['banking', 'ledger_defaults', 'fx_unrealised_gain_account_code'],
+            self::FxUnrealisedGainProvision => ['banking', 'ledger_defaults', 'fx_unrealised_gain_provision_account_code'],
+            self::FxUnrealisedLoss => ['banking', 'ledger_defaults', 'fx_unrealised_loss_account_code'],
+            self::RetainedEarnings, self::FxRealisedGain, self::FxRealisedLoss => null,
+        };
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function values(): array
+    {
+        return array_map(static fn (self $role): string => $role->value, self::cases());
+    }
+}

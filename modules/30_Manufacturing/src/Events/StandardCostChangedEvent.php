@@ -1,0 +1,65 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Manufacturing\Events;
+
+/**
+ * The rolled-up standard cost of an item changed.
+ */
+final class StandardCostChangedEvent extends BaseManufacturingEvent
+{
+    public function __construct(
+        public string $mfgItemId,
+        public float $oldCost,
+        public float $newCost,
+        public string $reason,
+        string $tenantId,
+        ?string $companyId = null,
+        ?string $eventId = null,
+        ?string $occurredAt = null
+    ) {
+        parent::__construct($tenantId, $companyId, $eventId, $occurredAt);
+    }
+
+    /**
+     * Aggregate type of the event.
+     */
+    public function getAggregateType(): string
+    {
+        return 'mfg_item';
+    }
+
+    /**
+     * Aggregate id of the event.
+     */
+    public function getAggregateId(): string
+    {
+        return $this->mfgItemId;
+    }
+
+    /**
+     * Name of the event in the outbox.
+     */
+    public function getEventName(): string
+    {
+        return 'mfg.costing.standard_cost_changed';
+    }
+
+    /**
+     * Payload of the event.
+     *
+     * @return array<string, mixed>
+     */
+    public function toPayload(): array
+    {
+        return [
+            'mfg_item_id' => $this->mfgItemId,
+            'old_cost' => $this->oldCost,
+            'new_cost' => $this->newCost,
+            'reason' => $this->reason,
+            'tenant_id' => $this->tenantId,
+            'company_id' => $this->companyId,
+        ];
+    }
+}

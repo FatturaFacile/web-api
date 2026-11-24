@@ -1,0 +1,53 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Invoicing\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Invoicing\Models\SalesDeliveryNote;
+
+/**
+ * @mixin SalesDeliveryNote
+ */
+final class SalesDeliveryNoteResource extends JsonResource
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'tenant_id' => $this->tenant_id,
+            'contact_id' => $this->contact_id,
+            'sales_order_id' => $this->sales_order_id,
+            'warehouse_id' => $this->warehouse_id,
+            'ddt_number' => $this->ddt_number,
+            'date' => $this->date->toDateString(),
+            'transport_reason' => $this->transport_reason,
+            'packages_count' => $this->packages_count,
+            'gross_weight_kg' => (float) $this->gross_weight_kg,
+            'carrier_name' => $this->carrier_name,
+            'status' => $this->status,
+            'shipping_status' => $this->shipping_status,
+            'tracking_number' => $this->tracking_number,
+            'tracking_code' => $this->tracking_code,
+            'awb_number' => $this->awb_number,
+            'transport_reason_code' => $this->transport_reason_code,
+            'shipment_flow' => $this->shipment_flow,
+            'sender_display' => $this->sender_display,
+            'final_recipient_name' => $this->final_recipient_name,
+            'shipped_at' => $this->shipped_at?->toISOString(),
+            'delivered_at' => $this->delivered_at?->toISOString(),
+            'contact' => $this->whenLoaded('customer', fn (): ?array => $this->customer === null ? null : [
+                'id' => $this->customer->id,
+                'name' => $this->customer->company_name ?: trim($this->customer->first_name.' '.$this->customer->last_name),
+            ]),
+            'items' => $this->whenLoaded('items'),
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
+        ];
+    }
+}

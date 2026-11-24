@@ -1,0 +1,46 @@
+name: Weekly DAST (OWASP ZAP baseline)
+
+# Passive OWASP ZAP baseline scan of the dev environment. The target comes from the repository variable DAST_TARGET_URL
+# (Settings > Secrets and variables > Actions > Variables, e.g. https://dev-api.fatturafacile.eu). Without it the job is
+# skipped: nothing is scanned and the workflow stays green.
+
+on:
+  schedule:
+    - cron: '0 4 * * 2' # Tuesdays 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dast-zap
+  cancel-in-progress: false
+
+jobs:
+  zap-baseline:
+    name: ZAP baseline scan of the dev environment
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    if: ${{ vars.DAST_TARGET_URL != '' }}
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v7
+
+      - name: ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: ${{ vars.DAST_TARGET_URL }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: zap-baseline-report
+
+  skipped:
+    name: DAST target not configured
+    runs-on: ubuntu-24.04
+    if: ${{ vars.DAST_TARGET_URL == '' }}
+    steps:
+      - name: Explain the skip
+        run: echo "Repository variable DAST_TARGET_URL is not set, ZAP baseline scan skipped."

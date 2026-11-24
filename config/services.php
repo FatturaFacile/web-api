@@ -1,0 +1,79 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Third Party Services
+    |--------------------------------------------------------------------------
+    |
+    | This file is for storing the credentials for third party services such
+    | as Resend, Postmark, AWS, and more. This file provides the de facto
+    | location for this type of information, allowing packages to have
+    | a conventional file to locate the various service credentials.
+    |
+    */
+
+    'postmark' => [
+        'key' => env('POSTMARK_API_KEY'),
+    ],
+
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+    ],
+
+    'ses' => [
+        'key' => env('AWS_ACCESS_KEY_ID'),
+        'secret' => env('AWS_SECRET_ACCESS_KEY'),
+        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    ],
+
+    'slack' => [
+        'notifications' => [
+            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
+            'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
+        ],
+    ],
+
+    'preservation' => [
+        // Legal preservation needs an accredited provider: the `accredited` driver refuses to run until one is contracted.
+        'driver' => env('PRESERVATION_DRIVER', 'local'),
+    ],
+
+    'corrispettivi' => [
+        // Only the local driver works today: the Agenzia delle Entrate driver refuses to run until an agreement exists.
+        'driver' => env('CORRISPETTIVI_DRIVER', 'local'),
+    ],
+
+    'sdi' => [
+        // Shared secret expected in the X-Webhook-Secret header of SDI notification webhooks.
+        'webhook_secret' => env('SDI_WEBHOOK_SECRET'),
+
+        // Channel of the tenants that have not chosen one. Empty means they cannot transmit until they do.
+        'default_channel' => env('SDI_DEFAULT_CHANNEL'),
+    ],
+
+    'bootstrap' => [
+        // Expected in the X-Bootstrap-Secret header of GET /api/v1/system/bootstrap-support. Empty closes the endpoint.
+        'secret' => env('BOOTSTRAP_SUPPORT_SECRET'),
+    ],
+
+    // Registry lookups used to autofill and certify the customer registry (Customer 360).
+    'vies' => [
+        'base_url' => env('VIES_BASE_URL', 'https://ec.europa.eu/taxation_customs/vies/rest-api'),
+        'timeout' => (int) env('VIES_TIMEOUT', 8),
+        'cache_ttl' => (int) env('VIES_CACHE_TTL', 86400),
+        // Own VAT number sent with each check so that VIES returns the consultation identifier (audit proof).
+        'requester_country' => env('VIES_REQUESTER_COUNTRY'),
+        'requester_number' => env('VIES_REQUESTER_NUMBER'),
+    ],
+
+    'zefix' => [
+        'base_url' => env('ZEFIX_BASE_URL', 'https://www.zefix.admin.ch/ZefixPublicREST/api/v1'),
+        // Zefix PublicREST requires registered Basic Auth credentials; without them only the UID checksum is checked.
+        'username' => env('ZEFIX_USERNAME'),
+        'password' => env('ZEFIX_PASSWORD'),
+        'timeout' => (int) env('ZEFIX_TIMEOUT', 8),
+    ],
+
+];

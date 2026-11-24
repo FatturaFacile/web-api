@@ -1,0 +1,70 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'building' => [
+        'has_spaces' => 'Das Gebäude hat noch Räume: Entfernen oder verschieben Sie diese zuerst.',
+    ],
+    'space' => [
+        'kind_has_children' => 'Ein Raum, der andere Räume enthält, kann nicht zu Etage, Arbeitsplatz, Parkplatz oder Besprechungsraum werden.',
+        'has_children' => 'Der Raum enthält andere Räume: Entfernen Sie diese zuerst.',
+        'has_future_bookings' => 'Der Raum hat künftige Buchungen: Stornieren Sie diese zuerst.',
+        'floor_has_no_parent' => 'Eine Etage liegt direkt unter dem Gebäude und hat keinen übergeordneten Raum.',
+        'parent_not_found' => 'Der übergeordnete Raum existiert nicht.',
+        'parent_other_building' => 'Der übergeordnete Raum gehört zu einem anderen Gebäude.',
+        'parent_is_leaf' => 'Ein Raum vom Typ :kind kann keine anderen Räume enthalten.',
+        'cycle' => 'Ein Raum kann nicht in sich selbst oder in einem seiner Unterräume liegen.',
+        'kind_not_bookable' => 'Ein Raum vom Typ :kind kann nicht gebucht werden.',
+        'capacity_required' => 'Ein buchbarer Raum braucht eine Kapazität von mindestens 1.',
+    ],
+    'booking' => [
+        'not_bookable' => 'Der Raum ist nicht buchbar.',
+        'in_past' => 'Die Buchung darf nicht in der Vergangenheit beginnen.',
+        'too_long' => 'Eine Buchung dieser Raumart dauert höchstens :minutes Minuten.',
+        'too_far' => 'Diese Raumart kann nicht mehr als :days Tage im Voraus gebucht werden.',
+        'over_capacity' => 'Der Raum fasst höchstens :capacity Personen.',
+        'daily_limit' => 'Sie können pro Tag höchstens :limit Buchung(en) dieser Raumart haben.',
+        'conflict' => 'Der Raum ist in diesem Zeitraum bereits gebucht.',
+        'cancel_only_booked' => 'Die Buchung ist :status: Nur eine noch nicht genutzte Buchung kann storniert werden.',
+        'checkin_only_booked' => 'Die Buchung ist :status: Nur bei einer noch offenen Buchung ist ein Check-in möglich.',
+        'checkin_window' => 'Der Check-in ist ab wenigen Minuten vor Beginn bis zum Ende der Buchung möglich.',
+        'own_only' => 'Sie können nur für sich selbst buchen.',
+    ],
+    'series' => [
+        'no_occurrences' => 'Die Wiederholung ergibt im gewählten Zeitraum keine Buchung.',
+        'too_many' => 'Eine Serienbuchung kann höchstens :max Buchungen erzeugen.',
+        'nothing_bookable' => 'Kein Termin der Serie kann gebucht werden.',
+        'already_cancelled' => 'Die Serie ist bereits storniert.',
+        'span' => 'Eine Serienbuchung kann höchstens :days Tage umfassen.',
+        'end_before_start' => 'Die Endzeit muss nach der Startzeit liegen.',
+    ],
+    'request' => [
+        'locked' => 'Die Anfrage ist :status und kann nicht geändert werden.',
+        'transition' => 'Eine Anfrage im Status :from kann nicht in :to wechseln.',
+        'work_order_not_found' => 'Der Wartungsauftrag existiert in diesem Unternehmen nicht.',
+        'work_order_exists' => 'Die Anfrage hat bereits einen Wartungsauftrag.',
+        'asset_required' => 'Wählen Sie die Anlage, für die der Auftrag gilt.',
+        'asset_not_found' => 'Die Anlage existiert in diesem Unternehmen nicht.',
+        'space_not_found' => 'Der Raum existiert nicht.',
+        'building_mismatch' => 'Der Raum liegt nicht im gewählten Gebäude.',
+    ],
+    'inspection' => [
+        'start_only_scheduled' => 'Die Inspektion ist :status: Nur eine geplante Inspektion kann gestartet werden.',
+        'locked' => 'Die Inspektion ist :status und kann nicht geändert werden.',
+        'unknown_item' => 'Die Checkliste hat keinen Punkt :keys.',
+        'not_numeric' => 'Die Antwort auf ":item" muss eine Zahl sein.',
+        'required_missing' => 'Beantworten Sie alle Pflichtpunkte: :items.',
+    ],
+    'meter' => [
+        'unit_locked' => 'Art und Einheit können nicht mehr geändert werden, sobald der Zähler Ablesungen hat.',
+        'inactive' => 'Der Zähler ist nicht aktiv.',
+        'not_chronological' => 'Die Ablesung muss nach der letzten (:date) datiert sein.',
+        'only_latest' => 'Nur die letzte Ablesung des Zählers kann entfernt werden.',
+        'below_previous' => 'Der Wert liegt unter der vorherigen Ablesung (:previous). Geben Sie einen Zählerüberlauf oder einen Zählertausch an.',
+        'no_rollover_value' => 'Legen Sie den Überlaufwert des Zählers fest, bevor Sie einen Überlauf erfassen.',
+        'rollover_not_below' => 'Eine Ablesung mit Überlauf muss unter der vorherigen liegen (:previous).',
+        'above_rollover' => 'Die vorherige Ablesung liegt über dem Überlaufwert (:rollover) des Zählers.',
+        'unit_for_kind' => 'Die Einheit :unit passt nicht zu einem Zähler :kind.',
+    ],
+];

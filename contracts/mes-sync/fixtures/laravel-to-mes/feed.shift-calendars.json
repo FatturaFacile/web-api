@@ -1,0 +1,44 @@
+{
+    "description": "GET .../mes-sync/shift-calendars: dated UTC shift instances with the breaks of the plant and the planned maintenance of one machine (non_production).",
+    "path": "/api/v1/manufacturing/mes-sync/shift-calendars?after_seq=0&limit=500",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "response": {
+        "schema_version": 1,
+        "resource": "shift-calendars",
+        "data": [
+            {
+                "id": "018f0000-0000-7000-8000-000000000201",
+                "seq": 11,
+                "revision": 11,
+                "deleted": false,
+                "payload": {
+                    "scope_type": "work_center",
+                    "scope_id": "018f0000-0000-7000-8000-0000000000f1",
+                    "shift_code": "DAY",
+                    "starts_at": "2026-12-22T05:00:00Z",
+                    "ends_at": "2026-12-22T13:00:00Z",
+                    "timezone": "Europe/Rome",
+                    "non_production": [
+                        {
+                            "kind": "break",
+                            "machine_id": null,
+                            "from": "2026-12-22T09:00:00Z",
+                            "to": "2026-12-22T09:15:00Z",
+                            "reference": null
+                        },
+                        {
+                            "kind": "planned_maintenance",
+                            "machine_id": "018f0000-0000-7000-8000-0000000000a1",
+                            "from": "2026-12-22T11:00:00Z",
+                            "to": "2026-12-22T13:00:00Z",
+                            "reference": "MWO-2026-0007"
+                        }
+                    ]
+                }
+            }
+        ],
+        "next_seq": 11,
+        "has_more": false,
+        "watermark": 11
+    }
+}

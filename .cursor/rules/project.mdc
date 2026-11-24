@@ -1,0 +1,7 @@
+---
+description: Canonical project governance pointer
+globs: **/*
+alwaysApply: true
+---
+- Follow [AGENTS.md](../../AGENTS.md) as the single source of truth for all architecture, coding, i18n (`it`, `de`, `fr`, `en`), DB, git (`dev` only, no PRs), and quality-gate rules.
+- Enforce PHP 8.5 strict types, tenant isolation, SQLite `:memory:` local tests, and zero-error Pint/PHPStan/test gates before pushing to `dev`.

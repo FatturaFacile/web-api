@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Enterprise\MultiTenant\Concerns\StampsTenantFromParent;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+
+/**
+ * @property Carbon|null $sent_at
+ * @property Carbon|null $delivered_at
+ */
+class InvoiceSdiMetadata extends Model
+{
+    use HasFactory, HasUuids, StampsTenantFromParent;
+
+    protected $table = 'invoice_sdi_metadata';
+
+    protected $fillable = [
+        'invoice_id',
+        'transmission_format',
+        'sdi_identifier',
+        'sdi_status',
+        'file_name',
+        'xml_content',
+        'sent_at',
+        'delivered_at',
+        'transmission_claimed_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'sent_at' => 'datetime',
+            'delivered_at' => 'datetime',
+            'transmission_claimed_at' => 'datetime',
+        ];
+    }
+
+    /**
+     * @return BelongsTo<Invoice, $this>
+     */
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
+    }
+}

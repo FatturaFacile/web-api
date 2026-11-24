@@ -1,0 +1,55 @@
+{
+    "description": "GET /api/v1/manufacturing/mes-sync/machines?after_seq=0&limit=2 (page with a live machine and a tombstone).",
+    "path": "/api/v1/manufacturing/mes-sync/machines?after_seq=0&limit=2",
+    "tenant_id": "018f0000-0000-7000-8000-000000000001",
+    "response": {
+        "schema_version": 1,
+        "resource": "machines",
+        "data": [
+            {
+                "id": "018f0000-0000-7000-8000-0000000000a1",
+                "seq": 3,
+                "revision": 3,
+                "deleted": false,
+                "payload": {
+                    "machine_id": "018f0000-0000-7000-8000-0000000000a1",
+                    "machine_code": "CNC-01",
+                    "name": "CNC lathe 1",
+                    "work_center_id": "018f0000-0000-7000-8000-0000000000f1",
+                    "asset_id": null,
+                    "power_kw": "15.50",
+                    "status": "active",
+                    "line_code": "WC-LINE-A",
+                    "ideal_cycle_ms": 1200.0,
+                    "tag_roles": {
+                        "run": "Running",
+                        "alarm": "Alarm",
+                        "count": "TotalCounter",
+                        "good": "GoodCounter"
+                    },
+                    "debounce_ms": 3000,
+                    "stale_after_s": 30,
+                    "counter": {
+                        "rollover_modulus": 65536,
+                        "max_delta_per_sample": 500
+                    },
+                    "oee_policy": {
+                        "version": 1,
+                        "setup": "AvailabilityLoss",
+                        "gap": "ExcludeFromPlanned"
+                    }
+                }
+            },
+            {
+                "id": "018f0000-0000-7000-8000-0000000000a2",
+                "seq": 5,
+                "revision": 5,
+                "deleted": true,
+                "payload": {}
+            }
+        ],
+        "next_seq": 5,
+        "has_more": false,
+        "watermark": 5
+    }
+}

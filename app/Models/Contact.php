@@ -1,0 +1,200 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use App\Casts\EncryptedField;
+use App\Domain\Audit\Concerns\HasImmutableAuditTrail;
+use App\Domain\Audit\Contracts\AuditableEntityInterface;
+use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasEncryptedFields;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+
+/**
+ * @property Carbon|null $fiscal_verified_at
+ */
+class Contact extends Model implements AuditableEntityInterface
+{
+    use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+    use HasEncryptedFields;
+    use HasImmutableAuditTrail;
+
+    /** @var array<string, string|null> field => blind-index column */
+    protected array $encryptedFields = ['iban' => 'iban_bidx', 'qr_iban' => 'qr_iban_bidx'];
+
+    /** @var list<string> */
+    protected array $auditMask = ['iban', 'qr_iban', 'fiscal_code'];
+
+    protected bool $auditTrackReads = true;
+
+    protected $attributes = [
+        'type' => 'customer',
+        'country' => 'IT',
+    ];
+
+    protected $fillable = [
+        'type',
+        'legal_type',
+        'country',
+        'company_name',
+        'first_name',
+        'last_name',
+        'email',
+        'phone',
+        'vat_number',
+        'fiscal_code',
+        'uid_number',
+        'eori_number',
+        'default_incoterm',
+        'sdi_code',
+        'pec',
+        'iban',
+        'qr_iban',
+        'payment_terms_days',
+        'price_list_id',
+        'payment_term_id',
+        'document_language',
+        'processing_restricted_at',
+        'anonymized_at',
+        'parent_id',
+        'hierarchy_type',
+        'fiscal_verified_at',
+        'fiscal_verification_source',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'iban' => EncryptedField::class,
+            'qr_iban' => EncryptedField::class,
+            'processing_restricted_at' => 'datetime',
+            'anonymized_at' => 'datetime',
+            'fiscal_verified_at' => 'datetime',
+            'portal_consent_at' => 'datetime',
+        ];
+    }
+
+    /**
+     * Calculated grid columns as portable SQL (same on SQLite and PostgreSQL), so they filter, sort, group and list
+     * their values in the database like real columns. Reachable from related grids as `contact.name`.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'tax_id' => "COALESCE(NULLIF(contacts.vat_number, ''), NULLIF(contacts.fiscal_code, ''), NULLIF(contacts.uid_number, ''))",
+            'name' => "COALESCE(NULLIF(contacts.company_name, ''), NULLIF(TRIM(COALESCE(contacts.first_name, '') || ' ' || COALESCE(contacts.last_name, '')), ''), '-')",
+        ];
+    }
+
+    /**
+     * Parent company in the corporate hierarchy (holding, subsidiary, branch).
+     *
+     * @return BelongsTo<Contact, $this>
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /**
+     * @return HasMany<Contact, $this>
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
+    }
+
+    /**
+     * @return HasMany<ContactPerson, $this>
+     */
+    public function persons(): HasMany
+    {
+        return $this->hasMany(ContactPerson::class);
+    }
+
+    /**
+     * @return Attribute<string, string>
+     */
+    protected function type(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => empty($value) ? 'customer' : $value,
+        );
+    }
+
+    /**
+     * @return Attribute<string|null, string|null>
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? strtolower(trim($value)) : null,
+        );
+    }
+
+    /**
+     * @return HasMany<ContactAddress, $this>
+     */
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(ContactAddress::class);
+    }
+
+    /**
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * @return HasMany<Quote, $this>
+     */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class);
+    }
+
+    /**
+     * @return HasMany<SalesOrder, $this>
+     */
+    public function salesOrders(): HasMany
+    {
+        return $this->hasMany(SalesOrder::class);
+    }
+
+    /**
+     * @return HasMany<DeliveryNote, $this>
+     */
+    public function deliveryNotes(): HasMany
+    {
+        return $this->hasMany(DeliveryNote::class);
+    }
+
+    /**
+     * @return HasMany<ServiceReport, $this>
+     */
+    public function serviceReports(): HasMany
+    {
+        return $this->hasMany(ServiceReport::class);
+    }
+
+    /**
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+}

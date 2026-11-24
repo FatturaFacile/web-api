@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\AssetManagement\Jobs;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Modules\AssetManagement\Contracts\DepreciationEngineServiceInterface;
+use Modules\AssetManagement\DTOs\RunDepreciationDTO;
+
+/**
+ * Queued depreciation run of a yearly period. Depreciation is manual by design: the job is dispatched by the accountant, never scheduled.
+ */
+final class ExecuteYearlyDepreciationJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function __construct(
+        public readonly string $tenantId,
+        public readonly string $companyId,
+        public readonly string $yearCode,
+        public readonly string $ledgerType = 'statutory',
+        public readonly ?string $actorUserId = null
+    ) {
+        $this->afterCommit();
+    }
+
+    public function handle(DepreciationEngineServiceInterface $depreciationEngine): void
+    {
+        $depreciationEngine->executeDepreciationRun(new RunDepreciationDTO(
+            tenantId: $this->tenantId,
+            companyId: $this->companyId,
+            periodCode: $this->yearCode,
+            periodType: 'yearly',
+            ledgerType: $this->ledgerType,
+            autoPostToGl: true
+        ), $this->actorUserId);
+    }
+}

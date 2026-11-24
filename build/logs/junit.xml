@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Feature\OpenAPICoverageTest" file="tests\Feature\OpenAPICoverageTest.php" tests="2" assertions="27" errors="0" failures="0" skipped="0" time="1.036472">
+    <testcase name="OpenAPI: Specification endpoint serves valid OpenAPI schema covering enterprise domains" file="tests\Feature\OpenAPICoverageTest.php::OpenAPI: Specification endpoint serves valid OpenAPI schema covering enterprise domains" class="Tests\Feature\OpenAPICoverageTest" classname="Tests.Feature.OpenAPICoverageTest" assertions="22" time="0.783953"/>
+    <testcase name="OpenAPI: Specification includes standard components, schemas and security definitions" file="tests\Feature\OpenAPICoverageTest.php::OpenAPI: Specification includes standard components, schemas and security definitions" class="Tests\Feature\OpenAPICoverageTest" classname="Tests.Feature.OpenAPICoverageTest" assertions="5" time="0.252520"/>
+  </testsuite>
+</testsuites>

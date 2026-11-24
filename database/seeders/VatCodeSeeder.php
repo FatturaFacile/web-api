@@ -1,0 +1,163 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+
+final class VatCodeSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $tenantId = Schema::hasTable('tenants') ? DB::table('tenants')->value('id') : null;
+        // With no tenant yet the codes are generic rows (null tenant, shared by every tenant): an invented tenant id would be
+        // refused by the tenant foreign key.
+
+        $codes = [
+            [
+                'code' => 'IVA22',
+                'description' => 'Standard VAT 22% (IVA Ordinaria 22% / Normalsatz / Taux normal)',
+                'rate' => 22.00,
+                'country' => 'IT',
+                'rc' => false,
+                'sp' => false,
+            ],
+            [
+                'code' => 'IVA10',
+                'description' => 'Reduced VAT 10% (IVA Ridotta 10% / Reduzierter Satz / Taux réduit)',
+                'rate' => 10.00,
+                'country' => 'IT',
+                'rc' => false,
+                'sp' => false,
+            ],
+            [
+                'code' => 'IVA04',
+                'description' => 'Super Reduced VAT 4% (IVA Minima 4% / Stark reduzierter Satz / Taux super-réduit)',
+                'rate' => 4.00,
+                'country' => 'IT',
+                'rc' => false,
+                'sp' => false,
+            ],
+            [
+                'code' => 'REVERSE_CHARGE',
+                'description' => 'Reverse Charge Art. 17 c. 6 (Inversione contabile / Steuerschuldumkehr / Autoliquidation)',
+                'rate' => 0.00,
+                'country' => 'IT',
+                'rc' => true,
+                'sp' => false,
+            ],
+            [
+                'code' => 'SPLIT_PAYMENT',
+                'description' => 'Split Payment PA (Scissione pagamenti / Split-Verfahren / Paiement fractionné)',
+                'rate' => 22.00,
+                'country' => 'IT',
+                'rc' => false,
+                'sp' => true,
+            ],
+            [
+                'code' => 'CH_MWST_81',
+                'description' => 'Swiss Standard MWST 8.1% (TVA normale suisse / Schweizer Normalsatz)',
+                'rate' => 8.10,
+                'country' => 'CH',
+                'rc' => false,
+                'sp' => false,
+            ],
+            [
+                'code' => 'CH_MWST_26',
+                'description' => 'Swiss Reduced MWST 2.6% (TVA réduite suisse / Schweizer reduzierter Satz)',
+                'rate' => 2.60,
+                'country' => 'CH',
+                'rc' => false,
+                'sp' => false,
+            ],
+            [
+                'code' => 'CH_MWST_38',
+                'description' => 'Swiss Accommodation MWST 3.8% (Aliquota speciale alloggio / Beherbergungssatz / Taux spécial hébergement)',
+                'rate' => 3.80,
+                'country' => 'CH',
+                'rc' => false,
+                'sp' => false,
+            ],
+            [
+                'code' => 'CH_EXEMPT_EXPORT_0',
+                'description' => 'Swiss Exempt with Input Tax Deduction Art. 23 LIVA (Export 0% - Box 220)',
+                'rate' => 0.00,
+                'country' => 'CH',
+                'rc' => false,
+                'sp' => false,
+            ],
+            [
+                'code' => 'CH_EXEMPT_ART21_0',
+                'description' => 'Swiss Exempt without Input Tax Deduction Art. 21 LIVA (Excluded 0% - Box 230)',
+                'rate' => 0.00,
+                'country' => 'CH',
+                'rc' => false,
+                'sp' => false,
+            ],
+            [
+                'code' => 'CH_BEZUGSTEUER_81',
+                'description' => 'Swiss Acquisition Tax on Foreign Services 8.1% (Bezugsteuer Art. 45 LIVA - Box 383)',
+                'rate' => 8.10,
+                'country' => 'CH',
+                'rc' => true,
+                'sp' => false,
+            ],
+            [
+                'code' => 'CH_OUT_OF_SCOPE_0',
+                'description' => 'Swiss Out-of-Scope / Non-Remuneration Flows Art. 18(2) LIVA (0% - Box 900/910)',
+                'rate' => 0.00,
+                'country' => 'CH',
+                'rc' => false,
+                'sp' => false,
+            ],
+            [
+                'code' => 'EXEMPT',
+                'description' => 'VAT Exempt (Operazione Esente / Steuerbefreit / Opération exonérée)',
+                'rate' => 0.00,
+                'country' => 'IT',
+                'rc' => false,
+                'sp' => false,
+            ],
+        ];
+
+        foreach ($codes as $c) {
+            $existing = DB::table('vat_codes')->where('code', $c['code'])->first();
+
+            if (! $existing) {
+                DB::table('vat_codes')->insert([
+                    'id' => (string) Str::uuid7(),
+                    'tenant_id' => $tenantId,
+                    'company_id' => $tenantId,
+                    'code' => $c['code'],
+                    'country_iso' => substr($c['country'], 0, 2),
+                    'country' => $c['country'],
+                    'rate' => $c['rate'],
+                    'tax_rate_percent' => $c['rate'],
+                    'description' => $c['description'],
+                    'is_reverse_charge' => $c['rc'],
+                    'is_split_payment' => $c['sp'],
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                DB::table('vat_codes')->where('id', $existing->id)->update([
+                    'tenant_id' => $tenantId,
+                    'company_id' => $tenantId,
+                    'country_iso' => substr($c['country'], 0, 2),
+                    'country' => $c['country'],
+                    'rate' => $c['rate'],
+                    'tax_rate_percent' => $c['rate'],
+                    'description' => $c['description'],
+                    'is_reverse_charge' => $c['rc'],
+                    'is_split_payment' => $c['sp'],
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+    }
+}

@@ -1,0 +1,251 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Tenancy;
+
+use App\Models\Tenant;
+use App\Services\Inventory\LabelPresetRegistry;
+use Closure;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Modules\HumanResources\Services\TimeTracking\DataRetentionPolicy;
+use Modules\Invoicing\Services\CustomerCreditService;
+
+/**
+ * Typed, whitelisted per-tenant preferences stored under `tenants.settings.preferences.<group>.<key>`.
+ */
+class TenantPreferences
+{
+    public const GROUPS = ['invoice', 'email', 'sdi', 'work_orders', 'company', 'labels', 'inventory', 'banking', 'accounting', 'time_tracking', 'visitors', 'sales', 'fiscal'];
+
+    /**
+     * Preference keys that hold a group of options, merged option by option when updated.
+     *
+     * @var array<string, array<int, string>>
+     */
+    private const NESTED_OPTIONS = ['banking' => ['reconciliation', 'ledger_defaults'], 'accounting' => ['accounts', 'bank_accounts']];
+
+    public function __construct(private readonly TenantContext $tenantContext) {}
+
+    /**
+     * An IBAN without spaces, in upper case.
+     */
+    public static function normalizeIban(string $iban): string
+    {
+        return strtoupper((string) preg_replace('/\s+/', '', $iban));
+    }
+
+    /**
+     * Validation rules for the keys of a preference group (null clears a preference).
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public function rules(string $group): array
+    {
+        $tenantId = $this->tenantContext->getTenantId();
+
+        return match ($group) {
+            'invoice' => [
+                'default_payment_term_id' => ['nullable', 'uuid', Rule::exists('payment_terms', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
+                'footer_text' => ['nullable', 'string', 'max:1000'],
+                'reminder_grace_days' => ['nullable', 'integer', 'min:0', 'max:365'],
+                'reminder_interval_days' => ['nullable', 'integer', 'min:1', 'max:365'],
+                'reminder_max_level' => ['nullable', 'integer', 'min:1', 'max:3'],
+            ],
+            'email' => [
+                'sender_name' => ['nullable', 'string', 'max:100'],
+                'reply_to' => ['nullable', 'email', 'max:255'],
+                'bcc' => ['nullable', 'email', 'max:255'],
+                'signature' => ['nullable', 'string', 'max:2000'],
+            ],
+            'sdi' => [
+                'send_enabled' => ['nullable', 'boolean'],
+            ],
+            'company' => [
+                'street' => ['nullable', 'string', 'max:70'],
+                'house_number' => ['nullable', 'string', 'max:16'],
+                'postal_code' => ['nullable', 'string', 'max:16'],
+                'city' => ['nullable', 'string', 'max:35'],
+                'country' => ['nullable', 'string', 'regex:/^[A-Z]{2}$/'],
+                'address_line_1' => ['nullable', 'string', 'max:70'],
+                'address_line_2' => ['nullable', 'string', 'max:70'],
+                // Business-day time zone; when empty it follows the country of the company (see TenantClock).
+                'timezone' => ['nullable', 'string', 'timezone:all'],
+            ],
+            'labels' => array_merge(
+                [
+                    'default_preset' => ['nullable', 'string', 'max:50'],
+                    'custom_presets' => ['nullable', 'array', 'max:20'],
+                    'custom_presets.*' => ['array'],
+                    'custom_presets.*.name' => ['required', 'string', 'max:100'],
+                ],
+                LabelPresetRegistry::geometryRules('custom_presets.*'),
+                LabelPresetRegistry::contentOptionRules('custom_presets.*.defaults'),
+            ),
+            'accounting' => [
+                'accounts' => ['nullable', 'array'],
+                'accounts.receivables_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'accounts.payables_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'accounts.revenue_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'accounts.output_vat_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'accounts.cost_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'accounts.input_vat_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'accounts.bank_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'accounts.rounding_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'accounts.cash_discount_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.-]{1,20}$/'],
+                // Ledger account of every bank account, by IBAN: {"IT60X0542811101000000123456": "1001"}.
+                'bank_accounts' => ['nullable', 'array', function (string $attribute, mixed $value, Closure $fail): void {
+                    foreach (array_keys((array) $value) as $iban) {
+                        if (preg_match('/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/', self::normalizeIban((string) $iban)) !== 1) {
+                            $fail(__('accounting.errors.invalid_iban', ['iban' => $iban]));
+                        }
+                    }
+                }],
+                'bank_accounts.*' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+            ],
+            'banking' => [
+                'reconciliation' => ['nullable', 'array'],
+                'reconciliation.auto_match_tolerance_amount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+                'reconciliation.max_fee_deduction_amount' => ['nullable', 'numeric', 'min:0', 'max:10000'],
+                'reconciliation.allow_partial_reconciliation' => ['nullable', 'boolean'],
+                'ledger_defaults' => ['nullable', 'array'],
+                'ledger_defaults.tax_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.payroll_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.bank_charges_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                // Ledger account of the commission the bank charges on an unpaid Ri.Ba. receipt.
+                'ledger_defaults.riba_unpaid_fee_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                // Counter accounts of the treasury postings: no default is shipped, a posting without its account is refused.
+                'ledger_defaults.internal_transfer_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.generic_expense_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.interest_income_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.interest_expense_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.fx_unrealised_gain_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.fx_unrealised_loss_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.cash_difference_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.auto_categorize_standard_codes' => ['nullable', 'boolean'],
+            ],
+            'inventory' => [
+                'auto_deactivate_on_zero_stock' => ['nullable', 'boolean'],
+                'sync_deactivation_to_ecommerce' => ['nullable', 'boolean'],
+            ],
+            'time_tracking' => [
+                'retention_years' => ['nullable', 'integer', 'min:'.DataRetentionPolicy::MINIMUM_YEARS, 'max:'.DataRetentionPolicy::MAXIMUM_YEARS],
+            ],
+            'visitors' => [
+                'retention_days' => ['nullable', 'integer', 'min:'.config('visitors.retention_min_days'), 'max:'.config('visitors.retention_max_days')],
+            ],
+            // Credit management of the sales orders (see CustomerCreditService): what confirming an order does when the
+            // customer is over its credit limit, and after how many days an overdue invoice blocks new orders (none by default).
+            'sales' => [
+                'credit_check_mode' => ['nullable', Rule::in(CustomerCreditService::MODES)],
+                'credit_block_overdue_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
+            ],
+            'work_orders' => [
+                'auto_invoice' => ['nullable', 'boolean'],
+                'auto_email' => ['nullable', 'boolean'],
+            ],
+            'fiscal' => $this->fiscalRules(),
+            default => [],
+        };
+    }
+
+    /**
+     * Italian fiscal defaults (issue #286): regime, default cassa and ritenuta, stamp duty payer, ENASARCO.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    private function fiscalRules(): array
+    {
+        return [
+            'regime_fiscale' => ['nullable', 'string', Rule::in((array) config('italian_tax.regimes', []))],
+            'default_fund' => ['nullable', 'array'],
+            'default_fund.type' => ['required_with:default_fund', 'string', Rule::in(array_keys((array) config('italian_tax.fund_types', [])))],
+            'default_fund.percent' => ['required_with:default_fund', 'numeric', 'min:0', 'max:100'],
+            'default_fund.vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'default_fund.natura' => ['nullable', 'string', Rule::in((array) config('italian_tax.natura_codes', []))],
+            'default_fund.withholding_applies' => ['nullable', 'boolean'],
+            'default_withholding' => ['nullable', 'array'],
+            'default_withholding.type' => ['required_with:default_withholding', 'string', Rule::in(array_keys((array) config('italian_tax.withholding.types', [])))],
+            'default_withholding.reason' => ['required_with:default_withholding', 'string', Rule::in((array) config('italian_tax.withholding.reasons', []))],
+            'default_withholding.rate' => ['required_with:default_withholding', 'numeric', 'min:0', 'max:100'],
+            'default_withholding.taxable_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'default_withholding.includes_fund' => ['nullable', 'boolean'],
+            'stamp_duty_charge_mode' => ['nullable', 'string', Rule::in(['customer', 'issuer'])],
+            'enasarco_enabled' => ['nullable', 'boolean'],
+        ];
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    public function all(): array
+    {
+        $stored = $this->tenantContext->getTenant()?->settings['preferences'] ?? [];
+
+        return collect(self::GROUPS)->mapWithKeys(fn (string $group): array => [$group => $stored[$group] ?? []])->all();
+    }
+
+    public function get(string $group, string $key, mixed $default = null): mixed
+    {
+        return $this->all()[$group][$key] ?? $default;
+    }
+
+    /**
+     * Merge values into a group; null values remove the preference.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    public function update(string $group, array $values): array
+    {
+        $tenantId = $this->tenantContext->getTenantId();
+
+        return DB::transaction(function () use ($group, $values, $tenantId): array {
+            $tenant = Tenant::lockForUpdate()->findOrFail($tenantId);
+            $settings = $tenant->settings ?? [];
+            $current = $settings['preferences'][$group] ?? [];
+
+            foreach ($values as $key => $value) {
+                if (in_array($key, self::NESTED_OPTIONS[$group] ?? [], true) && is_array($value)) {
+                    // The nested options are merged one by one; null removes a single option.
+                    if ($key === 'bank_accounts') {
+                        $value = collect($value)->mapWithKeys(fn (mixed $account, string|int $iban): array => [self::normalizeIban((string) $iban) => $account])->all();
+                    }
+
+                    $merged = array_filter(array_merge($current[$key] ?? [], $value), fn (mixed $option): bool => $option !== null);
+
+                    if ($merged === []) {
+                        unset($current[$key]);
+                    } else {
+                        $current[$key] = $merged;
+                    }
+
+                    continue;
+                }
+
+                if ($value === null) {
+                    unset($current[$key]);
+                } else {
+                    $current[$key] = $value;
+                }
+            }
+
+            $settings['preferences'][$group] = $current;
+
+            // Backward compatibility: the FatturaPA builder historically read `settings.regime_fiscale`.
+            if ($group === 'fiscal' && array_key_exists('regime_fiscale', $values)) {
+                if ($values['regime_fiscale'] === null) {
+                    unset($settings['regime_fiscale']);
+                } else {
+                    $settings['regime_fiscale'] = $values['regime_fiscale'];
+                }
+            }
+
+            $tenant->update(['settings' => $settings]);
+            $this->tenantContext->setTenant($tenant);
+
+            return $current;
+        });
+    }
+}

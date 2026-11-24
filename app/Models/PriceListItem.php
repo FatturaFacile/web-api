@@ -1,0 +1,58 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Enterprise\MultiTenant\Concerns\StampsTenantFromParent;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+/**
+ * @property string $tenant_id
+ */
+class PriceListItem extends Model
+{
+    use HasFactory, HasUuids, StampsTenantFromParent;
+
+    protected $fillable = [
+        'price_list_id',
+        'product_id',
+        'price',
+        'min_quantity',
+        'max_quantity',
+        'discount_cascade',
+        'discount_mode',
+        'valid_from',
+        'valid_to',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'min_quantity' => 'decimal:4',
+            'max_quantity' => 'decimal:4',
+            'price' => 'decimal:4',
+            'valid_from' => 'date',
+            'valid_to' => 'date',
+        ];
+    }
+
+    /**
+     * @return BelongsTo<PriceList, $this>
+     */
+    public function priceList(): BelongsTo
+    {
+        return $this->belongsTo(PriceList::class);
+    }
+
+    /**
+     * @return BelongsTo<Product, $this>
+     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+}

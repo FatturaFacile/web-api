@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.ech.ch/xmlns/eCH-0217/2"
+           xmlns:tns="http://www.ech.ch/xmlns/eCH-0217/2"
+           elementFormDefault="qualified">
+
+  <xs:simpleType name="UidType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="CHE-\d{3}\.\d{3}\.\d{3}(\sMWST)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="AmountType">
+    <xs:restriction base="xs:decimal">
+      <xs:fractionDigits value="2"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NonNegativeAmountType">
+    <xs:restriction base="xs:decimal">
+      <xs:minInclusive value="0"/>
+      <xs:fractionDigits value="2"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SettlementMethodType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="effective"/>
+      <xs:enumeration value="saldosteuersatz"/>
+      <xs:enumeration value="net_tax_rate"/>
+      <xs:enumeration value="flat_tax_rate"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ConsiderationBasisType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="agreed"/>
+      <xs:enumeration value="received"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="BoxType">
+    <xs:attribute name="code" type="xs:string" use="required"/>
+    <xs:attribute name="amount" type="tns:AmountType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="RateBoxType">
+    <xs:attribute name="code" type="xs:string" use="required"/>
+    <xs:attribute name="taxableBase" type="tns:AmountType" use="required"/>
+    <xs:attribute name="rate" type="xs:decimal" use="required"/>
+    <xs:attribute name="taxAmount" type="tns:AmountType" use="required"/>
+  </xs:complexType>
+
+  <xs:element name="vatDeclaration">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="header">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="uid" type="tns:UidType"/>
+              <xs:element name="companyName" type="xs:string"/>
+              <xs:element name="settlementMethod" type="tns:SettlementMethodType"/>
+              <xs:element name="considerationBasis" type="tns:ConsiderationBasisType" minOccurs="0"/>
+              <xs:element name="periodFrom" type="xs:date"/>
+              <xs:element name="periodTo" type="xs:date"/>
+              <xs:element name="currency" type="xs:string"/>
+              <xs:element name="quadraturaPassed" type="xs:boolean" minOccurs="0"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="turnoverSection">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="box" type="tns:BoxType" minOccurs="8" maxOccurs="12"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="taxCalculationSection">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="rateBox" type="tns:RateBoxType" minOccurs="1" maxOccurs="8"/>
+              <xs:element name="box" type="tns:BoxType" minOccurs="1" maxOccurs="2"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="inputTaxSection">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="box" type="tns:BoxType" minOccurs="6" maxOccurs="8"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="settlementSection">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="box" type="tns:BoxType" minOccurs="2" maxOccurs="4"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="otherFlowsSection" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="box" type="tns:BoxType" minOccurs="2" maxOccurs="4"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="minorVersion" type="xs:integer" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

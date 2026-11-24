@@ -1,0 +1,1898 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<countryCodes version="00186" created="2026-08-25T02:56:36" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.ezv.admin.ch/pdf_linker.php?doc=edecCountryCodeSchema_v_1_0">
+<countryGroups>
+<countryGroup grpNr="100001" grpUser="Tarif" nameDe="Europäische Union" nameFr="Union européenne" nameIt="Unione europea" nameEn="European Union" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100002" grpUser="Tarif" nameDe="Europäische Freihandelsassoziation" nameFr="Association européenne de libre-échange" nameIt="Associazione europea di libero scambio" nameEn="European Free Trade Association" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100003" grpUser="Tarif" nameDe="Entwicklungsländer und -gebiete" nameFr="Pays et territoires en développement" nameIt="Paesi e territori in sviluppo" nameEn="Developing countries and territories" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100004" grpUser="Tarif" nameDe="SPANIEN" nameFr="SPANIEN" nameIt="SPANIEN" nameEn="SPANIEN" validFrom="1988-01-01" validTo="1998-12-31" />
+<countryGroup grpNr="100005" grpUser="Tarif" nameDe="Südafrikanische Zollunion" nameFr="Union douanière d&apos;Afrique australe" nameIt="Unione doganale dell&apos;Africa australe" nameEn="Southern African Customs Union" validFrom="2008-05-01" validTo="2999-12-31" />
+<countryGroup grpNr="100006" grpUser="Tarif" nameDe="In der Entwicklung am wenigsten fortgeschrittene Länder" nameFr="Pays en développement les moins avancés" nameIt="Paesi in sviluppo meno avanzati" nameEn="Least developed countries" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100007" grpUser="Tarif" nameDe="Andorra" nameFr="Andorre" nameIt="Andorra" nameEn="Andorra" validFrom="1999-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100008" grpUser="Tarif" nameDe="BULGARIEN" nameFr="BULGARIEN" nameIt="BULGARIEN" nameEn="BULGARIEN" validFrom="1988-01-01" validTo="1998-12-31" />
+<countryGroup grpNr="100009" grpUser="Tarif" nameDe="Golfkooperationsrat" nameFr="Conseil de coopération du Golfe" nameIt="Consiglio di cooperazione del Golfo" nameEn="Gulf Cooperation Council" validFrom="2014-07-01" validTo="2999-12-31" />
+<countryGroup grpNr="100010" grpUser="Tarif" nameDe="Zentralamerikanische Staaten" nameFr="Etats d&apos;Amérique centrale" nameIt="Stati dell&apos;America centrale" nameEn="Central American States" validFrom="2014-08-29" validTo="2999-12-31" />
+<countryGroup grpNr="100100" grpUser="Tarif" nameDe="Tschechische Republik, Slovakische Republik" nameFr="République tchèque, République slovaque" nameIt="Repubblica ceca, Repubblica slovacca" nameEn="Czech Republic, Slovak Republic" validFrom="1988-01-01" validTo="2004-04-30" />
+<countryGroup grpNr="100105" grpUser="Tarif" nameDe="PORTUGAL" nameFr="PORTUGAL" nameIt="PORTUGAL" nameEn="PORTUGAL" validFrom="1988-01-01" validTo="1998-12-31" />
+<countryGroup grpNr="100110" grpUser="Tarif" nameDe="Türkiye" nameFr="Türkiye" nameIt="Türkiye" nameEn="Türkiye" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100111" grpUser="Tarif" nameDe="Marokko" nameFr="Maroc" nameIt="Marocco" nameEn="Morocco" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100112" grpUser="Tarif" nameDe="Westjordanland und Gazastreifen" nameFr="Cisjordanie et Bande de Gaza" nameIt="Cisgiordania e Striscia di Gaza" nameEn="West Bank and Gaza Strip" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100113" grpUser="Tarif" nameDe="Nordmazedonien" nameFr="Macédoine du Nord" nameIt="Macedonia del Nord" nameEn="North Macedonia" validFrom="2002-05-01" validTo="2999-12-31" />
+<countryGroup grpNr="100114" grpUser="Tarif" nameDe="Mexiko" nameFr="Mexique" nameIt="Messico" nameEn="Mexico" validFrom="2001-07-01" validTo="2999-12-31" />
+<countryGroup grpNr="100115" grpUser="Tarif" nameDe="Jordanien" nameFr="Jordanie" nameIt="Giordania" nameEn="Jordan" validFrom="2002-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100116" grpUser="Tarif" nameDe="Kroatien" nameFr="Croatie" nameIt="Croazia" nameEn="Croatia" validFrom="2002-01-01" validTo="2013-06-30" />
+<countryGroup grpNr="100117" grpUser="Tarif" nameDe="Chile" nameFr="Chili" nameIt="Cile" nameEn="Chile" validFrom="2004-12-01" validTo="2999-12-31" />
+<countryGroup grpNr="100118" grpUser="Tarif" nameDe="Tunesien" nameFr="Tunisie" nameIt="Tunisia" nameEn="Tunisia" validFrom="2005-06-01" validTo="2999-12-31" />
+<countryGroup grpNr="100119" grpUser="Tarif" nameDe="Libanon" nameFr="Liban" nameIt="Libano" nameEn="Lebanon" validFrom="2007-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100120" grpUser="Tarif" nameDe="Israel" nameFr="Israël" nameIt="Israele" nameEn="Israel" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100121" grpUser="Tarif" nameDe="Lesotho" nameFr="Lesotho" nameIt="Lesotho" nameEn="Lesotho" validFrom="2008-05-01" validTo="2999-12-31" />
+<countryGroup grpNr="100122" grpUser="Tarif" nameDe="Aegypten" nameFr="Egypte" nameIt="Egitto" nameEn="Egypt" validFrom="2007-08-01" validTo="2999-12-31" />
+<countryGroup grpNr="100123" grpUser="Tarif" nameDe="Kanada" nameFr="Canada" nameIt="Canada" nameEn="Canada" validFrom="2009-07-01" validTo="2999-12-31" />
+<countryGroup grpNr="100124" grpUser="Tarif" nameDe="Japan" nameFr="Japon" nameIt="Giappone" nameEn="Japan" validFrom="2009-09-01" validTo="2999-12-31" />
+<countryGroup grpNr="100125" grpUser="Tarif" nameDe="Kolumbien" nameFr="Colombie" nameIt="Colombia" nameEn="Colombia" validFrom="2011-07-01" validTo="2999-12-31" />
+<countryGroup grpNr="100126" grpUser="Tarif" nameDe="Serbien" nameFr="Serbie" nameIt="Serbia" nameEn="Serbia" validFrom="2010-10-01" validTo="2999-12-31" />
+<countryGroup grpNr="100127" grpUser="Tarif" nameDe="Albanien" nameFr="Albanie" nameIt="Albania" nameEn="Albania" validFrom="2010-11-01" validTo="2999-12-31" />
+<countryGroup grpNr="100128" grpUser="Tarif" nameDe="Ukraine" nameFr="Ukraine" nameIt="Ucraina" nameEn="Ukraine" validFrom="2012-06-01" validTo="2999-12-31" />
+<countryGroup grpNr="100129" grpUser="Tarif" nameDe="Peru" nameFr="Pérou" nameIt="Perù" nameEn="Peru" validFrom="2011-07-01" validTo="2999-12-31" />
+<countryGroup grpNr="100130" grpUser="Tarif" nameDe="Estland, Lettland, Litauen" nameFr="Estonie, Lettonie, Lituanie" nameIt="Estonia, Lettonia, Lituania" nameEn="Estonia, Latvia, Lithuania" validFrom="1988-01-01" validTo="2004-04-30" />
+<countryGroup grpNr="100131" grpUser="Tarif" nameDe="Montenegro" nameFr="Monténégro" nameIt="Montenegro" nameEn="Montenegro" validFrom="2012-09-01" validTo="2999-12-31" />
+<countryGroup grpNr="100132" grpUser="Tarif" nameDe="Hongkong" nameFr="Hong Kong" nameIt="Hong Kong" nameEn="Hong Kong" validFrom="2012-10-01" validTo="2999-12-31" />
+<countryGroup grpNr="100133" grpUser="Tarif" nameDe="Costa Rica" nameFr="Costa Rica" nameIt="Costa Rica" nameEn="Costa Rica" validFrom="2014-08-29" validTo="2999-12-31" />
+<countryGroup grpNr="100134" grpUser="Tarif" nameDe="Panama" nameFr="Panama" nameIt="Panama" nameEn="Panama" validFrom="2014-08-29" validTo="2999-12-31" />
+<countryGroup grpNr="100135" grpUser="Tarif" nameDe="Bosnien-Herzegowina" nameFr="Bosnie-Herzégovine" nameIt="Bosnia Erzegovina" nameEn="Bosnia and Herzegovina" validFrom="2015-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100136" grpUser="Tarif" nameDe="China (ohne Hongkong)" nameFr="Chine (sans Hong Kong)" nameIt="Cina (senza Hong Kong)" nameEn="China (without Hong Kong)" validFrom="2014-07-01" validTo="2999-12-31" />
+<countryGroup grpNr="100138" grpUser="Tarif" nameDe="Philippinen" nameFr="Philippines" nameIt="Filippine" nameEn="Philippines" validFrom="2018-06-01" validTo="2999-12-31" />
+<countryGroup grpNr="100139" grpUser="Tarif" nameDe="Georgien" nameFr="Géorgie" nameIt="Georgia" nameEn="Georgia" validFrom="2018-05-01" validTo="2999-12-31" />
+<countryGroup grpNr="100140" grpUser="Tarif" nameDe="Polen" nameFr="Pologne" nameIt="Polonia" nameEn="Poland" validFrom="1988-01-01" validTo="2004-04-30" />
+<countryGroup grpNr="100141" grpUser="Tarif" nameDe="Ecuador" nameFr="Equateur" nameIt="Ecuador" nameEn="Ecuador" validFrom="2020-11-01" validTo="2999-12-31" />
+<countryGroup grpNr="100142" grpUser="Tarif" nameDe="Vereinigtes Königreich" nameFr="Royaume-Uni" nameIt="Regno Unito" nameEn="United Kingdom" validFrom="2021-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100143" grpUser="Tarif" nameDe="Indonesien" nameFr="Indonésie" nameIt="Indonesia" nameEn="Indonesia" validFrom="2021-11-01" validTo="2999-12-31" />
+<countryGroup grpNr="100144" grpUser="Tarif" nameDe="Moldau, Republik" nameFr="Moldova, République de" nameIt="Moldova, Repubblica di" nameEn="Moldova, Republic of" validFrom="2025-04-01" validTo="2999-12-31" />
+<countryGroup grpNr="100145" grpUser="Tarif" nameDe="Indien" nameFr="Inde" nameIt="India" nameEn="India" validFrom="2025-10-01" validTo="2999-12-31" />
+<countryGroup grpNr="100147" grpUser="Tarif" nameDe="Vereinigte Staaten" nameFr="Etats-Unis" nameIt="Stati Uniti" nameEn="United States" validFrom="2025-11-19" validTo="2999-12-31" />
+<countryGroup grpNr="100148" grpUser="Tarif" nameDe="Kosovo" nameFr="Kosovo" nameIt="Kosovo" nameEn="Kosovo" validFrom="2026-08-01" validTo="2999-12-31" />
+<countryGroup grpNr="100150" grpUser="Tarif" nameDe="Rumänien" nameFr="Roumanie" nameIt="Romania" nameEn="Romania" validFrom="1988-01-01" validTo="2006-12-31" />
+<countryGroup grpNr="100160" grpUser="Tarif" nameDe="Bulgarien" nameFr="Bulgarie" nameIt="Bulgaria" nameEn="Bulgaria" validFrom="1988-01-01" validTo="2006-12-31" />
+<countryGroup grpNr="100170" grpUser="Tarif" nameDe="Ungarn" nameFr="Hongrie" nameIt="Ungheria" nameEn="Hungary" validFrom="1988-01-01" validTo="2004-04-30" />
+<countryGroup grpNr="100180" grpUser="Tarif" nameDe="Färöer-Inseln" nameFr="Iles Féroé" nameIt="Isole Feroe" nameEn="Faeroe Islands" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100190" grpUser="Tarif" nameDe="Slowenien" nameFr="Slovénie" nameIt="Slovenia" nameEn="Slovenia" validFrom="1988-01-01" validTo="2004-04-30" />
+<countryGroup grpNr="100309" grpUser="Tarif" nameDe="JUGOSLAWIEN" nameFr="JUGOSLAWIEN" nameIt="JUGOSLAWIEN" nameEn="JUGOSLAWIEN" validFrom="1988-01-01" validTo="1998-12-31" />
+<countryGroup grpNr="100311" grpUser="Tarif" nameDe="China (ohne Hongkong)" nameFr="Chine (sans Hong-Kong)" nameIt="Cina (senza Hong Kong)" nameEn="China (without Hong Kong)" validFrom="1988-01-01" validTo="2014-06-30" />
+<countryGroup grpNr="100312" grpUser="Tarif" nameDe="HONGKONG" nameFr="HONGKONG" nameIt="HONGKONG" nameEn="HONGKONG" validFrom="1988-01-01" validTo="1998-12-31" />
+<countryGroup grpNr="100313" grpUser="Tarif" nameDe="Macau" nameFr="Macao" nameIt="Macao" nameEn="Macau" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100314" grpUser="Tarif" nameDe="SUEDKOREA" nameFr="SUEDKOREA" nameIt="SUEDKOREA" nameEn="SUEDKOREA" validFrom="1988-01-01" validTo="1998-12-31" />
+<countryGroup grpNr="100315" grpUser="Tarif" nameDe="Korea (Nord)" nameFr="Corée (Nord)" nameIt="Corea (Nord)" nameEn="Korea (North)" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100316" grpUser="Tarif" nameDe="Brasilien" nameFr="Brésil" nameIt="Brasile" nameEn="Brazil" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100317" grpUser="Tarif" nameDe="Indien" nameFr="Inde" nameIt="India" nameEn="India" validFrom="1999-07-01" validTo="2025-09-30" />
+<countryGroup grpNr="100318" grpUser="Tarif" nameDe="Pakistan" nameFr="Pakistan" nameIt="Pakistan" nameEn="Pakistan" validFrom="1999-07-01" validTo="2999-12-31" />
+<countryGroup grpNr="100319" grpUser="Tarif" nameDe="Sri Lanka" nameFr="Sri Lanka" nameIt="Sri Lanka" nameEn="Sri Lanka" validFrom="1999-07-01" validTo="2999-12-31" />
+<countryGroup grpNr="100320" grpUser="Tarif" nameDe="Bosnien und Herzegowina" nameFr="Bosnie et Herzégovine" nameIt="Bosnia e Erzegovina" nameEn="Bosnia and Herzegovina" validFrom="2002-01-01" validTo="2004-03-31" />
+<countryGroup grpNr="100321" grpUser="Tarif" nameDe="Albanien" nameFr="Albanie" nameIt="Albania" nameEn="Albania" validFrom="2002-01-01" validTo="2004-03-31" />
+<countryGroup grpNr="100322" grpUser="Tarif" nameDe="Singapur" nameFr="Singapour" nameIt="Singapore" nameEn="Singapore" validFrom="2003-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="100323" grpUser="Tarif" nameDe="Korea (Süd)" nameFr="Corée (Sud)" nameIt="Corea (Sud)" nameEn="Korea (South)" validFrom="2006-09-01" validTo="2999-12-31" />
+<countryGroup grpNr="999999" grpUser="Tarif" nameDe="Länder nicht nachgewiesen" nameFr="Pays non précisés" nameIt="Paesi non specificati" nameEn="Countries not specified" validFrom="2002-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="200000" grpUser="Measure" nameDe="Alle Länder" nameFr="Tous les pays" nameIt="Tutti i paesi" nameEn="All countries" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="200001" grpUser="Measure" nameDe="Europäische Union (einschl. Andorra, Nordirland und San Marino)" nameFr="Union européenne (y c. Andorre, Irlande du Nord et Saint-Marin)" nameIt="Unione europea (comprese Andorra, Irlanda del Nord e San Marino)" nameEn="European Union (incl. Andorra, Northern Ireland and San Marino)" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="200002" grpUser="Measure" nameDe="Europäische Freihandelsassoziation" nameFr="Association européenne de libre-échange" nameIt="Associazione europea di libero scambio" nameEn="European Free Trade Association" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="200003" grpUser="Measure" nameDe="Europa" nameFr="Europe" nameIt="Europa" nameEn="Europe" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="200004" grpUser="Measure" nameDe="Norwegen" nameFr="Norvège" nameIt="Norvegia" nameEn="Norway" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="200005" grpUser="Measure" nameDe="Island" nameFr="Island" nameIt="Island" nameEn="Island" validFrom="2007-07-01" validTo="2999-12-31" />
+<countryGroup grpNr="200006" grpUser="Measure" nameDe="andere Länder ohne grenztierärztliche Untersuchung (Kontrolle)" nameFr="autres pays sans visite vétérinaire de frontière (contrôle)" nameIt="altri paesi senza visita veterinaria di confine (controllo)" nameEn="autres pays sans visite vétérinaire de frontière (contrôle)" validFrom="2013-02-10" validTo="2999-12-31" />
+<countryGroup grpNr="200007" grpUser="Measure" nameDe="Neuseeland" nameFr="Nouvelle-Zélande" nameIt="Nuova Zelanda" nameEn="New Zeeland" validFrom="2016-01-01" validTo="2999-12-31" />
+<countryGroup grpNr="200008" grpUser="Measure" nameDe="Länder ohne IUU (Kontrolle)" nameFr="pays sans IUU (contrôle)" nameIt="paesi senza IUU (controllo)" nameEn="countries without IUU (control)" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroup grpNr="200009" grpUser="Measure" nameDe="Indonesien" nameFr="Indonésie" nameIt="Indonesia" nameEn="Indonesia" validFrom="2024-10-01" validTo="2999-12-31" />
+<countryGroup grpNr="200010" grpUser="Measure" nameDe="Länder von Tschernobyl-Verordnung betroffen" nameFr="Pays touchés par Ordonnance Tchernobyl" nameIt="Paesi colpiti da Ordinanza Chernobyl" nameEn="Countries affected by Chernobyl Ordinance" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroup grpNr="300001" grpUser="Fracht" nameDe="Länder der Sicherheitszone" nameFr="Pays de la zone de sécurité" nameIt="Paesi nella zona di sicurezza" nameEn="Countries of the security zone" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroup grpNr="300002" grpUser="Fracht" nameDe="Länder ausserhalb der Sicherheitszone" nameFr="Pays hors de la zone de sécurité" nameIt="Paesi fuori dalla zona di sicurezza" nameEn="Countries outside of the security zone" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroup grpNr="300010" grpUser="Fracht" nameDe="Länder mit e-CITES" nameFr="Pays avec e-CITES" nameIt="Paesi con e-CITES" nameEn="Countries with e-CITES" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroup grpNr="300011" grpUser="Fracht" nameDe="Länder ohne e-CITES" nameFr="Pays sans e-CITES" nameIt="Paesi senza e-CITES" nameEn="Countries without e-CITES" validFrom="2013-10-01" validTo="2999-12-31" />
+</countryGroups>
+<countries>
+<country isoCode="AD" nameDe="Andorra" nameFr="Andorre" nameIt="Andorra" nameEn="Andorra" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2013-02-08" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100007" validFrom="1999-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="AE" nameDe="Vereinigte Arabische Emirate" nameFr="Emirats arabes unis" nameIt="Emirati Arabi Uniti" nameEn="United Arab Emirates" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100009" validFrom="2014-07-01" validTo="2999-12-31" />
+</country>
+<country isoCode="AF" nameDe="Afghanistan" nameFr="Afghanistan" nameIt="Afganistan" nameEn="Afghanistan" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="AG" nameDe="Antigua und Barbuda (mit Redonda)" nameFr="Antigua et Barbuda (comprennent Redonda)" nameIt="Antigua e Barbuda (compresa Redonda)" nameEn="Antigua and Barbuda (with Redonda)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2026-03-31" />
+</country>
+<country isoCode="AI" nameDe="Anguilla (mit Sombrero-Insel)" nameFr="Anguilla (comprend l&apos;île Sombrero)" nameIt="Anguilla (compreso isola Sombrero)" nameEn="Anguilla (includes Sombrero Island)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2026-03-31" />
+</country>
+<country isoCode="AL" nameDe="Albanien" nameFr="Albanie" nameIt="Albania" nameEn="Albania" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100321" validFrom="2002-01-01" validTo="2004-03-31" />
+<countryGroupAssignment grpNr="100127" validFrom="2010-11-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="2001-04-01" validTo="2004-03-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2010-10-31" />
+</country>
+<country isoCode="AM" nameDe="Armenien" nameFr="Arménie" nameIt="Armenia" nameEn="Armenia" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1992-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="AN" nameDe="Niederländische Antillen (mit Bonaire, St. Eustatius und Saba, Curaçao sowie Süd-St. Martin)" nameFr="Antilles néerlandaises (comprennent Bonaire, Saint-Eustache et Saba, Curaçao ainsi que la partie sud de Saint-Martin)" nameIt="Antille olandesi (comprese Bonaire, Sant&apos;Eustachio e Saba, Curaçao come la parte meridionale di Saint-Martin)" nameEn="Netherlands Antilles (incl. Bonaire, St. Eustatius and Saba, Curaçao and southern part of Saint Martin)" validFrom="1988-01-01" validTo="2012-12-31">
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2012-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2012-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="AO" nameDe="Angola" nameFr="Angola" nameIt="Angola" nameEn="Angola" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="AQ" nameDe="Antarktis (Gebiet südlich des 60. Breitengrades; ohne Französische Südgebiete [TF], Bouvetinsel [BV], Südgeorgien und die Südlichen Sandwichinseln [GS])" nameFr="Antarctique (territoires au sud du soixantième degré de latitude sud; sans les Terres australes françaises [TF], l&apos;île Bouvet [BV], les îles Géorgie du Sud et Sandwich du Sud [GS])" nameIt="Antartide (territori al di sotto del sessantesimo grado di latitudine sud; escluse Terre australi e antartiche francesi [TF], Isola di Bouvet [BV] e Georgia del sud e Sandwich australi [GS])" nameEn="Antarctica (territories located south of the 60. south latitude; not including the French Southern Territories [TF], Bouvet Island [BV], South Georgia and South Sandwich Islands [GS])" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="AR" nameDe="Argentinien (mit Feuerland)" nameFr="Argentine (comprend la Terre de Feu)" nameIt="Argentina (compreso la Terra del Fuoco)" nameEn="Argentina (includes the Tierra del Fuego)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="AS" nameDe="Amerikanisch-Samoa" nameFr="Samoa américaines" nameIt="Samoa americana" nameEn="American Samoa" validFrom="2006-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2006-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2006-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="AT" nameDe="Österreich" nameFr="Autriche" nameIt="Austria" nameEn="Austria" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="AU" nameDe="Australien (mit Lord Howe-, Macquarie-, Ashmore- und Cartier-Inseln)" nameFr="Australie (comprend les îles Lord Howe, Macquarie, Ashmore et Cartier)" nameIt="Australia (comprese le isole Lord Howe, Macquarie, Ashmore e Cartier)" nameEn="Australia (includes Lord Howe, Macquarie, Ashmore and Cartier Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="AW" nameDe="Aruba" nameFr="Aruba" nameIt="Aruba" nameEn="Aruba" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="AZ" nameDe="Aserbaidschan" nameFr="Azerbaïdjan" nameIt="Azerbaigian" nameEn="Azerbaijan" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1992-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BA" nameDe="Bosnien und Herzegowina" nameFr="Bosnie-Herzégovine" nameIt="Bosnia-Erzegovina" nameEn="Bosnia and Herzegovina" validFrom="1992-05-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100320" validFrom="2002-01-01" validTo="2004-03-31" />
+<countryGroupAssignment grpNr="100135" validFrom="2015-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="2001-04-01" validTo="2004-03-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1992-05-01" validTo="2014-12-31" />
+</country>
+<country isoCode="BB" nameDe="Barbados" nameFr="Barbade" nameIt="Barbados" nameEn="Barbados" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2012-08-31" />
+</country>
+<country isoCode="BD" nameDe="Bangladesch" nameFr="Bangladesh" nameIt="Bangladesh" nameEn="Bangladesh" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BE" nameDe="Belgien-Luxemburg" nameFr="Belgique-Luxembourg" nameIt="Belgio-Lussemburgo" nameEn="Belgium-Luxembourg" validFrom="1988-01-01" validTo="1998-12-31">
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="1998-12-31" />
+</country>
+<country isoCode="BE" nameDe="Belgien" nameFr="Belgique" nameIt="Belgio" nameEn="Belgium" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1999-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BF" nameDe="Burkina Faso" nameFr="Burkina" nameIt="Burkina Faso" nameEn="Burkina Faso" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BG" nameDe="Bulgarien, Republik" nameFr="Bulgarie, République de" nameIt="Bulgaria, Repubblica di" nameEn="Bulgaria, Republic of" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2007-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100160" validFrom="1988-01-01" validTo="2006-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="2007-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BH" nameDe="Bahrain" nameFr="Bahreïn" nameIt="Bahrein" nameEn="Bahrain" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100009" validFrom="2014-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2014-06-30" />
+</country>
+<country isoCode="BI" nameDe="Burundi" nameFr="Burundi" nameIt="Burundi" nameEn="Burundi" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BJ" nameDe="Benin" nameFr="Bénin" nameIt="Benin" nameEn="Benin" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BL" nameDe="Saint Barthélemy" nameFr="Saint-Barthélemy" nameIt="Saint-Barthélemy" nameEn="Saint Barthélemy" validFrom="2013-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2024-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2013-01-01" validTo="2023-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2013-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="2013-01-01" validTo="2013-02-28" />
+</country>
+<country isoCode="BM" nameDe="Bermuda" nameFr="Bermudes" nameIt="Bermuda" nameEn="Bermuda" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1998-12-31" />
+</country>
+<country isoCode="BN" nameDe="Brunei Darussalam" nameFr="Brunéi Darussalam" nameIt="Brunei Darussalam" nameEn="Brunei Darussalam" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1998-12-31" />
+</country>
+<country isoCode="BO" nameDe="Bolivien, Plurinationaler Staat" nameFr="Bolivie, Etat plurinational de" nameIt="Bolivia, Stato plurinazionale della" nameEn="Bolivia, the Plurinational State of" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BQ" nameDe="Bonaire, St. Eustatius und Saba" nameFr="Bonaire, Saint-Eustache et Saba" nameIt="Bonaire, Sint Eustatius e Saba" nameEn="Bonaire, Sint Eustatius and Saba" validFrom="2013-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2013-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2013-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BR" nameDe="Brasilien (mit Riffe von Rocas, Fernando de Noronha, Inseln Trinidade und Martim Vaz sowie der Felsen von S. Pedro und S. Paulo)" nameFr="Brésil (comprend l&apos;atoll das Rocas, Fernando de Noronha, les îles Trinidade, Martim Vaz et les roches Saint-Pierre et Saint-Paul)" nameIt="Brasile (compresi l&apos;atollo das Rocas, Fernando de Noronha, le isole Trinidade e Martim Vaz e le rocche S. Pedro e S. Paulo)" nameEn="Brazil (includes Atol das Rocas, Fernando de Noronha, Trindade and Martin Vaz Islands and Penedos de Sao Pedro and Sao Paulo)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100316" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BS" nameDe="Bahamas" nameFr="Bahamas" nameIt="Bahamas" nameEn="Bahamas" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1998-12-31" />
+</country>
+<country isoCode="BT" nameDe="Bhutan" nameFr="Bhoutan" nameIt="Bhutan" nameEn="Bhutan" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BV" nameDe="Bouvetinsel (auch Bouvetöya genannt)" nameFr="Bouvet, Île (appelée aussi Bouvetöya)" nameIt="Bouvet, Isola (detta anche Bouvetöya)" nameEn="Bouvet Island (named Bouvetöya too)" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="BW" nameDe="Botsuana" nameFr="Botswana" nameIt="Botswana" nameEn="Botswana" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100005" validFrom="2008-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2008-04-30" />
+</country>
+<country isoCode="BY" nameDe="Belarus (gebräuchliche Form: Weissrussland)" nameFr="Bélarus (forme usuelle: Biélorussie)" nameIt="Belarus (forma usuale: Bielorussia)" nameEn="Belarus (usual form: Bielorussia)" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2007-04-01" validTo="2999-12-31" />
+</country>
+<country isoCode="BZ" nameDe="Belize (mit Inseln Ambergris Caye und Turneffe)" nameFr="Belize (comprend les îles Ambergris Caye et Turneffe)" nameIt="Belize (compreso le isole Ambergris Caye e Turneffe)" nameEn="Belize (includes Ambergris Caye and Turneffe Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CA" nameDe="Kanada" nameFr="Canada" nameIt="Canada" nameEn="Canada" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100123" validFrom="2009-07-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CC" nameDe="Kokos (Keeling)-Inseln" nameFr="Cocos (Keeling), Îles" nameIt="Cocos (Keeling), Isole" nameEn="Cocos (Keeling) Islands" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CD" nameDe="Kongo, Demokratische Republik (früher Zaïre)" nameFr="Congo, République démocratique du (anciennement Zaïre)" nameIt="Congo, Repubblica democratica del (in passato Zaïre)" nameEn="Congo, Democratic Republic of the (before Zaïre)" validFrom="1997-06-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1997-06-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1997-06-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CF" nameDe="Zentralafrikanische Republik" nameFr="Centrafricaine, République" nameIt="Centrafricana, Repubblica" nameEn="Central African Republic" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CG" nameDe="Kongo, Republik" nameFr="Congo, République du" nameIt="Congo, Repubblica del" nameEn="Congo, Republic of the" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="2007-04-01" validTo="2011-06-30" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CH" nameDe="Schweiz (mit Liechtenstein und Büsingen; ohne Campione d&apos;Italia)" nameFr="Suisse (y compris Liechtenstein et Büsingen ; sans Campione d&apos;Italia)" nameIt="Svizzera (compresi il Lichtenstein e Büsingen; senza Campione d&apos;Italia)" nameEn="Switzerland (with Liechtenstein and Büsingen; excluding Campione d&apos;Italia)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CI" nameDe="Côte d&apos;Ivoire" nameFr="Côte d&apos;Ivoire" nameIt="Costa d&apos;Avorio" nameEn="Côte d&apos;Ivoire" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="2007-04-01" validTo="2026-03-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CK" nameDe="Cookinseln" nameFr="Cook, Îles" nameIt="Cook, Isole" nameEn="Cook Islands" validFrom="1998-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1998-01-01" validTo="2026-03-31" />
+</country>
+<country isoCode="CL" nameDe="Chile (mit Osterinseln und den Inseln Juan Fernandez, San Felix und Sala y Gomez, die Insel Chiloé, den Chonos-Archipel, die Wellington-Insel, den westlichen Teil von Feuerland, die Insel San Ambrosio)" nameFr="Chili (comprend les îles de Pâques, Juan Fernandez, San Felix et Sala y Gomez,  l&apos;île de Chiloé, l&apos;archipel des Chonos, l&apos;île Wellington, la partie ouest de Terre de Feu,  l&apos;île de San Ambrosio)" nameIt="Cile (compreso le isole di Pasqua, Juan Fernandez, San Felix e Sala y Gomez, l&apos;isola di Chiloé, l&apos;arcipelago di Chonos, l&apos;isola di Wellington, la Terra del Fuoco occidentale, l&apos;isola di San Ambrosio)" nameEn="Chile (includes Easter, Juan Fernandez, San Felix and Sala y Gomez Islands, Chiloé Island, Chonos Archipelago, Wellington Island, the western part of Tierra del Fuego, San Ambrosio Island)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100117" validFrom="2004-12-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2004-11-30" />
+</country>
+<country isoCode="CM" nameDe="Kamerun" nameFr="Cameroun" nameIt="Camerun" nameEn="Cameroon" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CN" nameDe="China, Volksrepublik (mit Insel Hainan)" nameFr="Chine, République populaire de (comprend l&apos;île de Hainan)" nameIt="Cina, Repubblica popolare di (compreso l&apos;isola di Hainan)" nameEn="China, People&apos;s Republic of (includes Hainan Island)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100311" validFrom="1988-01-01" validTo="2014-06-30" />
+<countryGroupAssignment grpNr="100136" validFrom="2014-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2014-06-30" />
+</country>
+<country isoCode="CO" nameDe="Kolumbien (mit San Andrés und Providencia, Malpelo-Insel, Roncadorriff, Serrana- und Serranillabanks)" nameFr="Colombie (comprend San Andrés et Providencia, l&apos;île Malpelo, Cayo Roncador, les basses Serrana et les basses Serranilla)" nameIt="Colombia (compresi San Andres e Providencia, l&apos;isola Malpelo, Cayo Roncador, Serrana e Serranilla)" nameEn="Colombia (includes San Andrés and Providence, Malpelo Island, Roncador Cay, Serrana and Serranilla Banks)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100125" validFrom="2011-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="CR" nameDe="Costa Rica (mit Cocos-Inseln)" nameFr="Costa Rica (comprend les îles Cocos)" nameIt="Costa Rica (comprese le isole Cocos)" nameEn="Costa Rica (includes Cocos Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100133" validFrom="2014-08-29" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100010" validFrom="2014-08-29" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2014-08-28" />
+</country>
+<country isoCode="CS" nameDe="Tschechoslowakei" nameFr="Tchécoslovaquie" nameIt="Cecoslovacchia" nameEn="Czechoslovakia" validFrom="1988-01-01" validTo="1992-12-31">
+<countryGroupAssignment grpNr="100100" validFrom="1988-01-01" validTo="1992-12-31" />
+</country>
+<country isoCode="CS" nameDe="Serbien-und-Montenegro" nameFr="Serbie-et-Monténégro" nameIt="Serbia-e-Montenegro" nameEn="Serbia and Montenegro" validFrom="2004-01-01" validTo="2005-12-31">
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2005-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2005-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2004-01-01" validTo="2005-12-31" />
+</country>
+<country isoCode="CU" nameDe="Kuba (mit Hauptinsel (Kuba), Camagüey, Sabana, die Inselgruppen Jardines de la Reina, Canarreos und Colorados sowie die Insel der Jugend (ehemals Pinos))" nameFr="Cuba (comprend l&apos;île principale (Cuba), Camagüey, Sabana, les archipels des Jardines de la Reina, des Canarreos et des Colorados et l&apos;île de la Jeunesse (anciennement Pinos))" nameIt="Cuba (compreso l&apos;isola principale (Cuba), Camagüey, Sabana, gli arcipelaghi di Jardines de la Reina, Canarreos e Colorados e l&apos;Isola della Gioventù (ex Pinos))" nameEn="Cuba (includes the main island (Cuba), Camagüey, Sabana, the archipelagos of Jardines de la Reina, Canarreos and Colorados and the Isle of Youth (formerly Pinos))" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CV" nameDe="Cabo Verde, Republik (mit Inseln Santo Antão, São Vicente, Santa Luzia, Branco, Raso, São Nicolau, Sal, Boa Vista, Santiago, Brava, Fogo, Rombo und Maio)" nameFr="Cabo Verde, République de (comprend les îles de Santo Antão, São Vicente, Santa Luzia, Branco, Raso, São Nicolau, Sal, Boa Vista, Santiago, Brava, Fogo, Rombo et Maio)" nameIt="Capo Verde, Repubblica di (compreso le isole di Santo Antão, São Vicente, Santa Luzia, Branco, Raso, São Nicolau, Sal, Boa Vista, Santiago, Brava, Fogo, Rombo e Maio)" nameEn="Cabo Verde, Republic of (includes the islands of Santo Antão, São Vicente, Santa Luzia, Branco, Raso, São Nicolau, Sal, Boa Vista, Santiago, Brava, Fogo, Rombo and Maio)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2011-06-30" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CW" nameDe="Curaçao" nameFr="Curaçao" nameIt="Curaçao" nameEn="Curaçao" validFrom="2013-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2013-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2013-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CX" nameDe="Weihnachtsinsel (australische Weihnachtsinsel)" nameFr="Ile Christmas (île Christmas australienne)" nameIt="Isola Christmas (isola Christmas australiana)" nameEn="Christmas Island (australian Christmas Island)" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CY" nameDe="Zypern" nameFr="Chypre" nameIt="Cipro" nameEn="Cyprus" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1998-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="2004-05-01" validTo="2999-12-31" />
+</country>
+<country isoCode="CZ" nameDe="Tschechien" nameFr="Tchéquie" nameIt="Cechia" nameEn="Czechia" validFrom="1993-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100100" validFrom="1993-01-01" validTo="2004-04-30" />
+<countryGroupAssignment grpNr="100001" validFrom="2004-05-01" validTo="2999-12-31" />
+</country>
+<country isoCode="DD" nameDe="DDR" nameFr="RDA" nameIt="RDT" nameEn="GDR" validFrom="1988-01-01" validTo="1990-10-31">
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="1990-10-31" />
+</country>
+<country isoCode="DE" nameDe="Deutschland (mit Helgoland; ohne Büsingen)" nameFr="Allemagne (comprend l&apos;île de Heligoland; sans Büsingen)" nameIt="Germania (compreso Heligoland; senza Büsingen)" nameEn="Germany (includes the island of Heligoland; excluding the territory of Büsingen)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="DJ" nameDe="Dschibuti" nameFr="Djibouti" nameIt="Gibuti" nameEn="Djibouti" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="DK" nameDe="Dänemark (ohne Färöer-Inseln und Grönland)" nameFr="Danemark (sans les îles Féroé et le Groenland)" nameIt="Danimarca (senza le isole Feroe e la Groenlandia)" nameEn="Denmark (excluding Faeroe Islands and the Greenland)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="DM" nameDe="Dominica" nameFr="Dominique" nameIt="Dominica" nameEn="Dominica" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="DO" nameDe="Dominikanische Republik" nameFr="Dominicaine, République" nameIt="Dominicana, Repubblica" nameEn="Dominican Republic" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="DZ" nameDe="Algerien" nameFr="Algérie" nameIt="Algeria" nameEn="Algeria" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="EC" nameDe="Ecuador (mit Galapagos-Inseln)" nameFr="Equateur (comprend les îles Galapagos)" nameIt="Ecuador (comprese le isole Galapagos)" nameEn="Ecuador (includes Galapagos Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100141" validFrom="2020-11-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2020-10-31" />
+</country>
+<country isoCode="EE" nameDe="Estland (mit Inseln Saaremaa und Hiiumaa sind Teil des estnischen Hoheitsgebiets)" nameFr="Estonie (comprend les îles de Saaremaa et Hiiumaa font partie du territoire estonien)" nameIt="Estonia (compreso le isole di Saaremaa e Hiiumaa fanno parte del territorio estone)" nameEn="Estonia (includes the islands of Saaremaa and Hiiumaa are part of the Estonian territory)" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100130" validFrom="1992-01-01" validTo="2004-04-30" />
+<countryGroupAssignment grpNr="100001" validFrom="2004-05-01" validTo="2999-12-31" />
+</country>
+<country isoCode="EG" nameDe="Ägypten" nameFr="Egypte" nameIt="Egitto" nameEn="Egypt" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100122" validFrom="2007-08-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2007-07-31" />
+</country>
+<country isoCode="EH" nameDe="Westsahara" nameFr="Sahara occidental" nameIt="Sahara occidentale" nameEn="Western Sahara" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="ER" nameDe="Eritrea (mit Dahlak-Archipel)" nameFr="Erythrée (comprend l&apos;archipel des Dahlak)" nameIt="Eritrea (compreso l&apos;arcipelago Dahlak)" nameEn="Eritrea (includes the Dahlak Archipelago)" validFrom="1994-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1994-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1994-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="ES" nameDe="Spanien (mit Balearen; ohne die Kanarischen Inseln, Ceuta und Melilla)" nameFr="Espagne (comprend les îles Baléares; sans les îles Canaries, Ceuta et Mellila)" nameIt="Spagna (comprese le isole Baleari; senza le isole Canarie, Ceuta e Melilla)" nameEn="Spain (including the Balearic Islands; excluding Canary Islands, Ceuta and Melilla)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="ET" nameDe="Äthiopien, Demokratische Bundesrepublik" nameFr="Ethiopie, République fédérale démocratique d&apos;" nameIt="Etiopia, Repubblica federale democratica di" nameEn="Ethiopia, Federal Democratic Republic of" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="FI" nameDe="Finnland (einschl. Ålandinseln)" nameFr="Finlande (comprend les îles d&apos;Åland)" nameIt="Finlandia (comprese le isole Åland)" nameEn="Finland (including Åland Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="FJ" nameDe="Fidschi, Republik (mit den Inseln Viti Levu, Vanua Levu und Rotuma)" nameFr="Fidji, République (comprend les îles Viti Levu, Vanua Levu et Rotuma)" nameIt="Figi, Repubblica (comprese le isole Viti Levu, Vanua Levu e Rotuma)" nameEn="Fiji, Republic of (includes Viti Levu, Vanua Levu and Rotuma Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="FK" nameDe="Falkland-Inseln (Westfalkland, Ostfalkland)" nameFr="Falkland, Îles (Falkland Ouest, Falkland Est)" nameIt="Falkland, Isole (Falkland Ovest, Falkland Est)" nameEn="Falkland Islands (West and East Falkland)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1998-12-31" />
+</country>
+<country isoCode="FM" nameDe="Mikronesien, Föderierte Staaten von (Chuuk, Kosrae, Pohnpei und Yap)" nameFr="Micronésie, Etats fédérés de (Chuuk, Kosrae, Pohnpei et Yap)" nameIt="Micronesia, Stati federati di (Chuuk, Kosrae, Pohnpei e Yap)" nameEn="Micronesia, Federated States of (Chuuk, Kosrae, Pohnpei and Yap)" validFrom="1997-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1997-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="FO" nameDe="Färöer-Inseln" nameFr="Féroé, Îles" nameIt="Feroe, Isole" nameEn="Faeroe Islands" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200006" validFrom="2013-02-23" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2013-02-08" validTo="2013-02-22" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100180" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="FR" nameDe="Frankreich (mit Monaco und dem französischen Nordteil von St. Martin; ohne Französisch-Guyana, Guadeloupe, Martinique, Mayotte und Réunion)" nameFr="France (comprend Monaco et la partie nord française de Saint-Martin ; sans Guyane française, Guadeloupe, Martinique, Mayotte et Réunion)" nameIt="Francia (comprese Monaco e la parte settentrionale francese di Saint-Martin; senza Guyana francese, Guadalupa, Martinica, Mayotte e Riunione)" nameEn="France (including Monaco and the northern french part of Saint-Martin; excluding French Guiana, Guadeloupe, Martinique, Mayotte and Reunion)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300010" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GA" nameDe="Gabun" nameFr="Gabon" nameIt="Gabon" nameEn="Gabon" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GB" nameDe="Vereinigtes Königreich (mit Grossbritannien, Nordirland und Kanalinseln sowie Insel Man)" nameFr="Royaume-Uni (comprend la Grande-Bretagne, l&apos;Irlande du Nord, les îles Anglo-normandes et l&apos;île de Man)" nameIt="Regno Unito (comprese la Gran Bretagna, l&apos;Irlanda del Nord, le isole del Canale e l&apos;Isola di Man)" nameEn="United Kingdom (with Great Britain, Northern Ireland, Channel Islands and Isle of Man)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2021-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2020-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2020-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100142" validFrom="2021-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2020-12-31" />
+</country>
+<country isoCode="GD" nameDe="Grenada (mit südlichen Grenadinen)" nameFr="Grenade (comprend les îles Grenadines du Sud)" nameIt="Grenada (comprese le isole Grenadine meridionali)" nameEn="Grenada (includes southern Grenadines)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GE" nameDe="Georgien" nameFr="Géorgie" nameIt="Georgia" nameEn="Georgia" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100139" validFrom="2018-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1992-01-01" validTo="2018-04-30" />
+</country>
+<country isoCode="GF" nameDe="Französisch-Guyana" nameFr="Guyane française" nameIt="Guyana francese" nameEn="French Guiana" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200006" validFrom="2013-02-23" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2013-02-08" validTo="2013-02-22" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GH" nameDe="Ghana" nameFr="Ghana" nameIt="Ghana" nameEn="Ghana" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GI" nameDe="Gibraltar" nameFr="Gibraltar" nameIt="Gibilterra" nameEn="Gibraltar" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="GL" nameDe="Grönland" nameFr="Groenland" nameIt="Groenlandia" nameEn="Greenland" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GM" nameDe="Gambia" nameFr="Gambie" nameIt="Gambia" nameEn="Gambia" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GN" nameDe="Guinea" nameFr="Guinée" nameIt="Guinea" nameEn="Guinea" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GP" nameDe="Guadeloupe (mit Grande-Terre, Basse-Terre, Marie-Galante, Les Saintes, Petite-Terre, La Désirade)" nameFr="Guadeloupe (comprend Grande-Terre, Basse-Terre, Marie-Galante, Les Saintes, Petite-Terre, La Désirade)" nameIt="Guadalupa (comprese Grande-Terre, Basse-Terre, Marie-Galante, Les Saintes, Petite-Terre, La Désirade)" nameEn="Guadeloupe (includes Grande-Terre, Basse-Terre, Marie-Galante, Les Saintes, Petite-Terre, La Désirade)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200006" validFrom="2013-02-23" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2013-02-08" validTo="2013-02-22" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GQ" nameDe="Äquatorial-Guinea (mit Mbini (Río Muni), Bioko Island (Fernando Póo), die Insel Annobón (Pagalu), Corisco-Insel und die Elobeys-Inseln)" nameFr="Guinée équatoriale (comprend Mbini (Río Muni), l&apos;île de Bioko (Fernando Póo), l&apos;île Annobón (Pagalu), l&apos;île Corisco et les îles Elobeys)" nameIt="Guinea equatoriale (compreso Mbini (Río Muni), l&apos;isola di Bioko (Fernando Póo), l&apos;isola Annobón (Pagalu), l&apos;isola di Corisco e le isole Elobeys)" nameEn="Equatorial Guinea (includes Mbini (Río Muni), Bioko Island (Fernando Póo), Annobón Island (Pagalu), Corisco Island and the Elobeys Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2026-03-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GR" nameDe="Griechenland (mit Inseln des Ägäischen Meeres, die Ionischen Inseln, Dodekanes und Kreta)" nameFr="Grèce (comprend les îles de la mer Egée, les îles Ioniennes, Dodécanèse et la Crète)" nameIt="Grecia (compreso le isole del mare Egeo, le isole Ioniche, il Dodecaneso e la Creta)" nameEn="Greece (includes Aegean, Ionian, Dodecanese Sea Islands and Crete)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GS" nameDe="Südgeorgien und Süd-Sandwichinseln" nameFr="Georgie du Sud et îles Sandwich du Sud" nameIt="Georgia del Sud e isole Sandwich del Sud" nameEn="South Georgia and South Sandwich Islands" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="GT" nameDe="Guatemala" nameFr="Guatemala" nameIt="Guatemala" nameEn="Guatemala" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2700-03-31" />
+</country>
+<country isoCode="GU" nameDe="Guam" nameFr="Guam" nameIt="Guam" nameEn="Guam" validFrom="2006-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2006-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2006-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="GW" nameDe="Guinea-Bissau" nameFr="Guinée-Bissau" nameIt="Guinea-Bissau" nameEn="Guinea-Bissau" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="GY" nameDe="Guyana" nameFr="Guyana" nameIt="Guyana" nameEn="Guyana" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="HK" nameDe="Hongkong (Sonderverwaltungsregion Hongkong der Volksrepublik China)" nameFr="Hong Kong (région administrative spéciale de Hong Kong de la République populaire de Chine)" nameIt="Hong Kong (Regione amministrativa speciale di Hong Kong della Repubblica popolare cinese)" nameEn="Hong Kong (Hong Kong Special Administrative Region of the People&apos;s Republic of China)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100132" validFrom="2012-10-01" validTo="2999-12-31" />
+</country>
+<country isoCode="HM" nameDe="Heard- und McDonald-Inseln" nameFr="Iles Heard et McDonald" nameIt="Isole Heard e McDonald" nameEn="Heard and McDonald Islands" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="HN" nameDe="Honduras (mit Swan-Inseln [Schwaneninseln])" nameFr="Honduras (comprend les îles Swan)" nameIt="Honduras (comprese le isole Swan)" nameEn="Honduras (includes Swan Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="HR" nameDe="Kroatien, Republik" nameFr="Croatie, République de" nameIt="Croazia, Repubblica di" nameEn="Croatia, Republic of" validFrom="1992-02-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2013-06-30" />
+<countryGroupAssignment grpNr="300001" validFrom="2013-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2013-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100116" validFrom="2002-01-01" validTo="2013-06-30" />
+<countryGroupAssignment grpNr="100003" validFrom="1992-02-01" validTo="2001-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="2013-07-01" validTo="2999-12-31" />
+</country>
+<country isoCode="HT" nameDe="Haiti" nameFr="Haïti" nameIt="Haiti" nameEn="Haiti" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="HU" nameDe="Ungarn" nameFr="Hongrie" nameIt="Ungheria" nameEn="Hungary" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100170" validFrom="1988-01-01" validTo="2004-04-30" />
+<countryGroupAssignment grpNr="100001" validFrom="2004-05-01" validTo="2999-12-31" />
+</country>
+<country isoCode="ID" nameDe="Indonesien" nameFr="Indonésie" nameIt="Indonesia" nameEn="Indonesia" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200009" validFrom="2024-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100143" validFrom="2021-11-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2021-10-31" />
+</country>
+<country isoCode="IE" nameDe="Irland" nameFr="Irlande" nameIt="Irlanda" nameEn="Ireland" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="IL" nameDe="Israel (ohne Westjordanland [West Bank], Gazastreifen, Ost-Jerusalem und Golanhöhen)" nameFr="Israël (sans Cisjordanie [West Bank], bande de Gaza, Jérusalem-Est et les hauteurs du Golan)" nameIt="Israele (senza la Cisjordania [West Bank], la Striscia di Gaza, Gerusalemme  Est e le alture del Golan)" nameEn="Israel (without West Bank, Gaza Strip, East-Jerusalem and Golan Heights)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100120" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="IN" nameDe="Indien (mit Minicoy-, Lakkadiven-, Amindiven-, Andamanen- und Nikobaren-Inseln)" nameFr="Inde (comprend les îles Minicoy, Laquédives, Amindivi, Andaman et Nicobar)" nameIt="India (compreso le isole Minicoy, Laccadive, Amindivi, Andamane e Nicobare)" nameEn="India (includes the Islands Minicoy, Laccadive, Amindivi, Andaman and Nicobar)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100317" validFrom="1999-07-01" validTo="2025-09-30" />
+<countryGroupAssignment grpNr="100145" validFrom="2025-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2025-09-30" />
+</country>
+<country isoCode="IO" nameDe="Britisches Territorium im Indischen Ozean (Tschagosinseln)" nameFr="Territoire britannique de l&apos;Océan Indien (archipel Chagos)" nameIt="Territorio britannico dell&apos;Oceano Indiano (archipelago delle Chagos)" nameEn="British Indian Ocean Territory (Chagos Archipelago)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="IQ" nameDe="Irak" nameFr="Irak" nameIt="Iraq" nameEn="Iraq" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="IR" nameDe="Iran, Islamische Republik" nameFr="Iran, République islamique d&apos;" nameIt="Iran, Repubblica islamica d&apos;" nameEn="Iran, Islamic Republic of" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="IS" nameDe="Island" nameFr="Islande" nameIt="Islanda" nameEn="Iceland" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200005" validFrom="2007-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200002" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100002" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="IT" nameDe="Italien (mit Livigno und Campione d&apos;Italia; ohne San Marino und Heiliger Stuhl)" nameFr="Italie (comprend Livigno et Campione d&apos;Italia ; sans Saint-Marin et Saint-Siège)" nameIt="Italia (con Livigno e Campione d&apos;Italia; senza San Marino e Santa Sede)" nameEn="Italy (including Livigno and Campione d&apos;Italia; without San Marino and Holy See)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="JM" nameDe="Jamaika (mit Morant Cays und Pedro Cays)" nameFr="Jamaïque (comprend Morant Cays et Pedro Cays)" nameIt="Giamaica (comprese Morant Cays e Pedro Cays)" nameEn="Jamaica (includes Morant Cays and Pedro Cays)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="JO" nameDe="Jordanien" nameFr="Jordanie" nameIt="Giordania" nameEn="Jordan" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100115" validFrom="2002-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2001-12-31" />
+</country>
+<country isoCode="JP" nameDe="Japan (mit Honshu, Shikoku, Kyushu, Hokaido und ihren Inseln)" nameFr="Japon (comprend Honshu, Shikoku, Kyushu, Hokaido et les îles appartenant à ces zones)" nameIt="Giappone (comprese Honshu, Shikoku, Kyushu, Hokaido et le isole appartenendo a queste zone)" nameEn="Japan (including Honshu, Shikoku, Kyushu, Hokaido and theirs islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2018-11-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100124" validFrom="2009-09-01" validTo="2999-12-31" />
+</country>
+<country isoCode="KE" nameDe="Kenia" nameFr="Kenya" nameIt="Kenia" nameEn="Kenya" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="KG" nameDe="Kirgisistan" nameFr="Kirghizstan" nameIt="Kirghizistan" nameEn="Kyrgyzstan" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="2011-07-01" validTo="2012-08-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1992-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="KH" nameDe="Kambodscha" nameFr="Cambodge" nameIt="Cambogia" nameEn="Cambodia" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="KI" nameDe="Kiribati, Republik (gebräuchliche Form: Kiribati; mit Fanning-, Gilbert- [Banaba], Washington-, Christmas-, Ozean- und Phönix-Inseln [Abariringa, Birnie, Canton, Enderbury, Gardner, Hull, McKean, Phönix, Sidney] und ein Teil der Linieninseln [Kiritimati])" nameFr="Kiribati, République de (forme usuelle : Kiribati ; comprend les îles Fanning, Gilbert [Banaba], Washington, Christmas, Ocean et Phoenix [Abariringa, Birnie, Canton, Enderbury, Gardner, Hull, McKean, Phoenix, Sidney] et une partie des îles de la Ligne [Kiritimati])" nameIt="Kiribati, Repubblica di (forma usuale: Kiribati; comprese le isole Fanning, Gilbert [Banaba], Washington, Christmas, Ocean e Phoenix [Abariringa, Birnie, Canton, Enderbury, Gardner, Hull, McKean, Phoenix, Sidney] e una parte delle isole della Linea [Kiritimati])" nameEn="Kiribati, the Republic of (usual form: Kiribati; includes Fanning, Gilbert [Banaba], Washington, Christmas, Ocean and Phoenix Islands [Abariringa, Birnie, Canton, Enderbury, Gardner, Hull, McKean, Phoenix, Sidney] and a part of Line Island [Kiritimati])" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="KM" nameDe="Komoren, Union der (mit Anjouan, Grande Comore, Mohéli usw.)" nameFr="Comores, Union des (comprend Anjouan, la Grande Comore, Mohéli, etc.)" nameIt="Comore, Unione delle (comprende Anjouan, la Grande Comore, Mohéli, ecc.)" nameEn="Comoros, Union of (includes Anjouan, Grande Comore, Mohéli, asf.)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="KN" nameDe="St. Kitts und Nevis" nameFr="Saint-Kitts-et-Nevis" nameIt="Saint Kitts e Nevis" nameEn="St Kitts and Nevis" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2026-03-31" />
+</country>
+<country isoCode="KP" nameDe="Korea, Demokratische Volksrepublik (gebräuchliche Form : Nordkorea)" nameFr="Corée, République populaire démocratique de (forme usuelle: Corée du Nord)" nameIt="Corea, Repubblica popolare democratica di (forma usuale: Corea del Nord)" nameEn="Korea, People&apos;s Democratic Republic of (usual form: North Korea)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100315" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="KR" nameDe="Korea, Republik (gebräuchliche Form: Südkorea, mit Cheju-Insel)" nameFr="Corée, République de (forme usuelle: Corée du Sud, comprend l&apos;île de Cheju)" nameIt="Corea, Repubblica di (forma usuale : Corea del Sud, compreso l&apos;isola di Cheju)" nameEn="Korea, Republic of (usual form: South Korea, includes Cheju Island)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100323" validFrom="2006-09-01" validTo="2999-12-31" />
+</country>
+<country isoCode="KW" nameDe="Kuwait (mit Inseln Boûbiyan, Warbah und Faïlakah)" nameFr="Koweït (comprend  les îles Boûbiyan, Warbah et Faïlakah)" nameIt="Kuwait (compreso le isole Boûbiyan, Warbah e Faïlakah)" nameEn="Kuwait (includes Boûbiyan, Warbah and Faïlakah islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100009" validFrom="2014-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1998-12-31" />
+</country>
+<country isoCode="KY" nameDe="Kaiman-Inseln (mit Gross-Kaiman, Kaiman-Brac und Klein-Kaiman)" nameFr="Caïmanes, Îles (comprennent la Grande Caïmane, Caïmane Brac et la Petite Caïmane)" nameIt="Cayman, Isole (comprese Grande Cayman, Cayman Brac e Piccola Cayman)" nameEn="Cayman Islands (including Grand Cayman, Cayman Brac and Little Cayman)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1998-12-31" />
+</country>
+<country isoCode="KZ" nameDe="Kasachstan" nameFr="Kazakhstan" nameIt="Kazakstan" nameEn="Kazakhstan" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1992-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="LA" nameDe="Laos, Demokratische Volksrepublik" nameFr="Lao, République démocratique populaire" nameIt="Laos, Repubblica popolare democratica del" nameEn="Lao, People&apos;s Democratic Republic" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="LB" nameDe="Libanon" nameFr="Liban" nameIt="Libano" nameEn="Lebanon" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100119" validFrom="2007-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2006-12-31" />
+</country>
+<country isoCode="LC" nameDe="St. Lucia" nameFr="Sainte-Lucie" nameIt="Santa Lucia" nameEn="St Lucia" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="LK" nameDe="Sri Lanka" nameFr="Sri Lanka" nameIt="Sri Lanka" nameEn="Sri Lanka" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100319" validFrom="1999-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="LR" nameDe="Liberia" nameFr="Libéria" nameIt="Liberia" nameEn="Liberia" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="LS" nameDe="Lesotho" nameFr="Lesotho" nameIt="Lesotho" nameEn="Lesotho" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100121" validFrom="2008-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2008-04-30" />
+<countryGroupAssignment grpNr="100005" validFrom="2008-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2008-04-30" />
+</country>
+<country isoCode="LT" nameDe="Litauen" nameFr="Lituanie" nameIt="Lituania" nameEn="Lithuania" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100130" validFrom="1992-01-01" validTo="2004-04-30" />
+<countryGroupAssignment grpNr="100001" validFrom="2004-05-01" validTo="2999-12-31" />
+</country>
+<country isoCode="LU" nameDe="Luxemburg" nameFr="Luxembourg" nameIt="Lussemburgo" nameEn="Luxembourg" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1999-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="LV" nameDe="Lettland" nameFr="Lettonie" nameIt="Lettonia" nameEn="Latvia" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100130" validFrom="1992-01-01" validTo="2004-04-30" />
+<countryGroupAssignment grpNr="100001" validFrom="2004-05-01" validTo="2999-12-31" />
+</country>
+<country isoCode="LY" nameDe="Libyen" nameFr="Libye" nameIt="Libia" nameEn="Libya" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MA" nameDe="Marokko" nameFr="Maroc" nameIt="Marocco" nameEn="Morocco" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100111" validFrom="1999-12-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1999-11-30" />
+</country>
+<country isoCode="MD" nameDe="Moldau, Republik" nameFr="Moldova, République de" nameIt="Moldova, Repubblica di" nameEn="Moldova, Republic of" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100144" validFrom="2025-04-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1992-01-01" validTo="2025-03-31" />
+</country>
+<country isoCode="ME" nameDe="Montenegro" nameFr="Monténégro" nameIt="Montenegro" nameEn="Montenegro" validFrom="2007-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2007-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2007-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100131" validFrom="2012-09-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2007-01-01" validTo="2012-08-31" />
+</country>
+<country isoCode="ME" nameDe="Montenegro" nameFr="Monténégro" nameIt="Montenegro" nameEn="Montenegro" validFrom="1992-05-01" validTo="1996-12-31">
+</country>
+<country isoCode="MG" nameDe="Madagaskar, Republik (mit Insel Nosy Be)" nameFr="Madagascar, République de (comprend l&apos;île de Nosy Be)" nameIt="Madagascar, Repubblica di (compreso l&apos;isola di Nosy Be)" nameEn="Madagascar, Republic of (includes Nosy Be Island 
+)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MH" nameDe="Marshall-Inseln" nameFr="Marshall, Îles" nameIt="Marshall, Isole" nameEn="Marshall Islands" validFrom="1997-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1997-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MK" nameDe="Nordmazedonien, Republik" nameFr="Macédoine du Nord, République de" nameIt="Macedonia del Nord, Repubblica di" nameEn="North Macedonia, Republic of" validFrom="1992-05-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100113" validFrom="2002-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2002-04-30" />
+</country>
+<country isoCode="ML" nameDe="Mali" nameFr="Mali" nameIt="Mali" nameEn="Mali" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MM" nameDe="Myanmar, Union" nameFr="Myanmar, Union du" nameIt="Myanmar, Unione di" nameEn="Myanmar, Union of" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MN" nameDe="Mongolei" nameFr="Mongolie" nameIt="Mongolia" nameEn="Mongolia" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MO" nameDe="Macau" nameFr="Macao" nameIt="Macao" nameEn="Macau" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100313" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="MP" nameDe="Nördliche Marianen, Inseln" nameFr="Mariannes du Nord, Îles" nameIt="Marianne del Nord, Isole" nameEn="Northern Mariana, Islands" validFrom="1997-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1997-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="MQ" nameDe="Martinique" nameFr="Martinique" nameIt="Martinica" nameEn="Martinique" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200006" validFrom="2013-02-23" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2013-02-08" validTo="2013-02-22" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MR" nameDe="Mauretanien" nameFr="Mauritanie" nameIt="Mauritania" nameEn="Mauritania" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MS" nameDe="Montserrat" nameFr="Montserrat" nameIt="Monserrat" nameEn="Montserrat" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MT" nameDe="Malta (mit Cominotto und Filfola)" nameFr="Malte (comprend Cominotto et Filfola)" nameIt="Malta (compreso Cominotto e Filfola)" nameEn="Malta (includes Cominotto and Filfola)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2004-04-30" />
+<countryGroupAssignment grpNr="100001" validFrom="2004-05-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MU" nameDe="Mauritius (mit Rodrigues, Agalega und Cargados Carajos Shoals)" nameFr="Maurice (comprend Rodrigues, Agalega et les Cargados Carajos Shoals)" nameIt="Maurizio (compresi Rodrigues, Agalega e le Cargados Carajos Shoals)" nameEn="Mauritius (including Rodrigues, Agalega and Cargados Carajos Shoals)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MV" nameDe="Malediven" nameFr="Maldives" nameIt="Maldive" nameEn="Maldives" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2012-08-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MW" nameDe="Malawi" nameFr="Malawi" nameIt="Malawi" nameEn="Malawi" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MX" nameDe="Mexiko" nameFr="Mexique" nameIt="Messico" nameEn="Mexico" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100114" validFrom="2001-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1998-12-31" />
+</country>
+<country isoCode="MY" nameDe="Malaysia (mit Halbinsel-Malaysia und Ostmalaysia [Labuan, Sabah und Sarawak])" nameFr="Malaisie (comprend la Malaisie péninsulaire et la Malaisie orientale [Labuan, Sabah et Sarawak])" nameIt="Malaysia (comprese Malaysia peninsulare e Malesia Est [Labuan, Sabah e Sarawak])" nameEn="Malaysia (including the Malaysian Peninsula and East Malaysia [Labuan, Sabah and Sarawak])" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="MZ" nameDe="Mosambik" nameFr="Mozambique" nameIt="Mozambico" nameEn="Mozambique" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="NA" nameDe="Namibia" nameFr="Namibie" nameIt="Namibia" nameEn="Namibia" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100005" validFrom="2008-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2008-04-30" />
+</country>
+<country isoCode="NC" nameDe="Neukaledonien (mit Ile des Pins, Loyalty-, Belep-, Chesterfield- und Walpole-Inseln)" nameFr="Nouvelle-Calédonie (comprend l&apos;île des Pins, Loyauté, Belep, Chesterfield et Walpole)" nameIt="Nuova Caledonia (compreso l&apos;isola dei Pini, della Lealtà, Belep, Chesterfield e Walpole)" nameEn="New Caledonia (includes Ile des Pins and Loyalty, Belep, Chesterfield and Walpole Islands)" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="NE" nameDe="Niger" nameFr="Niger" nameIt="Niger" nameEn="Niger" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="NF" nameDe="Norfolk-Insel" nameFr="Norfolk, Île" nameIt="Norfolk, Isola" nameEn="Norfolk Island" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="NG" nameDe="Nigeria, Bundesrepublik" nameFr="Nigéria, République fédérale du" nameIt="Nigeria, Repubblica federale di" nameEn="Nigeria, Federal Republic of" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="NI" nameDe="Nicaragua (mit Corn-Inseln)" nameFr="Nicaragua (comprend les îles du Maïs (Corn Islands))" nameIt="Nicaragua (compreso le isole del Mais (Corn Islands))" nameEn="Nicaragua (includes Corn Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="NL" nameDe="Niederlande" nameFr="Pays-Bas" nameIt="Paesi Bassi" nameEn="Netherlands" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="NO" nameDe="Norwegen (ohne Bouvetinsel, Svalbard- und Jan Mayen-Inseln)" nameFr="Norvège (sans les îles Bouvet, Svalbard et Jan Mayen)" nameIt="Norvegia (senza le isole Bouvet, Svalbard e Jan Mayen)" nameEn="Norway (excluding Bouvet Island, Svalbard and Jan Mayen Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200004" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200002" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100002" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="NP" nameDe="Nepal, Demokratische Bundesrepublik" nameFr="Népal, République fédérale démocratique du" nameIt="Nepal, Repubblica federale democratica di" nameEn="Nepal, Federal Democratic Republic" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="NR" nameDe="Nauru" nameFr="Nauru" nameIt="Nauru" nameEn="Nauru" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="NU" nameDe="Niue-Insel" nameFr="Niué, Île" nameIt="Niue, Isola" nameEn="Niue Island" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="NZ" nameDe="Neuseeland (mit Nord-, Sud-, Stewart-, Antipoden-, Auckland-, Bounty-, Campbell-, Kermadec-, Chatham- und Snares-Inseln sowie die Rossabhängigkeit in der Antarktis)" nameFr="Nouvelle-Zélande (comprend les îles du Nord, du Sud, Stewart, Antipodes, Auckland, Bounty, Campbell, Kermadec, Chatham et Snares ainsi que la dépendance de Ross en Antarctique)" nameIt="Nuova Zelanda (comprese le isole del Nord, del Sud, Stewart, Antipodi, Auckland, Bounty, Campbell, Kermadec, Chatham e Snares come la dipendenza di Ross in Antartide)" nameEn="New Zealand (includes Nord, Sud, Steward, Antipodes, Auckland, Bounty, Campbell, Kermadec, Chatham and Snares Islands like the dependence of Ross in Antarctica)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200007" validFrom="2016-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="OM" nameDe="Oman (mit Teil der Halbinsel Moussandam / mit Inseln Kouria Mouria)" nameFr="Oman (comprend une partie de la peninsule de Moussandam / comprend les îles Kouria Mouria)" nameIt="Oman (compreso una parte della penisola di Moussandam / compreso le isole Kouria Mouria)" nameEn="Oman (includes a part of the Moussandam peninsula / includes the Kouria Mouria islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100009" validFrom="2014-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2014-06-30" />
+</country>
+<country isoCode="PA" nameDe="Panama" nameFr="Panama" nameIt="Panama" nameEn="Panama" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100134" validFrom="2014-08-29" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100010" validFrom="2014-08-29" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2014-08-28" />
+</country>
+<country isoCode="PE" nameDe="Peru" nameFr="Pérou" nameIt="Perù" nameEn="Peru" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100129" validFrom="2011-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="PF" nameDe="Französisch-Polynesien (mit Marquesasinseln, Gesellschaftsinseln (einschliesslich Tahiti), Tuamotu-, Gambier- und Australinseln)" nameFr="Polynésie française (comprend Îles Marquises, archipel de la Société (dont Tahiti), archipel des Tuamotu, îles Gambier et îles Australes)" nameIt="Polinesia francese (comprese Isole Marchesi, Isole della Società (compresa Tahiti), Isole Tuamotu, Isole Gambier e Isole Australi)" nameEn="French Polynesia (includes Marquesas Islands, Society Islands (including Tahiti), Tuamotu Islands, Gambier Islands and Austral Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="PG" nameDe="Papua-Neuguinea (Ostteil der Insel Neuguinea; Bismarck-Archipel (einschliesslich Neubritannien, Neuirland, Neuhannover und Admiralitätsinseln); nördliche Salomonen (Bougainville und Buka); Trobriand-, Woodlark-, Entrecasteauxinseln und Louisiade- Archipel)" nameFr="Papouasie-Nouvelle-Guinée (partie orientale de la Nouvelle-Guinée; archipel des Bismarck (dont Nouvelle-Bretagne, Nouvelle-Irlande, Lavongai et îles de l&apos;Amirauté); îles Salomon du Nord (Bougainville et Buka); îles Tro-briand, île Woodlark, îles d&apos;Entrecasteaux et archipel de la Louisiade)" nameIt="Papua Nuova Guinea (Parte orientale della Nuova Guinea; Arcipelago di Bismarck (comprese Nuova Britannia, Nuova Irlanda, Lavongai o Nuova Hannover e le Isole dell&apos;Ammiragliato); Isole Salomone settentrionali (Bougainville e Buka); Isole Trobriand, Isola Woodlark; Isole d&apos;Entrecasteaux e Arcipelago della Louisiade)" nameEn="Papua New Guinea (Eastern part of New Guinea; Bismarck Archipelago (including New Britain, New Ireland, Lavongai (New Hanover) and Admiralty Islands); Northern Solomon Islands (Bougainville and Buka); Trobriand Islands, Woodlark Island; d&apos;Entrecasteaux Islands and Louisiade Archipelago)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="PH" nameDe="Philippinen" nameFr="Philippines" nameIt="Filippine" nameEn="Philippines" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100138" validFrom="2018-06-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2018-05-31" />
+</country>
+<country isoCode="PK" nameDe="Pakistan" nameFr="Pakistan" nameIt="Pakistan" nameEn="Pakistan" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100318" validFrom="1999-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="PL" nameDe="Polen" nameFr="Pologne" nameIt="Polonia" nameEn="Poland" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100140" validFrom="1988-01-01" validTo="2004-04-30" />
+<countryGroupAssignment grpNr="100001" validFrom="2004-05-01" validTo="2999-12-31" />
+</country>
+<country isoCode="PM" nameDe="St. Pierre und Miquelon" nameFr="Saint-Pierre-et-Miquelon" nameIt="Saint Pierre e Miquelon" nameEn="St Pierre and Miquelon" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="PN" nameDe="Pitcairn-Inseln (mit Henderson, Ducie und Oeno)" nameFr="Pitcairn, Îles (comprennent Henderson, Ducie et Oeno)" nameIt="Pitcairn, Isole (comprende Henderson, Ducie e Oeno)" nameEn="Pitcairn Islands (includes Henderson, Ducie and Oeno)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="PR" nameDe="Puerto Rico" nameFr="Porto Rico" nameIt="Portorico" nameEn="Puerto Rico" validFrom="1988-01-01" validTo="2005-12-31">
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2005-12-31" />
+</country>
+<country isoCode="PS" nameDe="Palästina, Staat (Westjordanland (einschliesslich Ost-Jerusalem) und Gazastreifen)" nameFr="Palestine, Etat de (Cisjordanie (dont Jérusalem-Est) et bande de Gaza)" nameIt="Palestina, Stato di (Cisgiordania (compresa Gerusalemme est) e Striscia di Gaza)" nameEn="Palestine, the State of (West Bank (including East Jerusalem) and Gaza Strip)" validFrom="1997-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100112" validFrom="1999-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1997-01-01" validTo="1999-06-30" />
+</country>
+<country isoCode="PT" nameDe="Portugal (mit den Azoren und Madeira)" nameFr="Portugal (comprend les Açores et Madère)" nameIt="Portogallo (comprese le Azzorre e Madera)" nameEn="Portugal (including the Azores and Madeira)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="PU" nameDe="Amerikanisch-Ozeanien" nameFr="Océanie américaine" nameIt="Oceania americana" nameEn="American Oceania" validFrom="1988-01-01" validTo="1996-12-31">
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1996-12-31" />
+</country>
+<country isoCode="PW" nameDe="Palau" nameFr="Palau" nameIt="Palau" nameEn="Palau" validFrom="1997-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1997-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="PY" nameDe="Paraguay" nameFr="Paraguay" nameIt="Paraguay" nameEn="Paraguay" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="QA" nameDe="Katar" nameFr="Qatar" nameIt="Qatar" nameEn="Qatar" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100009" validFrom="2014-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1998-12-31" />
+</country>
+<country isoCode="RE" nameDe="Réunion (mit den Inseln Europa, Bassas da India, Juan de Nova, Glorieuses und Tromelin)" nameFr="Réunion (comprend les îles Europa, Bassas da India, Juan de Nova, Glorieuses et Tromelin)" nameIt="Riunione (comprese le isole Europa, Bassas da India, Juan de Nova, Gloriose e Tromelin)" nameEn="Réunion (includes Europa, Bassas da India, Juan de Nova, Glorieuses and Tromelin Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200006" validFrom="2013-02-23" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2013-02-08" validTo="2013-02-22" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="RO" nameDe="Rumänien" nameFr="Roumanie" nameIt="Romania" nameEn="Romania" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2007-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100150" validFrom="1988-01-01" validTo="2006-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="2007-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="RS" nameDe="Serbien" nameFr="Serbie" nameIt="Serbia" nameEn="Serbia" validFrom="2007-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2007-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2007-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100126" validFrom="2010-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2007-01-01" validTo="2010-09-30" />
+</country>
+<country isoCode="RU" nameDe="Russische Föderation" nameFr="Fédération de Russie" nameIt="Federazione russa" nameEn="Russian Federation" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="RW" nameDe="Ruanda" nameFr="Rwanda" nameIt="Ruanda" nameEn="Rwanda" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SA" nameDe="Saudi-Arabien" nameFr="Arabie saoudite" nameIt="Arabia Saudita" nameEn="Saudi Arabia" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100009" validFrom="2014-07-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2014-06-30" />
+</country>
+<country isoCode="SB" nameDe="Salomonen (mit Süd-Salomon-Inseln, hauptsächlich Guadalcanal, Malaita, San Cristobal, Santa Isabel und Choiseul)" nameFr="Salomon, Îles (comprennent les îles Salomon du Sud, principalement Guadalcanal, Malaita, San Cristobal, Santa Isabela et Choiseul)" nameIt="Salomone, Isole (comprende le isole Salomone del Sud, segnatamente Guadalcanal, Malaita, San Cristobal, Santa Isabela e Choiseul)" nameEn="Solomon Islands (includes Southern Solomon Islands, principally Guadalcanal, Malaita, San Cristobal, Santa Isabella and Choiseul)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SC" nameDe="Seychellen, Republik (mit Inseln Mahé, Praslin, la Digue, Frégate und Silhouette; Amirantesinseln, darunter Desroches, Alphonse, Plate und Coëvity; Farguhar-Inseln, darunter Providence; Aldabra und Cosmoledoinseln)" nameFr="Seychelles, République des (comprennent les îles Mahé et Praslin, La Digue, Frégate et Silhouette; îles Amirantes, dont Desroches, Alphonse, Plate et Coëtivy ; îles Farquhar, dont Providence ; îles Aldabra et Cosmoledo)" nameIt="Seychelles, Repubblica (comprese le isole Mahé e Praslin, La Digue, Frégate e Silhouette; isole Amirantes, tra cui Desroches, Alphonse, Plate e Coëtivy ; Farquhar, tra cui Providence ; Aldabra e Cosmoledo)" nameEn="Seychelles, Republic of (including Mahé, Praslin, Frégate and Silhouette; Amirantes, incl. Desroches, Alphonse, Plate and Coëtivy ; Farquhar, incl. Providence ; Aldabra and Cosmoledo Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2026-03-31" />
+</country>
+<country isoCode="SD" nameDe="Sudan (ohne Südsudan)" nameFr="Soudan (sans Soudan du Sud)" nameIt="Sudan (senza Sud Sudan)" nameEn="Sudan (without South Sudan)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SE" nameDe="Schweden (mit Inseln Gotland und Ölan)" nameFr="Suède (comprend les îles de Gotland et Öland)" nameIt="Svezia (compreso le isole di Gotland e Öland)" nameEn="Sweden (includes the islands of Gotland and Öland)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SG" nameDe="Singapur" nameFr="Singapour" nameIt="Singapore" nameEn="Singapore" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100322" validFrom="2003-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1998-12-31" />
+</country>
+<country isoCode="SH" nameDe="St. Helena, Ascension und Tristan da Cunha (mit Inseln Gough, Inaccessible und Nightingale)" nameFr="Sainte-Hélène, Ascension et Tristan da Cunha (comprend les îles Gough, Inaccessible et Nightingale)" nameIt="Sant&apos;Elena, Ascensione e Tristan da Cunha (compreso le isole Gough, Inacessible e Nightingale)" nameEn="Saint Helena, Ascension and Tristan da Cunha (includes Gough, Inaccessible and Nightingale Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SI" nameDe="Slowenien" nameFr="Slovénie" nameIt="Slovenia" nameEn="Slovenia" validFrom="1992-02-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100190" validFrom="1992-02-01" validTo="2004-04-30" />
+<countryGroupAssignment grpNr="100001" validFrom="2004-05-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SJ" nameDe="Svalbard und Jan Mayen-Insel (mit Bäreninsel)" nameFr="Svalbard et île Jan Mayen (comprennent l&apos;île aux Ours)" nameIt="Svalbard e isola Jan Mayen (comprende l&apos;Isola Bear)" nameEn="Svalbard and Jan Mayen Island (with Bear Island)" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200004" validFrom="2012-05-20" validTo="2016-09-14" />
+<countryGroupAssignment grpNr="200003" validFrom="2012-05-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200002" validFrom="2012-05-20" validTo="2016-09-14" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100002" validFrom="2012-05-20" validTo="2999-12-31" />
+</country>
+<country isoCode="SK" nameDe="Slowakei" nameFr="Slovaquie" nameIt="Slovacchia" nameEn="Slovakia" validFrom="1993-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2004-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100100" validFrom="1993-01-01" validTo="2004-04-30" />
+<countryGroupAssignment grpNr="100001" validFrom="2004-05-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SL" nameDe="Sierra Leone (mit Sherbro Island)" nameFr="Sierra Leone (comprend l&apos;île de Sherbro)" nameIt="Sierra Leone (compreso l&apos;isola di Sherbro)" nameEn="Sierra Leone (includes Sherbro Island)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SM" nameDe="San Marino" nameFr="Saint-Marin" nameIt="San Marino" nameEn="San Marino" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2013-02-08" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1999-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SN" nameDe="Senegal (mit Gorée-Insel)" nameFr="Sénégal (comprend l&apos;île de Gorée)" nameIt="Senegal (compreso l&apos;isola di Gorée)" nameEn="Senegal (includes the island of Gorée)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="2004-04-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SO" nameDe="Somalia, Bundesrepublik" nameFr="Somalie, République fédérale de" nameIt="Somalia, Repubblica Federale di" nameEn="Somalia, Federal Republic of" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SQ" nameDe="Serbien" nameFr="Serbie" nameIt="Serbia" nameEn="Serbie" validFrom="1992-05-01" validTo="1996-12-31">
+</country>
+<country isoCode="SR" nameDe="Suriname" nameFr="Suriname" nameIt="Suriname" nameEn="Suriname" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SS" nameDe="Südsudan, Republik" nameFr="Soudan du Sud, République du" nameIt="Sud Sudan, Repubblica" nameEn="South Sudan, Republic of" validFrom="2011-09-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2011-09-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2011-09-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="2011-09-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2011-09-01" validTo="2999-12-31" />
+</country>
+<country isoCode="ST" nameDe="Sao Tomé und Principe" nameFr="Sao Tomé-et-Principe" nameIt="Sao Tomé e Principe" nameEn="Sao Tomé and Principe" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SU" nameDe="USSR" nameFr="URSS" nameIt="URSS" nameEn="USSR" validFrom="1988-01-01" validTo="1991-12-31">
+</country>
+<country isoCode="SV" nameDe="El Salvador" nameFr="El Salvador" nameIt="El Salvador" nameEn="El Salvador" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SX" nameDe="St. Martin (Südteil der Insel)" nameFr="Saint Martin (partie sud de l&apos;île)" nameIt="St. Martin (parte meridionale dell&apos;isola)" nameEn="Sint Maarten (southern part of Saint Martin Island)" validFrom="2013-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2013-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2013-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SY" nameDe="Syrien, Arabische Republik" nameFr="Syrienne, République arabe" nameIt="Siria, Repubblica araba di" nameEn="Syrian Arab Republic" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="SZ" nameDe="Swasiland" nameFr="Swaziland" nameIt="Swaziland" nameEn="Swaziland" validFrom="1988-01-01" validTo="2018-08-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2018-08-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2018-08-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2018-08-31" />
+<countryGroupAssignment grpNr="100005" validFrom="2008-05-01" validTo="2018-08-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2008-04-30" />
+</country>
+<country isoCode="SZ" nameDe="Königreich Eswatini" nameFr="Royaume du Eswatini" nameIt="Regno di Eswatini" nameEn="Kingdom of Eswatini" validFrom="2018-09-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2018-09-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2018-09-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2018-09-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100005" validFrom="2018-09-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TC" nameDe="Turks- und Caicos-Inseln" nameFr="Turks-et-Caicos, Îles" nameIt="Turks e Caicos, Isole" nameEn="Turks and Caicos Islands" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="TD" nameDe="Tschad" nameFr="Tchad" nameIt="Ciad" nameEn="Chad" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TF" nameDe="Französische Südgebiete" nameFr="Terres australes françaises" nameIt="Territori australi francesi" nameEn="French Southern Territories" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="TG" nameDe="Togo" nameFr="Togo" nameIt="Togo" nameEn="Togo" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TH" nameDe="Thailand" nameFr="Thaïlande" nameIt="Thailandia" nameEn="Thailand" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TJ" nameDe="Tadschikistan" nameFr="Tadjikistan" nameIt="Tagikistan" nameEn="Tajikistan" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1992-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TK" nameDe="Tokelau-Inseln" nameFr="Tokelau, Îles" nameIt="Tokelau, Isole" nameEn="Tokelau Islands" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TL" nameDe="Timor-Leste" nameFr="Timor-Oriental" nameIt="Timor-Leste" nameEn="Timor-Leste" validFrom="2004-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="2007-04-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TM" nameDe="Turkmenistan" nameFr="Turkménistan" nameIt="Turkmenistan" nameEn="Turkmenistan" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1992-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TN" nameDe="Tunesien (mit Insel Djerba)" nameFr="Tunisie (comprend l&apos;île de Djerba)" nameIt="Tunisia (compreso l&apos;isola di Djerba)" nameEn="Tunisia (includes the island of Djerba)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100118" validFrom="2005-06-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2005-05-31" />
+</country>
+<country isoCode="TO" nameDe="Tonga" nameFr="Tonga" nameIt="Tonga" nameEn="Tonga" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TP" nameDe="Osttimor (mit Oe-Cussi)" nameFr="Timor oriental (comprend Oe-Cussi)" nameIt="Timor orientale (compresi Oe-Cussi)" nameEn="East Timor (includes Oe-Cussi)" validFrom="1999-01-01" validTo="2003-12-31">
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2003-12-31" />
+</country>
+<country isoCode="TR" nameDe="Türkiye" nameFr="Türkiye" nameIt="Türkiye" nameEn="Türkiye" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100110" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TT" nameDe="Trinidad und Tobago" nameFr="Trinité-et-Tobago" nameIt="Trinidad e Tobago" nameEn="Trinidad and Tobago" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2012-08-31" />
+</country>
+<country isoCode="TV" nameDe="Tuvalu (mit Funafuti, Nanumanga, Nui, Nanomea, Nurakita, Niutao, Nukufetau, Nukulaelae und Vaitupu)" nameFr="Tuvalu (comprend Funafuti, Nanumanga, Nui, Nanomea, Nurakita, Niutao, Nukufetau, Nukulaelae et Vaitupu)" nameIt="Tuvalu (compresi Funafuti, Nanumanga, Nui, Nanomea, Nurakita, Niutao, Nukufetau, Nukulaelae e Vaitupu)" nameEn="Tuvalu (includes Funafuti, Nanumanga, Nui, Nanomea, Nurakita, Niutao, Nukufetau, Nukulaelae and Vaitupu)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TW" nameDe="Taiwan (mit Kinmen, Matsu und Penghu)" nameFr="Taïwan (comprend Kinmen, Matsu et Penghu)" nameIt="Taiwan (comprese Kinmen, Matsu e Penghu)" nameEn="Taiwan (including Kinmen, Matsu and Penghu)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="TZ" nameDe="Tansania, Vereinigte Republik (mit Sansibar, Pemba und Tanganjika)" nameFr="Tanzanie, République Unie de (comprend Zanzibar, Pemba et Tanganyicka)" nameIt="Tanzania, Repubblica Unita di (comprese Zansibar, Pemba e Tanganyicka)" nameEn="Tanzania, United Republic of (including Zanzibar, Pemba and Tanganyicka)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="UA" nameDe="Ukraine" nameFr="Ukraine" nameIt="Ucraina" nameEn="Ukraine" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100128" validFrom="2012-06-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2007-04-01" validTo="2012-05-31" />
+</country>
+<country isoCode="UG" nameDe="Uganda" nameFr="Ouganda" nameIt="Uganda" nameEn="Uganda" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="UM" nameDe="Kleinere Amerikanische Überseeinseln (mit Kingmanriff, Baker-, Howland-, Jarvis-, Johnston-, Midway-, Navassa-, Palmyra- und Wake-Inseln)" nameFr="Mineures éloignées des USA, Îles (comprend Kingman Reef ainsi que les îles Baker, Howland, Jarvis, Johnston, Midway, Navassa, Palmyre et Wake)" nameIt="Minori periferiche degli Stati Uniti (compresi Kingman Reef e le isole Baker, Howland, Jarvis, Johnston, Midway, Navassa, Palmyra e Wake)" nameEn="Minor Outlying Islands, United States (includes Kingman Reef and Baker, Howland, Jarvis, Johnston, Midway, Navassa, Palmyre and Wake Islands)" validFrom="2006-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2006-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2006-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="UM" nameDe="Amerikanisch-Ozeanien (mit Kingmanriff, Guam, Amerikanisch-Samoa, Baker-, Howland-, Jarvis-, Johnston-, Midway-, Palmyra- und Wake-Inseln)" nameFr="Océanie américaine (comprend Kingman Reef, Guam, Samoa américaine ainsi que les îles Baker, Howland, Jarvis, Johnston, Midway, Palmyre et Wake)" nameIt="Oceania americana (compresi Kingman Reef, Guam, Samoa americana e le isole Baker, Howland, Jarvis, Johnston, Midway, Palmyra e Wake)" nameEn="American Oceania (includes Kingman Reef, Guam, American Samoa and Baker, Howland, Jarvis, Johnston, Midway, Palmyre and Wake Islands)" validFrom="1997-01-01" validTo="2005-12-31">
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2005-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1997-01-01" validTo="2005-12-31" />
+</country>
+<country isoCode="US" nameDe="Vereinigte Staaten (einschliesslich Alaska, Hawaï und Puerto Rico)" nameFr="Etats-Unis (comprend l&apos;Alaska, Hawaï et Porto Rico)" nameIt="Stati Uniti (compreso Alaska, Hawaï e Porto Rico)" nameEn="United States (including Alaska, Hawaï and Puerto Rico)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2017-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100147" validFrom="2025-11-19" validTo="2999-12-31" />
+</country>
+<country isoCode="UY" nameDe="Uruguay" nameFr="Uruguay" nameIt="Uruguay" nameEn="Uruguay" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="UZ" nameDe="Usbekistan" nameFr="Ouzbékistan" nameIt="Uzbekistan" nameEn="Uzbekistan" validFrom="1992-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1992-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="VA" nameDe="Heiliger Stuhl (auch Vatikanstadt genannt)" nameFr="Saint-Siège (appelé aussi Cité du Vatican)" nameIt="Santa Sede (detta anche Città del Vaticano)" nameEn="Holy See (also known as Vatican City)" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="VC" nameDe="St. Vincent und die Grenadinen (mit nördlichen Grenadinen)" nameFr="Saint-Vincent-et-les-Grenadines (comprennent les îles Grenadines du Nord)" nameIt="Saint Vincent e le Grenadine (comprese le isole Grenadine del Nord)" nameEn="St Vincent and the Grenadines (including northern Grenadines)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="VE" nameDe="Venezuela, Bolivarische Republik (gebräuchliche Form: Venezuela; mit Aves Insel)" nameFr="Venezuela, République bolivarienne du (forme usuelle : Venezuela; comprend l&apos;île d&apos;Aves)" nameIt="Venezuela, Repubblica bolivariana del (forma usuale: Venezuela; compreso l&apos;isola di Aves)" nameEn="Venezuela, the Bolivarian Republic of (usual form: Venezuela; includes Aves Island)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="VG" nameDe="Britische Jungferninseln (mit den Inseln Anegada, Jost van Dyke, Tortola und Virgin Gorda)" nameFr="Vierges britanniques, Îles (comprennent les îles Anegada, Jost Van Dyke, Tortola et Virgin Gorda)" nameIt="Vergini britanniche, Isole (comprese le isole Anegada, Jost Van Dyke, Tortola e Virgin Gorda)" nameEn="British Virgin Islands (includes Anegada, Jost Van Dyke, Tortola and Virgin Gorda Islands)" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="VI" nameDe="Amerikanische Jungferninseln" nameFr="Vierges américaines, Îles" nameIt="Vergini americane, Isole" nameEn="American Virgin Islands" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2011-06-30" />
+</country>
+<country isoCode="VN" nameDe="Vietnam, Sozialistische Republik" nameFr="Viet Nam, République socialiste du" nameIt="Vietnam, Repubblica Socialista del" nameEn="Viet Nam, Socialist Republic of" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="VU" nameDe="Vanuatu" nameFr="Vanuatu" nameIt="Vanuatu" nameEn="Vanuatu" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2026-03-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="WF" nameDe="Wallis und Futuna (mit Horn-, Uvea- und Alofi-Inseln)" nameFr="Wallis-et-Futuna (comprennent les îles Horn, Uvéa et Alofi)" nameIt="Wallis e Futuna (comprende le isole Horn, Uvea e Alofi)" nameEn="Wallis and Futuna (includes Horn, Uvea and Alofi Islands)" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1999-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="WS" nameDe="Samoa" nameFr="Samoa" nameIt="Samoa" nameEn="Samoa" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2026-03-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="XA" nameDe="Kanarische Inseln" nameFr="Canaries, Îles" nameIt="Canarie, Isole" nameEn="Canary Islands" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200006" validFrom="2013-02-23" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2013-02-08" validTo="2013-02-22" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="XB" nameDe="Ceuta und Melilla" nameFr="Ceuta et Melilla" nameIt="Ceuta e Melilla" nameEn="Ceuta and Melilla" validFrom="1988-01-01" validTo="2010-12-31">
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2010-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2010-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="1988-01-01" validTo="2010-12-31" />
+</country>
+<country isoCode="XC" nameDe="Ceuta" nameFr="Ceuta" nameIt="Ceuta" nameEn="Ceuta" validFrom="2011-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2011-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2011-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="2011-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="XI" nameDe="Nordirland" nameFr="Irlande du Nord" nameIt="Irlanda del Nord" nameEn="Northern Ireland" validFrom="2026-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2026-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2026-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200008" validFrom="2026-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2026-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200001" validFrom="2026-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2026-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100142" validFrom="2026-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="XK" nameDe="Kosovo" nameFr="Kosovo" nameIt="Kosovo" nameEn="Kosovo" validFrom="2006-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200010" validFrom="2026-03-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200003" validFrom="2006-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2006-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100148" validFrom="2026-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2006-01-01" validTo="2026-09-30" />
+</country>
+<country isoCode="XL" nameDe="Melilla" nameFr="Melilla" nameIt="Melilla" nameEn="Melilla" validFrom="2011-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2011-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2011-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="2011-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="XM" nameDe="Montenegro" nameFr="Monténégro" nameIt="Montenegro" nameEn="Montenegro" validFrom="2006-01-01" validTo="2006-12-31">
+<countryGroupAssignment grpNr="200003" validFrom="2006-01-01" validTo="2006-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2006-01-01" validTo="2006-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2006-01-01" validTo="2006-12-31" />
+</country>
+<country isoCode="XS" nameDe="Serbien" nameFr="Serbie" nameIt="Serbia" nameEn="Serbia" validFrom="2006-01-01" validTo="2006-12-31">
+<countryGroupAssignment grpNr="200003" validFrom="2006-01-01" validTo="2006-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2006-01-01" validTo="2006-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="2006-01-01" validTo="2006-12-31" />
+</country>
+<country isoCode="YD" nameDe="Jemen (Süd)" nameFr="Yémen (Sud)" nameIt="Yemen (Sud)" nameEn="Yemen (Sud)" validFrom="1988-01-01" validTo="1990-12-31">
+</country>
+<country isoCode="YE" nameDe="Jemen (mit Kamaran-, Perim- und Socotra-Inseln)" nameFr="Yémen (comprend les îles Kamaran, Perim et Socotra)" nameIt="Yemen (comprese le isole Kamaran, Perim e Socotra)" nameEn="Yemen (includes Kamaran, Perim and Socotra Islands)" validFrom="1991-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1991-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1991-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="YE" nameDe="Jemen (Nord)" nameFr="Yémen (Nord)" nameIt="Yemen (Nord)" nameEn="Yemen (Nord)" validFrom="1988-01-01" validTo="1990-12-31">
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="1990-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1990-12-31" />
+</country>
+<country isoCode="YT" nameDe="Mayotte (Grande-Terre und Pamandzi)" nameFr="Mayotte (Grande-Terre et Pamandzi)" nameIt="Mayotte (Grande-Terre e Pamandzi)" nameEn="Mayotte (Grande-Terre and Pamandzi)" validFrom="1999-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2013-12-31" />
+<countryGroupAssignment grpNr="300001" validFrom="2014-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200006" validFrom="2016-12-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100001" validFrom="2017-06-01" validTo="2999-12-31" />
+</country>
+<country isoCode="YU" nameDe="Bundesrepublik Jugoslawien (Serbien und Montenegro)" nameFr="République fédérale de Yougoslavie (Serbie et Monténégro)" nameIt="Repubblica federale di Jugoslavia (Serbia e Montenegro)" nameEn="Federal Republic of Yugoslavia (Serbia and Montenegro)" validFrom="1997-01-01" validTo="2003-12-31">
+<countryGroupAssignment grpNr="100003" validFrom="2001-04-01" validTo="2003-12-31" />
+</country>
+<country isoCode="YU" nameDe="Jugoslawien" nameFr="Yougoslavie" nameIt="Jugoslavia" nameEn="Yugoslavia" validFrom="1988-01-01" validTo="1992-04-30">
+</country>
+<country isoCode="ZA" nameDe="Südafrika (mit Marion- und Prinz-Eduard-Inseln)" nameFr="Afrique du Sud (comprend les îles Marion et Prince Edouard)" nameIt="Sud Africa (compreso le isole Marion e Principe Edoardo)" nameEn="South Africa (includes Marion and Prince Eduard Islands)" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100005" validFrom="2008-05-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2008-04-30" />
+</country>
+<country isoCode="ZM" nameDe="Sambia" nameFr="Zambie" nameIt="Zambia" nameEn="Zambia" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+<country isoCode="ZR" nameDe="Zaire" nameFr="Zaïre" nameIt="Zaire" nameEn="Zaire" validFrom="1988-01-01" validTo="1997-05-31">
+<countryGroupAssignment grpNr="100006" validFrom="1988-01-01" validTo="1997-05-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="1997-05-31" />
+</country>
+<country isoCode="ZW" nameDe="Simbabwe" nameFr="Zimbabwe" nameIt="Zimbabwe" nameEn="Zimbabwe" validFrom="1988-01-01" validTo="2999-12-31">
+<countryGroupAssignment grpNr="300011" validFrom="2013-10-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="300002" validFrom="2010-12-20" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="200000" validFrom="2004-01-01" validTo="2999-12-31" />
+<countryGroupAssignment grpNr="100003" validFrom="1988-01-01" validTo="2999-12-31" />
+</country>
+</countries>
+</countryCodes>

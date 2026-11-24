@@ -1,0 +1,207 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\ItalianSdi;
+
+use App\Support\Money;
+use App\Support\Security\SafeXmlLoader;
+use InvalidArgumentException;
+use SimpleXMLElement;
+
+/**
+ * Reads incoming FatturaPA (v1.2.x) documents into plain arrays: supplier, recipient and one entry per
+ * `FatturaElettronicaBody` (a file may carry several documents).
+ */
+class FatturaPaParser
+{
+    /**
+     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string, withholdings: list<array{type: string, amount: string, rate: string, reason: ?string, taxable: string}>, stamp_duty: float, lines: list<array{line_number: int, description: string, quantity: ?string, unit_of_measure: ?string, unit_price: string, line_total: string, tax_rate: string, vat_nature: ?string, competence_start_date: ?string, competence_end_date: ?string}>}>}
+     */
+    public function parse(string $xml): array
+    {
+        $document = $this->load($xml);
+
+        $supplier = $document->xpath('//FatturaElettronicaHeader/CedentePrestatore/DatiAnagrafici')[0] ?? null;
+        $recipient = $document->xpath('//FatturaElettronicaHeader/CessionarioCommittente/DatiAnagrafici')[0] ?? null;
+        $bodies = $document->xpath('//FatturaElettronicaBody');
+
+        if ($supplier === null || $bodies === [] || $bodies === false) {
+            throw new InvalidArgumentException(__('purchases.invalid_fatturapa'));
+        }
+
+        $name = $this->value($supplier, 'Anagrafica/Denominazione')
+            ?? trim(($this->value($supplier, 'Anagrafica/Nome') ?? '').' '.($this->value($supplier, 'Anagrafica/Cognome') ?? ''));
+
+        $documents = [];
+
+        foreach ($bodies as $body) {
+            $net = 0.0;
+            $tax = 0.0;
+
+            foreach ($body->xpath('DatiBeniServizi/DatiRiepilogo') ?: [] as $summary) {
+                $net += (float) $this->value($summary, 'ImponibileImporto');
+                $tax += (float) $this->value($summary, 'Imposta');
+            }
+
+            $number = $this->value($body, 'DatiGenerali/DatiGeneraliDocumento/Numero');
+            $date = $this->value($body, 'DatiGenerali/DatiGeneraliDocumento/Data');
+
+            if ($number === null || $date === null) {
+                throw new InvalidArgumentException(__('purchases.invalid_fatturapa'));
+            }
+
+            $documents[] = [
+                'document_type' => $this->value($body, 'DatiGenerali/DatiGeneraliDocumento/TipoDocumento') ?? 'TD01',
+                'currency' => $this->value($body, 'DatiGenerali/DatiGeneraliDocumento/Divisa') ?? 'EUR',
+                'date' => $date,
+                'number' => $number,
+                'total' => round((float) ($this->value($body, 'DatiGenerali/DatiGeneraliDocumento/ImportoTotaleDocumento') ?? $net + $tax), 2),
+                'net' => round($net, 2),
+                'tax' => round($tax, 2),
+                'due_date' => $this->value($body, 'DatiPagamento/DettaglioPagamento/DataScadenzaPagamento'),
+                'withholdings' => $this->withholdings($body),
+                'stamp_duty' => round((float) ($this->value($body, 'DatiGenerali/DatiGeneraliDocumento/DatiBollo/ImportoBollo') ?? 0), 2),
+                'lines' => $this->lines($body),
+            ];
+        }
+
+        return [
+            'supplier' => [
+                'country' => $this->value($supplier, 'IdFiscaleIVA/IdPaese') ?? 'IT',
+                'vat' => $this->value($supplier, 'IdFiscaleIVA/IdCodice'),
+                'fiscal_code' => $this->value($supplier, 'CodiceFiscale'),
+                'name' => $name,
+            ],
+            'recipient_vat' => $recipient !== null ? $this->value($recipient, 'IdFiscaleIVA/IdCodice') : null,
+            'recipient_fiscal_code' => $recipient !== null ? $this->value($recipient, 'CodiceFiscale') : null,
+            'documents' => $documents,
+        ];
+    }
+
+    /**
+     * @return list<array{line_number: int, description: string, quantity: ?string, unit_of_measure: ?string, unit_price: string, line_total: string, tax_rate: string, vat_nature: ?string, competence_start_date: ?string, competence_end_date: ?string}>
+     */
+    private function lines(SimpleXMLElement $body): array
+    {
+        $lines = [];
+
+        foreach ($body->xpath('DatiBeniServizi/DettaglioLinee') ?: [] as $index => $line) {
+            [$competenceStart, $competenceEnd] = $this->competenceDates(
+                $this->value($line, 'DataInizioPeriodo'),
+                $this->value($line, 'DataFinePeriodo'),
+            );
+
+            $lines[] = [
+                'line_number' => (int) ($this->value($line, 'NumeroLinea') ?? $index + 1),
+                'description' => $this->value($line, 'Descrizione') ?? '',
+                'quantity' => $this->value($line, 'Quantita'),
+                'unit_of_measure' => $this->value($line, 'UnitaMisura'),
+                'unit_price' => $this->value($line, 'PrezzoUnitario') ?? '0',
+                'line_total' => $this->value($line, 'PrezzoTotale') ?? '0',
+                'tax_rate' => $this->value($line, 'AliquotaIVA') ?? '0',
+                'vat_nature' => $this->value($line, 'Natura'),
+                'competence_start_date' => $competenceStart,
+                'competence_end_date' => $competenceEnd,
+            ];
+        }
+
+        return $lines;
+    }
+
+    /**
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function competenceDates(?string $rawStart, ?string $rawEnd): array
+    {
+        if ($rawStart === null || $rawEnd === null) {
+            return [null, null];
+        }
+
+        $start = \DateTimeImmutable::createFromFormat('!Y-m-d', $rawStart);
+        $end = \DateTimeImmutable::createFromFormat('!Y-m-d', $rawEnd);
+
+        if ($start === false || $end === false || $end < $start) {
+            return [null, null];
+        }
+
+        return [$start->format('Y-m-d'), $end->format('Y-m-d')];
+    }
+
+    /**
+     * Extract only the recipient VAT, used to route a webhook payload to the right tenant.
+     */
+    public function recipientVat(string $xml): ?string
+    {
+        $recipient = $this->load($xml)->xpath('//FatturaElettronicaHeader/CessionarioCommittente/DatiAnagrafici')[0] ?? null;
+
+        return $recipient !== null ? $this->value($recipient, 'IdFiscaleIVA/IdCodice') : null;
+    }
+
+    private function load(string $xml): SimpleXMLElement
+    {
+        SafeXmlLoader::assertSafeXml($xml);
+
+        // Namespaces, element prefixes and prefixed attributes are stripped so plain XPath works for every provider flavour.
+        $clean = (string) preg_replace('/\sxmlns(:\w+)?="[^"]*"/', '', $xml);
+        $clean = (string) preg_replace('/(<\/?)\w+:/', '$1', $clean);
+        $clean = (string) preg_replace('/\s\w+:\w+="[^"]*"/', '', $clean);
+
+        try {
+            $document = SafeXmlLoader::loadSimpleXml($clean);
+        } catch (InvalidArgumentException) {
+            throw new InvalidArgumentException(__('purchases.invalid_fatturapa'));
+        }
+
+        if ($document->getName() !== 'FatturaElettronica') {
+            throw new InvalidArgumentException(__('purchases.invalid_fatturapa'));
+        }
+
+        return $document;
+    }
+
+    /**
+     * @return list<array{type: string, amount: string, rate: string, reason: ?string, taxable: string}>
+     */
+    private function withholdings(SimpleXMLElement $body): array
+    {
+        $flaggedBase = 0;
+
+        foreach ($body->xpath('DatiBeniServizi/DettaglioLinee') ?: [] as $line) {
+            if (strtoupper((string) $this->value($line, 'Ritenuta')) === 'SI') {
+                $flaggedBase += Money::toCents($this->value($line, 'PrezzoTotale') ?? '0');
+            }
+        }
+
+        foreach ($body->xpath('DatiGenerali/DatiGeneraliDocumento/DatiCassaPrevidenziale') ?: [] as $fund) {
+            if (strtoupper((string) $this->value($fund, 'Ritenuta')) === 'SI') {
+                $flaggedBase += Money::toCents($this->value($fund, 'ImportoContributoCassa') ?? '0');
+            }
+        }
+
+        $withholdings = [];
+
+        foreach ($body->xpath('DatiGenerali/DatiGeneraliDocumento/DatiRitenuta') ?: [] as $block) {
+            $amount = Money::toCents($this->value($block, 'ImportoRitenuta') ?? '0');
+            $rate = Money::toScaled($this->value($block, 'AliquotaRitenuta') ?? '0', 2);
+
+            $withholdings[] = [
+                'type' => strtoupper($this->value($block, 'TipoRitenuta') ?? 'RT01'),
+                'amount' => Money::fromCents($amount),
+                'rate' => Money::fromScaled($rate, 2),
+                'reason' => $this->value($block, 'CausalePagamento'),
+                'taxable' => Money::fromCents($rate > 0 ? Money::divideRounded($amount * 10000, $rate) : $flaggedBase),
+            ];
+        }
+
+        return $withholdings;
+    }
+
+    private function value(SimpleXMLElement $node, string $path): ?string
+    {
+        $found = $node->xpath($path)[0] ?? null;
+        $value = $found !== null ? trim((string) $found) : '';
+
+        return $value === '' ? null : $value;
+    }
+}

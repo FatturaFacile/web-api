@@ -1,0 +1,234 @@
+name: Build, Publish and Deploy
+
+on:
+  workflow_run:
+    workflows:
+      - Enterprise ERP CI Pipeline
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+  workflow_call:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Image
+    # Workflow-run deploys must come from a successful main run in this repository.
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository) ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'workflow_call'
+
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # Step 1: Check out source code repository
+      # workflow_run starts on the latest main: check out the exact commit that passed the chain
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+
+      # Step 2: Determine commit SHA values for container tagging
+      - name: Resolve Commit SHA
+        id: vars
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          echo "head_sha=$SHA" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHA:0:7}" >> $GITHUB_OUTPUT
+
+      # Step 3: Set up Docker Buildx for multi-layer build cache
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Step 4: Authenticate with GitHub Container Registry (GHCR)
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 5: Generate container tags and labels
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # type=sha would tag the latest main seen by workflow_run, not the commit that passed the chain
+          tags: |
+            type=raw,value=latest
+            type=raw,value=sha-${{ steps.vars.outputs.short_sha }}
+            type=raw,value=sha-${{ steps.vars.outputs.head_sha }}
+            type=raw,value=sha-${{ github.event.workflow_run.head_sha }},priority=100
+
+      # Step 6: Build and push image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          # A failed cache write (e.g. "failed to reserve cache") must not block the deploy
+          cache-to: type=gha,mode=max,ignore-error=true
+
+  deploy:
+    name: Remote VPS Deployment
+    needs: build-and-push
+    runs-on: ubuntu-24.04
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'workflow_call' ||
+      github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      # Step 7: Connect to production VPS via SSH and deploy
+      - name: Deploy to Ubuntu Server via SSH
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            set -e
+            cd ~/api.fatturafacile.eu
+
+            # Whatever happens from here on (a failed step included), leave the services running: up -d is
+            # idempotent and the exit status of the deploy is kept. The health check at the end decides if it is green.
+            trap 'rc=$?; docker compose up -d postgres redis app queue_worker scheduler reverse-proxy >/dev/null 2>&1 || true; exit $rc' EXIT
+
+            # Authenticate with GHCR
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Save current image tag for automatic rollback if healthcheck fails
+            PREV_IMAGE=$(docker compose images app --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | head -n 1 || true)
+
+            # Pull latest application images
+            docker compose pull app queue_worker scheduler
+
+            # Free dangling image layers before recreating containers
+            docker image prune -f
+
+            # Gracefully stop background workers and application (preserve PostgreSQL running state and data volume)
+            docker compose stop queue_worker scheduler app || true
+
+            # Ensure PostgreSQL container is running without destroying its persistent volume
+            docker compose up -d postgres
+
+            # Poll PostgreSQL availability before starting client containers
+            echo "Waiting for PostgreSQL service to be ready..."
+            RETRIES=30
+            until docker compose exec -T postgres pg_isready -h localhost || [ $RETRIES -eq 0 ]; do
+              echo "Awaiting PostgreSQL connection readiness ($RETRIES retries remaining)..."
+              sleep 2
+              RETRIES=$((RETRIES-1))
+            done
+
+            if [ $RETRIES -eq 0 ]; then
+              echo "Deployment failed: PostgreSQL service did not become healthy in time."
+              exit 1
+            fi
+
+            # About 3600 relations: tenant backups and schema rebuilds need more lock slots than the default 64.
+            # ALTER SYSTEM keeps the value in the data volume; PostgreSQL restarts only when the value changes.
+            LOCKS=$(docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SHOW max_locks_per_transaction"' | tr -d '[:space:]')
+            if [ "$LOCKS" != "256" ]; then
+              echo "Raising max_locks_per_transaction from $LOCKS to 256..."
+              docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "ALTER SYSTEM SET max_locks_per_transaction = 256"'
+              docker compose restart postgres
+              RETRIES=30
+              until docker compose exec -T postgres pg_isready -h localhost || [ $RETRIES -eq 0 ]; do
+                sleep 2
+                RETRIES=$((RETRIES-1))
+              done
+              if [ $RETRIES -eq 0 ]; then
+                echo "Deployment failed: PostgreSQL did not come back after the lock setting change."
+                exit 1
+              fi
+            fi
+
+            # Launch web application container
+            docker compose up -d app
+
+            # Wait for app container to reach stable running state
+            echo "Waiting for app container to reach stable running state..."
+            APP_RETRIES=20
+            until [ "$(docker compose ps --status running -q app)" != "" ] || [ $APP_RETRIES -eq 0 ]; do
+              STATUS=$(docker compose ps -a app --format "{{.Status}}")
+              echo "Current app status: $STATUS ($APP_RETRIES retries remaining)..."
+              if echo "$STATUS" | grep -qi "Restarting"; then
+                echo "App container entered crash loop! Dumping logs:"
+                docker compose logs --tail=50 app
+                exit 1
+              fi
+              sleep 2
+              APP_RETRIES=$((APP_RETRIES-1))
+            done
+
+            if [ $APP_RETRIES -eq 0 ]; then
+              echo "Timeout waiting for app container to run. Dumping logs:"
+              docker compose logs --tail=50 app
+              exit 1
+            fi
+
+            # Execute cache, migrations, and swagger generation in a single shell session
+            docker compose exec -T app sh -c "
+              set -e
+              php -d memory_limit=2048M artisan config:clear
+              php -d memory_limit=2048M artisan cache:clear
+              php -d memory_limit=2048M artisan migrate --force
+              php -d memory_limit=2048M artisan config:cache
+              php -d memory_limit=2048M artisan route:cache
+              php -d memory_limit=2048M artisan view:cache
+              php -d memory_limit=2048M artisan l5-swagger:generate
+            "
+
+            # Start worker daemons after migrations and cache generation succeed
+            docker compose up -d queue_worker scheduler
+
+            # Health check through nginx: /up must answer 200, otherwise the job fails
+            docker compose up -d reverse-proxy
+            HEALTH=000
+            for i in $(seq 1 15); do
+              HEALTH=$(docker compose exec -T reverse-proxy curl -sk -o /dev/null -w '%{http_code}' \
+                --resolve api.fatturafacile.eu:443:127.0.0.1 https://api.fatturafacile.eu/up || true)
+              [ "$HEALTH" = "200" ] && break
+              sleep 2
+            done
+            if [ "$HEALTH" != "200" ]; then
+              echo "Deployment failed: /up answered $HEALTH"
+              docker compose logs --tail=50 app
+              if [ -n "$PREV_IMAGE" ]; then
+                echo "Rolling back app, queue_worker, and scheduler to $PREV_IMAGE..."
+                API_TAG="$PREV_IMAGE" docker compose up -d app queue_worker scheduler || true
+              fi
+              exit 1
+            fi
+
+            # Housekeeping: prune images older than 24h
+            docker image prune -af --filter "until=24h"

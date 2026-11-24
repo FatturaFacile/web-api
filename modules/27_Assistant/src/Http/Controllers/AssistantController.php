@@ -1,0 +1,137 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Assistant\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Http\Responses\ApiResponse;
+use App\Services\Tenancy\TenantContext;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Modules\Assistant\Contracts\CatalogueQuery;
+use Modules\Assistant\Enums\AnswerOutcome;
+use Modules\Assistant\Http\Requests\AskAssistantRequest;
+use Modules\Assistant\Http\Resources\AssistantLogResource;
+use Modules\Assistant\Models\AssistantQuestionLog;
+use Modules\Assistant\Services\AssistantService;
+use OpenApi\Attributes as OA;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+
+/**
+ * HTTP endpoints of the assistant flows of the Assistant module.
+ */
+final class AssistantController extends Controller
+{
+    use ApiResponse;
+
+    /**
+     * Inject the collaborators.
+     */
+    public function __construct(
+        private readonly AssistantService $assistant,
+        private readonly TenantContext $tenantContext,
+    ) {}
+
+    /**
+     * Ask the assistant.
+     */
+    #[OA\Post(
+        path: '/api/v1/assistant/ask',
+        operationId: 'askAssistant',
+        description: 'Answer a question in natural language from the fixed catalogue. Read-only and limited to the role of the caller. Every question is logged. Send the thread_id of an own conversation to continue it; without it a new thread is started. The answer carries thread_id and log_id (the id to send feedback to).',
+        summary: 'Ask the assistant',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AskAssistantRequest')),
+        tags: ['Assistant'],
+        responses: [
+            new OA\Response(response: 200, description: 'Answer, or the reason why there is none', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/AssistantAnswer')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
+    public function ask(AskAssistantRequest $request): JsonResponse
+    {
+        return $this->successResponse($this->assistant->ask($request->user(), (string) $this->tenantContext->getTenantId(), $request->validated('question'), $request->validated('thread_id')));
+    }
+
+    /**
+     * List the catalogue.
+     */
+    #[OA\Get(
+        path: '/api/v1/assistant/catalogue',
+        operationId: 'getAssistantCatalogue',
+        description: 'The questions the role of the caller can ask.',
+        summary: 'List the catalogue',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Assistant'],
+        responses: [
+            new OA\Response(response: 200, description: 'Catalogue', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssistantCatalogueEntry'))])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function catalogue(Request $request): JsonResponse
+    {
+        $queries = $this->assistant->availableTo($request->user(), (string) $this->tenantContext->getTenantId());
+
+        return $this->successResponse(array_map(static fn (CatalogueQuery $query): array => [
+            'key' => $query->key(),
+            'description' => $query->description(),
+            'parameters' => (object) $query->parameters(),
+        ], $queries));
+    }
+
+    /**
+     * List asked questions.
+     */
+    #[OA\Get(
+        path: '/api/v1/assistant/logs',
+        operationId: 'getAssistantLogs',
+        description: 'Questions asked in this tenant, latest first. Owners and administrators only. Filter by `outcome` (`unmatched` shows what people asked that the catalogue cannot answer yet, `forbidden` what their role does not allow), by `user_id` and by period.',
+        summary: 'List asked questions',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Assistant'],
+        parameters: [
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'outcome', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['answered', 'unmatched', 'forbidden', 'failed'])),
+            new OA\Parameter(name: 'user_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Questions', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssistantLogResource'))])),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid filter', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
+    public function logs(Request $request): JsonResponse
+    {
+        $role = $request->user()->getRoleInTenant((string) $this->tenantContext->getTenantId());
+
+        if (! in_array($role, ['owner', 'admin'], true)) {
+            throw new AccessDeniedHttpException('Only owners and administrators can read the questions.');
+        }
+
+        $filters = $request->validate([
+            'outcome' => ['nullable', Rule::enum(AnswerOutcome::class)],
+            'user_id' => ['nullable', 'uuid'],
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
+        ]);
+
+        $logs = AssistantQuestionLog::query()
+            ->when($filters['outcome'] ?? null, static fn ($query, string $outcome) => $query->where('outcome', $outcome))
+            ->when($filters['user_id'] ?? null, static fn ($query, string $userId) => $query->where('user_id', $userId))
+            ->when($filters['from'] ?? null, static fn ($query, string $from) => $query->whereDate('created_at', '>=', $from))
+            ->when($filters['to'] ?? null, static fn ($query, string $to) => $query->whereDate('created_at', '<=', $to))
+            ->latest()
+            ->gridPaginate(min(100, max(5, (int) $request->query('per_page', 25))));
+
+        return $this->successResponse(
+            AssistantLogResource::collection($logs->getCollection()),
+            'Questions',
+            meta: ['current_page' => $logs->currentPage(), 'last_page' => $logs->lastPage(), 'per_page' => $logs->perPage(), 'total' => $logs->total()]
+        );
+    }
+}

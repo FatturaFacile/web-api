@@ -1,0 +1,70 @@
+name: Regenerate API docs
+
+# Regenerates the OpenAPI / Postman files (docs/api) after every push to dev and opens a pull request with them, so nobody has to do it
+# locally (there is no pre-push hook for it anymore). The branch is pushed with GITHUB_TOKEN, which never triggers another
+# workflow run, and the merged change only touches docs/api (ignored by the trigger), so there is no loop.
+on:
+  push:
+    branches:
+      - dev
+    paths-ignore:
+      - 'docs/api/**'
+  workflow_dispatch:
+
+concurrency:
+  group: docs-api-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  regenerate:
+    name: Export OpenAPI and open a pull request
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Setup PHP 8.5 Runtime
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath
+          coverage: none
+          ini-values: memory_limit=2G
+          tools: composer:v2
+
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Export the documentation
+        run: |
+          cp .env.example .env
+          # Scramble inspects models/schema while analysing routes, so the sqlite file must exist (an empty one is enough).
+          touch database/database.sqlite
+          php artisan key:generate
+          php -d memory_limit=2048M artisan docs:export
+
+      - name: Open or update the pull request with the regenerated files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- docs/api; then
+            echo "docs/api is up to date."
+            exit 0
+          fi
+          # dev is protected (pull request, verified signatures, code scanning): the bot never pushes to it.
+          BRANCH="docs/openapi-regenerated"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add docs/api
+          git commit -m "docs: regenerate OpenAPI"
+          git push --force origin "$BRANCH"
+          if [ -z "$(gh pr list --head "$BRANCH" --base "${{ github.ref_name }}" --state open --json number --jq '.[0].number')" ]; then
+            gh pr create --head "$BRANCH" --base "${{ github.ref_name }}" --title "docs: regenerate OpenAPI" --body "Automatic export of docs/api after the last push to ${{ github.ref_name }}."
+          fi

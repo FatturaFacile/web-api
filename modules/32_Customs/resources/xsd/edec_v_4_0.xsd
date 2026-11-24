@@ -1,0 +1,1797 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Mit XMLSpy v2010 rel. 2 (http://www.altova.com) von BIT (Bundesamt für Informatik und Telekommunikation (BIT)) bearbeitet -->
+<!-- edec XML Schema -->
+<!-- Name of schema: edec -->
+<!-- Scope of schema: import and export customs declarations-->
+<!-- Organization: Swiss Customs Administration -->
+<!-- Documentation: http://www.e-dec.ch/ -->
+<xs:schema xmlns:edec="http://www.e-dec.ch/xml/schema/edec/v4" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.e-dec.ch/xml/schema/edec/v4" elementFormDefault="qualified" attributeFormDefault="unqualified" version="4.0">
+	<xs:element name="goodsDeclarations">
+		<xs:annotation>
+			<xs:documentation>Zollanmeldungen (Root Element des edec XML Schemas)
+
+Anhand des Attributs schemaVersion stellt das System e-dec fest, welche Version des edec Schemas zum Validieren benutzt werden soll.
+
+Für bestimmte Elemente existieren Domänenwerte , die nicht im XML Schema hinterlegt sind. Bei diesen Elementen wurde in der Dokumentation das Stichwort "Stammdaten" aufgeführt. Dahinter ist jeweils als XPath eine Referenz auf das Stammdatenfile und das Element oder Attribut, das die Domänenwerte enthält, zu finden. 
+
+Für das Element transportMode wird z.B. folgende Bemerkung stehen: Stammdaten: edecDomains.xml/domains/domain[@name="transportMode"]/entry/@value). Dies bedeutet, dass die Stammdaten im File 'edecDomains.xml' unter dem Element 'domain/entry' im Attribut 'value' zu finden sind, wobei das 'domain' Attribut name=trasportMode ist.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="edec:goodsDeclaration" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="schemaVersion" use="required">
+				<xs:annotation>
+					<xs:documentation>Attribut zur Angabe der benutzten edec Schema Version.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="[1-9]{0,1}[0-9]{1}\.[0-9]{1,2}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="goodsDeclaration" type="edec:GoodsDeclarationType">
+		<xs:annotation>
+			<xs:documentation>Einfuhrzollanmeldung / Versandvorgang (Header)</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="goodsItem" type="edec:GoodsItemType">
+		<xs:annotation>
+			<xs:documentation>Ware (Detail)</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="GoodsDeclarationType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Einfuhrzollanmeldung</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="serviceType">
+				<xs:annotation>
+					<xs:documentation>Versandvorgang Typ, Code für Import (1), Export (2).(Stammdaten: edecDomains.xml/domains/domain[@name="serviceType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="1"/>
+						<xs:enumeration value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="traderDeclarationNumber">
+				<xs:annotation>
+					<xs:documentation>Anmeldungsnummer Deklarant (früher: Deklarationsnummer Spediteur); bestimmte Sonderzeichen dürfen hier nicht vorkommen</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="22"/>
+						<xs:pattern value="[^/:&quot;\?\*\|\\]*"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="bunchNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Sammelsendungsnummer. Nur für e-dec Import relevant</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="9"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="traderReference" type="edec:Reference" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Dossiernummer Zollkunde</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="clearanceLocation">
+				<xs:annotation>
+					<xs:documentation>Veranlagungsort (früher Abfertigungsort); für Export müssen zugelassene Versender (ZV) hier 2 für "Domizil" angeben. Werte: Zollstelle (1), Domizil (2) (Stammdaten: edecDomains.xml/domains/domain[@name="clearanceLocation"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="warehouseCoded" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Bezeichnung des Lagers (Lieferort); nur für Export relevant. z.B. offenes Zolllager (OZL) (1), Zwischenlager (ZWILA) (2) (Stammdaten: edecDomains.xml/domains/domain[@name="warehouseCoded"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="declarationTime">
+				<xs:annotation>
+					<xs:documentation>Code für Anmeldungszeitpunkt, z.B. Stellung unter Zollkontrolle (1), Vorausanmeldung (2), nachträgliche Anmeldung (3), andere (99) (Stammdaten: edecDomains.xml/domains/domain[@name="declarationTime"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="declarationType">
+				<xs:annotation>
+					<xs:documentation>Code für Anmeldungstyp, z.B. definitiv (1), provisorisch (2), andere Zwischenabfertigung (3) ... (Stammdaten: edecDomains.xml/domains/domain[@name="declarationType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="correctionCode">
+				<xs:annotation>
+					<xs:documentation>Korrekturcode; Status der Einfuhrzollanmeldung: Annullation (0), Erstübermittlung (1), Korrektur (2), erneute Anforderung von Rückmeldung und PDF (3) (Stammdaten: edecDomains.xml/domains/domain[@name="correctionCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="0"/>
+						<xs:enumeration value="1"/>
+						<xs:enumeration value="2"/>
+						<xs:enumeration value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="correctionReason" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Korrekturgrund, Begründung; Ereignis welches zur Korrektur führte z.B. Antrag vor Aufnahme der Kontrolltätigkeit (1), Belegrevision (2) ... (Stammdaten: edecDomains.xml/domains/domain[@name="correctionReason"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="5"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="language" type="xs:language">
+				<xs:annotation>
+					<xs:documentation>Sprachencode, z.B. de, fr, it (Stammdaten: edecDomains.xml/domains/domain[@name="language"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="customsOfficeNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zollstellennummer (früher Dienststellennummer); für Export nicht ZV optional; zugelassene Versender (ZV) müssen hier ihre Kontrollzollstelle angeben; (Stammdaten: edecCustomsOffices.xml/customsOffices/customsOffice/@number)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="8"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="dispatchCountry" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Ländercode für Versendungsland; aus welchem Land wird Ware importiert (Stammdaten: edecCountries.xml/countries/country/@isoCode)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="dispatchCountryConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode Versendungsland (nicht gesetzt (0), gesetzt (1)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="placeOfLoading" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Ladeort; nur für e-dec Export relevant, z.B. Zulad/Beilad (Stammdaten:?)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="placeOfUnloading" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Abladeort</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="agreedLocationOfGoods" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Bewilligter Warenort; security; nur für e-dec Export relevant, (Stammdaten:?)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="injunctionType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Antrag 2. Veranlagungsverfügung Zoll für Erstattung von Abgaben im Herkunftsland; Zusatzveranlagungsverfügung Zoll (1)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="reason" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Code für Grund der provisorischen Abfertigung, z.B. Ursprungsnachweis für Länder der EU (1), Ursprungsnachweis für Länder der EFTA (2), Ursprungsnachweis für Länder der aFHA (3) ... (Stammdaten: edecDomains.xml/domains/domain[@name="reason"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="5"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="deliveryDestination" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Ländercode für Bestimmungsland; nur für e-dec Export relevant. (Stammdaten: edecCountries.xml/countries/country/@isoCode)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="transferToTransitSystem" type="edec:YesNoCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Transfer ins Transit System; bei Exportanmeldungen, die automatisch an das Transit-System NCTS transferiert werden sollen, um dort eine Transitabmeldung machen zu können. (Stammdaten: edecDomains.xml/domains/domain[@name="yesNoCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="uniqueConsignmentReferenceNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Unique consignment reference number (UCR); nur für e-dec Export relevant.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="70"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="security" type="edec:YesNoCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Sicherheit. Werte: ja (1), nein (0); Flag 1 gesetzt, wenn Security Daten für Warensendung verlangt werden (Stammdaten: edecDomains.xml/domains/domain[@name="yesNoCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="specificCircumstanceIndicator" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Kennnummer für besondere Umstände; z.B. (a) Post- und Expressgutsendungen, (b) Bevorratung von Schiffen und Flugzeugen, (c) Beförderungsart "Strasse" (Stammdaten: edecDomains.xml/domains/domain[@name="specificCircumstanceIndicator"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="transportMeans" type="edec:TransportMeansType">
+				<xs:annotation>
+					<xs:documentation>Beförderung</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="transportInContainer" type="edec:YesNoCode">
+				<xs:annotation>
+					<xs:documentation>Container. Werte: ja (1), nein (0); Flag 1 gesetzt, wenn Beförderung in Container (Stammdaten: edecDomains.xml/domains/domain[@name="yesNoCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="container" type="edec:ContainerType" minOccurs="0" maxOccurs="99">
+				<xs:annotation>
+					<xs:documentation>Container</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="previousDocument" type="edec:PreviousDocumentType" minOccurs="0" maxOccurs="9">
+				<xs:annotation>
+					<xs:documentation>summarische Anmeldung / Vorpapiere</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="specialMention" type="edec:SpecialMentionType" minOccurs="0" maxOccurs="99">
+				<xs:annotation>
+					<xs:documentation>besondere Vermerke für Zollanmeldung</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="postalShipment" type="edec:PostalShipmentType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Postverkehr; Element nur vorhanden für Einfuhrzollanmeldungen im Postverkehr</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="consignor" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Versender / Ausführer</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edec:AddressType">
+							<xs:sequence>
+								<xs:element name="consignorReference" type="edec:Reference" minOccurs="0">
+									<xs:annotation>
+										<xs:documentation>Versender Referenz</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="consignorSecurity" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Versender / Ausführer Security</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edec:AddressType">
+							<xs:sequence>
+								<xs:element name="consignorSecurityReference" type="edec:Reference" minOccurs="0">
+									<xs:annotation>
+										<xs:documentation>Versender Security Referenz</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="importer" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Importeur</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edec:AddressType">
+							<xs:sequence>
+								<xs:element name="importerReference" type="edec:Reference" minOccurs="0">
+									<xs:annotation>
+										<xs:documentation>Importeur Referenz</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="consignee">
+				<xs:annotation>
+					<xs:documentation>Empfänger</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edec:AddressType">
+							<xs:sequence>
+								<xs:element name="consigneeReference" type="edec:Reference" minOccurs="0">
+									<xs:annotation>
+										<xs:documentation>Empfänger Referenz</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="consigneeSecurity" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Empfänger Security</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edec:AddressType">
+							<xs:sequence>
+								<xs:element name="consigneeSecurityReference" type="edec:Reference" minOccurs="0">
+									<xs:annotation>
+										<xs:documentation>Empfänger Security Referenz</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="declarant" type="edec:DeclarantType">
+				<xs:annotation>
+					<xs:documentation>Deklarant und Information über Firma des Deklaranten</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="carrier" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Transporteur; nur für e-dec Export relevant.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edec:AddressType">
+							<xs:sequence>
+								<xs:element name="carrierReference" type="edec:Reference" minOccurs="0">
+									<xs:annotation>
+										<xs:documentation>Transporteur Referenz</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="vendee" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Erwerber; nur für e-dec Export relevant.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edec:AddressType">
+							<xs:sequence>
+								<xs:element name="vendeeReference" type="edec:Reference" minOccurs="0">
+									<xs:annotation>
+										<xs:documentation>Erwerber Referenz</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="bailor" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Einlagerer; nur für e-dec Export relevant.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edec:AddressType">
+							<xs:sequence>
+								<xs:element name="bailorReference" type="edec:Reference" minOccurs="0">
+									<xs:annotation>
+										<xs:documentation>Einlagerer Referenz</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="authorizedConsignee" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>ZE; nur für e-dec Import relevant.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edec:AddressType">
+							<xs:sequence>
+								<xs:element name="authorizedConsigneeReference" type="edec:Reference" minOccurs="0">
+									<xs:annotation>
+										<xs:documentation>ZE Referenz</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="business" type="edec:BusinessType">
+				<xs:annotation>
+					<xs:documentation>Geschäft</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element ref="edec:goodsItem" maxOccurs="unbounded"/>
+			<xs:element name="otherElements" type="xs:anyType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Frei nutzbares Element</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="BusinessType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Geschäft</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="incoterms" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Incoterms, z.B. CFR, EXW, FCA, FAS ... (Stammdaten: edecDomains.xml/domains/domain[@name="incoterms"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="customsAccount" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Konto Zoll; Kontonummer des Zollkunden beim Zoll. Die Kontonummer soll als Zahl übermittelt werden, d.h. ohne Bindestriche; nur für e-dec Import relevant.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="8"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="VATAccount" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Konto Mehrwertsteuer; Konto des Zollkunden.  Die Kontonummer soll als Zahl übermittelt werden, d.h. ohne Bindestriche; nur für e-dec Import relevant.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="8"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="VATNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Mehrwertsteuernummer</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="12"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="VATSuffix" type="edec:YesNoCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zusatz zum Feld Mehrwertsteuernummer (VATNumber). (0) falls im Feld Mehrwertsteuernummer keine UID MWST-Nummer steht. (1) falls im Feld Mehrwertsteuernummer eine UID MWST-Nummer steht.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="invoiceCurrencyType">
+				<xs:annotation>
+					<xs:documentation>Rechnungswährungscode, z.B. CHF (1), EUR (2), andere Währungen von EU-Ländern (3) … (Stammdaten: edecDomains.xml/domains/domain[@name="invoiceCurrencyType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="companyNumberTaxpayer" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Firmennummer Steuerpflichtiger; für Mineralölsteuer in e-dec Export rlevant.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="17"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="PreviousDocumentType">
+		<xs:annotation>
+			<xs:documentation>Complex Type summarische Anmeldung</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="previousDocumentType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Art Vorpapier, z.B. T2-Versandschein (T2), T2L-Nachweis (T2L), Airwaybill (AWB) ... (Stammdaten: edecDomains.xml/domains/domain[@name="previousDocumentType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="6"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="previousDocumentReference" type="edec:Reference" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zeichen (Nummer) Vorpapier; Für e-dec Export optional, sonst mandatory.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="additionalInformation" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>zusätzliche Angaben</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="70"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TransportMeansType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Beförderung</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="transportMode">
+				<xs:annotation>
+					<xs:documentation>Verkehrszweig; Beförderungsmittel mit dem der Transport über die Zollgrenze ausgeführt wird z.B Eisenbahnverkehr (2), Strassenverkehr (3) ... (Stammdaten: edecDomains.xml/domains/domain[@name="transportMode"]/entry/@value).</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="transportationType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Beförderungsmittel Typ; Art des Fahrzeuges z.B. PKW (1), LKW (2) … (Stammdaten: edecDomains.xml/domains/domain[@name="transportationType"]/entry/@value); nur für e-dec Import relevant.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="transportationCountry" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Ländercode für Beförderungsmittel (Stammdaten: edecCountries.xml/countries/country/@isoCode)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="transportationNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Beförderungsmittel Kennzeichen, z.B. Kontrollschild des LKW, Zugs-Nr. etc.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="27"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ContainerType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Container</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="containerNumber">
+				<xs:annotation>
+					<xs:documentation>Container Nummer</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="17"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="PostalShipmentType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Postverkehr</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="postalShipmentType">
+				<xs:annotation>
+					<xs:documentation>Postverkehrsart; Werte: Briefpostverkehr (1), Paketpostverkehr (2) (Stammdaten: edecDomains.xml/domains/domain[@name="postalShipmentType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="1"/>
+						<xs:enumeration value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="inspectionCode" type="edec:YesNoCode">
+				<xs:annotation>
+					<xs:documentation>Besichtigungscode; Werte: ja (1), nein (0); Flag 1 gesetzt, wenn Paket oder Brief von Konzessionär besichtigt wurde (Stammdaten: edecDomains.xml/domains/domain[@name="yesNoCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="procedureType">
+				<xs:annotation>
+					<xs:documentation>Veranlagungsart; Werte: reduziert zollfrei (1), reduziert zollzahlend (2), standard (3) (Stammdaten: edecDomains.xml/domains/domain[@name="procedureType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="AddressType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Adresse</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="name">
+				<xs:annotation>
+					<xs:documentation>Name</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="addressSupplement1" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>zusätzliche Adressinformation</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="addressSupplement2" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>zusätzliche Adressinformation</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="street" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Strasse und Hausnummer</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="addressSupplement3" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>zusätzliche Adressinformation</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="postalCode" type="edec:PostalCode">
+				<xs:annotation>
+					<xs:documentation>PLZ (Stammdaten: edecPostalCodes/postalCodes/postalCode/@number)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="city">
+				<xs:annotation>
+					<xs:documentation>Stadt</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="country">
+				<xs:annotation>
+					<xs:documentation>Land (Stammdaten: edecCountries.xml/countries/country/@isoCode)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="traderIdentificationNumber" type="edec:TraderIdentificationNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Trader Identification Number (TIN); Identifikationsnummer (Stammdaten)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DeclarantType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Deklarant</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="traderIdentificationNumber" type="edec:TraderIdentificationNumber">
+				<xs:annotation>
+					<xs:documentation>Trader Identification Number (TIN); früher traderNumber, enthält die TIN bzw. Spediteurnummer (Stammdaten)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="declarantNumber">
+				<xs:annotation>
+					<xs:documentation>Deklarantennummer (Mitarbeiter) (Stammdaten)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="6"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="name" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Name</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="street" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Strasse und Hausnummer</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="postalCode" type="edec:PostalCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>PLZ (Stammdaten: edecPostalCodes.xml/postalCodes/postalCode/@number)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="city" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Stadt</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="country" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Land (Stammdaten: edecCountries.xml/countries/country/@isoCode)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GoodsItemType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Ware</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="traderItemID">
+				<xs:annotation>
+					<xs:documentation>Warenposition Detail-ID kann vom Zollkunden frei definiert werden. Bei einer Korrektur muss dieselbe ID wie im Original benutzt werden.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="16"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="description">
+				<xs:annotation>
+					<xs:documentation>Warenbezeichnung</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="280"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="commodityCode">
+				<xs:annotation>
+					<xs:documentation>Warennummer (Tarifnummer inkl. Punkt - siehe auch TARES) (Stammdaten: edecTariffMasterData.xml/tariffMasterData/commodityCodes/commodityCode/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="commodityCodeConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode Warennummer (nicht gesetzt (0), gesetzt (1)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="statisticalCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Schlüssel zur Warennummer; muss zur jeweiligen Tarifnummer in den Stammdaten existieren (Stammdaten: edecTariffMasterData.xml/tariffMasterData/commodityCodes/commodityCode/statisticalCode/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="grossMass">
+				<xs:annotation>
+					<xs:documentation>Rohmasse; Eigengewicht der Ware + Gewicht der unmittelbaren Umschliessung, Füllmaterial, Transportverpackung</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="12"/>
+						<xs:fractionDigits value="3"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="grossMassConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode Rohmasse (nicht gesetzt (0), gesetzt (1)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="netMass" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Eigenmasse; Eigengewicht der Ware</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="12"/>
+						<xs:fractionDigits value="3"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="netMassConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode Eigenmasse (nicht gesetzt (0), gesetzt (1)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="customsNetWeight" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zollnettogewicht in kg (für Nettoverzollungen); Eigengewicht der Ware + Gewicht der unmittelbaren Umschliessung (ohne Transportverpackung)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="10"/>
+						<xs:fractionDigits value="1"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="additionalUnit" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zusatzmenge; statistische Zusatzmenge z.B. Liter, Stückzahl, Quadratmeter…</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="10"/>
+						<xs:fractionDigits value="1"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="additionalUnitConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode Zusatzmenge  (nicht gesetzt (0), gesetzt (1)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="storageType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Lagercode; Status für Produkte die der Mineralölsteuer unterliegen z.B. Einfuhr in freien Verkehr mit definitiver Steueranmeldung (1) … (Stammdaten: edecDomains.xml/domains/domain[@name="storageType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="permitObligation">
+				<xs:annotation>
+					<xs:documentation>Bewilligungspflichtcode; Status über Bewilligungspflicht, z.B. nicht Bewilligungspflichtig (0), Bewilligungspflichtig (1) ... (Stammdaten: edecDomains.xml/domains/domain[@name="permitObligation"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="nonCustomsLawObligation">
+				<xs:annotation>
+					<xs:documentation>NZEPflichtcode; Status über Nichtzollrechtliche Erlasse, z.B. ohne Kontrolle (0), mit Kontrolle vor Freigabe der Ware  (1)... (Stammdaten: edecDomains.xml/domains/domain[@name="nonCustomsLawObligation"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="UNDangerousGoodsCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>UN Gefahren-Code (Stammdaten: )</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="4"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="statistic" type="edec:StatisticType">
+				<xs:annotation>
+					<xs:documentation>Verfahren / Statistik</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="origin" type="edec:OriginType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Ursprung.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="repairAndRefinement" type="edec:RepairAndRefinementType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Reparatur- und Veredelungsverkehr</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="goodsItemDetails" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Generisches Element, welches Detailinformationen zur Ware enthält, z.B. Zusammensetzung.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="goodsItemDetail" maxOccurs="unbounded">
+							<xs:annotation>
+								<xs:documentation>Generisches Element mit Child Elements name und value. Bei mehreren Details zu einem goodsItem gibt es mehrere goodsItemDetail Elemente: z.B. name="2" (Code für Fahrgestellnummer) value="12345"; oder name="4" value="10%" für 10% Anteil Stickstoff; oder name="25" value="1" für Tabaksorte Kentucky.</xs:documentation>
+							</xs:annotation>
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="name">
+										<xs:annotation>
+											<xs:documentation>Z.B. bei Fahrzeugen name="1" (Code für Markenschlüssel); oder bei Tabak name="25" (Code für Tabaksorte). (Stammdaten: edecDomains.xml/domains/domain[@name="goodsItemDetailName"]/entry/@value)</xs:documentation>
+										</xs:annotation>
+										<xs:simpleType>
+											<xs:restriction base="xs:string">
+												<xs:minLength value="1"/>
+												<xs:maxLength value="20"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:element>
+									<xs:element name="value">
+										<xs:annotation>
+											<xs:documentation>Z.B. bei Fahrzeug Markenschlüsseln value="925" (Code für Markenschlüssel "Vorkswagen"); oder bei Tabak value="1" (Code für Tabaksorte Kentucky). Zu einigen value-Attributen gibt es Stammdaten, z.B edecDomains.xml/domains/domain[@name="vehicleModelCode"]/entry/@value</xs:documentation>
+										</xs:annotation>
+										<xs:simpleType>
+											<xs:restriction base="xs:string">
+												<xs:minLength value="1"/>
+												<xs:maxLength value="50"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:element>
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="packaging" type="edec:PackagingType" maxOccurs="99">
+				<xs:annotation>
+					<xs:documentation>Packstück</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="producedDocument" type="edec:ProducedDocumentType" minOccurs="0" maxOccurs="99">
+				<xs:annotation>
+					<xs:documentation>Vorgelegte Unterlagen / Bescheinigungen</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="permit" type="edec:PermitType" minOccurs="0" maxOccurs="99">
+				<xs:annotation>
+					<xs:documentation>Bewilligung</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="nonCustomsLaw" type="edec:NonCustomsLawType" minOccurs="0" maxOccurs="9">
+				<xs:annotation>
+					<xs:documentation>NZE; nichtzollrechtliche Erlasse.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="valuation" type="edec:ValuationType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zoll / MWST; nur für e-dec Import relevant.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="additionalTax" type="edec:AdditionalTaxType" minOccurs="0" maxOccurs="99">
+				<xs:annotation>
+					<xs:documentation>Zusatzabgabe; nur für e-dec Import relevant.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="fee" type="edec:FeeType" minOccurs="0" maxOccurs="9">
+				<xs:annotation>
+					<xs:documentation>Gebühr; nur für e-dec Import relevant.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="notification" type="edec:NotificationType" minOccurs="0" maxOccurs="99">
+				<xs:annotation>
+					<xs:documentation>Meldung</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="specialMention" type="edec:SpecialMentionType" minOccurs="0" maxOccurs="99">
+				<xs:annotation>
+					<xs:documentation>besonderer Vermerk für Warenposition</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="refund" type="edec:RefundType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Rückerstattung für flüchtig organische Stoffe; nur für e-dec Export relevant.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="sensibleGoods" type="edec:SensibleGoodsType" minOccurs="0" maxOccurs="9">
+				<xs:annotation>
+					<xs:documentation>Empfindliche Waren; nur für e-dec Export relevant.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="otherElements" type="xs:anyType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Frei nutzbares Element</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="AdditionalTaxType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Zusatzabgaben</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="type">
+				<xs:annotation>
+					<xs:documentation>Art (Stammdaten: edecTariffMasterData.xml/tariffMasterData/additionalTaxes/type/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="4"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="key">
+				<xs:annotation>
+					<xs:documentation>Schlüssel; muss unter den jeweiligen Zusatzabgaben existieren (Stammdaten: edecTariffMasterData.xml/tariffMasterData/additionalTaxes/type[@value="???"]/key/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="quantity">
+				<xs:annotation>
+					<xs:documentation>Menge</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="12"/>
+						<xs:fractionDigits value="3"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="rate" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Ansatz in CHF</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="7"/>
+						<xs:fractionDigits value="2"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="rateConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode Zusatzabgabenansatz (gesetzt (1), nicht gesetzt (0)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="alcoholLevel" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Volumenprozent bei Alkohol</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:maxInclusive value="100"/>
+						<xs:minInclusive value="0"/>
+						<xs:totalDigits value="4"/>
+						<xs:fractionDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="FeeType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Gebühr</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="type">
+				<xs:annotation>
+					<xs:documentation>Art (Stammdaten: edecTariffMasterData.xml/tariffMasterData/fees/tpye/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="4"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="quantity">
+				<xs:annotation>
+					<xs:documentation>Menge</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="10"/>
+						<xs:fractionDigits value="1"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="rate">
+				<xs:annotation>
+					<xs:documentation>Ansatz in CHF</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="7"/>
+						<xs:fractionDigits value="2"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="StatisticType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Verfahren / Statistik</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="customsClearanceType">
+				<xs:annotation>
+					<xs:documentation>Veranlagungstyp (früher Abfertigungstyp), z.B. Code für Normalabfertigung (1), Veredelungsverkehr (2), Reparaturverkehr (3) … (Stammdaten: edecDomains.xml/domains/domain[@name="customsClearanceType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="commercialGood">
+				<xs:annotation>
+					<xs:documentation>Handelsware, z.B. Code für Handelsware (1), Nichthandelsware (2) (Stammdaten: edecDomains.xml/domains/domain[@name="commercialGood"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+						<xs:enumeration value="1"/>
+						<xs:enumeration value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="statisticalValue">
+				<xs:annotation>
+					<xs:documentation>Statistischer Wert; Wert unverzollt in CHF ohne Nachkommastellen</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="statisticalValueConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode Statistischer Wert unverzollt (gesetzt (1) / nicht gesetzt (0)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="repair" type="edec:YesNoCode">
+				<xs:annotation>
+					<xs:documentation>Ausbesserung (ja (1), nein (0)) (Stammdaten: edecDomains.xml/domains/domain[@name="yesNoCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OriginType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Ursprung</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="originCountry">
+				<xs:annotation>
+					<xs:documentation>Code Ursprungsland; 2-stelliger ISO Ländercode (gross geschrieben) (Stammdaten: edecCountries.xml/countries/country/@isoCode)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="2"/>
+						<xs:pattern value="[A-Z]{2}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="preference" type="edec:YesNoCode">
+				<xs:annotation>
+					<xs:documentation>Präferenz; Präferenzabfertigung (ja (1) /nein (0)) (Stammdaten: edecDomains.xml/domains/domain[@name="yesNoCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="preferenceConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode Präferenz; bestätigung Verzichtes auf Präferenzabfertigung trotz angegebenen Ursprungsnachweis (gesetzt (1) / nicht gesetzt (0)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ValuationType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Zoll / MWST</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="netDuty" type="edec:YesNoCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Nettoverzollung; Verzollung nach dem Eigengewicht +Tarazuschlag (ja (1), nein(0)) (Stammdaten: edecDomains.xml/domains/domain[@name="yesNoCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="tareSupplement" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Tarazuschlag für Nettoverzollungen (in %)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="4"/>
+						<xs:fractionDigits value="1"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="tareSupplementConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode Tarazuschlag (gesetzt (1), nicht gesetzt (0)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="customsFavourCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zollbegünstigungscode; Art Zollbegünstigung gemäss Zolltarif, z.B. zur menschlichen Ernährung, zu Futterzwecken ... (Stammdaten: edecTariffMasterData.xml/tariffMasterData/commodityCodes/commodityCode/rate/@customsFavourCode</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="rate" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zollansatz in CHF; nur zu benutzen, wenn Zollansatz vom normalen Ansatz abweicht</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="7"/>
+						<xs:fractionDigits value="2"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="rateConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode Zollansatz (gesetzt (1), nicht gesetzt (0)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="VATValue">
+				<xs:annotation>
+					<xs:documentation>MWST Wert in CHF ohne Nachkommastellen</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="VATValueConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode MWST Wert (gesetzt (1), nicht gesetzt (0)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="VATCode">
+				<xs:annotation>
+					<xs:documentation>MWST Code, z.B. 7,6% - Normalsatz (1), 2,4% - Reduzierter Satz (2) ... (Stammdaten: edecDomains.xml/domains/domain[@name="VATCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="VATCodeConfirmation" type="edec:ConfirmationCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Richtigcode MWST Code (gesetzt (1), nicht gesetzt (0)) (Stammdaten: edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="NonCustomsLawType">
+		<xs:annotation>
+			<xs:documentation>Complex Type NZE</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="nonCustomsLawType">
+				<xs:annotation>
+					<xs:documentation>NZE-Artencode; nichtzollrechtliche Erlasse, die bei dieser Warenposition zu beachten sind, z.B. Fleisch und Fleischwaren (100), Pflanzenschutz (270), Abfälle (66) ... (Stammdaten: edecDomains.xml/domains/domain[@name="nonCustomsLawType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="SensibleGoodsType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Empfindliche Waren</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="type" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Warencode</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="weight">
+				<xs:annotation>
+					<xs:documentation>Gewicht</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="12"/>
+						<xs:fractionDigits value="3"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ProducedDocumentType">
+		<xs:annotation>
+			<xs:documentation>Complex Type vorgelegte Unterlage / Bescheinigung</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="documentType">
+				<xs:annotation>
+					<xs:documentation>Art Unterlage-Code; Bezeichnung für vorgelegte Unterlagen, z.B. APS-Ursprungszeugnis (865), EUR.1 Warenverkehrsbescheinigung (954) ... (Stammdaten: edecDomains.xml/domains/domain[@name="documentType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="4"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="documentReferenceNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zeichen (Nummer) Unterlage</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="35"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="issueDate" type="edec:DateWithoutTimezone" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Datum der vorgelegten Unterlage / Bescheinigung im Format yyyy-mm-dd</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="additionalInformation" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>zusätzliche Angaben zu den vorgelegten Unterlagen</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="70"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="PermitType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Bewilligung</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="permitType">
+				<xs:annotation>
+					<xs:documentation>Bewilligungstyp, z.B. Einzelbewilligung (1), Generalbewilligung (2), Gernerallizent (3) ... (Stammdaten: edecDomains.xml/domains/domain[@name="permitType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="permitAuthority">
+				<xs:annotation>
+					<xs:documentation>Bewilligungsstellencode, z.B. Bundesamt für Landwirtschaft (1), Eidg. Alkoholverwaltung (2), Staatssekretariat für Wirtschaft (seco) (3) ... (Stammdaten: edecDomains.xml/domains/domain[@name="permitAuthority"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="permitNumber">
+				<xs:annotation>
+					<xs:documentation>Bewilligungsnummer</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="17"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="issueDate" type="edec:DateWithoutTimezone" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Bewilligungsdatum im Format yyyy-mm-dd</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="additionalInformation" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zusätzliche Angaben zur Bewilligung, z.B. bei Generaleinfurhbewilligung Zwischenhändler (wenn vorhanden)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="70"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="permitItemDetails" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Generisches Element, welches Detailinformationen zur Bewilligung enthält.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="permitItemDetail" maxOccurs="99">
+							<xs:annotation>
+								<xs:documentation>Generisches Element mit Child Elements key und value. Bei mehreren Details zu einem permitItem gibt es mehrere permitItemDetail Elemente: z.B. key="2" (Anzahl vorhandene Einheiten gem. Bewilligung) value="123", oder key="4" (Wissenschaftliche Bezeichnung gem. CITES) value="348" (Boa constrictor imperator).</xs:documentation>
+							</xs:annotation>
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="key">
+										<xs:annotation>
+											<xs:documentation>Schlüssel, z.B. Positionsnummer der Bewilligung (1), Anzahl vorhandene Einheiten gem. Bewilligung (2)... (Stammdaten: edecDomains.xml/domains/domain[@name="permitItemDetailKey"]/entry/@value)</xs:documentation>
+										</xs:annotation>
+										<xs:simpleType>
+											<xs:restriction base="xs:nonNegativeInteger">
+												<xs:totalDigits value="4"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:element>
+									<xs:element name="value">
+										<xs:annotation>
+											<xs:documentation>Wert, z.B. Wissenschaftliche Bezeichnung gem. CITES: Boa constrictor imperator (348)... (Stammdaten: edecPermitItemDetails.xml/permitItemDetails/permitItemDetail[@name="scientificNameCITES"]/entry/@value)</xs:documentation>
+										</xs:annotation>
+										<xs:simpleType>
+											<xs:restriction base="xs:string">
+												<xs:minLength value="1"/>
+												<xs:maxLength value="50"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:element>
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="NotificationType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Meldung</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="notificationCode">
+				<xs:annotation>
+					<xs:documentation>Meldestellencode; Angaben darüber, welche Stellen über diese Warenposition orientiert werden; enthält eine Zollstellennummer z.B. CH001641</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="8"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="PackagingType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Packstück</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="packagingType">
+				<xs:annotation>
+					<xs:documentation>Verpackungscode, z.B. Karton, Palette ... (Stammdaten: edecDomains.xml/domains/domain[@name="packagingType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="quantity" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Ware verpackt: Anzahl Packstücke angeben; Ware unverpackt: Stückzahl angeben; beim Verpackungstyp Massengut ist dieses Element optional .</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="5"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="packagingReferenceNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zeichen (Nummer) Packstücke</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="42"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="SpecialMentionType">
+		<xs:annotation>
+			<xs:documentation>Complex Type besonderer Vermerk</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="sequenceNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Reihenfolge; falls vorhanden definiert die Sequenznummer die Erscheinungsreihenfolge auf PDF Dokumenten.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="text">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="70"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="RepairAndRefinementType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Reparatur- und Veredelungsverkehr</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="direction">
+				<xs:annotation>
+					<xs:documentation>Verkehrsrichtung; z.B. aktiv (1), passiv (2)... (Stammdaten: edecDomains.xml/domains/domain[@name="direction"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="refinementType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Veredelungstyp; z.B. Eigenveredelungsverkehr (1), Lohnveredelungsverkehr (2)... (Stammdaten: edecDomains.xml/domains/domain[@name="refinementType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="processType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Verfahrenstyp; z.B. ordentliches Verfahren (1), besonderes Verfahren (2)... (Stammdaten: edecDomains.xml/domains/domain[@name="processType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="billingType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Abrechnungstyp; z.B. Nichterhebungsverfahren (1), Rückerstattungsverfahren (2)... (Stammdaten: edecDomains.xml/domains/domain[@name="billingType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="repairReason" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Art der Veredelung oder Ausbesserung</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="280"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="RefundType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Rückerstattung für flüchtig organische Stoffe.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="refundType">
+				<xs:annotation>
+					<xs:documentation>Rückerstattungstyp; z.B. Alkohol, VOC LW (Stammdaten: edecDomains.xml/domains/domain[@name="refundType"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="VOCQuantity" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>VOC Menge</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="12"/>
+						<xs:fractionDigits value="3"/>
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="ConfirmationCode">
+		<xs:annotation>
+			<xs:documentation>Simple Type mit Werteliste für Richtigcode Flags. nicht gesetzt=0, gesetzt=1. Entspricht den Stammdaten in edecDomains.xml/domains/domain[@name="confirmationCode"]/entry/@value</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:integer">
+			<xs:enumeration value="0"/>
+			<xs:enumeration value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="DateWithoutTimezone">
+		<xs:annotation>
+			<xs:documentation>Simple Type mit Datum ohne Zeitzonenangabe (Format yyyy-mm-dd)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:date">
+			<xs:pattern value="[0-9]{4}-[0-9]{2}-[0-9]{2}"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Reference">
+		<xs:annotation>
+			<xs:documentation>Simple Type für Referenzen</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="35"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TraderIdentificationNumber">
+		<xs:annotation>
+			<xs:documentation>Simple Type für TraderIdentificationNumber (TIN)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="17"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="PostalCode">
+		<xs:annotation>
+			<xs:documentation>PLZ (Stammdaten: edecPostalCodes/postalCodes/postalCode/@number)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="9"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="YesNoCode">
+		<xs:annotation>
+			<xs:documentation>Simple Type mit Werteliste für ja-nein Flags. nein=0, ja=1 (Stammdaten: edecDomains.xml/domains/domain[@name="yesNoCode"]/entry/@value)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:integer">
+			<xs:enumeration value="0"/>
+			<xs:enumeration value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

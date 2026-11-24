@@ -1,0 +1,81 @@
+version: 2
+updates:
+  # GitHub Actions: one grouped PR per week
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Rome"
+    open-pull-requests-limit: 2
+    assignees:
+      - "aledv"
+      - "davide-nava"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # npm: one grouped PR for minor and patch updates; major versions are handled by hand
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Rome"
+    open-pull-requests-limit: 2
+    assignees:
+      - "aledv"
+      - "davide-nava"
+    commit-message:
+      prefix: "deps"
+    groups:
+      npm-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Composer (PHP): one grouped PR for minor and patch updates; major versions are handled by hand
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Rome"
+    open-pull-requests-limit: 2
+    assignees:
+      - "aledv"
+      - "davide-nava"
+    commit-message:
+      prefix: "deps(composer)"
+    groups:
+      composer-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Docker base images: one grouped PR per week
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Rome"
+    open-pull-requests-limit: 2
+    assignees:
+      - "aledv"
+      - "davide-nava"
+    groups:
+      docker:
+        patterns:
+          - "*"

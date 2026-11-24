@@ -1,0 +1,21 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Laravel Serve" type="PhpLocalRunConfigurationType" factoryName="PHP Console" path="$PROJECT_DIR$/artisan" scriptParameters="serve --host=127.0.0.1 --port=8001">
+    <CommandLine parameters="-dxdebug.start_with_request=yes" workingDirectory="$PROJECT_DIR$">
+      <envFiles>
+        <find>$PROJECT_DIR$/.env</find>
+      </envFiles>
+      <envs>
+        <env name="PHP_IDE_CONFIG" value="serverName=localhost" />
+        <env name="XDEBUG_MODE" value="debug" />
+      </envs>
+    </CommandLine>
+    <option name="envFilePaths">
+      <list>
+        <option value="$PROJECT_DIR$/.env" />
+      </list>
+    </option>
+    <method v="2">
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Migrate" run_configuration_type="PhpLocalRunConfigurationType" />
+    </method>
+  </configuration>
+</component>

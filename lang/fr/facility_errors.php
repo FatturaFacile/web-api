@@ -1,0 +1,70 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'building' => [
+        'has_spaces' => 'Le bâtiment a encore des espaces : supprimez-les ou déplacez-les d\'abord.',
+    ],
+    'space' => [
+        'kind_has_children' => 'Un espace qui contient d\'autres espaces ne peut pas devenir un étage, un bureau, une place de parking ou une salle de réunion.',
+        'has_children' => 'L\'espace contient d\'autres espaces : supprimez-les d\'abord.',
+        'has_future_bookings' => 'L\'espace a des réservations à venir : annulez-les d\'abord.',
+        'floor_has_no_parent' => 'Un étage se trouve directement sous le bâtiment et n\'a pas d\'espace parent.',
+        'parent_not_found' => 'L\'espace parent n\'existe pas.',
+        'parent_other_building' => 'L\'espace parent appartient à un autre bâtiment.',
+        'parent_is_leaf' => 'Un espace de type :kind ne peut pas contenir d\'autres espaces.',
+        'cycle' => 'Un espace ne peut pas être placé dans lui-même ni dans l\'un de ses enfants.',
+        'kind_not_bookable' => 'Un espace de type :kind ne peut pas être réservé.',
+        'capacity_required' => 'Un espace réservable exige une capacité d\'au moins 1.',
+    ],
+    'booking' => [
+        'not_bookable' => 'L\'espace n\'est pas réservable.',
+        'in_past' => 'La réservation ne peut pas commencer dans le passé.',
+        'too_long' => 'Une réservation de ce type d\'espace dure au maximum :minutes minutes.',
+        'too_far' => 'Ce type d\'espace ne peut pas être réservé plus de :days jours à l\'avance.',
+        'over_capacity' => 'L\'espace accueille au maximum :capacity personnes.',
+        'daily_limit' => 'Vous pouvez avoir au maximum :limit réservation(s) de ce type d\'espace par jour.',
+        'conflict' => 'L\'espace est déjà réservé sur cet intervalle.',
+        'cancel_only_booked' => 'La réservation est :status : seule une réservation non encore utilisée peut être annulée.',
+        'checkin_only_booked' => 'La réservation est :status : seule une réservation encore ouverte peut faire l\'objet d\'un enregistrement.',
+        'checkin_window' => 'L\'enregistrement est possible de quelques minutes avant le début jusqu\'à la fin de la réservation.',
+        'own_only' => 'Vous ne pouvez réserver que pour vous-même.',
+    ],
+    'series' => [
+        'no_occurrences' => 'La récurrence ne produit aucune réservation sur la période choisie.',
+        'too_many' => 'Une réservation récurrente peut générer au maximum :max réservations.',
+        'nothing_bookable' => 'Aucune occurrence de la série ne peut être réservée.',
+        'already_cancelled' => 'La série est déjà annulée.',
+        'span' => 'Une réservation récurrente peut couvrir au maximum :days jours.',
+        'end_before_start' => 'L\'heure de fin doit être postérieure à l\'heure de début.',
+    ],
+    'request' => [
+        'locked' => 'La demande est :status et ne peut pas être modifiée.',
+        'transition' => 'Une demande :from ne peut pas passer à :to.',
+        'work_order_not_found' => 'L\'ordre de maintenance n\'existe pas dans cette entreprise.',
+        'work_order_exists' => 'La demande a déjà un ordre de maintenance.',
+        'asset_required' => 'Choisissez l\'immobilisation concernée par l\'ordre de maintenance.',
+        'asset_not_found' => 'L\'immobilisation n\'existe pas dans cette entreprise.',
+        'space_not_found' => 'L\'espace n\'existe pas.',
+        'building_mismatch' => 'L\'espace n\'est pas dans le bâtiment choisi.',
+    ],
+    'inspection' => [
+        'start_only_scheduled' => 'L\'inspection est :status : seule une inspection planifiée peut être démarrée.',
+        'locked' => 'L\'inspection est :status et ne peut pas être modifiée.',
+        'unknown_item' => 'La liste de contrôle n\'a pas de point :keys.',
+        'not_numeric' => 'La réponse à « :item » doit être un nombre.',
+        'required_missing' => 'Répondez à tous les points obligatoires : :items.',
+    ],
+    'meter' => [
+        'unit_locked' => 'Le type et l\'unité ne peuvent plus changer une fois que le compteur a des relevés.',
+        'inactive' => 'Le compteur n\'est pas actif.',
+        'not_chronological' => 'Le relevé doit être daté après le dernier (:date).',
+        'only_latest' => 'Seul le dernier relevé du compteur peut être supprimé.',
+        'below_previous' => 'La valeur est inférieure au relevé précédent (:previous). Déclarez un tour de cadran ou un remplacement du compteur.',
+        'no_rollover_value' => 'Définissez la valeur de bouclage du compteur avant d\'enregistrer un tour de cadran.',
+        'rollover_not_below' => 'Un relevé avec tour de cadran doit être inférieur au précédent (:previous).',
+        'above_rollover' => 'Le relevé précédent dépasse la valeur de bouclage (:rollover) du compteur.',
+        'unit_for_kind' => 'L\'unité :unit ne convient pas à un compteur :kind.',
+    ],
+];

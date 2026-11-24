@@ -1,0 +1,233 @@
+{
+    "name": "laravel/laravel",
+    "type": "project",
+    "description": "The skeleton application for the Laravel framework.",
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.5",
+        "ext-dom": "*",
+        "barryvdh/laravel-dompdf": "^3.1",
+        "darkaonline/l5-swagger": "^11.2",
+        "dedoc/scramble": "^0.13.49",
+        "endroid/qr-code": "^6.1",
+        "fpdf/fpdf": "^1.90",
+        "khanamiryan/qrcode-detector-decoder": "^2.0",
+        "laravel/framework": "^13.17",
+        "laravel/reverb": "^1.13",
+        "laravel/sanctum": "^4.0",
+        "laravel/telescope": "^5.26",
+        "laravel/tinker": "^3.0",
+        "league/flysystem-sftp-v3": "^3.36",
+        "onelogin/php-saml": "^4.4",
+        "openspout/openspout": "^5.13",
+        "picqer/php-barcode-generator": "^3.3",
+        "setasign/fpdi": "^2.6",
+        "smalot/pdfparser": "^2.13",
+        "spatie/laravel-permission": "^8.3",
+        "spatie/laravel-query-builder": "^7.3",
+        "sprain/swiss-qr-bill": "^5.3",
+        "web-auth/webauthn-lib": "^5.3"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.14",
+        "laravel/boost": "^2.10",
+        "laravel/pail": "^1.2.5",
+        "laravel/pao": "^1.0.6",
+        "laravel/pint": "^1.27",
+        "laravel/sail": "^1.69",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.6",
+        "pestphp/pest": "^4.7",
+        "pestphp/pest-plugin-laravel": "^4.1",
+        "phpunit/phpunit": "^12.5.12"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/",
+            "Enterprise\\Foundation\\": "packages/enterprise-foundation/src/",
+            "Enterprise\\AuditLedger\\": "packages/audit-ledger/src/",
+            "Enterprise\\AiGateway\\": "packages/ai-gateway/src/",
+            "Enterprise\\EventBus\\": "packages/event-bus/src/",
+            "Enterprise\\MultiTenant\\": "packages/multi-tenant/src/",
+            "Enterprise\\FeatureFlags\\": "packages/feature-flags/src/",
+            "Enterprise\\OpenApi\\": "packages/openapi/src/",
+            "Modules\\SDI\\": "modules/06_SDI/src/",
+            "Modules\\Workflow\\": "modules/21_Workflow/src/",
+            "Modules\\Procurement\\": "modules/13_Procurement/src/",
+            "Modules\\Inventory\\": "modules/14_Inventory/src/",
+            "Modules\\Projects\\": "modules/15_Projects/src/",
+            "Modules\\GeneralLedger\\": "modules/22_GeneralLedger/src/",
+            "Modules\\Treasury\\": "modules/24_Treasury/src/",
+            "Modules\\Invoicing\\": "modules/05_Invoicing/src/",
+            "Modules\\CRM\\": "modules/02_CRM/src/",
+            "Modules\\AssetManagement\\": "modules/16_AssetManagement/src/",
+            "Modules\\HumanResources\\": "modules/18_HumanResources/src/",
+            "Modules\\ServiceManagement\\": "modules/17_ServiceManagement/src/",
+            "Modules\\SubscriptionBilling\\": "modules/19_SubscriptionBilling/src/",
+            "Modules\\Manufacturing\\": "modules/30_Manufacturing/src/",
+            "Modules\\Analytics\\": "modules/20_Analytics/src/",
+            "Modules\\Communication\\": "modules/23_Communication/src/",
+            "Modules\\FiscalRetail\\": "modules/26_FiscalRetail/src/",
+            "Modules\\HealthExpenses\\": "modules/27_HealthExpenses/src/",
+            "Modules\\DataExport\\": "modules/28_DataExport/src/",
+            "Modules\\Integrations\\": "modules/29_Integrations/src/",
+            "Modules\\DocumentTrust\\": "modules/32_DocumentTrust/src/",
+            "Modules\\DigitalPreservation\\": "modules/65_DigitalPreservation/src/",
+            "Modules\\Forecasting\\": "modules/66_Forecasting/src/",
+            "Modules\\OcrExtraction\\": "modules/67_OcrExtraction/src/",
+            "Modules\\AnalyticsDss\\": "modules/68_AnalyticsDss/src/",
+            "Modules\\KpiDashboards\\": "modules/68_KpiDashboards/src/",
+            "Modules\\ItalianPayroll\\": "modules/69_ItalianPayroll/src/",
+            "Modules\\Quoting\\": "modules/69_Quoting/src/",
+            "Modules\\SwissFiscal\\": "modules/69_SwissFiscal/src/",
+            "Modules\\ShiftPlanning\\": "modules/70_ShiftPlanning/src/",
+            "Modules\\AiCognitive\\": "modules/68_AiCognitive/src/",
+            "Modules\\Hse\\": "modules/69_Hse/src/",
+            "Modules\\MrpPlanning\\": "modules/71_MrpPlanning/src/",
+            "Modules\\ResourcePlanning\\": "modules/73_ResourcePlanning/src/",
+            "Modules\\ItalianVat\\": "modules/74_ItalianVat/src/",
+            "Modules\\AccountsPayable\\": "modules/75_AccountsPayable/src/",
+            "Modules\\SwissVat\\": "modules/75_SwissVat/src/",
+            "Modules\\LeaveManagement\\": "modules/76_LeaveManagement/src/",
+            "Modules\\ArtisanalGelato\\": "modules/72_ArtisanalGelato/src/",
+            "Modules\\DataResidency\\": "modules/69_DataResidency/src/",
+            "Modules\\Payroll\\": "modules/18_Payroll/src/",
+            "Modules\\Associations\\": "modules/31_Associations/src/",
+            "Modules\\Customs\\": "modules/32_Customs/src/",
+            "Modules\\Documents\\": "modules/25_Documents/src/",
+            "Modules\\Contracts\\": "modules/26_Contracts/src/",
+            "Modules\\Assistant\\": "modules/27_Assistant/src/",
+            "Modules\\Copilot\\": "modules/62_Copilot/src/",
+            "Modules\\Academy\\": "modules/66_Academy/src/",
+            "Modules\\EDocumentNetworks\\": "modules/28_EDocumentNetworks/src/",
+            "Modules\\WorkspaceSync\\": "modules/29_WorkspaceSync/src/",
+            "Modules\\Workshop\\": "modules/33_Workshop/src/",
+            "Modules\\ConstructionTrades\\": "modules/34_ConstructionTrades/src/",
+            "Modules\\Childcare\\": "modules/35_Childcare/src/",
+            "Modules\\PracticeManagement\\": "modules/36_PracticeManagement/src/",
+            "Modules\\Hospitality\\": "modules/37_Hospitality/src/",
+            "Modules\\Visitors\\": "modules/38_Visitors/src/",
+            "Modules\\Intrastat\\": "modules/39_Intrastat/src/",
+            "Modules\\Quality\\": "modules/40_Quality/src/",
+            "Modules\\Governance\\": "modules/42_Governance/src/",
+            "Modules\\TravelExpense\\": "modules/41_TravelExpense/src/",
+            "Modules\\Configurator\\": "modules/46_Configurator/src/",
+            "Modules\\SupplierPortal\\": "modules/44_SupplierPortal/src/",
+            "Modules\\Facility\\": "modules/43_Facility/src/",
+            "Modules\\LeaseAccounting\\": "modules/45_LeaseAccounting/src/",
+            "Modules\\Sustainability\\": "modules/47_Sustainability/src/",
+            "Modules\\Fleet\\": "modules/48_Fleet/src/",
+            "Modules\\CreditManagement\\": "modules/54_CreditManagement/src/",
+            "Modules\\TalentLearning\\": "modules/55_TalentLearning/src/",
+            "Modules\\Wms\\": "modules/50_Wms/src/",
+            "Modules\\Transportation\\": "modules/51_Transportation/src/",
+            "Modules\\Planning\\": "modules/52_Planning/src/",
+            "Modules\\Budgeting\\": "modules/53_Budgeting/src/",
+            "Modules\\BusinessIntelligence\\": "modules/56_BusinessIntelligence/src/",
+            "Modules\\Marketplace\\": "modules/57_Marketplace/src/",
+            "Modules\\Platform\\": "modules/58_Platform/src/",
+            "Modules\\Collaboration\\": "modules/59_Collaboration/src/",
+            "Modules\\Controlling\\": "modules/64_Controlling/src/",
+            "Modules\\AnalyticalAccounting\\": "modules/72_AnalyticalAccounting/src/",
+            "Modules\\Rebates\\": "modules/60_Rebates/src/",
+            "Modules\\Pricing\\": "modules/63_Pricing/src/",
+            "Modules\\Events\\": "modules/61_Events/src/",
+            "Modules\\Plm\\": "modules/62_Plm/src/",
+            "Modules\\Returns\\":"modules/49_Returns/src/",
+            "Modules\\Logistics\\": "modules/32_Logistics/src/",
+            "Modules\\CorporateGroup\\": "modules/33_CorporateGroup/src/",
+            "Modules\\": "modules/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "setup": [
+            "composer install",
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php artisan key:generate",
+            "@php artisan migrate --force",
+            "npm install --ignore-scripts",
+            "npm run build"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan dev"
+        ],
+        "test": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php scripts/dev/locked.php php -d memory_limit=1536M artisan test --parallel --processes=6"
+        ],
+        "test:serial": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php scripts/dev/locked.php php artisan test"
+        ],
+        "test:unit": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=6 --no-coverage --testsuite=Unit",
+        "test:arch": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --no-coverage --testsuite=Architecture",
+        "test:fast": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=6 --no-coverage --testsuite=Unit,Architecture",
+        "test:changed": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=4 --no-coverage --dirty",
+        "test:module": "@php scripts/dev/locked.php php -d memory_limit=1536M vendor/bin/pest --parallel --processes=4 --no-coverage",
+        "lint": "@php vendor/bin/pint --test",
+        "lint:dirty": "@php vendor/bin/pint --dirty",
+        "analyse": "@php -d memory_limit=2G vendor/bin/phpstan analyse --memory-limit=2G",
+        "analyse:dirty": "@php scripts/dev/analyse-dirty.php",
+        "quality": [
+            "@lint",
+            "@analyse",
+            "@test:arch"
+        ],
+        "quality:full": [
+            "@quality",
+            "@test"
+        ],
+        "test:sail": [
+            "./vendor/bin/sail test"
+        ],
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi",
+            "git config core.hooksPath .githooks || true"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi",
+            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
+            "@php artisan migrate --graceful --ansi"
+        ],
+        "pre-package-uninstall": [
+            "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "process-timeout": 0,
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

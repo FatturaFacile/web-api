@@ -1,0 +1,993 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Mit XMLSpy v2010 rel. 2 (http://www.altova.com) von BIT (Bundesamt für Informatik und Telekommunikation (BIT)) bearbeitet -->
+<!-- edecResponse XML Schema -->
+<!-- Name of schema: edecResponse -->
+<!-- Scope of schema: response to import or export customs declarations-->
+<!-- Organization: Swiss Customs Administration -->
+<!-- Documentation: http://www.e-dec.ch/ -->
+<xs:schema xmlns:edecResponse="http://www.e-dec.ch/xml/schema/edecResponse/v4" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.e-dec.ch/xml/schema/edecResponse/v4" elementFormDefault="qualified" attributeFormDefault="unqualified" version="4.0">
+	<xs:element name="goodsDeclarationsResponse">
+		<xs:annotation>
+			<xs:documentation>Root Element mit Antwort auf e-dec Import oder Export Zollanmeldung. 
+In der Antwort können sowohl Annahmen wie auch Ablehnungen verschiedener Zollanmeldungen stehen. 
+Tatsächlich wird aber immer nur eine einzelne Antwort auf eine Zollanmeldung pro edecResponse Dokument zurückgeschickt. Eine Antwort kann sowohl eine Annahme/Ablehnung wie eine Statusmeldung zu einer Zollanmeldung enthalten.
+Alterantiv zu diesem Root Element kann auch das Root Element selectionAndTransitResponse in einer Antwort benutzt werden (siehe globales Element selectionAndTransitResponse).
+Anhand des Attributs schemaVersion wird mitgeteilt, welche Version des edecResponse Schemas zum Validieren benutzt werden soll.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="edecResponse:goodsDeclarationAcceptance" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element ref="edecResponse:goodsDeclarationRejection" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element ref="edecResponse:goodsDeclarationStatus" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="schemaVersion" type="edecResponse:SchemaVersionType" use="required">
+				<xs:annotation>
+					<xs:documentation>Attribut zur Angabe der benutzten edecResponse Schema Version. Die Liste der möglichen Versionen ist vorgegeben.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="selectionAndTransitResponse">
+		<xs:annotation>
+			<xs:documentation>Alternatives Root Element mit Antwort auf e-dec Export selectionAndTransit Anfragen. 
+Die Struktur des Elements ist identisch mit jener des globalen Elements goodsDeclarationsResponse.
+Anhand des Attributs schemaVersion wird mitgeteilt, welche Version des edecResponse Schemas zum Validieren benutzt werden soll.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="edecResponse:goodsDeclarationAcceptance" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element ref="edecResponse:goodsDeclarationRejection" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element ref="edecResponse:goodsDeclarationStatus" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="schemaVersion" type="edecResponse:SchemaVersionType" use="required">
+				<xs:annotation>
+					<xs:documentation>Attribut zur Angabe der benutzten edecResponse Schema Version. Die Liste der möglichen Versionen ist vorgegeben.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="goodsDeclarationAcceptance" type="edecResponse:GoodsDeclarationAcceptanceType">
+		<xs:annotation>
+			<xs:documentation>Annahme Zollanmeldung / Versandvorgang</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="goodsDeclarationRejection" type="edecResponse:GoodsDeclarationRejectionType">
+		<xs:annotation>
+			<xs:documentation>Ablehnung Zollanmeldung / Versandvorgang</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="goodsDeclarationStatus" type="edecResponse:GoodsDeclarationStatusType">
+		<xs:annotation>
+			<xs:documentation>Status einer Zollanmeldung, z.B. wartend auf Korrekturbegutachtung durch Zöllner. Das Element kann alleine oder zusammen mit einer goodsDeclarationAcceptance vorkommen.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="goodsItem" type="edecResponse:GoodsItemType">
+		<xs:annotation>
+			<xs:documentation>Ware (Detail)</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="GoodsDeclarationAcceptanceType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Zollanmeldung</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="traderDeclarationNumber" type="edecResponse:TraderDeclarationNumber">
+				<xs:annotation>
+					<xs:documentation>Zollanmeldungsnummer Deklarant (früher: Deklarationsnummer Spediteur)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="traderReference" type="edecResponse:TraderReference" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Dossiernummer Zollkunde</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="requestorTraderIdentificationNumber" type="edecResponse:TraderIdentificationNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Trader Identification Number (TIN) des ZV Zollkunden. Das Element wird nur gesetzt, wenn ein Spediteur als zugelassener Versender eine Zollanmeldung übernimmt, die ursprünglich von einem anderen Zollkunden deklariert wurde. Das Element kann dazu verwendet werden, um die Antwort Nachricht beim Kunden auf die passende Anfrage zu mappen.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="selectionCorrelationID" type="edecResponse:Reference" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Optionale Referenz um auch bei asynchronen (Mail) oder mandantenfähigen Systemen eine eindeutige Zuordnung zwischen Request und Response zu ermöglichen. Falls dieses Element im selectionAndTransit Request gefüllt ist, so wird es auch in der Response enthalten sein.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="customsDeclarationNumber" type="edecResponse:CustomsDeclarationNumber">
+				<xs:annotation>
+					<xs:documentation>Zollanmeldungsnummer Zoll (früher Deklarationsnummer Zoll)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="customsDeclarationVersion" type="edecResponse:CustomsDeclarationVersion">
+				<xs:annotation>
+					<xs:documentation>Versionsnummer der Zollanmeldung auf Seite Zoll</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="accessCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zugangscode für Bezug von elektronischen Dokumenten; Code kann vom Spediteur an den Endkunden weitergegeben werden, damit dieser Veranlagungsverfügungen beziehen kann.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="20"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="acceptanceDate" type="xs:date">
+				<xs:annotation>
+					<xs:documentation>Annahmedatum im Format yyyy-mm-dd</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="acceptanceTime" type="xs:time">
+				<xs:annotation>
+					<xs:documentation>Annahmezeit im Format hh:mm:ss</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="provisionalDeclarationExpirationDate" type="xs:date" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Frist-Ablaufdatum für provisorische Zollanmeldungen. Datum im Format yyyy-mm-dd</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="declarant" type="edecResponse:DeclarantType">
+				<xs:annotation>
+					<xs:documentation>Deklarant</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="initiator">
+				<xs:annotation>
+					<xs:documentation>Urheber; Element gibt Auskunft darüber, wer die letzten Änderungen an der Zollanmeldung gemacht hat. Bei Erstübermittlungen steht immer der Code für Zollkunde im Element. Bei Korrekturen wird auf die Instanz verwiesen, die die Korrektur gemacht hat, z.B. Zoll (0), Zollkunde/Spediteur (1). (Stammdaten: edecDomains.xml/domains/domain[@name="initiator"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="0"/>
+						<xs:enumeration value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="correctionCode">
+				<xs:annotation>
+					<xs:documentation>Korrekturcode; Status der aktuellen Version der Zollanmeldung: Annullation (0), Erstübermittlung (1), Korrektur (2)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="0"/>
+						<xs:enumeration value="1"/>
+						<xs:enumeration value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="valuation" type="edecResponse:ValuationType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Summe Zoll / MWST</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="additionalTax" type="edecResponse:FeeType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Summe Zusatzabgaben</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="fee" type="edecResponse:FeeType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Summe Gebühr</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element ref="edecResponse:goodsItem" maxOccurs="unbounded"/>
+			<xs:element name="changeInformation" type="edecResponse:ChangeInformationType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Informationen über neue, korrigierte oder gelöschte Daten der Zollanmeldung. Element wird nur gefüllt, wenn Korrektur durch Zoll (initiator=0).
+Die Struktur des Elements lehnt sich an den Working Draft von XUpdate an (siehe xmldb-org.sourceforge.net/xupdate/).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="otherElements" type="xs:anyType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Frei nutzbares Element</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ChangeInformationType">
+		<xs:annotation>
+			<xs:documentation>Complex Type für Informationen über neue, korrigierte oder gelöschte Daten der Zollanmeldung. Die Struktur des Elements lehnt sich an den Working Draft von XUpdate an (siehe http://xmldb-org.sourceforge.net/xupdate/).</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="update" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Der Wert des im select-Attribut ausgewählten Elements wurde korrigiert. Der neue Wert ist im update Element angegeben.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType mixed="true">
+					<xs:simpleContent>
+						<xs:extension base="xs:string">
+							<xs:attribute name="select" use="required">
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:minLength value="1"/>
+										<xs:maxLength value="500"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+						</xs:extension>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="append" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Das im select Attribut ausgewählte Element hat neue Unterelemente erhalten. 
+Die neuen Elemente inklusive der Werte sind im append Element enthaltenen. Mit dem optionalen child-Attribut kann die Position der neuen Elemente als Integer angegeben werden (standardmässig: last()).</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:any namespace="http://www.e-dec.ch/xml/schema/edec" processContents="lax" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute name="select" use="required">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:minLength value="1"/>
+								<xs:maxLength value="500"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="child" type="xs:integer" use="optional"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="insert-after" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Nach dem im select Attribut ausgewählten Element wurden neue Elemente eingefügt. 
+Die neuen Elemente inklusive der Werte sind im insert-after Element enthaltenen.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:any namespace="http://www.e-dec.ch/xml/schema/edec" processContents="lax" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute name="select" use="required">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:minLength value="1"/>
+								<xs:maxLength value="500"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="remove" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Das im select Attribut ausgewühlte Element wurde mit all seinen Unterelementen gelöscht.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="select" use="required">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:minLength value="1"/>
+								<xs:maxLength value="500"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GoodsDeclarationRejectionType">
+		<xs:annotation>
+			<xs:documentation>Complex Type für Ablehnung Zollanmeldung</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="rejectionDate" type="xs:date">
+				<xs:annotation>
+					<xs:documentation>Ablehnungsdatum im Format yyyy-mm-dd</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="rejectionTime" type="xs:time">
+				<xs:annotation>
+					<xs:documentation>Ablehnungsuhrzeit</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="errors">
+				<xs:annotation>
+					<xs:documentation>Fehlermeldungen; es gibt vier Arten von Fehlern. Von diesen Fehlerarten kann aber immer nur eine aufs Mal auftreten.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:annotation>
+						<xs:documentation>Ablehnung einer Korrektur oder einer Annullierung durch den Zoll.</xs:documentation>
+					</xs:annotation>
+					<xs:choice>
+						<xs:element name="EDIFACTErrors" type="edecResponse:EDIFACTErrorType">
+							<xs:annotation>
+								<xs:documentation>Fehler, die bei der EDIFACT Konvertierung aufgetreten sind. Dieses Element wird von EDEC intern verwendet. Diese Art Fehler wird dem Zollkunden als EDIFACT Message zugeschickt und nicht als XML.</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="XMLSchemaErrors" type="edecResponse:XMLSchemaErrorType">
+							<xs:annotation>
+								<xs:documentation>Fehler, die bei der Validierung mit dem XML Schema aufgetreten sind.</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="ruleErrors" type="edecResponse:RuleErrorType">
+							<xs:annotation>
+								<xs:documentation>Fehler, die bei der Plausibilisierung aufgetreten sind.</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="customsRejection" type="edecResponse:CustomsRejectionType">
+							<xs:annotation>
+								<xs:documentation>Ablehnung einer Korrektur oder Annullierung durch den Zoll.</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:choice>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="otherElements" type="xs:anyType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Frei nutzbares Element</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GoodsDeclarationStatusType">
+		<xs:annotation>
+			<xs:documentation>Complex Type für die Übermittlung des Status einer Zollanmeldung, z.B. wartend auf Korrekturbegutachtung durch Zöllner.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="traderDeclarationNumber" type="edecResponse:TraderDeclarationNumber">
+				<xs:annotation>
+					<xs:documentation>Zollanmeldungsnummer Deklarant (früher: Deklarationsnummer Spediteur)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="traderReference" type="edecResponse:TraderReference" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Dossiernummer Zollkunde</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="requestorTraderIdentificationNumber" type="edecResponse:TraderIdentificationNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Trader Identification Number (TIN) des ZV Zollkunden. Das Element wird nur gesetzt, wenn ein Spediteur als zugelassener Versender eine Zollanmeldung übernimmt, die ursprünglich von einem anderen Zollkunden deklariert wurde. Das Element kann dazu verwendet werden, um die Antwort Nachricht beim Kunden auf die passende Anfrage zu mappen.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="selectionCorrelationID" type="edecResponse:Reference" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Optionale Referenz um auch bei asynchronen (Mail) oder mandantenfähigen Systemen eine eindeutige Zuordnung zwischen Request und Response zu ermöglichen. Falls dieses Element im selectionAndTransit Request gefüllt ist, so wird es auch in der Response enthalten sein.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="customsOfficeNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zollstelle bei der die Selektion stattgefunden hat. Die Zollstellennummer ist für spätere Korrekturen vom Zollkunden relevant.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="8"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="customsDeclarationNumber" type="edecResponse:CustomsDeclarationNumber">
+				<xs:annotation>
+					<xs:documentation>Zollanmeldungsnummer Zoll (früher Deklarationsnummer Zoll)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="customsDeclarationVersion" type="edecResponse:CustomsDeclarationVersion">
+				<xs:annotation>
+					<xs:documentation>Versionsnummer der Zollanmeldung auf Seite Zoll</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="statusDate" type="xs:date">
+				<xs:annotation>
+					<xs:documentation>Statusdatum im Format YYYY-MM-DD</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="statusTime" type="xs:time">
+				<xs:annotation>
+					<xs:documentation>Statusuhrzeit im Format hh:mm:ss</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="status">
+				<xs:annotation>
+					<xs:documentation>Status der Zollanmeldung (Stammdaten: edecDomains.xml/domains/domain[@name="status"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:positiveInteger">
+						<xs:totalDigits value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="materialCheck" type="edecResponse:YesNoCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Revisionscode / Ladungskontrolle (ja (1), nein (0)) (Stammdaten)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="release" type="edecResponse:YesNoCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Freigabe (ja (1), nein (0)) (Stammdaten: edecDomains.xml/domains/domain[@name="yesNoCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="security" type="edecResponse:YesNoCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Sicherheit. Werte: ja (1), nein (0); Flag 1 gesetzt, wenn Security Daten für Warensendung verlangt werden (Stammdaten: edecDomains.xml/domains/domain[@name="yesNoCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="specificCircumstanceIndicator" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Kennnummer für besondere Umstände; z.B. (a) Post- und Expressgutsendungen, (b) Bevorratung von Schiffen und Flugzeugen, (c) Beförderungsart "Strasse" (Stammdaten: edecDomains.xml/domains/domain[@name="specificCircumstanceIndicator"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="uniqueConsignmentReferenceNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Unique consignment reference number (UCR); nur für e-dec Export relevant.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="70"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="transferToTransitSystem" type="edecResponse:YesNoCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Info über Transit beim Status 211 Werte: ja (1), nein (0); (Stammdaten: edecDomains.xml/domains/domain[@name="yesNoCode"]/entry/@value)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element ref="edecResponse:goodsItem" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="otherElements" type="xs:anyType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Frei nutzbares Element</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GoodsItemType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Ware</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="traderItemID">
+				<xs:annotation>
+					<xs:documentation>Positionsnummer Zollkunde; die vom Zollkunden übermittelte Detail-ID wird hier zurückgeschickt</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="16"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="customsItemNumber">
+				<xs:annotation>
+					<xs:documentation>Positionsnummer Zoll; fortlaufende Nummerierung der Warenpositionen</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="5"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="selectionResult" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Selektionsergebnis Code; wird vom Zoll bekannt gegeben: frei ohne (1), frei mit (2), gesperrt (3) (Stammdaten: edecDomains.xml/domains/domain[@name="selectionResult"]/entry/@value). Optional für export</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="valuationRate" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zollansatz (CHF)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="9"/>
+						<xs:fractionDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="valuationDetail" type="edecResponse:ValuationType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zoll / MWST Detail</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="additionalTaxDetail" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Zusatzabgaben Details</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edecResponse:FeeType">
+							<xs:sequence>
+								<xs:element name="key">
+									<xs:annotation>
+										<xs:documentation>Schlüssel; muss unter den jeweiligen Zusatzabgaben existieren (Stammdaten: edecTariffMasterData.xml/tariffMasterData/additionalTaxes/type[@value="000"]/key/@value)</xs:documentation>
+									</xs:annotation>
+									<xs:simpleType>
+										<xs:restriction base="xs:string">
+											<xs:length value="3"/>
+										</xs:restriction>
+									</xs:simpleType>
+								</xs:element>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="feeDetail" type="edecResponse:FeeType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Gebühr Details</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="otherElements" type="xs:anyType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Frei nutzbares Element</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DeclarantType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Deklarant</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="traderIdentificationNumber" type="edecResponse:TraderIdentificationNumber">
+				<xs:annotation>
+					<xs:documentation>Trader Identification Number (TIN); früher traderNumber, enthält die TIN bzw. Spediteurnummer (Stammdaten)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="declarantNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Deklarantennummer (Mitarbeiter) (Stammdaten)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="6"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="FeeType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Gebühr; optionales Element da in edecImport optional.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="type">
+				<xs:annotation>
+					<xs:documentation>Art (Stammdaten: edecTariffMasterData.xml/tariffMasterData/fees/tpye/@value)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="4"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="amount">
+				<xs:annotation>
+					<xs:documentation>Betrag in CHF</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="12"/>
+						<xs:fractionDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ValuationType">
+		<xs:annotation>
+			<xs:documentation>Complex Type Zoll / MWST</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="duty">
+				<xs:annotation>
+					<xs:documentation>Zollbetrag in CHF</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="12"/>
+						<xs:fractionDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="VAT">
+				<xs:annotation>
+					<xs:documentation>MWST in CHF</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="12"/>
+						<xs:fractionDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="EDIFACTErrorType">
+		<xs:annotation>
+			<xs:documentation>Complex Type für Fehlermeldungen, die auf Grund der Validierung der EDIFACT Nachricht entstanden sind.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="converter" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Informationen über das Programm, das die EDIFACT Nachricht prüft und umwandelt.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="name">
+							<xs:annotation>
+								<xs:documentation>Name des Programms</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="50"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name="reference" type="xs:anyURI" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>Link zum Hersteller oder zur Dokumentation</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="error" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Informationen über Fehler</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edecResponse:ErrorType"/>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="XMLSchemaErrorType">
+		<xs:annotation>
+			<xs:documentation>Complex Type für Fehlermeldungen, die auf Grund der Validierung mit dem XML Schema entstanden sind.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="schema">
+				<xs:annotation>
+					<xs:documentation>Informationen über das Schema, das zur Validierung benutz wurde.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="location" type="xs:anyURI">
+							<xs:annotation>
+								<xs:documentation>URL des XML Schemas</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="namespace" type="xs:anyURI" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>Namespace des XML Schemas</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="version" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>Version des XML Schemas</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="20"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="parser">
+				<xs:annotation>
+					<xs:documentation>Informationen über den Parser, der die Fehlermeldungen generiert hat</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="name">
+							<xs:annotation>
+								<xs:documentation>Name des Parsers</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="50"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name="reference" type="xs:anyURI" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>Link zum Parser oder zur Dokumentation</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="error" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Informationen über Fehler</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="edecResponse:ErrorType"/>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="RuleErrorType">
+		<xs:annotation>
+			<xs:documentation>Complex Type für Fehlermeldungen, die auf Grund der Plausi-Regeln entstanden sind.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="traderDeclarationNumber" type="edecResponse:TraderDeclarationNumber">
+				<xs:annotation>
+					<xs:documentation>Anmeldungsnummer Deklarant (früher: Deklarationsnummer Spediteur)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="traderReference" type="edecResponse:TraderReference" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Dossiernummer Zollkunde</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="requestorTraderIdentificationNumber" type="edecResponse:TraderIdentificationNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Trader Identification Number (TIN) des ZV Zollkunden. Das Element wird nur gesetzt, wenn ein Spediteur als zugelassener Versender eine Zollanmeldung übernimmt, die ursprünglich von einem anderen Zollkunden deklariert wurde. Das Element kann dazu verwendet werden, um die Antwort Nachricht beim Kunden auf die passende Anfrage zu mappen.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="selectionCorrelationID" type="edecResponse:Reference" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Optionale Referenz um auch bei asynchronen (Mail) oder mandantenfähigen Systemen eine eindeutige Zuordnung zwischen Request und Response zu ermöglichen. Falls dieses Element im selectionAndTransit Request gefüllt ist, so wird es auch in der Response enthalten sein.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="customsDeclarationNumber" type="edecResponse:CustomsDeclarationNumber" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zollanmeldungsnummer Zoll; wir nur bei Fällen gefüllt, in denen es keine traderDeclarationNumber gibt (z.B. bei selectionAndTransit Abfrage einer nicht existierenden customsDeclarationNumber). In diesem Fall bleibt das Element traderDeclarationNumber leer.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="declarant" type="edecResponse:DeclarantType">
+				<xs:annotation>
+					<xs:documentation>Deklarant. TIN bzw. Spediteurnummer, Deklarantennummer und Zollanmeldungsnummer</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ruleEngine" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Informationen über das Programm, das die Regeln geprüft und die Fehlermeldungen generiert hat</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="name" type="xs:string">
+							<xs:annotation>
+								<xs:documentation>Name des Programms</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="reference" type="xs:string" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>Link zum Hersteller oder zur Dokumentation</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="error" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Informationen über Fehler</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="ruleName">
+							<xs:annotation>
+								<xs:documentation>Name der Regel, die zur Plausibilisierung benutzt wurde.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="50"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name="ruleID" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>ID oder Nummer der Regel (wird zurzeit nicht benutzt)</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="ruleVersion" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>Version der Regel (wird zurzeit nicht benutzt)</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="errorCode" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>Code der Fehlermeldung (wird zurzeit nicht benutzt)</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="checkType" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>Gibt an, welcher Fehlertyp aufgetreten ist.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="150"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name="reference" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>Referenz zur Position, an der der Fehler aufgetaucht ist. Z.B. "traderItemID:2" bedeutet, dass bei der 2. Warenposition ein Fehler aufgetreten ist. "goodsDeclaration" deutet darauf hin, dass in den Header Daten ein Fehler existiert. Ist zum neuen Element referencedElements redundant, wird aber aus Kompatibilitätsgründen noch weitergeführt.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="50"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name="referencedElements" type="edecResponse:ReferencedElementType" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>Liste der Elemente bei denen der Fehler aufgetaucht ist.</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="descriptions" type="edecResponse:DescriptionType" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>Liste der Fehlerbeschreibungen in mehreren Sprachen (DE, FR, IT)</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DescriptionType">
+		<xs:annotation>
+			<xs:documentation>Complex Type für Beschreibungen</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="description" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Beschreibung in einer Sprache</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="edecResponse:Description">
+							<xs:attribute name="language" type="xs:language" use="required"/>
+						</xs:extension>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ReferencedElementType">
+		<xs:annotation>
+			<xs:documentation>Complex Type für Referenzen</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="referencedElement" type="edecResponse:Description" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Referenzierung des fehlerhaften Elements in XPath Syntax (z.B. /goodsDeclarations/goodsDeclaration/goodsItem[traderItemID='1']/permit).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="CustomsRejectionType">
+		<xs:annotation>
+			<xs:documentation>Complex Type für Ablehnungen von Korrekturen und Annullierungen durch den Zoll.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="traderDeclarationNumber" type="edecResponse:TraderDeclarationNumber"/>
+			<xs:element name="traderReference" type="edecResponse:TraderReference" minOccurs="0"/>
+			<xs:element name="selectionCorrelationID" type="edecResponse:Reference" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Optionale Referenz um auch bei asynchronen (Mail) oder mandantenfähigen Systemen eine eindeutige Zuordnung zwischen Request und Response zu ermöglichen. Falls dieses Element im selectionAndTransit Request gefüllt ist, so wird es auch in der Response enthalten sein.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="declarant" type="edecResponse:DeclarantType">
+				<xs:annotation>
+					<xs:documentation>Deklarant. TIN bzw. Spediteurnummer, Deklarantennummer und Zollanmeldungsnummer</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="type">
+				<xs:annotation>
+					<xs:documentation>Art der Ablehnung, z.B. correctionRejection (Ablehung Korrektur), cancellationRejection (Ablehnung Annullierung)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="correctionRejection"/>
+						<xs:enumeration value="cancellationRejection"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ErrorType">
+		<xs:annotation>
+			<xs:documentation>Complex Type zur Abbildung von Fehlern</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="message" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>original Fehlermeldung</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="errorLine" type="xs:integer" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Zeile, auf der die Fehlermeldung aufgetauch ist.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="errorColumn" type="xs:integer" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Spalte, in der die Fehlermeldung aufgetauch ist.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="elementName" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Elementname, bei dem der Fehler aufgetaucht ist.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="CustomsDeclarationNumber">
+		<xs:annotation>
+			<xs:documentation>Zollanmeldungsnummer Zoll (früher Deklarationsnummer Zoll) (bei Export entspricht die Referenz der Movement Reference Number, MRN)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="21"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CustomsDeclarationVersion">
+		<xs:annotation>
+			<xs:documentation>Versionsnummer der Zollanmeldung. Wird von e-dec vergeben.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:integer">
+			<xs:totalDigits value="2"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Description">
+		<xs:annotation>
+			<xs:documentation>Text mit beschränkter Länge</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="1000"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TraderDeclarationNumber">
+		<xs:annotation>
+			<xs:documentation>Zollanmeldungsnummer Zollkunde (früher Deklarationsnummer Spediteur)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="22"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TraderIdentificationNumber">
+		<xs:annotation>
+			<xs:documentation>Simple Type für TraderIdentificationNumber (TIN)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="17"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TraderReference">
+		<xs:annotation>
+			<xs:documentation>Dossiernummer Zollkunde; das Element ist optional da es bei edecImport ebenfalls optional ist. Falls das Element in der Zollanmeldung gefüllt wurde, wird es in der Antwort zurückgeschickt.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="35"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Reference">
+		<xs:annotation>
+			<xs:documentation>Simple Type für Referenzen</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="35"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="YesNoCode">
+		<xs:annotation>
+			<xs:documentation>Werteliste für ja-nein Flags. nein=0, ja=1</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:integer">
+			<xs:enumeration value="0"/>
+			<xs:enumeration value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="SchemaVersionType">
+		<xs:annotation>
+			<xs:documentation>Schema Versionsnummer die zum Validieren verwendet werden muss</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[1-9]{0,1}[0-9]{1}\.[0-9]{1,2}"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>
