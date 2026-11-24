@@ -62,6 +62,7 @@ use Modules\LeaseAccounting\Providers\LeaseAccountingServiceProvider;
 use Modules\LeaveManagement\Providers\LeaveManagementServiceProvider;
 use Modules\Logistics\Providers\LogisticsServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
+use Modules\MarketingAutomation\Providers\MarketingAutomationServiceProvider;
 use Modules\Marketplace\Providers\MarketplaceServiceProvider;
 use Modules\MrpPlanning\Providers\MrpPlanningServiceProvider;
 use Modules\OcrExtraction\Providers\OcrExtractionServiceProvider;
@@ -192,6 +193,7 @@ return [
     AccountsPayableServiceProvider::class,
     SwissVatServiceProvider::class,
     LeaveManagementServiceProvider::class,
+    MarketingAutomationServiceProvider::class,
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,
 ];

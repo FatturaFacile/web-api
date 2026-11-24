@@ -82,6 +82,8 @@ return [
                 'write' => ['leave_management.write', 'leave_management.approve', 'leave_management.*'],
             ],
         ],
+        // Marketing Automation (Mod 155): promotional outreach is run by sales; everyone with CRM access reads the dashboards.
+        'marketing_automation' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'sales', 'sales_manager']],
         // Pay data of every employee: owners and administrators, or a member granted payroll.* on the membership (the
         // same rule as PayrollPolicy). Employees read their own payslips and certificates on routes without this check.
         'payroll' => [

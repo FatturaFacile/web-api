@@ -146,6 +146,7 @@ class DatabaseSeeder extends Seeder
             SovereignRegionNodeSeeder::class,
             SwissVatSeeder::class,
             LeaveManagementSeeder::class,
+            MarketingAutomationSeeder::class,
         ]);
     }
 }

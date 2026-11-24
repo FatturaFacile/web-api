@@ -41,6 +41,8 @@ use Modules\Inventory\Jobs\RecalculateInventoryValuationJob;
 use Modules\Manufacturing\Jobs\MaterialiseShiftInstancesJob;
 use Modules\Manufacturing\Jobs\ProcessManufacturingForecastJob;
 use Modules\Manufacturing\Jobs\ProcessMrpRunJob;
+use Modules\MarketingAutomation\Jobs\EvaluateRfmSegmentsJob;
+use Modules\MarketingAutomation\Jobs\RunMarketingJourneysJob;
 use Modules\Platform\Jobs\EvaluateNotificationAlertRulesJob;
 use Modules\PracticeManagement\Jobs\ExpireFeeProposalsJob;
 use Modules\Procurement\Jobs\CheckExpiringSupplierContractsJob;
@@ -210,6 +212,9 @@ $completenessTenantJob('subscriptions:billing-run', static fn (Tenant $tenant): 
 $completenessTenantJob('subscriptions:revenue-recognition', static fn (Tenant $tenant): object => new RecognizeRevenueScheduleJob($tenant->id))
     ->monthlyOn(1, '02:20')->when(static fn (): bool => (bool) config('subscription_billing.scheduled_billing'));
 $completenessTenantJob('inventory:expire-lots', static fn (Tenant $tenant): object => new ExpireStockLotsJob($tenant->id))->dailyAt('00:45');
+// Mod 155 Marketing Automation: hourly RFM audience refresh and the five-minute journey step runner.
+$completenessTenantJob('marketing:refresh-segments', static fn (Tenant $tenant): object => new EvaluateRfmSegmentsJob($tenant->id))->hourly();
+$completenessTenantJob('marketing:run-journeys', static fn (Tenant $tenant): object => new RunMarketingJourneysJob($tenant->id))->everyFiveMinutes();
 $completenessTenantJob('appointments:reminders', static fn (Tenant $tenant): object => new QueueAppointmentRemindersJob($tenant->id))->everyFifteenMinutes();
 
 // Module 17 ESM (GH-396): alert once per loaner unit still out after the repaired equipment was returned
