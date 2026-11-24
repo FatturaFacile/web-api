@@ -23,8 +23,12 @@ use Modules\CRM\Http\Controllers\LeadSettingController;
 use Modules\CRM\Http\Controllers\LeadSourceController;
 use Modules\CRM\Http\Controllers\LeadWebhookController;
 use Modules\CRM\Http\Controllers\LeadWebhookEndpointController;
+use Modules\CRM\Http\Controllers\LossReasonController;
+use Modules\CRM\Http\Controllers\OpportunityBoardController;
 use Modules\CRM\Http\Controllers\OpportunityController;
 use Modules\CRM\Http\Controllers\PipelineStageController;
+use Modules\CRM\Http\Controllers\SalesForecastDashboardController;
+use Modules\CRM\Http\Controllers\SalesPipelineController;
 use Modules\CRM\Http\Controllers\SegmentController;
 
 // module.access:crm gives reads to every member and writes (any non-GET verb) only to the CRM write roles.
@@ -83,6 +87,13 @@ Route::prefix('api/v1/crm')->middleware(['api', 'auth:sanctum', 'tenant', 'local
     Route::post('lead-sources/{id}/rotate-secret', [LeadSourceController::class, 'rotateSecret'])->name('crm.lead-sources.rotate-secret');
 
     // 2. Opportunities and pipeline configuration
+    Route::post('opportunities/{id}/move', [OpportunityBoardController::class, 'move'])->name('crm.opportunities.move');
+    Route::patch('opportunities/{id}/notes', [OpportunityBoardController::class, 'notes'])->name('crm.opportunities.notes');
+    Route::get('opportunities/{id}/history', [OpportunityBoardController::class, 'history'])->name('crm.opportunities.history');
+    Route::post('pipelines/catalog/install', [SalesPipelineController::class, 'installCatalog'])->name('crm.pipelines.catalog');
+    Route::get('pipelines/{id}/board', [SalesPipelineController::class, 'board'])->name('crm.pipelines.board');
+    Route::apiResource('pipelines', SalesPipelineController::class)->parameters(['pipelines' => 'id'])->names('crm.pipelines');
+    Route::apiResource('loss-reasons', LossReasonController::class)->except(['show'])->parameters(['loss-reasons' => 'id'])->names('crm.loss-reasons');
     Route::post('opportunities/{id}/stage', [OpportunityController::class, 'changeStage'])->name('crm.opportunities.stage');
     Route::post('opportunities/{id}/quote', [OpportunityController::class, 'requestQuote'])->name('crm.opportunities.quote');
     Route::post('opportunities/{id}/project', [OpportunityController::class, 'convertToProject'])->name('crm.opportunities.project');
@@ -112,6 +123,8 @@ Route::prefix('api/v1/crm')->middleware(['api', 'auth:sanctum', 'tenant', 'local
     Route::apiResource('activities', ActivityController::class)->except(['destroy'])->names('crm.activities');
 
     // 5. Forecasts
+    Route::get('forecasts/dashboard', [SalesForecastDashboardController::class, 'forecast'])->name('crm.forecasts.dashboard');
+    Route::get('reports/loss-analysis', [SalesForecastDashboardController::class, 'lossAnalysis'])->name('crm.reports.loss-analysis');
     Route::post('forecasts/generate', [ForecastController::class, 'generate'])->name('crm.forecasts.generate');
     Route::post('forecasts/{id}/lock', [ForecastController::class, 'lock'])->name('crm.forecasts.lock');
     Route::apiResource('forecasts', ForecastController::class)->only(['index'])->names('crm.forecasts');

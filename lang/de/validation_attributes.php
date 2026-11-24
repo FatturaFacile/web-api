@@ -3601,4 +3601,13 @@ return [
     'allocation_driver_id' => 'Umlageschlüssel',
     'fixed_weights_json' => 'feste Gewichte',
     'target_filter_json' => 'Zielfilter',
+    'loss_reason_code' => 'Verlustgrund',
+    'loss_notes' => 'Verlustdetails',
+    'pipeline_id' => 'Pipeline',
+    'per_column' => 'Opportunities pro Spalte',
+    'requires_competitor' => 'erfordert einen Wettbewerber',
+    'business_line' => 'Geschäftsbereich',
+    'market' => 'Markt',
+    'install_standard_stages' => 'Standardphasen',
+    'append' => 'anhängen',
 ];

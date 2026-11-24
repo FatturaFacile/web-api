@@ -3601,4 +3601,13 @@ return [
     'allocation_driver_id' => 'allocation driver',
     'fixed_weights_json' => 'fixed weights',
     'target_filter_json' => 'target filter',
+    'loss_reason_code' => 'loss reason',
+    'loss_notes' => 'loss details',
+    'pipeline_id' => 'pipeline',
+    'per_column' => 'deals per column',
+    'requires_competitor' => 'requires a competitor',
+    'business_line' => 'business line',
+    'market' => 'market',
+    'install_standard_stages' => 'standard stages',
+    'append' => 'append',
 ];

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
 use DomainException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Modules\CRM\Http\Requests\SavePipelineStageRequest;
 use Modules\CRM\Models\OpportunityStage;
 use Modules\CRM\Services\PipelineStageService;
@@ -38,9 +39,11 @@ final class PipelineStageController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $stages = OpportunityStage::where('tenant_id', $this->tenantContext->getTenantId())->orderBy('sequence')->orderBy('code')->get();
+        $stages = OpportunityStage::where('tenant_id', $this->tenantContext->getTenantId())
+            ->when($request->filled('pipeline_id'), fn ($query) => $query->where('pipeline_id', $request->query('pipeline_id')))
+            ->orderBy('sequence')->orderBy('code')->get();
 
         return response()->json(['data' => $stages->map(fn (OpportunityStage $stage): array => $this->present($stage))->values()]);
     }
@@ -169,7 +172,10 @@ final class PipelineStageController extends Controller
         return [
             'id' => (string) $stage->id,
             'code' => $stage->code,
-            'name' => $stage->name,
+            'name' => $stage->label(),
+            'pipeline_id' => $stage->pipeline_id,
+            'forecast_category' => $stage->forecast_category,
+            'translations' => $stage->translations,
             'sequence' => $stage->sequence,
             'default_probability' => (float) $stage->default_probability,
             'is_won' => $stage->is_won,

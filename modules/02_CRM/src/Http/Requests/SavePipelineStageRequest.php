@@ -32,6 +32,10 @@ final class SavePipelineStageRequest extends FormRequest
                 ? ['required', 'string', 'max:50', 'regex:/^[a-z0-9_]+$/', Rule::unique('crm_opportunity_stages', 'code')->where('tenant_id', app(TenantContext::class)->getTenantId())]
                 : ['prohibited'],
             'name' => [$required, 'string', 'max:100'],
+            'pipeline_id' => ['nullable', 'uuid', Rule::exists('crm_pipelines', 'id')->where('tenant_id', app(TenantContext::class)->getTenantId())],
+            'forecast_category' => ['nullable', 'string', 'in:pipeline,best_case,commit,closed,omitted'],
+            'translations' => ['nullable', 'array'],
+            'translations.*' => ['nullable', 'string', 'max:100'],
             'sequence' => ['nullable', 'integer', 'min:0'],
             'default_probability' => [$required, 'numeric', 'between:0,100'],
             'is_won' => ['nullable', 'boolean'],

@@ -50,7 +50,15 @@ final class OpportunityController extends Controller
     public function index(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $query = Opportunity::where('tenant_id', $tenant->id)->with(['account', 'stage']);
+        $query = Opportunity::where('tenant_id', $tenant->id)->with(['account', 'stage', 'owner']);
+
+        if ($request->filled('pipeline_id')) {
+            $query->where('pipeline_id', $request->query('pipeline_id'));
+        }
+
+        if ($request->filled('owner_user_id')) {
+            $query->where('owner_user_id', $request->query('owner_user_id'));
+        }
 
         if ($request->has('status')) {
             $query->where('status', $request->query('status'));
@@ -115,14 +123,15 @@ final class OpportunityController extends Controller
             amount: (float) $request->input('amount'),
             currency: $request->input('currency', 'EUR'),
             stageCode: $request->input('stage_code', 'discovery'),
-            forecastCategory: $request->input('forecast_category', 'pipeline'),
+            forecastCategory: $request->input('forecast_category'),
             expectedCloseDate: $request->input('expected_close_date'),
             ownerUserId: $request->input('owner_user_id'),
             campaignId: $request->input('campaign_id'),
             leadId: $request->input('lead_id'),
             discountPercentage: (float) $request->input('discount_percentage', 0.0),
             lineItems: $request->input('line_items', []),
-            tags: $request->input('tags', [])
+            tags: $request->input('tags', []),
+            pipelineId: $request->input('pipeline_id')
         ), $actorId);
 
         return response()->json(new OpportunityResource($opportunity), 201);
@@ -184,12 +193,14 @@ final class OpportunityController extends Controller
 
         $updated = $this->opportunityService->changeStage($opp, new UpdateOpportunityStageDTO(
             targetStageCode: $request->input('target_stage_code'),
-            amount: $request->input('amount') ? (float) $request->input('amount') : null,
-            probability: $request->input('probability') ? (float) $request->input('probability') : null,
+            amount: $request->filled('amount') ? (float) $request->input('amount') : null,
+            probability: $request->filled('probability') ? (float) $request->input('probability') : null,
             forecastCategory: $request->input('forecast_category'),
             winLossReason: $request->input('win_loss_reason'),
             competitor: $request->input('competitor'),
-            actualCloseDate: $request->input('actual_close_date')
+            actualCloseDate: $request->input('actual_close_date'),
+            lossReasonCode: $request->input('loss_reason_code'),
+            lossNotes: $request->input('loss_notes')
         ), $actorId);
 
         return response()->json(new OpportunityResource($updated));

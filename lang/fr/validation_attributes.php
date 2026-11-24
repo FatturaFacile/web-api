@@ -3601,4 +3601,13 @@ return [
     'allocation_driver_id' => 'clé de répartition',
     'fixed_weights_json' => 'pondérations fixes',
     'target_filter_json' => 'filtre des destinataires',
+    'loss_reason_code' => 'motif de perte',
+    'loss_notes' => 'détails de la perte',
+    'pipeline_id' => 'pipeline',
+    'per_column' => 'opportunités par colonne',
+    'requires_competitor' => 'exige un concurrent',
+    'business_line' => 'ligne d\'activité',
+    'market' => 'marché',
+    'install_standard_stages' => 'étapes standard',
+    'append' => 'ajouter à la suite',
 ];

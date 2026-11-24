@@ -3601,4 +3601,13 @@ return [
     'allocation_driver_id' => 'driver di allocazione',
     'fixed_weights_json' => 'pesi fissi',
     'target_filter_json' => 'filtro dei destinatari',
+    'loss_reason_code' => 'motivo di perdita',
+    'loss_notes' => 'dettagli della perdita',
+    'pipeline_id' => 'pipeline',
+    'per_column' => 'trattative per colonna',
+    'requires_competitor' => 'richiede un competitor',
+    'business_line' => 'linea di business',
+    'market' => 'mercato',
+    'install_standard_stages' => 'fasi standard',
+    'append' => 'aggiungi in coda',
 ];

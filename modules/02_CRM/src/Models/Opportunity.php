@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\CRM\Models;
 
 use App\Models\Contact;
+use App\Models\User;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,6 +25,8 @@ final class Opportunity extends BaseEnterpriseModel
             'expected_close_date' => 'date',
             'actual_close_date' => 'date',
             'discount_percentage' => 'decimal:2',
+            'board_position' => 'integer',
+            'notes_updated_at' => 'datetime',
             'tags' => 'array',
             'metadata' => 'array',
         ];
@@ -52,6 +55,21 @@ final class Opportunity extends BaseEnterpriseModel
     public function stage(): BelongsTo
     {
         return $this->belongsTo(OpportunityStage::class, 'stage_id');
+    }
+
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_user_id');
+    }
+
+    public function pipeline(): BelongsTo
+    {
+        return $this->belongsTo(Pipeline::class, 'pipeline_id');
+    }
+
+    public function stageHistory(): HasMany
+    {
+        return $this->hasMany(OpportunityStageHistory::class, 'opportunity_id')->latest();
     }
 
     public function salesQuote(): BelongsTo
