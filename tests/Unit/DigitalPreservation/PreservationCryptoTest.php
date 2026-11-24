@@ -105,7 +105,7 @@ test('the PdV.xml carries the mandatory AgID tags, the namespace and the SDI cro
     $dom = new DOMDocument;
     $dom->loadXML($xml);
     $xpath = new DOMXPath($dom);
-    $xpath->registerNamespace('p', AgidPdvXmlBuilder::Namespace);
+    $xpath->registerNamespace('p', AgidPdvXmlBuilder::XmlNamespace);
 
     expect($dom->encoding)->toBe('UTF-8')
         ->and($dom->documentElement->namespaceURI)->toBe('urn:agid:conservazione:pdv:v1.2')

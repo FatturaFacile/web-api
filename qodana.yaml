@@ -6,7 +6,7 @@ profile:
   name: qodana.recommended
 
 php:
-  version: 8.5
+  version: 8.6
 
 include:
   - name: PhpUndefinedMethodInspection

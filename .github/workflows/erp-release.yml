@@ -24,10 +24,10 @@ jobs:
       - name: Checkout Codebase
         uses: actions/checkout@v7
 
-      - name: Setup PHP 8.5 Runtime
+      - name: Setup PHP 8.6 Runtime
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: '8.6'
           extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath
 
       - name: Install Production Dependencies

@@ -2,7 +2,7 @@
 
 ## Stack & Architecture
 - **Repo**: `FatturaFacile/web-api` (Enterprise ERP REST API under `/api/v1/`).
-- **Stack**: PHP `^8.5` (strict types), Laravel `^13.17`, Pest `^4.7`, PHPUnit `^12.5`, Larastan/PHPStan (level 5 + baseline), Laravel Pint, Vite `^8.0`, TailwindCSS `^4.0`.
+- **Stack**: PHP `^8.6` (strict types), Laravel `^13.17`, Pest `^5.3`, PHPUnit `^13.4`, Larastan/PHPStan (level 5 + baseline), Laravel Pint, Vite `^8.0`, TailwindCSS `^4.0`.
 - **Modular Monolith + Clean Architecture / DDD**:
   - `app/`: core services, HTTP middleware, console commands, base contracts/models.
   - `modules/`: numbered domain modules (`02_CRM`, `05_Invoicing`, `06_SDI`, `13_Procurement`, `14_Inventory`, `18_HumanResources`, `22_GeneralLedger`, `24_Treasury`, `30_Manufacturing`, etc.).

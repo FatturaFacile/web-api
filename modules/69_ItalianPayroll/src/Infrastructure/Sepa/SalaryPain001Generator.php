@@ -15,7 +15,7 @@ use Modules\Payroll\Calculation\Dec;
  */
 final class SalaryPain001Generator
 {
-    public const string Namespace = 'urn:iso:std:iso:20022:tech:xsd:pain.001.001.03';
+    public const string XmlNamespace = 'urn:iso:std:iso:20022:tech:xsd:pain.001.001.03';
 
     /**
      * @param  array{name: string, iban: string, bic?: string|null}  $debtor
@@ -43,7 +43,7 @@ final class SalaryPain001Generator
         $total = Dec::round($total);
         $document = new DOMDocument('1.0', 'UTF-8');
         $document->formatOutput = true;
-        $root = $document->appendChild($document->createElementNS(self::Namespace, 'Document'));
+        $root = $document->appendChild($document->createElementNS(self::XmlNamespace, 'Document'));
         $initiation = $this->child($document, $root, 'CstmrCdtTrfInitn');
 
         $header = $this->child($document, $initiation, 'GrpHdr');
@@ -135,7 +135,7 @@ final class SalaryPain001Generator
      */
     private function child(DOMDocument $document, DOMElement|\DOMNode $parent, string $name, array $attributes = []): DOMElement
     {
-        $element = $document->createElementNS(self::Namespace, $name);
+        $element = $document->createElementNS(self::XmlNamespace, $name);
 
         foreach ($attributes as $key => $value) {
             $element->setAttribute($key, $value);
