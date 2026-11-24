@@ -262,11 +262,11 @@ it('uses the part of a credit note that the run needs and leaves the rest open',
 
     $executed = $this->postJson("/api/v1/accounts-payable/payment-runs/{$run['id']}/execute")->assertOk();
 
-    // 1500 owed to Alfa, 1700 of credit: A-NC (200) is used up and 1300 of A-NC2 offset, so nothing is transferred to Alfa.
+    // 1500 owed to Alfa, 1700 of credit: A-NC (200) is used up and 1300 of A-NC2 offset (1500 netted), so nothing is transferred to Alfa.
     $alfa = collect($executed->json('data.transfers'))->firstWhere('creditor_iban', 'IT60X0542811101000000123456');
     $statuses = apStatuses($this);
 
-    expect($alfa)->toMatchArray(['amount' => '0.00', 'credit_netted_amount' => '1700.00', 'status' => 'netted'])
+    expect($alfa)->toMatchArray(['amount' => '0.00', 'credit_netted_amount' => '1500.00', 'status' => 'netted'])
         ->and($statuses['A-NC'])->toBe('paid')
         ->and($statuses['A-NC2'])->toBe('open')
         ->and($statuses['A-1'])->toBe('paid')

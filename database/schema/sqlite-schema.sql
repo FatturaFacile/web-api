@@ -6846,6 +6846,12 @@ CREATE TABLE "crm_opportunities"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "pipeline_id" varchar,
+  "board_position" integer not null default '0',
+  "loss_reason_code" varchar,
+  "loss_notes" text,
+  "notes" text,
+  "notes_updated_at" datetime,
   foreign key("project_id") references "projects"("id") on delete set null on update no action,
   foreign key("sales_quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("stage_id") references "crm_opportunity_stages"("id") on delete restrict on update no action,
@@ -6931,6 +6937,9 @@ CREATE TABLE "crm_opportunity_stages"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "pipeline_id" varchar,
+  "forecast_category" varchar not null default 'pipeline',
+  "translations" text,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -46941,329 +46950,6 @@ CREATE UNIQUE INDEX "receivable_provision_rates_tenant_id_bucket_key_unique" on 
   "tenant_id",
   "bucket_key"
 );
-CREATE TABLE "it_vat_sections"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "register_type" varchar not null,
-  "code" varchar not null,
-  "name" varchar not null,
-  "document_kind" varchar,
-  "is_active" tinyint(1) not null default '1',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "it_vat_sections_tenant_id_code_unique" on "it_vat_sections"(
-  "tenant_id",
-  "code"
-);
-CREATE INDEX "it_vat_sections_tenant_id_register_type_index" on "it_vat_sections"(
-  "tenant_id",
-  "register_type"
-);
-CREATE TABLE "it_vat_register_prints"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "section_id" varchar not null,
-  "year" integer not null,
-  "period_from" date not null,
-  "period_to" date not null,
-  "first_protocol" integer not null,
-  "last_protocol" integer not null,
-  "entries_count" integer not null,
-  "page_from" integer not null,
-  "page_to" integer not null,
-  "total_taxable" numeric not null default '0',
-  "total_vat" numeric not null default '0',
-  "total_deductible_vat" numeric not null default '0',
-  "content_hash" varchar not null,
-  "stamp_reference" varchar not null,
-  "printed_at" datetime not null,
-  "printed_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("section_id") references "it_vat_sections"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "it_vat_prints_unique_range" on "it_vat_register_prints"(
-  "tenant_id",
-  "section_id",
-  "year",
-  "last_protocol"
-);
-CREATE UNIQUE INDEX "it_vat_register_prints_tenant_id_stamp_reference_unique" on "it_vat_register_prints"(
-  "tenant_id",
-  "stamp_reference"
-);
-CREATE TABLE "it_vat_register_entries"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "section_id" varchar not null,
-  "register_type" varchar not null,
-  "year" integer not null,
-  "protocol_number" integer not null,
-  "entry_date" date not null,
-  "document_date" date,
-  "document_number" varchar,
-  "document_kind" varchar not null default 'ordinary',
-  "document_type_code" varchar,
-  "contact_id" varchar,
-  "counterparty_name" varchar,
-  "counterparty_vat" varchar,
-  "taxable_amount" numeric not null default '0',
-  "vat_rate" numeric not null default '0',
-  "vat_amount" numeric not null default '0',
-  "vat_nature" varchar,
-  "gross_amount" numeric not null default '0',
-  "deduction_percentage" numeric not null default '100',
-  "deductible_vat" numeric not null default '0',
-  "non_deductible_vat" numeric not null default '0',
-  "non_deductible_reason" varchar,
-  "source_type" varchar,
-  "source_id" varchar,
-  "print_id" varchar,
-  "notes" text,
-  "created_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("section_id") references "it_vat_sections"("id") on delete cascade,
-  foreign key("print_id") references "it_vat_register_prints"("id") on delete set null,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "it_vat_entries_protocol_unique" on "it_vat_register_entries"(
-  "section_id",
-  "year",
-  "protocol_number"
-);
-CREATE INDEX "it_vat_entries_period_index" on "it_vat_register_entries"(
-  "tenant_id",
-  "register_type",
-  "entry_date"
-);
-CREATE INDEX "it_vat_register_entries_source_type_source_id_index" on "it_vat_register_entries"(
-  "source_type",
-  "source_id"
-);
-CREATE INDEX "it_vat_register_entries_contact_id_index" on "it_vat_register_entries"(
-  "contact_id"
-);
-CREATE TABLE "it_vat_pro_rata_rates"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "year" integer not null,
-  "deductible_operations" numeric not null default '0',
-  "total_operations" numeric not null default '0',
-  "provisional_percentage" integer not null default '100',
-  "definitive_percentage" integer,
-  "is_definitive" tinyint(1) not null default '0',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "it_vat_pro_rata_rates_tenant_id_year_unique" on "it_vat_pro_rata_rates"(
-  "tenant_id",
-  "year"
-);
-CREATE TABLE "it_vat_ventilations"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "entry_date" date not null,
-  "gross_takings" numeric not null,
-  "purchase_basis" text not null,
-  "breakdown" text not null,
-  "total_taxable" numeric not null,
-  "total_vat" numeric not null,
-  "registered_at" datetime,
-  "created_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE INDEX "it_vat_ventilations_tenant_id_entry_date_index" on "it_vat_ventilations"(
-  "tenant_id",
-  "entry_date"
-);
-CREATE TABLE "it_third_party_goods_movements"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "section_id" varchar not null,
-  "year" integer not null,
-  "protocol_number" integer not null,
-  "print_id" varchar,
-  "movement_date" date not null,
-  "movement_type" varchar not null,
-  "contact_id" varchar not null,
-  "description" varchar not null,
-  "unit" varchar not null default 'pz',
-  "quantity" numeric not null,
-  "value" numeric not null default '0',
-  "document_number" varchar,
-  "document_date" date,
-  "notes" text,
-  "created_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  foreign key("section_id") references "it_vat_sections"("id") on delete cascade,
-  foreign key("print_id") references "it_vat_register_prints"("id") on delete set null,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "it_goods_protocol_unique" on "it_third_party_goods_movements"(
-  "section_id",
-  "year",
-  "protocol_number"
-);
-CREATE INDEX "it_third_party_goods_movements_tenant_id_contact_id_description_index" on "it_third_party_goods_movements"(
-  "tenant_id",
-  "contact_id",
-  "description"
-);
-CREATE INDEX "it_third_party_goods_movements_contact_id_index" on "it_third_party_goods_movements"(
-  "contact_id"
-);
-CREATE TABLE "it_lipe_communications"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "year" integer not null,
-  "quarter" integer not null,
-  "status" varchar not null default 'draft',
-  "settlement_ids" text not null,
-  "totals" text not null,
-  "file_name" varchar,
-  "xml_content" text,
-  "xsd_errors" text,
-  "reconciliation_status" varchar not null default 'not_run',
-  "reconciliation" text,
-  "signature_status" varchar not null default 'unsigned',
-  "signature_digest" varchar,
-  "signer_fingerprint" varchar,
-  "signed_at" datetime,
-  "transmission_protocol" varchar,
-  "transmitted_at" datetime,
-  "rejection_reason" text,
-  "created_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "it_lipe_communications_tenant_id_year_quarter_unique" on "it_lipe_communications"(
-  "tenant_id",
-  "year",
-  "quarter"
-);
-CREATE TABLE "it_annual_vat_reconciliations"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "year" integer not null,
-  "status" varchar not null default 'draft',
-  "periods" text not null,
-  "total_output_vat" numeric not null default '0',
-  "total_input_vat" numeric not null default '0',
-  "pro_rata_percentage" integer not null default '100',
-  "pro_rata_adjustment" numeric not null default '0',
-  "prior_year_credit" numeric not null default '0',
-  "interest_total" numeric not null default '0',
-  "paid_total" numeric not null default '0',
-  "annual_debit" numeric not null default '0',
-  "annual_credit" numeric not null default '0',
-  "ledger_balance" numeric not null default '0',
-  "difference" numeric not null default '0',
-  "is_reconciled" tinyint(1) not null default '0',
-  "diagnostics" text,
-  "finalized_at" datetime,
-  "finalized_by" varchar,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "it_annual_vat_reconciliations_tenant_id_year_unique" on "it_annual_vat_reconciliations"(
-  "tenant_id",
-  "year"
-);
-CREATE TABLE "it_cu_certifications"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "year" integer not null,
-  "supplier_id" varchar not null,
-  "recipient_name" varchar not null,
-  "recipient_tax_code" varchar,
-  "recipient_vat_number" varchar,
-  "recipient_kind" varchar not null,
-  "reason_code" varchar not null,
-  "gross_amount" numeric not null default '0',
-  "non_taxable_amount" numeric not null default '0',
-  "taxable_amount" numeric not null default '0',
-  "withheld_amount" numeric not null default '0',
-  "contributions_amount" numeric not null default '0',
-  "payments_count" integer not null default '0',
-  "status" varchar not null default 'draft',
-  "validation_errors" text,
-  "issued_at" datetime,
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "it_cu_unique" on "it_cu_certifications"(
-  "tenant_id",
-  "year",
-  "supplier_id",
-  "reason_code"
-);
-CREATE TABLE "it_f24_payments"(
-  "id" varchar not null,
-  "tenant_id" varchar not null,
-  "year" integer not null,
-  "month" integer not null,
-  "tax_code" varchar not null,
-  "amount_due" numeric not null default '0',
-  "amount_paid" numeric not null default '0',
-  "due_date" date not null,
-  "paid_at" date,
-  "f24_reference" varchar,
-  "withholding_settlement_id" varchar,
-  "status" varchar not null default 'due',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade,
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "it_f24_payments_tenant_id_year_month_tax_code_unique" on "it_f24_payments"(
-  "tenant_id",
-  "year",
-  "month",
-  "tax_code"
-);
-CREATE INDEX "it_f24_payments_withholding_settlement_id_index" on "it_f24_payments"(
-  "withholding_settlement_id"
-);
 CREATE TABLE "ap_open_items"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -48042,6 +47728,9 @@ CREATE TABLE "eam_fiscal_depreciation_rates"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -48082,6 +47771,9 @@ CREATE TABLE "eam_asset_improvements"(
   "created_at" datetime,
   "updated_at" datetime,
   "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("asset_id") references "eam_fixed_assets"("id") on delete cascade,
   primary key("id")
@@ -48380,6 +48072,858 @@ CREATE INDEX "invoice_match_resolutions_tenant_id_index" on "invoice_match_resol
 );
 CREATE INDEX "invoice_match_resolutions_passive_invoice_id_index" on "invoice_match_resolutions"(
   "passive_invoice_id"
+);
+CREATE TABLE "it_annual_vat_reconciliations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "year" integer not null,
+  "status" varchar not null default('draft'),
+  "periods" text not null,
+  "total_output_vat" numeric not null default('0'),
+  "total_input_vat" numeric not null default('0'),
+  "pro_rata_percentage" integer not null default('100'),
+  "pro_rata_adjustment" numeric not null default('0'),
+  "prior_year_credit" numeric not null default('0'),
+  "interest_total" numeric not null default('0'),
+  "paid_total" numeric not null default('0'),
+  "annual_debit" numeric not null default('0'),
+  "annual_credit" numeric not null default('0'),
+  "ledger_balance" numeric not null default('0'),
+  "difference" numeric not null default('0'),
+  "is_reconciled" tinyint(1) not null default('0'),
+  "diagnostics" text,
+  "finalized_at" datetime,
+  "finalized_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "it_annual_vat_reconciliations_tenant_id_year_unique" on "it_annual_vat_reconciliations"(
+  "tenant_id",
+  "year"
+);
+CREATE TABLE "it_cu_certifications"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "year" integer not null,
+  "supplier_id" varchar not null,
+  "recipient_name" varchar not null,
+  "recipient_tax_code" varchar,
+  "recipient_vat_number" varchar,
+  "recipient_kind" varchar not null,
+  "reason_code" varchar not null,
+  "gross_amount" numeric not null default('0'),
+  "non_taxable_amount" numeric not null default('0'),
+  "taxable_amount" numeric not null default('0'),
+  "withheld_amount" numeric not null default('0'),
+  "contributions_amount" numeric not null default('0'),
+  "payments_count" integer not null default('0'),
+  "status" varchar not null default('draft'),
+  "validation_errors" text,
+  "issued_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "it_cu_unique" on "it_cu_certifications"(
+  "tenant_id",
+  "year",
+  "supplier_id",
+  "reason_code"
+);
+CREATE TABLE "it_f24_payments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "year" integer not null,
+  "month" integer not null,
+  "tax_code" varchar not null,
+  "amount_due" numeric not null default('0'),
+  "amount_paid" numeric not null default('0'),
+  "due_date" date not null,
+  "paid_at" date,
+  "f24_reference" varchar,
+  "withholding_settlement_id" varchar,
+  "status" varchar not null default('due'),
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "it_f24_payments_tenant_id_year_month_tax_code_unique" on "it_f24_payments"(
+  "tenant_id",
+  "year",
+  "month",
+  "tax_code"
+);
+CREATE INDEX "it_f24_payments_withholding_settlement_id_index" on "it_f24_payments"(
+  "withholding_settlement_id"
+);
+CREATE TABLE "it_lipe_communications"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "year" integer not null,
+  "quarter" integer not null,
+  "status" varchar not null default('draft'),
+  "settlement_ids" text not null,
+  "totals" text not null,
+  "file_name" varchar,
+  "xml_content" text,
+  "xsd_errors" text,
+  "reconciliation_status" varchar not null default('not_run'),
+  "reconciliation" text,
+  "signature_status" varchar not null default('unsigned'),
+  "signature_digest" varchar,
+  "signer_fingerprint" varchar,
+  "signed_at" datetime,
+  "transmission_protocol" varchar,
+  "transmitted_at" datetime,
+  "rejection_reason" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "it_lipe_communications_tenant_id_year_quarter_unique" on "it_lipe_communications"(
+  "tenant_id",
+  "year",
+  "quarter"
+);
+CREATE TABLE "it_third_party_goods_movements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "section_id" varchar not null,
+  "year" integer not null,
+  "protocol_number" integer not null,
+  "print_id" varchar,
+  "movement_date" date not null,
+  "movement_type" varchar not null,
+  "contact_id" varchar not null,
+  "description" varchar not null,
+  "unit" varchar not null default('pz'),
+  "quantity" numeric not null,
+  "value" numeric not null default('0'),
+  "document_number" varchar,
+  "document_date" date,
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("print_id") references "it_vat_register_prints"("id") on delete set null on update no action,
+  foreign key("section_id") references "it_vat_sections"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "it_goods_protocol_unique" on "it_third_party_goods_movements"(
+  "section_id",
+  "year",
+  "protocol_number"
+);
+CREATE INDEX "it_third_party_goods_movements_contact_id_index" on "it_third_party_goods_movements"(
+  "contact_id"
+);
+CREATE INDEX "it_third_party_goods_movements_tenant_id_contact_id_description_index" on "it_third_party_goods_movements"(
+  "tenant_id",
+  "contact_id",
+  "description"
+);
+CREATE TABLE "it_vat_pro_rata_rates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "year" integer not null,
+  "deductible_operations" numeric not null default('0'),
+  "total_operations" numeric not null default('0'),
+  "provisional_percentage" integer not null default('100'),
+  "definitive_percentage" integer,
+  "is_definitive" tinyint(1) not null default('0'),
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "it_vat_pro_rata_rates_tenant_id_year_unique" on "it_vat_pro_rata_rates"(
+  "tenant_id",
+  "year"
+);
+CREATE TABLE "it_vat_register_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "section_id" varchar not null,
+  "register_type" varchar not null,
+  "year" integer not null,
+  "protocol_number" integer not null,
+  "entry_date" date not null,
+  "document_date" date,
+  "document_number" varchar,
+  "document_kind" varchar not null default('ordinary'),
+  "document_type_code" varchar,
+  "contact_id" varchar,
+  "counterparty_name" varchar,
+  "counterparty_vat" varchar,
+  "taxable_amount" numeric not null default('0'),
+  "vat_rate" numeric not null default('0'),
+  "vat_amount" numeric not null default('0'),
+  "vat_nature" varchar,
+  "gross_amount" numeric not null default('0'),
+  "deduction_percentage" numeric not null default('100'),
+  "deductible_vat" numeric not null default('0'),
+  "non_deductible_vat" numeric not null default('0'),
+  "non_deductible_reason" varchar,
+  "source_type" varchar,
+  "source_id" varchar,
+  "print_id" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("print_id") references "it_vat_register_prints"("id") on delete set null on update no action,
+  foreign key("section_id") references "it_vat_sections"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "it_vat_entries_period_index" on "it_vat_register_entries"(
+  "tenant_id",
+  "register_type",
+  "entry_date"
+);
+CREATE UNIQUE INDEX "it_vat_entries_protocol_unique" on "it_vat_register_entries"(
+  "section_id",
+  "year",
+  "protocol_number"
+);
+CREATE INDEX "it_vat_register_entries_contact_id_index" on "it_vat_register_entries"(
+  "contact_id"
+);
+CREATE INDEX "it_vat_register_entries_source_type_source_id_index" on "it_vat_register_entries"(
+  "source_type",
+  "source_id"
+);
+CREATE TABLE "it_vat_register_prints"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "section_id" varchar not null,
+  "year" integer not null,
+  "period_from" date not null,
+  "period_to" date not null,
+  "first_protocol" integer not null,
+  "last_protocol" integer not null,
+  "entries_count" integer not null,
+  "page_from" integer not null,
+  "page_to" integer not null,
+  "total_taxable" numeric not null default('0'),
+  "total_vat" numeric not null default('0'),
+  "total_deductible_vat" numeric not null default('0'),
+  "content_hash" varchar not null,
+  "stamp_reference" varchar not null,
+  "printed_at" datetime not null,
+  "printed_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("section_id") references "it_vat_sections"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "it_vat_prints_unique_range" on "it_vat_register_prints"(
+  "tenant_id",
+  "section_id",
+  "year",
+  "last_protocol"
+);
+CREATE UNIQUE INDEX "it_vat_register_prints_tenant_id_stamp_reference_unique" on "it_vat_register_prints"(
+  "tenant_id",
+  "stamp_reference"
+);
+CREATE TABLE "it_vat_sections"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "register_type" varchar not null,
+  "code" varchar not null,
+  "name" varchar not null,
+  "document_kind" varchar,
+  "is_active" tinyint(1) not null default('1'),
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "it_vat_sections_tenant_id_code_unique" on "it_vat_sections"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "it_vat_sections_tenant_id_register_type_index" on "it_vat_sections"(
+  "tenant_id",
+  "register_type"
+);
+CREATE TABLE "it_vat_ventilations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "entry_date" date not null,
+  "gross_takings" numeric not null,
+  "purchase_basis" text not null,
+  "breakdown" text not null,
+  "total_taxable" numeric not null,
+  "total_vat" numeric not null,
+  "registered_at" datetime,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  primary key("id")
+);
+
+CREATE INDEX "it_vat_ventilations_tenant_id_entry_date_index" on "it_vat_ventilations"(
+  "tenant_id",
+  "entry_date"
+);
+CREATE TABLE "crm_pipelines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "business_line" varchar,
+  "market" varchar,
+  "currency" varchar not null default 'CHF',
+  "translations" text,
+  "sequence" integer not null default '10',
+  "is_default" tinyint(1) not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "crm_pipelines_tenant_id_code_unique" on "crm_pipelines"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "crm_pipelines_tenant_id_is_active_sequence_index" on "crm_pipelines"(
+  "tenant_id",
+  "is_active",
+  "sequence"
+);
+CREATE TABLE "crm_loss_reasons"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "translations" text,
+  "requires_competitor" tinyint(1) not null default '0',
+  "sequence" integer not null default '10',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "crm_loss_reasons_tenant_id_code_unique" on "crm_loss_reasons"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "crm_opportunity_stages_pipeline_id_index" on "crm_opportunity_stages"(
+  "pipeline_id"
+);
+CREATE INDEX "crm_opportunities_pipeline_id_index" on "crm_opportunities"(
+  "pipeline_id"
+);
+CREATE INDEX "crm_opportunities_loss_reason_code_index" on "crm_opportunities"(
+  "loss_reason_code"
+);
+CREATE TABLE "crm_opportunity_stage_history"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "opportunity_id" varchar not null,
+  "from_stage_id" varchar,
+  "to_stage_id" varchar,
+  "changed_by_user_id" varchar,
+  "amount" numeric not null default '0',
+  "probability" numeric not null default '0',
+  "weighted_amount" numeric not null default '0',
+  "loss_reason_code" varchar,
+  "winning_competitor" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("opportunity_id") references "crm_opportunities"("id") on delete cascade,
+  foreign key("from_stage_id") references "crm_opportunity_stages"("id") on delete set null,
+  foreign key("to_stage_id") references "crm_opportunity_stages"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "crm_opp_stage_hist_lookup" on "crm_opportunity_stage_history"(
+  "tenant_id",
+  "opportunity_id",
+  "created_at"
+);
+CREATE INDEX "crm_opportunity_stage_history_changed_by_user_id_index" on "crm_opportunity_stage_history"(
+  "changed_by_user_id"
+);
+CREATE INDEX "ap_open_item_events_tenant_id_open_item_id_occurred_at_index" on "ap_open_item_events"(
+  "tenant_id",
+  "open_item_id",
+  "occurred_at"
+);
+CREATE INDEX "ap_payment_run_items_tenant_id_payment_run_id_index" on "ap_payment_run_items"(
+  "tenant_id",
+  "payment_run_id"
+);
+CREATE INDEX "ap_payment_run_offsets_tenant_id_payment_run_id_index" on "ap_payment_run_offsets"(
+  "tenant_id",
+  "payment_run_id"
+);
+CREATE INDEX "ap_payment_run_transfers_tenant_id_payment_run_id_index" on "ap_payment_run_transfers"(
+  "tenant_id",
+  "payment_run_id"
+);
+CREATE TABLE "ma_blueprints"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "kind" varchar not null,
+  "code" varchar not null,
+  "texts" text,
+  "payload" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ma_blueprints_kind_code_uq" on "ma_blueprints"(
+  "tenant_id",
+  "kind",
+  "code"
+);
+CREATE TABLE "ma_segments"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "code" varchar,
+  "name" varchar not null,
+  "description" text,
+  "criteria" text,
+  "auto_refresh_hourly" tinyint(1) not null default '0',
+  "eligible_contacts_count" integer not null default '0',
+  "excluded_insolvent_count" integer not null default '0',
+  "excluded_no_consent_count" integer not null default '0',
+  "rfm_breakdown" text,
+  "last_evaluated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ma_segments_refresh_idx" on "ma_segments"(
+  "tenant_id",
+  "auto_refresh_hourly"
+);
+CREATE TABLE "ma_segment_members"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "segment_id" varchar not null,
+  "contact_id" varchar not null,
+  "r_score" integer not null,
+  "f_score" integer not null,
+  "m_score" integer not null,
+  "rfm_label" varchar not null,
+  "locale" varchar not null default 'it',
+  "recency_days" integer,
+  "frequency_orders" integer not null default '0',
+  "monetary_value" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("segment_id") references "ma_segments"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ma_seg_members_uq" on "ma_segment_members"(
+  "segment_id",
+  "contact_id"
+);
+CREATE TABLE "ma_campaigns"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "name" varchar not null,
+  "status" varchar not null default 'draft',
+  "channel" varchar not null default 'email_dem',
+  "trigger_type" varchar not null default 'scheduled_broadcast',
+  "segment_id" varchar,
+  "sender_name" varchar,
+  "sender_email" varchar,
+  "sender_postal_address" varchar,
+  "provider" varchar not null default 'smtp',
+  "template_mjml_json" text,
+  "ab_test_split_variant_json" text,
+  "utm_campaign_code" varchar,
+  "attribution_model" varchar not null default 'last_touch',
+  "attribution_window_days" integer not null default '30',
+  "currency" varchar not null default 'CHF',
+  "campaign_cost" numeric not null default '0',
+  "coupon_code" varchar,
+  "scheduled_at" datetime,
+  "started_at" datetime,
+  "completed_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("segment_id") references "ma_segments"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "ma_campaigns_status_idx" on "ma_campaigns"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "ma_campaigns_trigger_idx" on "ma_campaigns"(
+  "tenant_id",
+  "trigger_type"
+);
+CREATE TABLE "ma_journey_steps"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "campaign_id" varchar not null,
+  "step_key" varchar not null,
+  "type" varchar not null,
+  "config" text,
+  "next_step_key" varchar,
+  "true_step_key" varchar,
+  "false_step_key" varchar,
+  "is_entry" tinyint(1) not null default '0',
+  "pos_x" integer not null default '0',
+  "pos_y" integer not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("campaign_id") references "ma_campaigns"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ma_steps_campaign_key_uq" on "ma_journey_steps"(
+  "campaign_id",
+  "step_key"
+);
+CREATE TABLE "ma_enrollments"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "campaign_id" varchar not null,
+  "contact_id" varchar not null,
+  "current_step_key" varchar,
+  "status" varchar not null default 'active',
+  "variant" varchar,
+  "next_run_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("campaign_id") references "ma_campaigns"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ma_enroll_uq" on "ma_enrollments"(
+  "campaign_id",
+  "contact_id"
+);
+CREATE INDEX "ma_enroll_due_idx" on "ma_enrollments"("status", "next_run_at");
+CREATE TABLE "ma_step_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "enrollment_id" varchar not null,
+  "campaign_id" varchar not null,
+  "step_key" varchar not null,
+  "type" varchar not null,
+  "outcome" varchar not null,
+  "detail" text,
+  "executed_at" datetime not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("enrollment_id") references "ma_enrollments"("id") on delete cascade,
+  foreign key("campaign_id") references "ma_campaigns"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE TABLE "ma_messages"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "campaign_id" varchar not null,
+  "contact_id" varchar not null,
+  "token" varchar not null,
+  "channel" varchar not null default 'email',
+  "recipient" varchar not null,
+  "variant" varchar,
+  "locale" varchar not null default 'it',
+  "status" varchar not null default 'queued',
+  "provider_reference" varchar,
+  "error" text,
+  "sent_at" datetime,
+  "delivered_at" datetime,
+  "first_opened_at" datetime,
+  "first_clicked_at" datetime,
+  "bounced_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("campaign_id") references "ma_campaigns"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ma_messages_campaign_idx" on "ma_messages"(
+  "campaign_id",
+  "status"
+);
+CREATE INDEX "ma_messages_contact_idx" on "ma_messages"(
+  "tenant_id",
+  "contact_id",
+  "sent_at"
+);
+CREATE UNIQUE INDEX "ma_messages_token_unique" on "ma_messages"("token");
+CREATE TABLE "ma_metrics"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "campaign_id" varchar not null,
+  "sent_count" integer not null default '0',
+  "delivered_count" integer not null default '0',
+  "unique_opens_count" integer not null default '0',
+  "unique_clicks_count" integer not null default '0',
+  "unsubscribes_count" integer not null default '0',
+  "hard_bounces_count" integer not null default '0',
+  "soft_bounces_count" integer not null default '0',
+  "spam_complaints_count" integer not null default '0',
+  "attributed_quotes_count" integer not null default '0',
+  "attributed_quotes_value" numeric not null default '0',
+  "attributed_sales_orders_count" integer not null default '0',
+  "attributed_net_revenue_amount" numeric not null default '0',
+  "attributed_invoiced_amount" numeric not null default '0',
+  "attributed_collected_amount" numeric not null default '0',
+  "attributed_gross_margin_amount" numeric not null default '0',
+  "campaign_cost" numeric not null default '0',
+  "calculated_roi_percentage" numeric,
+  "roi_state" varchar not null default 'no_cost',
+  "currency" varchar not null default 'CHF',
+  "calculated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("campaign_id") references "ma_campaigns"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ma_metrics_campaign_uq" on "ma_metrics"("campaign_id");
+CREATE TABLE "ma_attributions"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "campaign_id" varchar not null,
+  "message_id" varchar,
+  "contact_id" varchar,
+  "document_type" varchar not null,
+  "document_id" varchar not null,
+  "touch_model" varchar not null,
+  "currency" varchar not null,
+  "amount_net" numeric not null default '0',
+  "amount_gross" numeric not null default '0',
+  "gross_margin" numeric not null default '0',
+  "collected_amount" numeric not null default '0',
+  "via" varchar not null default 'touch',
+  "attributed_at" datetime not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("campaign_id") references "ma_campaigns"("id") on delete cascade,
+  foreign key("message_id") references "ma_messages"("id") on delete set null,
+  foreign key("contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ma_attr_doc_uq" on "ma_attributions"(
+  "tenant_id",
+  "document_type",
+  "document_id"
+);
+CREATE INDEX "ma_attr_campaign_idx" on "ma_attributions"(
+  "campaign_id",
+  "document_type"
+);
+CREATE TABLE "ma_consents"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "contact_id" varchar not null,
+  "marketing_opt_in" tinyint(1) not null default '0',
+  "profiling_opt_in" tinyint(1) not null default '0',
+  "soft_opt_in_eligible" tinyint(1) not null default '0',
+  "double_opt_in_confirmed" tinyint(1) not null default '0',
+  "channel_preferences" text,
+  "locale" varchar not null default 'it',
+  "unsubscribed_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ma_consents_contact_uq" on "ma_consents"(
+  "tenant_id",
+  "contact_id"
+);
+CREATE TABLE "ma_consent_events"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "contact_id" varchar not null,
+  "event_type" varchar not null,
+  "lawful_basis" varchar,
+  "strategy_code" varchar,
+  "source" varchar,
+  "ip_address" varchar,
+  "user_agent" text,
+  "details" text,
+  "occurred_at" datetime not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ma_consent_events_idx" on "ma_consent_events"(
+  "tenant_id",
+  "contact_id",
+  "occurred_at"
+);
+CREATE TABLE "ma_suppressions"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "contact_id" varchar,
+  "address" varchar not null,
+  "channel" varchar not null default 'email',
+  "reason" varchar not null,
+  "campaign_id" varchar,
+  "suppressed_at" datetime not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ma_suppressions_addr_uq" on "ma_suppressions"(
+  "tenant_id",
+  "channel",
+  "address"
 );
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
@@ -48832,3 +49376,7 @@ INSERT INTO migrations VALUES(447,'2027_12_28_000100_create_receivable_provision
 INSERT INTO migrations VALUES(448,'2027_12_29_000100_link_gelato_ingredients_to_inventory',16);
 INSERT INTO migrations VALUES(449,'2027_12_30_000200_create_mfg_machine_signal_tables',16);
 INSERT INTO migrations VALUES(450,'2027_12_31_000100_create_invoice_matching_mod048_tables',17);
+INSERT INTO migrations VALUES(451,'2027_12_31_000100_complete_audit_and_tenant_columns_on_vat_and_eam_tables',18);
+INSERT INTO migrations VALUES(452,'2027_12_31_000100_create_crm_sales_pipeline_tables',18);
+INSERT INTO migrations VALUES(453,'2027_12_31_000200_add_leading_tenant_indexes_to_accounts_payable_children',18);
+INSERT INTO migrations VALUES(454,'2028_01_02_000100_create_marketing_automation_mod155_tables',18);

@@ -29,8 +29,8 @@ final class SupplierTermRequest extends FormRequest
         return [
             'supplier_id' => $creating ? ['required', 'uuid', Rule::exists('contacts', 'id')->where('tenant_id', $tenantId)] : ['prohibited'],
             'clause' => ['nullable', 'string', 'max:255', Rule::requiredIf($creating && ! $this->filled('skonto_percentage'))],
-            'skonto_percentage' => ['nullable', 'numeric', 'gt:0', 'max:100', 'required_with:skonto_days'],
-            'skonto_days' => ['nullable', 'integer', 'min:0', 'max:365', 'required_with:skonto_percentage'],
+            'skonto_percentage' => ['nullable', 'numeric', 'gt:0', 'max:100', Rule::requiredIf($creating && $this->filled('skonto_days'))],
+            'skonto_days' => ['nullable', 'integer', 'min:0', 'max:365', Rule::requiredIf($creating && $this->filled('skonto_percentage'))],
             'net_days' => ['nullable', 'integer', 'min:0', 'max:730'],
             'reference' => ['nullable', 'string', 'max:100'],
             'valid_from' => ['nullable', 'date'],

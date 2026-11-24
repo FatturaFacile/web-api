@@ -54,8 +54,9 @@ Route::prefix('api/v1/accounts-payable')->middleware(['api', 'auth:sanctum', 'te
     });
 });
 
-// The same services in the contract of the web client (items, batches, aging): a thin layer, the rules are the ones above.
-Route::prefix('api/v1/accounting/payables')->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])->group(function (): void {
+// The same services in the contract of the web client (items, batches, aging): a thin layer, the rules are the ones above. The
+// accounting prefix belongs to the ledger module (read access to the books), the stricter accounts_payable gates below decide the rest.
+Route::prefix('api/v1/accounting/payables')->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:ledger,read'])->group(function (): void {
     Route::middleware('module.access:accounts_payable,read')->group(function (): void {
         Route::post('batches/preview', [AccountingPayablesController::class, 'preview'])->name('accounts-payable.payables.batches.preview');
     });

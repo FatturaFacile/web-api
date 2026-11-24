@@ -31,6 +31,8 @@ use App\Models\VatValidationLog;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use InvalidArgumentException;
+use Modules\AccountsPayable\Models\ApOpenItem;
+use Modules\AccountsPayable\Models\ApPaymentRunTransfer;
 use Modules\Associations\Models\Donor;
 use Modules\Associations\Models\Member;
 use Modules\Associations\Models\PrivacySubject;
@@ -65,6 +67,7 @@ use Modules\Inventory\Models\WeighbridgeVehicle;
 use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Invoicing\Models\SalesRepresentative;
+use Modules\ItalianVat\Models\CuCertification;
 use Modules\Payroll\Models\PayrollEmployeeChild;
 use Modules\Payroll\Models\PayrollEmployeeProfile;
 use Modules\Payroll\Models\Payslip;
@@ -244,6 +247,7 @@ final class PersonalDataRegistry
             'companies' => 'Legal entities of the corporate group (code, legal name, tax code): companies, not data subjects.',
             'company_sites' => 'Premises of the companies of the group.',
             'fpa_documents' => 'Electronic invoice envelopes: the recipient PEC is a business mailbox of the customer company, personal data of the parties stays in the contacts and the invoice.',
+            'it_f24_payments' => 'F24 payments of the company: the tax code column is the tribute code (codice tributo, e.g. 1040), not the fiscal code of a person.',
             'sdi_configurations' => 'Transmission settings of the company (its own fiscal code and PEC), not data of data subjects.',
         ];
     }
@@ -284,6 +288,9 @@ final class PersonalDataRegistry
             new PersonalDataEntry('payment_approvals', [PaymentApproval::class], 'Payment approvals', 'technical', ['ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('payment_lines', [PaymentLine::class], 'Payment lines', 'financial', ['recipient_iban'], $fiscal, $commercialNote),
             new PersonalDataEntry('riba_receipts', [RibaReceipt::class], 'Ri.Ba. receipts', 'financial', ['debtor_tax_code', 'debtor_address'], $fiscal, $commercialNote),
+            new PersonalDataEntry('it_cu_certifications', [CuCertification::class], 'Certificazione Unica (CU) certifications', 'identity', ['recipient_tax_code'], $fiscal, $commercialNote, ['contact' => 'supplier_id']),
+            new PersonalDataEntry('ap_open_items', [ApOpenItem::class], 'Supplier open items', 'financial', ['creditor_iban'], $fiscal, $commercialNote, ['contact' => 'supplier_id']),
+            new PersonalDataEntry('ap_payment_run_transfers', [ApPaymentRunTransfer::class], 'Payment run transfers by creditor IBAN', 'financial', ['creditor_iban'], $fiscal, $commercialNote, ['contact' => 'supplier_id']),
             new PersonalDataEntry('appointments', [Appointment::class], 'Appointments', 'contact', ['address'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('construction_sites', [ConstructionSite::class], 'Construction sites', 'location', ['address'], $erasable, $operationalNote),
             new PersonalDataEntry('work_orders', [WorkOrder::class], 'Work orders', 'location', ['intervention_address'], $erasable, $operationalNote),

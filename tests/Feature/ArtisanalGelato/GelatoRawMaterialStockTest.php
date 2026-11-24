@@ -113,7 +113,9 @@ it('does not touch inventory for an ingredient that is not linked to a stock ite
 
 it('rejects an ingredient linked to a stock item of another company', function (): void {
     gelatoStockSetUp(1.0);
-    $foreign = StockItem::factory()->create(['tenant_id' => Tenant::create(['name' => 'Altra', 'legal_name' => 'Altra SA', 'country' => 'CH', 'default_currency' => 'CHF'])->id]);
+    // The active tenant context always wins over an explicit tenant_id, so the foreign item is created in its own context.
+    $otherTenant = Tenant::create(['name' => 'Altra', 'legal_name' => 'Altra SA', 'country' => 'CH', 'default_currency' => 'CHF']);
+    $foreign = app(TenantContext::class)->runWithTenant($otherTenant, fn (): StockItem => StockItem::factory()->create(['tenant_id' => $otherTenant->id]));
 
     $this->postJson('/api/v1/gelato/ingredients', [
         'code' => 'FOREIGN_LINK',

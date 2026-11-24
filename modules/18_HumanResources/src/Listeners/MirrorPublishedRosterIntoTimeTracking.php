@@ -56,7 +56,7 @@ final class MirrorPublishedRosterIntoTimeTracking
                 ->join('roster_shift_templates as t', 't.id', '=', 'a.shift_template_id')
                 ->where('a.tenant_id', $tenantId)->whereNotNull('a.employee_id')->whereNull('a.deleted_at')->whereNull('p.deleted_at')
                 ->whereIn('p.status', ['published', 'locked'])
-                ->whereBetween('a.shift_date', [$from, $to])
+                ->whereDate('a.shift_date', '>=', $from)->whereDate('a.shift_date', '<=', $to)
                 ->get(['a.employee_id', 'a.shift_date', 'a.start_at', 'a.end_at', 't.break_minutes']);
 
             if ($rows->isEmpty()) {

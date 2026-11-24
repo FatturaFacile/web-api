@@ -43,7 +43,7 @@ it('adds up the periods and reconciles them with the Erario c/IVA account', func
 
 it('subtracts the payments and the credit of the previous year from the annual debit', function (): void {
     yearSettlements($this, ['is_paid' => true, 'status' => 'paid']);
-    DB::table('vat_settlements')->where('tenant_id', $this->tenant->id)->where('period_from', '2026-01-01')->update(['prior_credit_used' => '150.0000']);
+    DB::table('vat_settlements')->where('tenant_id', $this->tenant->id)->whereDate('period_from', '2026-01-01')->update(['prior_credit_used' => '150.0000']);
 
     $this->postJson('/api/v1/italian-vat/annual-vat/2026/calculate')->assertOk()
         ->assertJsonPath('data.prior_year_credit', '150.00')
