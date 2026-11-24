@@ -11,11 +11,11 @@ use Modules\MarketingAutomation\Application\Commands\EvaluateRfmSegmentationAndB
 use Modules\MarketingAutomation\Application\Commands\EvaluateRfmSegmentationAndBuildAudienceHandler;
 use Modules\MarketingAutomation\Application\Queries\GetRfmMatrixHandler;
 use Modules\MarketingAutomation\Application\Queries\GetRfmMatrixQuery;
+use Modules\MarketingAutomation\Domain\Enums\SuppressionReason;
 use Modules\MarketingAutomation\Models\Segment;
 use Modules\MarketingAutomation\Models\SegmentMember;
 use Modules\MarketingAutomation\Services\SegmentEvaluationService;
 use Modules\MarketingAutomation\Services\SuppressionService;
-use Modules\MarketingAutomation\Domain\Enums\SuppressionReason;
 
 function maSegment(string $tenantId, array $criteria = [], bool $hourly = false): Segment
 {

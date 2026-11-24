@@ -6,7 +6,7 @@ use Modules\MarketingAutomation\Domain\Enums\RfmLabel;
 use Modules\MarketingAutomation\Services\MetricsService;
 use Modules\MarketingAutomation\Services\RfmScoringService;
 
-test('recency is scored on fixed business bands', function (int|null $days, int $score): void {
+test('recency is scored on fixed business bands', function (?int $days, int $score): void {
     expect((new RfmScoringService)->recencyScore($days))->toBe($score);
 })->with([
     [0, 5], [30, 5], [31, 4], [90, 4], [91, 3], [180, 3], [181, 2], [365, 2], [366, 1], [null, 1],

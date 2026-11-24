@@ -27,8 +27,8 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed>|null $rfm_breakdown
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class Segment extends BaseEnterpriseModel
 {

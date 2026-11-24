@@ -8,6 +8,7 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
 /**
  * Mod 155 Marketing Automation — Campaign.
@@ -30,13 +31,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string|null $coupon_code
  * @property array<string, mixed>|null $template_mjml_json
  * @property array<string, mixed>|null $ab_test_split_variant_json
- * @property \Illuminate\Support\Carbon|null $scheduled_at
- * @property \Illuminate\Support\Carbon|null $started_at
- * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property Carbon|null $scheduled_at
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property string|null $sender_name
  * @property string|null $sender_email
  * @property string|null $sender_postal_address

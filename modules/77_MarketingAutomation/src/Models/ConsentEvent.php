@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\MarketingAutomation\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Support\Carbon;
 
 /**
  * Mod 155 Marketing Automation — ConsentEvent.
@@ -19,11 +20,11 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
  * @property string|null $ip_address
  * @property string|null $user_agent
  * @property array<string, mixed>|null $details
- * @property \Illuminate\Support\Carbon|null $occurred_at
+ * @property Carbon|null $occurred_at
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class ConsentEvent extends BaseEnterpriseModel
 {

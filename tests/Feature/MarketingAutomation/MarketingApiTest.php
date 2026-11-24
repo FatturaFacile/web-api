@@ -9,6 +9,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\MarketingAutomation\Models\ConsentEvent;
+use Modules\MarketingAutomation\Services\AttributionService;
 
 const MA_BASE = '/api/v1/marketing-automation';
 
@@ -294,7 +295,7 @@ test('the dashboard exposes the KPIs per campaign and in total', function (): vo
     maMessage($tenant, $campaign, $contact, now()->subDays(2), now()->subDay());
     $order = maSalesOrder($tenant, $contact, now()->toDateString(), 800);
     maOrderLine($tenant, $order, null, 1, 800, 300);
-    app(Modules\MarketingAutomation\Services\AttributionService::class)->attribute((string) $tenant->id, 'sales_order', $order);
+    app(AttributionService::class)->attribute((string) $tenant->id, 'sales_order', $order);
 
     $data = maActingAs($user, $tenant)->getJson(MA_BASE.'/dashboard')->assertOk()->json('data');
 

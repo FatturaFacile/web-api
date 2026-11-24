@@ -12,6 +12,8 @@ use Illuminate\Support\Str;
 use Modules\CRM\Models\Activity;
 use Modules\MarketingAutomation\Application\Commands\ExecuteMarketingAutomationJourneyCommand;
 use Modules\MarketingAutomation\Application\Commands\ExecuteMarketingAutomationJourneyHandler;
+use Modules\MarketingAutomation\Jobs\EvaluateRfmSegmentsJob;
+use Modules\MarketingAutomation\Jobs\RunMarketingJourneysJob;
 use Modules\MarketingAutomation\Jobs\SendMarketingMessageJob;
 use Modules\MarketingAutomation\Models\Campaign;
 use Modules\MarketingAutomation\Models\Enrollment;
@@ -233,8 +235,8 @@ test('the scheduled jobs run for a tenant', function (): void {
     [$tenant] = maSetup('CH');
     $segment = Segment::withoutGlobalScopes()->create(['tenant_id' => (string) $tenant->id, 'name' => 'Auto', 'criteria' => [], 'auto_refresh_hourly' => true]);
 
-    Modules\MarketingAutomation\Jobs\EvaluateRfmSegmentsJob::dispatchSync((string) $tenant->id);
-    Modules\MarketingAutomation\Jobs\RunMarketingJourneysJob::dispatchSync((string) $tenant->id);
+    EvaluateRfmSegmentsJob::dispatchSync((string) $tenant->id);
+    RunMarketingJourneysJob::dispatchSync((string) $tenant->id);
 
     expect($segment->refresh()->last_evaluated_at)->not->toBeNull();
 });

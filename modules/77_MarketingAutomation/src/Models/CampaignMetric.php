@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\MarketingAutomation\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Support\Carbon;
 
 /**
  * Mod 155 Marketing Automation — CampaignMetric.
@@ -31,11 +32,11 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
  * @property string $attributed_collected_amount
  * @property string $attributed_gross_margin_amount
  * @property string $campaign_cost
- * @property \Illuminate\Support\Carbon|null $calculated_at
+ * @property Carbon|null $calculated_at
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class CampaignMetric extends BaseEnterpriseModel
 {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\MarketingAutomation\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Support\Carbon;
 
 /**
  * Mod 155 Marketing Automation — JourneyStep.
@@ -24,8 +25,8 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
  * @property int $pos_y
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class JourneyStep extends BaseEnterpriseModel
 {

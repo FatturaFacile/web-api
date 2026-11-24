@@ -7,13 +7,18 @@ require_once __DIR__.'/MarketingTestHelpers.php';
 use Database\Seeders\MarketingAutomationSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use Modules\MarketingAutomation\Domain\Enums\SuppressionReason;
+use Modules\MarketingAutomation\Exceptions\MailDeliveryException;
 use Modules\MarketingAutomation\Jobs\SendMarketingMessageJob;
 use Modules\MarketingAutomation\Models\ConsentEvent;
 use Modules\MarketingAutomation\Models\MarketingConsent;
 use Modules\MarketingAutomation\Models\MarketingMessage;
 use Modules\MarketingAutomation\Models\Suppression;
+use Modules\MarketingAutomation\Services\Delivery\AmazonSesMailAdapter;
+use Modules\MarketingAutomation\Services\Delivery\MailgunMailAdapter;
 use Modules\MarketingAutomation\Services\Delivery\OutboundEmail;
+use Modules\MarketingAutomation\Services\Delivery\SendGridMailAdapter;
 use Modules\MarketingAutomation\Services\Delivery\SmtpMailAdapter;
 use Modules\MarketingAutomation\Services\MarketingMessageService;
 use Modules\MarketingAutomation\Services\MetricsService;
@@ -86,7 +91,7 @@ test('prepare refuses recipients without consent, unsubscribed, suppressed, inso
 
     $insolvent = maContact($tenant);
     maConsent($tenant, $insolvent);
-    DB::table('customer_credit_profiles')->insert(['id' => (string) Illuminate\Support\Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'customer_id' => $insolvent, 'is_credit_hold' => true, 'created_at' => now(), 'updated_at' => now()]);
+    DB::table('customer_credit_profiles')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'customer_id' => $insolvent, 'is_credit_hold' => true, 'created_at' => now(), 'updated_at' => now()]);
     expect($service->prepare($campaign, $insolvent)['reason'])->toBe('credit_blocked');
 
     $anonymous = maCampaign($tenant, ['sender_postal_address' => '']);
@@ -185,7 +190,7 @@ test('a permanent provider failure is a hard bounce and suppresses the address',
     {
         public function send(OutboundEmail $email, array $config): array
         {
-            throw new Modules\MarketingAutomation\Exceptions\MailDeliveryException('550 5.1.1 user unknown', true);
+            throw new MailDeliveryException('550 5.1.1 user unknown', true);
         }
     });
     $service = app(MarketingMessageService::class);
@@ -312,9 +317,9 @@ test('three soft bounces to the same address turn into a hard bounce', function 
 });
 
 test('provider adapters normalise webhook payloads', function (): void {
-    $sendgrid = app(Modules\MarketingAutomation\Services\Delivery\SendGridMailAdapter::class);
-    $ses = app(Modules\MarketingAutomation\Services\Delivery\AmazonSesMailAdapter::class);
-    $mailgun = app(Modules\MarketingAutomation\Services\Delivery\MailgunMailAdapter::class);
+    $sendgrid = app(SendGridMailAdapter::class);
+    $ses = app(AmazonSesMailAdapter::class);
+    $mailgun = app(MailgunMailAdapter::class);
 
     expect($sendgrid->parseWebhook([['event' => 'spamreport', 'email' => 'a@x.ch'], ['event' => 'processed', 'email' => 'b@x.ch']]))->toBe([['type' => 'complaint', 'address' => 'a@x.ch', 'reference' => null]])
         ->and($mailgun->parseWebhook(['event-data' => ['event' => 'failed', 'severity' => 'temporary', 'recipient' => 'a@x.ch']])[0]['type'])->toBe('soft_bounce')

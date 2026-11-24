@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\MarketingAutomation\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Support\Carbon;
 
 /**
  * Mod 155 Marketing Automation — Attribution.
@@ -23,11 +24,11 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
  * @property string $amount_gross
  * @property string $gross_margin
  * @property string $collected_amount
- * @property \Illuminate\Support\Carbon|null $attributed_at
+ * @property Carbon|null $attributed_at
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class Attribution extends BaseEnterpriseModel
 {

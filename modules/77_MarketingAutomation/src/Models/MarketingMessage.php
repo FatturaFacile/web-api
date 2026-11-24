@@ -6,6 +6,7 @@ namespace Modules\MarketingAutomation\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Mod 155 Marketing Automation — MarketingMessage.
@@ -21,15 +22,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $locale
  * @property string $status
  * @property string|null $provider_reference
- * @property \Illuminate\Support\Carbon|null $sent_at
- * @property \Illuminate\Support\Carbon|null $delivered_at
- * @property \Illuminate\Support\Carbon|null $first_opened_at
- * @property \Illuminate\Support\Carbon|null $first_clicked_at
- * @property \Illuminate\Support\Carbon|null $bounced_at
+ * @property Carbon|null $sent_at
+ * @property Carbon|null $delivered_at
+ * @property Carbon|null $first_opened_at
+ * @property Carbon|null $first_clicked_at
+ * @property Carbon|null $bounced_at
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class MarketingMessage extends BaseEnterpriseModel
 {
