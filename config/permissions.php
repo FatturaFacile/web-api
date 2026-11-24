@@ -82,6 +82,17 @@ return [
                 'write' => ['leave_management.write', 'leave_management.approve', 'leave_management.*'],
             ],
         ],
+        // Sales commissions and agent management (Mod 041): commissions are part of someone's pay. Owners, administrators,
+        // accountants and sales managers read and maintain conditions; AgentCommissionPolicy reserves the approval and the
+        // payment of a statement, the fiscal parameters and the compliance exports to owners, administrators and accountants.
+        'agent_commissions' => [
+            'read' => ['owner', 'admin', 'accountant', 'accountant_readonly', 'sales_manager'],
+            'write' => ['owner', 'admin', 'accountant', 'sales_manager'],
+            'grants' => [
+                'read' => ['agent_commissions.read', 'agent_commissions.write', 'agent_commissions.settle', 'agent_commissions.*'],
+                'write' => ['agent_commissions.write', 'agent_commissions.settle', 'agent_commissions.*'],
+            ],
+        ],
         // Pay data of every employee: owners and administrators, or a member granted payroll.* on the membership (the
         // same rule as PayrollPolicy). Employees read their own payslips and certificates on routes without this check.
         'payroll' => [
