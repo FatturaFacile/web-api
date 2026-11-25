@@ -48,6 +48,7 @@ return [
         'italian_payroll' => env('FEATURE_MODULE_ITALIAN_PAYROLL'),
         'hse' => env('FEATURE_MODULE_HSE'),
         'cpq_quotes' => env('FEATURE_MODULE_CPQ_QUOTES'),
+        'cpq_configurator' => env('FEATURE_MODULE_CPQ_CONFIGURATOR'),
         'swiss_fiscal' => env('FEATURE_MODULE_SWISS_FISCAL'),
         'swiss_vat' => env('FEATURE_MODULE_SWISS_VAT'),
         'leave_management' => env('FEATURE_MODULE_LEAVE_MANAGEMENT'),
