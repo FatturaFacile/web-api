@@ -8,16 +8,21 @@ use Modules\Treasury\Http\Controllers\BankReconciliationController;
 use Modules\Treasury\Http\Controllers\CashForecastController;
 use Modules\Treasury\Http\Controllers\CashPositionController;
 use Modules\Treasury\Http\Controllers\CashRegisterController;
+use Modules\Treasury\Http\Controllers\F24DelegationController;
 use Modules\Treasury\Http\Controllers\FxRiskController;
 use Modules\Treasury\Http\Controllers\LiquidityController;
 use Modules\Treasury\Http\Controllers\LiquidityForecastController;
 use Modules\Treasury\Http\Controllers\OpenBankingController;
+use Modules\Treasury\Http\Controllers\OpenBankingSyncController;
 use Modules\Treasury\Http\Controllers\PagoPaNoticeController;
 use Modules\Treasury\Http\Controllers\PaymentBatchController;
+use Modules\Treasury\Http\Controllers\PaymentFlowController;
 use Modules\Treasury\Http\Controllers\PaymentProposalController;
 use Modules\Treasury\Http\Controllers\ReceivableCollectionController;
 use Modules\Treasury\Http\Controllers\RibaController;
 use Modules\Treasury\Http\Controllers\RibaPortfolioController;
+use Modules\Treasury\Http\Controllers\SmartReconciliationController;
+use Modules\Treasury\Http\Controllers\StatementImportController;
 use Modules\Treasury\Http\Controllers\TreasuryBalanceController;
 use Modules\Treasury\Http\Controllers\TreasuryKpiController;
 use Modules\Treasury\Http\Controllers\TreasuryMovementController;
@@ -107,6 +112,44 @@ Route::prefix('api/v1/treasury')
         Route::get('open-banking/consents/{id}/account', [OpenBankingController::class, 'account'])->whereUuid('id');
         Route::post('open-banking/payments', [OpenBankingController::class, 'initiatePayment']);
         Route::get('open-banking/payments/{id}', [OpenBankingController::class, 'showPayment'])->whereUuid('id');
+
+        // Outgoing payment files: Swiss pain.001.001.09, SEPA pain.001.001.03, CBI
+        Route::get('payment-flows', [PaymentFlowController::class, 'index'])->name('treasury.payment-flows.index');
+        Route::post('payment-flows/preview', [PaymentFlowController::class, 'preview'])->name('treasury.payment-flows.preview');
+        Route::post('payment-flows/batches', [PaymentFlowController::class, 'storeBatch'])->name('treasury.payment-flows.batches');
+
+        // Modello F24 telematico
+        Route::get('f24/tax-codes', [F24DelegationController::class, 'taxCodes'])->name('treasury.f24.tax-codes');
+        Route::get('f24/delegations', [F24DelegationController::class, 'index'])->name('treasury.f24.index');
+        Route::post('f24/delegations', [F24DelegationController::class, 'store'])->name('treasury.f24.store');
+        Route::get('f24/delegations/{id}', [F24DelegationController::class, 'show'])->whereUuid('id')->name('treasury.f24.show');
+        Route::put('f24/delegations/{id}', [F24DelegationController::class, 'update'])->whereUuid('id')->name('treasury.f24.update');
+        Route::delete('f24/delegations/{id}', [F24DelegationController::class, 'destroy'])->whereUuid('id')->name('treasury.f24.destroy');
+        Route::post('f24/delegations/{id}/validate', [F24DelegationController::class, 'validateDelegation'])->whereUuid('id')->name('treasury.f24.validate');
+        Route::post('f24/delegations/{id}/generate', [F24DelegationController::class, 'generate'])->whereUuid('id')->name('treasury.f24.generate');
+        Route::get('f24/delegations/{id}/download', [F24DelegationController::class, 'download'])->whereUuid('id')->name('treasury.f24.download');
+        Route::post('f24/delegations/{id}/mark-paid', [F24DelegationController::class, 'markPaid'])->whereUuid('id')->name('treasury.f24.mark-paid');
+
+        // Statement imports (camt.053 / camt.054 / CBI / CSV) and saved CSV mappings
+        Route::post('statement-imports', [StatementImportController::class, 'import'])->name('treasury.statement-imports.store');
+        Route::get('csv-profiles', [StatementImportController::class, 'profiles'])->name('treasury.csv-profiles.index');
+        Route::post('csv-profiles', [StatementImportController::class, 'storeProfile'])->name('treasury.csv-profiles.store');
+        Route::delete('csv-profiles/{id}', [StatementImportController::class, 'destroyProfile'])->whereUuid('id')->name('treasury.csv-profiles.destroy');
+
+        // Smart reconciliation workbench: ranked proposals, 1-click apply, undo
+        Route::get('smart-reconciliation/lines', [SmartReconciliationController::class, 'lines'])->name('treasury.smart-reconciliation.lines');
+        Route::get('smart-reconciliation/summary', [SmartReconciliationController::class, 'summary'])->name('treasury.smart-reconciliation.summary');
+        Route::post('smart-reconciliation/run', [SmartReconciliationController::class, 'run'])->name('treasury.smart-reconciliation.run');
+        Route::post('smart-reconciliation/lines/{id}/refresh', [SmartReconciliationController::class, 'refresh'])->whereUuid('id')->name('treasury.smart-reconciliation.refresh');
+        Route::post('smart-reconciliation/lines/{id}/unmatch', [SmartReconciliationController::class, 'unmatch'])->whereUuid('id')->name('treasury.smart-reconciliation.unmatch');
+        Route::post('smart-reconciliation/proposals/{id}/apply', [SmartReconciliationController::class, 'apply'])->whereUuid('id')->name('treasury.smart-reconciliation.apply');
+        Route::post('smart-reconciliation/proposals/{id}/reject', [SmartReconciliationController::class, 'reject'])->whereUuid('id')->name('treasury.smart-reconciliation.reject');
+
+        // Open banking connections (PSD2 / SIX bLink) and their statement pulls
+        Route::get('open-banking/status', [OpenBankingSyncController::class, 'status'])->name('treasury.open-banking.status');
+        Route::get('open-banking/consents', [OpenBankingSyncController::class, 'consents'])->name('treasury.open-banking.consents.index');
+        Route::get('open-banking/sync-runs', [OpenBankingSyncController::class, 'runs'])->name('treasury.open-banking.sync-runs');
+        Route::post('open-banking/consents/{id}/sync', [OpenBankingSyncController::class, 'sync'])->whereUuid('id')->name('treasury.open-banking.sync');
 
         // Cash Forecasts
         Route::get('cash-forecasts', [CashForecastController::class, 'index']);

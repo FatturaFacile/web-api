@@ -29,6 +29,7 @@ class TestingSeeder extends Seeder
             UserSeeder::class,
             ErpLookupsSeeder::class,
             UnitOfMeasureSeeder::class,
+            TreasuryBankingReferenceSeeder::class,
             DocumentSequenceSeeder::class,
             PayrollReferenceSeeder::class,
             FiscalDepreciationRateSeeder::class,

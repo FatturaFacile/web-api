@@ -57,6 +57,9 @@ return [
         'missing_trailer' => 'Der Kontoauszug ist unvollständig: Der Abschlusssatz EF fehlt.',
         'record_count_mismatch' => 'Der Abschlusssatz deklariert :expected Datensätze, gelesen wurden jedoch :actual.',
         'empty_file' => 'Die Datei ist leer.',
+        'csv_invalid_mapping' => 'Die CSV-Zuordnung ist ungültig: Spalte :column wurde nicht gefunden.',
+        'csv_invalid_row' => 'CSV-Zeile :line ist ungültig: :reason.',
+        'csv_no_rows' => 'Die CSV-Datei enthält keine Bewegungen.',
     ],
 
 ];

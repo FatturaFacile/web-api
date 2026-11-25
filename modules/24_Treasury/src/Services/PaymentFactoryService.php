@@ -29,6 +29,7 @@ use Modules\Treasury\Models\PaymentApproval;
 use Modules\Treasury\Models\PaymentBatch;
 use Modules\Treasury\Models\PaymentExecution;
 use Modules\Treasury\Models\PaymentLine;
+use Modules\Treasury\Services\PaymentFlows\CbiInitiatorDecorator;
 
 final readonly class PaymentFactoryService implements PaymentFactoryServiceInterface
 {
@@ -168,7 +169,7 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
             remittanceText: $this->optional($line->getAttribute('remittance_reference')),
         ))->all();
 
-        return $this->pain001->build(new Pain001Message(
+        $xml = $this->pain001->build(new Pain001Message(
             messageId: $messageId,
             createdAt: CarbonImmutable::now(),
             initiatorName: $debtorName,
@@ -179,6 +180,10 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
             debtorBic: $batch->bankAccount->bic_swift !== null ? (string) $batch->bankAccount->bic_swift : null,
             payments: $payments,
         ), $this->version($batch));
+
+        $cuc = (string) $batch->getAttribute('cbi_cuc');
+
+        return $cuc !== '' ? (new CbiInitiatorDecorator)->apply($xml, $cuc) : $xml;
     }
 
     private function optional(mixed $value): ?string

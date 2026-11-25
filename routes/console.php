@@ -82,6 +82,9 @@ if (config('backup.schedule.check_hourly', true)) {
     Schedule::command('tenants:backup-check')->hourly()->withoutOverlapping()->onOneServer();
 }
 Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
+// Movements of the open banking consents (PSD2 / SIX bLink) imported as bank statements (idempotent).
+Schedule::command('treasury:open-banking-sync')->dailyAt('06:15')->withoutOverlapping()->onOneServer();
+
 // Recurring journals and automatic reversals (accruals, deferrals, FX revaluations) due, per tenant business day.
 Schedule::command('general-ledger:run-scheduled')->dailyAt('02:30')->withoutOverlapping()->onOneServer();
 // AI forecasting (Mod 094): payment models first, because the liquidity projection reads the expected collection dates.

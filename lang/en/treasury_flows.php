@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'issue' => [
+        'debtor_iban_invalid' => 'The IBAN of the debited bank account is not valid.',
+        'debtor_iban_country' => 'The debited account must be an :country account for this flow.',
+        'cuc_required' => 'The CBI flow needs the CUC (Codice Unico CBI) of the company.',
+        'cuc_invalid' => 'The CUC must be made of 8 letters or digits.',
+        'no_lines' => 'Add at least one payment.',
+        'mixed_currency' => 'All payments of a file must share one currency.',
+        'currency_not_allowed' => 'Currency :currency is not allowed for this flow.',
+        'amount_out_of_range' => 'The amount must be between 0.01 and 999,999,999.99 with at most two decimals.',
+        'iban_invalid' => 'The creditor IBAN is not valid.',
+        'iban_country_not_allowed' => 'Country :country is not part of the SEPA area.',
+        'name_too_long' => 'The creditor name exceeds :max characters.',
+        'charset' => 'The text contains characters that are not allowed in a payment file.',
+        'remittance_too_long' => 'The remittance information exceeds :max characters.',
+        'reference_invalid' => 'The structured reference is not a valid QR reference (27 digits) or ISO 11649 reference.',
+    ],
+    'f24' => [
+        'not_generated' => 'The F24 file has not been generated yet.',
+        'not_editable' => 'A generated or paid F24 cannot be changed.',
+        'issue' => [
+            'taxpayer_fiscal_code_invalid' => 'The taxpayer fiscal code is not valid.',
+            'taxpayer_name_required' => 'The taxpayer surname or company name is required.',
+            'payment_date_past' => 'The payment date cannot be in the past.',
+            'no_lines' => 'Add at least one line.',
+            'section_invalid' => 'The section is not valid.',
+            'amount_invalid' => 'The amounts must be positive with at most two decimals.',
+            'one_side_only' => 'A line carries either a debit or a credit amount, not both and not none.',
+            'tax_code_unknown' => 'The code :code is not a known code of this section.',
+            'reference_year_required' => 'The reference year (YYYY) is required.',
+            'installment_required' => 'The installment (NNRR) is required for this code.',
+            'institution_code_invalid' => 'The institution code is not valid for this section.',
+            'reference_number_required' => 'The reference number is required.',
+            'reference_period_invalid' => 'The reference period must be MMYYYY.',
+            'cadastral_code_invalid' => 'The municipality code must be a letter followed by three digits.',
+            'no_debit' => 'The F24 has no amount due.',
+            'credit_exceeds_debit' => 'Credits offset (:credit) exceed the debits (:debit).',
+        ],
+    ],
+    'reconciliation' => [
+        'proposal_not_pending' => 'This proposal is no longer open.',
+        'note' => 'Smart reconciliation: rule :rule, confidence :confidence%.',
+        'fx_label' => 'Exchange difference on bank movement :reference',
+    ],
+    'messages' => [
+        'batch_created' => 'Payment batch created.',
+        'f24_created' => 'F24 saved.',
+        'f24_deleted' => 'F24 deleted.',
+        'f24_generated' => 'F24 telematic file generated.',
+        'csv_profile_saved' => 'CSV profile saved.',
+        'csv_profile_deleted' => 'CSV profile deleted.',
+        'reconciliation_run' => 'Reconciliation completed.',
+        'proposal_applied' => 'Match applied and posted.',
+        'proposal_rejected' => 'Proposal rejected.',
+        'reconciliation_undone' => 'Reconciliation undone.',
+        'sync_completed' => 'Synchronisation completed.',
+    ],
+];

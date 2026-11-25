@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'issue' => [
+        'debtor_iban_invalid' => 'Die IBAN des zu belastenden Kontos ist ungültig.',
+        'debtor_iban_country' => 'Das zu belastende Konto muss für diesen Ablauf ein :country-Konto sein.',
+        'cuc_required' => 'Der CBI-Ablauf benötigt den CUC (Codice Unico CBI) des Unternehmens.',
+        'cuc_invalid' => 'Der CUC muss aus 8 Buchstaben oder Ziffern bestehen.',
+        'no_lines' => 'Fügen Sie mindestens eine Zahlung hinzu.',
+        'mixed_currency' => 'Alle Zahlungen einer Datei müssen dieselbe Währung haben.',
+        'currency_not_allowed' => 'Die Währung :currency ist für diesen Ablauf nicht zulässig.',
+        'amount_out_of_range' => 'Der Betrag muss zwischen 0,01 und 999 999 999,99 mit höchstens zwei Nachkommastellen liegen.',
+        'iban_invalid' => 'Die IBAN des Begünstigten ist ungültig.',
+        'iban_country_not_allowed' => 'Das Land :country gehört nicht zum SEPA-Raum.',
+        'name_too_long' => 'Der Name des Begünstigten überschreitet :max Zeichen.',
+        'charset' => 'Der Text enthält Zeichen, die in einer Zahlungsdatei nicht zulässig sind.',
+        'remittance_too_long' => 'Der Verwendungszweck überschreitet :max Zeichen.',
+        'reference_invalid' => 'Die strukturierte Referenz ist weder eine gültige QR-Referenz (27 Ziffern) noch eine ISO-11649-Referenz.',
+    ],
+    'f24' => [
+        'not_generated' => 'Die F24-Datei wurde noch nicht erzeugt.',
+        'not_editable' => 'Ein erzeugtes oder bezahltes F24 kann nicht geändert werden.',
+        'issue' => [
+            'taxpayer_fiscal_code_invalid' => 'Der Codice fiscale des Steuerpflichtigen ist ungültig.',
+            'taxpayer_name_required' => 'Name oder Firmenbezeichnung des Steuerpflichtigen ist erforderlich.',
+            'payment_date_past' => 'Das Zahlungsdatum darf nicht in der Vergangenheit liegen.',
+            'no_lines' => 'Fügen Sie mindestens eine Zeile hinzu.',
+            'section_invalid' => 'Der Abschnitt ist ungültig.',
+            'amount_invalid' => 'Die Beträge müssen positiv sein und höchstens zwei Nachkommastellen haben.',
+            'one_side_only' => 'Eine Zeile enthält entweder einen Soll- oder einen Haben-Betrag, nicht beide und nicht keinen.',
+            'tax_code_unknown' => 'Der Code :code ist für diesen Abschnitt nicht bekannt.',
+            'reference_year_required' => 'Das Bezugsjahr (JJJJ) ist erforderlich.',
+            'installment_required' => 'Die Ratenangabe (NNRR) ist für diesen Code erforderlich.',
+            'institution_code_invalid' => 'Der Amtscode ist für diesen Abschnitt ungültig.',
+            'reference_number_required' => 'Die Bezugsnummer ist erforderlich.',
+            'reference_period_invalid' => 'Der Bezugszeitraum muss MMJJJJ lauten.',
+            'cadastral_code_invalid' => 'Der Gemeindecode muss aus einem Buchstaben und drei Ziffern bestehen.',
+            'no_debit' => 'Das F24 hat keinen zu zahlenden Betrag.',
+            'credit_exceeds_debit' => 'Die verrechneten Guthaben (:credit) übersteigen die Schulden (:debit).',
+        ],
+    ],
+    'reconciliation' => [
+        'proposal_not_pending' => 'Dieser Vorschlag ist nicht mehr offen.',
+        'note' => 'Intelligenter Abgleich: Regel :rule, Konfidenz :confidence %.',
+        'fx_label' => 'Kursdifferenz auf Bankbewegung :reference',
+    ],
+    'messages' => [
+        'batch_created' => 'Zahlungsstapel erstellt.',
+        'f24_created' => 'F24 gespeichert.',
+        'f24_deleted' => 'F24 gelöscht.',
+        'f24_generated' => 'Telematische F24-Datei erzeugt.',
+        'csv_profile_saved' => 'CSV-Profil gespeichert.',
+        'csv_profile_deleted' => 'CSV-Profil gelöscht.',
+        'reconciliation_run' => 'Abgleich abgeschlossen.',
+        'proposal_applied' => 'Zuordnung angewendet und gebucht.',
+        'proposal_rejected' => 'Vorschlag abgelehnt.',
+        'reconciliation_undone' => 'Abgleich rückgängig gemacht.',
+        'sync_completed' => 'Synchronisierung abgeschlossen.',
+    ],
+];

@@ -4,8 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\Treasury\Models;
 
+use Carbon\CarbonInterface;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 
+/**
+ * @property string $driver
+ * @property string $iban
+ * @property string $external_consent_id
+ * @property string|null $access_token
+ * @property string $status
+ * @property CarbonInterface|null $expires_at
+ */
 final class OpenBankingConsent extends BaseEnterpriseModel
 {
     protected $table = 'open_banking_consents';

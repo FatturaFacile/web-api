@@ -17,4 +17,9 @@ final class OpenBankingUnavailableException extends RuntimeException
     {
         return new self('The local open banking simulator does not run in production.');
     }
+
+    public static function providerFailure(string $provider, string $reason): self
+    {
+        return new self("The open banking provider [{$provider}] failed: {$reason}");
+    }
 }

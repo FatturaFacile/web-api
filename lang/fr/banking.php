@@ -57,6 +57,9 @@ return [
         'missing_trailer' => 'Le relevé est incomplet : l\'enregistrement de fin EF est manquant.',
         'record_count_mismatch' => 'L\'enregistrement de fin déclare :expected enregistrements mais :actual ont été lus.',
         'empty_file' => 'Le fichier est vide.',
+        'csv_invalid_mapping' => 'Le mappage CSV est invalide : colonne :column introuvable.',
+        'csv_invalid_row' => 'La ligne CSV :line est invalide : :reason.',
+        'csv_no_rows' => 'Le CSV ne contient aucun mouvement.',
     ],
 
 ];
