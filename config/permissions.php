@@ -208,6 +208,8 @@ return [
         // reads them. The approval of a payment run (CFO) is a separate module: owners and administrators, or a member granted
         // accounts_payable_approval.write.
         'accounts_payable' => ['read' => $financeReaders, 'write' => $finance, 'grants' => ['read' => ['accounts_payable.*'], 'write' => ['accounts_payable.*']]],
+        // Liquidity planning (Mod 017): rolling cash forecast, DSCR / capital / PFN crisis indicators, what-if scenarios and alerts.
+        'liquidity_planning' => ['read' => $financeReaders, 'write' => $finance, 'grants' => ['read' => ['liquidity_planning.*'], 'write' => ['liquidity_planning.*']]],
         'accounts_payable_approval' => ['read' => $financeReaders, 'write' => $managers],
         // Swiss VAT compliance (Mod 024): Effective & Saldosteuersatz returns, Bezugsteuer, input tax adjustments, and SuisseTax XML.
         'swiss_vat' => ['read' => $financeReaders, 'write' => $finance, 'grants' => ['read' => ['swiss_vat.*'], 'write' => ['swiss_vat.*']]],

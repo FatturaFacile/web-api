@@ -71,7 +71,7 @@ const SCHEDULE_NON_CLEANUPS = [
     'fatturafacile:preservation:run', 'fatturafacile:preservation:verify', 'subscriptions:process', 'general-ledger:run-scheduled', 'analytics:refresh-kpi-snapshots', 'analytics:run-scheduled-exports', 'analytics:dispatch-scheduled-reports',
     'webhooks:dispatch-overdue', 'treasury:open-banking-sync', 'invoices:send-reminders', 'ecommerce:sync-orders', 'sdi:poll', 'Enterprise\EventBus\Jobs\RelayOutboxEventsJob',
     'workflow:webhooks', 'workflow:timeouts', 'crm:activity-reminders', 'esm:sla-breaches', 'esm:support-mailboxes', 'esm:contract-renewals',
-    'forecasting:train-payment-models', 'forecasting:refresh-liquidity', 'forecasting:generate-sku-demand', 'ai-cognitive:nightly-scoring',
+    'forecasting:train-payment-models', 'forecasting:refresh-liquidity', 'liquidity:evaluate-alerts', 'forecasting:generate-sku-demand', 'ai-cognitive:nightly-scoring',
     'inventory:reorder-rules', 'inventory:valuation', 'procurement:expiring-contracts', 'procurement:supplier-otif', 'procurement:overdue-order-reminders', 'procurement:invoice-matching', 'hr:expiring-certifications', 'hse:check-expirations',
     'eam:expiring-coverage', 'hr:leave-accruals', 'subscriptions:metered-usage', 'manufacturing:mrp', 'manufacturing:forecast',
     'associations:fee-reminders', 'associations:renewal-reminders', 'associations:certificate-alerts', 'associations:volunteer-alerts',

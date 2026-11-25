@@ -40,6 +40,8 @@ use Database\Seeders\Translations\ItalianVatWorkbenchFrontendTranslations;
 use Database\Seeders\Translations\KpiDashboardsFrontendTranslations;
 use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\LeaveManagementFrontendTranslations;
+use Database\Seeders\Translations\LiquidityPlanningFrontendTranslations;
+use Database\Seeders\Translations\LiquidityPlanningTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
 use Database\Seeders\Translations\ManufacturingCommandCenterFrontendTranslations;
 use Database\Seeders\Translations\ManufacturingProductionFrontendTranslations;
@@ -163,7 +165,9 @@ class FrontendTranslationSeeder extends Seeder
             + AgentCommissionsFrontendTranslations::all($locale)
             + DebtCollectionFrontendTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)
-            + TreasuryBankingFrontendTranslations::all($locale);
+            + TreasuryBankingFrontendTranslations::all($locale)
+            + LiquidityPlanningFrontendTranslations::all($locale)
+            + LiquidityPlanningTranslations::all($locale);
     }
 
     /**

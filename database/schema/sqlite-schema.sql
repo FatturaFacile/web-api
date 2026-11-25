@@ -49803,6 +49803,121 @@ CREATE INDEX "dc_events_tenant_id_customer_id_occurred_at_index" on "dc_events"(
   "customer_id",
   "occurred_at"
 );
+CREATE TABLE "lp_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "jurisdiction" varchar not null default 'IT',
+  "share_capital" numeric,
+  "legal_minimum_capital" numeric,
+  "minimum_liquidity" numeric not null default '0',
+  "dscr_critical_threshold" numeric not null default '1',
+  "dscr_warning_threshold" numeric not null default '1.2',
+  "max_pfn_ebitda" numeric not null default '3.5',
+  "ebitda_override" numeric,
+  "net_equity_override" numeric,
+  "alert_cooldown_hours" integer not null default '24',
+  "notify_emails" text,
+  "email_alerts_enabled" tinyint(1) not null default '1',
+  "collection_behavior_days" integer not null default '0',
+  "payroll_monthly_override" numeric,
+  "payroll_pay_day" integer not null default '27',
+  "tax_monthly_estimate" numeric,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "lp_settings_tenant_id_unique" on "lp_settings"(
+  "tenant_id"
+);
+CREATE TABLE "lp_manual_items"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "label" varchar not null,
+  "tier" varchar not null,
+  "category" varchar not null,
+  "direction" varchar not null,
+  "amount" numeric not null,
+  "currency" varchar not null,
+  "first_date" date not null,
+  "frequency" varchar not null default 'once',
+  "end_date" date,
+  "is_active" tinyint(1) not null default '1',
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "lp_manual_items_tenant_id_is_active_first_date_index" on "lp_manual_items"(
+  "tenant_id",
+  "is_active",
+  "first_date"
+);
+CREATE TABLE "lp_scenarios"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "description" text,
+  "levers" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "lp_scenarios_tenant_id_name_index" on "lp_scenarios"(
+  "tenant_id",
+  "name"
+);
+CREATE TABLE "lp_alerts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "type" varchar not null,
+  "severity" varchar not null,
+  "status" varchar not null default 'open',
+  "fingerprint" varchar not null,
+  "title_key" varchar not null,
+  "message_key" varchar not null,
+  "params" text,
+  "detected_at" datetime not null,
+  "acknowledged_at" datetime,
+  "acknowledged_by" varchar,
+  "resolved_at" datetime,
+  "last_notified_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "lp_alerts_tenant_id_status_detected_at_index" on "lp_alerts"(
+  "tenant_id",
+  "status",
+  "detected_at"
+);
+CREATE INDEX "lp_alerts_tenant_id_fingerprint_index" on "lp_alerts"(
+  "tenant_id",
+  "fingerprint"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -50262,3 +50377,4 @@ INSERT INTO migrations VALUES(455,'2027_12_31_000100_create_agent_commissions_mo
 INSERT INTO migrations VALUES(456,'2027_12_20_000100_create_treasury_settlement_tables',20);
 INSERT INTO migrations VALUES(457,'2028_01_03_000100_add_split_payment_to_passive_invoices',20);
 INSERT INTO migrations VALUES(458,'2028_01_05_000100_create_debt_collection_mod014_tables',21);
+INSERT INTO migrations VALUES(459,'2028_01_04_000100_create_liquidity_planning_tables',22);
