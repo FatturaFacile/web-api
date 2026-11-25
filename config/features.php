@@ -59,6 +59,7 @@ return [
         'resource_planning' => env('FEATURE_MODULE_RESOURCE_PLANNING'),
         'italian_vat' => env('FEATURE_MODULE_ITALIAN_VAT'),
         'accounts_payable' => env('FEATURE_MODULE_ACCOUNTS_PAYABLE'),
+        'liquidity_planning' => env('FEATURE_MODULE_LIQUIDITY_PLANNING'),
         'artisanal_gelato' => env('FEATURE_MODULE_ARTISANAL_GELATO'),
         'ai_cognitive' => env('FEATURE_MODULE_AI_COGNITIVE'),
         'data_residency' => env('FEATURE_MODULE_DATA_RESIDENCY'),

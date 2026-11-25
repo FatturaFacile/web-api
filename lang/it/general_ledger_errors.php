@@ -9,6 +9,14 @@ return [
         'has_sub_accounts' => 'Il conto :code ha dei sottoconti: spostali o eliminali prima.',
         'is_default_posting' => 'Il conto :code è un conto di registrazione predefinito: scegline prima un altro nelle impostazioni della contabilità.',
         'parent_cycle' => 'Un conto non può essere collocato sotto se stesso o sotto uno dei suoi sottoconti.',
+        'is_not_postable' => 'Il conto :code è un nodo strutturale/di raggruppamento e non accetta registrazioni dirette.',
+        'currency_not_allowed' => 'La valuta :currency non è consentita per il conto :code.',
+        'code_locked' => 'Il conto :code ha già dei movimenti: il codice conto non può essere modificato.',
+    ],
+    'mapping' => [
+        'self_mapping' => 'Un conto non può essere mappato su se stesso.',
+        'duplicate' => 'Esiste già una mappatura tra questo conto di origine e la destinazione selezionata.',
+        'allocation_exceeded' => 'La somma delle percentuali di allocazione per lo standard :standard supera il 100%.',
     ],
     'accrual' => [
         'cutoff_outside_coverage' => 'La data di chiusura deve cadere nel periodo di competenza, prima del suo ultimo giorno.',

@@ -12,36 +12,73 @@ use Modules\GeneralLedger\Models\DefaultPostingAccount;
 use Modules\GeneralLedger\Models\JournalLine;
 
 /**
- * Changes to the chart of accounts that keep the posted ledger consistent: an account with postings keeps its type and
- * normal balance (the statements already classified its amounts) and is deactivated instead of deleted; an account
- * cannot become its own ancestor; an account used as a default posting account cannot be deleted.
+ * Domain service enforcing Chart of Accounts invariants:
+ * - An account with postings keeps its type, normal balance, and code (renaming & deactivation remain allowed).
+ * - An account cannot become its own ancestor or descendant (cycle prevention).
+ * - An account with postings, child sub-accounts, or default posting role cannot be deleted.
  */
 final class ChartOfAccountService
 {
     /**
      * @param  array<string, mixed>  $data
      *
-     * @throws LedgerConflictException when the type or normal balance of an account with postings would change
+     * @throws LedgerConflictException when the type, normal balance, or code of an account with postings would change
      * @throws ValidationException when the parent would create a cycle
      */
     public function update(ChartOfAccount $account, array $data): ChartOfAccount
     {
         return DB::transaction(function () use ($account, $data): ChartOfAccount {
             $locked = ChartOfAccount::whereKey($account->id)->lockForUpdate()->firstOrFail();
+            $hasPostings = $this->hasPostings($locked);
+
             $changesClass = (isset($data['account_type']) && $data['account_type'] !== $locked->account_type)
                 || (isset($data['normal_balance']) && $data['normal_balance'] !== $locked->normal_balance);
 
-            if ($changesClass && $this->hasPostings($locked)) {
+            if ($changesClass && $hasPostings) {
                 throw new LedgerConflictException(__('general_ledger_errors.account.type_locked', ['code' => $locked->account_code]));
+            }
+
+            if (isset($data['account_code']) && $data['account_code'] !== $locked->account_code && $hasPostings) {
+                throw new LedgerConflictException(__('general_ledger_errors.account.code_locked', ['code' => $locked->account_code]));
             }
 
             if (! empty($data['parent_account_id'])) {
                 $this->assertNoCycle($locked, (string) $data['parent_account_id']);
             }
 
+            $parentChanged = array_key_exists('parent_account_id', $data) && $data['parent_account_id'] !== $locked->parent_account_id;
+            $codeChanged = isset($data['account_code']) && $data['account_code'] !== $locked->account_code;
+
             $locked->update($data);
 
-            return $locked;
+            if ($parentChanged || $codeChanged) {
+                $locked->refresh();
+                $locked->syncSubtreeHierarchy();
+            }
+
+            return $locked->load(['parentAccount', 'vatCode', 'defaultCostCenter']);
+        });
+    }
+
+    /**
+     * Move an account under a new parent (or null for root), preventing cycles and cascading hierarchy paths.
+     *
+     * @throws ValidationException when the target parent would create a cycle
+     */
+    public function move(ChartOfAccount $account, ?string $parentAccountId): ChartOfAccount
+    {
+        return DB::transaction(function () use ($account, $parentAccountId): ChartOfAccount {
+            $locked = ChartOfAccount::whereKey($account->id)->lockForUpdate()->firstOrFail();
+
+            if ($parentAccountId !== null && $parentAccountId !== '') {
+                $this->assertNoCycle($locked, $parentAccountId);
+            }
+
+            $locked->update(['parent_account_id' => $parentAccountId ?: null]);
+            $locked->refresh();
+            $locked->syncSubtreeHierarchy();
+
+            return $locked->load(['parentAccount', 'vatCode', 'defaultCostCenter']);
         });
     }
 
@@ -69,9 +106,15 @@ final class ChartOfAccountService
         });
     }
 
-    private function hasPostings(ChartOfAccount $account): bool
+    public function hasPostings(ChartOfAccount $account): bool
     {
-        return JournalLine::withoutGlobalScopes()->where('account_id', $account->id)->exists();
+        if (JournalLine::withoutGlobalScopes()->where('account_id', $account->id)->exists()) {
+            return true;
+        }
+
+        return DB::table('general_ledger_lines')
+            ->where('account_id', $account->id)
+            ->exists();
     }
 
     /**

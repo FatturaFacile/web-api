@@ -9,6 +9,14 @@ return [
         'has_sub_accounts' => 'Konto :code hat Unterkonten: Verschieben oder löschen Sie diese zuerst.',
         'is_default_posting' => 'Konto :code ist ein Standardbuchungskonto: Wählen Sie zuerst in den Buchhaltungseinstellungen ein anderes.',
         'parent_cycle' => 'Ein Konto kann nicht sich selbst oder einem seiner Unterkonten untergeordnet werden.',
+        'is_not_postable' => 'Konto :code ist ein Struktur-/Sammelkonto und akzeptiert keine direkten Buchungen.',
+        'currency_not_allowed' => 'Die Währung :currency ist für Konto :code nicht zulässig.',
+        'code_locked' => 'Konto :code enthält bereits Buchungen: die Kontonummer kann nicht geändert werden.',
+    ],
+    'mapping' => [
+        'self_mapping' => 'Ein Konto kann nicht sich selbst zugeordnet werden.',
+        'duplicate' => 'Eine Zuordnung zwischen diesem Quell- und Zielkonto existiert bereits.',
+        'allocation_exceeded' => 'Die Summe der Zuteilungsprozentsätze für Standard :standard überschreitet 100 %.',
     ],
     'accrual' => [
         'cutoff_outside_coverage' => 'Das Stichtagsdatum muss innerhalb des Abgrenzungszeitraums und vor dessen letztem Tag liegen.',

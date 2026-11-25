@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Services\ChartTemplates;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
-use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Application\ChartOfAccounts\Commands\ProvisionChartTemplateCommand;
+use Modules\GeneralLedger\Application\ChartOfAccounts\Commands\ProvisionChartTemplateHandler;
 
 /**
  * Loads a standard chart of accounts into a tenant. The import is idempotent: an account whose code already exists
@@ -38,45 +38,26 @@ final class ChartTemplateImporter
      *
      * @throws InvalidArgumentException when the template does not exist
      */
-    public function import(string $tenantId, string $templateKey): array
+    public function import(string $tenantId, string $templateKey, ?string $companyId = null, bool $includeDefaultMappings = true, string $locale = 'it'): array
     {
-        $template = ChartTemplateCatalog::all()[$templateKey] ?? throw new InvalidArgumentException("Unknown chart template [{$templateKey}]");
+        try {
+            $result = (new ProvisionChartTemplateHandler)->handle(
+                new ProvisionChartTemplateCommand(
+                    tenantId: $tenantId,
+                    companyId: $companyId,
+                    templateKey: $templateKey,
+                    includeDefaultMappings: $includeDefaultMappings,
+                    locale: $locale,
+                ),
+            );
+        } catch (ValidationException $e) {
+            throw new InvalidArgumentException("Unknown chart template [{$templateKey}]", 0, $e);
+        }
 
-        return DB::transaction(function () use ($tenantId, $template, $templateKey): array {
-            $parents = array_unique(array_filter(array_column($template['accounts'], 4)));
-            $existing = ChartOfAccount::withoutGlobalScopes()->withTrashed()->where('tenant_id', $tenantId)->pluck('id', 'account_code')->all();
-            $created = 0;
-            $skipped = 0;
-
-            foreach ($template['accounts'] as [$code, $name, $type, $normalBalance, $parentCode, $reportingClass, $reconciliationType]) {
-                if (isset($existing[$code])) {
-                    $skipped++;
-
-                    continue;
-                }
-
-                $account = ChartOfAccount::withoutGlobalScopes()->create([
-                    'id' => (string) Str::uuid7(),
-                    'tenant_id' => $tenantId,
-                    'account_code' => $code,
-                    'name' => $name,
-                    'standard' => $template['standard'],
-                    'account_type' => $type,
-                    'normal_balance' => $normalBalance,
-                    'currency' => $template['currency'],
-                    'parent_account_id' => $parentCode !== null ? ($existing[$parentCode] ?? null) : null,
-                    'reporting_class' => $reportingClass,
-                    'is_reconciliation_account' => $reconciliationType !== null,
-                    'reconciliation_type' => $reconciliationType,
-                    'allows_manual_posting' => ! in_array($code, $parents, true),
-                    'is_active' => true,
-                ]);
-
-                $existing[$code] = $account->id;
-                $created++;
-            }
-
-            return ['template' => $templateKey, 'created' => $created, 'skipped' => $skipped];
-        });
+        return [
+            'template' => $result['template'],
+            'created' => $result['created_count'],
+            'skipped' => $result['skipped_count'],
+        ];
     }
 }

@@ -13,6 +13,7 @@ final class GeneralLedgerDatabaseSeeder extends Seeder
         $this->call([
             FiscalYearSeeder::class,
             FiscalPeriodSeeder::class,
+            ChartOfAccountTemplateSeeder::class,
             ChartOfAccountsSeeder::class,
             VatCodeSeeder::class,
             AccountTypeSeeder::class,
