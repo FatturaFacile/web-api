@@ -505,6 +505,16 @@ return [
         // Collaboration (global search, comments with mentions, shared tags, record timeline): every member reads and writes.
         // Each record type also needs read access to its own module, checked per request by the collaboration registry.
         'collaboration' => ['read' => $anyMember, 'write' => $anyMember],
+        // Van Selling & Offline Field Sales (Mod 233, Issue #479): mobile van warehouses, global load DDT, field routes,
+        // GS1-128 variable-weight sales, dedicated fiscal sectionals, thermal printing, offline delta sync & EOD settlement.
+        'van_sales_and_field_force' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager', 'warehouse', 'dispatcher', 'operations_manager', 'member'],
+            'grants' => [
+                'read' => ['van_sales.view', 'van_sales.manage', 'van_sales.settle', 'van_sales.credit_override', 'van_sales.*'],
+                'write' => ['van_sales.manage', 'van_sales.settle', 'van_sales.credit_override', 'van_sales.*'],
+            ],
+        ],
     ],
 
     /*

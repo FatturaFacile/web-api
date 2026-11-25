@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             StatutoryFinancialsReferenceSeeder::class,
             PassengerTransportDemoSeeder::class,
             CustomerReturnsReverseLogisticsDemoSeeder::class,
+            VanSellingFieldSalesDemoSeeder::class,
             TreasuryBankingReferenceSeeder::class,
             CpqLocalizationSeeder::class,
             CpqConfiguratorLocalizationSeeder::class,
