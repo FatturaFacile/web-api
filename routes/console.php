@@ -254,3 +254,7 @@ Schedule::command('passenger-transport:track-flights')->everyTenMinutes()->witho
 
 // Customer returns & advance replacements (Mod 232): scan overdue cross-shipping returns and issue penalty invoices.
 Schedule::command('returns:scan-overdue-replacements')->dailyAt('07:45')->withoutOverlapping()->onOneServer();
+
+// Customer satisfaction (Mod 245): sends the due survey invitations and schedules the semi-annual relationship survey of the active clients.
+Schedule::command('surveys:process-dispatches')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('surveys:enqueue-semi-annual')->dailyAt('06:30')->withoutOverlapping()->onOneServer();
