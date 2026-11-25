@@ -70,6 +70,9 @@ class PermissionSeeder extends GlobalDataSeeder
             ['code' => 'van_sales.manage', 'label_it' => 'Gestione Furgoni, Carichi e Giri Tentata Vendita', 'label_en' => 'Manage Van Selling Warehouses, Loads & Routes'],
             ['code' => 'van_sales.settle', 'label_it' => 'Chiusura e Quadratura Fine Giro Furgone', 'label_en' => 'Complete End-of-Day Van Settlement'],
             ['code' => 'van_sales.credit_override', 'label_it' => 'Sblocco Fido e Incasso in Tentata Vendita', 'label_en' => 'Override/Unblock Customer Credit in Field Sales'],
+            ['code' => 'sales_bc.view', 'label_it' => 'Consultazione CRM & Vendite Omnicanale (SD#139)', 'label_en' => 'View Omnichannel CRM & Sales Pipeline (SD#139)'],
+            ['code' => 'sales_bc.manage', 'label_it' => 'Gestione Pipeline CRM, CPQ, Ordini, DDT & Provvigioni (SD#139)', 'label_en' => 'Manage CRM, CPQ, Orders, DDT & Commissions (SD#139)'],
+            ['code' => 'sales_bc.approve_margin', 'label_it' => 'Approvazione Deroga Margine Minimo (Mod 038)', 'label_en' => 'Approve Minimum Margin Guardrail Override (Mod 038)'],
         ];
 
         foreach ($permissions as $idx => $perm) {

@@ -105,6 +105,7 @@ use Modules\Transportation\Providers\TransportationServiceProvider;
 use Modules\TravelExpense\Providers\TravelExpenseServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\VanSalesAndFieldForce\Providers\VanSalesAndFieldForceServiceProvider;
+use Modules\SalesBoundedContext\Providers\SalesBoundedContextServiceProvider;
 use Modules\Visitors\Providers\VisitorsServiceProvider;
 use Modules\Wms\Providers\WmsServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
@@ -222,4 +223,5 @@ return [
     ArtisanalGelatoServiceProvider::class,
     CpqConfiguratorServiceProvider::class,
     VanSalesAndFieldForceServiceProvider::class,
+    SalesBoundedContextServiceProvider::class,
 ];
