@@ -42,6 +42,7 @@ use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
 use Modules\Events\Providers\EventsServiceProvider;
+use Modules\ExpenseManagement\Providers\ExpenseManagementServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\Fleet\Providers\FleetServiceProvider;
@@ -196,6 +197,7 @@ return [
     LeaveManagementServiceProvider::class,
     MarketingAutomationServiceProvider::class,
     AgentCommissionsServiceProvider::class,
+    ExpenseManagementServiceProvider::class,
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,
 ];

@@ -95,6 +95,7 @@
             "Modules\\ItalianVat\\": "modules/74_ItalianVat/src/",
             "Modules\\AccountsPayable\\": "modules/75_AccountsPayable/src/",
             "Modules\\AgentCommissions\\": "modules/77_AgentCommissions/src/",
+            "Modules\\ExpenseManagement\\": "modules/78_ExpenseManagement/src/",
             "Modules\\SwissVat\\": "modules/75_SwissVat/src/",
             "Modules\\LeaveManagement\\": "modules/76_LeaveManagement/src/",
             "Modules\\MarketingAutomation\\": "modules/77_MarketingAutomation/src/",

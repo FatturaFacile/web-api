@@ -49427,6 +49427,444 @@ CREATE INDEX "open_banking_sync_runs_consent_id_index" on "open_banking_sync_run
 CREATE INDEX "open_banking_sync_runs_status_index" on "open_banking_sync_runs"(
   "status"
 );
+CREATE TABLE "exm_categories"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar,
+  "is_meal" tinyint(1) not null default '0',
+  "is_lodging" tinyint(1) not null default '0',
+  "is_transport" tinyint(1) not null default '0',
+  "is_mileage" tinyint(1) not null default '0',
+  "vat_recoverable" tinyint(1) not null default '1',
+  "requires_receipt" tinyint(1) not null default '1',
+  "default_gl_account_code" varchar,
+  "default_vat_code" varchar,
+  "default_vat_rate" numeric not null default '0',
+  "sort_order" integer not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "exm_categories_code_uq" on "exm_categories"(
+  "tenant_id",
+  "code"
+);
+CREATE TABLE "exm_policies"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "jurisdiction" varchar not null,
+  "is_active" tinyint(1) not null default '1',
+  "duplicate_detection" tinyint(1) not null default '1',
+  "block_non_traceable" tinyint(1) not null default '0',
+  "receipt_threshold" numeric not null default '0',
+  "mileage_rate_per_km" numeric,
+  "per_diem_daily_limit" numeric,
+  "max_age_days" integer,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "exm_policies_code_uq" on "exm_policies"(
+  "tenant_id",
+  "code"
+);
+CREATE TABLE "exm_policy_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "policy_id" varchar not null,
+  "category_code" varchar,
+  "rule_type" varchar not null,
+  "limit_amount" numeric not null,
+  "severity" varchar not null default 'warning',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("policy_id") references "exm_policies"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "exm_policy_rules_policy_ix" on "exm_policy_rules"(
+  "tenant_id",
+  "policy_id"
+);
+CREATE TABLE "exm_aci_vehicle_rates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source" varchar not null default 'IT_ACI_TABLE',
+  "vehicle_code" varchar not null,
+  "make_model" varchar not null,
+  "fuel" varchar,
+  "vehicle_class" varchar,
+  "annual_km_bracket" integer not null default '15000',
+  "rate_per_km" numeric not null,
+  "currency" varchar not null default 'EUR',
+  "rate_period" varchar not null,
+  "valid_from" date not null,
+  "valid_to" date,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "exm_vehicle_rates_lookup_ix" on "exm_aci_vehicle_rates"(
+  "tenant_id",
+  "source",
+  "vehicle_code"
+);
+CREATE UNIQUE INDEX "exm_vehicle_rates_uq" on "exm_aci_vehicle_rates"(
+  "tenant_id",
+  "source",
+  "vehicle_code",
+  "annual_km_bracket",
+  "valid_from"
+);
+CREATE TABLE "exm_card_accounts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "employee_id" varchar,
+  "holder_name" varchar not null,
+  "card_last4" varchar not null,
+  "issuer" varchar,
+  "currency" varchar not null default 'EUR',
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "exm_card_accounts_uq" on "exm_card_accounts"(
+  "tenant_id",
+  "card_last4",
+  "holder_name"
+);
+CREATE INDEX "exm_card_accounts_company_id_index" on "exm_card_accounts"(
+  "company_id"
+);
+CREATE INDEX "exm_card_accounts_employee_id_index" on "exm_card_accounts"(
+  "employee_id"
+);
+CREATE TABLE "exm_reports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "report_number" varchar not null,
+  "title" varchar,
+  "employee_id" varchar,
+  "user_id" varchar not null,
+  "cost_center_id" varchar,
+  "jurisdiction" varchar not null default 'IT',
+  "period_start" date not null,
+  "period_end" date not null,
+  "currency" varchar not null default 'EUR',
+  "total_amount" numeric not null default '0',
+  "approved_amount" numeric not null default '0',
+  "reimbursable_amount" numeric not null default '0',
+  "non_reimbursable_amount" numeric not null default '0',
+  "taxable_amount" numeric not null default '0',
+  "status" varchar not null default 'draft',
+  "submitted_at" datetime,
+  "approved_by" varchar,
+  "approved_at" datetime,
+  "rejection_reason" text,
+  "posted_at" datetime,
+  "reimbursed_at" datetime,
+  "cancelled_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "exm_reports_number_uq" on "exm_reports"(
+  "tenant_id",
+  "company_id",
+  "report_number"
+);
+CREATE INDEX "exm_reports_status_ix" on "exm_reports"("tenant_id", "status");
+CREATE INDEX "exm_reports_employee_ix" on "exm_reports"(
+  "tenant_id",
+  "employee_id",
+  "period_start"
+);
+CREATE INDEX "exm_reports_company_id_index" on "exm_reports"("company_id");
+CREATE INDEX "exm_reports_employee_id_index" on "exm_reports"("employee_id");
+CREATE INDEX "exm_reports_user_id_index" on "exm_reports"("user_id");
+CREATE INDEX "exm_reports_cost_center_id_index" on "exm_reports"(
+  "cost_center_id"
+);
+CREATE TABLE "exm_receipts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "document_id" varchar,
+  "sha256" varchar not null,
+  "disk" varchar not null default 'local',
+  "path" varchar not null,
+  "original_name" varchar not null,
+  "mime_type" varchar not null,
+  "size_bytes" integer not null,
+  "ocr_provider" varchar,
+  "ocr_confidence" numeric,
+  "ocr_payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "exm_receipts_sha_ix" on "exm_receipts"("tenant_id", "sha256");
+CREATE INDEX "exm_receipts_document_id_index" on "exm_receipts"(
+  "document_id"
+);
+CREATE TABLE "exm_card_transactions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "card_account_id" varchar not null,
+  "external_id" varchar,
+  "merchant_name" varchar not null,
+  "transaction_date" date not null,
+  "posting_date" date,
+  "amount" numeric not null,
+  "currency" varchar not null default 'EUR',
+  "status" varchar not null default 'unmatched',
+  "matched_amount" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("card_account_id") references "exm_card_accounts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "exm_card_tx_status_ix" on "exm_card_transactions"(
+  "tenant_id",
+  "status"
+);
+CREATE UNIQUE INDEX "exm_card_tx_external_uq" on "exm_card_transactions"(
+  "tenant_id",
+  "card_account_id",
+  "external_id"
+);
+CREATE TABLE "exm_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "expense_report_id" varchar not null,
+  "expense_date" date not null,
+  "category_id" varchar not null,
+  "merchant_name" varchar not null,
+  "merchant_tax_id" varchar,
+  "description" varchar,
+  "original_amount" numeric not null,
+  "original_currency" varchar not null,
+  "exchange_rate" numeric not null default '1',
+  "exchange_rate_date" date,
+  "amount_in_base_currency" numeric not null,
+  "vat_code_id" varchar,
+  "vat_rate" numeric not null default '0',
+  "vat_amount" numeric not null default '0',
+  "vat_recoverable_amount" numeric not null default '0',
+  "payment_method" varchar not null default 'employee_out_of_pocket',
+  "corporate_card_transaction_id" varchar,
+  "is_traceable_payment" tinyint(1) not null default '1',
+  "is_taxable_benefit" tinyint(1) not null default '0',
+  "is_reimbursable" tinyint(1) not null default '1',
+  "policy_violations" text,
+  "project_id" varchar,
+  "billable_to_customer" tinyint(1) not null default '0',
+  "receipt_id" varchar,
+  "receipt_document_id" varchar,
+  "receipt_sha256" varchar,
+  "normalized_merchant" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("expense_report_id") references "exm_reports"("id") on delete cascade,
+  foreign key("category_id") references "exm_categories"("id") on delete restrict,
+  foreign key("corporate_card_transaction_id") references "exm_card_transactions"("id") on delete set null,
+  foreign key("receipt_id") references "exm_receipts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "exm_lines_sha_ix" on "exm_lines"("tenant_id", "receipt_sha256");
+CREATE INDEX "exm_lines_dup_ix" on "exm_lines"(
+  "tenant_id",
+  "normalized_merchant",
+  "expense_date",
+  "amount_in_base_currency"
+);
+CREATE INDEX "exm_lines_report_ix" on "exm_lines"(
+  "tenant_id",
+  "expense_report_id"
+);
+CREATE INDEX "exm_lines_project_id_index" on "exm_lines"("project_id");
+CREATE TABLE "exm_mileage_claims"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "expense_line_id" varchar not null,
+  "origin_address" varchar not null,
+  "destination_address" varchar not null,
+  "waypoint_addresses" text,
+  "distance_km" numeric not null,
+  "is_round_trip" tinyint(1) not null default '0',
+  "vehicle_id" varchar,
+  "vehicle_make_model" varchar,
+  "vehicle_class_code" varchar not null,
+  "rate_per_km" numeric not null,
+  "calculated_amount" numeric not null,
+  "calculation_source" varchar not null,
+  "rate_period" varchar,
+  "rate_effective_date" date,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("expense_line_id") references "exm_lines"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "exm_mileage_line_ix" on "exm_mileage_claims"(
+  "tenant_id",
+  "expense_line_id"
+);
+CREATE TABLE "exm_per_diems"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "expense_report_id" varchar not null,
+  "country_code" varchar not null,
+  "destination_type" varchar not null,
+  "allowance_method" varchar not null,
+  "trip_start_at" datetime not null,
+  "trip_end_at" datetime not null,
+  "duration_hours" numeric not null,
+  "days_count" numeric not null,
+  "allowance_rate_per_day" numeric not null,
+  "gross_allowance_amount" numeric not null,
+  "daily_tax_free_limit" numeric not null,
+  "tax_free_amount" numeric not null,
+  "taxable_excess_amount" numeric not null,
+  "meals_lodging_reductions" numeric not null default '0',
+  "lodging_reimbursed" tinyint(1) not null default '0',
+  "meals_reimbursed" tinyint(1) not null default '0',
+  "warnings" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("expense_report_id") references "exm_reports"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "exm_per_diems_report_ix" on "exm_per_diems"(
+  "tenant_id",
+  "expense_report_id"
+);
+CREATE TABLE "exm_payouts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "expense_report_id" varchar not null,
+  "channel" varchar not null,
+  "status" varchar not null default 'exported',
+  "message_id" varchar,
+  "total_amount" numeric not null,
+  "taxable_amount" numeric not null default '0',
+  "exempt_amount" numeric not null default '0',
+  "currency" varchar not null,
+  "execution_date" date,
+  "file_name" varchar,
+  "disk" varchar,
+  "path" varchar,
+  "payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("expense_report_id") references "exm_reports"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "exm_payouts_report_ix" on "exm_payouts"(
+  "tenant_id",
+  "expense_report_id"
+);
+CREATE TABLE "exm_audit_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "expense_report_id" varchar not null,
+  "expense_line_id" varchar,
+  "action" varchar not null,
+  "from_status" varchar,
+  "to_status" varchar,
+  "actor_id" varchar,
+  "payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("expense_report_id") references "exm_reports"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "exm_audit_report_ix" on "exm_audit_logs"(
+  "tenant_id",
+  "expense_report_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -49885,3 +50323,4 @@ INSERT INTO migrations VALUES(454,'2028_01_02_000100_create_marketing_automation
 INSERT INTO migrations VALUES(455,'2027_12_31_000100_create_agent_commissions_mod041_tables',19);
 INSERT INTO migrations VALUES(456,'2027_12_20_000100_create_treasury_settlement_tables',20);
 INSERT INTO migrations VALUES(457,'2028_01_03_000100_add_split_payment_to_passive_invoices',20);
+INSERT INTO migrations VALUES(458,'2028_01_04_000100_create_expense_management_mod075_tables',21);
