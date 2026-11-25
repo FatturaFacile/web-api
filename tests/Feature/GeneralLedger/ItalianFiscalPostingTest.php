@@ -382,7 +382,21 @@ test('contributions are in the register but not in the F24', function (): void {
 
     expect((string) $settlement->total_withheld)->toBe('150.00')
         ->and((string) $settlement->total_f24)->toBe('100.00')
-        ->and($f24['lines'])->toBe([['tax_code' => '1040', 'reference_month' => '03', 'reference_year' => 2027, 'amount' => '100.00']]);
+        ->and($f24['lines'])->toBe([['tax_code' => '1038', 'reference_month' => '03', 'reference_year' => 2027, 'amount' => '100.00']]);
+});
+
+test('the F24 code follows the causale of the withholding: agents commissions 1038, self-employed work 1040', function (): void {
+    $agent = passiveWithWithholding($this->tenant, $this->supplier, [['type' => 'RT01', 'amount' => '100.00', 'rate' => '20.00', 'reason' => 'Q']]);
+    $professional = passiveWithWithholding($this->tenant, $this->supplier, [['type' => 'RT01', 'amount' => '200.00', 'rate' => '20.00', 'reason' => 'A']]);
+    $payments = app(RecordSupplierPayment::class);
+    $payments->execute($agent, ['amount' => 900, 'paid_at' => '2027-03-20']);
+    $payments->execute($professional, ['amount' => 800, 'paid_at' => '2027-03-21']);
+
+    $service = app(WithholdingSettlementService::class);
+    $f24 = $service->f24($service->calculate($this->tenant->id, 2027, 3));
+    $byCode = collect($f24['lines'])->pluck('amount', 'tax_code')->all();
+
+    expect($byCode)->toBe(['1038' => '100.00', '1040' => '200.00']);
 });
 
 test('paying a settlement clears the payable, once, and freezes it', function (): void {

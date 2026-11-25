@@ -41,7 +41,9 @@ return [
         // delle Entrate pages "F24 Ritenute reddito lavoro autonomo" and "Codice tributo 1040" and on the F24/770 2026 table
         // (read 2026-11-11). A causale with its own code goes in `f24_codes_by_reason`.
         'f24_code' => env('FISCAL_IT_WITHHOLDING_F24_CODE', '1040'),
-        'f24_codes_by_reason' => [],
+        // Causali R and Q (commissions to mono- and multi-mandate agents and sales representatives, art. 25-bis D.P.R. 600/1973)
+        // are paid with code 1038; every other causale uses the default code above.
+        'f24_codes_by_reason' => ['R' => '1038', 'Q' => '1038'],
         // Paid by the 16th of the month after the payment (Agenzia delle Entrate, F24 ritenute lavoro autonomo, read 2026-11-11).
         'due_day' => 16,
     ],
