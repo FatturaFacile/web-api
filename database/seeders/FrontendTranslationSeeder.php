@@ -18,6 +18,7 @@ use Database\Seeders\Translations\CopilotFrontendTranslations;
 use Database\Seeders\Translations\CpqQuotesFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
+use Database\Seeders\Translations\DebtCollectionFrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
 use Database\Seeders\Translations\FieldServiceManagementFrontendTranslations;
@@ -160,6 +161,7 @@ class FrontendTranslationSeeder extends Seeder
             + FixedAssetsFrontendTranslations::all($locale)
             + AcademyFrontendTranslations::all($locale)
             + AgentCommissionsFrontendTranslations::all($locale)
+            + DebtCollectionFrontendTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)
             + TreasuryBankingFrontendTranslations::all($locale);
     }
