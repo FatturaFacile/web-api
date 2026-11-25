@@ -66,6 +66,10 @@ class PermissionSeeder extends GlobalDataSeeder
             ['code' => 'audit.worm.manage', 'label_it' => 'Gestione Archivio WORM Audit Trail', 'label_en' => 'Manage the Audit WORM Archive'],
             ['code' => 'hr.payroll.view', 'label_it' => 'Consultazione Paghe Svizzere', 'label_en' => 'View Swiss Payroll'],
             ['code' => 'hr.payroll.manage', 'label_it' => 'Gestione Paghe Svizzere', 'label_en' => 'Manage Swiss Payroll'],
+            ['code' => 'van_sales.view', 'label_it' => 'Consultazione Tentata Vendita e Field Sales', 'label_en' => 'View Van Selling & Field Sales'],
+            ['code' => 'van_sales.manage', 'label_it' => 'Gestione Furgoni, Carichi e Giri Tentata Vendita', 'label_en' => 'Manage Van Selling Warehouses, Loads & Routes'],
+            ['code' => 'van_sales.settle', 'label_it' => 'Chiusura e Quadratura Fine Giro Furgone', 'label_en' => 'Complete End-of-Day Van Settlement'],
+            ['code' => 'van_sales.credit_override', 'label_it' => 'Sblocco Fido e Incasso in Tentata Vendita', 'label_en' => 'Override/Unblock Customer Credit in Field Sales'],
         ];
 
         foreach ($permissions as $idx => $perm) {

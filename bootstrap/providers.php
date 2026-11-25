@@ -104,6 +104,7 @@ use Modules\TenderManagement\Providers\TenderManagementServiceProvider;
 use Modules\Transportation\Providers\TransportationServiceProvider;
 use Modules\TravelExpense\Providers\TravelExpenseServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
+use Modules\VanSalesAndFieldForce\Providers\VanSalesAndFieldForceServiceProvider;
 use Modules\Visitors\Providers\VisitorsServiceProvider;
 use Modules\Wms\Providers\WmsServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
@@ -220,4 +221,5 @@ return [
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,
     CpqConfiguratorServiceProvider::class,
+    VanSalesAndFieldForceServiceProvider::class,
 ];
