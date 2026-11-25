@@ -38,6 +38,7 @@ use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
 use Modules\DataResidency\Providers\DataResidencyServiceProvider;
+use Modules\DebtCollection\Providers\DebtCollectionServiceProvider;
 use Modules\DigitalPreservation\Providers\DigitalPreservationServiceProvider;
 use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
@@ -197,6 +198,7 @@ return [
     LeaveManagementServiceProvider::class,
     MarketingAutomationServiceProvider::class,
     AgentCommissionsServiceProvider::class,
+    DebtCollectionServiceProvider::class,
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,
     CpqConfiguratorServiceProvider::class,
