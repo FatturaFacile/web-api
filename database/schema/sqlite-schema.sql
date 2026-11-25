@@ -53482,6 +53482,307 @@ CREATE INDEX "ptr_service_sheets_tenant_id_booking_id_index" on "ptr_service_she
 CREATE INDEX "ptr_service_sheets_tenant_id_index" on "ptr_service_sheets"(
   "tenant_id"
 );
+CREATE TABLE "sales_partner_conventions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "slug" varchar not null,
+  "name" varchar not null,
+  "partner_company_name" varchar not null,
+  "partner_vat_number" varchar,
+  "partner_uid_number" varchar,
+  "partner_contact_id" varchar,
+  "partner_type" varchar not null,
+  "country_code" varchar not null,
+  "currency" varchar not null,
+  "valid_from" date not null,
+  "valid_to" date,
+  "status" varchar not null default 'DRAFT',
+  "eligible_population" integer,
+  "hr_contact_name" varchar,
+  "hr_contact_email" varchar,
+  "hr_contact_phone" varchar,
+  "contract_document_path" varchar,
+  "verification_methods" text,
+  "allowed_email_domains" text,
+  "card_number_prefix" varchar,
+  "card_number_regex" varchar,
+  "static_convention_code" varchar,
+  "allow_family_members" tinyint(1) not null default '0',
+  "max_family_members" integer not null default '0',
+  "annual_spending_cap_per_beneficiary" numeric,
+  "employer_subsidy_enabled" tinyint(1) not null default '0',
+  "employer_subsidy_type" varchar,
+  "employer_subsidy_value" numeric,
+  "employer_subsidy_annual_cap" numeric,
+  "subsidy_purpose" varchar not null default 'GENERAL',
+  "split_billing_anonymized" tinyint(1) not null default '1',
+  "billing_cycle" varchar not null default 'MONTHLY',
+  "logo_path" varchar,
+  "primary_color" varchar,
+  "welcome_message_key" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("partner_contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sales_partner_conventions_tenant_id_code_unique" on "sales_partner_conventions"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "sales_partner_conventions_tenant_id_status_index" on "sales_partner_conventions"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "sales_partner_conventions_tenant_id_index" on "sales_partner_conventions"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "sales_partner_conventions_slug_unique" on "sales_partner_conventions"(
+  "slug"
+);
+CREATE TABLE "sales_convention_discount_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "convention_id" varchar not null,
+  "priority" integer not null default '100',
+  "rule_type" varchar not null,
+  "target_price_list_id" varchar,
+  "target_category_id" varchar,
+  "discount_percentage" numeric not null default '0',
+  "exclude_promotional_items" tinyint(1) not null default '1',
+  "cumulative_with_other_discounts" tinyint(1) not null default '0',
+  "min_cart_amount" numeric,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("convention_id") references "sales_partner_conventions"("id") on delete cascade,
+  foreign key("target_price_list_id") references "price_lists"("id") on delete set null,
+  foreign key("target_category_id") references "product_categories"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "sales_convention_discount_rules_convention_id_priority_index" on "sales_convention_discount_rules"(
+  "convention_id",
+  "priority"
+);
+CREATE INDEX "sales_convention_discount_rules_tenant_id_index" on "sales_convention_discount_rules"(
+  "tenant_id"
+);
+CREATE TABLE "sales_convention_enrollments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "convention_id" varchar not null,
+  "customer_id" varchar not null,
+  "beneficiary_type" varchar not null,
+  "parent_enrollment_id" varchar,
+  "relationship" varchar not null default('SELF'),
+  "full_name" varchar not null,
+  "verified_email" varchar,
+  "membership_card_number" varchar,
+  "identifier_hash" varchar,
+  "verification_method" varchar not null,
+  "verified_at" datetime,
+  "expires_at" datetime,
+  "status" varchar not null default('PENDING_OTP'),
+  "wallet_pass_id" varchar not null,
+  "qr_payload" varchar not null,
+  "usage_year" integer,
+  "annual_used_amount" numeric not null default('0'),
+  "annual_used_subsidy" numeric not null default('0'),
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("customer_id") references "contacts"("id") on delete cascade on update no action,
+  foreign key("convention_id") references "sales_partner_conventions"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  foreign key("parent_enrollment_id") references "sales_convention_enrollments"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "sales_convention_enrollments_convention_id_status_index" on "sales_convention_enrollments"(
+  "convention_id",
+  "status"
+);
+CREATE INDEX "sales_convention_enrollments_convention_id_verified_email_index" on "sales_convention_enrollments"(
+  "convention_id",
+  "verified_email"
+);
+CREATE INDEX "sales_convention_enrollments_identifier_hash_index" on "sales_convention_enrollments"(
+  "identifier_hash"
+);
+CREATE INDEX "sales_convention_enrollments_parent_enrollment_id_index" on "sales_convention_enrollments"(
+  "parent_enrollment_id"
+);
+CREATE INDEX "sales_convention_enrollments_tenant_id_index" on "sales_convention_enrollments"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "sales_convention_enrollments_wallet_pass_id_unique" on "sales_convention_enrollments"(
+  "wallet_pass_id"
+);
+CREATE TABLE "sales_convention_allowed_hashes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "convention_id" varchar not null,
+  "identifier_sha256" varchar not null,
+  "label_hint" varchar,
+  "is_used" tinyint(1) not null default('0'),
+  "used_by_enrollment_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("convention_id") references "sales_partner_conventions"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  foreign key("used_by_enrollment_id") references "sales_convention_enrollments"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sales_convention_allowed_hashes_convention_id_identifier_sha256_unique" on "sales_convention_allowed_hashes"(
+  "convention_id",
+  "identifier_sha256"
+);
+CREATE INDEX "sales_convention_allowed_hashes_identifier_sha256_index" on "sales_convention_allowed_hashes"(
+  "identifier_sha256"
+);
+CREATE INDEX "sales_convention_allowed_hashes_tenant_id_index" on "sales_convention_allowed_hashes"(
+  "tenant_id"
+);
+CREATE TABLE "sales_convention_otp_challenges"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "convention_id" varchar not null,
+  "email" varchar not null,
+  "otp_hash" varchar not null,
+  "attempts" integer not null default '0',
+  "expires_at" datetime not null,
+  "verified_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("convention_id") references "sales_partner_conventions"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sales_convention_otp_challenges_convention_id_email_index" on "sales_convention_otp_challenges"(
+  "convention_id",
+  "email"
+);
+CREATE INDEX "sales_convention_otp_challenges_tenant_id_index" on "sales_convention_otp_challenges"(
+  "tenant_id"
+);
+CREATE TABLE "sales_convention_split_billings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "convention_id" varchar not null,
+  "enrollment_id" varchar not null,
+  "source_document_type" varchar not null,
+  "source_document_id" varchar not null,
+  "transaction_date" date not null,
+  "currency" varchar not null,
+  "total_gross_amount" numeric not null,
+  "convention_discount_amount" numeric not null default '0',
+  "employer_subsidy_amount" numeric not null default '0',
+  "employee_paid_amount" numeric not null default '0',
+  "cost_amount" numeric not null default '0',
+  "employee_document_id" varchar,
+  "b2b_consolidated_invoice_id" varchar,
+  "billing_status" varchar not null default 'PENDING_CONSOLIDATION',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("convention_id") references "sales_partner_conventions"("id") on delete cascade,
+  foreign key("enrollment_id") references "sales_convention_enrollments"("id") on delete cascade,
+  foreign key("b2b_consolidated_invoice_id") references "invoices"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sales_conv_split_source_unique" on "sales_convention_split_billings"(
+  "tenant_id",
+  "source_document_type",
+  "source_document_id"
+);
+CREATE INDEX "sales_conv_split_billing_idx" on "sales_convention_split_billings"(
+  "convention_id",
+  "billing_status",
+  "transaction_date"
+);
+CREATE INDEX "sales_convention_split_billings_tenant_id_index" on "sales_convention_split_billings"(
+  "tenant_id"
+);
+CREATE TABLE "pos_welfare_voucher_redemptions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source_document_type" varchar not null,
+  "source_document_id" varchar not null,
+  "enrollment_id" varchar,
+  "jurisdiction" varchar not null,
+  "provider" varchar not null,
+  "welfare_category" varchar not null,
+  "voucher_code_masked" varchar not null,
+  "voucher_barcode_hash" varchar not null,
+  "currency" varchar not null,
+  "gross_voucher_amount" numeric not null,
+  "merchant_fee_percentage" numeric not null default '0',
+  "merchant_fee_amount" numeric not null default '0',
+  "net_expected_reimbursement" numeric not null,
+  "reimbursement_status" varchar not null default 'PENDING_SETTLEMENT',
+  "settlement_batch_reference" varchar,
+  "provider_self_invoice_number" varchar,
+  "settled_amount" numeric,
+  "reconciled_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("enrollment_id") references "sales_convention_enrollments"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "pos_welfare_voucher_unique" on "pos_welfare_voucher_redemptions"(
+  "tenant_id",
+  "provider",
+  "voucher_barcode_hash"
+);
+CREATE INDEX "pos_welfare_voucher_redemptions_tenant_id_reimbursement_status_index" on "pos_welfare_voucher_redemptions"(
+  "tenant_id",
+  "reimbursement_status"
+);
+CREATE INDEX "pos_welfare_voucher_redemptions_tenant_id_index" on "pos_welfare_voucher_redemptions"(
+  "tenant_id"
+);
+CREATE INDEX "pos_welfare_voucher_redemptions_voucher_barcode_hash_index" on "pos_welfare_voucher_redemptions"(
+  "voucher_barcode_hash"
+);
+CREATE INDEX "pos_welfare_voucher_redemptions_settlement_batch_reference_index" on "pos_welfare_voucher_redemptions"(
+  "settlement_batch_reference"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -53954,3 +54255,4 @@ INSERT INTO migrations VALUES(468,'2028_01_06_000100_create_gdo_trade_terms_mod2
 INSERT INTO migrations VALUES(469,'2028_01_07_000100_create_industrial_laundry_mod177_tables',28);
 INSERT INTO migrations VALUES(470,'2028_01_07_000100_create_statutory_financials_mod167_tables',29);
 INSERT INTO migrations VALUES(471,'2028_01_06_000200_create_passenger_transport_mod176_tables',30);
+INSERT INTO migrations VALUES(472,'2028_01_07_000200_create_corporate_conventions_mod358_tables',31);
