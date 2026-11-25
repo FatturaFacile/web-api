@@ -74,6 +74,7 @@ use Database\Seeders\Translations\SrmFrontendTranslations;
 use Database\Seeders\Translations\SupplierRebatesFrontendTranslations;
 use Database\Seeders\Translations\SwissQrBillSlipFrontendTranslations;
 use Database\Seeders\Translations\SwissVatFrontendTranslations;
+use Database\Seeders\Translations\TenderManagementFrontendTranslations;
 use Database\Seeders\Translations\TreasuryBankingFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -175,7 +176,8 @@ class FrontendTranslationSeeder extends Seeder
             + SrmFrontendTranslations::all($locale)
             + TreasuryBankingFrontendTranslations::all($locale)
             + LiquidityPlanningFrontendTranslations::all($locale)
-            + LiquidityPlanningTranslations::all($locale);
+            + LiquidityPlanningTranslations::all($locale)
+            + TenderManagementFrontendTranslations::all($locale);
     }
 
     /**

@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'messages' => [
+        'listed' => 'Ausschreibungsdaten abgerufen.',
+        'saved' => 'Gespeichert.',
+        'deleted' => 'Gelöscht.',
+        'ingested' => 'Die simap.ch-Publikation wurde importiert.',
+        'transitioned' => 'Der Status der Ausschreibung wurde aktualisiert.',
+        'evaluated' => 'Die Go/No-Go-Bewertung wurde abgeschlossen.',
+        'simulated' => 'Das wirtschaftliche Angebot wurde berechnet.',
+        'submitted' => 'Das Ausschreibungsdossier wurde eingereicht.',
+        'converted' => 'Der Zuschlag wurde in einen Vertrag und ein Projekt umgewandelt.',
+        'edgue_generated' => 'Das eDGUE wurde erstellt.',
+        'uploaded' => 'Das Dokument wurde hochgeladen.',
+        'renewed' => 'Die Erneuerung wurde erfasst.',
+        'synced' => 'Das Dokument wurde als mit FVOE 2.0 abgeglichen markiert.',
+        'acknowledged' => 'Die Meldung wurde quittiert.',
+    ],
+    'errors' => [
+        'invalid_transition' => 'Das Dossier kann nicht von :from zu :to wechseln.',
+        'participation_exists' => 'Für diese Ausschreibung existiert bereits ein Teilnahmedossier.',
+        'notice_closed' => 'Die Ausschreibung ist nicht mehr offen.',
+        'deadline_passed' => 'Die zwingende Eingabefrist ist abgelaufen.',
+        'envelopes_incomplete' => 'Die Umschläge sind unvollständig.',
+        'readiness_blocked' => 'Das Dossier kann nicht eingereicht werden: :issues blockierende Feststellung(en) offen.',
+        'safety_costs_required' => 'Die betrieblichen Sicherheitskosten müssen angegeben werden (Art. 108 Abs. 9).',
+        'labor_costs_required' => 'Die Lohnkosten müssen angegeben werden (Art. 108 Abs. 9).',
+        'bid_bond_percentage_invalid' => 'Der Prozentsatz der provisorischen Sicherheit muss 1 % oder 2 % betragen.',
+        'discount_out_of_range' => 'Der Rabatt muss zwischen 0 und 100 Prozent liegen.',
+        'formula_required' => 'Für den wirtschaftlich günstigsten Zuschlag ist eine Bewertungsformel erforderlich.',
+        'not_awarded' => 'Nur eine zugeschlagene Ausschreibung kann umgewandelt werden.',
+        'already_converted' => 'Dieser Zuschlag wurde bereits umgewandelt.',
+        'contracting_authority_contact_required' => 'Wählen Sie den Kontakt der Vergabestelle für die Rechnungsstellung.',
+        'project_manager_required' => 'Wählen Sie einen Projektleiter.',
+        'invalid_signature_format' => 'Dieses Dokument muss digital signiert sein: Laden Sie eine .p7m-Datei oder ein PAdES-signiertes PDF hoch.',
+        'signature_invalid' => 'Die digitale Signatur des Dokuments ist ungültig.',
+        'vault_file_required' => 'Fügen Sie das gescannte Dokument bei.',
+        'document_type_jurisdiction_mismatch' => 'Dieser Dokumenttyp ist für den gewünschten Vorgang nicht gültig.',
+        'unknown_envelope' => 'Unbekannter Umschlag.',
+        'unknown_envelope_document' => 'Unbekanntes Umschlagdokument.',
+        'edgue_unsupported_jurisdiction' => 'Das eDGUE gilt nur für italienische öffentliche Ausschreibungen.',
+        'simap_payload_invalid' => 'Die simap.ch-Publikation enthält weder Projektnummer noch Titel.',
+        'file_too_large' => 'Die Datei ist zu gross.',
+    ],
+];

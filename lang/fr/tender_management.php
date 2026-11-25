@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'messages' => [
+        'listed' => 'Données de l\'appel d\'offres récupérées.',
+        'saved' => 'Enregistré.',
+        'deleted' => 'Supprimé.',
+        'ingested' => 'La publication simap.ch a été importée.',
+        'transitioned' => 'Le statut de l\'appel d\'offres a été mis à jour.',
+        'evaluated' => 'L\'évaluation Go/No-Go est terminée.',
+        'simulated' => 'L\'offre économique a été calculée.',
+        'submitted' => 'Le dossier de soumission a été déposé.',
+        'converted' => 'L\'adjudication a été convertie en contrat et en projet.',
+        'edgue_generated' => 'Le eDGUE a été généré.',
+        'uploaded' => 'Le document a été téléversé.',
+        'renewed' => 'Le renouvellement a été enregistré.',
+        'synced' => 'Le document a été marqué comme aligné sur FVOE 2.0.',
+        'acknowledged' => 'L\'alerte a été prise en compte.',
+    ],
+    'errors' => [
+        'invalid_transition' => 'Le dossier ne peut pas passer de :from à :to.',
+        'participation_exists' => 'Un dossier de participation existe déjà pour cet appel d\'offres.',
+        'notice_closed' => 'L\'appel d\'offres n\'est plus ouvert.',
+        'deadline_passed' => 'Le délai impératif de remise est échu.',
+        'envelopes_incomplete' => 'Les enveloppes sont incomplètes.',
+        'readiness_blocked' => 'Le dossier ne peut pas être déposé : :issues constat(s) bloquant(s) subsistent.',
+        'safety_costs_required' => 'Les coûts de sécurité de l\'entreprise doivent être déclarés (art. 108 al. 9).',
+        'labor_costs_required' => 'Les coûts de main-d\'œuvre doivent être déclarés (art. 108 al. 9).',
+        'bid_bond_percentage_invalid' => 'Le pourcentage de la garantie provisoire doit être de 1 % ou 2 %.',
+        'discount_out_of_range' => 'Le rabais doit être compris entre 0 et 100 pour cent.',
+        'formula_required' => 'Un appel d\'offres attribué à l\'offre économiquement la plus avantageuse exige une formule de notation.',
+        'not_awarded' => 'Seul un appel d\'offres adjugé peut être converti.',
+        'already_converted' => 'Cette adjudication a déjà été convertie.',
+        'contracting_authority_contact_required' => 'Sélectionnez le contact du pouvoir adjudicateur à facturer.',
+        'project_manager_required' => 'Sélectionnez un chef de projet.',
+        'invalid_signature_format' => 'Ce document doit être signé numériquement : téléversez un fichier .p7m ou un PDF signé PAdES.',
+        'signature_invalid' => 'La signature numérique du document n\'est pas valide.',
+        'vault_file_required' => 'Joignez le document numérisé.',
+        'document_type_jurisdiction_mismatch' => 'Ce type de document n\'est pas valable pour l\'opération demandée.',
+        'unknown_envelope' => 'Enveloppe inconnue.',
+        'unknown_envelope_document' => 'Document d\'enveloppe inconnu.',
+        'edgue_unsupported_jurisdiction' => 'Le eDGUE ne concerne que les marchés publics italiens.',
+        'simap_payload_invalid' => 'La publication simap.ch n\'a ni numéro de projet ni titre.',
+        'file_too_large' => 'Le fichier est trop volumineux.',
+    ],
+];
