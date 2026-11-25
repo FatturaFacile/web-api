@@ -245,6 +245,86 @@ test('contributions on a received invoice go to their own payable', function ():
         ->and($lines['2000']['credit'])->toBe(850.0);
 });
 
+function passiveWithSplitPayment(Tenant $tenant, Contact $supplier, string $splitTax = '220.00', string $documentType = 'TD01'): PassiveInvoice
+{
+    return app(PostPassiveInvoiceAction::class)->register([
+        'tenant_id' => $tenant->id,
+        'supplier_id' => $supplier->id,
+        'invoice_number' => 'S-'.Str::random(4),
+        'date' => '2027-03-01',
+        'total_amount' => '1220.00',
+        'total_net' => '1000.00',
+        'total_tax' => '220.00',
+        'split_payment_tax_amount' => $splitTax,
+        'currency' => 'EUR',
+        'document_type' => $documentType,
+        'payment_status' => 'unpaid',
+    ]);
+}
+
+test('under split payment the supplier is owed the net and the VAT is owed to the tax authority', function (): void {
+    $invoice = passiveWithSplitPayment($this->tenant, $this->supplier);
+    $lines = entryLines($invoice->id, 'vendor_invoice');
+
+    expect($invoice->isSplitPayment())->toBeTrue()
+        ->and($lines['2000']['credit'])->toBe(1000.0)
+        ->and($lines['1400']['debit'])->toBe(220.0)
+        ->and($lines['2200']['credit'])->toBe(220.0)
+        ->and($invoice->amountDue())->toBe('1000.00');
+});
+
+test('a split-payment invoice is paid for the net only and then counts as paid', function (): void {
+    $invoice = passiveWithSplitPayment($this->tenant, $this->supplier);
+    $payments = app(RecordSupplierPayment::class);
+
+    expect(fn () => $payments->execute($invoice, ['amount' => 1220, 'paid_at' => '2027-03-20']))->toThrow(ValidationException::class);
+
+    $payments->execute($invoice, ['amount' => 1000, 'paid_at' => '2027-03-20']);
+
+    expect($invoice->refresh()->payment_status)->toBe('paid')
+        ->and(accountBalance('2000'))->toBe(0.0)
+        ->and(accountBalance('2200'))->toBe(-220.0);
+});
+
+test('only the VAT of the split-payment summary lines is withheld from the supplier', function (): void {
+    $invoice = passiveWithSplitPayment($this->tenant, $this->supplier, '100.00');
+
+    expect($invoice->amountDue())->toBe('1120.00')
+        ->and(entryLines($invoice->id, 'vendor_invoice')['2000']['credit'])->toBe(1120.0);
+});
+
+test('split payment and withholding tax combine on one invoice', function (): void {
+    $invoice = app(PostPassiveInvoiceAction::class)->register([
+        'tenant_id' => $this->tenant->id,
+        'supplier_id' => $this->supplier->id,
+        'invoice_number' => 'SW-1',
+        'date' => '2027-03-01',
+        'total_amount' => '1220.00',
+        'total_net' => '1000.00',
+        'total_tax' => '220.00',
+        'split_payment_tax_amount' => '220.00',
+        'withholding_tax_amount' => '200.00',
+        'withholdings' => [['type' => 'RT01', 'amount' => '200.00', 'rate' => '20.00', 'reason' => 'A']],
+        'currency' => 'EUR',
+        'document_type' => 'TD06',
+        'payment_status' => 'unpaid',
+    ]);
+    $lines = entryLines($invoice->id, 'vendor_invoice');
+
+    expect($lines['2000']['credit'])->toBe(800.0)
+        ->and($lines['2230']['credit'])->toBe(200.0)
+        ->and($lines['2200']['credit'])->toBe(220.0)
+        ->and($invoice->amountDue())->toBe('800.00');
+});
+
+test('a split-payment credit note reverses the entry', function (): void {
+    $credit = passiveWithSplitPayment($this->tenant, $this->supplier, '220.00', 'TD04');
+    $lines = entryLines($credit->id, 'vendor_credit_note');
+
+    expect($lines['2000']['debit'])->toBe(1000.0)
+        ->and($lines['2200']['debit'])->toBe(220.0)
+        ->and($lines['1400']['credit'])->toBe(220.0);
+});
 // ------------------------------------------------------------ Liquidazione ritenute
 
 test('the month holds what was paid in it, and partial payments add up to the exact withholding', function (): void {

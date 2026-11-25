@@ -108,35 +108,9 @@ test('purchases controller imports fatturapa xml with validation and edge cases'
         'xml_file' => $invalidFile,
     ])->assertStatus(422);
 
-    // 2. Valid FatturaPA XML
-    $xmlContent = <<<'XML'
-<?xml version="1.0" encoding="UTF-8"?>
-<p:FatturaElettronica xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2" versione="FPR12">
-  <FatturaElettronicaHeader>
-    <CedentePrestatore>
-      <DatiAnagrafici>
-        <IdFiscaleIVA>
-          <IdPaese>IT</IdPaese>
-          <IdCodice>09876543210</IdCodice>
-        </IdFiscaleIVA>
-        <Anagrafica>
-          <Denominazione>Acme Tech SRL</Denominazione>
-        </Anagrafica>
-      </DatiAnagrafici>
-    </CedentePrestatore>
-  </FatturaElettronicaHeader>
-  <FatturaElettronicaBody>
-    <DatiGenerali>
-      <DatiGeneraliDocumento>
-        <Numero>FT-999</Numero>
-        <Data>2026-10-31</Data>
-        <Divisa>EUR</Divisa>
-        <ImportoTotaleDocumento>305.00</ImportoTotaleDocumento>
-      </DatiGeneraliDocumento>
-    </DatiGenerali>
-  </FatturaElettronicaBody>
-</p:FatturaElettronica>
-XML;
+    // 2. Valid FatturaPA XML addressed to the active company
+    $this->tenant->update(['vat_number' => '00811720580']);
+    $xmlContent = importSdiXml();
 
     $validFile = UploadedFile::fake()->createWithContent('fattura.xml', $xmlContent);
     $response = apiRequest()->postJson('/api/v1/purchases/passive-invoices/import-sdi', [
@@ -146,9 +120,95 @@ XML;
     $response->assertCreated()
         ->assertJsonPath('data.invoice_number', 'FT-999')
         ->assertJsonPath('data.total_amount', fn ($val) => (float) $val === 305.0)
-        ->assertJsonPath('data.supplier', 'Acme Tech SRL');
+        ->assertJsonPath('data.supplier', 'Acme Tech SRL')
+        ->assertJsonPath('data.duplicate', false);
 });
 
+/**
+ * A FatturaPA of the supplier 09876543210, sent through the intermediary 01234567890 and addressed to 00811720580.
+ *
+ * @param  array{type?: string, number?: string, extra?: string, summary?: string}  $options
+ */
+function importSdiXml(array $options = []): string
+{
+    $type = $options['type'] ?? 'TD01';
+    $number = $options['number'] ?? 'FT-999';
+    $extra = $options['extra'] ?? '';
+    $summary = $options['summary'] ?? '<AliquotaIVA>22.00</AliquotaIVA><ImponibileImporto>250.00</ImponibileImporto><Imposta>55.00</Imposta>';
+
+    return <<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<p:FatturaElettronica xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2" versione="FPR12">
+  <FatturaElettronicaHeader>
+    <DatiTrasmissione><IdTrasmittente><IdPaese>IT</IdPaese><IdCodice>01234567890</IdCodice></IdTrasmittente></DatiTrasmissione>
+    <CedentePrestatore><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>09876543210</IdCodice></IdFiscaleIVA><Anagrafica><Denominazione>Acme Tech SRL</Denominazione></Anagrafica></DatiAnagrafici></CedentePrestatore>
+    <CessionarioCommittente><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>00811720580</IdCodice></IdFiscaleIVA></DatiAnagrafici></CessionarioCommittente>
+  </FatturaElettronicaHeader>
+  <FatturaElettronicaBody>
+    <DatiGenerali>
+      <DatiGeneraliDocumento>
+        <TipoDocumento>{$type}</TipoDocumento>
+        <Divisa>EUR</Divisa>
+        <Data>2026-10-31</Data>
+        <Numero>{$number}</Numero>
+        {$extra}
+        <ImportoTotaleDocumento>305.00</ImportoTotaleDocumento>
+      </DatiGeneraliDocumento>
+    </DatiGenerali>
+    <DatiBeniServizi>
+      <DettaglioLinee><NumeroLinea>1</NumeroLinea><Descrizione>Consulting</Descrizione><Quantita>1.00</Quantita><PrezzoUnitario>250.00</PrezzoUnitario><PrezzoTotale>250.00</PrezzoTotale><AliquotaIVA>22.00</AliquotaIVA></DettaglioLinee>
+      <DatiRiepilogo>{$summary}</DatiRiepilogo>
+    </DatiBeniServizi>
+  </FatturaElettronicaBody>
+</p:FatturaElettronica>
+XML;
+}
+
+test('the legacy SDI import takes the supplier from the seller and keeps the document type', function (): void {
+    $this->tenant->update(['vat_number' => '00811720580']);
+
+    $credit = apiRequest()->postJson('/api/v1/purchases/passive-invoices/import-sdi', [
+        'xml_file' => UploadedFile::fake()->createWithContent('nc.xml', importSdiXml(['type' => 'TD04', 'number' => 'NC-1'])),
+    ])->assertCreated();
+
+    $invoice = PassiveInvoice::findOrFail($credit->json('data.id'));
+
+    expect($invoice->document_type)->toBe('TD04')
+        ->and($invoice->supplier->vat_number)->toBe('09876543210')
+        ->and($invoice->supplier->country)->toBe('IT')
+        ->and($invoice->lines()->count())->toBe(1)
+        ->and((float) $invoice->total_net)->toBe(250.0);
+});
+
+test('the legacy SDI import registers a document once and refuses an invoice addressed to another company', function (): void {
+    $this->tenant->update(['vat_number' => '00811720580']);
+    $upload = static fn (string $xml) => UploadedFile::fake()->createWithContent('f.xml', $xml);
+
+    $first = apiRequest()->postJson('/api/v1/purchases/passive-invoices/import-sdi', ['xml_file' => $upload(importSdiXml())])->assertCreated();
+    $again = apiRequest()->postJson('/api/v1/purchases/passive-invoices/import-sdi', ['xml_file' => $upload(importSdiXml())])->assertOk();
+
+    expect($again->json('data.id'))->toBe($first->json('data.id'))
+        ->and($again->json('data.duplicate'))->toBeTrue()
+        ->and(PassiveInvoice::count())->toBe(1);
+
+    $this->tenant->update(['vat_number' => '99999999999']);
+
+    apiRequest()->postJson('/api/v1/purchases/passive-invoices/import-sdi', ['xml_file' => $upload(importSdiXml(['number' => 'FT-1000']))])->assertUnprocessable();
+});
+
+test('the legacy SDI import stores withholding and stamp duty like receive-xml', function (): void {
+    $this->tenant->update(['vat_number' => '00811720580']);
+    $extra = '<DatiRitenuta><TipoRitenuta>RT01</TipoRitenuta><ImportoRitenuta>50.00</ImportoRitenuta><AliquotaRitenuta>20.00</AliquotaRitenuta><CausalePagamento>A</CausalePagamento></DatiRitenuta><DatiBollo><BolloVirtuale>SI</BolloVirtuale><ImportoBollo>0.00</ImportoBollo></DatiBollo>';
+
+    $response = apiRequest()->postJson('/api/v1/purchases/passive-invoices/import-sdi', [
+        'xml_file' => UploadedFile::fake()->createWithContent('r.xml', importSdiXml(['extra' => $extra])),
+    ])->assertCreated();
+
+    $invoice = PassiveInvoice::findOrFail($response->json('data.id'));
+
+    expect((float) $invoice->withholding_tax_amount)->toBe(50.0)
+        ->and($invoice->withholdings)->toHaveCount(1);
+});
 test('purchases controller scans swiss qr bill payload and exports pain001', function (): void {
     // 1. Invalid QR payload
     apiRequest()->postJson('/api/v1/purchases/passive-invoices/scan-qr-bill', [
@@ -346,4 +406,33 @@ XML;
         'cbi_file' => $cbiFile,
         'bank_account_id' => $bankAccount->id,
     ])->assertOk()->assertJsonPath('data.status', 'parsed');
+});
+
+test('a received invoice with EsigibilitaIVA S is stored as split payment and owed to the supplier net of VAT', function (): void {
+    $this->tenant->update(['vat_number' => '00811720580']);
+    $summary = '<AliquotaIVA>22.00</AliquotaIVA><ImponibileImporto>250.00</ImponibileImporto><Imposta>55.00</Imposta><EsigibilitaIVA>S</EsigibilitaIVA>';
+
+    $response = apiRequest()->postJson('/api/v1/purchases/passive-invoices/import-sdi', [
+        'xml_file' => UploadedFile::fake()->createWithContent('split.xml', importSdiXml(['summary' => $summary])),
+    ])->assertCreated();
+
+    $invoice = PassiveInvoice::findOrFail($response->json('data.id'));
+
+    expect($invoice->isSplitPayment())->toBeTrue()
+        ->and((float) $invoice->split_payment_tax_amount)->toBe(55.0)
+        ->and($invoice->amountDue())->toBe('250.00');
+});
+
+test('an invoice with immediate or deferred VAT is not split payment', function (): void {
+    $this->tenant->update(['vat_number' => '00811720580']);
+    $summary = '<AliquotaIVA>22.00</AliquotaIVA><ImponibileImporto>250.00</ImponibileImporto><Imposta>55.00</Imposta><EsigibilitaIVA>I</EsigibilitaIVA>';
+
+    $response = apiRequest()->postJson('/api/v1/purchases/passive-invoices/import-sdi', [
+        'xml_file' => UploadedFile::fake()->createWithContent('immediate.xml', importSdiXml(['summary' => $summary])),
+    ])->assertCreated();
+
+    $invoice = PassiveInvoice::findOrFail($response->json('data.id'));
+
+    expect($invoice->isSplitPayment())->toBeFalse()
+        ->and($invoice->amountDue())->toBe('305.00');
 });

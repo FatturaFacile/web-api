@@ -16,7 +16,7 @@ use SimpleXMLElement;
 class FatturaPaParser
 {
     /**
-     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string, withholdings: list<array{type: string, amount: string, rate: string, reason: ?string, taxable: string}>, stamp_duty: float, lines: list<array{line_number: int, description: string, quantity: ?string, unit_of_measure: ?string, unit_price: string, line_total: string, tax_rate: string, vat_nature: ?string, competence_start_date: ?string, competence_end_date: ?string}>}>}
+     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, split_payment_tax: float, due_date: ?string, withholdings: list<array{type: string, amount: string, rate: string, reason: ?string, taxable: string}>, stamp_duty: float, lines: list<array{line_number: int, description: string, quantity: ?string, unit_of_measure: ?string, unit_price: string, line_total: string, tax_rate: string, vat_nature: ?string, competence_start_date: ?string, competence_end_date: ?string}>}>}
      */
     public function parse(string $xml): array
     {
@@ -38,10 +38,16 @@ class FatturaPaParser
         foreach ($bodies as $body) {
             $net = 0.0;
             $tax = 0.0;
+            $splitTax = 0.0;
 
             foreach ($body->xpath('DatiBeniServizi/DatiRiepilogo') ?: [] as $summary) {
                 $net += (float) $this->value($summary, 'ImponibileImporto');
                 $tax += (float) $this->value($summary, 'Imposta');
+
+                // EsigibilitaIVA S: the VAT of this summary line is paid by the buyer to the tax authority (split payment).
+                if (strtoupper((string) $this->value($summary, 'EsigibilitaIVA')) === 'S') {
+                    $splitTax += (float) $this->value($summary, 'Imposta');
+                }
             }
 
             $number = $this->value($body, 'DatiGenerali/DatiGeneraliDocumento/Numero');
@@ -59,6 +65,7 @@ class FatturaPaParser
                 'total' => round((float) ($this->value($body, 'DatiGenerali/DatiGeneraliDocumento/ImportoTotaleDocumento') ?? $net + $tax), 2),
                 'net' => round($net, 2),
                 'tax' => round($tax, 2),
+                'split_payment_tax' => round($splitTax, 2),
                 'due_date' => $this->value($body, 'DatiPagamento/DettaglioPagamento/DataScadenzaPagamento'),
                 'withholdings' => $this->withholdings($body),
                 'stamp_duty' => round((float) ($this->value($body, 'DatiGenerali/DatiGeneraliDocumento/DatiBollo/ImportoBollo') ?? 0), 2),

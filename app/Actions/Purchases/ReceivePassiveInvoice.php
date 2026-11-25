@@ -76,6 +76,7 @@ class ReceivePassiveInvoice
                     'total_amount' => $document['total'],
                     'total_net' => $document['net'],
                     'total_tax' => $document['tax'],
+                    'split_payment_tax_amount' => number_format($document['split_payment_tax'], 2, '.', ''),
                     'currency' => $document['currency'],
                     'document_type' => $document['document_type'],
                     'payment_status' => 'unpaid',

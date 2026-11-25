@@ -18911,6 +18911,7 @@ CREATE TABLE "passive_invoices"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "split_payment_tax_amount" numeric not null default '0',
   foreign key("supplier_id") references "contacts"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -49883,3 +49884,4 @@ INSERT INTO migrations VALUES(453,'2027_12_31_000200_add_leading_tenant_indexes_
 INSERT INTO migrations VALUES(454,'2028_01_02_000100_create_marketing_automation_mod155_tables',18);
 INSERT INTO migrations VALUES(455,'2027_12_31_000100_create_agent_commissions_mod041_tables',19);
 INSERT INTO migrations VALUES(456,'2027_12_20_000100_create_treasury_settlement_tables',20);
+INSERT INTO migrations VALUES(457,'2028_01_03_000100_add_split_payment_to_passive_invoices',20);

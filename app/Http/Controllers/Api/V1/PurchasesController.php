@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\Purchases\ReceivePassiveInvoice;
 use App\Contracts\SwissQrBill\SwissQrBillParserInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
@@ -14,9 +15,9 @@ use App\Models\PurchaseRequest;
 use App\Services\SwissQrBill\QrBillGeneratorService;
 use App\Services\Tenancy\TenantContext;
 use App\Support\Http\RequestedPerPage;
-use DOMDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 use Modules\GeneralLedger\Actions\PostPassiveInvoiceAction;
 use Modules\Treasury\Actions\ExportSupplierPaymentsAction;
 use OpenApi\Attributes as OA;
@@ -100,106 +101,58 @@ class PurchasesController extends Controller
     }
 
     /**
-     * Parse and import Italian FatturaPA XML into passive_invoices.
+     * Import an Italian FatturaPA XML into passive invoices.
      *
-     * @deprecated Legacy stub that inserts without parsing. Use POST /api/v1/purchases/passive-invoices/receive-xml instead.
+     * @deprecated Alias of POST /api/v1/purchases/passive-invoices/receive-xml, kept for old clients: it runs the same import.
      */
     #[OA\Post(
         path: '/api/v1/purchases/passive-invoices/import-sdi',
         operationId: 'importSdiPassiveInvoice',
-        description: 'Legacy import endpoint for Italian FatturaPA XML files into passive invoices.',
+        description: 'Deprecated alias of receive-xml. The file is parsed with the same FatturaPA reader: the supplier comes from CedentePrestatore, the document type, withholding, stamp duty, split payment and lines are stored, the addressee must be the active company and a document already received is not duplicated.',
         summary: 'Import SDI XML (deprecated)',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Purchasing'],
         responses: [
+            new OA\Response(response: 200, description: 'Document already received', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 201, description: 'Passive invoice imported successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
-            new OA\Response(response: 400, description: 'Invalid XML file', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid XML or invoice addressed to another company', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ],
         deprecated: true
     )]
-    public function importSdi(Request $request): JsonResponse
+    public function importSdi(Request $request, ReceivePassiveInvoice $receive): JsonResponse
     {
         $request->validate([
             'xml_file' => ['required', 'file', 'mimes:xml,txt', 'max:10240'],
         ]);
 
-        $content = file_get_contents($request->file('xml_file')->getRealPath());
-        $dom = new DOMDocument;
-        $loaded = @$dom->loadXML($content);
+        $file = $request->file('xml_file');
 
-        if (! $loaded) {
+        try {
+            $results = $receive->execute((string) file_get_contents($file->getRealPath()), $file->getClientOriginalName());
+        } catch (InvalidArgumentException $exception) {
             return $this->problemDetailsResponse(
                 title: 'Invalid XML File',
-                detail: 'The uploaded file is not a valid XML document.',
+                detail: $exception->getMessage(),
                 status: Response::HTTP_UNPROCESSABLE_ENTITY
             );
         }
 
-        // Extract key FatturaPA fields
-        $docNumNodes = $dom->getElementsByTagName('Numero');
-        $invoiceNumber = $docNumNodes->length > 0 ? $docNumNodes->item(0)->nodeValue : 'REC-'.time();
-
-        $docDateNodes = $dom->getElementsByTagName('Data');
-        $invoiceDate = $docDateNodes->length > 0 ? $docDateNodes->item(0)->nodeValue : now()->toDateString();
-
-        $totalNodes = $dom->getElementsByTagName('ImportoTotaleDocumento');
-        $totalAmount = $totalNodes->length > 0 ? (float) $totalNodes->item(0)->nodeValue : 0.0;
-
-        $currencyNodes = $dom->getElementsByTagName('Divisa');
-        $currency = $currencyNodes->length > 0 ? $currencyNodes->item(0)->nodeValue : 'EUR';
-
-        // Supplier info
-        $supplierVatNodes = $dom->getElementsByTagName('IdCodice');
-        $supplierVat = $supplierVatNodes->length > 0 ? $supplierVatNodes->item(0)->nodeValue : null;
-
-        $supplier = null;
-        if ($supplierVat) {
-            $supplier = Contact::where('vat_number', $supplierVat)->first();
-        }
-
-        if ($supplier === null) {
-            $denominazioneNodes = $dom->getElementsByTagName('Denominazione');
-            $supplierName = $denominazioneNodes->length > 0 ? $denominazioneNodes->item(0)->nodeValue : 'Fornitore Esterno';
-            $supplier = Contact::create([
-                'type' => 'supplier',
-                'country' => 'IT',
-                'company_name' => $supplierName,
-                'vat_number' => $supplierVat,
-            ]);
-        }
-
-        $totalTax = 0.0;
-
-        foreach ($dom->getElementsByTagName('Imposta') as $taxNode) {
-            $totalTax += (float) $taxNode->nodeValue;
-        }
-
-        $passiveInvoice = $this->passiveInvoices->register([
-            'supplier_id' => $supplier->id,
-            'invoice_number' => $invoiceNumber,
-            'date' => $invoiceDate,
-            'total_amount' => $totalAmount,
-            'total_net' => round($totalAmount - $totalTax, 2),
-            'total_tax' => round($totalTax, 2),
-            'currency' => $currency,
-            'payment_status' => 'unpaid',
-            'sdi_lot_id' => 'SDI-IMP-'.now()->timestamp,
-            'is_reconciled' => false,
-            'xml_payload' => $content,
-        ]);
+        $first = $results[0]['invoice'];
+        $created = collect($results)->contains(static fn (array $result): bool => ! $result['duplicate']);
 
         return $this->successResponse(
             data: [
-                'id' => $passiveInvoice->id,
-                'invoice_number' => $invoiceNumber,
-                'date' => $invoiceDate,
-                'total_amount' => $totalAmount,
-                'supplier' => $supplier->company_name,
+                'id' => $first->id,
+                'invoice_number' => $first->invoice_number,
+                'date' => $first->date->toDateString(),
+                'total_amount' => $first->total_amount,
+                'supplier' => $first->supplier?->company_name,
+                'duplicate' => ! $created,
+                'documents' => count($results),
             ],
             message: 'Italian FatturaPA XML parsed and registered successfully',
-            statusCode: Response::HTTP_CREATED
+            statusCode: $created ? Response::HTTP_CREATED : Response::HTTP_OK
         );
     }
 
