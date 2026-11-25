@@ -123,6 +123,8 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/public/quote-signatures',
         'api/v1/public/careers',
         'api/v1/public/rma',
+        // Corporate convention landing page (Mod 358): the slug of the convention selects the company, the unguessable wallet pass id is the credential of a pass; throttled by IP.
+        'api/v1/public/conventions',
         // Gelato QR allergen book (Mod 398): authenticated by the signature of the URL (signed), which also covers the tenant id.
         'api/v1/public/gelato',
         // Supplier RFQ portal (Mod 045): authenticated by cryptographic rfq.invitation.token middleware, throttled by IP.

@@ -484,6 +484,17 @@ return [
                 'write' => ['franchise_network.write', 'franchise_network.manage', 'franchise_network.audit', 'franchise_network.portal', 'franchise_network.*'],
             ],
         ],
+        // Corporate conventions, partner employee discounts and welfare cards (Mod 358): sales and finance roles read and write the
+        // conventions, the till and the welfare vouchers; ConventionPolicy reserves the B2B invoice of the employer quota and the
+        // settlement of welfare vouchers to finance (or corporate_conventions.bill).
+        'corporate_conventions' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager'],
+            'write' => [...$finance, 'sales', 'sales_manager'],
+            'grants' => [
+                'read' => ['corporate_conventions.read', 'corporate_conventions.write', 'corporate_conventions.bill', 'corporate_conventions.*'],
+                'write' => ['corporate_conventions.write', 'corporate_conventions.bill', 'corporate_conventions.*'],
+            ],
+        ],
         // Advanced pricing (price lists, cascading discounts, promotions, margin guardrails): finance and sales roles read;
         // owners, administrators, accountants and sales managers write. Authorizing a below-margin document is further
         // limited by the policy to owners, administrators and the role of the margin policy.
