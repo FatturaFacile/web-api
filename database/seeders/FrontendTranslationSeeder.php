@@ -56,6 +56,7 @@ use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PayablesFrontendTranslations;
+use Database\Seeders\Translations\PlmFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
 use Database\Seeders\Translations\ProjectBillingFrontendTranslations;
@@ -175,7 +176,8 @@ class FrontendTranslationSeeder extends Seeder
             + SrmFrontendTranslations::all($locale)
             + TreasuryBankingFrontendTranslations::all($locale)
             + LiquidityPlanningFrontendTranslations::all($locale)
-            + LiquidityPlanningTranslations::all($locale);
+            + LiquidityPlanningTranslations::all($locale)
+            + PlmFrontendTranslations::all($locale);
     }
 
     /**

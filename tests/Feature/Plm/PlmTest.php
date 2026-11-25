@@ -9,7 +9,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\Manufacturing\Models\MfgBom;
+use Modules\Manufacturing\Models\MfgBomComponent;
 use Modules\Manufacturing\Models\MfgItem;
+use Modules\Manufacturing\Models\MfgProductionOrder;
 
 uses(RefreshDatabase::class);
 
@@ -207,4 +209,160 @@ it('keeps the records inside the company and honours the role access', function 
     plmAct($viewer, $this->tenant);
     $this->getJson('/api/v1/plm/change-orders')->assertOk()->assertJsonCount(1, 'data');
     $this->postJson("/api/v1/plm/change-orders/{$order['id']}/submit")->assertForbidden();
+});
+
+it('serves the localized PLM dictionary for it-CH, de-CH, fr-CH, en and it-IT', function (): void {
+    foreach (['it-CH', 'de-CH', 'fr-CH', 'en', 'it-IT'] as $locale) {
+        $this->getJson("/api/v1/plm/dictionary?locale={$locale}")
+            ->assertOk()
+            ->assertJsonPath('data.locale', $locale)
+            ->assertJsonStructure(['data' => ['locale', 'translations', 'enums' => ['lifecycle_states', 'workflow_stages', 'change_reasons', 'stock_disposition_rules', 'approval_departments', 'cad_source_systems']]]);
+    }
+});
+
+it('imports CAD BOM (eBOM -> mBOM), auto-creates missing parts, computes diff and commits to Mod 059', function (): void {
+    $xml = '<bom><part><code>CAD-PART-100</code><name>Precision Shaft</name><quantity>2</quantity><uom>PCS</uom><unit_cost>15.50</unit_cost></part></bom>';
+
+    $session = $this->postJson('/api/v1/plm/cad-imports', [
+        'cad_source_system' => 'SolidWorks',
+        'product_code' => 'FG-CAD-900',
+        'revision_code' => 'A',
+        'bom_name' => 'Hydraulic Valve Assembly',
+        'raw_payload' => $xml,
+        'payload_format' => 'xml',
+        'auto_create_missing_parts' => true,
+        'cad_attachments' => [['id' => 'att-1', 'filename' => 'FG-CAD-900.step', 'format' => 'STEP', 'version' => 'A']],
+    ])->assertCreated()->json('data');
+
+    expect($session['cad_source_system'])->toBe('SolidWorks')
+        ->and($session['new_parts_to_create_count'])->toBe(2)
+        ->and($session['side_by_side_diff_json']['summary']['added'])->toBe(1)
+        ->and($session['status'])->toBe('Parsed');
+
+    $committed = $this->postJson("/api/v1/plm/cad-imports/{$session['id']}/commit")
+        ->assertOk()
+        ->json('data');
+
+    expect($committed['status'])->toBe('Committed')
+        ->and($committed['target_mbom_id'])->not->toBeNull();
+});
+
+it('computes multi-level BOM diff and Rev A vs Rev B cost roll-up', function (): void {
+    $compA = MfgItem::factory()->create(['tenant_id' => $this->tenant->id, 'standard_cost' => '10.0000', 'current_cost' => '10.0000']);
+    $compB = MfgItem::factory()->create(['tenant_id' => $this->tenant->id, 'standard_cost' => '25.0000', 'current_cost' => '25.0000']);
+
+    $bomA = MfgBom::factory()->create(['tenant_id' => $this->tenant->id, 'mfg_item_id' => $this->item->id, 'revision' => 'A', 'version' => 10]);
+    MfgBomComponent::create([
+        'tenant_id' => $this->tenant->id, 'bom_id' => $bomA->id, 'component_item_id' => $compA->id,
+        'sequence' => 10, 'quantity_per' => '2.0000', 'uom' => $compA->uom,
+    ]);
+
+    $bomB = MfgBom::factory()->create(['tenant_id' => $this->tenant->id, 'mfg_item_id' => $this->item->id, 'revision' => 'B', 'version' => 11]);
+    MfgBomComponent::create([
+        'tenant_id' => $this->tenant->id, 'bom_id' => $bomB->id, 'component_item_id' => $compA->id,
+        'sequence' => 10, 'quantity_per' => '3.0000', 'uom' => $compA->uom,
+    ]);
+    MfgBomComponent::create([
+        'tenant_id' => $this->tenant->id, 'bom_id' => $bomB->id, 'component_item_id' => $compB->id,
+        'sequence' => 20, 'quantity_per' => '1.0000', 'uom' => $compB->uom,
+    ]);
+
+    $diff = $this->getJson("/api/v1/plm/bom-diff?from_bom_id={$bomA->id}&to_bom_id={$bomB->id}")
+        ->assertOk()
+        ->json('data');
+
+    expect($diff['summary']['added'])->toBe(1)
+        ->and($diff['summary']['modified'])->toBe(1)
+        ->and((float) $diff['cost_rollup']['before_total_cost'])->toBe(20.0)
+        ->and((float) $diff['cost_rollup']['after_total_cost'])->toBe(55.0)
+        ->and((float) $diff['cost_rollup']['cost_delta'])->toBe(35.0);
+});
+
+it('runs multi-level Where-Used impact analysis returning parents and open production orders', function (): void {
+    $child = MfgItem::factory()->create(['tenant_id' => $this->tenant->id]);
+    $this->bom->update(['status' => 'active']);
+    MfgBomComponent::create([
+        'tenant_id' => $this->tenant->id, 'bom_id' => $this->bom->id, 'component_item_id' => $child->id,
+        'sequence' => 10, 'quantity_per' => '4.0000', 'uom' => $child->uom,
+    ]);
+
+    MfgProductionOrder::create([
+        'tenant_id' => $this->tenant->id,
+        'order_number' => 'MO-IMPACT-1',
+        'mfg_item_id' => $this->item->id,
+        'bom_id' => $this->bom->id,
+        'status' => 'released',
+        'target_quantity' => '10.0000',
+        'completed_quantity' => '0.0000',
+        'scrapped_quantity' => '0.0000',
+        'uom' => $this->item->uom,
+        'planned_start_date' => '2027-06-15',
+        'planned_end_date' => '2027-06-20',
+    ]);
+
+    $impact = $this->getJson("/api/v1/plm/where-used/{$child->id}")
+        ->assertOk()
+        ->json('data');
+
+    expect($impact['parents'])->toHaveCount(1)
+        ->and($impact['parents'][0]['parent_item_id'])->toBe((string) $this->item->id)
+        ->and($impact['open_production_orders'])->toHaveCount(1)
+        ->and($impact['open_production_orders'][0]['order_number'])->toBe('MO-IMPACT-1');
+});
+
+it('requires 4-department approvals and executes immediate safety cutover with MES obsolete watermark', function (): void {
+    $revA = $this->postJson('/api/v1/plm/revisions', [
+        'mfg_item_id' => (string) $this->item->id,
+        'revision' => 'A',
+        'rohs_and_reach_compliant' => true,
+        'conflict_minerals_compliant' => true,
+        'technical_file_ref' => 'TF-CE-001',
+    ])->assertCreated()->json('data');
+    $this->postJson("/api/v1/plm/revisions/{$revA['id']}/release")->assertOk();
+
+    $eco = plmOrder([
+        'change_reason' => 'QualitySafetyFix',
+        'is_safety_immediate_cutover' => true,
+        'existing_stock_disposition_rule' => 'ScrapImmediately',
+    ]);
+
+    // Attempting cutover before 4 departmental approvals fails
+    $this->postJson("/api/v1/plm/change-orders/{$eco['id']}/execute-cutover")
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('approvals_matrix');
+
+    foreach (['Engineering', 'Quality', 'Purchasing', 'Production'] as $dept) {
+        $this->postJson("/api/v1/plm/change-orders/{$eco['id']}/department-signoff", [
+            'department' => $dept,
+            'decision' => 'approve',
+            'comment' => "Approved by {$dept}",
+        ])->assertOk();
+    }
+
+    $executed = $this->postJson("/api/v1/plm/change-orders/{$eco['id']}/execute-cutover")
+        ->assertOk()
+        ->json('data');
+
+    expect($executed['workflow_stage'])->toBe('EcnReleased')
+        ->and($executed['ecn_number'])->not->toBeNull()
+        ->and($executed['cutover_summary_json']['immediate_safety_cutover'])->toBeTrue();
+
+    // Verify Rev A now carries MES obsolete watermark
+    $manifest = $this->getJson("/api/v1/plm/revisions/{$revA['id']}/viewer-manifest")
+        ->assertOk()
+        ->json('data');
+
+    expect($manifest['is_obsolete'])->toBeTrue()
+        ->and($manifest['obsolete_watermark'])->toBeTrue()
+        ->and($manifest['watermark_label'])->toBe('SUPERATO / OBSOLETO');
+
+    // Verify CE/UKCA/OMacch compliance endpoint
+    $compliance = $this->postJson("/api/v1/plm/revisions/{$revA['id']}/compliance", [
+        'rohs_and_reach_compliant' => true,
+        'conflict_minerals_compliant' => true,
+        'technical_file_ref' => 'TF-CE-001',
+    ])->assertOk()->json('data');
+
+    expect($compliance['strategy_code'])->toBe('ce_ukca_machinery_rohs')
+        ->and($compliance['omacch_mra_ch_eu_compliant'])->toBeTrue();
 });

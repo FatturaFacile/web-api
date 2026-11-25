@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * One step of the approval flow of a change order: approvers decide in sequence.
+ * One step of the approval flow of a change order: approvers decide in sequence or by department.
  *
  * @property string $id
  * @property string $tenant_id
@@ -18,6 +18,10 @@ use Illuminate\Support\Carbon;
  * @property string $approver_id
  * @property int $sequence
  * @property string $status
+ * @property string|null $department
+ * @property string|null $actor_role
+ * @property string|null $sign_off_hash
+ * @property array<string, mixed>|null $metadata_json
  * @property Carbon|null $decided_at
  * @property string|null $comment
  */
@@ -33,7 +37,11 @@ final class PlmChangeApproval extends BaseEnterpriseModel
 
     protected function casts(): array
     {
-        return ['sequence' => 'integer', 'decided_at' => 'datetime'];
+        return [
+            'sequence' => 'integer',
+            'decided_at' => 'datetime',
+            'metadata_json' => 'array',
+        ];
     }
 
     /**

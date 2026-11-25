@@ -7,10 +7,14 @@ namespace Modules\Plm\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Modules\Plm\Enums\ApprovalDepartment;
+use Modules\Plm\Enums\ChangeReason;
+use Modules\Plm\Enums\EcoWorkflowStage;
+use Modules\Plm\Enums\StockDispositionRule;
 
 /**
- * An engineering change order: the reason for a change, the items and bills of material it affects and the approval
- * flow it goes through before it is implemented.
+ * EngineeringChangeRequestAndOrder: tracks ECR -> ECO -> ECN workflow, change reason,
+ * existing stock disposition rule, cutover date/lot, and departmental electronic approvals.
  *
  * @property string $id
  * @property string $tenant_id
@@ -20,6 +24,16 @@ use Illuminate\Support\Carbon;
  * @property string $change_type
  * @property string $priority
  * @property string $status
+ * @property string $workflow_stage
+ * @property string $change_reason
+ * @property bool $is_safety_immediate_cutover
+ * @property string $existing_stock_disposition_rule
+ * @property string|null $effective_date_or_lot_cutover
+ * @property string|null $lot_serial_cutover_code
+ * @property array<string, mixed>|null $approvals_matrix_json
+ * @property string|null $ecn_number
+ * @property Carbon|null $ecn_released_at
+ * @property array<string, mixed>|null $cutover_summary_json
  * @property string|null $requested_by
  * @property Carbon|null $effective_date
  * @property Carbon|null $submitted_at
@@ -60,7 +74,51 @@ final class PlmChangeOrder extends BaseEnterpriseModel
             'submitted_at' => 'datetime',
             'decided_at' => 'datetime',
             'implemented_at' => 'datetime',
+            'ecn_released_at' => 'datetime',
+            'is_safety_immediate_cutover' => 'boolean',
+            'approvals_matrix_json' => 'array',
+            'cutover_summary_json' => 'array',
         ];
+    }
+
+    public function workflowStageEnum(): EcoWorkflowStage
+    {
+        if (is_string($this->workflow_stage) && $this->workflow_stage !== '') {
+            $parsed = EcoWorkflowStage::tryFrom($this->workflow_stage);
+            if ($parsed !== null) {
+                return $parsed;
+            }
+        }
+
+        return EcoWorkflowStage::fromLegacyStatus((string) $this->status);
+    }
+
+    public function changeReasonEnum(): ChangeReason
+    {
+        return ChangeReason::tryFrom((string) $this->change_reason) ?? ChangeReason::CostReduction;
+    }
+
+    public function dispositionRuleEnum(): StockDispositionRule
+    {
+        return StockDispositionRule::tryFrom((string) $this->existing_stock_disposition_rule) ?? StockDispositionRule::UseUpEsaurimentoScorte;
+    }
+
+    public function isImmediateSafetyCutover(): bool
+    {
+        return (bool) $this->is_safety_immediate_cutover || $this->changeReasonEnum()->requiresImmediateSafetyCutover();
+    }
+
+    public function hasAllDepartmentApprovals(): bool
+    {
+        $matrix = $this->approvals_matrix_json ?? [];
+        foreach (ApprovalDepartment::cases() as $department) {
+            $entry = $matrix[$department->value] ?? null;
+            if (! is_array($entry) || ($entry['status'] ?? 'pending') !== 'approved') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
