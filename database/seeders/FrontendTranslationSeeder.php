@@ -29,6 +29,7 @@ use Database\Seeders\Translations\FieldServiceManagementFrontendTranslations;
 use Database\Seeders\Translations\FixedAssetsFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
+use Database\Seeders\Translations\GdoTradeTermsFrontendTranslations;
 use Database\Seeders\Translations\GeneralLedgerPrimaNotaFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
 use Database\Seeders\Translations\HelpdeskSlaFrontendTranslations;
@@ -170,6 +171,7 @@ class FrontendTranslationSeeder extends Seeder
             + AgentCommissionsFrontendTranslations::all($locale)
             + DebtCollectionFrontendTranslations::all($locale)
             + ExpenseManagementFrontendTranslations::all($locale)
+            + GdoTradeTermsFrontendTranslations::all($locale)
             + ElectronicSignatureFrontendTranslations::all($locale)
             + ElectronicSignatureNotificationTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)

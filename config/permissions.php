@@ -407,6 +407,17 @@ return [
             'read' => [...$financeReaders, 'sales', 'sales_manager', 'procurement_manager'],
             'write' => [...$finance, 'sales_manager', 'procurement_manager'],
         ],
+        // GDO trade terms (Mod 231): framework contracts with retail chains, tiered year-end rebates, trade promotions, monthly
+        // accruals and settlements. Finance and sales roles read; owners, administrators, accountants and sales managers write.
+        // GdoTradeTermsPolicy reserves running and reversing the accrual and settling to finance (or gdo_trade_terms.settle).
+        'gdo_trade_terms' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager'],
+            'write' => [...$finance, 'sales_manager'],
+            'grants' => [
+                'read' => ['gdo_trade_terms.read', 'gdo_trade_terms.write', 'gdo_trade_terms.settle', 'gdo_trade_terms.*'],
+                'write' => ['gdo_trade_terms.write', 'gdo_trade_terms.settle', 'gdo_trade_terms.*'],
+            ],
+        ],
         // Advanced pricing (price lists, cascading discounts, promotions, margin guardrails): finance and sales roles read;
         // owners, administrators, accountants and sales managers write. Authorizing a below-margin document is further
         // limited by the policy to owners, administrators and the role of the margin policy.

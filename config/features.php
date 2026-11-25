@@ -56,6 +56,7 @@ return [
         'agent_commissions' => env('FEATURE_MODULE_AGENT_COMMISSIONS'),
         'debt_collection' => env('FEATURE_MODULE_DEBT_COLLECTION'),
         'expense_management' => env('FEATURE_MODULE_EXPENSE_MANAGEMENT'),
+        'gdo_trade_terms' => env('FEATURE_MODULE_GDO_TRADE_TERMS'),
         'electronic_signature' => env('FEATURE_MODULE_ELECTRONIC_SIGNATURE'),
         'shift_planning' => env('FEATURE_MODULE_SHIFT_PLANNING'),
         'resource_planning' => env('FEATURE_MODULE_RESOURCE_PLANNING'),

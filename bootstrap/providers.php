@@ -50,6 +50,7 @@ use Modules\Facility\Providers\FacilityServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\Fleet\Providers\FleetServiceProvider;
 use Modules\Forecasting\Providers\ForecastingServiceProvider;
+use Modules\GdoTradeTerms\Providers\GdoTradeTermsServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Governance\Providers\GovernanceServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
@@ -204,6 +205,7 @@ return [
     AgentCommissionsServiceProvider::class,
     DebtCollectionServiceProvider::class,
     ExpenseManagementServiceProvider::class,
+    GdoTradeTermsServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,

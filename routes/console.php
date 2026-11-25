@@ -241,3 +241,6 @@ Schedule::command('hse:check-expirations')->dailyAt('06:30')->withoutOverlapping
 // MES Core integration (issue #184): the UTC shift instances keep a moving horizon, and the change log is compacted.
 $completenessTenantJob('mfg:mes-shift-instances', static fn (Tenant $tenant): object => new MaterialiseShiftInstancesJob($tenant->id))->dailyAt('00:30');
 Schedule::command('mfg:mes-prune-changes')->dailyAt('03:45')->withoutOverlapping()->onOneServer();
+
+// GDO trade terms (Mod 231): monthly accrual of the rebates and trade contributions of the month that just ended.
+Schedule::command('gdo-trade-terms:accrue')->monthlyOn(1, '04:30')->withoutOverlapping()->onOneServer();
