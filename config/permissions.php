@@ -113,6 +113,16 @@ return [
         'analytics' => ['read' => $financeReaders, 'write' => $finance],
         'communication' => ['read' => $financeReaders, 'write' => ['owner', 'admin', 'accountant', 'sales']],
         'document_trust' => ['read' => $financeReaders, 'write' => $finance],
+        // Electronic signatures (FES / FEA / FEQ). Every member may follow and start the signature of a document they can
+        // already see; ElectronicSignaturePolicy keeps the provider settings and the policies to owners and administrators.
+        'electronic_signature' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager', 'purchasing', 'procurement_manager', 'hr', 'member'],
+            'grants' => [
+                'read' => ['electronic_signature.read', 'electronic_signature.write', 'electronic_signature.*'],
+                'write' => ['electronic_signature.write', 'electronic_signature.*'],
+            ],
+        ],
         'digital_preservation' => ['read' => $financeReaders, 'write' => $finance],
         // AI cash flow and demand forecasting (Mod 094). forecasting.view reads, forecasting.simulate trains and simulates; the
         // one-click apply of reorder thresholds to the warehouse and planning data is its own module (forecasting.apply_wms).

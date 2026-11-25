@@ -26,6 +26,7 @@ use Modules\Customs\Jobs\RetrieveAssessmentDecisionsJob;
 use Modules\Documents\Jobs\AnchorPreservationChainJob;
 use Modules\Documents\Jobs\ApplyDocumentRetentionJob;
 use Modules\DocumentTrust\Jobs\VerifyPreservationPackagesJob;
+use Modules\ElectronicSignature\Jobs\ProcessSignatureLifecycleJob;
 use Modules\Facility\Jobs\GenerateFacilityInspectionsJob;
 use Modules\Facility\Jobs\ReleaseNoShowBookingsJob;
 use Modules\FiscalRetail\Jobs\RetryCorrispettiviTransmissionsJob;
@@ -178,6 +179,8 @@ $forEachTenant('document-trust:verify-preservation', static fn (Tenant $tenant):
 // Before procurement:expiring-contracts at 05:10, so a supplier contract that renews by itself is not marked expired.
 $forEachTenant('contracts:deadlines', static fn (Tenant $tenant): object => new ProcessContractDeadlinesJob($tenant->id))->dailyAt('04:50');
 $forEachTenant('contracts:expire-signature-requests', static fn (Tenant $tenant): object => new ExpireSignatureRequestsJob($tenant->id))->dailyAt('04:55');
+// Electronic signatures: reminders before the expiry, expiry of overdue envelopes, pending provider signatures.
+$forEachTenant('signatures:lifecycle', static fn (): object => new ProcessSignatureLifecycleJob)->everyFifteenMinutes();
 $forEachTenant('workspace:sync', static fn (Tenant $tenant): object => new SyncWorkspaceConnectionsJob($tenant->id))->hourly();
 $forEachTenant('visitors:purge', static fn (Tenant $tenant): object => new PurgeExpiredVisitorsJob($tenant->id))->dailyAt('03:50');
 $forEachTenant('facility:release-no-shows', static fn (Tenant $tenant): object => new ReleaseNoShowBookingsJob($tenant->id))->everyFiveMinutes();

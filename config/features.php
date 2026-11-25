@@ -53,6 +53,7 @@ return [
         'leave_management' => env('FEATURE_MODULE_LEAVE_MANAGEMENT'),
         'marketing_automation' => env('FEATURE_MODULE_MARKETING_AUTOMATION'),
         'agent_commissions' => env('FEATURE_MODULE_AGENT_COMMISSIONS'),
+        'electronic_signature' => env('FEATURE_MODULE_ELECTRONIC_SIGNATURE'),
         'shift_planning' => env('FEATURE_MODULE_SHIFT_PLANNING'),
         'resource_planning' => env('FEATURE_MODULE_RESOURCE_PLANNING'),
         'italian_vat' => env('FEATURE_MODULE_ITALIAN_VAT'),

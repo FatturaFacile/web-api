@@ -41,6 +41,7 @@ use Modules\DigitalPreservation\Providers\DigitalPreservationServiceProvider;
 use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
+use Modules\ElectronicSignature\Providers\ElectronicSignatureServiceProvider;
 use Modules\Events\Providers\EventsServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
@@ -196,6 +197,7 @@ return [
     LeaveManagementServiceProvider::class,
     MarketingAutomationServiceProvider::class,
     AgentCommissionsServiceProvider::class,
+    ElectronicSignatureServiceProvider::class,
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,
 ];
