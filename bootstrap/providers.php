@@ -95,6 +95,7 @@ use Modules\Sustainability\Providers\SustainabilityServiceProvider;
 use Modules\SwissFiscal\Providers\SwissFiscalServiceProvider;
 use Modules\SwissVat\Providers\SwissVatServiceProvider;
 use Modules\TalentLearning\Providers\TalentLearningServiceProvider;
+use Modules\TenderManagement\Providers\TenderManagementServiceProvider;
 use Modules\Transportation\Providers\TransportationServiceProvider;
 use Modules\TravelExpense\Providers\TravelExpenseServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
@@ -204,6 +205,7 @@ return [
     AgentCommissionsServiceProvider::class,
     DebtCollectionServiceProvider::class,
     ExpenseManagementServiceProvider::class,
+    TenderManagementServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,

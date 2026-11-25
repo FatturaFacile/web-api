@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'messages' => [
+        'listed' => 'Dati della gara recuperati.',
+        'saved' => 'Salvato.',
+        'deleted' => 'Eliminato.',
+        'ingested' => 'La pubblicazione simap.ch è stata importata.',
+        'transitioned' => 'Lo stato della gara è stato aggiornato.',
+        'evaluated' => 'La valutazione Go/No-Go è stata completata.',
+        'simulated' => 'L\'offerta economica è stata calcolata.',
+        'submitted' => 'Il fascicolo di gara è stato presentato.',
+        'converted' => 'L\'aggiudicazione è stata convertita in contratto e commessa.',
+        'edgue_generated' => 'L\'eDGUE è stato generato.',
+        'uploaded' => 'Il documento è stato caricato.',
+        'renewed' => 'Il rinnovo è stato registrato.',
+        'synced' => 'Il documento è stato segnato come allineato a FVOE 2.0.',
+        'acknowledged' => 'L\'avviso è stato preso in carico.',
+    ],
+    'errors' => [
+        'invalid_transition' => 'Il fascicolo non può passare da :from a :to.',
+        'participation_exists' => 'Esiste già un fascicolo di partecipazione per questa gara.',
+        'notice_closed' => 'La gara non è più aperta.',
+        'deadline_passed' => 'Il termine perentorio di presentazione è scaduto.',
+        'envelopes_incomplete' => 'Le buste sono incomplete.',
+        'readiness_blocked' => 'Il fascicolo non può essere presentato: restano :issues rilievi bloccanti.',
+        'safety_costs_required' => 'Vanno dichiarati gli oneri di sicurezza aziendali (Art. 108 co. 9).',
+        'labor_costs_required' => 'Vanno dichiarati i costi della manodopera (Art. 108 co. 9).',
+        'bid_bond_percentage_invalid' => 'La percentuale della garanzia provvisoria deve essere 1% o 2%.',
+        'discount_out_of_range' => 'Il ribasso deve essere compreso tra 0 e 100 per cento.',
+        'formula_required' => 'Una gara con offerta economicamente più vantaggiosa richiede una formula di punteggio.',
+        'not_awarded' => 'Si può convertire solo una gara aggiudicata.',
+        'already_converted' => 'Questa aggiudicazione è già stata convertita.',
+        'contracting_authority_contact_required' => 'Seleziona il contatto della stazione appaltante da fatturare.',
+        'project_manager_required' => 'Seleziona un responsabile di commessa.',
+        'invalid_signature_format' => 'Il documento deve essere firmato digitalmente: carica un file .p7m o un PDF firmato PAdES.',
+        'signature_invalid' => 'La firma digitale del documento non è valida.',
+        'vault_file_required' => 'Allega il documento scansionato.',
+        'document_type_jurisdiction_mismatch' => 'Questo tipo di documento non è valido per l\'operazione richiesta.',
+        'unknown_envelope' => 'Busta sconosciuta.',
+        'unknown_envelope_document' => 'Documento di busta sconosciuto.',
+        'edgue_unsupported_jurisdiction' => 'L\'eDGUE riguarda solo le gare pubbliche italiane.',
+        'simap_payload_invalid' => 'La pubblicazione simap.ch non ha numero di progetto né titolo.',
+        'file_too_large' => 'Il file è troppo grande.',
+    ],
+];

@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'messages' => [
+        'listed' => 'Tender data retrieved.',
+        'saved' => 'Saved.',
+        'deleted' => 'Deleted.',
+        'ingested' => 'The simap.ch publication was imported.',
+        'transitioned' => 'The tender status was updated.',
+        'evaluated' => 'The Go/No-Go evaluation was completed.',
+        'simulated' => 'The economic offer was calculated.',
+        'submitted' => 'The tender dossier was submitted.',
+        'converted' => 'The award was converted into a contract and a project.',
+        'edgue_generated' => 'The eDGUE was generated.',
+        'uploaded' => 'The document was uploaded.',
+        'renewed' => 'The renewal was recorded.',
+        'synced' => 'The document was flagged as aligned with FVOE 2.0.',
+        'acknowledged' => 'The alert was acknowledged.',
+    ],
+    'errors' => [
+        'invalid_transition' => 'The dossier cannot move from :from to :to.',
+        'participation_exists' => 'A participation dossier already exists for this tender.',
+        'notice_closed' => 'The tender is no longer open.',
+        'deadline_passed' => 'The peremptory submission deadline has passed.',
+        'envelopes_incomplete' => 'The envelopes are incomplete.',
+        'readiness_blocked' => 'The dossier cannot be submitted: :issues blocking finding(s) remain.',
+        'safety_costs_required' => 'The company safety costs must be declared (Art. 108 para. 9).',
+        'labor_costs_required' => 'The labour costs must be declared (Art. 108 para. 9).',
+        'bid_bond_percentage_invalid' => 'The bid bond percentage must be 1% or 2%.',
+        'discount_out_of_range' => 'The discount must be between 0 and 100 percent.',
+        'formula_required' => 'A tender awarded on the most economically advantageous tender needs a scoring formula.',
+        'not_awarded' => 'Only an awarded tender can be converted.',
+        'already_converted' => 'This award was already converted.',
+        'contracting_authority_contact_required' => 'Select the contact of the contracting authority to invoice.',
+        'project_manager_required' => 'Select a project manager.',
+        'invalid_signature_format' => 'This document must be digitally signed: upload a .p7m file or a PAdES signed PDF.',
+        'signature_invalid' => 'The digital signature of the document is not valid.',
+        'vault_file_required' => 'Attach the scanned document.',
+        'document_type_jurisdiction_mismatch' => 'This document type is not valid for the requested operation.',
+        'unknown_envelope' => 'Unknown envelope.',
+        'unknown_envelope_document' => 'Unknown envelope document.',
+        'edgue_unsupported_jurisdiction' => 'The eDGUE applies to Italian public tenders only.',
+        'simap_payload_invalid' => 'The simap.ch publication has no project number or title.',
+        'file_too_large' => 'The file is too large.',
+    ],
+];
