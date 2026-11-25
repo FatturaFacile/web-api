@@ -31,6 +31,12 @@ class BankStatementException extends RuntimeException
 
     public const EMPTY_FILE = 'empty_file';
 
+    public const CSV_INVALID_MAPPING = 'csv_invalid_mapping';
+
+    public const CSV_INVALID_ROW = 'csv_invalid_row';
+
+    public const CSV_NO_ROWS = 'csv_no_rows';
+
     /**
      * @param  array<string, mixed>  $context  replacements of the message (line number, record, ...)
      */

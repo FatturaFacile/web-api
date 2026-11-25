@@ -19027,6 +19027,7 @@ CREATE TABLE "payment_batches"(
   "updated_by" varchar,
   "deleted_by" varchar,
   "pain_version" varchar not null default '09',
+  "cbi_cuc" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -49249,6 +49250,182 @@ CREATE INDEX "agc_lines_entry_idx" on "agc_statement_lines"(
   "tenant_id",
   "entry_id"
 );
+CREATE TABLE "reconciliation_proposals"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "bank_statement_line_id" varchar not null,
+  "document_type" varchar not null,
+  "document_id" varchar not null,
+  "rule" varchar not null,
+  "confidence" integer not null,
+  "matched_amount" numeric not null,
+  "fee_amount" numeric not null default '0',
+  "fx_difference" numeric not null default '0',
+  "residual_amount" numeric not null default '0',
+  "currency" varchar not null,
+  "status" varchar not null default 'pending',
+  "evidence" text,
+  "applied_at" datetime,
+  "applied_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "recon_proposals_line_document_unique" on "reconciliation_proposals"(
+  "bank_statement_line_id",
+  "document_type",
+  "document_id"
+);
+CREATE INDEX "reconciliation_proposals_tenant_id_index" on "reconciliation_proposals"(
+  "tenant_id"
+);
+CREATE INDEX "reconciliation_proposals_bank_statement_line_id_index" on "reconciliation_proposals"(
+  "bank_statement_line_id"
+);
+CREATE INDEX "reconciliation_proposals_status_index" on "reconciliation_proposals"(
+  "status"
+);
+CREATE TABLE "f24_tax_codes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "section" varchar not null,
+  "translation_key" varchar not null,
+  "requires_installment" tinyint(1) not null default '0',
+  "period_format" varchar not null default 'year',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "f24_tax_codes_section_code_unique" on "f24_tax_codes"(
+  "section",
+  "code"
+);
+CREATE INDEX "f24_tax_codes_tenant_id_index" on "f24_tax_codes"("tenant_id");
+CREATE INDEX "f24_tax_codes_section_index" on "f24_tax_codes"("section");
+CREATE TABLE "f24_delegations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "bank_account_id" varchar,
+  "taxpayer_fiscal_code" varchar not null,
+  "taxpayer_name" varchar not null,
+  "taxpayer_first_name" varchar,
+  "taxpayer_birth_date" date,
+  "taxpayer_birth_place" varchar,
+  "taxpayer_birth_province" varchar,
+  "taxpayer_gender" varchar,
+  "payment_date" date not null,
+  "status" varchar not null default 'draft',
+  "total_debit" numeric not null default '0',
+  "total_credit" numeric not null default '0',
+  "total_payable" numeric not null default '0',
+  "file_name" varchar,
+  "file_content" text,
+  "file_hash" varchar,
+  "validated_at" datetime,
+  "generated_at" datetime,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE INDEX "f24_delegations_tenant_id_index" on "f24_delegations"(
+  "tenant_id"
+);
+CREATE INDEX "f24_delegations_bank_account_id_index" on "f24_delegations"(
+  "bank_account_id"
+);
+CREATE INDEX "f24_delegations_status_index" on "f24_delegations"("status");
+CREATE TABLE "f24_delegation_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "f24_delegation_id" varchar not null,
+  "section" varchar not null,
+  "tax_code" varchar not null,
+  "institution_code" varchar,
+  "reference_number" varchar,
+  "installment" varchar,
+  "reference_period" varchar,
+  "reference_year" varchar,
+  "debit_amount" numeric not null default '0',
+  "credit_amount" numeric not null default '0',
+  "position" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("f24_delegation_id") references "f24_delegations"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "f24_delegation_lines_tenant_id_index" on "f24_delegation_lines"(
+  "tenant_id"
+);
+CREATE INDEX "f24_delegation_lines_f24_delegation_id_index" on "f24_delegation_lines"(
+  "f24_delegation_id"
+);
+CREATE TABLE "statement_csv_profiles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "delimiter" varchar not null default ';',
+  "has_header" tinyint(1) not null default '1',
+  "date_format" varchar not null default 'd/m/Y',
+  "decimal_separator" varchar not null default ',',
+  "thousands_separator" varchar,
+  "account_iban" varchar,
+  "currency" varchar not null default 'EUR',
+  "columns" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "statement_csv_profiles_tenant_id_name_unique" on "statement_csv_profiles"(
+  "tenant_id",
+  "name"
+);
+CREATE INDEX "statement_csv_profiles_tenant_id_index" on "statement_csv_profiles"(
+  "tenant_id"
+);
+CREATE TABLE "open_banking_sync_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "consent_id" varchar not null,
+  "driver" varchar not null,
+  "status" varchar not null,
+  "from_date" date not null,
+  "to_date" date not null,
+  "fetched" integer not null default '0',
+  "imported" integer not null default '0',
+  "duplicates" integer not null default '0',
+  "bank_statement_id" varchar,
+  "error" text,
+  "started_at" datetime,
+  "finished_at" datetime,
+  "triggered_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE INDEX "open_banking_sync_runs_tenant_id_index" on "open_banking_sync_runs"(
+  "tenant_id"
+);
+CREATE INDEX "open_banking_sync_runs_consent_id_index" on "open_banking_sync_runs"(
+  "consent_id"
+);
+CREATE INDEX "open_banking_sync_runs_status_index" on "open_banking_sync_runs"(
+  "status"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -49705,3 +49882,4 @@ INSERT INTO migrations VALUES(452,'2027_12_31_000100_create_crm_sales_pipeline_t
 INSERT INTO migrations VALUES(453,'2027_12_31_000200_add_leading_tenant_indexes_to_accounts_payable_children',18);
 INSERT INTO migrations VALUES(454,'2028_01_02_000100_create_marketing_automation_mod155_tables',18);
 INSERT INTO migrations VALUES(455,'2027_12_31_000100_create_agent_commissions_mod041_tables',19);
+INSERT INTO migrations VALUES(456,'2027_12_20_000100_create_treasury_settlement_tables',20);

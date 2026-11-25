@@ -18,6 +18,10 @@ final readonly class ParsedStatement
 
     public const FORMAT_CAMT054 = 'camt054';
 
+    public const FORMAT_CSV = 'csv';
+
+    public const FORMAT_OPEN_BANKING = 'open_banking';
+
     /**
      * @param  array<int, ParsedStatementLine>  $lines
      */

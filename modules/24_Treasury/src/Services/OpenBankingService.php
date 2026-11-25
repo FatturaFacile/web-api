@@ -8,8 +8,11 @@ use App\Models\PassiveInvoice;
 use Illuminate\Validation\ValidationException;
 use Modules\Treasury\Contracts\OpenBankingGateway;
 use Modules\Treasury\Exceptions\OpenBankingUnavailableException;
+use Modules\Treasury\Gateways\BlinkOpenBankingGateway;
 use Modules\Treasury\Gateways\LocalOpenBankingGateway;
+use Modules\Treasury\Gateways\Psd2OpenBankingGateway;
 use Modules\Treasury\Gateways\RefusingOpenBankingGateway;
+use Modules\Treasury\Gateways\SandboxOpenBankingGateway;
 use Modules\Treasury\Models\OpenBankingConsent;
 use Modules\Treasury\Models\OpenBankingPayment;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -20,7 +23,13 @@ final readonly class OpenBankingService
 
     public function gateway(): OpenBankingGateway
     {
-        return config('open_banking.driver') === 'local' ? new LocalOpenBankingGateway : new RefusingOpenBankingGateway;
+        return match ((string) config('open_banking.driver')) {
+            'local' => new LocalOpenBankingGateway,
+            'sandbox' => new SandboxOpenBankingGateway,
+            'psd2' => new Psd2OpenBankingGateway,
+            'blink' => new BlinkOpenBankingGateway,
+            default => new RefusingOpenBankingGateway,
+        };
     }
 
     /**

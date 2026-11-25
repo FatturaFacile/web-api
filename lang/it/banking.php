@@ -57,6 +57,9 @@ return [
         'missing_trailer' => 'L\'estratto conto è incompleto: manca il record di coda EF.',
         'record_count_mismatch' => 'Il record di coda dichiara :expected record ma ne sono stati letti :actual.',
         'empty_file' => 'Il file è vuoto.',
+        'csv_invalid_mapping' => 'La mappatura del CSV non è valida: colonna :column non trovata.',
+        'csv_invalid_row' => 'La riga :line del CSV non è valida: :reason.',
+        'csv_no_rows' => 'Il CSV non contiene movimenti.',
     ],
 
 ];

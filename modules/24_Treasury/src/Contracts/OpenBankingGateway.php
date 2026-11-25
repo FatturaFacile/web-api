@@ -31,7 +31,7 @@ interface OpenBankingGateway
     public function accountBalance(string $accessToken, string $iban): array;
 
     /**
-     * @return list<array{external_id: string, booked_at: string, amount: string, currency: string, description: string}>
+     * @return list<array{external_id: string, booked_at: string, amount: string, currency: string, description: string, counterpart_name?: ?string, counterpart_iban?: ?string, reference?: ?string}>
      *
      * @throws OpenBankingUnavailableException
      */

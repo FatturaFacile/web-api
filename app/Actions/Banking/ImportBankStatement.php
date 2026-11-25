@@ -42,9 +42,21 @@ class ImportBankStatement
     public function execute(string $content, bool $autoReconcile = false): array
     {
         $content = mb_check_encoding($content, 'UTF-8') ? $content : mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
-        $parsed = $this->parser->parse($content);
+
+        return $this->executeParsed($this->parser->parse($content), hash('sha256', trim($content)), $autoReconcile);
+    }
+
+    /**
+     * Stores a statement that was already read (CSV with a mapping, an open banking pull). `$hash` identifies the
+     * payload: the same payload is refused, and single movements are de-duplicated across statements as for files.
+     *
+     * @return array{statement: BankStatement, reconciliation: array{reconciled: int, unmatched: int}|null, duplicates: int}
+     *
+     * @throws ValidationException when the same payload has already been imported
+     */
+    public function executeParsed(ParsedStatement $parsed, string $hash, bool $autoReconcile = false): array
+    {
         $tenantId = (string) $this->tenantContext->getTenantId();
-        $hash = hash('sha256', trim($content));
 
         if (BankStatement::query()->where('content_hash', $hash)->exists()) {
             throw ValidationException::withMessages(['file' => __('banking.errors.duplicate_statement')]);

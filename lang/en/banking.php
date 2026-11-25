@@ -57,6 +57,9 @@ return [
         'missing_trailer' => 'The statement is incomplete: the EF trailer record is missing.',
         'record_count_mismatch' => 'The trailer declares :expected records but :actual were read.',
         'empty_file' => 'The file is empty.',
+        'csv_invalid_mapping' => 'The CSV mapping is not valid: column :column was not found.',
+        'csv_invalid_row' => 'CSV row :line is not valid: :reason.',
+        'csv_no_rows' => 'The CSV contains no movements.',
     ],
 
 ];

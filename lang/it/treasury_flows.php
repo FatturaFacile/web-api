@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'issue' => [
+        'debtor_iban_invalid' => 'L\'IBAN del conto da addebitare non è valido.',
+        'debtor_iban_country' => 'Il conto da addebitare deve essere un conto :country per questo flusso.',
+        'cuc_required' => 'Il flusso CBI richiede il CUC (Codice Unico CBI) dell\'azienda.',
+        'cuc_invalid' => 'Il CUC deve essere composto da 8 lettere o cifre.',
+        'no_lines' => 'Aggiungi almeno un pagamento.',
+        'mixed_currency' => 'Tutti i pagamenti di un file devono avere la stessa valuta.',
+        'currency_not_allowed' => 'La valuta :currency non è ammessa per questo flusso.',
+        'amount_out_of_range' => 'L\'importo deve essere tra 0,01 e 999.999.999,99 con al massimo due decimali.',
+        'iban_invalid' => 'L\'IBAN del beneficiario non è valido.',
+        'iban_country_not_allowed' => 'Il paese :country non fa parte dell\'area SEPA.',
+        'name_too_long' => 'Il nome del beneficiario supera :max caratteri.',
+        'charset' => 'Il testo contiene caratteri non ammessi in un file di pagamento.',
+        'remittance_too_long' => 'La causale supera :max caratteri.',
+        'reference_invalid' => 'Il riferimento strutturato non è un riferimento QR valido (27 cifre) né un riferimento ISO 11649.',
+    ],
+    'f24' => [
+        'not_generated' => 'Il file F24 non è ancora stato generato.',
+        'not_editable' => 'Un F24 generato o pagato non può essere modificato.',
+        'issue' => [
+            'taxpayer_fiscal_code_invalid' => 'Il codice fiscale del contribuente non è valido.',
+            'taxpayer_name_required' => 'Cognome o ragione sociale del contribuente obbligatorio.',
+            'payment_date_past' => 'La data di pagamento non può essere nel passato.',
+            'no_lines' => 'Aggiungi almeno una riga.',
+            'section_invalid' => 'La sezione non è valida.',
+            'amount_invalid' => 'Gli importi devono essere positivi con al massimo due decimali.',
+            'one_side_only' => 'Una riga riporta un importo a debito oppure a credito, non entrambi e non nessuno.',
+            'tax_code_unknown' => 'Il codice :code non è un codice noto per questa sezione.',
+            'reference_year_required' => 'L\'anno di riferimento (AAAA) è obbligatorio.',
+            'installment_required' => 'La rateazione (NNRR) è obbligatoria per questo codice.',
+            'institution_code_invalid' => 'Il codice ente non è valido per questa sezione.',
+            'reference_number_required' => 'Il numero di riferimento è obbligatorio.',
+            'reference_period_invalid' => 'Il periodo di riferimento deve essere MMAAAA.',
+            'cadastral_code_invalid' => 'Il codice comune deve essere una lettera seguita da tre cifre.',
+            'no_debit' => 'L\'F24 non ha importi a debito.',
+            'credit_exceeds_debit' => 'I crediti compensati (:credit) superano i debiti (:debit).',
+        ],
+    ],
+    'reconciliation' => [
+        'proposal_not_pending' => 'Questa proposta non è più aperta.',
+        'note' => 'Riconciliazione intelligente: regola :rule, confidenza :confidence%.',
+        'fx_label' => 'Differenza cambio sul movimento bancario :reference',
+    ],
+    'messages' => [
+        'batch_created' => 'Distinta di pagamento creata.',
+        'f24_created' => 'F24 salvato.',
+        'f24_deleted' => 'F24 eliminato.',
+        'f24_generated' => 'File telematico F24 generato.',
+        'csv_profile_saved' => 'Profilo CSV salvato.',
+        'csv_profile_deleted' => 'Profilo CSV eliminato.',
+        'reconciliation_run' => 'Riconciliazione completata.',
+        'proposal_applied' => 'Abbinamento applicato e registrato.',
+        'proposal_rejected' => 'Proposta rifiutata.',
+        'reconciliation_undone' => 'Riconciliazione annullata.',
+        'sync_completed' => 'Sincronizzazione completata.',
+    ],
+];

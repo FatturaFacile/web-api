@@ -23,6 +23,7 @@ use Modules\GeneralLedger\Events\TrialBalanceGeneratedEvent;
 use Modules\GeneralLedger\Events\YearClosedEvent;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
 use Modules\Projects\Events\ProjectCashFlowForecastEvent;
+use Modules\Treasury\Console\SyncOpenBankingCommand;
 use Modules\Treasury\Contracts\BankReconciliationServiceInterface;
 use Modules\Treasury\Contracts\CashForecastServiceInterface;
 use Modules\Treasury\Contracts\ForeignExchangeRiskServiceInterface;
@@ -83,6 +84,10 @@ final class TreasuryServiceProvider extends ServiceProvider
         $this->registerPolicies();
         $this->registerEventConsumers();
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([SyncOpenBankingCommand::class]);
+        }
     }
 
     private function registerPolicies(): void
