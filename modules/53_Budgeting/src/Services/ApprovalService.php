@@ -47,6 +47,14 @@ final readonly class ApprovalService
                 }
             }
 
+            if ($locked->version_type === BudgetVersion::Revised) {
+                $baseline = $locked->base_version_id === null ? null : BudgetVersion::query()->find($locked->base_version_id);
+
+                if ($baseline === null || ! in_array($baseline->status, [BudgetVersion::Approved, BudgetVersion::Locked], true)) {
+                    throw ValidationException::withMessages(['status' => [__('budgeting_errors.approval.baseline_not_approved')]]);
+                }
+            }
+
             $locked->approved_by = $userId;
             $locked->approved_at = now();
         });
@@ -59,6 +67,10 @@ final readonly class ApprovalService
         }
 
         return $this->transition($version, [BudgetVersion::Submitted, BudgetVersion::Approved], BudgetVersion::Draft, BudgetApproval::Reject, $userId, $comment, function (BudgetVersion $locked): void {
+            if ($locked->status === BudgetVersion::Approved && $locked->isFormalBudget()) {
+                throw ValidationException::withMessages(['status' => [__('budgeting_errors.approval.formal_immutable')]]);
+            }
+
             $locked->submitted_by = null;
             $locked->submitted_at = null;
             $locked->approved_by = null;

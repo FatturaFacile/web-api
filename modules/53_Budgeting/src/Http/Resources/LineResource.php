@@ -28,6 +28,8 @@ final class LineResource extends JsonResource
             'project_id' => $this->project_id,
             'period' => $this->period,
             'amount' => $this->amount,
+            'quantity' => $this->quantity,
+            'unit_price' => $this->unit_price,
             'source' => $this->source,
             'driver_id' => $this->driver_id,
             'notes' => $this->notes,

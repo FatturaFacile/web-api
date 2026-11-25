@@ -14,6 +14,7 @@ use Database\Seeders\Translations\AnalyticalAccountingFrontendTranslations;
 use Database\Seeders\Translations\ArtisanalGelatoFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\BomManagementFrontendTranslations;
+use Database\Seeders\Translations\BudgetingSpendControlFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
 use Database\Seeders\Translations\CpqConfiguratorFrontendTranslations;
 use Database\Seeders\Translations\CpqQuotesFrontendTranslations;
@@ -177,7 +178,8 @@ class FrontendTranslationSeeder extends Seeder
             + TreasuryBankingFrontendTranslations::all($locale)
             + LiquidityPlanningFrontendTranslations::all($locale)
             + LiquidityPlanningTranslations::all($locale)
-            + PlmFrontendTranslations::all($locale);
+            + PlmFrontendTranslations::all($locale)
+            + BudgetingSpendControlFrontendTranslations::all($locale);
     }
 
     /**

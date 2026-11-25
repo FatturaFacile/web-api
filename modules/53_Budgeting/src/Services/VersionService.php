@@ -77,6 +77,10 @@ final readonly class VersionService
                 'version_type' => $data['version_type'] ?? BudgetVersion::Forecast,
                 'status' => BudgetVersion::Draft,
                 'currency' => $source->currency,
+                'granularity' => $source->granularity,
+                'scenario_kind' => $data['scenario_kind'] ?? null,
+                'revision_number' => $data['revision_number'] ?? 0,
+                'revision_reason' => $data['revision_reason'] ?? null,
                 'base_version_id' => $source->id,
                 'seasonal_weights' => $source->seasonal_weights,
             ]);
@@ -109,6 +113,8 @@ final readonly class VersionService
                     'project_id' => $line->project_id,
                     'period' => $line->period,
                     'amount' => $line->amount,
+                    'quantity' => $line->quantity,
+                    'unit_price' => $line->unit_price,
                     'source' => $line->source,
                     'driver_id' => $line->driver_id === null ? null : ($driverMap[$line->driver_id] ?? null),
                     'notes' => $line->notes,
@@ -153,7 +159,15 @@ final readonly class VersionService
      */
     private function fields(array $data): array
     {
-        $fields = array_intersect_key($data, array_flip(['name', 'description', 'fiscal_year', 'year_start', 'version_type', 'currency', 'seasonal_weights']));
+        $fields = array_intersect_key($data, array_flip(['name', 'description', 'fiscal_year', 'year_start', 'version_type', 'scenario_kind', 'granularity', 'currency', 'seasonal_weights']));
+
+        if (($fields['granularity'] ?? null) === null) {
+            unset($fields['granularity']);
+        }
+
+        if (($fields['version_type'] ?? null) !== null && $fields['version_type'] !== BudgetVersion::Scenario) {
+            $fields['scenario_kind'] = null;
+        }
 
         if (isset($fields['seasonal_weights'])) {
             $fields['seasonal_weights'] = $this->spread->assertSeasonalWeights($fields['seasonal_weights']);

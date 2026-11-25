@@ -346,7 +346,9 @@ return [
         'facility' => ['read' => $anyMember, 'write' => $anyMember],
         // Planning and budgeting (controlling): every member reads; owners, administrators, accountants and department
         // staff keep versions, lines and drivers. Approving, rejecting and locking a version are reserved by the policy
-        // to owners, administrators and members granted budgeting.approve.
+        // to owners, administrators and members granted budgeting.approve. The spend lock (Mod 019) adds budgeting.control.manage
+        // (spend rules, thresholds, actual volumes: owners, administrators and accountants have it) and budgeting.override.approve
+        // (the CFO decision on an override request: owners and administrators have it).
         'budgeting' => [
             'read' => $anyMember,
             'write' => ['owner', 'admin', 'accountant', 'production', 'procurement_manager', 'sales_manager', 'member'],

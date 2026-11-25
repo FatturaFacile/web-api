@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $project_id
  * @property int $period
  * @property string $amount
+ * @property string|null $quantity
+ * @property string|null $unit_price
  * @property string $source
  * @property string|null $driver_id
  * @property string|null $notes
@@ -47,6 +49,8 @@ final class BudgetLine extends BaseEnterpriseModel
         return [
             'period' => 'integer',
             'amount' => 'decimal:2',
+            'quantity' => 'decimal:3',
+            'unit_price' => 'decimal:4',
         ];
     }
 

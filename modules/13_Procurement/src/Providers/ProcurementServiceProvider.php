@@ -40,6 +40,7 @@ use Modules\Procurement\Contracts\InventoryReceivingBridgeInterface;
 use Modules\Procurement\Contracts\ProcurementServiceInterface;
 use Modules\Procurement\Contracts\PurchaseBudgetCommitmentInterface;
 use Modules\Procurement\Contracts\PurchaseSuggestionHandOffInterface;
+use Modules\Procurement\Contracts\SpendControlInterface;
 use Modules\Procurement\Contracts\SupplierEvaluationServiceInterface;
 use Modules\Procurement\Contracts\ThreeWayMatchingServiceInterface;
 use Modules\Procurement\Events\GoodsReceivedEvent;
@@ -86,6 +87,7 @@ use Modules\Procurement\Policies\PurchaseRequisitionPolicy;
 use Modules\Procurement\Policies\SupplierContractPolicy;
 use Modules\Procurement\Policies\SupplierPolicy;
 use Modules\Procurement\Services\InventoryReceivingBridgeService;
+use Modules\Procurement\Services\NullSpendControl;
 use Modules\Procurement\Services\PassiveInvoiceApprovalService;
 use Modules\Procurement\Services\ProcurementAuditLedgerService;
 use Modules\Procurement\Services\ProcurementService;
@@ -113,6 +115,9 @@ final class ProcurementServiceProvider extends ServiceProvider
 
         $this->app->singleton(SupplierEvaluationServiceInterface::class, SupplierEvaluationService::class);
         $this->app->singleton(SupplierEvaluationService::class);
+
+        // The budgeting module binds the real spend control; without it nothing is checked.
+        $this->app->bindIf(SpendControlInterface::class, NullSpendControl::class);
 
         $this->app->singleton(PurchaseBudgetCommitmentInterface::class, PurchaseBudgetCommitmentService::class);
         $this->app->singleton(PurchaseBudgetCommitmentService::class);

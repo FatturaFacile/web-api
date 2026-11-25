@@ -27,7 +27,7 @@ final readonly class LineService
             $this->versions->assertDraft($version);
             $this->assertDimensions($version, $data);
 
-            return $this->upsert($version, $data, (int) $data['period'], (string) $data['amount'], BudgetLine::Manual, null, $data['notes'] ?? null);
+            return $this->upsert($version, $data, (int) $data['period'], (string) $data['amount'], BudgetLine::Manual, null, $data['notes'] ?? null, $data['quantity'] ?? null, $data['unit_price'] ?? null);
         });
     }
 
@@ -52,7 +52,7 @@ final readonly class LineService
             'cost_center_id' => $merged['cost_center_id'] ?? null,
             'project_id' => $merged['project_id'] ?? null,
             'period' => (int) $merged['period'],
-            ...array_intersect_key($data, array_flip(['amount', 'notes'])),
+            ...array_intersect_key($data, array_flip(['amount', 'notes', 'quantity', 'unit_price'])),
             'source' => BudgetLine::Manual,
             'driver_id' => null,
         ]);
@@ -102,10 +102,10 @@ final readonly class LineService
      *
      * @param  array<string, mixed>  $key
      */
-    public function upsert(BudgetVersion $version, array $key, int $period, string $amount, string $source, ?string $driverId, ?string $notes): BudgetLine
+    public function upsert(BudgetVersion $version, array $key, int $period, string $amount, string $source, ?string $driverId, ?string $notes, ?string $quantity = null, ?string $unitPrice = null): BudgetLine
     {
         $line = $this->find($version, (string) $key['account_id'], $key['cost_center_id'] ?? null, $key['project_id'] ?? null, $period);
-        $values = ['amount' => $amount, 'source' => $source, 'driver_id' => $driverId, 'notes' => $notes];
+        $values = ['amount' => $amount, 'source' => $source, 'driver_id' => $driverId, 'notes' => $notes, 'quantity' => $quantity, 'unit_price' => $unitPrice];
 
         if ($line === null) {
             return BudgetLine::create([

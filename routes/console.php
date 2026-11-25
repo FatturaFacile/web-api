@@ -134,6 +134,7 @@ Schedule::command('demo:reset')->everyThirtyMinutes()->withoutOverlapping()->onO
 Schedule::job(new RelayOutboxEventsJob)->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::job(new MaintainOutboxLifecycleJob)->dailyAt('03:15')->withoutOverlapping()->onOneServer();
 Schedule::command('crm:process-automation')->hourly()->withoutOverlapping()->onOneServer();
+Schedule::command('budgeting:reconcile-commitments')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
 
 $forEachTenant = static fn (string $name, Closure $job): CallbackEvent => Schedule::call(
     static fn (): int => app(TenantJobDispatcher::class)->dispatchForEachTenant($job)

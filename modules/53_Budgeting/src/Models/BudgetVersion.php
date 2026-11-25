@@ -20,8 +20,13 @@ use Illuminate\Support\Carbon;
  * @property int $fiscal_year
  * @property Carbon $year_start
  * @property string $version_type
+ * @property string|null $scenario_kind
+ * @property int $revision_number
+ * @property string|null $revision_reason
  * @property string $status
  * @property string $currency
+ * @property string $granularity
+ * @property int|null $rolling_horizon_months
  * @property string|null $base_version_id
  * @property int|null $reforecast_from_period
  * @property list<string>|null $seasonal_weights
@@ -42,7 +47,26 @@ final class BudgetVersion extends BaseEnterpriseModel
 
     public const string RollingForecast = 'rolling_forecast';
 
-    public const array Types = [self::Budget, self::Forecast, self::RollingForecast];
+    public const string Revised = 'revised';
+
+    public const string Scenario = 'scenario';
+
+    /** The budget is the original (approved) one; revised budgets and scenarios sit beside it. */
+    public const array Types = [self::Budget, self::Revised, self::Forecast, self::RollingForecast, self::Scenario];
+
+    public const string BestCase = 'best_case';
+
+    public const string WorstCase = 'worst_case';
+
+    public const string CustomCase = 'custom';
+
+    public const array ScenarioKinds = [self::BestCase, self::WorstCase, self::CustomCase];
+
+    public const string Monthly = 'monthly';
+
+    public const string Quarterly = 'quarterly';
+
+    public const array Granularities = [self::Monthly, self::Quarterly];
 
     public const string Draft = 'draft';
 
@@ -62,6 +86,8 @@ final class BudgetVersion extends BaseEnterpriseModel
             'fiscal_year' => 'integer',
             'year_start' => 'date',
             'reforecast_from_period' => 'integer',
+            'revision_number' => 'integer',
+            'rolling_horizon_months' => 'integer',
             'seasonal_weights' => 'array',
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
@@ -72,6 +98,19 @@ final class BudgetVersion extends BaseEnterpriseModel
     public function isDraft(): bool
     {
         return $this->status === self::Draft;
+    }
+
+    /**
+     * Original and revised budgets are formal documents: once approved they are never reopened, a revision replaces them.
+     */
+    public function isFormalBudget(): bool
+    {
+        return in_array($this->version_type, [self::Budget, self::Revised], true);
+    }
+
+    public function isQuarterly(): bool
+    {
+        return $this->granularity === self::Quarterly;
     }
 
     /**

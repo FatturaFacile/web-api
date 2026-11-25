@@ -20,7 +20,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'description', type: 'string', nullable: true),
     new OA\Property(property: 'fiscal_year', type: 'integer', example: 2028),
     new OA\Property(property: 'year_start', description: 'First day of fiscal period 1', type: 'string', format: 'date'),
-    new OA\Property(property: 'version_type', type: 'string', enum: ['budget', 'forecast', 'rolling_forecast']),
+    new OA\Property(property: 'version_type', type: 'string', enum: ['budget', 'revised', 'forecast', 'rolling_forecast', 'scenario']),
     new OA\Property(property: 'status', type: 'string', enum: ['draft', 'submitted', 'approved', 'locked']),
     new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
     new OA\Property(property: 'base_version_id', description: 'The version this one was copied or re-forecast from', type: 'string', format: 'uuid', nullable: true),
@@ -44,7 +44,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'description', type: 'string', nullable: true),
     new OA\Property(property: 'fiscal_year', type: 'integer'),
     new OA\Property(property: 'year_start', description: 'Defaults to the first of January of the fiscal year', type: 'string', format: 'date', nullable: true),
-    new OA\Property(property: 'version_type', type: 'string', enum: ['budget', 'forecast', 'rolling_forecast']),
+    new OA\Property(property: 'version_type', type: 'string', enum: ['budget', 'revised', 'forecast', 'rolling_forecast', 'scenario']),
     new OA\Property(property: 'currency', type: 'string', minLength: 3, maxLength: 3),
     new OA\Property(property: 'seasonal_weights', description: 'Exactly twelve non-negative weights, at least one above zero', type: 'array', items: new OA\Items(type: 'number'), nullable: true),
 ])]

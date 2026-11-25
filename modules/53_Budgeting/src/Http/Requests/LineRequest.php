@@ -21,6 +21,8 @@ final class LineRequest extends BudgetingFormRequest
             'project_id' => ['nullable', 'uuid'],
             'period' => ['required', 'integer', 'min:1', 'max:12'],
             'amount' => ['required', 'numeric', 'min:0', 'max:9999999999999'],
+            'quantity' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
+            'unit_price' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
     }
