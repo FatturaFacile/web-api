@@ -34,6 +34,8 @@ final readonly class PurchaseLiabilityReadyEvent implements DomainEventInterface
         public float $stampDutyAmount = 0.0,
         /** Accrual (GR/IR) the invoice clears; the rest of the net amount is a cost. Null clears the whole net amount. */
         public ?float $grIrAmount = null,
+        /** VAT of the document paid by the buyer to the tax authority under split payment: it is not owed to the supplier. */
+        public float $splitPaymentTaxAmount = 0.0,
     ) {}
 
     public function getEventId(): string

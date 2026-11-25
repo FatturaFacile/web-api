@@ -183,6 +183,8 @@ final class SrmFrontendTranslations
             'srm.invoice.field.total' => ['Totale documento', 'Document total', 'Belegtotal', 'Total du document'],
             'srm.invoice.field.withholding' => ['Ritenuta d’acconto', 'Withholding tax', 'Quellensteuer (Ritenuta)', 'Retenue à la source'],
             'srm.invoice.field.stampDuty' => ['Imposta di bollo', 'Stamp duty', 'Stempelsteuer', 'Droit de timbre'],
+            'srm.invoice.field.splitPayment' => ['Scissione dei pagamenti (IVA)', 'Split payment (VAT)', 'Split Payment (MWST)', 'Split payment (TVA)'],
+            'srm.invoice.splitPaymentTag' => ['IVA versata all’erario', 'VAT paid to the tax authority', 'MWST an die Steuerbehörde', 'TVA versée au fisc'],
             'srm.invoice.field.currency' => ['Valuta', 'Currency', 'Währung', 'Devise'],
             'srm.invoice.field.paymentStatus' => ['Stato pagamento', 'Payment status', 'Zahlungsstatus', 'Statut du paiement'],
             'srm.invoice.field.paid' => ['Pagato', 'Paid', 'Bezahlt', 'Payé'],

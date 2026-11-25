@@ -97,6 +97,7 @@ final readonly class PostPassiveInvoiceAction
             costAllocations: $this->costAllocations($invoice, $net),
             stampDutyAmount: $this->chargedStampDuty($invoice, $gross, $net, $tax),
             grIrAmount: $clearing !== null ? min((float) $clearing['amount'], $net) : null,
+            splitPaymentTaxAmount: min(abs((float) $invoice->split_payment_tax_amount), $tax),
         );
 
         $this->dispatcher->publish($event);

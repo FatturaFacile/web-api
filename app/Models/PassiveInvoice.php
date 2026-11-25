@@ -67,6 +67,7 @@ class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
         'withholding_tax_amount',
         'withholdings',
         'stamp_duty_amount',
+        'split_payment_tax_amount',
         'declaration_of_intent_id',
         'cost_account_id',
         'cost_account_source',
@@ -94,6 +95,7 @@ class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
             'withholding_tax_amount' => 'decimal:2',
             'withholdings' => 'array',
             'stamp_duty_amount' => 'decimal:2',
+            'split_payment_tax_amount' => 'decimal:2',
             'approval_decided_at' => 'datetime',
         ];
     }
@@ -146,11 +148,22 @@ class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
     }
 
     /**
-     * What is paid to the supplier: the withholding goes to the tax authority or to the fund instead.
+     * What is paid to the supplier: the withholding goes to the tax authority or to the fund instead, and under split
+     * payment so does the VAT.
      */
     public function amountDue(): string
     {
-        return Decimal::round2(Decimal::sub((string) ($this->total_amount ?? '0'), (string) ($this->withholding_tax_amount ?? '0')));
+        $due = Decimal::sub((string) ($this->total_amount ?? '0'), (string) ($this->withholding_tax_amount ?? '0'));
+
+        return Decimal::round2(Decimal::sub($due, (string) ($this->split_payment_tax_amount ?? '0')));
+    }
+
+    /**
+     * Whether the VAT of the document is paid by the buyer to the tax authority (split payment, EsigibilitaIVA = S).
+     */
+    public function isSplitPayment(): bool
+    {
+        return Decimal::isPositive((string) ($this->split_payment_tax_amount ?? '0'));
     }
 
     /**

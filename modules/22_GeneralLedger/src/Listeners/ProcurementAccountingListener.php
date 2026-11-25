@@ -193,6 +193,7 @@ final class ProcurementAccountingListener
         $stampDuty = LedgerAmount::of($event->stampDutyAmount, 2);
         $withholding = LedgerAmount::of($event->withholdingTaxAmount, 2);
         $contribution = LedgerAmount::of($event->contributionAmount, 2);
+        $splitTax = LedgerAmount::of($event->splitPaymentTaxAmount, 2);
 
         $lines = $this->costLines($event, (string) $grIrAcc->id, $currency, $exchangeRate);
 
@@ -224,7 +225,7 @@ final class ProcurementAccountingListener
         $lines[] = [
             'account_id' => $apAcc->id,
             'debit_amount' => '0',
-            'credit_amount' => Decimal::round2(Decimal::sub(Decimal::sub(LedgerAmount::of($event->grossAmount, 2), $withholding), $contribution)),
+            'credit_amount' => Decimal::round2(Decimal::sub(Decimal::sub(Decimal::sub(LedgerAmount::of($event->grossAmount, 2), $withholding), $contribution), $splitTax)),
             'currency' => $currency,
             'exchange_rate' => $exchangeRate,
             'partner_type' => 'supplier',
@@ -236,6 +237,8 @@ final class ProcurementAccountingListener
         $withheld = [
             [$withholding, $this->accounts->withholdingPayable(...)],
             [$contribution, $this->accounts->contributionsPayable(...)],
+            // Split payment: the VAT is owed to the tax authority, not to the supplier.
+            [$splitTax, $this->accounts->outputVat(...)],
         ];
 
         foreach ($withheld as [$amount, $account]) {
