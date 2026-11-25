@@ -10,6 +10,7 @@ use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Procurement\Contracts\SpendControlInterface;
 use Modules\Procurement\Enums\PurchaseRequisitionStatus;
 use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
 use Modules\Procurement\Events\PurchaseRequisitionApprovedEvent;
@@ -84,6 +85,8 @@ final readonly class ProcurementApprovalService
             if ($costCenterId !== null) {
                 $locked->cost_center_id = $costCenterId;
             }
+
+            app(SpendControlInterface::class)->check($locked, SpendControlInterface::StageSubmit);
 
             $tenantId = (string) $locked->tenant_id;
             $amount = $isOrder ? (string) $locked->total_amount : (string) $locked->total_estimated_amount;
@@ -278,6 +281,8 @@ final readonly class ProcurementApprovalService
      */
     private function markApproved(PurchaseOrder|PurchaseRequisition $document, ?string $approverId): void
     {
+        app(SpendControlInterface::class)->check($document, SpendControlInterface::StageApprove);
+
         if ($document instanceof PurchaseOrder) {
             $document->update(['status' => PurchaseOrderStatus::Approved->value, 'is_locked' => false, 'approved_at' => now(), 'approved_by' => $approverId]);
 

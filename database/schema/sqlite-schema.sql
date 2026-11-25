@@ -36879,6 +36879,11 @@ CREATE TABLE "budget_versions"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "granularity" varchar not null default 'monthly',
+  "scenario_kind" varchar,
+  "revision_number" integer not null default '0',
+  "revision_reason" varchar,
+  "rolling_horizon_months" integer,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -36951,6 +36956,8 @@ CREATE TABLE "budget_lines"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "quantity" numeric,
+  "unit_price" numeric,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("version_id") references "budget_versions"("id") on delete cascade,
   primary key("id")
@@ -50286,7 +50293,6 @@ CREATE INDEX "cpq_configured_instances_tenant_id_status_index" on "cpq_configure
   "tenant_id",
   "status"
 );
-
 CREATE TABLE "exm_categories"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -50725,6 +50731,486 @@ CREATE INDEX "exm_audit_report_ix" on "exm_audit_logs"(
   "tenant_id",
   "expense_report_id"
 );
+CREATE TABLE "signature_provider_configs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "provider" varchar not null,
+  "jurisdiction" varchar not null default 'BOTH',
+  "name" varchar not null,
+  "credentials" text,
+  "certificate_path" varchar,
+  "is_sandbox" tinyint(1) not null default '1',
+  "is_active" tinyint(1) not null default '1',
+  "is_default" tinyint(1) not null default '0',
+  "settings" text,
+  "last_tested_at" datetime,
+  "last_test_status" varchar,
+  "last_test_message" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sig_provider_configs_tenant_idx" on "signature_provider_configs"(
+  "tenant_id",
+  "provider",
+  "is_active"
+);
+CREATE TABLE "signature_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "document_type" varchar not null,
+  "required_level" varchar not null,
+  "jurisdiction" varchar not null default 'eIDAS',
+  "provider_config_id" varchar,
+  "routing_mode" varchar not null default 'sequential',
+  "expiration_days" integer not null default '14',
+  "reminder_days" text,
+  "min_amount" numeric,
+  "amount_currency" varchar,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("provider_config_id") references "signature_provider_configs"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "sig_templates_tenant_type_idx" on "signature_templates"(
+  "tenant_id",
+  "document_type",
+  "is_active"
+);
+CREATE TABLE "signature_envelopes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "signable_type" varchar,
+  "signable_id" varchar,
+  "verification_code" varchar not null,
+  "title" varchar not null,
+  "subject" varchar,
+  "message" text,
+  "required_level" varchar not null,
+  "jurisdiction" varchar not null,
+  "routing_mode" varchar not null,
+  "status" varchar not null default 'draft',
+  "provider_config_id" varchar,
+  "provider" varchar not null,
+  "locale" varchar not null default 'it',
+  "document_format" varchar not null default 'pades',
+  "file_name" varchar,
+  "original_path" varchar,
+  "original_sha256" varchar,
+  "working_path" varchar,
+  "signed_path" varchar,
+  "signed_sha256" varchar,
+  "external_id" varchar,
+  "sent_at" datetime,
+  "expires_at" datetime,
+  "completed_at" datetime,
+  "last_reminder_at" datetime,
+  "reminders_sent" text,
+  "metadata" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("provider_config_id") references "signature_provider_configs"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "sig_envelopes_tenant_status_idx" on "signature_envelopes"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "sig_envelopes_signable_idx" on "signature_envelopes"(
+  "tenant_id",
+  "signable_type",
+  "signable_id"
+);
+CREATE INDEX "sig_envelopes_expiry_idx" on "signature_envelopes"(
+  "status",
+  "expires_at"
+);
+CREATE INDEX "sig_envelopes_original_hash_idx" on "signature_envelopes"(
+  "original_sha256"
+);
+CREATE INDEX "sig_envelopes_signed_hash_idx" on "signature_envelopes"(
+  "signed_sha256"
+);
+CREATE INDEX "sig_envelopes_external_idx" on "signature_envelopes"(
+  "external_id"
+);
+CREATE UNIQUE INDEX "signature_envelopes_verification_code_unique" on "signature_envelopes"(
+  "verification_code"
+);
+CREATE TABLE "signature_recipients"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "envelope_id" varchar not null,
+  "signing_order" integer not null default '1',
+  "role" varchar not null default 'SIGNER',
+  "full_name" varchar not null,
+  "email" varchar not null,
+  "phone" varchar,
+  "identity_metadata" text,
+  "auth_method" varchar not null default 'email_link',
+  "access_token_hash" varchar,
+  "access_token" text,
+  "token_expires_at" datetime,
+  "otp_hash" varchar,
+  "otp_expires_at" datetime,
+  "otp_attempts" integer not null default '0',
+  "signature_box" text,
+  "status" varchar not null default 'waiting',
+  "external_id" varchar,
+  "prepared_path" varchar,
+  "signature_data" text,
+  "signature_method" varchar,
+  "certificate_serial" varchar,
+  "certificate_subject" varchar,
+  "notified_at" datetime,
+  "viewed_at" datetime,
+  "consent_at" datetime,
+  "signed_at" datetime,
+  "declined_at" datetime,
+  "decline_reason" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("envelope_id") references "signature_envelopes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sig_recipients_token_uq" on "signature_recipients"(
+  "access_token_hash"
+);
+CREATE INDEX "sig_recipients_envelope_idx" on "signature_recipients"(
+  "tenant_id",
+  "envelope_id",
+  "signing_order"
+);
+CREATE INDEX "sig_recipients_external_idx" on "signature_recipients"(
+  "external_id"
+);
+CREATE TABLE "signature_audit_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "envelope_id" varchar not null,
+  "recipient_id" varchar,
+  "sequence" integer not null,
+  "event" varchar not null,
+  "actor_type" varchar not null,
+  "actor_id" varchar,
+  "ip_address" varchar,
+  "user_agent" varchar,
+  "metadata" text,
+  "document_sha256" varchar,
+  "receipt" text,
+  "timestamp_token" text,
+  "previous_hash" varchar not null,
+  "entry_hash" varchar not null,
+  "occurred_at" datetime not null,
+  "created_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("envelope_id") references "signature_envelopes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sig_audit_sequence_uq" on "signature_audit_logs"(
+  "envelope_id",
+  "sequence"
+);
+CREATE INDEX "sig_audit_envelope_idx" on "signature_audit_logs"(
+  "tenant_id",
+  "envelope_id"
+);
+CREATE TABLE "budget_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "amber_threshold_percent" numeric not null default '5',
+  "red_threshold_percent" numeric not null default '10',
+  "override_validity_days" integer not null default '30',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "budget_settings_tenant_id_unique" on "budget_settings"(
+  "tenant_id"
+);
+CREATE TABLE "budget_spend_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "account_id" varchar,
+  "cost_center_id" varchar,
+  "project_id" varchar,
+  "mode" varchar not null default 'allow',
+  "threshold_percent" numeric not null default '100',
+  "document_types" text not null,
+  "stages" text not null,
+  "enforce_without_budget" tinyint(1) not null default '0',
+  "priority" integer not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "budget_spend_rules_tenant_id_is_active_index" on "budget_spend_rules"(
+  "tenant_id",
+  "is_active"
+);
+CREATE INDEX "budget_spend_rules_account_id_index" on "budget_spend_rules"(
+  "account_id"
+);
+CREATE INDEX "budget_spend_rules_cost_center_id_index" on "budget_spend_rules"(
+  "cost_center_id"
+);
+CREATE INDEX "budget_spend_rules_project_id_index" on "budget_spend_rules"(
+  "project_id"
+);
+CREATE TABLE "budget_commitments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source_type" varchar not null,
+  "source_id" varchar not null,
+  "source_number" varchar,
+  "parent_source_id" varchar,
+  "account_id" varchar,
+  "cost_center_id" varchar,
+  "project_id" varchar,
+  "fiscal_year" integer not null,
+  "period" integer,
+  "commitment_date" date not null,
+  "currency" varchar not null,
+  "amount" numeric not null,
+  "consumed_amount" numeric not null default '0',
+  "released_amount" numeric not null default '0',
+  "status" varchar not null default 'open',
+  "release_reason" varchar,
+  "closed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "budget_commitments_source" on "budget_commitments"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "budget_commitments_open" on "budget_commitments"(
+  "tenant_id",
+  "status",
+  "fiscal_year"
+);
+CREATE INDEX "budget_commitments_parent_source_id_index" on "budget_commitments"(
+  "parent_source_id"
+);
+CREATE INDEX "budget_commitments_account_id_index" on "budget_commitments"(
+  "account_id"
+);
+CREATE INDEX "budget_commitments_cost_center_id_index" on "budget_commitments"(
+  "cost_center_id"
+);
+CREATE INDEX "budget_commitments_project_id_index" on "budget_commitments"(
+  "project_id"
+);
+CREATE TABLE "budget_overrides"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "scope" varchar not null default 'document',
+  "source_type" varchar,
+  "source_id" varchar,
+  "source_number" varchar,
+  "account_id" varchar,
+  "cost_center_id" varchar,
+  "project_id" varchar,
+  "fiscal_year" integer not null,
+  "requested_amount" numeric not null,
+  "shortfall_amount" numeric not null default '0',
+  "approved_amount" numeric,
+  "consumed_amount" numeric not null default '0',
+  "reason" text not null,
+  "status" varchar not null default 'pending',
+  "requested_by" varchar,
+  "decided_by" varchar,
+  "decided_at" datetime,
+  "decision_comment" varchar,
+  "valid_until" date,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "budget_overrides_tenant_id_status_index" on "budget_overrides"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "budget_overrides_source_id_index" on "budget_overrides"(
+  "source_id"
+);
+CREATE INDEX "budget_overrides_account_id_index" on "budget_overrides"(
+  "account_id"
+);
+CREATE INDEX "budget_overrides_cost_center_id_index" on "budget_overrides"(
+  "cost_center_id"
+);
+CREATE INDEX "budget_overrides_project_id_index" on "budget_overrides"(
+  "project_id"
+);
+CREATE TABLE "budget_spend_checks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source_type" varchar not null,
+  "source_id" varchar,
+  "source_number" varchar,
+  "stage" varchar not null,
+  "outcome" varchar not null,
+  "rule_id" varchar,
+  "override_id" varchar,
+  "account_id" varchar,
+  "cost_center_id" varchar,
+  "project_id" varchar,
+  "fiscal_year" integer not null,
+  "budget_amount" numeric not null default '0',
+  "actual_amount" numeric not null default '0',
+  "committed_amount" numeric not null default '0',
+  "requested_amount" numeric not null default '0',
+  "available_amount" numeric not null default '0',
+  "projected_percent" numeric,
+  "user_id" varchar,
+  "message" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "budget_spend_checks_tenant_id_outcome_created_at_index" on "budget_spend_checks"(
+  "tenant_id",
+  "outcome",
+  "created_at"
+);
+CREATE INDEX "budget_spend_checks_source_id_index" on "budget_spend_checks"(
+  "source_id"
+);
+CREATE INDEX "budget_spend_checks_cost_center_id_index" on "budget_spend_checks"(
+  "cost_center_id"
+);
+CREATE TABLE "budget_actual_volumes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "account_id" varchar not null,
+  "cost_center_id" varchar,
+  "project_id" varchar,
+  "month" varchar not null,
+  "quantity" numeric not null,
+  "notes" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "budget_actual_volumes_tenant_id_month_index" on "budget_actual_volumes"(
+  "tenant_id",
+  "month"
+);
+CREATE INDEX "budget_actual_volumes_account_id_index" on "budget_actual_volumes"(
+  "account_id"
+);
+CREATE INDEX "budget_actual_volumes_cost_center_id_index" on "budget_actual_volumes"(
+  "cost_center_id"
+);
+CREATE INDEX "budget_actual_volumes_project_id_index" on "budget_actual_volumes"(
+  "project_id"
+);
+CREATE TABLE "budget_imports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "version_id" varchar not null,
+  "file_name" varchar not null,
+  "format" varchar not null,
+  "mode" varchar not null,
+  "status" varchar not null,
+  "total_rows" integer not null default '0',
+  "imported_rows" integer not null default '0',
+  "error_rows" integer not null default '0',
+  "errors" text,
+  "user_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("version_id") references "budget_versions"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "budget_imports_tenant_id_version_id_index" on "budget_imports"(
+  "tenant_id",
+  "version_id"
+);
+CREATE INDEX "budget_imports_version_id_created_at_index" on "budget_imports"(
+  "version_id",
+  "created_at"
+);
+CREATE TABLE "budget_audit_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "subject_type" varchar not null,
+  "subject_id" varchar not null,
+  "action" varchar not null,
+  "from_status" varchar,
+  "to_status" varchar,
+  "user_id" varchar,
+  "comment" varchar,
+  "payload" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "budget_audit_subject" on "budget_audit_events"(
+  "tenant_id",
+  "subject_type",
+  "subject_id"
+);
+CREATE INDEX "budget_audit_events_subject_id_index" on "budget_audit_events"(
+  "subject_id"
+);
+
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
 INSERT INTO migrations VALUES(3,'0001_01_01_000002_create_jobs_table',1);
@@ -51187,3 +51673,5 @@ INSERT INTO migrations VALUES(459,'2028_01_04_000100_create_liquidity_planning_t
 INSERT INTO migrations VALUES(460,'2028_01_05_000100_create_debt_collection_mod014_tables',22);
 INSERT INTO migrations VALUES(461,'2028_01_04_000100_create_cpq_configurator_mod230_tables',23);
 INSERT INTO migrations VALUES(462,'2028_01_04_000100_create_expense_management_mod075_tables',24);
+INSERT INTO migrations VALUES(463,'2028_01_04_000100_create_electronic_signature_tables',25);
+INSERT INTO migrations VALUES(464,'2028_01_06_000100_create_budgeting_spend_control_mod019_tables',25);

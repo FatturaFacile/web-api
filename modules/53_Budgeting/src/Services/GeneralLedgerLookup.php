@@ -67,6 +67,23 @@ final class GeneralLedgerLookup implements LedgerLookup
         return $result;
     }
 
+    public function idsByCode(string $tenantId, string $dimension, array $codes): array
+    {
+        [$table, $column] = match ($dimension) {
+            'account' => ['chart_of_accounts', 'account_code'],
+            'cost_center' => ['cost_centers', 'code'],
+            default => ['projects', 'project_number'],
+        };
+
+        $result = [];
+
+        foreach (DB::table($table)->where('tenant_id', $tenantId)->whereIn($column, $codes)->get(['id', $column]) as $row) {
+            $result[(string) $row->{$column}] = (string) $row->id;
+        }
+
+        return $result;
+    }
+
     public function projects(string $tenantId, array $ids): array
     {
         $result = [];

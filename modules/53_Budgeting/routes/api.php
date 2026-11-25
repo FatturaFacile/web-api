@@ -3,10 +3,16 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Budgeting\Http\Controllers\ActualVolumeController;
 use Modules\Budgeting\Http\Controllers\ApprovalController;
 use Modules\Budgeting\Http\Controllers\DashboardController;
 use Modules\Budgeting\Http\Controllers\DriverController;
+use Modules\Budgeting\Http\Controllers\ExchangeController;
+use Modules\Budgeting\Http\Controllers\GridController;
 use Modules\Budgeting\Http\Controllers\LineController;
+use Modules\Budgeting\Http\Controllers\OverrideController;
+use Modules\Budgeting\Http\Controllers\SpendControlController;
+use Modules\Budgeting\Http\Controllers\SpendRuleController;
 use Modules\Budgeting\Http\Controllers\VarianceController;
 use Modules\Budgeting\Http\Controllers\VersionController;
 
@@ -52,4 +58,45 @@ Route::prefix('api/v1/budgeting')
 
         Route::get('/versions/{id}/variance', [VarianceController::class, 'show'])->name('versions.variance');
         Route::get('/versions/{id}/compare', [VarianceController::class, 'compare'])->name('versions.compare');
+
+        Route::get('/versions/{id}/variance/decomposition', [VarianceController::class, 'decomposition'])->name('versions.variance.decomposition');
+
+        Route::get('/versions/{id}/grid', [GridController::class, 'show'])->name('versions.grid');
+        Route::put('/versions/{id}/grid', [GridController::class, 'save'])->name('versions.grid.save');
+        Route::post('/versions/{id}/revise', [GridController::class, 'revise'])->name('versions.revise');
+        Route::post('/versions/{id}/scenario', [GridController::class, 'scenario'])->name('versions.scenario');
+        Route::post('/versions/{id}/transfer', [GridController::class, 'transfer'])->name('versions.transfer');
+        Route::post('/versions/{id}/roll-forward', [GridController::class, 'rollForward'])->name('versions.roll-forward');
+        Route::get('/versions/{id}/audit', [GridController::class, 'audit'])->name('versions.audit');
+
+        Route::get('/versions/{id}/import-template', [ExchangeController::class, 'template'])->name('versions.import-template');
+        Route::post('/versions/{id}/import', [ExchangeController::class, 'import'])->name('versions.import');
+        Route::get('/versions/{id}/imports', [ExchangeController::class, 'imports'])->name('versions.imports');
+        Route::get('/versions/{id}/executive-pack', [ExchangeController::class, 'executivePack'])->name('versions.executive-pack');
+
+        Route::get('/actual-volumes', [ActualVolumeController::class, 'index'])->name('actual-volumes.index');
+        Route::post('/actual-volumes', [ActualVolumeController::class, 'store'])->name('actual-volumes.store');
+        Route::delete('/actual-volumes/{id}', [ActualVolumeController::class, 'destroy'])->name('actual-volumes.destroy');
+
+        Route::prefix('spend-control')->name('spend-control.')->group(function (): void {
+            Route::get('/availability', [SpendControlController::class, 'availability'])->name('availability');
+            Route::post('/check', [SpendControlController::class, 'check'])->name('check');
+            Route::get('/commitments', [SpendControlController::class, 'commitments'])->name('commitments');
+            Route::get('/checks', [SpendControlController::class, 'checks'])->name('checks');
+            Route::get('/settings', [SpendControlController::class, 'showSettings'])->name('settings.show');
+            Route::put('/settings', [SpendControlController::class, 'updateSettings'])->name('settings.update');
+
+            Route::get('/rules', [SpendRuleController::class, 'index'])->name('rules.index');
+            Route::post('/rules', [SpendRuleController::class, 'store'])->name('rules.store');
+            Route::put('/rules/{id}', [SpendRuleController::class, 'update'])->name('rules.update');
+            Route::delete('/rules/{id}', [SpendRuleController::class, 'destroy'])->name('rules.destroy');
+
+            Route::get('/overrides', [OverrideController::class, 'index'])->name('overrides.index');
+            Route::post('/overrides', [OverrideController::class, 'store'])->name('overrides.store');
+            Route::get('/overrides/{id}', [OverrideController::class, 'show'])->name('overrides.show');
+            Route::post('/overrides/{id}/approve', [OverrideController::class, 'approve'])->name('overrides.approve');
+            Route::post('/overrides/{id}/reject', [OverrideController::class, 'reject'])->name('overrides.reject');
+            Route::post('/overrides/{id}/cancel', [OverrideController::class, 'cancel'])->name('overrides.cancel');
+            Route::get('/overrides/{id}/history', [OverrideController::class, 'history'])->name('overrides.history');
+        });
     });

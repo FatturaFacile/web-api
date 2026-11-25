@@ -20,6 +20,7 @@ use Modules\Inventory\Services\SupplierReceiptStockService;
 use Modules\Procurement\Contracts\InventoryReceivingBridgeInterface;
 use Modules\Procurement\Contracts\ProcurementServiceInterface;
 use Modules\Procurement\Contracts\PurchaseBudgetCommitmentInterface;
+use Modules\Procurement\Contracts\SpendControlInterface;
 use Modules\Procurement\DTOs\CreatePurchaseOrderDTO;
 use Modules\Procurement\DTOs\CreatePurchaseRequisitionDTO;
 use Modules\Procurement\DTOs\CreateSupplierDTO;
@@ -177,6 +178,8 @@ final class ProcurementService implements ProcurementServiceInterface
             $total = $this->writeRequisitionLines($requisition, $dto->lines);
             $requisition->update(['total_estimated_amount' => $total]);
 
+            $this->spendControl()->check($requisition->refresh(), SpendControlInterface::StageCreate);
+
             $this->auditLedger->record(action: 'REQUISITION_CREATED', model: $requisition, payloadBefore: null, payloadAfter: ['number' => $number, 'total' => $total]);
 
             $this->dispatcher->publishAndDispatch(new PurchaseRequisitionCreatedEvent(
@@ -266,6 +269,7 @@ final class ProcurementService implements ProcurementServiceInterface
             }
 
             $locked->update(['status' => PurchaseRequisitionStatus::Cancelled->value, 'is_locked' => false]);
+            $this->spendControl()->release($locked);
 
             return $locked;
         });
@@ -335,6 +339,8 @@ final class ProcurementService implements ProcurementServiceInterface
             ]);
 
             $totals = $this->writeOrderLines($order, $supplier, $contract, $dto->lines);
+
+            $this->spendControl()->check($order->refresh(), SpendControlInterface::StageCreate);
 
             $this->auditLedger->record(action: 'PURCHASE_ORDER_CREATED', model: $order, payloadBefore: null, payloadAfter: ['po_number' => $number, 'total' => $totals['gross']]);
 
@@ -469,6 +475,14 @@ final class ProcurementService implements ProcurementServiceInterface
         ]);
 
         return ['net' => $net, 'tax' => $tax, 'gross' => $gross];
+    }
+
+    /**
+     * The budget spend lock: bound to the budgeting module when it is installed, a pass-through otherwise.
+     */
+    private function spendControl(): SpendControlInterface
+    {
+        return app(SpendControlInterface::class);
     }
 
     /**
@@ -763,6 +777,8 @@ final class ProcurementService implements ProcurementServiceInterface
             if ($locked->is_budget_encumbered) {
                 $this->budgetService->releaseBudget($locked);
             }
+
+            $this->spendControl()->release($locked);
 
             $this->auditLedger->record(action: 'PURCHASE_ORDER_CANCELLED', model: $locked, payloadBefore: ['status' => $from], payloadAfter: ['status' => 'cancelled', 'reason' => $reason]);
 

@@ -42,4 +42,14 @@ interface LedgerLookup
      * @return array<string, array{code: string, name: string}>
      */
     public function projects(string $tenantId, array $ids): array;
+
+    /**
+     * Ids of the accounts, cost centres or projects of the company by their code (account code, cost centre code,
+     * project number), for the imports. A code that does not exist is missing from the result.
+     *
+     * @param  'account'|'cost_center'|'project'  $dimension
+     * @param  list<string>  $codes
+     * @return array<string, string> code => id
+     */
+    public function idsByCode(string $tenantId, string $dimension, array $codes): array;
 }

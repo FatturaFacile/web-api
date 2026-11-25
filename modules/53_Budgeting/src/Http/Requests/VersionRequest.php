@@ -24,6 +24,8 @@ final class VersionRequest extends BudgetingFormRequest
             'fiscal_year' => ['required', 'integer', 'min:2000', 'max:2100'],
             'year_start' => ['nullable', 'date_format:Y-m-d'],
             'version_type' => ['required', Rule::in(BudgetVersion::Types)],
+            'scenario_kind' => ['nullable', 'required_if:version_type,scenario', Rule::in(BudgetVersion::ScenarioKinds)],
+            'granularity' => ['nullable', Rule::in(BudgetVersion::Granularities)],
             'currency' => ['required', 'string', 'size:3'],
             'seasonal_weights' => ['nullable', 'array', 'size:12'],
             'seasonal_weights.*' => ['required', 'numeric', 'min:0', 'max:1000000'],

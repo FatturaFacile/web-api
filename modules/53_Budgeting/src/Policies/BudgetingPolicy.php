@@ -46,4 +46,22 @@ final class BudgetingPolicy
     {
         return $this->isOwnRecord($record) && $this->hasRoleOrPermission($user, ['owner', 'admin'], ['budgeting.approve', 'budgeting.*']);
     }
+
+    /**
+     * Spend rules, thresholds and actual volumes: owners, administrators, accountants and members granted
+     * budgeting.control.manage.
+     */
+    public function manageControl(User $user, Model $record): bool
+    {
+        return $this->isOwnRecord($record) && $this->hasRoleOrPermission($user, ['owner', 'admin', 'accountant'], ['budgeting.control.manage', 'budgeting.*']);
+    }
+
+    /**
+     * Deciding an override (deroga) is the CFO's call: owners, administrators and members granted
+     * budgeting.override.approve.
+     */
+    public function decideOverride(User $user, Model $record): bool
+    {
+        return $this->isOwnRecord($record) && $this->hasRoleOrPermission($user, ['owner', 'admin'], ['budgeting.override.approve', 'budgeting.*']);
+    }
 }
