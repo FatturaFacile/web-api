@@ -36,6 +36,7 @@ use Database\Seeders\Translations\HelpdeskSlaFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\HseFrontendTranslations;
 use Database\Seeders\Translations\IdentityFrontendTranslations;
+use Database\Seeders\Translations\IntercompanyFrontendTranslations;
 use Database\Seeders\Translations\InventoryCountingFrontendTranslations;
 use Database\Seeders\Translations\InvoiceMatchingFrontendTranslations;
 use Database\Seeders\Translations\ItalianFrontendTranslations;
@@ -171,6 +172,7 @@ class FrontendTranslationSeeder extends Seeder
             + AgentCommissionsFrontendTranslations::all($locale)
             + DebtCollectionFrontendTranslations::all($locale)
             + ExpenseManagementFrontendTranslations::all($locale)
+            + IntercompanyFrontendTranslations::all($locale)
             + GdoTradeTermsFrontendTranslations::all($locale)
             + ElectronicSignatureFrontendTranslations::all($locale)
             + ElectronicSignatureNotificationTranslations::all($locale)
