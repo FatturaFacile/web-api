@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Procurement\PurchaseRequisitionController as Mod
 use App\Http\Controllers\Api\V1\Procurement\RfqAttachmentController;
 use App\Http\Controllers\Api\V1\Procurement\RfqController;
 use Illuminate\Support\Facades\Route;
+use Modules\Procurement\Http\Controllers\DocumentFlowController;
 use Modules\Procurement\Http\Controllers\FrameworkAgreementController;
 use Modules\Procurement\Http\Controllers\InvoiceApprovalController;
 use Modules\Procurement\Http\Controllers\InvoiceMatchingController;
@@ -22,6 +23,7 @@ use Modules\Procurement\Http\Controllers\PurchaseReceiptController;
 use Modules\Procurement\Http\Controllers\PurchaseRequisitionController;
 use Modules\Procurement\Http\Controllers\PurchaseReturnController;
 use Modules\Procurement\Http\Controllers\PurchaseSuggestionController;
+use Modules\Procurement\Http\Controllers\SrmController;
 use Modules\Procurement\Http\Controllers\SupplierCatalogController;
 use Modules\Procurement\Http\Controllers\SupplierContractController;
 use Modules\Procurement\Http\Controllers\SupplierController;
@@ -155,6 +157,12 @@ Route::prefix('api/v1/procurement')
         Route::post('landed-costs/{id}/cancel', [LandedCostController::class, 'cancel'])->whereUuid('id')->name('procurement.landed-costs.cancel');
 
         // 15. Analytics
+        // SRM overview, composite supplier ratings and procure-to-pay document flow
+        Route::get('srm/dashboard', [SrmController::class, 'dashboard'])->name('procurement.srm.dashboard');
+        Route::get('srm/scorecards', [SrmController::class, 'scorecards'])->name('procurement.srm.scorecards');
+        Route::get('suppliers/{id}/srm-scorecard', [SrmController::class, 'supplierScorecard'])->whereUuid('id')->name('procurement.suppliers.srm-scorecard');
+        Route::get('document-flow/{type}/{id}', [DocumentFlowController::class, 'show'])->whereIn('type', ['requisition', 'rfq', 'purchase_order', 'goods_receipt', 'supplier_invoice', 'purchase_return'])->whereUuid('id')->name('procurement.document-flow.show');
+
         Route::get('analytics/spend', [ProcurementAnalyticsController::class, 'spend'])->name('procurement.analytics.spend');
         Route::get('analytics/open-orders', [ProcurementAnalyticsController::class, 'openOrders'])->name('procurement.analytics.open-orders');
         Route::get('analytics/price-variance', [ProcurementAnalyticsController::class, 'priceVariance'])->name('procurement.analytics.price-variance');

@@ -63,6 +63,7 @@ use Database\Seeders\Translations\RfqFrontendTranslations;
 use Database\Seeders\Translations\SalesPipelineFrontendTranslations;
 use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
 use Database\Seeders\Translations\ShiftPlanningFrontendTranslations;
+use Database\Seeders\Translations\SrmFrontendTranslations;
 use Database\Seeders\Translations\SupplierRebatesFrontendTranslations;
 use Database\Seeders\Translations\SwissQrBillSlipFrontendTranslations;
 use Database\Seeders\Translations\SwissVatFrontendTranslations;
@@ -157,7 +158,8 @@ class FrontendTranslationSeeder extends Seeder
             + AccrualsDeferralsFrontendTranslations::all($locale)
             + FixedAssetsFrontendTranslations::all($locale)
             + AcademyFrontendTranslations::all($locale)
-            + AgentCommissionsFrontendTranslations::all($locale);
+            + AgentCommissionsFrontendTranslations::all($locale)
+            + SrmFrontendTranslations::all($locale);
     }
 
     /**

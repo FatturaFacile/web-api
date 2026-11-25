@@ -14,15 +14,18 @@ enum SupplierQualificationStatus: string
     case InQualification = 'in_qualification';
     case Qualified = 'qualified';
     case Conditional = 'conditional';
+    case Preferred = 'preferred';
     case Expired = 'expired';
+    case Suspended = 'suspended';
     case Disqualified = 'disqualified';
+    case Blacklisted = 'blacklisted';
 
     /**
      * Whether purchase orders can be issued to a supplier in this status.
      */
     public function canOrder(): bool
     {
-        return in_array($this, [self::Qualified, self::Conditional], true);
+        return in_array($this, [self::Qualified, self::Conditional, self::Preferred], true);
     }
 
     /**
