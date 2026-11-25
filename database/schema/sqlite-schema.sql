@@ -53113,6 +53113,375 @@ CREATE INDEX "sfs_artifacts_dossier_id_kind_index" on "sfs_artifacts"(
   "kind"
 );
 CREATE INDEX "sfs_artifacts_tenant_id_index" on "sfs_artifacts"("tenant_id");
+CREATE TABLE "ptr_fleet_vehicles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "license_plate" varchar not null,
+  "vehicle_category" varchar not null,
+  "gross_weight_tons" numeric not null default '0',
+  "passenger_capacity" integer not null default '4',
+  "has_digital_tachograph" tinyint(1) not null default '0',
+  "psva_subject" tinyint(1) not null default '0',
+  "ncc_authorization_number" varchar,
+  "ncc_issuing_municipality" varchar,
+  "odometer_km" integer not null default '0',
+  "active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ptr_fleet_vehicles_tenant_id_license_plate_unique" on "ptr_fleet_vehicles"(
+  "tenant_id",
+  "license_plate"
+);
+CREATE INDEX "ptr_fleet_vehicles_tenant_id_index" on "ptr_fleet_vehicles"(
+  "tenant_id"
+);
+CREATE TABLE "ptr_driver_compliance_states"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "driver_employee_id" varchar not null,
+  "driving_license_number" varchar,
+  "driving_license_categories" text,
+  "driving_license_expiry_date" date,
+  "cqc_persone_number_it" varchar,
+  "cqc_persone_expiry_date" date,
+  "czv_certificate_number_ch" varchar,
+  "czv_expiry_date" date,
+  "tachograph_card_number" varchar,
+  "tachograph_card_expiry_date" date,
+  "daily_driving_minutes_used" integer not null default '0',
+  "extended_10h_days_used_this_week" integer not null default '0',
+  "continuous_driving_minutes_since_break" integer not null default '0',
+  "weekly_driving_minutes_used" integer not null default '0',
+  "biweekly_driving_minutes_used" integer not null default '0',
+  "last_daily_rest_duration_minutes" integer not null default '660',
+  "reduced_9h_rests_used_between_weekly_rests" integer not null default '0',
+  "last_weekly_rest_ended_at" datetime,
+  "available_for_next_trip" tinyint(1) not null default '1',
+  "next_mandatory_break_or_rest_at" datetime,
+  "counters_updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("driver_employee_id") references "hr_employees"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ptr_driver_compliance_states_tenant_id_driver_employee_id_unique" on "ptr_driver_compliance_states"(
+  "tenant_id",
+  "driver_employee_id"
+);
+CREATE INDEX "ptr_driver_compliance_states_tenant_id_index" on "ptr_driver_compliance_states"(
+  "tenant_id"
+);
+CREATE TABLE "ptr_ddd_archives"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "driver_employee_id" varchar,
+  "vehicle_id" varchar,
+  "file_type" varchar not null,
+  "original_name" varchar not null,
+  "storage_path" varchar not null,
+  "file_size" integer not null default '0',
+  "sha256" varchar not null,
+  "card_number" varchar,
+  "period_start" date,
+  "period_end" date,
+  "infringements_count" integer not null default '0',
+  "infringements_summary" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("driver_employee_id") references "hr_employees"("id") on delete set null,
+  foreign key("vehicle_id") references "ptr_fleet_vehicles"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ptr_ddd_archives_tenant_id_sha256_unique" on "ptr_ddd_archives"(
+  "tenant_id",
+  "sha256"
+);
+CREATE INDEX "ptr_ddd_archives_tenant_id_driver_employee_id_index" on "ptr_ddd_archives"(
+  "tenant_id",
+  "driver_employee_id"
+);
+CREATE INDEX "ptr_ddd_archives_tenant_id_index" on "ptr_ddd_archives"(
+  "tenant_id"
+);
+CREATE TABLE "ptr_driver_tachograph_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "driver_employee_id" varchar not null,
+  "ddd_archive_id" varchar,
+  "event_type" varchar not null,
+  "event_date" date not null,
+  "driving_minutes" integer not null default '0',
+  "work_minutes" integer not null default '0',
+  "longest_rest_minutes" integer not null default '0',
+  "infringement_code" varchar,
+  "infringement_minutes" integer not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("driver_employee_id") references "hr_employees"("id") on delete cascade,
+  foreign key("ddd_archive_id") references "ptr_ddd_archives"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ptr_driver_tachograph_events_tenant_id_driver_employee_id_event_date_index" on "ptr_driver_tachograph_events"(
+  "tenant_id",
+  "driver_employee_id",
+  "event_date"
+);
+CREATE INDEX "ptr_driver_tachograph_events_tenant_id_index" on "ptr_driver_tachograph_events"(
+  "tenant_id"
+);
+CREATE TABLE "ptr_hotel_concierge_contracts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contact_id" varchar not null,
+  "code" varchar not null,
+  "name" varchar not null,
+  "commission_rate" numeric not null default '0',
+  "currency" varchar not null default 'CHF',
+  "rate_card" text,
+  "valid_from" date,
+  "valid_to" date,
+  "billing_cycle" varchar not null default 'monthly',
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ptr_hotel_concierge_contracts_tenant_id_code_unique" on "ptr_hotel_concierge_contracts"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "ptr_hotel_concierge_contracts_tenant_id_index" on "ptr_hotel_concierge_contracts"(
+  "tenant_id"
+);
+CREATE TABLE "ptr_school_bus_contracts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contact_id" varchar not null,
+  "code" varchar not null,
+  "name" varchar not null,
+  "currency" varchar not null default 'EUR',
+  "rate_card" text,
+  "monthly_flat_amount" numeric,
+  "valid_from" date,
+  "valid_to" date,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ptr_school_bus_contracts_tenant_id_code_unique" on "ptr_school_bus_contracts"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "ptr_school_bus_contracts_tenant_id_index" on "ptr_school_bus_contracts"(
+  "tenant_id"
+);
+CREATE TABLE "ptr_school_bus_billings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "school_contract_id" varchar not null,
+  "period" varchar not null,
+  "invoice_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("school_contract_id") references "ptr_school_bus_contracts"("id") on delete cascade,
+  foreign key("invoice_id") references "invoices"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ptr_school_bus_billings_school_contract_id_period_unique" on "ptr_school_bus_billings"(
+  "school_contract_id",
+  "period"
+);
+CREATE INDEX "ptr_school_bus_billings_tenant_id_index" on "ptr_school_bus_billings"(
+  "tenant_id"
+);
+CREATE TABLE "ptr_bookings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "booking_code" varchar not null,
+  "service_type" varchar not null,
+  "status" varchar not null default 'draft',
+  "ordering_customer_id" varchar,
+  "b2b_concierge_user_id" varchar,
+  "hotel_contract_id" varchar,
+  "school_contract_id" varchar,
+  "lead_passenger_name" varchar,
+  "lead_passenger_phone" varchar,
+  "vip_welcome_sign_text" varchar,
+  "vip_welcome_logo_path" varchar,
+  "passengers_count" integer not null default '1',
+  "luggage_count" integer not null default '0',
+  "child_seats_spec" text,
+  "accessibility_notes" text,
+  "flight_or_train_number" varchar,
+  "flight_carrier_iata" varchar,
+  "arrival_airport_iata" varchar,
+  "scheduled_flight_arrival_at" datetime,
+  "estimated_flight_arrival_at" datetime,
+  "flight_status" varchar,
+  "flight_delay_minutes" integer not null default '0',
+  "flight_checked_at" datetime,
+  "pickup_datetime" datetime not null,
+  "estimated_dropoff_datetime" datetime,
+  "pickup_address" varchar not null,
+  "pickup_lat" numeric,
+  "pickup_lng" numeric,
+  "pickup_country_code" varchar not null default 'IT',
+  "dropoff_address" varchar not null,
+  "dropoff_lat" numeric,
+  "dropoff_lng" numeric,
+  "dropoff_country_code" varchar not null default 'IT',
+  "waypoints" text,
+  "total_distance_km" numeric not null default '0',
+  "it_territory_km" numeric not null default '0',
+  "ch_territory_km" numeric not null default '0',
+  "other_eu_territory_km" numeric not null default '0',
+  "border_crossing_point" varchar not null default 'none',
+  "agreed_price_net" numeric not null default '0',
+  "currency" varchar not null default 'EUR',
+  "vat_exemption_art23" tinyint(1) not null default '0',
+  "municipal_urban_service" tinyint(1) not null default '0',
+  "hotel_concierge_commission_rate" numeric,
+  "hotel_concierge_commission_amount" numeric not null default '0',
+  "exchange_direction" varchar not null default 'none',
+  "subcontracted_carrier_id" varchar,
+  "subcontractor_payout_amount" numeric not null default '0',
+  "assignor_commission_amount" numeric not null default '0',
+  "assigned_vehicle_id" varchar,
+  "assigned_driver_id" varchar,
+  "invoice_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ordering_customer_id") references "contacts"("id") on delete set null,
+  foreign key("hotel_contract_id") references "ptr_hotel_concierge_contracts"("id") on delete set null,
+  foreign key("school_contract_id") references "ptr_school_bus_contracts"("id") on delete set null,
+  foreign key("subcontracted_carrier_id") references "contacts"("id") on delete set null,
+  foreign key("assigned_vehicle_id") references "ptr_fleet_vehicles"("id") on delete set null,
+  foreign key("assigned_driver_id") references "hr_employees"("id") on delete set null,
+  foreign key("invoice_id") references "invoices"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ptr_bookings_tenant_id_booking_code_unique" on "ptr_bookings"(
+  "tenant_id",
+  "booking_code"
+);
+CREATE INDEX "ptr_bookings_tenant_id_pickup_datetime_index" on "ptr_bookings"(
+  "tenant_id",
+  "pickup_datetime"
+);
+CREATE INDEX "ptr_bookings_tenant_id_status_index" on "ptr_bookings"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "ptr_bookings_tenant_id_assigned_driver_id_index" on "ptr_bookings"(
+  "tenant_id",
+  "assigned_driver_id"
+);
+CREATE INDEX "ptr_bookings_tenant_id_assigned_vehicle_id_index" on "ptr_bookings"(
+  "tenant_id",
+  "assigned_vehicle_id"
+);
+CREATE INDEX "ptr_bookings_tenant_id_index" on "ptr_bookings"("tenant_id");
+CREATE TABLE "ptr_service_sheets"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "sheet_year" integer not null,
+  "progressive_sheet_number" integer not null,
+  "booking_id" varchar not null,
+  "vehicle_id" varchar,
+  "driver_employee_id" varchar,
+  "status" varchar not null default 'open',
+  "garage_departure_at" datetime,
+  "garage_departure_km" integer,
+  "service_start_at" datetime,
+  "service_start_km" integer,
+  "service_end_at" datetime,
+  "service_end_km" integer,
+  "garage_return_at" datetime,
+  "garage_return_km" integer,
+  "mit_fdse_protocol_code_it" varchar,
+  "mit_fdse_transmitted_at" datetime,
+  "interbus_eu_waybill_number" varchar,
+  "passenger_manifest" text,
+  "digital_signature_hash" varchar,
+  "pdf_storage_path" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("booking_id") references "ptr_bookings"("id") on delete cascade,
+  foreign key("vehicle_id") references "ptr_fleet_vehicles"("id") on delete set null,
+  foreign key("driver_employee_id") references "hr_employees"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ptr_service_sheets_progressive_unique" on "ptr_service_sheets"(
+  "tenant_id",
+  "sheet_year",
+  "progressive_sheet_number"
+);
+CREATE INDEX "ptr_service_sheets_tenant_id_booking_id_index" on "ptr_service_sheets"(
+  "tenant_id",
+  "booking_id"
+);
+CREATE INDEX "ptr_service_sheets_tenant_id_index" on "ptr_service_sheets"(
+  "tenant_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -53584,3 +53953,4 @@ INSERT INTO migrations VALUES(467,'2028_01_06_000100_create_tender_management_mo
 INSERT INTO migrations VALUES(468,'2028_01_06_000100_create_gdo_trade_terms_mod231_tables',27);
 INSERT INTO migrations VALUES(469,'2028_01_07_000100_create_industrial_laundry_mod177_tables',28);
 INSERT INTO migrations VALUES(470,'2028_01_07_000100_create_statutory_financials_mod167_tables',29);
+INSERT INTO migrations VALUES(471,'2028_01_06_000200_create_passenger_transport_mod176_tables',30);
