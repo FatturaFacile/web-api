@@ -32619,6 +32619,12 @@ CREATE TABLE "returns_settings"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "warranty_window_days" integer not null default '730',
+  "default_restocking_fee_percent" numeric not null default '10',
+  "advance_replacement_sla_days" integer not null default '15',
+  "outlet_devaluation_grade_b_percent" numeric not null default '20',
+  "outlet_devaluation_grade_c_percent" numeric not null default '35',
+  "outlet_warehouse_id" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -53783,6 +53789,2307 @@ CREATE INDEX "pos_welfare_voucher_redemptions_voucher_barcode_hash_index" on "po
 CREATE INDEX "pos_welfare_voucher_redemptions_settlement_batch_reference_index" on "pos_welfare_voucher_redemptions"(
   "settlement_batch_reference"
 );
+CREATE TABLE "sbc_customer_dossiers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "parent_dossier_id" varchar,
+  "contact_id" varchar,
+  "customer_code" varchar not null,
+  "company_name" varchar not null,
+  "hierarchy_role" varchar not null default 'b2c_consumer',
+  "country" varchar not null default 'CH',
+  "currency" varchar not null default 'CHF',
+  "uid_number" varchar,
+  "vat_number" varchar,
+  "fiscal_code" varchar,
+  "sdi_code" varchar,
+  "pec_email" varchar,
+  "qr_iban" varchar,
+  "addresses" text,
+  "contacts" text,
+  "credit_limit" numeric not null default '0',
+  "current_exposure" numeric not null default '0',
+  "overdue_balance" numeric not null default '0',
+  "insolvency_status" varchar not null default 'performing',
+  "risk_score" integer not null default '20',
+  "summary_360" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_customer_dossiers_tenant_id_customer_code_unique" on "sbc_customer_dossiers"(
+  "tenant_id",
+  "customer_code"
+);
+CREATE INDEX "sbc_customer_dossiers_tenant_id_index" on "sbc_customer_dossiers"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_customer_dossiers_parent_dossier_id_index" on "sbc_customer_dossiers"(
+  "parent_dossier_id"
+);
+CREATE INDEX "sbc_customer_dossiers_contact_id_index" on "sbc_customer_dossiers"(
+  "contact_id"
+);
+CREATE TABLE "sbc_omnichannel_leads"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "duplicate_of_id" varchar,
+  "converted_dossier_id" varchar,
+  "lead_code" varchar not null,
+  "source_channel" varchar not null default 'web_form',
+  "full_name" varchar not null,
+  "company_name" varchar,
+  "email" varchar,
+  "phone" varchar,
+  "country" varchar not null default 'CH',
+  "fiscal_identifier" varchar,
+  "dedup_hash" varchar not null,
+  "is_duplicate" tinyint(1) not null default '0',
+  "demographic_score" integer not null default '0',
+  "behavioral_score" integer not null default '0',
+  "firmographic_score" integer not null default '0',
+  "total_score" integer not null default '0',
+  "lifecycle_stage" varchar not null default 'captured',
+  "assigned_rep_name" varchar,
+  "assigned_territory" varchar,
+  "routing_rule_applied" varchar,
+  "utm_metadata" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_omnichannel_leads_tenant_id_lead_code_unique" on "sbc_omnichannel_leads"(
+  "tenant_id",
+  "lead_code"
+);
+CREATE INDEX "sbc_omnichannel_leads_tenant_id_index" on "sbc_omnichannel_leads"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_omnichannel_leads_duplicate_of_id_index" on "sbc_omnichannel_leads"(
+  "duplicate_of_id"
+);
+CREATE INDEX "sbc_omnichannel_leads_converted_dossier_id_index" on "sbc_omnichannel_leads"(
+  "converted_dossier_id"
+);
+CREATE INDEX "sbc_omnichannel_leads_dedup_hash_index" on "sbc_omnichannel_leads"(
+  "dedup_hash"
+);
+CREATE TABLE "sbc_opportunity_forecasts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar,
+  "lead_id" varchar,
+  "opportunity_code" varchar not null,
+  "title" varchar not null,
+  "kanban_stage" varchar not null default 'prospecting',
+  "win_probability_pct" numeric not null default '20',
+  "gross_amount" numeric not null default '0',
+  "weighted_amount" numeric not null default '0',
+  "currency" varchar not null default 'CHF',
+  "forecast_category" varchar not null default 'pipeline',
+  "sales_quota_target" numeric not null default '100000',
+  "quota_attainment_pct" numeric not null default '0',
+  "owner_name" varchar,
+  "expected_close_date" date,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_opportunity_forecasts_tenant_id_opportunity_code_unique" on "sbc_opportunity_forecasts"(
+  "tenant_id",
+  "opportunity_code"
+);
+CREATE INDEX "sbc_opportunity_forecasts_tenant_id_index" on "sbc_opportunity_forecasts"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_opportunity_forecasts_dossier_id_index" on "sbc_opportunity_forecasts"(
+  "dossier_id"
+);
+CREATE INDEX "sbc_opportunity_forecasts_lead_id_index" on "sbc_opportunity_forecasts"(
+  "lead_id"
+);
+CREATE TABLE "sbc_cpq_quotes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "parent_quote_id" varchar,
+  "dossier_id" varchar,
+  "opportunity_id" varchar,
+  "quote_number" varchar not null,
+  "version_number" integer not null default '1',
+  "title" varchar not null,
+  "valid_until" date,
+  "currency" varchar not null default 'CHF',
+  "payment_terms_code" varchar not null default 'NET_30',
+  "lines" text,
+  "total_net" numeric not null default '0',
+  "total_tax" numeric not null default '0',
+  "total_gross" numeric not null default '0',
+  "signature_standard" varchar not null default 'zertes_qes',
+  "signature_status" varchar not null default 'pending',
+  "signature_audit_trail" text,
+  "converted_order_id" varchar,
+  "converted_invoice_id" varchar,
+  "status" varchar not null default 'draft',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_cpq_quotes_tenant_id_quote_number_version_number_unique" on "sbc_cpq_quotes"(
+  "tenant_id",
+  "quote_number",
+  "version_number"
+);
+CREATE INDEX "sbc_cpq_quotes_tenant_id_index" on "sbc_cpq_quotes"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_cpq_quotes_parent_quote_id_index" on "sbc_cpq_quotes"(
+  "parent_quote_id"
+);
+CREATE INDEX "sbc_cpq_quotes_dossier_id_index" on "sbc_cpq_quotes"(
+  "dossier_id"
+);
+CREATE INDEX "sbc_cpq_quotes_opportunity_id_index" on "sbc_cpq_quotes"(
+  "opportunity_id"
+);
+CREATE INDEX "sbc_cpq_quotes_converted_order_id_index" on "sbc_cpq_quotes"(
+  "converted_order_id"
+);
+CREATE INDEX "sbc_cpq_quotes_converted_invoice_id_index" on "sbc_cpq_quotes"(
+  "converted_invoice_id"
+);
+CREATE TABLE "sbc_framework_orders"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "framework_order_id" varchar,
+  "dossier_id" varchar,
+  "quote_id" varchar,
+  "order_number" varchar not null,
+  "order_kind" varchar not null default 'sales_order',
+  "currency" varchar not null default 'CHF',
+  "ceiling_amount" numeric not null default '0',
+  "released_amount" numeric not null default '0',
+  "remaining_ceiling" numeric not null default '0',
+  "valid_from" date,
+  "valid_to" date,
+  "atp_qty" numeric not null default '0',
+  "ctp_qty" numeric not null default '0',
+  "requested_qty" numeric not null default '0',
+  "reserved_stock_qty" numeric not null default '0',
+  "shipped_qty" numeric not null default '0',
+  "backorder_qty" numeric not null default '0',
+  "total_amount" numeric not null default '0',
+  "fulfillment_status" varchar not null default 'reserved',
+  "lines" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_framework_orders_tenant_id_order_number_unique" on "sbc_framework_orders"(
+  "tenant_id",
+  "order_number"
+);
+CREATE INDEX "sbc_framework_orders_tenant_id_index" on "sbc_framework_orders"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_framework_orders_framework_order_id_index" on "sbc_framework_orders"(
+  "framework_order_id"
+);
+CREATE INDEX "sbc_framework_orders_dossier_id_index" on "sbc_framework_orders"(
+  "dossier_id"
+);
+CREATE INDEX "sbc_framework_orders_quote_id_index" on "sbc_framework_orders"(
+  "quote_id"
+);
+CREATE TABLE "sbc_pricing_guardrails"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "rule_code" varchar not null,
+  "name" varchar not null,
+  "currency" varchar not null default 'CHF',
+  "customer_segment" varchar not null default 'enterprise',
+  "base_unit_price" numeric not null default '0',
+  "unit_cost" numeric not null default '0',
+  "cascading_discounts" text,
+  "tier_breaks" text,
+  "promo_code" varchar,
+  "promo_discount_pct" numeric not null default '0',
+  "resolved_net_price" numeric not null default '0',
+  "calculated_margin_pct" numeric not null default '0',
+  "min_margin_pct" numeric not null default '15',
+  "guardrail_breached" tinyint(1) not null default '0',
+  "approval_status" varchar not null default 'auto_approved',
+  "approved_by_name" varchar,
+  "breach_audit_log" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_pricing_guardrails_tenant_id_rule_code_unique" on "sbc_pricing_guardrails"(
+  "tenant_id",
+  "rule_code"
+);
+CREATE INDEX "sbc_pricing_guardrails_tenant_id_index" on "sbc_pricing_guardrails"(
+  "tenant_id"
+);
+CREATE TABLE "sbc_recurring_subscriptions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar,
+  "contract_code" varchar not null,
+  "plan_name" varchar not null,
+  "billing_cycle" varchar not null default 'monthly',
+  "currency" varchar not null default 'CHF',
+  "base_recurring_amount" numeric not null default '0',
+  "pro_rata_adjustment_amount" numeric not null default '0',
+  "indexation_type" varchar not null default 'SWISS_LIK',
+  "last_index_rate_pct" numeric not null default '0',
+  "revalued_amount" numeric not null default '0',
+  "mrr_amount" numeric not null default '0',
+  "arr_amount" numeric not null default '0',
+  "lifecycle_status" varchar not null default 'active',
+  "churn_reason" varchar,
+  "next_billing_date" date,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_recurring_subscriptions_tenant_id_contract_code_unique" on "sbc_recurring_subscriptions"(
+  "tenant_id",
+  "contract_code"
+);
+CREATE INDEX "sbc_recurring_subscriptions_tenant_id_index" on "sbc_recurring_subscriptions"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_recurring_subscriptions_dossier_id_index" on "sbc_recurring_subscriptions"(
+  "dossier_id"
+);
+CREATE TABLE "sbc_ddt_invoices"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar,
+  "sales_order_id" varchar,
+  "related_document_id" varchar,
+  "document_kind" varchar not null default 'ddt_it',
+  "document_number" varchar not null,
+  "sdi_doc_type" varchar,
+  "qr_bill_reference" varchar,
+  "grouped_ddt_numbers" text,
+  "is_drop_shipping" tinyint(1) not null default '0',
+  "drop_ship_supplier_name" varchar,
+  "currency" varchar not null default 'EUR',
+  "total_net" numeric not null default '0',
+  "total_tax" numeric not null default '0',
+  "total_gross" numeric not null default '0',
+  "issue_date" date not null,
+  "status" varchar not null default 'issued',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_ddt_invoices_tenant_id_document_number_unique" on "sbc_ddt_invoices"(
+  "tenant_id",
+  "document_number"
+);
+CREATE INDEX "sbc_ddt_invoices_tenant_id_index" on "sbc_ddt_invoices"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_ddt_invoices_dossier_id_index" on "sbc_ddt_invoices"(
+  "dossier_id"
+);
+CREATE INDEX "sbc_ddt_invoices_sales_order_id_index" on "sbc_ddt_invoices"(
+  "sales_order_id"
+);
+CREATE INDEX "sbc_ddt_invoices_related_document_id_index" on "sbc_ddt_invoices"(
+  "related_document_id"
+);
+CREATE TABLE "sbc_commission_statements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "statement_number" varchar not null,
+  "agent_name" varchar not null,
+  "agent_jurisdiction" varchar not null default 'IT',
+  "accrual_basis" varchar not null default 'collected',
+  "period_label" varchar not null,
+  "currency" varchar not null default 'EUR',
+  "commissionable_base" numeric not null default '0',
+  "tier_rules" text,
+  "split_override_pct" numeric not null default '100',
+  "gross_commission_amount" numeric not null default '0',
+  "enasarco_company_amount" numeric not null default '0',
+  "enasarco_agent_withholding" numeric not null default '0',
+  "firr_accrual_amount" numeric not null default '0',
+  "net_payable_amount" numeric not null default '0',
+  "status" varchar not null default 'calculated',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_commission_statements_tenant_id_statement_number_unique" on "sbc_commission_statements"(
+  "tenant_id",
+  "statement_number"
+);
+CREATE INDEX "sbc_commission_statements_tenant_id_index" on "sbc_commission_statements"(
+  "tenant_id"
+);
+CREATE TABLE "sbc_portal_transactions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar,
+  "ddt_invoice_id" varchar,
+  "transaction_code" varchar not null,
+  "transaction_type" varchar not null default 'online_payment',
+  "payment_provider" varchar not null default 'twint',
+  "amount" numeric not null default '0',
+  "currency" varchar not null default 'CHF',
+  "open_balance_after" numeric not null default '0',
+  "qr_bill_reference" varchar,
+  "payment_reference" varchar,
+  "support_subject" varchar,
+  "support_status" varchar,
+  "settled_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_portal_transactions_tenant_id_transaction_code_unique" on "sbc_portal_transactions"(
+  "tenant_id",
+  "transaction_code"
+);
+CREATE INDEX "sbc_portal_transactions_tenant_id_index" on "sbc_portal_transactions"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_portal_transactions_dossier_id_index" on "sbc_portal_transactions"(
+  "dossier_id"
+);
+CREATE INDEX "sbc_portal_transactions_ddt_invoice_id_index" on "sbc_portal_transactions"(
+  "ddt_invoice_id"
+);
+CREATE TABLE "sbc_marketing_campaigns"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar,
+  "campaign_code" varchar not null,
+  "name" varchar not null,
+  "channel" varchar not null default 'dem_email',
+  "rfm_recency_score" integer not null default '5',
+  "rfm_frequency_score" integer not null default '4',
+  "rfm_monetary_score" integer not null default '5',
+  "rfm_segment" varchar not null default 'champions',
+  "journey_definition" text,
+  "exclude_insolvent_overdue" tinyint(1) not null default '1',
+  "excluded_insolvent_count" integer not null default '0',
+  "gdpr_nlpd_lcsl_consent_verified" tinyint(1) not null default '1',
+  "opted_out_suppressed_count" integer not null default '0',
+  "eligible_recipients_count" integer not null default '0',
+  "campaign_cost" numeric not null default '0',
+  "attributed_revenue" numeric not null default '0',
+  "roi_pct" numeric not null default '0',
+  "currency" varchar not null default 'CHF',
+  "status" varchar not null default 'active',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_marketing_campaigns_tenant_id_campaign_code_unique" on "sbc_marketing_campaigns"(
+  "tenant_id",
+  "campaign_code"
+);
+CREATE INDEX "sbc_marketing_campaigns_tenant_id_index" on "sbc_marketing_campaigns"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_marketing_campaigns_dossier_id_index" on "sbc_marketing_campaigns"(
+  "dossier_id"
+);
+CREATE TABLE "sbc_public_private_tenders"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar,
+  "converted_order_id" varchar,
+  "tender_code" varchar not null,
+  "title" varchar not null,
+  "procurement_framework" varchar not null default 'simap_ch_lapub',
+  "contracting_authority" varchar not null,
+  "cig_code" varchar,
+  "cup_code" varchar,
+  "soa_category" varchar,
+  "edgue_status" varchar not null default 'verified',
+  "fvoe_passoe_ref" varchar,
+  "qualification_vault" text,
+  "admin_envelope_status" varchar not null default 'sealed',
+  "technical_envelope_score" numeric not null default '0',
+  "economic_envelope_score" numeric not null default '0',
+  "total_award_score" numeric not null default '0',
+  "bid_amount" numeric not null default '0',
+  "currency" varchar not null default 'CHF',
+  "pipeline_stage" varchar not null default 'submitted',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_public_private_tenders_tenant_id_tender_code_unique" on "sbc_public_private_tenders"(
+  "tenant_id",
+  "tender_code"
+);
+CREATE INDEX "sbc_public_private_tenders_tenant_id_index" on "sbc_public_private_tenders"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_public_private_tenders_dossier_id_index" on "sbc_public_private_tenders"(
+  "dossier_id"
+);
+CREATE INDEX "sbc_public_private_tenders_converted_order_id_index" on "sbc_public_private_tenders"(
+  "converted_order_id"
+);
+CREATE TABLE "sbc_cpq_configurations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar,
+  "quote_id" varchar,
+  "configuration_code" varchar not null,
+  "product_family" varchar not null,
+  "selected_options" text,
+  "compatibility_rules_evaluated" text,
+  "has_constraint_conflict" tinyint(1) not null default '0',
+  "conflict_messages" text,
+  "super_bom_items" text,
+  "routing_operations" text,
+  "total_bom_cost" numeric not null default '0',
+  "configured_list_price" numeric not null default '0',
+  "net_configured_price" numeric not null default '0',
+  "calculated_margin_pct" numeric not null default '0',
+  "currency" varchar not null default 'CHF',
+  "status" varchar not null default 'validated',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_cpq_configurations_tenant_id_configuration_code_unique" on "sbc_cpq_configurations"(
+  "tenant_id",
+  "configuration_code"
+);
+CREATE INDEX "sbc_cpq_configurations_tenant_id_index" on "sbc_cpq_configurations"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_cpq_configurations_dossier_id_index" on "sbc_cpq_configurations"(
+  "dossier_id"
+);
+CREATE INDEX "sbc_cpq_configurations_quote_id_index" on "sbc_cpq_configurations"(
+  "quote_id"
+);
+CREATE TABLE "sbc_gdo_rebate_agreements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar,
+  "settlement_credit_note_id" varchar,
+  "agreement_code" varchar not null,
+  "gdo_chain_name" varchar not null,
+  "contract_year" integer not null default '2026',
+  "currency" varchar not null default 'EUR',
+  "tier_brackets" text,
+  "sell_in_volume_amount" numeric not null default '0',
+  "sell_out_promo_contribution" numeric not null default '0',
+  "resolved_tier_rate_pct" numeric not null default '0',
+  "annual_pfa_rebate_amount" numeric not null default '0',
+  "monthly_accrual_rateo" numeric not null default '0',
+  "accrued_months_count" integer not null default '1',
+  "total_provisioned_accrual" numeric not null default '0',
+  "settlement_status" varchar not null default 'accruing',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_gdo_rebate_agreements_tenant_id_agreement_code_unique" on "sbc_gdo_rebate_agreements"(
+  "tenant_id",
+  "agreement_code"
+);
+CREATE INDEX "sbc_gdo_rebate_agreements_tenant_id_index" on "sbc_gdo_rebate_agreements"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_gdo_rebate_agreements_dossier_id_index" on "sbc_gdo_rebate_agreements"(
+  "dossier_id"
+);
+CREATE INDEX "sbc_gdo_rebate_agreements_settlement_credit_note_id_index" on "sbc_gdo_rebate_agreements"(
+  "settlement_credit_note_id"
+);
+CREATE TABLE "sbc_reverse_logistics_returns"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar,
+  "original_invoice_id" varchar,
+  "credit_note_document_id" varchar,
+  "rma_number" varchar not null,
+  "return_reason" varchar not null,
+  "is_advance_cross_shipping" tinyint(1) not null default '0',
+  "replacement_shipment_ref" varchar,
+  "b_stock_grade" varchar not null default 'grade_b_refurbished',
+  "inventory_disposition" varchar not null default 'b_stock_outlet',
+  "original_invoice_date" date,
+  "days_since_invoice" integer not null default '0',
+  "art26_dpr633_72_vat_recoverable" tinyint(1) not null default '1',
+  "art26_compliance_note" varchar,
+  "return_net_amount" numeric not null default '0',
+  "return_vat_amount" numeric not null default '0',
+  "credit_note_gross_amount" numeric not null default '0',
+  "currency" varchar not null default 'EUR',
+  "status" varchar not null default 'rma_authorized',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_reverse_logistics_returns_tenant_id_rma_number_unique" on "sbc_reverse_logistics_returns"(
+  "tenant_id",
+  "rma_number"
+);
+CREATE INDEX "sbc_reverse_logistics_returns_tenant_id_index" on "sbc_reverse_logistics_returns"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_reverse_logistics_returns_dossier_id_index" on "sbc_reverse_logistics_returns"(
+  "dossier_id"
+);
+CREATE INDEX "sbc_reverse_logistics_returns_original_invoice_id_index" on "sbc_reverse_logistics_returns"(
+  "original_invoice_id"
+);
+CREATE INDEX "sbc_reverse_logistics_returns_credit_note_document_id_index" on "sbc_reverse_logistics_returns"(
+  "credit_note_document_id"
+);
+CREATE TABLE "sbc_van_selling_routes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "route_code" varchar not null,
+  "driver_agent_name" varchar not null,
+  "vehicle_plate" varchar not null,
+  "traveling_warehouse_code" varchar not null,
+  "document_series_sezionale" varchar not null,
+  "loaded_stock_qty" numeric not null default '0',
+  "sold_stock_qty" numeric not null default '0',
+  "returned_unsold_qty" numeric not null default '0',
+  "stock_variance_qty" numeric not null default '0',
+  "expected_cash_amount" numeric not null default '0',
+  "collected_cash_amount" numeric not null default '0',
+  "electronic_payment_amount" numeric not null default '0',
+  "cash_discrepancy_amount" numeric not null default '0',
+  "currency" varchar not null default 'CHF',
+  "bluetooth_escpos_payload" text,
+  "offline_sync_batch_id" varchar,
+  "reconciliation_status" varchar not null default 'reconciled_balanced',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_van_selling_routes_tenant_id_route_code_unique" on "sbc_van_selling_routes"(
+  "tenant_id",
+  "route_code"
+);
+CREATE INDEX "sbc_van_selling_routes_tenant_id_index" on "sbc_van_selling_routes"(
+  "tenant_id"
+);
+CREATE TABLE "sbc_franchising_affiliates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar,
+  "affiliate_code" varchar not null,
+  "franchisor_brand" varchar not null,
+  "store_name" varchar not null,
+  "country" varchar not null default 'CH',
+  "currency" varchar not null default 'CHF',
+  "sell_out_turnover" numeric not null default '0',
+  "royalty_rate_pct" numeric not null default '5',
+  "marketing_fund_rate_pct" numeric not null default '2',
+  "calculated_royalty_amount" numeric not null default '0',
+  "calculated_marketing_fund_amount" numeric not null default '0',
+  "total_fee_invoiceable" numeric not null default '0',
+  "pushed_price_list_version" varchar not null default 'PL-FRANCHISE-2026-V1',
+  "network_avg_turnover" numeric not null default '100000',
+  "benchmark_index_pct" numeric not null default '100',
+  "status" varchar not null default 'royalties_invoiced',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_franchising_affiliates_tenant_id_affiliate_code_unique" on "sbc_franchising_affiliates"(
+  "tenant_id",
+  "affiliate_code"
+);
+CREATE INDEX "sbc_franchising_affiliates_tenant_id_index" on "sbc_franchising_affiliates"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_franchising_affiliates_dossier_id_index" on "sbc_franchising_affiliates"(
+  "dossier_id"
+);
+CREATE TABLE "sbc_post_delivery_surveys"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar,
+  "ddt_invoice_id" varchar,
+  "survey_code" varchar not null,
+  "trigger_event" varchar not null default 'post_delivery_ddt',
+  "nps_score" integer not null default '9',
+  "csat_score" integer not null default '5',
+  "ces_score" integer not null default '6',
+  "nps_classification" varchar not null default 'promoter',
+  "detractor_recovery_alert_triggered" tinyint(1) not null default '0',
+  "recovery_action_owner" varchar,
+  "recovery_resolution_status" varchar not null default 'none',
+  "iso9001_clause_ref" varchar not null default 'ISO-9001:2015-9.1.2',
+  "iso9001_satisfaction_index" numeric not null default '90',
+  "verbatim_feedback" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_post_delivery_surveys_tenant_id_survey_code_unique" on "sbc_post_delivery_surveys"(
+  "tenant_id",
+  "survey_code"
+);
+CREATE INDEX "sbc_post_delivery_surveys_tenant_id_index" on "sbc_post_delivery_surveys"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_post_delivery_surveys_dossier_id_index" on "sbc_post_delivery_surveys"(
+  "dossier_id"
+);
+CREATE INDEX "sbc_post_delivery_surveys_ddt_invoice_id_index" on "sbc_post_delivery_surveys"(
+  "ddt_invoice_id"
+);
+CREATE TABLE "sbc_corporate_welfare_conventions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "partner_dossier_id" varchar,
+  "convention_code" varchar not null,
+  "partner_company_name" varchar not null,
+  "corporate_email_domain" varchar not null,
+  "employee_email" varchar not null,
+  "cral_badge_number" varchar not null,
+  "domain_and_cral_verified" tinyint(1) not null default '1',
+  "welfare_regime" varchar not null default 'it_art51_tuir',
+  "voucher_provider" varchar not null default 'Edenred / Reka',
+  "gross_basket_amount" numeric not null default '0',
+  "convention_discount_pct" numeric not null default '10',
+  "discounted_net_amount" numeric not null default '0',
+  "employer_welfare_quota_amount" numeric not null default '0',
+  "employee_copay_quota_amount" numeric not null default '0',
+  "regime_annual_limit" numeric not null default '1000',
+  "within_statutory_exemption" tinyint(1) not null default '1',
+  "currency" varchar not null default 'EUR',
+  "status" varchar not null default 'split_billed',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sbc_corporate_welfare_conventions_tenant_id_convention_code_unique" on "sbc_corporate_welfare_conventions"(
+  "tenant_id",
+  "convention_code"
+);
+CREATE INDEX "sbc_corporate_welfare_conventions_tenant_id_index" on "sbc_corporate_welfare_conventions"(
+  "tenant_id"
+);
+CREATE INDEX "sbc_corporate_welfare_conventions_partner_dossier_id_index" on "sbc_corporate_welfare_conventions"(
+  "partner_dossier_id"
+);
+CREATE TABLE "customer_returns"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "rma_id" varchar,
+  "rma_number" varchar not null,
+  "rma_barcode" varchar not null,
+  "return_tracking_number" varchar,
+  "carrier" varchar,
+  "contact_id" varchar not null,
+  "invoice_id" varchar,
+  "delivery_note_id" varchar,
+  "sales_order_id" varchar,
+  "warehouse_id" varchar,
+  "reason_code" varchar not null,
+  "channel" varchar not null default 'backoffice',
+  "status" varchar not null default 'requested',
+  "requested_on" date not null,
+  "within_return_window" tinyint(1) not null default '1',
+  "within_warranty_window" tinyint(1) not null default '1',
+  "window_overridden" tinyint(1) not null default '0',
+  "days_since_purchase" integer not null default '0',
+  "restocking_fee_applicable" tinyint(1) not null default '0',
+  "restocking_fee_percent" numeric not null default '0',
+  "restocking_fee_amount" numeric not null default '0',
+  "gross_return_amount" numeric not null default '0',
+  "net_refundable_amount" numeric not null default '0',
+  "photo_urls" text,
+  "customer_notes" text,
+  "internal_notes" text,
+  "resolution_type" varchar,
+  "credit_note_id" varchar,
+  "credit_note_reference" varchar,
+  "approved_at" datetime,
+  "approved_by" varchar,
+  "received_at" datetime,
+  "inspected_at" datetime,
+  "resolved_at" datetime,
+  "closed_at" datetime,
+  "rejected_at" datetime,
+  "rejection_reason" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "customer_returns_tenant_id_rma_number_unique" on "customer_returns"(
+  "tenant_id",
+  "rma_number"
+);
+CREATE INDEX "customer_returns_tenant_id_status_index" on "customer_returns"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "customer_returns_tenant_id_contact_id_index" on "customer_returns"(
+  "tenant_id",
+  "contact_id"
+);
+CREATE INDEX "customer_returns_tenant_id_requested_on_index" on "customer_returns"(
+  "tenant_id",
+  "requested_on"
+);
+CREATE INDEX "customer_returns_tenant_id_index" on "customer_returns"(
+  "tenant_id"
+);
+CREATE INDEX "customer_returns_rma_id_index" on "customer_returns"("rma_id");
+CREATE INDEX "customer_returns_invoice_id_index" on "customer_returns"(
+  "invoice_id"
+);
+CREATE INDEX "customer_returns_delivery_note_id_index" on "customer_returns"(
+  "delivery_note_id"
+);
+CREATE INDEX "customer_returns_sales_order_id_index" on "customer_returns"(
+  "sales_order_id"
+);
+CREATE INDEX "customer_returns_credit_note_id_index" on "customer_returns"(
+  "credit_note_id"
+);
+CREATE TABLE "customer_return_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_return_id" varchar not null,
+  "invoice_item_id" varchar,
+  "delivery_note_item_id" varchar,
+  "sales_order_item_id" varchar,
+  "product_id" varchar not null,
+  "description" varchar not null,
+  "quantity" numeric not null,
+  "quantity_received" numeric not null default '0',
+  "quantity_inspected" numeric not null default '0',
+  "unit_price" numeric not null default '0',
+  "tax_rate" numeric not null default '22',
+  "serial_number" varchar,
+  "lot_number" varchar,
+  "reason_code" varchar,
+  "grade" varchar,
+  "disposition" varchar,
+  "photo_urls" text,
+  "inspection_notes" text,
+  "stock_movement_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_return_id") references "customer_returns"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "customer_return_lines_tenant_id_customer_return_id_index" on "customer_return_lines"(
+  "tenant_id",
+  "customer_return_id"
+);
+CREATE INDEX "customer_return_lines_tenant_id_product_id_index" on "customer_return_lines"(
+  "tenant_id",
+  "product_id"
+);
+CREATE INDEX "customer_return_lines_tenant_id_index" on "customer_return_lines"(
+  "tenant_id"
+);
+CREATE INDEX "customer_return_lines_invoice_item_id_index" on "customer_return_lines"(
+  "invoice_item_id"
+);
+CREATE INDEX "customer_return_lines_delivery_note_item_id_index" on "customer_return_lines"(
+  "delivery_note_item_id"
+);
+CREATE INDEX "customer_return_lines_sales_order_item_id_index" on "customer_return_lines"(
+  "sales_order_item_id"
+);
+CREATE INDEX "customer_return_lines_product_id_index" on "customer_return_lines"(
+  "product_id"
+);
+CREATE TABLE "advance_replacements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "replacement_number" varchar not null,
+  "customer_return_id" varchar,
+  "rma_id" varchar,
+  "contact_id" varchar not null,
+  "original_invoice_id" varchar,
+  "faulty_product_id" varchar not null,
+  "faulty_serial_number" varchar,
+  "replacement_product_id" varchar not null,
+  "replacement_serial_number" varchar,
+  "replacement_unit_type" varchar not null default 'new',
+  "refurbished_item_id" varchar,
+  "quantity" numeric not null default '1',
+  "warehouse_id" varchar,
+  "outbound_delivery_note_id" varchar,
+  "outbound_stock_movement_id" varchar,
+  "status" varchar not null default 'pending_defective_return',
+  "shipped_on" date not null,
+  "sla_days" integer not null default '15',
+  "return_due_on" date not null,
+  "defective_received_at" datetime,
+  "penalty_amount" numeric not null default '0',
+  "currency" varchar not null default 'EUR',
+  "penalty_invoice_id" varchar,
+  "penalty_invoice_number" varchar,
+  "billed_at" datetime,
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "advance_replacements_tenant_id_replacement_number_unique" on "advance_replacements"(
+  "tenant_id",
+  "replacement_number"
+);
+CREATE INDEX "advance_replacements_tenant_id_status_index" on "advance_replacements"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "advance_replacements_tenant_id_return_due_on_index" on "advance_replacements"(
+  "tenant_id",
+  "return_due_on"
+);
+CREATE INDEX "advance_replacements_tenant_id_index" on "advance_replacements"(
+  "tenant_id"
+);
+CREATE INDEX "advance_replacements_customer_return_id_index" on "advance_replacements"(
+  "customer_return_id"
+);
+CREATE INDEX "advance_replacements_rma_id_index" on "advance_replacements"(
+  "rma_id"
+);
+CREATE INDEX "advance_replacements_original_invoice_id_index" on "advance_replacements"(
+  "original_invoice_id"
+);
+CREATE INDEX "advance_replacements_faulty_product_id_index" on "advance_replacements"(
+  "faulty_product_id"
+);
+CREATE INDEX "advance_replacements_replacement_product_id_index" on "advance_replacements"(
+  "replacement_product_id"
+);
+CREATE INDEX "advance_replacements_refurbished_item_id_index" on "advance_replacements"(
+  "refurbished_item_id"
+);
+CREATE INDEX "advance_replacements_penalty_invoice_id_index" on "advance_replacements"(
+  "penalty_invoice_id"
+);
+CREATE TABLE "return_grading_inspections"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "inspection_number" varchar not null,
+  "customer_return_id" varchar,
+  "customer_return_line_id" varchar,
+  "rma_id" varchar,
+  "rma_line_id" varchar,
+  "product_id" varchar not null,
+  "serial_number" varchar,
+  "lot_number" varchar,
+  "quantity_inspected" numeric not null default '1',
+  "grade" varchar not null,
+  "disposition" varchar not null,
+  "checklist" text,
+  "photo_urls" text not null,
+  "original_unit_cost" numeric not null default '0',
+  "devaluation_percent" numeric not null default '0',
+  "revalued_unit_cost" numeric not null default '0',
+  "target_warehouse_id" varchar,
+  "supplier_id" varchar,
+  "supplier_return_id" varchar,
+  "refurbished_item_id" varchar,
+  "stock_movement_id" varchar,
+  "inspector_notes" text,
+  "inspected_by" varchar,
+  "inspected_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "return_grading_inspections_tenant_id_inspection_number_unique" on "return_grading_inspections"(
+  "tenant_id",
+  "inspection_number"
+);
+CREATE INDEX "return_grading_inspections_tenant_id_grade_index" on "return_grading_inspections"(
+  "tenant_id",
+  "grade"
+);
+CREATE INDEX "return_grading_inspections_tenant_id_product_id_index" on "return_grading_inspections"(
+  "tenant_id",
+  "product_id"
+);
+CREATE INDEX "return_grading_inspections_tenant_id_index" on "return_grading_inspections"(
+  "tenant_id"
+);
+CREATE INDEX "return_grading_inspections_customer_return_id_index" on "return_grading_inspections"(
+  "customer_return_id"
+);
+CREATE INDEX "return_grading_inspections_customer_return_line_id_index" on "return_grading_inspections"(
+  "customer_return_line_id"
+);
+CREATE INDEX "return_grading_inspections_rma_id_index" on "return_grading_inspections"(
+  "rma_id"
+);
+CREATE INDEX "return_grading_inspections_rma_line_id_index" on "return_grading_inspections"(
+  "rma_line_id"
+);
+CREATE INDEX "return_grading_inspections_product_id_index" on "return_grading_inspections"(
+  "product_id"
+);
+CREATE INDEX "return_grading_inspections_refurbished_item_id_index" on "return_grading_inspections"(
+  "refurbished_item_id"
+);
+CREATE TABLE "refurbished_items"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "refurbished_sku" varchar not null,
+  "original_product_id" varchar not null,
+  "refurbished_product_id" varchar,
+  "return_grading_inspection_id" varchar,
+  "customer_return_id" varchar,
+  "rma_id" varchar,
+  "grade" varchar not null,
+  "serial_number" varchar,
+  "lot_number" varchar,
+  "quantity" numeric not null default '1',
+  "original_cost" numeric not null default '0',
+  "devaluation_percent" numeric not null default '20',
+  "refurbishment_cost" numeric not null default '0',
+  "new_unit_cost" numeric not null default '0',
+  "suggested_sale_price" numeric not null default '0',
+  "warehouse_id" varchar,
+  "work_order_status" varchar not null default 'completed',
+  "work_order_steps" text,
+  "stock_movement_id" varchar,
+  "is_available" tinyint(1) not null default '1',
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "refurbished_items_tenant_id_refurbished_sku_unique" on "refurbished_items"(
+  "tenant_id",
+  "refurbished_sku"
+);
+CREATE INDEX "refurbished_items_tenant_id_grade_index" on "refurbished_items"(
+  "tenant_id",
+  "grade"
+);
+CREATE INDEX "refurbished_items_tenant_id_original_product_id_index" on "refurbished_items"(
+  "tenant_id",
+  "original_product_id"
+);
+CREATE INDEX "refurbished_items_tenant_id_index" on "refurbished_items"(
+  "tenant_id"
+);
+CREATE INDEX "refurbished_items_original_product_id_index" on "refurbished_items"(
+  "original_product_id"
+);
+CREATE INDEX "refurbished_items_refurbished_product_id_index" on "refurbished_items"(
+  "refurbished_product_id"
+);
+CREATE INDEX "refurbished_items_return_grading_inspection_id_index" on "refurbished_items"(
+  "return_grading_inspection_id"
+);
+CREATE INDEX "refurbished_items_customer_return_id_index" on "refurbished_items"(
+  "customer_return_id"
+);
+CREATE INDEX "refurbished_items_rma_id_index" on "refurbished_items"(
+  "rma_id"
+);
+CREATE TABLE "van_warehouses"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "warehouse_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "license_plate" varchar not null,
+  "vehicle_make_model" varchar,
+  "driver_user_id" varchar,
+  "driver_name" varchar,
+  "depot_warehouse_id" varchar,
+  "has_cold_chain" tinyint(1) not null default '0',
+  "min_temp_celsius" numeric,
+  "max_temp_celsius" numeric,
+  "current_temp_celsius" numeric,
+  "last_temp_recorded_at" datetime,
+  "temp_alert_active" tinyint(1) not null default '0',
+  "invoice_sectional_code" varchar not null,
+  "invoice_next_number" integer not null default '1',
+  "ddt_sectional_code" varchar not null,
+  "ddt_next_number" integer not null default '1',
+  "receipt_sectional_code" varchar not null,
+  "receipt_next_number" integer not null default '1',
+  "fiscal_year" integer not null default '2026',
+  "printer_profile" varchar not null default 'escpos_80mm',
+  "printer_brand" varchar not null default 'Zebra',
+  "printer_mac_address" varchar,
+  "status" varchar not null default 'active',
+  "current_stock_snapshot" text,
+  "empties_onboard_snapshot" text,
+  "temperature_log" text,
+  "sync_version" integer not null default '1',
+  "last_synced_at" datetime,
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "van_warehouses_tenant_id_license_plate_unique" on "van_warehouses"(
+  "tenant_id",
+  "license_plate"
+);
+CREATE UNIQUE INDEX "van_warehouses_tenant_id_code_unique" on "van_warehouses"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "van_warehouses_tenant_id_status_index" on "van_warehouses"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "van_warehouses_tenant_id_index" on "van_warehouses"(
+  "tenant_id"
+);
+CREATE INDEX "van_warehouses_warehouse_id_index" on "van_warehouses"(
+  "warehouse_id"
+);
+CREATE INDEX "van_warehouses_driver_user_id_index" on "van_warehouses"(
+  "driver_user_id"
+);
+CREATE INDEX "van_warehouses_depot_warehouse_id_index" on "van_warehouses"(
+  "depot_warehouse_id"
+);
+CREATE TABLE "van_load_manifests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "van_warehouse_id" varchar not null,
+  "manifest_number" varchar not null,
+  "load_date" date not null,
+  "weekday_iso" integer not null,
+  "route_code" varchar,
+  "depot_warehouse_id" varchar,
+  "global_ddt_id" varchar,
+  "global_ddt_number" varchar,
+  "global_ddt_causal" varchar not null default 'Tentata Vendita',
+  "regulatory_reference" varchar not null default 'DPR 472/1996 & CM 249/E',
+  "self_addressed_company_name" varchar,
+  "departure_temp_celsius" numeric,
+  "cold_chain_compliant" tinyint(1) not null default '1',
+  "status" varchar not null default 'planned',
+  "lines" text not null,
+  "replenishment_suggestions" text,
+  "empties_loaded" text,
+  "total_packages" integer not null default '0',
+  "total_gross_weight_kg" numeric not null default '0',
+  "total_net_value" numeric not null default '0',
+  "currency" varchar not null default 'EUR',
+  "dispatched_at" datetime,
+  "closed_at" datetime,
+  "created_by" varchar,
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("van_warehouse_id") references "van_warehouses"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "van_load_manifests_tenant_id_manifest_number_unique" on "van_load_manifests"(
+  "tenant_id",
+  "manifest_number"
+);
+CREATE INDEX "van_load_manifests_tenant_id_load_date_index" on "van_load_manifests"(
+  "tenant_id",
+  "load_date"
+);
+CREATE INDEX "van_load_manifests_tenant_id_van_warehouse_id_status_index" on "van_load_manifests"(
+  "tenant_id",
+  "van_warehouse_id",
+  "status"
+);
+CREATE INDEX "van_load_manifests_tenant_id_index" on "van_load_manifests"(
+  "tenant_id"
+);
+CREATE INDEX "van_load_manifests_global_ddt_id_index" on "van_load_manifests"(
+  "global_ddt_id"
+);
+CREATE TABLE "field_route_plans"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "van_warehouse_id" varchar not null,
+  "van_load_manifest_id" varchar,
+  "route_code" varchar not null,
+  "name" varchar not null,
+  "plan_date" date not null,
+  "weekday_iso" integer not null,
+  "is_recurring" tinyint(1) not null default '1',
+  "salesperson_user_id" varchar,
+  "salesperson_name" varchar,
+  "territory_zone" varchar,
+  "country" varchar not null default 'IT',
+  "status" varchar not null default 'planned',
+  "stops" text not null,
+  "total_stops" integer not null default '0',
+  "completed_stops" integer not null default '0',
+  "sync_version" integer not null default '1',
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("van_warehouse_id") references "van_warehouses"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "field_route_plans_tenant_id_route_code_plan_date_unique" on "field_route_plans"(
+  "tenant_id",
+  "route_code",
+  "plan_date"
+);
+CREATE INDEX "field_route_plans_tenant_id_plan_date_index" on "field_route_plans"(
+  "tenant_id",
+  "plan_date"
+);
+CREATE INDEX "field_route_plans_tenant_id_van_warehouse_id_index" on "field_route_plans"(
+  "tenant_id",
+  "van_warehouse_id"
+);
+CREATE INDEX "field_route_plans_tenant_id_index" on "field_route_plans"(
+  "tenant_id"
+);
+CREATE INDEX "field_route_plans_van_load_manifest_id_index" on "field_route_plans"(
+  "van_load_manifest_id"
+);
+CREATE TABLE "van_visit_outcomes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "field_route_plan_id" varchar not null,
+  "van_warehouse_id" varchar not null,
+  "van_load_manifest_id" varchar,
+  "contact_id" varchar not null,
+  "stop_sequence" integer not null default '1',
+  "visit_mode" varchar not null default 'van_selling',
+  "outcome_status" varchar not null,
+  "no_sale_reason_code" varchar,
+  "rescheduled_to" date,
+  "document_type" varchar,
+  "fiscal_sectional_code" varchar,
+  "definitive_document_number" varchar,
+  "invoice_id" varchar,
+  "delivery_note_id" varchar,
+  "sales_order_id" varchar,
+  "sdi_transmission_status" varchar not null default 'not_applicable',
+  "qr_bill_generated" tinyint(1) not null default '0',
+  "qr_bill_reference" varchar,
+  "credit_check_passed" tinyint(1) not null default '1',
+  "credit_limit_amount" numeric not null default '0',
+  "exposure_before_visit" numeric not null default '0',
+  "overdue_amount_before_visit" numeric not null default '0',
+  "credit_blocked_initially" tinyint(1) not null default '0',
+  "unblocked_by_collection" tinyint(1) not null default '0',
+  "unblocking_payment_id" varchar,
+  "collected_overdue_amount" numeric not null default '0',
+  "sale_lines" text,
+  "return_lines" text,
+  "empties_movements" text,
+  "collections" text,
+  "total_net" numeric not null default '0',
+  "total_tax" numeric not null default '0',
+  "total_gross" numeric not null default '0',
+  "empties_net_deposit_amount" numeric not null default '0',
+  "returns_deduction_amount" numeric not null default '0',
+  "total_collected_amount" numeric not null default '0',
+  "payment_method" varchar,
+  "currency" varchar not null default 'EUR',
+  "printer_format" varchar not null default 'escpos_80mm',
+  "thermal_print_payload" text,
+  "client_idempotency_key" varchar,
+  "offline_created_at" datetime,
+  "synced_at" datetime,
+  "sync_version" integer not null default '1',
+  "sync_conflict_notes" text,
+  "gps_latitude" numeric,
+  "gps_longitude" numeric,
+  "visited_at" datetime not null,
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("field_route_plan_id") references "field_route_plans"("id") on delete cascade,
+  foreign key("van_warehouse_id") references "van_warehouses"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "van_visit_outcomes_tenant_id_client_idempotency_key_unique" on "van_visit_outcomes"(
+  "tenant_id",
+  "client_idempotency_key"
+);
+CREATE INDEX "van_visit_outcomes_tenant_id_van_warehouse_id_visited_at_index" on "van_visit_outcomes"(
+  "tenant_id",
+  "van_warehouse_id",
+  "visited_at"
+);
+CREATE INDEX "van_visit_outcomes_tenant_id_contact_id_index" on "van_visit_outcomes"(
+  "tenant_id",
+  "contact_id"
+);
+CREATE INDEX "van_visit_outcomes_tenant_id_outcome_status_index" on "van_visit_outcomes"(
+  "tenant_id",
+  "outcome_status"
+);
+CREATE INDEX "van_visit_outcomes_tenant_id_index" on "van_visit_outcomes"(
+  "tenant_id"
+);
+CREATE INDEX "van_visit_outcomes_van_load_manifest_id_index" on "van_visit_outcomes"(
+  "van_load_manifest_id"
+);
+CREATE INDEX "van_visit_outcomes_invoice_id_index" on "van_visit_outcomes"(
+  "invoice_id"
+);
+CREATE INDEX "van_visit_outcomes_delivery_note_id_index" on "van_visit_outcomes"(
+  "delivery_note_id"
+);
+CREATE INDEX "van_visit_outcomes_sales_order_id_index" on "van_visit_outcomes"(
+  "sales_order_id"
+);
+CREATE TABLE "van_eod_settlements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "van_warehouse_id" varchar not null,
+  "van_load_manifest_id" varchar,
+  "field_route_plan_id" varchar,
+  "settlement_number" varchar not null,
+  "settlement_date" date not null,
+  "status" varchar not null default 'draft',
+  "stock_reconciliation_lines" text not null,
+  "total_loaded_qty" numeric not null default '0',
+  "total_sold_qty" numeric not null default '0',
+  "total_returned_damaged_qty" numeric not null default '0',
+  "total_freebies_qty" numeric not null default '0',
+  "total_remaining_qty" numeric not null default '0',
+  "total_keep_onboard_qty" numeric not null default '0',
+  "total_unload_central_qty" numeric not null default '0',
+  "empties_reconciliation" text,
+  "cold_chain_summary" text,
+  "opening_cash_float" numeric not null default '0',
+  "collected_cash_amount" numeric not null default '0',
+  "collected_pos_card_amount" numeric not null default '0',
+  "collected_twint_amount" numeric not null default '0',
+  "collected_cheque_amount" numeric not null default '0',
+  "collected_bank_transfer_amount" numeric not null default '0',
+  "expected_cash_remittance" numeric not null default '0',
+  "counted_cash_remittance" numeric not null default '0',
+  "cash_discrepancy_amount" numeric not null default '0',
+  "total_remittance_amount" numeric not null default '0',
+  "deposit_slip_number" varchar,
+  "treasury_deposited" tinyint(1) not null default '0',
+  "central_warehouse_unloaded" tinyint(1) not null default '0',
+  "currency" varchar not null default 'EUR',
+  "reconciled_by" varchar,
+  "reconciled_at" datetime,
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("van_warehouse_id") references "van_warehouses"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "van_eod_settlements_tenant_id_settlement_number_unique" on "van_eod_settlements"(
+  "tenant_id",
+  "settlement_number"
+);
+CREATE INDEX "van_eod_settlements_tenant_id_settlement_date_index" on "van_eod_settlements"(
+  "tenant_id",
+  "settlement_date"
+);
+CREATE INDEX "van_eod_settlements_tenant_id_van_warehouse_id_index" on "van_eod_settlements"(
+  "tenant_id",
+  "van_warehouse_id"
+);
+CREATE INDEX "van_eod_settlements_tenant_id_index" on "van_eod_settlements"(
+  "tenant_id"
+);
+CREATE INDEX "van_eod_settlements_van_load_manifest_id_index" on "van_eod_settlements"(
+  "van_load_manifest_id"
+);
+CREATE INDEX "van_eod_settlements_field_route_plan_id_index" on "van_eod_settlements"(
+  "field_route_plan_id"
+);
+CREATE TABLE "survey_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "description" text,
+  "survey_type" varchar not null,
+  "trigger_event" varchar not null,
+  "trigger_filters" text,
+  "priority" integer not null default '100',
+  "channels" text not null,
+  "delay_hours" integer not null default '0',
+  "cooldown_days" integer not null default '60',
+  "detractor_threshold" integer,
+  "sla_hours" integer not null default '24',
+  "allow_voice_comment" tinyint(1) not null default '0',
+  "messages" text,
+  "follow_up_config" text,
+  "dimensions" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "survey_templates_tenant_id_code_unique" on "survey_templates"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "survey_templates_tenant_id_trigger_event_is_active_index" on "survey_templates"(
+  "tenant_id",
+  "trigger_event",
+  "is_active"
+);
+CREATE INDEX "survey_templates_tenant_id_index" on "survey_templates"(
+  "tenant_id"
+);
+CREATE TABLE "survey_dispatches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "survey_template_id" varchar not null,
+  "customer_id" varchar not null,
+  "contact_id" varchar,
+  "trigger_event" varchar not null,
+  "source_entity_type" varchar,
+  "source_entity_id" varchar,
+  "channel" varchar not null,
+  "locale" varchar not null default 'en',
+  "dispatch_token" varchar not null,
+  "status" varchar not null default 'scheduled',
+  "throttle_reason" varchar,
+  "scheduled_for" datetime,
+  "sent_at" datetime,
+  "responded_at" datetime,
+  "metadata" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("survey_template_id") references "survey_templates"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "survey_dispatches_tenant_id_customer_id_created_at_index" on "survey_dispatches"(
+  "tenant_id",
+  "customer_id",
+  "created_at"
+);
+CREATE INDEX "survey_dispatches_tenant_id_source_entity_type_source_entity_id_index" on "survey_dispatches"(
+  "tenant_id",
+  "source_entity_type",
+  "source_entity_id"
+);
+CREATE INDEX "survey_dispatches_tenant_id_index" on "survey_dispatches"(
+  "tenant_id"
+);
+CREATE INDEX "survey_dispatches_customer_id_index" on "survey_dispatches"(
+  "customer_id"
+);
+CREATE UNIQUE INDEX "survey_dispatches_dispatch_token_unique" on "survey_dispatches"(
+  "dispatch_token"
+);
+CREATE INDEX "survey_dispatches_status_index" on "survey_dispatches"(
+  "status"
+);
+CREATE INDEX "survey_dispatches_scheduled_for_index" on "survey_dispatches"(
+  "scheduled_for"
+);
+CREATE TABLE "survey_responses"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "survey_dispatch_id" varchar not null,
+  "survey_template_id" varchar not null,
+  "customer_id" varchar not null,
+  "contact_id" varchar,
+  "survey_type" varchar not null,
+  "score" integer not null,
+  "normalized_band" varchar not null,
+  "is_detractor" tinyint(1) not null default '0',
+  "comment_text" text,
+  "voice_attachment_path" varchar,
+  "voice_duration_seconds" integer,
+  "voice_transcript" text,
+  "sentiment_score" numeric,
+  "sentiment_label" varchar,
+  "sentiment_topics" text,
+  "department_code" varchar,
+  "technician_id" varchar,
+  "product_line_code" varchar,
+  "branch_code" varchar,
+  "submitted_via" varchar not null,
+  "locale" varchar,
+  "metadata" text,
+  "initial_clicked_at" datetime not null,
+  "comment_updated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("survey_dispatch_id") references "survey_dispatches"("id") on delete cascade,
+  foreign key("survey_template_id") references "survey_templates"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "survey_responses_survey_dispatch_id_unique" on "survey_responses"(
+  "survey_dispatch_id"
+);
+CREATE INDEX "survey_responses_tenant_id_survey_type_initial_clicked_at_index" on "survey_responses"(
+  "tenant_id",
+  "survey_type",
+  "initial_clicked_at"
+);
+CREATE INDEX "survey_responses_tenant_id_index" on "survey_responses"(
+  "tenant_id"
+);
+CREATE INDEX "survey_responses_customer_id_index" on "survey_responses"(
+  "customer_id"
+);
+CREATE INDEX "survey_responses_is_detractor_index" on "survey_responses"(
+  "is_detractor"
+);
+CREATE INDEX "survey_responses_department_code_index" on "survey_responses"(
+  "department_code"
+);
+CREATE INDEX "survey_responses_technician_id_index" on "survey_responses"(
+  "technician_id"
+);
+CREATE INDEX "survey_responses_product_line_code_index" on "survey_responses"(
+  "product_line_code"
+);
+CREATE INDEX "survey_responses_branch_code_index" on "survey_responses"(
+  "branch_code"
+);
+CREATE TABLE "detractor_recovery_cases"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "survey_response_id" varchar not null,
+  "customer_id" varchar not null,
+  "assigned_account_manager_id" varchar,
+  "assigned_support_lead_id" varchar,
+  "crm_task_id" varchar,
+  "priority" varchar not null default 'high',
+  "status" varchar not null default 'open',
+  "sla_due_at" datetime not null,
+  "first_contacted_at" datetime,
+  "resolved_at" datetime,
+  "churn_risk_updated" tinyint(1) not null default '0',
+  "previous_churn_risk" varchar,
+  "new_churn_risk" varchar,
+  "resolution_summary" text,
+  "root_cause_code" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("survey_response_id") references "survey_responses"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "detractor_recovery_cases_survey_response_id_unique" on "detractor_recovery_cases"(
+  "survey_response_id"
+);
+CREATE INDEX "detractor_recovery_cases_tenant_id_status_sla_due_at_index" on "detractor_recovery_cases"(
+  "tenant_id",
+  "status",
+  "sla_due_at"
+);
+CREATE INDEX "detractor_recovery_cases_tenant_id_index" on "detractor_recovery_cases"(
+  "tenant_id"
+);
+CREATE INDEX "detractor_recovery_cases_customer_id_index" on "detractor_recovery_cases"(
+  "customer_id"
+);
+CREATE INDEX "detractor_recovery_cases_assigned_account_manager_id_index" on "detractor_recovery_cases"(
+  "assigned_account_manager_id"
+);
+CREATE INDEX "detractor_recovery_cases_assigned_support_lead_id_index" on "detractor_recovery_cases"(
+  "assigned_support_lead_id"
+);
+CREATE INDEX "detractor_recovery_cases_status_index" on "detractor_recovery_cases"(
+  "status"
+);
+CREATE INDEX "detractor_recovery_cases_sla_due_at_index" on "detractor_recovery_cases"(
+  "sla_due_at"
+);
+CREATE TABLE "iso_9001_satisfaction_reports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "title" varchar not null,
+  "period_from" date not null,
+  "period_to" date not null,
+  "group_by" varchar not null default 'overall',
+  "filters" text,
+  "metrics_snapshot" text not null,
+  "management_review_notes" text,
+  "generated_by_user_id" varchar,
+  "exported_format" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "iso_9001_satisfaction_reports_tenant_id_period_from_period_to_index" on "iso_9001_satisfaction_reports"(
+  "tenant_id",
+  "period_from",
+  "period_to"
+);
+CREATE INDEX "iso_9001_satisfaction_reports_tenant_id_index" on "iso_9001_satisfaction_reports"(
+  "tenant_id"
+);
+CREATE TABLE "survey_opt_outs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "channel" varchar,
+  "reason" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "survey_opt_outs_tenant_id_customer_id_index" on "survey_opt_outs"(
+  "tenant_id",
+  "customer_id"
+);
+CREATE INDEX "survey_opt_outs_tenant_id_index" on "survey_opt_outs"(
+  "tenant_id"
+);
+CREATE INDEX "survey_opt_outs_customer_id_index" on "survey_opt_outs"(
+  "customer_id"
+);
+CREATE TABLE "frn_stores"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "franchisee_tenant_id" varchar,
+  "contact_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "store_type" varchar not null default 'franchisee',
+  "status" varchar not null default 'active',
+  "country" varchar not null default 'IT',
+  "city" varchar,
+  "address" varchar,
+  "postal_code" varchar,
+  "size_cluster" varchar not null default 'medium',
+  "opened_on" date,
+  "area_manager_user_id" varchar,
+  "vat_number" varchar,
+  "uid_number" varchar,
+  "link_code" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("franchisee_tenant_id") references "tenants"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_stores_tenant_id_code_unique" on "frn_stores"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "frn_stores_tenant_id_index" on "frn_stores"("tenant_id");
+CREATE INDEX "frn_stores_franchisee_tenant_id_index" on "frn_stores"(
+  "franchisee_tenant_id"
+);
+CREATE INDEX "frn_stores_contact_id_index" on "frn_stores"("contact_id");
+CREATE INDEX "frn_stores_area_manager_user_id_index" on "frn_stores"(
+  "area_manager_user_id"
+);
+CREATE UNIQUE INDEX "frn_stores_link_code_unique" on "frn_stores"(
+  "link_code"
+);
+CREATE TABLE "frn_formulas"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "labels" text not null,
+  "descriptions" text,
+  "is_preset" tinyint(1) not null default '0',
+  "royalty_tiers" text not null,
+  "marketing_tiers" text not null,
+  "minimum_guarantee" numeric not null default '0',
+  "startup_months" integer not null default '0',
+  "startup_mode" varchar not null default 'none',
+  "startup_reduction_percent" numeric not null default '0',
+  "ramp_start_percent" numeric not null default '0',
+  "startup_applies_to_marketing" tinyint(1) not null default '0',
+  "currency" varchar not null default 'EUR',
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_formulas_tenant_id_code_unique" on "frn_formulas"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "frn_formulas_tenant_id_index" on "frn_formulas"("tenant_id");
+CREATE TABLE "frn_agreements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "store_id" varchar not null,
+  "formula_id" varchar,
+  "agreement_number" varchar not null,
+  "status" varchar not null default 'draft',
+  "jurisdiction" varchar not null default 'IT',
+  "disclosure_delivered_on" date,
+  "signed_on" date,
+  "start_date" date not null,
+  "end_date" date not null,
+  "term_months" integer not null,
+  "auto_renew" tinyint(1) not null default '0',
+  "renewal_notice_days" integer not null default '180',
+  "renewal_reminder_sent_at" datetime,
+  "exclusivity_zone" text,
+  "entry_fee" numeric not null default '0',
+  "entry_fee_deferral_months" integer not null default '0',
+  "min_purchase_amount" numeric not null default '0',
+  "min_purchase_source" varchar not null default 'central_warehouse',
+  "approved_supplier_ids" text,
+  "guarantee_type" varchar not null default 'none',
+  "guarantee_amount" numeric not null default '0',
+  "guarantee_reference" varchar,
+  "guarantee_expires_on" date,
+  "payment_method" varchar not null default 'bank_transfer',
+  "mandate_reference" varchar,
+  "mandate_signed_on" date,
+  "currency" varchar not null default 'EUR',
+  "non_binding_pricing" tinyint(1) not null default '0',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("store_id") references "frn_stores"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_agreements_tenant_id_agreement_number_unique" on "frn_agreements"(
+  "tenant_id",
+  "agreement_number"
+);
+CREATE INDEX "frn_agreements_tenant_id_status_end_date_index" on "frn_agreements"(
+  "tenant_id",
+  "status",
+  "end_date"
+);
+CREATE INDEX "frn_agreements_tenant_id_index" on "frn_agreements"(
+  "tenant_id"
+);
+CREATE INDEX "frn_agreements_store_id_index" on "frn_agreements"("store_id");
+CREATE INDEX "frn_agreements_formula_id_index" on "frn_agreements"(
+  "formula_id"
+);
+CREATE TABLE "frn_entry_fee_deferrals"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "agreement_id" varchar not null,
+  "period" varchar not null,
+  "amount" numeric not null,
+  "recognized_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("agreement_id") references "frn_agreements"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_entry_fee_deferrals_agreement_id_period_unique" on "frn_entry_fee_deferrals"(
+  "agreement_id",
+  "period"
+);
+CREATE INDEX "frn_entry_fee_deferrals_tenant_id_index" on "frn_entry_fee_deferrals"(
+  "tenant_id"
+);
+CREATE INDEX "frn_entry_fee_deferrals_agreement_id_index" on "frn_entry_fee_deferrals"(
+  "agreement_id"
+);
+CREATE TABLE "frn_purchase_records"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "store_id" varchar not null,
+  "period" varchar not null,
+  "purchased_amount" numeric not null default '0',
+  "required_amount" numeric not null default '0',
+  "compliant" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("store_id") references "frn_stores"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_purchase_records_store_id_period_unique" on "frn_purchase_records"(
+  "store_id",
+  "period"
+);
+CREATE INDEX "frn_purchase_records_tenant_id_index" on "frn_purchase_records"(
+  "tenant_id"
+);
+CREATE INDEX "frn_purchase_records_store_id_index" on "frn_purchase_records"(
+  "store_id"
+);
+CREATE TABLE "frn_sell_out_reports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "store_id" varchar not null,
+  "period" varchar not null,
+  "gross_sales" numeric not null default '0',
+  "returns" numeric not null default '0',
+  "discounts" numeric not null default '0',
+  "net_sales" numeric not null default '0',
+  "tickets_count" integer not null default '0',
+  "visitors_count" integer not null default '0',
+  "cost_of_goods_sold" numeric not null default '0',
+  "average_inventory_value" numeric not null default '0',
+  "source" varchar not null default 'pos',
+  "pos_reference" varchar,
+  "submitted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("store_id") references "frn_stores"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_sell_out_reports_store_id_period_unique" on "frn_sell_out_reports"(
+  "store_id",
+  "period"
+);
+CREATE INDEX "frn_sell_out_reports_tenant_id_period_index" on "frn_sell_out_reports"(
+  "tenant_id",
+  "period"
+);
+CREATE INDEX "frn_sell_out_reports_tenant_id_index" on "frn_sell_out_reports"(
+  "tenant_id"
+);
+CREATE INDEX "frn_sell_out_reports_store_id_index" on "frn_sell_out_reports"(
+  "store_id"
+);
+CREATE TABLE "frn_royalty_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "period" varchar not null,
+  "status" varchar not null default 'calculated',
+  "stores_count" integer not null default '0',
+  "total_royalty" numeric not null default '0',
+  "total_marketing" numeric not null default '0',
+  "total_minimum_adjustment" numeric not null default '0',
+  "total_loyalty_settlement" numeric not null default '0',
+  "total_net" numeric not null default '0',
+  "currency" varchar not null default 'EUR',
+  "calculated_at" datetime,
+  "invoiced_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_royalty_runs_tenant_id_period_unique" on "frn_royalty_runs"(
+  "tenant_id",
+  "period"
+);
+CREATE INDEX "frn_royalty_runs_tenant_id_index" on "frn_royalty_runs"(
+  "tenant_id"
+);
+CREATE TABLE "frn_royalty_statements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "store_id" varchar not null,
+  "agreement_id" varchar,
+  "formula_id" varchar,
+  "period" varchar not null,
+  "status" varchar not null default 'calculated',
+  "skip_reason" varchar,
+  "net_sales" numeric not null default '0',
+  "royalty_gross" numeric not null default '0',
+  "startup_factor" numeric not null default '1',
+  "royalty_after_startup" numeric not null default '0',
+  "minimum_guarantee_applied" numeric not null default '0',
+  "minimum_adjustment" numeric not null default '0',
+  "royalty_charged" numeric not null default '0',
+  "marketing_fund" numeric not null default '0',
+  "loyalty_settlement" numeric not null default '0',
+  "total_net" numeric not null default '0',
+  "breakdown" text,
+  "invoice_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("run_id") references "frn_royalty_runs"("id") on delete cascade,
+  foreign key("store_id") references "frn_stores"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_royalty_statements_run_id_store_id_unique" on "frn_royalty_statements"(
+  "run_id",
+  "store_id"
+);
+CREATE INDEX "frn_royalty_statements_store_id_period_index" on "frn_royalty_statements"(
+  "store_id",
+  "period"
+);
+CREATE INDEX "frn_royalty_statements_tenant_id_index" on "frn_royalty_statements"(
+  "tenant_id"
+);
+CREATE INDEX "frn_royalty_statements_run_id_index" on "frn_royalty_statements"(
+  "run_id"
+);
+CREATE INDEX "frn_royalty_statements_store_id_index" on "frn_royalty_statements"(
+  "store_id"
+);
+CREATE INDEX "frn_royalty_statements_invoice_id_index" on "frn_royalty_statements"(
+  "invoice_id"
+);
+CREATE TABLE "frn_loyalty_transactions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "store_id" varchar not null,
+  "earned_store_id" varchar,
+  "customer_ref" varchar not null,
+  "type" varchar not null,
+  "points" integer not null,
+  "value_amount" numeric not null default '0',
+  "occurred_at" datetime not null,
+  "period" varchar not null,
+  "settled_run_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("store_id") references "frn_stores"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "frn_loyalty_transactions_tenant_id_period_type_index" on "frn_loyalty_transactions"(
+  "tenant_id",
+  "period",
+  "type"
+);
+CREATE INDEX "frn_loyalty_transactions_tenant_id_index" on "frn_loyalty_transactions"(
+  "tenant_id"
+);
+CREATE INDEX "frn_loyalty_transactions_store_id_index" on "frn_loyalty_transactions"(
+  "store_id"
+);
+CREATE INDEX "frn_loyalty_transactions_earned_store_id_index" on "frn_loyalty_transactions"(
+  "earned_store_id"
+);
+CREATE INDEX "frn_loyalty_transactions_settled_run_id_index" on "frn_loyalty_transactions"(
+  "settled_run_id"
+);
+CREATE TABLE "frn_catalog_pushes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "push_type" varchar not null,
+  "title" varchar not null,
+  "payload" text not null,
+  "target_mode" varchar not null default 'all',
+  "store_ids" text,
+  "status" varchar not null default 'draft',
+  "effective_from" date,
+  "dispatched_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "frn_catalog_pushes_tenant_id_status_index" on "frn_catalog_pushes"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "frn_catalog_pushes_tenant_id_index" on "frn_catalog_pushes"(
+  "tenant_id"
+);
+CREATE TABLE "frn_catalog_push_targets"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "push_id" varchar not null,
+  "store_id" varchar not null,
+  "status" varchar not null default 'pending',
+  "attempts" integer not null default '0',
+  "last_error" varchar,
+  "synced_at" datetime,
+  "acknowledged_at" datetime,
+  "next_retry_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("push_id") references "frn_catalog_pushes"("id") on delete cascade,
+  foreign key("store_id") references "frn_stores"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_catalog_push_targets_push_id_store_id_unique" on "frn_catalog_push_targets"(
+  "push_id",
+  "store_id"
+);
+CREATE INDEX "frn_catalog_push_targets_tenant_id_index" on "frn_catalog_push_targets"(
+  "tenant_id"
+);
+CREATE INDEX "frn_catalog_push_targets_push_id_index" on "frn_catalog_push_targets"(
+  "push_id"
+);
+CREATE INDEX "frn_catalog_push_targets_store_id_index" on "frn_catalog_push_targets"(
+  "store_id"
+);
+CREATE TABLE "frn_audit_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "labels" text not null,
+  "criteria" text not null,
+  "pass_threshold_percent" numeric not null default '80',
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_audit_templates_tenant_id_code_unique" on "frn_audit_templates"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "frn_audit_templates_tenant_id_index" on "frn_audit_templates"(
+  "tenant_id"
+);
+CREATE TABLE "frn_audits"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "store_id" varchar not null,
+  "template_id" varchar not null,
+  "auditor_id" varchar,
+  "status" varchar not null default 'draft',
+  "audited_on" date not null,
+  "score" numeric not null default '0',
+  "max_score" numeric not null default '0',
+  "score_percent" numeric not null default '0',
+  "passed" tinyint(1),
+  "notes" text,
+  "answers" text,
+  "photos" text,
+  "submitted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("store_id") references "frn_stores"("id") on delete cascade,
+  foreign key("template_id") references "frn_audit_templates"("id"),
+  primary key("id")
+);
+
+CREATE INDEX "frn_audits_store_id_audited_on_index" on "frn_audits"(
+  "store_id",
+  "audited_on"
+);
+CREATE INDEX "frn_audits_tenant_id_index" on "frn_audits"("tenant_id");
+CREATE INDEX "frn_audits_store_id_index" on "frn_audits"("store_id");
+CREATE INDEX "frn_audits_template_id_index" on "frn_audits"("template_id");
+CREATE INDEX "frn_audits_auditor_id_index" on "frn_audits"("auditor_id");
+CREATE TABLE "frn_audit_actions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "audit_id" varchar not null,
+  "store_id" varchar not null,
+  "criterion_code" varchar not null,
+  "description" text not null,
+  "due_date" date not null,
+  "status" varchar not null default 'open',
+  "completed_at" datetime,
+  "completion_note" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("audit_id") references "frn_audits"("id") on delete cascade,
+  foreign key("store_id") references "frn_stores"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "frn_audit_actions_tenant_id_index" on "frn_audit_actions"(
+  "tenant_id"
+);
+CREATE INDEX "frn_audit_actions_audit_id_index" on "frn_audit_actions"(
+  "audit_id"
+);
+CREATE INDEX "frn_audit_actions_store_id_index" on "frn_audit_actions"(
+  "store_id"
+);
+CREATE TABLE "frn_benchmark_dimensions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "labels" text not null,
+  "descriptions" text,
+  "unit" varchar not null default 'number',
+  "higher_is_better" tinyint(1) not null default '1',
+  "sort_order" integer not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_benchmark_dimensions_tenant_id_code_unique" on "frn_benchmark_dimensions"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "frn_benchmark_dimensions_tenant_id_index" on "frn_benchmark_dimensions"(
+  "tenant_id"
+);
+CREATE TABLE "frn_benchmark_snapshots"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "store_id" varchar not null,
+  "period" varchar not null,
+  "cluster" varchar not null,
+  "metrics" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("store_id") references "frn_stores"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_benchmark_snapshots_store_id_period_unique" on "frn_benchmark_snapshots"(
+  "store_id",
+  "period"
+);
+CREATE INDEX "frn_benchmark_snapshots_tenant_id_index" on "frn_benchmark_snapshots"(
+  "tenant_id"
+);
+CREATE INDEX "frn_benchmark_snapshots_store_id_index" on "frn_benchmark_snapshots"(
+  "store_id"
+);
+CREATE TABLE "frn_benchmark_network_stats"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "period" varchar not null,
+  "cluster" varchar not null,
+  "metric" varchar not null,
+  "average" numeric,
+  "median" numeric,
+  "p75" numeric,
+  "sample_size" integer not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_bench_stats_unique" on "frn_benchmark_network_stats"(
+  "tenant_id",
+  "period",
+  "cluster",
+  "metric"
+);
+CREATE INDEX "frn_benchmark_network_stats_tenant_id_index" on "frn_benchmark_network_stats"(
+  "tenant_id"
+);
+CREATE TABLE "frn_collection_batches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "scheme" varchar not null,
+  "status" varchar not null default 'ready',
+  "total_amount" numeric not null default '0',
+  "currency" varchar not null default 'EUR',
+  "collection_date" date not null,
+  "items" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("run_id") references "frn_royalty_runs"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "frn_collection_batches_run_id_scheme_unique" on "frn_collection_batches"(
+  "run_id",
+  "scheme"
+);
+CREATE INDEX "frn_collection_batches_tenant_id_index" on "frn_collection_batches"(
+  "tenant_id"
+);
+CREATE INDEX "frn_collection_batches_run_id_index" on "frn_collection_batches"(
+  "run_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -54256,3 +56563,9 @@ INSERT INTO migrations VALUES(469,'2028_01_07_000100_create_industrial_laundry_m
 INSERT INTO migrations VALUES(470,'2028_01_07_000100_create_statutory_financials_mod167_tables',29);
 INSERT INTO migrations VALUES(471,'2028_01_06_000200_create_passenger_transport_mod176_tables',30);
 INSERT INTO migrations VALUES(472,'2028_01_07_000200_create_corporate_conventions_mod358_tables',31);
+INSERT INTO migrations VALUES(473,'2026_11_25_213000_create_sales_bounded_context_sd139_batch1_tables',32);
+INSERT INTO migrations VALUES(474,'2026_11_25_220000_create_sales_bounded_context_sd139_batch2_tables',32);
+INSERT INTO migrations VALUES(475,'2028_01_07_000200_create_customer_returns_reverse_logistics_mod232_tables',32);
+INSERT INTO migrations VALUES(476,'2028_01_07_000300_create_van_selling_field_sales_mod233_tables',32);
+INSERT INTO migrations VALUES(477,'2028_01_08_000100_create_customer_satisfaction_mod245_tables',32);
+INSERT INTO migrations VALUES(478,'2028_01_08_000100_create_franchise_network_mod244_tables',32);
