@@ -40,6 +40,8 @@ class DatabaseSeeder extends Seeder
             SalesBoundedContextBatch1DemoSeeder::class,
             SalesBoundedContextBatch2LocalizationSeeder::class,
             SalesBoundedContextBatch2DemoSeeder::class,
+            FranchiseNetworkReferenceSeeder::class,
+            FranchiseNetworkDemoSeeder::class,
             TreasuryBankingReferenceSeeder::class,
             CpqLocalizationSeeder::class,
             CpqConfiguratorLocalizationSeeder::class,

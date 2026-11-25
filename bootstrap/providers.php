@@ -51,6 +51,7 @@ use Modules\Facility\Providers\FacilityServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\Fleet\Providers\FleetServiceProvider;
 use Modules\Forecasting\Providers\ForecastingServiceProvider;
+use Modules\FranchiseNetwork\Providers\FranchiseNetworkServiceProvider;
 use Modules\GdoTradeTerms\Providers\GdoTradeTermsServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Governance\Providers\GovernanceServiceProvider;
@@ -219,6 +220,7 @@ return [
     StatutoryFinancialsServiceProvider::class,
     PassengerTransportServiceProvider::class,
     CustomerSatisfactionServiceProvider::class,
+    FranchiseNetworkServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,
