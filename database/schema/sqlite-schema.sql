@@ -49427,6 +49427,382 @@ CREATE INDEX "open_banking_sync_runs_consent_id_index" on "open_banking_sync_run
 CREATE INDEX "open_banking_sync_runs_status_index" on "open_banking_sync_runs"(
   "status"
 );
+CREATE TABLE "dc_policies"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "jurisdiction" varchar not null,
+  "currency" varchar,
+  "customer_id" varchar,
+  "is_default" tinyint(1) not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "min_overdue_amount" numeric not null default '0',
+  "interest_basis" varchar not null default 'actual_365',
+  "contractual_rate_percent" numeric,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dc_policies_tenant_id_jurisdiction_is_active_index" on "dc_policies"(
+  "tenant_id",
+  "jurisdiction",
+  "is_active"
+);
+CREATE TABLE "dc_policy_levels"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "policy_id" varchar not null,
+  "level" integer not null,
+  "min_days_overdue" integer not null default '0',
+  "wait_days" integer not null default '0',
+  "deadline_days" integer not null default '10',
+  "fee_amount" numeric not null default '0',
+  "charge_interest" tinyint(1) not null default '0',
+  "channels" text,
+  "legal_warning" tinyint(1) not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("policy_id") references "dc_policies"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dc_policy_levels_policy_id_level_unique" on "dc_policy_levels"(
+  "policy_id",
+  "level"
+);
+CREATE INDEX "dc_policy_levels_tenant_id_policy_id_index" on "dc_policy_levels"(
+  "tenant_id",
+  "policy_id"
+);
+CREATE TABLE "dc_interest_rates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "jurisdiction" varchar not null,
+  "kind" varchar not null,
+  "base_rate_percent" numeric not null,
+  "markup_percent" numeric not null default '0',
+  "effective_from" date not null,
+  "effective_to" date,
+  "notes" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dc_interest_rates_tenant_id_jurisdiction_effective_from_index" on "dc_interest_rates"(
+  "tenant_id",
+  "jurisdiction",
+  "effective_from"
+);
+CREATE TABLE "dc_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "locale" varchar not null,
+  "jurisdiction" varchar,
+  "subject" varchar not null default '',
+  "body" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dc_templates_tenant_id_code_locale_index" on "dc_templates"(
+  "tenant_id",
+  "code",
+  "locale"
+);
+CREATE TABLE "dc_exclusions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "receivable_item_id" varchar,
+  "type" varchar not null,
+  "reason" varchar not null,
+  "notes" text,
+  "created_by" varchar,
+  "released_at" datetime,
+  "released_by" varchar,
+  "release_note" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dc_exclusions_tenant_id_customer_id_released_at_index" on "dc_exclusions"(
+  "tenant_id",
+  "customer_id",
+  "released_at"
+);
+CREATE TABLE "dc_payment_plans"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "currency" varchar not null,
+  "total_amount" numeric not null,
+  "start_date" date not null,
+  "end_date" date not null,
+  "status" varchar not null default 'active',
+  "receivable_item_ids" text,
+  "installments" text,
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dc_payment_plans_tenant_id_customer_id_status_index" on "dc_payment_plans"(
+  "tenant_id",
+  "customer_id",
+  "status"
+);
+CREATE TABLE "dc_batches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "channel" varchar not null,
+  "status" varchar not null default 'pending',
+  "total" integer not null default '0',
+  "sent" integer not null default '0',
+  "failed" integer not null default '0',
+  "started_at" datetime,
+  "completed_at" datetime,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dc_batches_tenant_id_status_index" on "dc_batches"(
+  "tenant_id",
+  "status"
+);
+CREATE TABLE "dc_cases"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "receivable_item_id" varchar not null,
+  "jurisdiction" varchar not null,
+  "currency" varchar not null,
+  "current_level" integer,
+  "last_notice_on" date,
+  "deadline_on" date,
+  "status" varchar not null default 'open',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dc_cases_tenant_id_receivable_item_id_unique" on "dc_cases"(
+  "tenant_id",
+  "receivable_item_id"
+);
+CREATE INDEX "dc_cases_tenant_id_customer_id_index" on "dc_cases"(
+  "tenant_id",
+  "customer_id"
+);
+CREATE TABLE "dc_notices"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "number" varchar not null,
+  "kind" varchar not null default 'reminder',
+  "level" integer not null,
+  "customer_id" varchar not null,
+  "jurisdiction" varchar not null,
+  "currency" varchar not null,
+  "principal" numeric not null,
+  "interest" numeric not null default '0',
+  "fee" numeric not null default '0',
+  "total" numeric not null,
+  "issued_on" date not null,
+  "new_due_date" date,
+  "channel" varchar not null,
+  "status" varchar not null default 'draft',
+  "locale" varchar not null default 'it',
+  "subject" varchar not null default '',
+  "body" text,
+  "batch_id" varchar,
+  "pec_message_id" varchar,
+  "sent_at" datetime,
+  "error" text,
+  "attempts" integer not null default '0',
+  "charge_receivable_item_id" varchar,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  foreign key("batch_id") references "dc_batches"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dc_notices_tenant_id_number_unique" on "dc_notices"(
+  "tenant_id",
+  "number"
+);
+CREATE INDEX "dc_notices_tenant_id_customer_id_status_index" on "dc_notices"(
+  "tenant_id",
+  "customer_id",
+  "status"
+);
+CREATE INDEX "dc_notices_pec_message_id_index" on "dc_notices"(
+  "pec_message_id"
+);
+CREATE TABLE "dc_notice_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "notice_id" varchar not null,
+  "receivable_item_id" varchar not null,
+  "document_number" varchar,
+  "due_date" date not null,
+  "principal" numeric not null,
+  "interest" numeric not null default '0',
+  "interest_days" integer not null default '0',
+  "rate_percent" numeric not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("notice_id") references "dc_notices"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dc_notice_lines_tenant_id_notice_id_index" on "dc_notice_lines"(
+  "tenant_id",
+  "notice_id"
+);
+CREATE INDEX "dc_notice_lines_tenant_id_receivable_item_id_index" on "dc_notice_lines"(
+  "tenant_id",
+  "receivable_item_id"
+);
+CREATE TABLE "dc_pec_receipts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "notice_id" varchar not null,
+  "kind" varchar not null,
+  "message_id" varchar,
+  "received_at" datetime not null,
+  "notes" text,
+  "attachment_path" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("notice_id") references "dc_notices"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dc_pec_receipts_tenant_id_notice_id_index" on "dc_pec_receipts"(
+  "tenant_id",
+  "notice_id"
+);
+CREATE TABLE "dc_enforcement_offices"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "postal_code_from" varchar,
+  "postal_code_to" varchar,
+  "address" varchar,
+  "postal_code" varchar,
+  "city" varchar,
+  "canton" varchar,
+  "email" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dc_enforcement_offices_tenant_id_postal_code_from_index" on "dc_enforcement_offices"(
+  "tenant_id",
+  "postal_code_from"
+);
+CREATE TABLE "dc_dossiers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "number" varchar not null,
+  "customer_id" varchar not null,
+  "currency" varchar not null,
+  "principal" numeric not null,
+  "interest" numeric not null default '0',
+  "fee" numeric not null default '0',
+  "total" numeric not null,
+  "status" varchar not null default 'generated',
+  "office_id" varchar,
+  "office_snapshot" text,
+  "receivable_item_ids" text not null,
+  "snapshot" text,
+  "locale" varchar not null default 'de',
+  "pdf_path" varchar,
+  "bundle_path" varchar,
+  "generated_at" datetime,
+  "submitted_at" datetime,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "dc_dossiers_tenant_id_number_unique" on "dc_dossiers"(
+  "tenant_id",
+  "number"
+);
+CREATE INDEX "dc_dossiers_tenant_id_customer_id_index" on "dc_dossiers"(
+  "tenant_id",
+  "customer_id"
+);
+CREATE TABLE "dc_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "event" varchar not null,
+  "level" integer,
+  "amount" numeric,
+  "currency" varchar,
+  "subject_type" varchar not null,
+  "subject_id" varchar not null,
+  "payload" text,
+  "actor_id" varchar,
+  "occurred_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dc_events_tenant_id_customer_id_occurred_at_index" on "dc_events"(
+  "tenant_id",
+  "customer_id",
+  "occurred_at"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -49885,3 +50261,4 @@ INSERT INTO migrations VALUES(454,'2028_01_02_000100_create_marketing_automation
 INSERT INTO migrations VALUES(455,'2027_12_31_000100_create_agent_commissions_mod041_tables',19);
 INSERT INTO migrations VALUES(456,'2027_12_20_000100_create_treasury_settlement_tables',20);
 INSERT INTO migrations VALUES(457,'2028_01_03_000100_add_split_payment_to_passive_invoices',20);
+INSERT INTO migrations VALUES(458,'2028_01_05_000100_create_debt_collection_mod014_tables',21);

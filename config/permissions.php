@@ -95,6 +95,17 @@ return [
                 'write' => ['agent_commissions.write', 'agent_commissions.settle', 'agent_commissions.*'],
             ],
         ],
+        // Dunning and debt collection: read for finance and sales managers, write for owners, administrators and
+        // accountants; the legal steps (Betreibung dossier, messa in mora, releasing an exclusion) can also be granted to
+        // another member on its own with debt_collection.escalate (DebtCollectionPolicy).
+        'debt_collection' => [
+            'read' => ['owner', 'admin', 'accountant', 'accountant_readonly', 'sales_manager'],
+            'write' => ['owner', 'admin', 'accountant'],
+            'grants' => [
+                'read' => ['debt_collection.read', 'debt_collection.write', 'debt_collection.escalate', 'debt_collection.*'],
+                'write' => ['debt_collection.write', 'debt_collection.escalate', 'debt_collection.*'],
+            ],
+        ],
         // Pay data of every employee: owners and administrators, or a member granted payroll.* on the membership (the
         // same rule as PayrollPolicy). Employees read their own payslips and certificates on routes without this check.
         'payroll' => [
