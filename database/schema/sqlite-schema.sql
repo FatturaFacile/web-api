@@ -51945,6 +51945,432 @@ CREATE INDEX "tnd_alerts_tenant_id_acknowledged_at_index" on "tnd_alerts"(
   "tenant_id",
   "acknowledged_at"
 );
+CREATE TABLE "gdt_delivery_points"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contact_id" varchar not null,
+  "code" varchar not null,
+  "name" varchar not null,
+  "point_type" varchar not null default 'store',
+  "city" varchar,
+  "postal_code" varchar,
+  "country" varchar not null default 'IT',
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gdt_delivery_points_tenant_id_contact_id_index" on "gdt_delivery_points"(
+  "tenant_id",
+  "contact_id"
+);
+CREATE INDEX "gdt_delivery_points_tenant_id_code_index" on "gdt_delivery_points"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "gdt_delivery_points_tenant_id_index" on "gdt_delivery_points"(
+  "tenant_id"
+);
+CREATE TABLE "gdt_contracts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "contact_id" varchar not null,
+  "include_child_contacts" tinyint(1) not null default '1',
+  "jurisdiction" varchar not null default 'IT',
+  "currency" varchar not null default 'EUR',
+  "starts_on" date not null,
+  "ends_on" date not null,
+  "status" varchar not null default 'draft',
+  "discount_1_percent" numeric not null default '0',
+  "discount_2_percent" numeric not null default '0',
+  "discount_3_percent" numeric not null default '0',
+  "cedi_discount_percent" numeric not null default '0',
+  "pallet_discount_amount" numeric not null default '0',
+  "tolerance_percent" numeric not null default '2',
+  "expense_account_id" varchar,
+  "provision_account_id" varchar,
+  "payable_account_id" varchar,
+  "vat_account_id" varchar,
+  "notes" text,
+  "activated_at" datetime,
+  "closed_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gdt_contracts_tenant_id_status_index" on "gdt_contracts"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "gdt_contracts_tenant_id_contact_id_index" on "gdt_contracts"(
+  "tenant_id",
+  "contact_id"
+);
+CREATE INDEX "gdt_contracts_tenant_id_code_index" on "gdt_contracts"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "gdt_contracts_tenant_id_index" on "gdt_contracts"("tenant_id");
+CREATE TABLE "gdt_scales"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contract_id" varchar not null,
+  "code" varchar not null,
+  "name" varchar not null,
+  "tier_mode" varchar not null default 'retroactive',
+  "basis" varchar not null default 'turnover',
+  "volume_mode" varchar not null default 'total',
+  "baseline_source" varchar not null default 'manual',
+  "baseline_value" numeric not null default '0',
+  "starts_on" date,
+  "ends_on" date,
+  "category_ids" text,
+  "brand_ids" text,
+  "product_ids" text,
+  "delivery_point_ids" text,
+  "is_active" tinyint(1) not null default '1',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contract_id") references "gdt_contracts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gdt_scales_tenant_id_contract_id_index" on "gdt_scales"(
+  "tenant_id",
+  "contract_id"
+);
+CREATE INDEX "gdt_scales_tenant_id_index" on "gdt_scales"("tenant_id");
+CREATE TABLE "gdt_scale_tiers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "scale_id" varchar not null,
+  "position" integer not null default '1',
+  "threshold" numeric not null,
+  "rate_percent" numeric not null default '0',
+  "flat_amount" numeric,
+  "label" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("scale_id") references "gdt_scales"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gdt_scale_tiers_scale_id_threshold_index" on "gdt_scale_tiers"(
+  "scale_id",
+  "threshold"
+);
+CREATE INDEX "gdt_scale_tiers_tenant_id_index" on "gdt_scale_tiers"(
+  "tenant_id"
+);
+CREATE TABLE "gdt_promotions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contract_id" varchar not null,
+  "code" varchar not null,
+  "name" varchar not null,
+  "promotion_type" varchar not null,
+  "date_basis" varchar not null default 'order',
+  "starts_on" date not null,
+  "ends_on" date not null,
+  "contribution_mode" varchar not null default 'percent_of_sales',
+  "rate_percent" numeric,
+  "unit_amount" numeric,
+  "fixed_amount" numeric,
+  "fixed_accrual" varchar not null default 'linear',
+  "cap_amount" numeric,
+  "category_ids" text,
+  "brand_ids" text,
+  "product_ids" text,
+  "delivery_point_ids" text,
+  "status" varchar not null default 'draft',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contract_id") references "gdt_contracts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gdt_promotions_tenant_id_contract_id_index" on "gdt_promotions"(
+  "tenant_id",
+  "contract_id"
+);
+CREATE INDEX "gdt_promotions_tenant_id_starts_on_ends_on_index" on "gdt_promotions"(
+  "tenant_id",
+  "starts_on",
+  "ends_on"
+);
+CREATE INDEX "gdt_promotions_tenant_id_index" on "gdt_promotions"(
+  "tenant_id"
+);
+CREATE TABLE "gdt_sell_out_reports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contract_id" varchar not null,
+  "delivery_point_id" varchar,
+  "product_id" varchar not null,
+  "period_start" date not null,
+  "period_end" date not null,
+  "quantity" numeric not null default '0',
+  "amount" numeric not null default '0',
+  "source" varchar not null default 'manual',
+  "natural_key" varchar not null,
+  "reported_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contract_id") references "gdt_contracts"("id") on delete cascade,
+  foreign key("delivery_point_id") references "gdt_delivery_points"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "gdt_sell_out_reports_tenant_id_natural_key_unique" on "gdt_sell_out_reports"(
+  "tenant_id",
+  "natural_key"
+);
+CREATE INDEX "gdt_sell_out_reports_tenant_id_contract_id_period_start_index" on "gdt_sell_out_reports"(
+  "tenant_id",
+  "contract_id",
+  "period_start"
+);
+CREATE INDEX "gdt_sell_out_reports_tenant_id_index" on "gdt_sell_out_reports"(
+  "tenant_id"
+);
+CREATE INDEX "gdt_sell_out_reports_product_id_index" on "gdt_sell_out_reports"(
+  "product_id"
+);
+CREATE TABLE "gdt_invoice_delivery_points"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "invoice_id" varchar not null,
+  "delivery_point_id" varchar not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("delivery_point_id") references "gdt_delivery_points"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "gdt_invoice_delivery_points_tenant_id_invoice_id_unique" on "gdt_invoice_delivery_points"(
+  "tenant_id",
+  "invoice_id"
+);
+CREATE INDEX "gdt_invoice_delivery_points_invoice_id_index" on "gdt_invoice_delivery_points"(
+  "invoice_id"
+);
+CREATE INDEX "gdt_invoice_delivery_points_tenant_id_index" on "gdt_invoice_delivery_points"(
+  "tenant_id"
+);
+CREATE TABLE "gdt_accrual_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "period_key" varchar not null,
+  "period_start" date not null,
+  "period_end" date not null,
+  "status" varchar not null default 'posted',
+  "unique_key" varchar,
+  "total_accrued" numeric not null default '0',
+  "contracts_count" integer not null default '0',
+  "journal_entry_id" varchar,
+  "reversal_journal_entry_id" varchar,
+  "run_by" varchar,
+  "posted_at" datetime,
+  "reversed_at" datetime,
+  "reversal_reason" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gdt_accrual_runs_tenant_id_period_key_index" on "gdt_accrual_runs"(
+  "tenant_id",
+  "period_key"
+);
+CREATE INDEX "gdt_accrual_runs_tenant_id_index" on "gdt_accrual_runs"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "gdt_accrual_runs_unique_key_unique" on "gdt_accrual_runs"(
+  "unique_key"
+);
+CREATE TABLE "gdt_accrual_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "contract_id" varchar not null,
+  "source_type" varchar not null,
+  "source_id" varchar not null,
+  "source_label" varchar,
+  "currency" varchar not null default 'EUR',
+  "base_value" numeric not null default '0',
+  "earned_cumulative" numeric not null default '0',
+  "previously_accrued" numeric not null default '0',
+  "delta_amount" numeric not null default '0',
+  "applied_rate_percent" numeric,
+  "status" varchar not null default 'accrued',
+  "settlement_line_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("run_id") references "gdt_accrual_runs"("id") on delete cascade,
+  foreign key("contract_id") references "gdt_contracts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gdt_accrual_lines_tenant_id_source_type_source_id_index" on "gdt_accrual_lines"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "gdt_accrual_lines_tenant_id_contract_id_index" on "gdt_accrual_lines"(
+  "tenant_id",
+  "contract_id"
+);
+CREATE INDEX "gdt_accrual_lines_tenant_id_index" on "gdt_accrual_lines"(
+  "tenant_id"
+);
+CREATE INDEX "gdt_accrual_lines_settlement_line_id_index" on "gdt_accrual_lines"(
+  "settlement_line_id"
+);
+CREATE TABLE "gdt_settlements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contract_id" varchar not null,
+  "code" varchar not null,
+  "kind" varchar not null default 'year_end',
+  "period_start" date not null,
+  "period_end" date not null,
+  "status" varchar not null default 'proposed',
+  "tax_treatment" varchar not null,
+  "currency" varchar not null default 'EUR',
+  "accrued_total" numeric not null default '0',
+  "earned_total" numeric not null default '0',
+  "variance_total" numeric not null default '0',
+  "credit_note_amount" numeric not null default '0',
+  "promo_amount" numeric not null default '0',
+  "tax_rate" numeric,
+  "credit_note_id" varchar,
+  "claim_invoice_number" varchar,
+  "claim_invoice_date" date,
+  "claim_net" numeric,
+  "claim_tax" numeric,
+  "claim_variance" numeric,
+  "dispute_reason" text,
+  "release_journal_entry_id" varchar,
+  "set_off_journal_entry_id" varchar,
+  "settled_on" date,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contract_id") references "gdt_contracts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gdt_settlements_tenant_id_contract_id_status_index" on "gdt_settlements"(
+  "tenant_id",
+  "contract_id",
+  "status"
+);
+CREATE INDEX "gdt_settlements_tenant_id_code_index" on "gdt_settlements"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "gdt_settlements_tenant_id_index" on "gdt_settlements"(
+  "tenant_id"
+);
+CREATE INDEX "gdt_settlements_credit_note_id_index" on "gdt_settlements"(
+  "credit_note_id"
+);
+CREATE TABLE "gdt_settlement_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "settlement_id" varchar not null,
+  "source_type" varchar not null,
+  "source_id" varchar not null,
+  "source_label" varchar,
+  "treatment" varchar not null,
+  "base_value" numeric not null default '0',
+  "accrued_amount" numeric not null default '0',
+  "earned_amount" numeric not null default '0',
+  "variance_amount" numeric not null default '0',
+  "cumulative_earned" numeric not null default '0',
+  "status" varchar not null default 'open',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("settlement_id") references "gdt_settlements"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gdt_settlement_lines_tenant_id_settlement_id_index" on "gdt_settlement_lines"(
+  "tenant_id",
+  "settlement_id"
+);
+CREATE INDEX "gdt_settlement_lines_tenant_id_source_type_source_id_index" on "gdt_settlement_lines"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "gdt_settlement_lines_tenant_id_index" on "gdt_settlement_lines"(
+  "tenant_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -52413,3 +52839,4 @@ INSERT INTO migrations VALUES(464,'2028_01_06_000100_create_budgeting_spend_cont
 INSERT INTO migrations VALUES(465,'2027_11_25_150000_upgrade_plm_mod168_tables',26);
 INSERT INTO migrations VALUES(466,'2028_01_06_000100_create_intercompany_tables',26);
 INSERT INTO migrations VALUES(467,'2028_01_06_000100_create_tender_management_mod169_tables',26);
+INSERT INTO migrations VALUES(468,'2028_01_06_000100_create_gdo_trade_terms_mod231_tables',27);

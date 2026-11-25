@@ -1,0 +1,13 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\GdoTradeTerms\Application\Queries;
+
+final readonly class PreviewMonthlyAccrualQuery
+{
+    public function __construct(
+        public string $tenantId,
+        public string $periodEnd,
+    ) {}
+}

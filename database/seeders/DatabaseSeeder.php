@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             ExpenseManagementReferenceSeeder::class,
             ExpenseManagementDemoSeeder::class,
             TenderManagementDemoSeeder::class,
+            GdoTradeTermsDemoSeeder::class,
             TreasuryBankingReferenceSeeder::class,
             CpqLocalizationSeeder::class,
             CpqConfiguratorLocalizationSeeder::class,

@@ -57,6 +57,7 @@ return [
         'debt_collection' => env('FEATURE_MODULE_DEBT_COLLECTION'),
         'expense_management' => env('FEATURE_MODULE_EXPENSE_MANAGEMENT'),
         'tender_management' => env('FEATURE_MODULE_TENDER_MANAGEMENT'),
+        'gdo_trade_terms' => env('FEATURE_MODULE_GDO_TRADE_TERMS'),
         'electronic_signature' => env('FEATURE_MODULE_ELECTRONIC_SIGNATURE'),
         'intercompany' => env('FEATURE_MODULE_INTERCOMPANY'),
         'shift_planning' => env('FEATURE_MODULE_SHIFT_PLANNING'),
