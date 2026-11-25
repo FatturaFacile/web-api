@@ -44,6 +44,10 @@ final class InvoiceMatchingService
                 throw new ProcurementRuleViolation('The supplier invoice does not exist in the active company.', 'passive_invoice_id');
             }
 
+            if ($invoice->document_type === 'TD04') {
+                throw new ProcurementRuleViolation('A credit note is not matched against orders: it is settled against the invoice it corrects.', 'passive_invoice_id');
+            }
+
             $current = $this->currentRun($invoiceId);
 
             if ($current !== null && in_array($trigger, [MatchTrigger::Auto, MatchTrigger::Batch], true) && in_array($current->status, [InvoiceMatchStatus::OverrideApproved, InvoiceMatchStatus::Resolved], true)) {

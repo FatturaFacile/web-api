@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Contracts\SwissQrBill\SwissQrBillParserInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Contact;
@@ -229,7 +230,7 @@ class PurchasesController extends Controller
             new OA\Response(response: 422, description: 'Invalid Swiss QR Code or Validation Error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function scanQrBill(Request $request): JsonResponse
+    public function scanQrBill(Request $request, SwissQrBillParserInterface $parser): JsonResponse
     {
         $validated = $request->validate([
             'qr_payload' => ['required', 'string'],
@@ -237,34 +238,55 @@ class PurchasesController extends Controller
             'exchange_rate' => ['nullable', 'numeric', 'min:0.000001'],
         ]);
 
-        $lines = preg_split('/\r\n|\r|\n/', trim($validated['qr_payload']));
+        $bill = $parser->parsePayload($validated['qr_payload']);
 
-        if (count($lines) < 20 || $lines[0] !== 'SPC') {
+        if (! $bill->valid) {
             return $this->problemDetailsResponse(
                 title: 'Invalid Swiss QR Code',
-                detail: 'The provided payload does not adhere to the Swiss Payments Code (SPC) specification.',
+                detail: 'The payload breaks the Swiss QR-bill specification: '.implode(', ', $bill->errors).'.',
                 status: Response::HTTP_UNPROCESSABLE_ENTITY
             );
         }
 
-        $qrIban = $lines[3] ?? '';
-        $creditorName = $lines[5] ?? 'Swiss Creditor';
-        $amount = (float) ($lines[18] ?? 0.0);
-        $currency = $lines[19] ?? 'CHF';
-        // SPC 0200: element 27 is the reference type (QRR, SCOR, NON), element 28 the reference, empty with NON.
-        $referenceType = $lines[27] ?? '';
-        $scorRef = $lines[28] ?? '';
+        $qrIban = $bill->iban;
+        $creditorName = (string) ($bill->creditor['name'] ?? 'Swiss Creditor');
+        $amount = (float) ($bill->amount ?? 0.0);
+        $currency = $bill->currency;
+        $referenceType = $bill->referenceType;
+        $scorRef = (string) ($bill->reference ?? '');
+
+        // The same bill (creditor account, reference, amount and currency) is booked once, however often it is scanned.
+        $documentHash = hash('sha256', implode('|', [$qrIban, $referenceType, $scorRef, number_format($amount, 2, '.', ''), $currency, $creditorName, (string) $bill->message]));
+        $existing = PassiveInvoice::query()->where('document_hash', $documentHash)->first();
+
+        if ($existing !== null) {
+            return $this->successResponse(
+                data: [
+                    'id' => $existing->id,
+                    'creditor' => $creditorName,
+                    'qr_iban' => $qrIban,
+                    'is_qr_iban' => $bill->isQrIban,
+                    'reference_type' => $referenceType,
+                    'reference' => $scorRef,
+                    'scor_reference' => $scorRef,
+                    'amount' => $amount,
+                    'currency' => $currency,
+                    'duplicate' => true,
+                ],
+                message: 'Swiss QR-Bill already recorded'
+            );
+        }
 
         $supplier = Contact::firstOrCreate(
             ['company_name' => $creditorName],
-            ['type' => 'supplier', 'country' => 'CH', 'qr_iban' => $qrIban]
+            ['type' => 'supplier', 'country' => (string) ($bill->creditor['country'] ?? 'CH'), 'qr_iban' => $bill->isQrIban ? $qrIban : null]
         );
 
         $totalTax = isset($validated['total_tax']) ? round((float) $validated['total_tax'], 2) : 0.0;
 
         $passiveInvoice = $this->passiveInvoices->register([
             'supplier_id' => $supplier->id,
-            'invoice_number' => 'QR-'.($scorRef !== '' ? $scorRef : strtoupper(substr(hash('sha256', $validated['qr_payload']), 0, 16))),
+            'invoice_number' => 'QR-'.($scorRef !== '' ? $scorRef : strtoupper(substr($documentHash, 0, 16))),
             'date' => now()->toDateString(),
             'total_amount' => $amount,
             'total_net' => round($amount - $totalTax, 2),
@@ -273,6 +295,7 @@ class PurchasesController extends Controller
             'currency' => $currency,
             'payment_status' => 'unpaid',
             'is_reconciled' => false,
+            'document_hash' => $documentHash,
             'qr_raw_payload' => $validated['qr_payload'],
         ]);
 
@@ -281,10 +304,13 @@ class PurchasesController extends Controller
                 'id' => $passiveInvoice->id,
                 'creditor' => $creditorName,
                 'qr_iban' => $qrIban,
+                'is_qr_iban' => $bill->isQrIban,
                 'reference_type' => $referenceType,
+                'reference' => $scorRef,
                 'scor_reference' => $scorRef,
                 'amount' => $amount,
                 'currency' => $currency,
+                'duplicate' => false,
             ],
             message: 'Swiss QR-Bill scanned and recorded',
             statusCode: Response::HTTP_CREATED

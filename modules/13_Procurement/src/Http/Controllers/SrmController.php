@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Modules\Procurement\Http\Controllers\Concerns\ProcurementControllerHelpers;
 use Modules\Procurement\Http\Requests\ProcurementPeriodRequest;
+use Modules\Procurement\Http\Requests\SrmScorecardsRequest;
 use Modules\Procurement\Models\Supplier;
 use Modules\Procurement\Services\SrmDashboardService;
 use Modules\Procurement\Services\SupplierRatingService;
@@ -54,20 +55,32 @@ final class SrmController extends Controller
     #[OA\Get(
         path: '/api/v1/procurement/srm/scorecards',
         operationId: 'procurementSrmScorecards',
-        description: 'Composite 0-100 rating and A-D tier of every supplier ordered from, invoiced or invited to a tender in the period, best first.',
+        description: 'Composite 0-100 rating and A-D tier of every supplier ordered from, invoiced or invited to a tender in the period, filtered by name and tier, sorted by score, name or a component, one page at a time.',
         summary: 'Supplier rating ranking',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Procurement SRM'],
-        parameters: [new OA\Parameter(ref: '#/components/parameters/ProcDateFrom'), new OA\Parameter(ref: '#/components/parameters/ProcDateTo')],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/ProcDateFrom'),
+            new OA\Parameter(ref: '#/components/parameters/ProcDateTo'),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string', maxLength: 100)),
+            new OA\Parameter(name: 'tier', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['A', 'B', 'C', 'D'])),
+            new OA\Parameter(name: 'sort', in: 'query', required: false, schema: new OA\Schema(type: 'string', default: 'score', enum: ['score', 'name', 'on_time_delivery_rate', 'quality_acceptance_rate', 'price_competitiveness_score', 'invoice_accuracy_rate', 'rfq_responsiveness_rate'])),
+            new OA\Parameter(name: 'direction', in: 'query', required: false, schema: new OA\Schema(type: 'string', default: 'desc', enum: ['asc', 'desc'])),
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 20)),
+        ],
         responses: [
-            new OA\Response(response: 200, description: 'Ranking', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))])),
+            new OA\Response(response: 200, description: 'Ranking page', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
+                new OA\Property(property: 'meta', type: 'object'),
+            ])),
             new OA\Response(ref: '#/components/responses/ProcUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/ProcUnprocessable', response: 422),
         ]
     )]
-    public function scorecards(ProcurementPeriodRequest $request): JsonResponse
+    public function scorecards(SrmScorecardsRequest $request): JsonResponse
     {
-        return response()->json(['data' => $this->ratings->ranking($this->tenantId(), $request->from(), $request->to(), 100)]);
+        return response()->json($this->ratings->page($this->tenantId(), $request->from(), $request->to(), $request->listing()));
     }
 
     /**

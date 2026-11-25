@@ -6,6 +6,7 @@ use App\Models\PassiveInvoice;
 use App\Models\PurchaseOrder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Modules\Procurement\Models\Supplier;
 use Tests\Support\InvoiceMatchingFixtures as Fixtures;
 
 require_once __DIR__.'/InvoiceMatchingSupport.php';
@@ -135,4 +136,76 @@ it('keeps the SRM figures of a company away from the others', function (): void 
     $this->getJson(SRM_API."/suppliers/{$this->supplier->id}/srm-scorecard")->assertNotFound();
 
     expect($mine['order']->id)->not->toBeNull();
+});
+
+/**
+ * Three suppliers with one on-time order each (names A..C) and a fourth late one, so the ranking has two tiers.
+ *
+ * @return list<Supplier>
+ */
+function srmFourSuppliers(object $test): array
+{
+    $suppliers = [];
+
+    foreach (['Alfa Forniture', 'Beta Ricambi', 'Gamma Logistica'] as $name) {
+        $supplier = Fixtures::supplier($test->tenant);
+        $supplier->update(['company_name' => $name]);
+        $order = Fixtures::order($test->tenant, $supplier, [['Fan', 2, '10.00']], ['date' => now()->toDateString(), 'expected_delivery_date' => now()->addDays(3)->toDateString()]);
+        Fixtures::receive($test->tenant, $order, [1 => 2], (string) $test->owner->id);
+        $suppliers[] = $supplier;
+    }
+
+    srmLateBlockedOrder($test);
+    $test->supplier->update(['company_name' => 'Delta Ritardi']);
+
+    return $suppliers;
+}
+
+it('paginates the ranking and reports the page meta', function (): void {
+    srmFourSuppliers($this);
+
+    $first = $this->getJson(SRM_API.'/srm/scorecards?per_page=3&page=1')->assertOk();
+    $second = $this->getJson(SRM_API.'/srm/scorecards?per_page=3&page=2')->assertOk();
+
+    expect($first->json('data'))->toHaveCount(3)
+        ->and($first->json('meta'))->toMatchArray(['current_page' => 1, 'per_page' => 3, 'total' => 4, 'last_page' => 2, 'from' => 1, 'to' => 3])
+        ->and($second->json('data'))->toHaveCount(1)
+        ->and($second->json('data.0.supplier_name'))->toBe('Delta Ritardi')
+        ->and($second->json('meta.from'))->toBe(4);
+});
+
+it('filters the ranking by name and tier', function (): void {
+    srmFourSuppliers($this);
+
+    $byName = $this->getJson(SRM_API.'/srm/scorecards?search=beta')->assertOk();
+    $byTier = $this->getJson(SRM_API.'/srm/scorecards?tier=D')->assertOk();
+
+    expect($byName->json('data'))->toHaveCount(1)
+        ->and($byName->json('data.0.supplier_name'))->toBe('Beta Ricambi')
+        ->and($byTier->json('meta.total'))->toBe(1)
+        ->and($byTier->json('data.0.supplier_name'))->toBe('Delta Ritardi');
+});
+
+it('sorts the ranking by name and by a component with empty values last', function (): void {
+    srmFourSuppliers($this);
+
+    $names = collect($this->getJson(SRM_API.'/srm/scorecards?sort=name&direction=asc')->assertOk()->json('data'))->pluck('supplier_name')->all();
+    $ontime = collect($this->getJson(SRM_API.'/srm/scorecards?sort=on_time_delivery_rate&direction=asc')->assertOk()->json('data'))->pluck('supplier_name')->all();
+    $rfq = collect($this->getJson(SRM_API.'/srm/scorecards?sort=rfq_responsiveness_rate&direction=desc')->assertOk()->json('data'))->pluck('components.rfq_responsiveness_rate')->all();
+
+    expect($names)->toBe(['Alfa Forniture', 'Beta Ricambi', 'Delta Ritardi', 'Gamma Logistica'])
+        ->and($ontime[0])->toBe('Delta Ritardi')
+        ->and($rfq)->toBe([null, null, null, null]);
+});
+
+it('validates the listing parameters of the ranking', function (): void {
+    $this->getJson(SRM_API.'/srm/scorecards?tier=Z')->assertUnprocessable()->assertJsonValidationErrors(['tier']);
+    $this->getJson(SRM_API.'/srm/scorecards?sort=colour')->assertUnprocessable()->assertJsonValidationErrors(['sort']);
+    $this->getJson(SRM_API.'/srm/scorecards?per_page=500')->assertUnprocessable()->assertJsonValidationErrors(['per_page']);
+});
+
+it('clamps an out-of-range page to the last one', function (): void {
+    srmFourSuppliers($this);
+
+    $this->getJson(SRM_API.'/srm/scorecards?per_page=3&page=99')->assertOk()->assertJsonPath('meta.current_page', 2);
 });
