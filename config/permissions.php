@@ -452,6 +452,17 @@ return [
                 'write' => ['statutory_financials.write', 'statutory_financials.file', 'statutory_financials.*'],
             ],
         ],
+        // Passenger transport (Mod 176): bookings, dispatch, fleet, driver compliance, tachograph archive, NCC service sheets, concierge
+        // and school bus contracts. Finance, dispatchers and operations managers read and write; PassengerTransportPolicy reserves
+        // invoicing to finance (or passenger_transport.bill).
+        'passenger_transport' => [
+            'read' => [...$financeReaders, 'dispatcher', 'operations_manager', 'sales', 'sales_manager'],
+            'write' => [...$finance, 'dispatcher', 'operations_manager'],
+            'grants' => [
+                'read' => ['passenger_transport.read', 'passenger_transport.write', 'passenger_transport.bill', 'passenger_transport.*'],
+                'write' => ['passenger_transport.write', 'passenger_transport.bill', 'passenger_transport.*'],
+            ],
+        ],
         // Advanced pricing (price lists, cascading discounts, promotions, margin guardrails): finance and sales roles read;
         // owners, administrators, accountants and sales managers write. Authorizing a below-margin document is further
         // limited by the policy to owners, administrators and the role of the margin policy.

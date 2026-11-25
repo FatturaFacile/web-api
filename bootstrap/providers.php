@@ -75,6 +75,7 @@ use Modules\MarketingAutomation\Providers\MarketingAutomationServiceProvider;
 use Modules\Marketplace\Providers\MarketplaceServiceProvider;
 use Modules\MrpPlanning\Providers\MrpPlanningServiceProvider;
 use Modules\OcrExtraction\Providers\OcrExtractionServiceProvider;
+use Modules\PassengerTransport\Providers\PassengerTransportServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
 use Modules\Planning\Providers\PlanningServiceProvider;
 use Modules\Platform\Identity\Providers\IdentityServiceProvider;
@@ -213,6 +214,7 @@ return [
     GdoTradeTermsServiceProvider::class,
     IndustrialLaundryServiceProvider::class,
     StatutoryFinancialsServiceProvider::class,
+    PassengerTransportServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,

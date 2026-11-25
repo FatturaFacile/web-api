@@ -248,3 +248,6 @@ Schedule::command('mfg:mes-prune-changes')->dailyAt('03:45')->withoutOverlapping
 
 // GDO trade terms (Mod 231): monthly accrual of the rebates and trade contributions of the month that just ended.
 Schedule::command('gdo-trade-terms:accrue')->monthlyOn(1, '04:30')->withoutOverlapping()->onOneServer();
+
+// Passenger transport (Mod 176): follows the flights of the airport transfers and moves the pickup to the real arrival.
+Schedule::command('passenger-transport:track-flights')->everyTenMinutes()->withoutOverlapping()->onOneServer();
