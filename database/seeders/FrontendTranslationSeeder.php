@@ -18,6 +18,7 @@ use Database\Seeders\Translations\CopilotFrontendTranslations;
 use Database\Seeders\Translations\CpqConfiguratorFrontendTranslations;
 use Database\Seeders\Translations\CpqQuotesFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
+use Database\Seeders\Translations\CustomerSatisfactionFrontendTranslations;
 use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\DebtCollectionFrontendTranslations;
 use Database\Seeders\Translations\ElectronicSignatureFrontendTranslations;
@@ -180,6 +181,7 @@ class FrontendTranslationSeeder extends Seeder
             + IndustrialLaundryFrontendTranslations::all($locale)
             + StatutoryFinancialsFrontendTranslations::all($locale)
             + PassengerTransportFrontendTranslations::all($locale)
+            + CustomerSatisfactionFrontendTranslations::all($locale)
             + ElectronicSignatureFrontendTranslations::all($locale)
             + ElectronicSignatureNotificationTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)

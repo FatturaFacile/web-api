@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             IndustrialLaundryDemoSeeder::class,
             StatutoryFinancialsReferenceSeeder::class,
             PassengerTransportDemoSeeder::class,
+            CustomerSatisfactionDemoSeeder::class,
             TreasuryBankingReferenceSeeder::class,
             CpqLocalizationSeeder::class,
             CpqConfiguratorLocalizationSeeder::class,
