@@ -56,4 +56,24 @@ return [
         'quantity_exceeds' => 'Il ne reste que :available à retourner de « :line ».',
         'stock_note' => 'Retour fournisseur :number',
     ],
+    'advance_replacement' => [
+        'refurbished_not_found' => 'Article reconditionné B-Stock introuvable dans l\'entreprise.',
+        'not_overdue' => 'Le remplacement anticipé n\'a pas encore dépassé la date limite SLA.',
+        'outbound_note' => 'Remplacement anticipé (Cross-Shipping) :number',
+        'penalty_invoice_line' => 'Facturation pour unité défectueuse non retournée (:number — :product, échéance :due)',
+        'penalty_invoice_note' => 'Facturation automatique de pénalité pour remplacement anticipé non retourné :number',
+    ],
+    'grading' => [
+        'photos_required' => 'Au moins une photo du produit reçu est obligatoire au poste d\'inspection des retours.',
+        'restock_note' => 'Remise en stock Grade A suite à inspection :number',
+        'rtv_note' => 'Réception pour retour fournisseur suite à inspection :number',
+        'bstock_note' => 'Entrée B-Stock / Reconditionné :sku',
+    ],
+    'credit_note' => [
+        'original_invoice_required' => 'Une facture de vente d\'origine est requise pour le contrôle fiscal et l\'émission de l\'avoir (TD04).',
+        'already_issued' => 'Un avoir a déjà été émis pour ce retour client.',
+        'art26_over_one_year' => 'Attention Art. 26 al. 2-3 DPR 633/72 : :days jours (plus d\'1 an) se sont écoulés depuis la facture :invoice du :date. Pour un accord commercial / retour de marchandise, la récupération de TVA n\'est pas autorisée : proposition d\'avoir TD04 sur la base imposable uniquement avec nature N2.2.',
+        'art41_liva_notice' => 'Suisse — Art. 41 LTVA : assurer la traçabilité documentaire de la diminution de la contre-prestation en référence à la facture :invoice.',
+        'default_note' => 'Avoir pour retour :rma sur facture :invoice',
+    ],
 ];

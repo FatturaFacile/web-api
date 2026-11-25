@@ -56,4 +56,24 @@ return [
         'quantity_exceeds' => 'Von ":line" können nur noch :available zurückgegeben werden.',
         'stock_note' => 'Lieferantenretoure :number',
     ],
+    'advance_replacement' => [
+        'refurbished_not_found' => 'Aufbereiteter B-Ware-Artikel im Unternehmen nicht gefunden.',
+        'not_overdue' => 'Die Vorab-Ersatzlieferung hat das SLA-Rückgabedatum noch nicht überschritten.',
+        'outbound_note' => 'Vorab-Ersatzlieferung (Cross-Shipping) :number',
+        'penalty_invoice_line' => 'Belastung nicht zurückgesendetes Defektgerät (:number — :product, fällig :due)',
+        'penalty_invoice_note' => 'Automatische Strafrechnung für nicht zurückgesendete Vorab-Ersatzlieferung :number',
+    ],
+    'grading' => [
+        'photos_required' => 'Mindestens ein Foto des eingegangenen Produkts ist an der Prüfstation zwingend erforderlich.',
+        'restock_note' => 'Wiedereinlagerung Grad A aus Retourenprüfung :number',
+        'rtv_note' => 'Eingang für Lieferantenretoure aus Prüfung :number',
+        'bstock_note' => 'B-Ware / Aufbereiteter Zugang :sku',
+    ],
+    'credit_note' => [
+        'original_invoice_required' => 'Für die steuerliche Prüfung und Gutschriftserstellung (TD04) ist eine Ursprungsrechnung erforderlich.',
+        'already_issued' => 'Für diese Kundenretoure wurde bereits eine Gutschrift erstellt.',
+        'art26_over_one_year' => 'Hinweis Art. 26 Abs. 2-3 DPR 633/72: Seit der Ursprungsrechnung :invoice vom :date sind :days Tage (über 1 Jahr) vergangen. Bei Warenrückgabe/Handelsvereinbarung ist kein Vorsteuerabzug zulässig: Es wird eine Gutschrift TD04 nur über die Bemessungsgrundlage mit Code N2.2 vorgeschlagen.',
+        'art41_liva_notice' => 'Schweiz — Art. 41 MWSTG: Dokumentarische Nachvollziehbarkeit der Entgeltsminderung mit Bezug auf Originalrechnung :invoice sicherstellen.',
+        'default_note' => 'Gutschrift für Retoure :rma zu Rechnung :invoice',
+    ],
 ];
