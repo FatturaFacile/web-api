@@ -61,6 +61,7 @@ use Modules\ItalianVat\Providers\ItalianVatServiceProvider;
 use Modules\KpiDashboards\Providers\KpiDashboardsServiceProvider;
 use Modules\LeaseAccounting\Providers\LeaseAccountingServiceProvider;
 use Modules\LeaveManagement\Providers\LeaveManagementServiceProvider;
+use Modules\LiquidityPlanning\Providers\LiquidityPlanningServiceProvider;
 use Modules\Logistics\Providers\LogisticsServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\MarketingAutomation\Providers\MarketingAutomationServiceProvider;
@@ -192,6 +193,7 @@ return [
     ResourcePlanningServiceProvider::class,
     ItalianVatServiceProvider::class,
     AccountsPayableServiceProvider::class,
+    LiquidityPlanningServiceProvider::class,
     SwissVatServiceProvider::class,
     LeaveManagementServiceProvider::class,
     MarketingAutomationServiceProvider::class,

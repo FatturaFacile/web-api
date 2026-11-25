@@ -8,6 +8,11 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * A loan of the company. `covenant_clause_json` lists the financial covenants as `{metric, value}` (`dscr`, `pfn_ebitda`, `min_cash`).
+ *
+ * @property list<array<string, mixed>>|null $covenant_clause_json
+ */
 final class LoanAgreement extends BaseEnterpriseModel
 {
     protected $table = 'loan_agreements';
