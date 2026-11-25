@@ -15,6 +15,7 @@ use Database\Seeders\Translations\ArtisanalGelatoFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\BomManagementFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
+use Database\Seeders\Translations\CpqConfiguratorFrontendTranslations;
 use Database\Seeders\Translations\CpqQuotesFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
@@ -135,6 +136,7 @@ class FrontendTranslationSeeder extends Seeder
             + MrpPlanningFrontendTranslations::all($locale)
             + ProposalPortalFrontendTranslations::all($locale)
             + CpqQuotesFrontendTranslations::all($locale)
+            + CpqConfiguratorFrontendTranslations::all($locale)
             + DataSovereigntyFrontendTranslations::all($locale)
             + MobileFrontendTranslations::all($locale)
             + MobileFeatureTranslations::all($locale)

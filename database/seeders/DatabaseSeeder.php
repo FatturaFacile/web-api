@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             DebtCollectionReferenceSeeder::class,
             TreasuryBankingReferenceSeeder::class,
             CpqLocalizationSeeder::class,
+            CpqConfiguratorLocalizationSeeder::class,
             ErpLookupsSeeder::class,
             ComprehensiveLookupMasterSeeder::class,
             UnitOfMeasureSeeder::class,
@@ -53,6 +54,7 @@ class DatabaseSeeder extends Seeder
             DocumentSequenceSeeder::class,
 
             CpqDefaultCatalogAndRulesSeeder::class,
+            CpqConfiguratorDemoSeeder::class,
             QuoteSeeder::class,
             QuoteItemSeeder::class,
 

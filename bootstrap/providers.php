@@ -32,6 +32,7 @@ use Modules\Contracts\Providers\ContractsServiceProvider;
 use Modules\Controlling\Providers\ControllingServiceProvider;
 use Modules\Copilot\Providers\CopilotServiceProvider;
 use Modules\CorporateGroup\Providers\CorporateGroupServiceProvider;
+use Modules\CpqConfigurator\Providers\CpqConfiguratorServiceProvider;
 use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
@@ -202,4 +203,5 @@ return [
     DebtCollectionServiceProvider::class,
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,
+    CpqConfiguratorServiceProvider::class,
 ];

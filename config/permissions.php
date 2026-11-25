@@ -172,6 +172,12 @@ return [
         // cpq_quotes_admin: managers override the margin guardrail (approve-and-issue).
         'cpq_quotes' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager']],
         'cpq_quotes_admin' => ['read' => ['owner', 'admin', 'sales_manager'], 'write' => ['owner', 'admin', 'sales_manager']],
+        // Technical-commercial product configurator (Mod 230): every member reads and configures with live pricing; sales staff confirm
+        // configurations and print proposals. Models, rules, mappings and formulas are reserved by the policy to owners, administrators,
+        // sales managers and members granted cpq_configurator.manage; industrial cost and margin to cpq_configurator.costs.
+        'cpq_configurator' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager']],
+        // The definition of models, rules, mappings and formulas of the configurator: the policy asks for owners, administrators, sales managers and cpq_configurator.manage.
+        'cpq_configurator_admin' => ['read' => ['owner', 'admin', 'sales_manager'], 'write' => ['owner', 'admin', 'sales_manager']],
         // Data residency, sovereignty and BYOK/HYOK (Mod 381). sovereignty_policy (sovereignty.policy.read / .manage): owners and
         // administrators (DPO, CISO) read the posture and enforce the residency policy; sovereignty_byok (sovereignty.byok.manage):
         // configure and rotate the customer-managed key and read the KMS log; sovereignty_killswitch (sovereignty.byok.killswitch):

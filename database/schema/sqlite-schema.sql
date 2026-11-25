@@ -50012,6 +50012,280 @@ CREATE INDEX "dc_events_tenant_id_customer_id_occurred_at_index" on "dc_events"(
   "customer_id",
   "occurred_at"
 );
+CREATE TABLE "cpq_models"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" text not null,
+  "description" text,
+  "currency" varchar not null default 'EUR',
+  "base_price" numeric not null default '0',
+  "base_cost" numeric not null default '0',
+  "base_lead_time_days" integer not null default '0',
+  "target_margin_percent" numeric,
+  "max_discount_percent" numeric not null default '100',
+  "part_number_prefix" varchar not null,
+  "part_number_sequence" integer not null default '0',
+  "steps" text,
+  "visual_base" text,
+  "proposal_texts" text,
+  "status" varchar not null default 'draft',
+  "version" integer not null default '1',
+  "published_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpq_models_tenant_id_code_unique" on "cpq_models"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "cpq_models_tenant_id_status_index" on "cpq_models"(
+  "tenant_id",
+  "status"
+);
+CREATE TABLE "cpq_characteristics"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "model_id" varchar not null,
+  "code" varchar not null,
+  "step_code" varchar,
+  "type" varchar not null,
+  "label" text not null,
+  "help" text,
+  "unit" varchar,
+  "range_min" numeric,
+  "range_max" numeric,
+  "range_step" numeric,
+  "default_value" varchar,
+  "is_required" tinyint(1) not null default '1',
+  "part_number" text,
+  "visual" text,
+  "sort_order" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("model_id") references "cpq_models"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpq_characteristics_tenant_id_model_id_code_unique" on "cpq_characteristics"(
+  "tenant_id",
+  "model_id",
+  "code"
+);
+CREATE INDEX "cpq_characteristics_tenant_id_model_id_sort_order_index" on "cpq_characteristics"(
+  "tenant_id",
+  "model_id",
+  "sort_order"
+);
+CREATE TABLE "cpq_characteristic_options"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "model_id" varchar not null,
+  "characteristic_id" varchar not null,
+  "code" varchar not null,
+  "label" text not null,
+  "description" text,
+  "part_number_code" varchar,
+  "is_default" tinyint(1) not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "properties" text,
+  "visual" text,
+  "sort_order" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("model_id") references "cpq_models"("id") on delete cascade,
+  foreign key("characteristic_id") references "cpq_characteristics"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpq_characteristic_options_tenant_id_characteristic_id_code_unique" on "cpq_characteristic_options"(
+  "tenant_id",
+  "characteristic_id",
+  "code"
+);
+CREATE INDEX "cpq_characteristic_options_tenant_id_model_id_index" on "cpq_characteristic_options"(
+  "tenant_id",
+  "model_id"
+);
+CREATE TABLE "cpq_constraint_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "model_id" varchar not null,
+  "code" varchar not null,
+  "rule_type" varchar not null,
+  "condition_expression" text,
+  "target_characteristic" varchar,
+  "target_options" text,
+  "forced_value" text,
+  "params" text,
+  "message" text,
+  "severity" varchar not null default 'error',
+  "priority" integer not null default '100',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("model_id") references "cpq_models"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpq_constraint_rules_tenant_id_model_id_code_unique" on "cpq_constraint_rules"(
+  "tenant_id",
+  "model_id",
+  "code"
+);
+CREATE INDEX "cpq_constraint_rules_tenant_id_model_id_priority_index" on "cpq_constraint_rules"(
+  "tenant_id",
+  "model_id",
+  "priority"
+);
+CREATE TABLE "cpq_superbom_mappings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "model_id" varchar not null,
+  "code" varchar not null,
+  "item_code" varchar not null,
+  "item_name" text not null,
+  "uom" varchar not null default 'PCS',
+  "condition_expression" text,
+  "quantity_formula" text not null default '1',
+  "unit_cost" numeric not null default '0',
+  "unit_cost_formula" text,
+  "lead_time_days" integer not null default '0',
+  "auto_include_message" text,
+  "sort_order" integer not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("model_id") references "cpq_models"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpq_superbom_mappings_tenant_id_model_id_code_unique" on "cpq_superbom_mappings"(
+  "tenant_id",
+  "model_id",
+  "code"
+);
+CREATE INDEX "cpq_superbom_mappings_tenant_id_model_id_sort_order_index" on "cpq_superbom_mappings"(
+  "tenant_id",
+  "model_id",
+  "sort_order"
+);
+CREATE TABLE "cpq_routing_mappings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "model_id" varchar not null,
+  "code" varchar not null,
+  "operation_name" text not null,
+  "work_center" varchar not null,
+  "condition_expression" text,
+  "setup_hours_formula" text not null default '0',
+  "run_hours_formula" text not null default '0',
+  "hourly_rate" numeric not null default '0',
+  "sort_order" integer not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("model_id") references "cpq_models"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpq_routing_mappings_tenant_id_model_id_code_unique" on "cpq_routing_mappings"(
+  "tenant_id",
+  "model_id",
+  "code"
+);
+CREATE INDEX "cpq_routing_mappings_tenant_id_model_id_sort_order_index" on "cpq_routing_mappings"(
+  "tenant_id",
+  "model_id",
+  "sort_order"
+);
+CREATE TABLE "cpq_pricing_formulas"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "model_id" varchar not null,
+  "code" varchar not null,
+  "label" text not null,
+  "effect" varchar not null,
+  "condition_expression" text,
+  "formula" text not null,
+  "sort_order" integer not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("model_id") references "cpq_models"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpq_pricing_formulas_tenant_id_model_id_code_unique" on "cpq_pricing_formulas"(
+  "tenant_id",
+  "model_id",
+  "code"
+);
+CREATE INDEX "cpq_pricing_formulas_tenant_id_model_id_sort_order_index" on "cpq_pricing_formulas"(
+  "tenant_id",
+  "model_id",
+  "sort_order"
+);
+CREATE TABLE "cpq_configured_instances"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "model_id" varchar not null,
+  "model_version" integer not null,
+  "configuration_hash" varchar not null,
+  "part_number" varchar not null,
+  "configuration" text not null,
+  "snapshot" text not null,
+  "currency" varchar not null default 'EUR',
+  "industrial_cost" numeric not null default '0',
+  "list_price" numeric not null default '0',
+  "selling_price" numeric not null default '0',
+  "margin_amount" numeric not null default '0',
+  "margin_percent" numeric not null default '0',
+  "lead_time_days" integer not null default '0',
+  "status" varchar not null default 'confirmed',
+  "mfg_item_id" varchar,
+  "mfg_bom_id" varchar,
+  "customer_reference" varchar,
+  "reuse_count" integer not null default '0',
+  "created_by" varchar,
+  "confirmed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("model_id") references "cpq_models"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cpq_instances_hash_unique" on "cpq_configured_instances"(
+  "tenant_id",
+  "model_id",
+  "configuration_hash"
+);
+CREATE UNIQUE INDEX "cpq_configured_instances_tenant_id_part_number_unique" on "cpq_configured_instances"(
+  "tenant_id",
+  "part_number"
+);
+CREATE INDEX "cpq_configured_instances_tenant_id_status_index" on "cpq_configured_instances"(
+  "tenant_id",
+  "status"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -50473,3 +50747,4 @@ INSERT INTO migrations VALUES(457,'2028_01_03_000100_add_split_payment_to_passiv
 INSERT INTO migrations VALUES(458,'2028_01_04_000100_enhance_chart_of_accounts_and_mappings_mod011',21);
 INSERT INTO migrations VALUES(459,'2028_01_04_000100_create_liquidity_planning_tables',22);
 INSERT INTO migrations VALUES(460,'2028_01_05_000100_create_debt_collection_mod014_tables',22);
+INSERT INTO migrations VALUES(461,'2028_01_04_000100_create_cpq_configurator_mod230_tables',23);
