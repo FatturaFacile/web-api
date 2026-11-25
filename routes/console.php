@@ -251,3 +251,6 @@ Schedule::command('gdo-trade-terms:accrue')->monthlyOn(1, '04:30')->withoutOverl
 
 // Passenger transport (Mod 176): follows the flights of the airport transfers and moves the pickup to the real arrival.
 Schedule::command('passenger-transport:track-flights')->everyTenMinutes()->withoutOverlapping()->onOneServer();
+
+// Customer returns & advance replacements (Mod 232): scan overdue cross-shipping returns and issue penalty invoices.
+Schedule::command('returns:scan-overdue-replacements')->dailyAt('07:45')->withoutOverlapping()->onOneServer();

@@ -56,4 +56,24 @@ return [
         'quantity_exceeds' => 'Only :available can still be returned of ":line".',
         'stock_note' => 'Return to supplier :number',
     ],
+    'advance_replacement' => [
+        'refurbished_not_found' => 'Refurbished B-Stock item not found in the company.',
+        'not_overdue' => 'The advance replacement has not passed its SLA return due date yet.',
+        'outbound_note' => 'Advance replacement (Cross-Shipping) :number',
+        'penalty_invoice_line' => 'Charge for unreturned defective unit (:number — :product, due :due)',
+        'penalty_invoice_note' => 'Automated penalty billing for unreturned advance replacement :number',
+    ],
+    'grading' => [
+        'photos_required' => 'At least one photo of the received product is mandatory at the returns grading station.',
+        'restock_note' => 'Grade A restock from return inspection :number',
+        'rtv_note' => 'Receipt for supplier return from inspection :number',
+        'bstock_note' => 'B-Stock / Refurbished receipt :sku',
+    ],
+    'credit_note' => [
+        'original_invoice_required' => 'An originating sales invoice is required for fiscal control and Credit Note (TD04) issuance.',
+        'already_issued' => 'A Credit Note has already been issued for this customer return.',
+        'art26_over_one_year' => 'Warning Art. 26(2-3) DPR 633/72: :days days (over 1 year) have elapsed since original invoice :invoice dated :date. For commercial agreements/returned goods, VAT recovery is not permitted: issuing Credit Note TD04 for the taxable base only with nature code N2.2 and <DatiFattureCollegate> is proposed.',
+        'art41_liva_notice' => 'Switzerland — Art. 41 LIVA: ensure documentary traceability of the consideration reduction referencing original invoice :invoice.',
+        'default_note' => 'Credit note for return :rma on invoice :invoice',
+    ],
 ];

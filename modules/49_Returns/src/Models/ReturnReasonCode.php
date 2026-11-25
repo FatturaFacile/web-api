@@ -30,6 +30,11 @@ final class ReturnReasonCode extends BaseEnterpriseModel
         'not_as_described' => ['Not as described', false],
         'changed_mind' => ['Changed mind', false],
         'other' => ['Other', false],
+        'right_of_withdrawal' => ['Right of withdrawal / Commercial return', false],
+        'commercial_return' => ['Commercial return / Agreement', false],
+        'wrong_shipment' => ['Wrong shipment', false],
+        'doa' => ['Dead On Arrival (DOA)', true],
+        'warranty_defect' => ['Warranty defect', true],
     ];
 
     protected $table = 'returns_reason_codes';

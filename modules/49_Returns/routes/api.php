@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Returns\Http\Controllers\AdvanceReplacementController;
+use Modules\Returns\Http\Controllers\CustomerReturnController;
+use Modules\Returns\Http\Controllers\ReturnGradingController;
+use Modules\Returns\Http\Controllers\ReverseLogisticsConfigController;
 use Modules\Returns\Http\Controllers\RmaController;
 use Modules\Returns\Http\Controllers\SettingsController;
 use Modules\Returns\Http\Controllers\SummaryController;
@@ -66,4 +70,29 @@ Route::prefix('api/v1/returns')
         Route::post('/supplier-returns/{id}/credit', [SupplierReturnController::class, 'credit'])->name('supplier-returns.credit');
         Route::post('/supplier-returns/{id}/close', [SupplierReturnController::class, 'close'])->name('supplier-returns.close');
         Route::post('/supplier-returns/{id}/cancel', [SupplierReturnController::class, 'cancel'])->name('supplier-returns.cancel');
+
+        // Mod 232: Reverse Logistics, Advance Replacements, Grading/B-Stock & Credit Note VAT Time-Limit Control
+        Route::get('/reverse-logistics/config', [ReverseLogisticsConfigController::class, 'show'])->name('reverse-logistics.config');
+        Route::post('/eligibility-check', [CustomerReturnController::class, 'eligibilityCheck'])->name('eligibility-check');
+
+        Route::get('/customer-returns', [CustomerReturnController::class, 'index'])->name('customer-returns.index');
+        Route::post('/customer-returns', [CustomerReturnController::class, 'store'])->name('customer-returns.store');
+        Route::get('/customer-returns/{id}', [CustomerReturnController::class, 'show'])->name('customer-returns.show');
+        Route::post('/customer-returns/{id}/approve', [CustomerReturnController::class, 'approve'])->name('customer-returns.approve');
+        Route::post('/customer-returns/{id}/receive', [CustomerReturnController::class, 'receive'])->name('customer-returns.receive');
+        Route::get('/customer-returns/{id}/label', [CustomerReturnController::class, 'label'])->name('customer-returns.label');
+
+        Route::post('/credit-note-check', [CustomerReturnController::class, 'creditNoteCheck'])->name('credit-note-check');
+        Route::post('/credit-notes', [CustomerReturnController::class, 'issueCreditNote'])->name('credit-notes.store');
+
+        Route::get('/advance-replacements', [AdvanceReplacementController::class, 'index'])->name('advance-replacements.index');
+        Route::post('/advance-replacements', [AdvanceReplacementController::class, 'store'])->name('advance-replacements.store');
+        Route::post('/advance-replacements/scan-overdue', [AdvanceReplacementController::class, 'scanOverdue'])->name('advance-replacements.scan-overdue');
+        Route::post('/advance-replacements/{id}/receive-defective', [AdvanceReplacementController::class, 'receiveDefective'])->name('advance-replacements.receive-defective');
+        Route::post('/advance-replacements/{id}/bill-overdue', [AdvanceReplacementController::class, 'billOverdue'])->name('advance-replacements.bill-overdue');
+
+        Route::get('/grading-inspections', [ReturnGradingController::class, 'indexInspections'])->name('grading-inspections.index');
+        Route::post('/grading-inspections', [ReturnGradingController::class, 'storeInspection'])->name('grading-inspections.store');
+        Route::get('/refurbished-items', [ReturnGradingController::class, 'indexRefurbished'])->name('refurbished-items.index');
+        Route::post('/refurbished-items/{id}/complete-work-order', [ReturnGradingController::class, 'completeWorkOrder'])->name('refurbished-items.complete-work-order');
     });

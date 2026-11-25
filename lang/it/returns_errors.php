@@ -56,4 +56,24 @@ return [
         'quantity_exceeds' => 'Di ":line" si possono ancora rendere solo :available.',
         'stock_note' => 'Reso a fornitore :number',
     ],
+    'advance_replacement' => [
+        'refurbished_not_found' => 'Articolo ricondizionato B-Stock non trovato nell\'azienda.',
+        'not_overdue' => 'La sostituzione anticipata non ha ancora superato la data di scadenza SLA.',
+        'outbound_note' => 'Sostituzione anticipata (Cross-Shipping) :number',
+        'penalty_invoice_line' => 'Addebito mancato reso unità difettosa (:number — :product, scadenza :due)',
+        'penalty_invoice_note' => 'Fatturazione automatica penale per mancato rientro reso sostituzione anticipata :number',
+    ],
+    'grading' => [
+        'photos_required' => 'È obbligatorio allegare almeno una foto del prodotto ricevuto alla stazione di controllo resi.',
+        'restock_note' => 'Rientro Grado A da perizia reso :number',
+        'rtv_note' => 'Rientro per reso a fornitore da perizia :number',
+        'bstock_note' => 'Carico B-Stock / Ricondizionato :sku',
+    ],
+    'credit_note' => [
+        'original_invoice_required' => 'Per il controllo fiscale e l\'emissione della Nota di Credito (TD04) è richiesta la fattura di vendita originaria.',
+        'already_issued' => 'Per questo reso è già stata emessa una Nota di Credito.',
+        'art26_over_one_year' => 'Attenzione Art. 26, commi 2 e 3 DPR 633/72: sono trascorsi :days giorni (oltre 1 anno) dalla fattura originaria :invoice del :date. Per accordo commerciale / reso merce non è consentito il recupero dell\'IVA: si propone l\'emissione della Nota di Credito TD04 per il solo imponibile con codice natura N2.2 e <DatiFattureCollegate>.',
+        'art41_liva_notice' => 'Svizzera — Art. 41 LIVA: assicurare la tracciabilità documentale della rettifica della controprestazione con riferimento alla fattura originaria :invoice.',
+        'default_note' => 'Nota di credito per reso :rma su fattura :invoice',
+    ],
 ];
