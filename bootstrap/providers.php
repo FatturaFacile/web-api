@@ -35,6 +35,7 @@ use Modules\CorporateGroup\Providers\CorporateGroupServiceProvider;
 use Modules\CpqConfigurator\Providers\CpqConfiguratorServiceProvider;
 use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
+use Modules\CustomerSatisfaction\Providers\CustomerSatisfactionServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
 use Modules\DataResidency\Providers\DataResidencyServiceProvider;
@@ -215,6 +216,7 @@ return [
     IndustrialLaundryServiceProvider::class,
     StatutoryFinancialsServiceProvider::class,
     PassengerTransportServiceProvider::class,
+    CustomerSatisfactionServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,

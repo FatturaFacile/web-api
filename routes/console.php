@@ -251,3 +251,7 @@ Schedule::command('gdo-trade-terms:accrue')->monthlyOn(1, '04:30')->withoutOverl
 
 // Passenger transport (Mod 176): follows the flights of the airport transfers and moves the pickup to the real arrival.
 Schedule::command('passenger-transport:track-flights')->everyTenMinutes()->withoutOverlapping()->onOneServer();
+
+// Customer satisfaction (Mod 245): sends the due survey invitations and schedules the semi-annual relationship survey of the active clients.
+Schedule::command('surveys:process-dispatches')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('surveys:enqueue-semi-annual')->dailyAt('06:30')->withoutOverlapping()->onOneServer();

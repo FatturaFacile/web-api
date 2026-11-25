@@ -463,6 +463,16 @@ return [
                 'write' => ['passenger_transport.write', 'passenger_transport.bill', 'passenger_transport.*'],
             ],
         ],
+        // Customer satisfaction surveys (Mod 245): NPS / CSAT / CES templates, dispatch monitor, closed-loop detractor recovery and the
+        // ISO 9001 § 9.1.2 analytics. Sales, service and quality roles work the recovery queue; finance and managers read the analytics.
+        'customer_satisfaction' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager', 'operations_manager', 'support_manager', 'dispatcher', 'technician'],
+            'write' => [...$finance, 'sales_manager', 'operations_manager', 'support_manager'],
+            'grants' => [
+                'read' => ['customer_satisfaction.read', 'customer_satisfaction.write', 'customer_satisfaction.*'],
+                'write' => ['customer_satisfaction.write', 'customer_satisfaction.*'],
+            ],
+        ],
         // Advanced pricing (price lists, cascading discounts, promotions, margin guardrails): finance and sales roles read;
         // owners, administrators, accountants and sales managers write. Authorizing a below-margin document is further
         // limited by the policy to owners, administrators and the role of the margin policy.
