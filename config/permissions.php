@@ -316,6 +316,8 @@ return [
         'travel' => ['read' => $anyMember, 'write' => $anyMember],
         // Expense reports (Mod 075): every member files their own; ExpenseReportPolicy reserves approval and payout to managers and finance.
         'expense_management' => ['read' => $anyMember, 'write' => $anyMember],
+        // Tender management (Mod 169): bids, vault documents and offers are finance work; TenderManagementPolicy keeps the award conversion to owners, administrators and accountants.
+        'tender_management' => ['read' => $financeReaders, 'write' => $finance],
         // Configure-price-quote: every member reads the configurable models and configurations; sales staff configure
         // and quote. Models, options and rules are reserved by the policy to owners, administrators, sales managers and
         // members granted configurator.manage; approving a configuration below the minimum margin to owners,

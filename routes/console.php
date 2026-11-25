@@ -238,6 +238,9 @@ Schedule::command('fatturafacile:preservation:verify')->weeklyOn(0, '04:00')->wi
 // Workplace health and safety (Mod 099): the 60/30/7 day and overdue alerts for certificates, medical visits and PPE.
 Schedule::command('hse:check-expirations')->dailyAt('06:30')->withoutOverlapping()->onOneServer();
 
+// Tender management (Mod 169): hourly deadline milestones (7 days, 72 h, 24 h, 4 h) and qualification vault expirations.
+Schedule::command('tender:scan-alerts')->hourly()->withoutOverlapping()->onOneServer();
+
 // MES Core integration (issue #184): the UTC shift instances keep a moving horizon, and the change log is compacted.
 $completenessTenantJob('mfg:mes-shift-instances', static fn (Tenant $tenant): object => new MaterialiseShiftInstancesJob($tenant->id))->dailyAt('00:30');
 Schedule::command('mfg:mes-prune-changes')->dailyAt('03:45')->withoutOverlapping()->onOneServer();

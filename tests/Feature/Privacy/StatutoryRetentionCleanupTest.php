@@ -72,7 +72,7 @@ const SCHEDULE_NON_CLEANUPS = [
     'webhooks:dispatch-overdue', 'treasury:open-banking-sync', 'invoices:send-reminders', 'ecommerce:sync-orders', 'sdi:poll', 'Enterprise\EventBus\Jobs\RelayOutboxEventsJob',
     'workflow:webhooks', 'workflow:timeouts', 'crm:activity-reminders', 'esm:sla-breaches', 'esm:support-mailboxes', 'esm:contract-renewals',
     'forecasting:train-payment-models', 'forecasting:refresh-liquidity', 'liquidity:evaluate-alerts', 'forecasting:generate-sku-demand', 'ai-cognitive:nightly-scoring',
-    'inventory:reorder-rules', 'inventory:valuation', 'procurement:expiring-contracts', 'procurement:supplier-otif', 'procurement:overdue-order-reminders', 'procurement:invoice-matching', 'hr:expiring-certifications', 'hse:check-expirations',
+    'inventory:reorder-rules', 'inventory:valuation', 'procurement:expiring-contracts', 'procurement:supplier-otif', 'procurement:overdue-order-reminders', 'procurement:invoice-matching', 'hr:expiring-certifications', 'hse:check-expirations', 'tender:scan-alerts',
     'eam:expiring-coverage', 'hr:leave-accruals', 'subscriptions:metered-usage', 'manufacturing:mrp', 'manufacturing:forecast',
     'associations:fee-reminders', 'associations:renewal-reminders', 'associations:certificate-alerts', 'associations:volunteer-alerts',
     'customs:assessment-decisions', 'workspace:sync', 'fiscal-retail:retry-transmissions', 'subscriptions:renewals', 'subscriptions:billing-run',
