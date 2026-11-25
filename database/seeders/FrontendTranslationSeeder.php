@@ -22,6 +22,7 @@ use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\DebtCollectionFrontendTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
+use Database\Seeders\Translations\ExpenseManagementFrontendTranslations;
 use Database\Seeders\Translations\FieldServiceManagementFrontendTranslations;
 use Database\Seeders\Translations\FixedAssetsFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
@@ -166,6 +167,7 @@ class FrontendTranslationSeeder extends Seeder
             + AcademyFrontendTranslations::all($locale)
             + AgentCommissionsFrontendTranslations::all($locale)
             + DebtCollectionFrontendTranslations::all($locale)
+            + ExpenseManagementFrontendTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)
             + TreasuryBankingFrontendTranslations::all($locale)
             + LiquidityPlanningFrontendTranslations::all($locale)

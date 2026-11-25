@@ -55,6 +55,7 @@ return [
         'marketing_automation' => env('FEATURE_MODULE_MARKETING_AUTOMATION'),
         'agent_commissions' => env('FEATURE_MODULE_AGENT_COMMISSIONS'),
         'debt_collection' => env('FEATURE_MODULE_DEBT_COLLECTION'),
+        'expense_management' => env('FEATURE_MODULE_EXPENSE_MANAGEMENT'),
         'shift_planning' => env('FEATURE_MODULE_SHIFT_PLANNING'),
         'resource_planning' => env('FEATURE_MODULE_RESOURCE_PLANNING'),
         'italian_vat' => env('FEATURE_MODULE_ITALIAN_VAT'),

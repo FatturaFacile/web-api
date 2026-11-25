@@ -304,6 +304,8 @@ return [
         // administrators, HR and accountants see every trip, approve (also travel.approve) and maintain the rate tables
         // (also travel.rates); owners, administrators and accountants (also travel.reconcile) record advances and reconcile.
         'travel' => ['read' => $anyMember, 'write' => $anyMember],
+        // Expense reports (Mod 075): every member files their own; ExpenseReportPolicy reserves approval and payout to managers and finance.
+        'expense_management' => ['read' => $anyMember, 'write' => $anyMember],
         // Configure-price-quote: every member reads the configurable models and configurations; sales staff configure
         // and quote. Models, options and rules are reserved by the policy to owners, administrators, sales managers and
         // members granted configurator.manage; approving a configuration below the minimum margin to owners,

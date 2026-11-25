@@ -97,6 +97,7 @@
             "Modules\\AgentCommissions\\": "modules/77_AgentCommissions/src/",
             "Modules\\DebtCollection\\": "modules/78_DebtCollection/src/",
             "Modules\\LiquidityPlanning\\": "modules/78_LiquidityPlanning/src/",
+            "Modules\\ExpenseManagement\\": "modules/78_ExpenseManagement/src/",
             "Modules\\SwissVat\\": "modules/75_SwissVat/src/",
             "Modules\\LeaveManagement\\": "modules/76_LeaveManagement/src/",
             "Modules\\MarketingAutomation\\": "modules/77_MarketingAutomation/src/",

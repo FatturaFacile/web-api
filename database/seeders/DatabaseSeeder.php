@@ -26,6 +26,8 @@ class DatabaseSeeder extends Seeder
             FrontendTranslationSeeder::class,
             AgentCommissionsReferenceSeeder::class,
             DebtCollectionReferenceSeeder::class,
+            ExpenseManagementReferenceSeeder::class,
+            ExpenseManagementDemoSeeder::class,
             TreasuryBankingReferenceSeeder::class,
             CpqLocalizationSeeder::class,
             CpqConfiguratorLocalizationSeeder::class,
