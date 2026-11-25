@@ -525,6 +525,15 @@ return [
                 'write' => ['van_sales.manage', 'van_sales.settle', 'van_sales.credit_override', 'van_sales.*'],
             ],
         ],
+        // Epic [Dominio 04] SD#139 — Sales Bounded Context (Mod 033-042).
+        'sales_bounded_context' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager', 'member'],
+            'grants' => [
+                'read' => ['sales_bc.view', 'sales_bc.manage', 'sales_bc.approve_margin', 'sales_bc.*'],
+                'write' => ['sales_bc.manage', 'sales_bc.approve_margin', 'sales_bc.*'],
+            ],
+        ],
     ],
 
     /*

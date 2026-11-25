@@ -73,6 +73,7 @@ use Database\Seeders\Translations\ReceivablesFrontendTranslations;
 use Database\Seeders\Translations\ReleaseAuditFrontendTranslations;
 use Database\Seeders\Translations\ResourcePlanningFrontendTranslations;
 use Database\Seeders\Translations\RfqFrontendTranslations;
+use Database\Seeders\Translations\SalesBoundedContextBatch1FrontendTranslations;
 use Database\Seeders\Translations\SalesPipelineFrontendTranslations;
 use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
 use Database\Seeders\Translations\ShiftPlanningFrontendTranslations;
@@ -191,7 +192,8 @@ class FrontendTranslationSeeder extends Seeder
             + LiquidityPlanningFrontendTranslations::all($locale)
             + LiquidityPlanningTranslations::all($locale)
             + CustomerReturnsReverseLogisticsFrontendTranslations::all($locale)
-            + VanSellingFieldSalesFrontendTranslations::all($locale);
+            + VanSellingFieldSalesFrontendTranslations::all($locale)
+            + SalesBoundedContextBatch1FrontendTranslations::all($locale);
     }
 
     /**

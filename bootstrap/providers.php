@@ -91,6 +91,7 @@ use Modules\Quoting\Providers\QuotingServiceProvider;
 use Modules\Rebates\Providers\RebatesServiceProvider;
 use Modules\ResourcePlanning\Providers\ResourcePlanningServiceProvider;
 use Modules\Returns\Providers\ReturnsServiceProvider;
+use Modules\SalesBoundedContext\Providers\SalesBoundedContextServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
@@ -224,4 +225,5 @@ return [
     ArtisanalGelatoServiceProvider::class,
     CpqConfiguratorServiceProvider::class,
     VanSalesAndFieldForceServiceProvider::class,
+    SalesBoundedContextServiceProvider::class,
 ];
