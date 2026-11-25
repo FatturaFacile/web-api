@@ -57,6 +57,7 @@ use Modules\Hospitality\Providers\HospitalityServiceProvider;
 use Modules\Hse\Providers\HseServiceProvider;
 use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
 use Modules\Integrations\Providers\IntegrationsServiceProvider;
+use Modules\Intercompany\Providers\IntercompanyServiceProvider;
 use Modules\Intrastat\Providers\IntrastatServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
@@ -207,6 +208,7 @@ return [
     ExpenseManagementServiceProvider::class,
     TenderManagementServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
+    IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,
     CpqConfiguratorServiceProvider::class,

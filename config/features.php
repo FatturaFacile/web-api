@@ -58,6 +58,7 @@ return [
         'expense_management' => env('FEATURE_MODULE_EXPENSE_MANAGEMENT'),
         'tender_management' => env('FEATURE_MODULE_TENDER_MANAGEMENT'),
         'electronic_signature' => env('FEATURE_MODULE_ELECTRONIC_SIGNATURE'),
+        'intercompany' => env('FEATURE_MODULE_INTERCOMPANY'),
         'shift_planning' => env('FEATURE_MODULE_SHIFT_PLANNING'),
         'resource_planning' => env('FEATURE_MODULE_RESOURCE_PLANNING'),
         'italian_vat' => env('FEATURE_MODULE_ITALIAN_VAT'),

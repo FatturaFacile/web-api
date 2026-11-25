@@ -38236,6 +38236,16 @@ CREATE TABLE "plm_change_orders"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "workflow_stage" varchar not null default 'Draft',
+  "change_reason" varchar not null default 'CostReduction',
+  "is_safety_immediate_cutover" tinyint(1) not null default '0',
+  "existing_stock_disposition_rule" varchar not null default 'UseUp_EsaurimentoScorte',
+  "effective_date_or_lot_cutover" varchar,
+  "lot_serial_cutover_code" varchar,
+  "approvals_matrix_json" text,
+  "ecn_number" varchar,
+  "ecn_released_at" datetime,
+  "cutover_summary_json" text,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -38266,6 +38276,10 @@ CREATE TABLE "plm_change_approvals"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "department" varchar,
+  "actor_role" varchar,
+  "sign_off_hash" varchar,
+  "metadata_json" text,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("change_order_id") references "plm_change_orders"("id") on delete cascade,
   foreign key("approver_id") references "users"("id") on delete cascade,
@@ -38296,6 +38310,21 @@ CREATE TABLE "plm_item_revisions"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "parent_revision_id" varchar,
+  "engineering_part_number" varchar,
+  "description" text,
+  "lifecycle_state" varchar not null default 'InDesign_Prototype',
+  "ebom_structure_json" text,
+  "mbom_id" varchar,
+  "routing_id" varchar,
+  "cad_drawing_pdf_and_step_file_ids" text,
+  "rohs_and_reach_compliant" tinyint(1) not null default '0',
+  "conflict_minerals_compliant" tinyint(1) not null default '0',
+  "technical_file_ref" varchar,
+  "regulatory_metadata_json" text,
+  "mes_drawing_obsolete_watermark" tinyint(1) not null default '0',
+  "superseded_by_revision_id" varchar,
+  "audit_trail_json" text,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   primary key("id")
 );
@@ -38327,6 +38356,14 @@ CREATE TABLE "plm_affected_items"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "from_revision_id" varchar,
+  "target_revision_id" varchar,
+  "disposition_rule" varchar,
+  "cutover_mode" varchar not null default 'PhaseOut_UseUpStock',
+  "effective_date" date,
+  "lot_serial_cutover" varchar,
+  "quarantined_lots_count" integer not null default '0',
+  "mes_drawings_obsoleted_count" integer not null default '0',
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("change_order_id") references "plm_change_orders"("id") on delete cascade,
   primary key("id")
@@ -51210,6 +51247,704 @@ CREATE INDEX "budget_audit_subject" on "budget_audit_events"(
 CREATE INDEX "budget_audit_events_subject_id_index" on "budget_audit_events"(
   "subject_id"
 );
+CREATE INDEX "plm_item_revisions_parent_revision_id_index" on "plm_item_revisions"(
+  "parent_revision_id"
+);
+CREATE INDEX "plm_item_revisions_engineering_part_number_index" on "plm_item_revisions"(
+  "engineering_part_number"
+);
+CREATE INDEX "plm_item_revisions_lifecycle_state_index" on "plm_item_revisions"(
+  "lifecycle_state"
+);
+CREATE INDEX "plm_item_revisions_mbom_id_index" on "plm_item_revisions"(
+  "mbom_id"
+);
+CREATE INDEX "plm_item_revisions_routing_id_index" on "plm_item_revisions"(
+  "routing_id"
+);
+CREATE INDEX "plm_change_orders_workflow_stage_index" on "plm_change_orders"(
+  "workflow_stage"
+);
+CREATE INDEX "plm_change_orders_change_reason_index" on "plm_change_orders"(
+  "change_reason"
+);
+CREATE INDEX "plm_change_approvals_department_index" on "plm_change_approvals"(
+  "department"
+);
+CREATE TABLE "plm_cad_import_sessions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "session_code" varchar not null,
+  "product_id" varchar,
+  "target_revision_id" varchar,
+  "target_mbom_id" varchar,
+  "cad_source_system" varchar not null,
+  "source_file_metadata" text not null,
+  "parsed_part_list_json" text not null,
+  "new_parts_to_create_count" integer not null default '0',
+  "created_parts_json" text,
+  "changed_quantities_diff_list" text,
+  "removed_parts_list" text,
+  "side_by_side_diff_json" text,
+  "cost_rollup_comparison_json" text,
+  "validation_warnings_json" text,
+  "status" varchar not null default 'Parsed',
+  "created_by" varchar,
+  "committed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "plm_cad_import_sessions_tenant_id_session_code_index" on "plm_cad_import_sessions"(
+  "tenant_id",
+  "session_code"
+);
+CREATE INDEX "plm_cad_import_sessions_tenant_id_index" on "plm_cad_import_sessions"(
+  "tenant_id"
+);
+CREATE INDEX "plm_cad_import_sessions_product_id_index" on "plm_cad_import_sessions"(
+  "product_id"
+);
+CREATE INDEX "plm_cad_import_sessions_target_revision_id_index" on "plm_cad_import_sessions"(
+  "target_revision_id"
+);
+CREATE INDEX "plm_cad_import_sessions_target_mbom_id_index" on "plm_cad_import_sessions"(
+  "target_mbom_id"
+);
+CREATE INDEX "plm_cad_import_sessions_status_index" on "plm_cad_import_sessions"(
+  "status"
+);
+CREATE TABLE "plm_technical_dossiers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "mfg_item_id" varchar not null,
+  "revision_id" varchar,
+  "dossier_code" varchar not null,
+  "strategy_code" varchar not null default 'ce_ukca_machinery_rohs',
+  "machinery_directive_ref" varchar not null default '2006/42/EC + EU 2023/1230 + CH OMacch(RS 819.14)',
+  "ce_declaration_status" varchar not null default 'compliant',
+  "ukca_declaration_status" varchar not null default 'compliant',
+  "omacch_mra_ch_eu_compliant" tinyint(1) not null default '1',
+  "rohs_compliant" tinyint(1) not null default '0',
+  "reach_svhc_compliant" tinyint(1) not null default '0',
+  "conflict_minerals_compliant" tinyint(1) not null default '0',
+  "iso_audit_standards_json" text,
+  "checklist_items_json" text,
+  "bom_compliance_rollup_json" text,
+  "last_evaluated_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "plm_technical_dossiers_tenant_id_dossier_code_index" on "plm_technical_dossiers"(
+  "tenant_id",
+  "dossier_code"
+);
+CREATE INDEX "plm_technical_dossiers_tenant_id_index" on "plm_technical_dossiers"(
+  "tenant_id"
+);
+CREATE INDEX "plm_technical_dossiers_mfg_item_id_index" on "plm_technical_dossiers"(
+  "mfg_item_id"
+);
+CREATE INDEX "plm_technical_dossiers_revision_id_index" on "plm_technical_dossiers"(
+  "revision_id"
+);
+CREATE TABLE "ic_group_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "mirror_mode" varchar not null default 'draft',
+  "auto_mirror" tinyint(1) not null default '1',
+  "sync_payments" tinyint(1) not null default '1',
+  "netting_enabled" tinyint(1) not null default '1',
+  "amount_tolerance" numeric not null default '1',
+  "date_tolerance_days" integer not null default '5',
+  "default_standard" varchar not null default 'fer30',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ic_group_settings_group_uq" on "ic_group_settings"(
+  "tenant_id",
+  "group_id"
+);
+CREATE TABLE "ic_party_links"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "entity_tenant_id" varchar not null,
+  "counterparty_tenant_id" varchar not null,
+  "contact_id" varchar not null,
+  "role" varchar not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ic_party_links_uq" on "ic_party_links"(
+  "group_id",
+  "entity_tenant_id",
+  "counterparty_tenant_id",
+  "role"
+);
+CREATE INDEX "ic_party_links_contact_idx" on "ic_party_links"(
+  "entity_tenant_id",
+  "contact_id"
+);
+CREATE INDEX "ic_party_links_group_id_index" on "ic_party_links"("group_id");
+CREATE TABLE "ic_transaction_links"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "pair_id" varchar not null,
+  "document_type" varchar not null,
+  "source_tenant_id" varchar not null,
+  "source_document_id" varchar not null,
+  "source_document_number" varchar,
+  "mirror_tenant_id" varchar not null,
+  "mirror_document_id" varchar,
+  "mirror_document_number" varchar,
+  "mirror_status" varchar,
+  "status" varchar not null default 'pending',
+  "currency" varchar not null,
+  "net_amount" numeric not null default '0',
+  "tax_amount" numeric not null default '0',
+  "gross_amount" numeric not null default '0',
+  "document_date" date not null,
+  "payment_status" varchar not null default 'unpaid',
+  "synced_paid_amount" numeric not null default '0',
+  "paid_variance" numeric not null default '0',
+  "error_message" varchar,
+  "idempotency_key" varchar not null,
+  "version" integer not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ic_tx_links_idem_uq" on "ic_transaction_links"(
+  "tenant_id",
+  "idempotency_key"
+);
+CREATE INDEX "ic_tx_links_status_idx" on "ic_transaction_links"(
+  "group_id",
+  "status"
+);
+CREATE INDEX "ic_tx_links_source_idx" on "ic_transaction_links"(
+  "source_tenant_id",
+  "source_document_id"
+);
+CREATE INDEX "ic_tx_links_mirror_idx" on "ic_transaction_links"(
+  "mirror_tenant_id",
+  "mirror_document_id"
+);
+CREATE INDEX "ic_transaction_links_pair_id_index" on "ic_transaction_links"(
+  "pair_id"
+);
+CREATE TABLE "ic_sync_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "transaction_id" varchar,
+  "event" varchar not null,
+  "message_key" varchar,
+  "context" text,
+  "amount" numeric,
+  "occurred_at" datetime not null,
+  "user_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_sync_events_group_id_index" on "ic_sync_events"("group_id");
+CREATE INDEX "ic_sync_events_transaction_id_index" on "ic_sync_events"(
+  "transaction_id"
+);
+CREATE TABLE "ic_netting_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "entity_a_tenant_id" varchar not null,
+  "entity_b_tenant_id" varchar not null,
+  "as_of_date" date not null,
+  "currency" varchar not null,
+  "status" varchar not null default 'draft',
+  "receivable_total" numeric not null default '0',
+  "payable_total" numeric not null default '0',
+  "net_amount" numeric not null default '0',
+  "net_direction" varchar not null default 'balanced',
+  "fx_variance" numeric not null default '0',
+  "amount_variance" numeric not null default '0',
+  "cancel_reason" varchar,
+  "version" integer not null default '1',
+  "confirmed_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_netting_runs_status_idx" on "ic_netting_runs"(
+  "group_id",
+  "status"
+);
+CREATE INDEX "ic_netting_runs_group_id_index" on "ic_netting_runs"(
+  "group_id"
+);
+CREATE TABLE "ic_netting_items"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "netting_run_id" varchar not null,
+  "transaction_id" varchar,
+  "side" varchar not null,
+  "document_number" varchar,
+  "currency" varchar not null,
+  "open_amount" numeric not null,
+  "applied_amount" numeric not null default '0',
+  "fx_rate" numeric not null default '1',
+  "variance" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_netting_items_netting_run_id_index" on "ic_netting_items"(
+  "netting_run_id"
+);
+CREATE TABLE "ic_reconciliation_batches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "as_of_date" date not null,
+  "status" varchar not null default 'open',
+  "totals" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_reconciliation_batches_group_id_index" on "ic_reconciliation_batches"(
+  "group_id"
+);
+CREATE TABLE "ic_reconciliation_items"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "batch_id" varchar not null,
+  "group_id" varchar not null,
+  "entity_a_tenant_id" varchar not null,
+  "entity_b_tenant_id" varchar not null,
+  "a_document_id" varchar,
+  "a_document_number" varchar,
+  "a_document_date" date,
+  "a_currency" varchar,
+  "a_amount" numeric,
+  "a_tax" numeric not null default '0',
+  "b_document_id" varchar,
+  "b_document_number" varchar,
+  "b_document_date" date,
+  "b_currency" varchar,
+  "b_amount" numeric,
+  "b_tax" numeric,
+  "difference" numeric not null default '0',
+  "difference_group_currency" numeric not null default '0',
+  "status" varchar not null default 'unmatched',
+  "anomaly_type" varchar not null default 'none',
+  "anomaly_reason" varchar,
+  "match_kind" varchar,
+  "resolution_reason" varchar,
+  "adjustment_amount" numeric,
+  "resolved_by" varchar,
+  "resolved_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_recon_items_status_idx" on "ic_reconciliation_items"(
+  "batch_id",
+  "status"
+);
+CREATE INDEX "ic_recon_items_anomaly_idx" on "ic_reconciliation_items"(
+  "batch_id",
+  "anomaly_type"
+);
+CREATE INDEX "ic_reconciliation_items_batch_id_index" on "ic_reconciliation_items"(
+  "batch_id"
+);
+CREATE TABLE "ic_period_rates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar,
+  "group_currency" varchar not null,
+  "currency" varchar not null,
+  "rate_type" varchar not null,
+  "period_end" date not null,
+  "rate" numeric not null,
+  "note" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ic_period_rates_uq" on "ic_period_rates"(
+  "tenant_id",
+  "group_currency",
+  "currency",
+  "rate_type",
+  "period_end"
+);
+CREATE INDEX "ic_period_rates_group_id_index" on "ic_period_rates"(
+  "group_id"
+);
+CREATE TABLE "ic_run_workflows"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "status" varchar not null default 'draft',
+  "version" integer not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ic_run_workflows_run_uq" on "ic_run_workflows"(
+  "tenant_id",
+  "run_id"
+);
+CREATE TABLE "ic_run_workflow_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "from_status" varchar,
+  "to_status" varchar not null,
+  "action" varchar not null,
+  "reason" varchar,
+  "user_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_run_workflow_events_run_id_index" on "ic_run_workflow_events"(
+  "run_id"
+);
+CREATE TABLE "ic_consolidation_packages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "standard" varchar not null,
+  "payload" text not null,
+  "checksum" varchar not null,
+  "generated_at" datetime not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_consolidation_packages_run_id_index" on "ic_consolidation_packages"(
+  "run_id"
+);
+CREATE TABLE "ic_manual_adjustments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "reference" varchar not null,
+  "reason" varchar not null,
+  "status" varchar not null default 'active',
+  "amount" numeric not null default '0',
+  "lines" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_manual_adjustments_run_id_index" on "ic_manual_adjustments"(
+  "run_id"
+);
+CREATE TABLE "tnd_notices"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "title" varchar not null,
+  "description" text,
+  "jurisdiction" varchar not null,
+  "procedure_type" varchar not null default 'open',
+  "contracting_authority_name" varchar not null,
+  "contracting_authority_contact_id" varchar,
+  "simap_project_number" varchar,
+  "cig_code_it" varchar,
+  "cup_code_it" varchar,
+  "rup_name" varchar,
+  "dedicated_bank_account_it" varchar,
+  "cpv_category_codes" text,
+  "award_criterion" varchar not null default 'LowestPrice',
+  "formula_type" varchar,
+  "currency" varchar not null default 'EUR',
+  "base_auction_amount" numeric not null default '0',
+  "non_subject_safety_costs_amount" numeric not null default '0',
+  "estimated_labor_cost_amount" numeric not null default '0',
+  "technical_max_score" numeric,
+  "economic_max_score" numeric,
+  "required_soa_categories" text,
+  "required_min_turnover" numeric,
+  "turnover_reference_years" integer not null default '3',
+  "required_similar_projects_count" integer not null default '0',
+  "required_similar_projects_amount" numeric,
+  "required_certifications" text,
+  "publication_date" date,
+  "clarification_deadline_at" datetime,
+  "submission_peremptory_deadline_at" datetime,
+  "status" varchar not null default 'open',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "tnd_notices_tenant_id_jurisdiction_status_index" on "tnd_notices"(
+  "tenant_id",
+  "jurisdiction",
+  "status"
+);
+CREATE INDEX "tnd_notices_tenant_id_submission_peremptory_deadline_at_index" on "tnd_notices"(
+  "tenant_id",
+  "submission_peremptory_deadline_at"
+);
+CREATE TABLE "tnd_vault_documents"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "doc_type" varchar not null,
+  "title" varchar,
+  "document_number" varchar,
+  "issuing_body" varchar,
+  "soa_categories_classifications" text,
+  "issue_date" date,
+  "expiry_date" date,
+  "intermediate_triennial_check_date" date,
+  "fvoe20_synced" tinyint(1) not null default '0',
+  "fvoe20_synced_at" datetime,
+  "numeric_value" numeric,
+  "file_path" varchar,
+  "file_name" varchar,
+  "file_sha256" varchar,
+  "verification_status" varchar not null default 'Valid',
+  "renewed_from_id" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "tnd_vault_documents_tenant_id_doc_type_index" on "tnd_vault_documents"(
+  "tenant_id",
+  "doc_type"
+);
+CREATE INDEX "tnd_vault_documents_tenant_id_verification_status_expiry_date_index" on "tnd_vault_documents"(
+  "tenant_id",
+  "verification_status",
+  "expiry_date"
+);
+CREATE TABLE "tnd_participations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "tender_id" varchar not null,
+  "participation_mode" varchar not null default 'SingleCompany',
+  "rti_quota_percentage" numeric,
+  "partner_companies" text,
+  "go_no_go_score" text,
+  "provisional_bid_bond_id" varchar,
+  "bid_bond_base_percentage" numeric,
+  "bid_bond_applied_reductions" text,
+  "bid_bond_final_amount" numeric,
+  "anac_contribution_receipt_id" varchar,
+  "anac_contribution_amount" numeric,
+  "administrative_envelope_docs" text,
+  "technical_envelope_docs" text,
+  "technical_envelope_score_target" numeric,
+  "economic_envelope_docs" text,
+  "economic_discount_percentage_offered" numeric,
+  "offered_amount" numeric,
+  "estimated_total_cost" numeric,
+  "net_margin_amount" numeric,
+  "company_safety_costs_declared" numeric,
+  "company_labor_costs_declared" numeric,
+  "offer_simulation" text,
+  "edgue_data" text,
+  "submitted_at" datetime,
+  "status" varchar not null default 'Scouting',
+  "converted_contract_id" varchar,
+  "converted_project_job_id" varchar,
+  "converted_at" datetime,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("tender_id") references "tnd_notices"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "tnd_participations_tenant_id_status_index" on "tnd_participations"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "tnd_participations_tenant_id_tender_id_index" on "tnd_participations"(
+  "tenant_id",
+  "tender_id"
+);
+CREATE TABLE "tnd_competitor_benchmarks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "tender_id" varchar,
+  "competitor_name" varchar not null,
+  "contracting_authority_name" varchar not null,
+  "cpv_code" varchar,
+  "jurisdiction" varchar,
+  "award_date" date,
+  "base_auction_amount" numeric,
+  "awarded_amount" numeric,
+  "offered_discount_percentage" numeric,
+  "technical_score" numeric,
+  "economic_score" numeric,
+  "total_score" numeric,
+  "is_winner" tinyint(1) not null default '0',
+  "source" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "tnd_competitor_benchmarks_tenant_id_contracting_authority_name_index" on "tnd_competitor_benchmarks"(
+  "tenant_id",
+  "contracting_authority_name"
+);
+CREATE INDEX "tnd_competitor_benchmarks_tenant_id_cpv_code_index" on "tnd_competitor_benchmarks"(
+  "tenant_id",
+  "cpv_code"
+);
+CREATE TABLE "tnd_alerts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "subject_type" varchar not null,
+  "subject_id" varchar not null,
+  "alert_type" varchar not null,
+  "milestone" varchar not null,
+  "severity" varchar not null default 'warning',
+  "message_key" varchar not null,
+  "message_params" text,
+  "due_at" datetime,
+  "raised_at" datetime not null,
+  "acknowledged_at" datetime,
+  "acknowledged_by" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_tnd_alert_milestone" on "tnd_alerts"(
+  "tenant_id",
+  "subject_id",
+  "alert_type",
+  "milestone"
+);
+CREATE INDEX "tnd_alerts_tenant_id_acknowledged_at_index" on "tnd_alerts"(
+  "tenant_id",
+  "acknowledged_at"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -51675,3 +52410,6 @@ INSERT INTO migrations VALUES(461,'2028_01_04_000100_create_cpq_configurator_mod
 INSERT INTO migrations VALUES(462,'2028_01_04_000100_create_expense_management_mod075_tables',24);
 INSERT INTO migrations VALUES(463,'2028_01_04_000100_create_electronic_signature_tables',25);
 INSERT INTO migrations VALUES(464,'2028_01_06_000100_create_budgeting_spend_control_mod019_tables',25);
+INSERT INTO migrations VALUES(465,'2027_11_25_150000_upgrade_plm_mod168_tables',26);
+INSERT INTO migrations VALUES(466,'2028_01_06_000100_create_intercompany_tables',26);
+INSERT INTO migrations VALUES(467,'2028_01_06_000100_create_tender_management_mod169_tables',26);

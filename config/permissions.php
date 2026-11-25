@@ -134,6 +134,13 @@ return [
                 'write' => ['electronic_signature.write', 'electronic_signature.*'],
             ],
         ],
+        // Intercompany mirror postings, reciprocal reconciliation and the consolidation workflow (Mod 021): finance roles only;
+        // the ledgers of every member entity are checked again by ConsolidationAccessGuard.
+        'intercompany' => [
+            'read' => $financeReaders,
+            'write' => $finance,
+            'grants' => ['read' => ['intercompany.read', 'intercompany.write', 'intercompany.*', 'gl.*'], 'write' => ['intercompany.write', 'intercompany.*', 'gl.*']],
+        ],
         'digital_preservation' => ['read' => $financeReaders, 'write' => $finance],
         // AI cash flow and demand forecasting (Mod 094). forecasting.view reads, forecasting.simulate trains and simulates; the
         // one-click apply of reorder thresholds to the warehouse and planning data is its own module (forecasting.apply_wms).
