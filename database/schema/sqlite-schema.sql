@@ -52371,6 +52371,450 @@ CREATE INDEX "gdt_settlement_lines_tenant_id_source_type_source_id_index" on "gd
 CREATE INDEX "gdt_settlement_lines_tenant_id_index" on "gdt_settlement_lines"(
   "tenant_id"
 );
+CREATE TABLE "ilr_roll_cages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "barcode" varchar not null,
+  "label" varchar,
+  "tare_weight_kg" numeric not null default '0',
+  "max_gross_weight_kg" numeric,
+  "is_active" tinyint(1) not null default '1',
+  "holder_contact_id" varchar,
+  "last_scanned_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("holder_contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ilr_roll_cages_tenant_id_barcode_unique" on "ilr_roll_cages"(
+  "tenant_id",
+  "barcode"
+);
+CREATE INDEX "ilr_roll_cages_tenant_id_holder_contact_id_index" on "ilr_roll_cages"(
+  "tenant_id",
+  "holder_contact_id"
+);
+CREATE INDEX "ilr_roll_cages_tenant_id_index" on "ilr_roll_cages"(
+  "tenant_id"
+);
+CREATE TABLE "ilr_garments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "epc_uid_rfid_hex" varchar not null,
+  "thermal_barcode" varchar,
+  "article_type" varchar not null,
+  "product_id" varchar,
+  "description" varchar,
+  "assigned_customer_id" varchar,
+  "assigned_wearer_employee_name" varchar,
+  "assigned_locker_code" varchar,
+  "wash_cycles_count" integer not null default '0',
+  "max_certified_wash_cycles_limit" integer,
+  "ppe_certification_standard" varchar,
+  "ppe_category" integer,
+  "current_lifecycle_state" varchar not null default 'clean_in_stock',
+  "is_reissue_blocked" tinyint(1) not null default '0',
+  "last_scanned_at" datetime,
+  "last_delivered_at" datetime,
+  "last_soiled_at" datetime,
+  "condemned_at" datetime,
+  "unreturned_billed_at" datetime,
+  "mending_or_condemn_reason" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("assigned_customer_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ilr_garments_tenant_id_epc_uid_rfid_hex_unique" on "ilr_garments"(
+  "tenant_id",
+  "epc_uid_rfid_hex"
+);
+CREATE INDEX "ilr_garments_customer_state_idx" on "ilr_garments"(
+  "tenant_id",
+  "assigned_customer_id",
+  "current_lifecycle_state"
+);
+CREATE INDEX "ilr_garments_tenant_id_article_type_index" on "ilr_garments"(
+  "tenant_id",
+  "article_type"
+);
+CREATE INDEX "ilr_garments_tenant_id_assigned_locker_code_index" on "ilr_garments"(
+  "tenant_id",
+  "assigned_locker_code"
+);
+CREATE INDEX "ilr_garments_tenant_id_index" on "ilr_garments"("tenant_id");
+CREATE TABLE "ilr_par_contracts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "customer_id" varchar not null,
+  "customer_segment" varchar not null default 'hotel',
+  "valid_from" date not null,
+  "valid_to" date,
+  "is_active" tinyint(1) not null default '1',
+  "billing_model" varchar not null default 'per_piece_washed',
+  "kg_basis" varchar not null default 'clean',
+  "unreturned_garment_replacement_price" numeric not null default '0',
+  "unreturned_threshold_days" integer not null default '60',
+  "jurisdiction" varchar not null default 'IT',
+  "currency" varchar not null default 'EUR',
+  "tax_rate" numeric not null default '22',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ilr_par_contracts_tenant_id_code_unique" on "ilr_par_contracts"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "ilr_par_contracts_tenant_id_customer_id_is_active_index" on "ilr_par_contracts"(
+  "tenant_id",
+  "customer_id",
+  "is_active"
+);
+CREATE INDEX "ilr_par_contracts_tenant_id_index" on "ilr_par_contracts"(
+  "tenant_id"
+);
+CREATE TABLE "ilr_par_contract_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contract_id" varchar not null,
+  "article_type" varchar not null,
+  "product_id" varchar,
+  "label" varchar,
+  "circulating_stock_qty" integer not null default '0',
+  "weekly_min_billing_percentage" numeric not null default '0',
+  "seasonal_min_billing_percentage" numeric,
+  "season_start_month" integer,
+  "season_end_month" integer,
+  "unit_wash_price" numeric not null default '0',
+  "price_per_kg" numeric not null default '0',
+  "rental_price" numeric not null default '0',
+  "replacement_price" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contract_id") references "ilr_par_contracts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ilr_par_contract_lines_contract_id_article_type_unique" on "ilr_par_contract_lines"(
+  "contract_id",
+  "article_type"
+);
+CREATE INDEX "ilr_par_contract_lines_tenant_id_index" on "ilr_par_contract_lines"(
+  "tenant_id"
+);
+CREATE TABLE "ilr_scan_sessions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "external_scan_id" varchar,
+  "gate_antenna_id" varchar not null,
+  "roll_cage_id" varchar,
+  "roll_cage_barcode" varchar not null,
+  "roll_cage_tare_weight_kg" numeric not null default '0',
+  "gross_weight_kg" numeric,
+  "net_weight_kg" numeric,
+  "direction" varchar not null,
+  "contact_id" varchar,
+  "read_epc_tags_list" text,
+  "accepted_epc_tags" text,
+  "rejected_reads" text,
+  "alerts" text,
+  "raw_reads_count" integer not null default '0',
+  "accepted_count" integer not null default '0',
+  "rejected_count" integer not null default '0',
+  "generated_ddt_id" varchar,
+  "generated_ddt_number" varchar,
+  "scanned_at" datetime not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("roll_cage_id") references "ilr_roll_cages"("id") on delete set null,
+  foreign key("contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ilr_scan_sessions_tenant_id_external_scan_id_unique" on "ilr_scan_sessions"(
+  "tenant_id",
+  "external_scan_id"
+);
+CREATE INDEX "ilr_scan_sessions_customer_idx" on "ilr_scan_sessions"(
+  "tenant_id",
+  "contact_id",
+  "direction",
+  "scanned_at"
+);
+CREATE INDEX "ilr_scan_sessions_tenant_id_index" on "ilr_scan_sessions"(
+  "tenant_id"
+);
+CREATE TABLE "ilr_garment_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "garment_id" varchar not null,
+  "scan_session_id" varchar,
+  "contact_id" varchar,
+  "article_type" varchar not null,
+  "event_type" varchar not null,
+  "from_state" varchar,
+  "to_state" varchar,
+  "wash_cycles_count" integer not null default '0',
+  "note" varchar,
+  "occurred_at" datetime not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("garment_id") references "ilr_garments"("id") on delete cascade,
+  foreign key("scan_session_id") references "ilr_scan_sessions"("id") on delete set null,
+  foreign key("contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "ilr_garment_events_tenant_id_garment_id_occurred_at_index" on "ilr_garment_events"(
+  "tenant_id",
+  "garment_id",
+  "occurred_at"
+);
+CREATE INDEX "ilr_garment_events_billing_idx" on "ilr_garment_events"(
+  "tenant_id",
+  "contact_id",
+  "event_type",
+  "occurred_at"
+);
+CREATE INDEX "ilr_garment_events_tenant_id_index" on "ilr_garment_events"(
+  "tenant_id"
+);
+CREATE TABLE "ilr_wash_programs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "is_thermal" tinyint(1) not null default '1',
+  "is_chemical" tinyint(1) not null default '0',
+  "disinfects" tinyint(1) not null default '0',
+  "target_temperature_c" numeric not null default '0',
+  "min_hold_minutes" integer not null default '0',
+  "min_chemical_dosing_ml_per_kg" numeric,
+  "disinfectant_code" varchar,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ilr_wash_programs_tenant_id_code_unique" on "ilr_wash_programs"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "ilr_wash_programs_tenant_id_index" on "ilr_wash_programs"(
+  "tenant_id"
+);
+CREATE TABLE "ilr_wash_batches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "batch_code" varchar not null,
+  "disinfection_thermal_chem_program_code" varchar not null,
+  "rabc_risk_zone" varchar not null default 'standard',
+  "rabc_control_status" varchar not null default 'pending',
+  "target_temperature_c" numeric not null default '0',
+  "target_hold_minutes" integer not null default '0',
+  "target_chemical_dosing_ml_per_kg" numeric,
+  "measured_temperature_c" numeric,
+  "measured_hold_minutes" integer,
+  "measured_chemical_dosing_ml_per_kg" numeric,
+  "microbiological_cfu_per_25cm2" numeric,
+  "load_net_weight_kg" numeric not null default '0',
+  "garments_count" integer not null default '0',
+  "operator_name" varchar,
+  "verifier_name" varchar,
+  "verified_by_user_id" varchar,
+  "violations" text,
+  "washed_at" datetime,
+  "certified_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ilr_wash_batches_tenant_id_batch_code_unique" on "ilr_wash_batches"(
+  "tenant_id",
+  "batch_code"
+);
+CREATE INDEX "ilr_wash_batches_tenant_id_rabc_control_status_index" on "ilr_wash_batches"(
+  "tenant_id",
+  "rabc_control_status"
+);
+CREATE INDEX "ilr_wash_batches_tenant_id_index" on "ilr_wash_batches"(
+  "tenant_id"
+);
+CREATE TABLE "ilr_wash_batch_sessions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "wash_batch_id" varchar not null,
+  "scan_session_id" varchar not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("wash_batch_id") references "ilr_wash_batches"("id") on delete cascade,
+  foreign key("scan_session_id") references "ilr_scan_sessions"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ilr_wash_batch_sessions_wash_batch_id_scan_session_id_unique" on "ilr_wash_batch_sessions"(
+  "wash_batch_id",
+  "scan_session_id"
+);
+CREATE INDEX "ilr_wash_batch_sessions_tenant_id_index" on "ilr_wash_batch_sessions"(
+  "tenant_id"
+);
+CREATE TABLE "ilr_wash_batch_garments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "wash_batch_id" varchar not null,
+  "garment_id" varchar not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("wash_batch_id") references "ilr_wash_batches"("id") on delete cascade,
+  foreign key("garment_id") references "ilr_garments"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ilr_wash_batch_garments_wash_batch_id_garment_id_unique" on "ilr_wash_batch_garments"(
+  "wash_batch_id",
+  "garment_id"
+);
+CREATE INDEX "ilr_wash_batch_garments_tenant_id_index" on "ilr_wash_batch_garments"(
+  "tenant_id"
+);
+CREATE TABLE "ilr_billing_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contract_id" varchar not null,
+  "customer_id" varchar not null,
+  "period_start" date not null,
+  "period_end" date not null,
+  "status" varchar not null default 'drafted',
+  "billing_model" varchar not null,
+  "jurisdiction" varchar not null default 'IT',
+  "currency" varchar not null default 'EUR',
+  "washed_pieces" integer not null default '0',
+  "net_weight_kg" numeric not null default '0',
+  "wash_amount" numeric not null default '0',
+  "minimum_top_up_amount" numeric not null default '0',
+  "rental_amount" numeric not null default '0',
+  "unreturned_amount" numeric not null default '0',
+  "subtotal" numeric not null default '0',
+  "tax_rate" numeric not null default '0',
+  "tax_amount" numeric not null default '0',
+  "total" numeric not null default '0',
+  "invoice_id" varchar,
+  "invoice_number" varchar,
+  "compliance_report" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contract_id") references "ilr_par_contracts"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ilr_billing_runs_period_uq" on "ilr_billing_runs"(
+  "tenant_id",
+  "contract_id",
+  "period_start",
+  "period_end"
+);
+CREATE INDEX "ilr_billing_runs_tenant_id_customer_id_index" on "ilr_billing_runs"(
+  "tenant_id",
+  "customer_id"
+);
+CREATE INDEX "ilr_billing_runs_tenant_id_index" on "ilr_billing_runs"(
+  "tenant_id"
+);
+CREATE TABLE "ilr_billing_run_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "billing_run_id" varchar not null,
+  "position" integer not null default '1',
+  "kind" varchar not null,
+  "article_type" varchar,
+  "quantity" numeric not null default '0',
+  "uom" varchar not null default 'PZ',
+  "unit_price" numeric not null default '0',
+  "amount" numeric not null default '0',
+  "detail" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("billing_run_id") references "ilr_billing_runs"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ilr_billing_run_lines_billing_run_id_position_index" on "ilr_billing_run_lines"(
+  "billing_run_id",
+  "position"
+);
+CREATE INDEX "ilr_billing_run_lines_tenant_id_index" on "ilr_billing_run_lines"(
+  "tenant_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -52840,3 +53284,4 @@ INSERT INTO migrations VALUES(465,'2027_11_25_150000_upgrade_plm_mod168_tables',
 INSERT INTO migrations VALUES(466,'2028_01_06_000100_create_intercompany_tables',26);
 INSERT INTO migrations VALUES(467,'2028_01_06_000100_create_tender_management_mod169_tables',26);
 INSERT INTO migrations VALUES(468,'2028_01_06_000100_create_gdo_trade_terms_mod231_tables',27);
+INSERT INTO migrations VALUES(469,'2028_01_07_000100_create_industrial_laundry_mod177_tables',28);

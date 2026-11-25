@@ -58,6 +58,7 @@ return [
         'expense_management' => env('FEATURE_MODULE_EXPENSE_MANAGEMENT'),
         'tender_management' => env('FEATURE_MODULE_TENDER_MANAGEMENT'),
         'gdo_trade_terms' => env('FEATURE_MODULE_GDO_TRADE_TERMS'),
+        'industrial_laundry' => env('FEATURE_MODULE_INDUSTRIAL_LAUNDRY'),
         'electronic_signature' => env('FEATURE_MODULE_ELECTRONIC_SIGNATURE'),
         'intercompany' => env('FEATURE_MODULE_INTERCOMPANY'),
         'shift_planning' => env('FEATURE_MODULE_SHIFT_PLANNING'),

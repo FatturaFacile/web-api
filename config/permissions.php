@@ -429,6 +429,18 @@ return [
                 'write' => ['gdo_trade_terms.write', 'gdo_trade_terms.settle', 'gdo_trade_terms.*'],
             ],
         ],
+        // Industrial laundries and linen / workwear rental (Mod 177): tunnel gate scans, par stock contracts, PPE wash limits, RABC
+        // batches and the monthly bill. Finance, sales and warehouse roles read; owners, administrators, accountants, sales
+        // managers and the warehouse and production staff of the laundry write. IndustrialLaundryPolicy reserves consolidating the
+        // monthly bill and drafting its invoice to finance (or industrial_laundry.bill).
+        'industrial_laundry' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager', 'warehouse', 'production'],
+            'write' => [...$finance, 'sales_manager', 'warehouse', 'production'],
+            'grants' => [
+                'read' => ['industrial_laundry.read', 'industrial_laundry.write', 'industrial_laundry.bill', 'industrial_laundry.*'],
+                'write' => ['industrial_laundry.write', 'industrial_laundry.bill', 'industrial_laundry.*'],
+            ],
+        ],
         // Advanced pricing (price lists, cascading discounts, promotions, margin guardrails): finance and sales roles read;
         // owners, administrators, accountants and sales managers write. Authorizing a below-margin document is further
         // limited by the policy to owners, administrators and the role of the margin policy.
