@@ -8,14 +8,19 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Modules\SalesBoundedContext\Application\Queries\GetOmnichannelPipelineOverviewHandler;
 use Modules\SalesBoundedContext\Application\Queries\GetOmnichannelPipelineOverviewQuery;
+use Modules\SalesBoundedContext\Domain\Enums\BStockConditionGrade;
 use Modules\SalesBoundedContext\Domain\Enums\CommissionAccrualBasis;
 use Modules\SalesBoundedContext\Domain\Enums\CustomerHierarchyRole;
 use Modules\SalesBoundedContext\Domain\Enums\ElectronicSignatureStandard;
 use Modules\SalesBoundedContext\Domain\Enums\ForecastCategory;
 use Modules\SalesBoundedContext\Domain\Enums\InsolvencyRiskStatus;
 use Modules\SalesBoundedContext\Domain\Enums\LeadLifecycleStage;
+use Modules\SalesBoundedContext\Domain\Enums\NpsRespondentCategory;
 use Modules\SalesBoundedContext\Domain\Enums\PortalPaymentProvider;
+use Modules\SalesBoundedContext\Domain\Enums\RfmSegmentCode;
 use Modules\SalesBoundedContext\Domain\Enums\SubscriptionLifecycleAction;
+use Modules\SalesBoundedContext\Domain\Enums\TenderProcurementFramework;
+use Modules\SalesBoundedContext\Domain\Enums\WelfareFiscalRegime;
 use Modules\SalesBoundedContext\Http\Controllers\Concerns\InteractsWithSalesBoundedContext;
 use Modules\SalesBoundedContext\Models\SbcCustomerDossier;
 use OpenApi\Attributes as OA;
@@ -60,6 +65,11 @@ final class SalesBoundedContextConfigController extends Controller
                 'subscription_actions' => $this->mapOptions(SubscriptionLifecycleAction::values(), is_array($statuses) ? $statuses : []),
                 'commission_bases' => $this->mapOptions(CommissionAccrualBasis::values(), is_array($statuses) ? $statuses : []),
                 'payment_providers' => $this->mapOptions(PortalPaymentProvider::values(), is_array($statuses) ? $statuses : []),
+                'rfm_segments' => $this->mapOptions(RfmSegmentCode::values(), is_array($statuses) ? $statuses : []),
+                'tender_frameworks' => $this->mapOptions(TenderProcurementFramework::values(), is_array($statuses) ? $statuses : []),
+                'b_stock_grades' => $this->mapOptions(BStockConditionGrade::values(), is_array($statuses) ? $statuses : []),
+                'nps_categories' => $this->mapOptions(NpsRespondentCategory::values(), is_array($statuses) ? $statuses : []),
+                'welfare_regimes' => $this->mapOptions(WelfareFiscalRegime::values(), is_array($statuses) ? $statuses : []),
             ],
         ]);
     }

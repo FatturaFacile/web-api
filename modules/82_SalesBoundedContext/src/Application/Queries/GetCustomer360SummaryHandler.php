@@ -8,9 +8,13 @@ use Modules\SalesBoundedContext\Models\SbcCpqQuote;
 use Modules\SalesBoundedContext\Models\SbcCustomerDossier;
 use Modules\SalesBoundedContext\Models\SbcDdtInvoice;
 use Modules\SalesBoundedContext\Models\SbcFrameworkOrder;
+use Modules\SalesBoundedContext\Models\SbcGdoRebateAgreement;
 use Modules\SalesBoundedContext\Models\SbcOpportunityForecast;
 use Modules\SalesBoundedContext\Models\SbcPortalTransaction;
+use Modules\SalesBoundedContext\Models\SbcPostDeliverySurvey;
+use Modules\SalesBoundedContext\Models\SbcPublicPrivateTender;
 use Modules\SalesBoundedContext\Models\SbcRecurringSubscription;
+use Modules\SalesBoundedContext\Models\SbcReverseLogisticsReturn;
 
 final readonly class GetCustomer360SummaryHandler
 {
@@ -54,6 +58,26 @@ final readonly class GetCustomer360SummaryHandler
             ->where('dossier_id', $dossier->id)
             ->get();
 
+        $tendersCount = SbcPublicPrivateTender::query()
+            ->where('tenant_id', $query->tenantId)
+            ->where('dossier_id', $dossier->id)
+            ->count();
+
+        $gdoRebatesAccrued = round((float) SbcGdoRebateAgreement::query()
+            ->where('tenant_id', $query->tenantId)
+            ->where('dossier_id', $dossier->id)
+            ->sum('total_provisioned_accrual'), 2);
+
+        $returnsCount = SbcReverseLogisticsReturn::query()
+            ->where('tenant_id', $query->tenantId)
+            ->where('dossier_id', $dossier->id)
+            ->count();
+
+        $surveysAvgNps = round((float) SbcPostDeliverySurvey::query()
+            ->where('tenant_id', $query->tenantId)
+            ->where('dossier_id', $dossier->id)
+            ->avg('nps_score'), 2);
+
         return [
             'dossier' => $dossier,
             'pipeline' => [
@@ -64,6 +88,10 @@ final readonly class GetCustomer360SummaryHandler
                 'active_mrr' => round((float) $subscriptions->sum('mrr_amount'), 2),
                 'invoices_and_ddts_count' => $documents->count(),
                 'portal_payments_total' => round((float) $portalTxs->where('transaction_type', 'online_payment')->sum('amount'), 2),
+                'tenders_count' => $tendersCount,
+                'gdo_rebates_accrued' => $gdoRebatesAccrued,
+                'reverse_returns_count' => $returnsCount,
+                'avg_nps_score' => $surveysAvgNps,
             ],
         ];
     }

@@ -37,6 +37,8 @@ class DatabaseSeeder extends Seeder
             VanSellingFieldSalesDemoSeeder::class,
             SalesBoundedContextBatch1LocalizationSeeder::class,
             SalesBoundedContextBatch1DemoSeeder::class,
+            SalesBoundedContextBatch2LocalizationSeeder::class,
+            SalesBoundedContextBatch2DemoSeeder::class,
             TreasuryBankingReferenceSeeder::class,
             CpqLocalizationSeeder::class,
             CpqConfiguratorLocalizationSeeder::class,
