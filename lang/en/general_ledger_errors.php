@@ -9,6 +9,14 @@ return [
         'has_sub_accounts' => 'Account :code has sub-accounts: move or delete them first.',
         'is_default_posting' => 'Account :code is a default posting account: choose another one in the ledger settings first.',
         'parent_cycle' => 'An account cannot be placed under itself or one of its sub-accounts.',
+        'is_not_postable' => 'Account :code is a structural grouping node and does not accept direct postings.',
+        'currency_not_allowed' => 'Currency :currency is not allowed for account :code.',
+        'code_locked' => 'Account :code already carries postings: its account code cannot be changed.',
+    ],
+    'mapping' => [
+        'self_mapping' => 'An account cannot be mapped to itself.',
+        'duplicate' => 'A mapping between this source account and target already exists.',
+        'allocation_exceeded' => 'Total allocation percentage for standard :standard exceeds 100%.',
     ],
     'accrual' => [
         'cutoff_outside_coverage' => 'The cut-off date must fall within the coverage, before its last day.',

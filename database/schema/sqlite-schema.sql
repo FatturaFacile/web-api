@@ -5155,6 +5155,17 @@ CREATE TABLE "chart_of_accounts"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "description" text,
+  "level" integer not null default '1',
+  "hierarchy_path" varchar,
+  "vat_code_id" varchar,
+  "default_cost_center_id" varchar,
+  "open_items_enabled" tinyint(1) not null default '0',
+  "allowed_currencies" text,
+  "is_postable" tinyint(1) not null default '1',
+  "is_system" tinyint(1) not null default '0',
+  "template_code" varchar,
+  "statutory_code" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -49427,6 +49438,89 @@ CREATE INDEX "open_banking_sync_runs_consent_id_index" on "open_banking_sync_run
 CREATE INDEX "open_banking_sync_runs_status_index" on "open_banking_sync_runs"(
   "status"
 );
+CREATE INDEX "idx_coa_tenant_parent" on "chart_of_accounts"(
+  "tenant_id",
+  "parent_account_id"
+);
+CREATE INDEX "idx_coa_tenant_standard" on "chart_of_accounts"(
+  "tenant_id",
+  "standard",
+  "is_active"
+);
+CREATE INDEX "idx_coa_tenant_path" on "chart_of_accounts"(
+  "tenant_id",
+  "hierarchy_path"
+);
+CREATE TABLE "gl_coa_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "key" varchar not null,
+  "standard" varchar not null,
+  "country" varchar not null,
+  "currency" varchar not null,
+  "texts" text not null,
+  "nodes" text not null,
+  "default_mappings" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_gl_coa_templates_key" on "gl_coa_templates"(
+  "tenant_id",
+  "key"
+);
+CREATE INDEX "idx_gl_coa_templates_active" on "gl_coa_templates"(
+  "tenant_id",
+  "is_active"
+);
+CREATE TABLE "gl_account_mappings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "source_account_id" varchar not null,
+  "target_account_id" varchar,
+  "source_standard" varchar not null,
+  "target_standard" varchar not null,
+  "target_account_code" varchar not null,
+  "target_account_name" varchar not null,
+  "mapping_type" varchar not null default 'direct',
+  "is_bidirectional" tinyint(1) not null default '1',
+  "allocation_percentage" numeric not null default '100',
+  "notes" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("source_account_id") references "chart_of_accounts"("id") on delete cascade,
+  foreign key("target_account_id") references "chart_of_accounts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "idx_gl_acc_map_source" on "gl_account_mappings"(
+  "tenant_id",
+  "source_account_id"
+);
+CREATE INDEX "idx_gl_acc_map_target" on "gl_account_mappings"(
+  "tenant_id",
+  "target_account_id"
+);
+CREATE INDEX "idx_gl_acc_map_standards" on "gl_account_mappings"(
+  "tenant_id",
+  "source_standard",
+  "target_standard"
+);
+CREATE INDEX "idx_gl_acc_map_company" on "gl_account_mappings"("company_id");
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -49885,3 +49979,4 @@ INSERT INTO migrations VALUES(454,'2028_01_02_000100_create_marketing_automation
 INSERT INTO migrations VALUES(455,'2027_12_31_000100_create_agent_commissions_mod041_tables',19);
 INSERT INTO migrations VALUES(456,'2027_12_20_000100_create_treasury_settlement_tables',20);
 INSERT INTO migrations VALUES(457,'2028_01_03_000100_add_split_payment_to_passive_invoices',20);
+INSERT INTO migrations VALUES(458,'2028_01_04_000100_enhance_chart_of_accounts_and_mappings_mod011',21);

@@ -116,6 +116,7 @@ class DatabaseSeeder extends Seeder
             DocumentEventSeeder::class,
 
             DashboardLayoutSeeder::class,
+            ChartOfAccountTemplateSeeder::class,
 
             EiInboundLogSeeder::class,
             EiOutboundLogSeeder::class,

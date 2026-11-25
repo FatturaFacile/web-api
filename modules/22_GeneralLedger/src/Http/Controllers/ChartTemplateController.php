@@ -7,17 +7,21 @@ namespace Modules\GeneralLedger\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Modules\GeneralLedger\Application\ChartOfAccounts\Commands\ProvisionChartTemplateCommand;
+use Modules\GeneralLedger\Application\ChartOfAccounts\Commands\ProvisionChartTemplateHandler;
+use Modules\GeneralLedger\Application\ChartOfAccounts\Queries\ListChartTemplatesHandler;
+use Modules\GeneralLedger\Application\ChartOfAccounts\Queries\ListChartTemplatesQuery;
+use Modules\GeneralLedger\Http\Requests\ProvisionChartTemplateRequest;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Services\ChartTemplates\ChartTemplateCatalog;
-use Modules\GeneralLedger\Services\ChartTemplates\ChartTemplateImporter;
 use OpenApi\Attributes as OA;
 
 final class ChartTemplateController extends Controller
 {
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly ChartTemplateImporter $importer,
+        private readonly ListChartTemplatesHandler $listTemplates,
+        private readonly ProvisionChartTemplateHandler $provisionTemplate,
     ) {}
 
     /**
@@ -26,19 +30,26 @@ final class ChartTemplateController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/account-templates',
         operationId: 'listGeneralLedgerAccountTemplates',
-        description: 'Lists the standard charts of accounts (Swiss SME chart, Italian chart, French PCG, Spanish PGC) with their standard, country, currency and number of accounts.',
+        description: 'Lists the standard charts of accounts (Swiss KMU/Käfer, Italian Civil Code/OIC, French PCG, Spanish PGC, German SKR03/SKR04) with localized metadata and UI copy.',
         summary: 'List chart of accounts templates',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Accounts'],
         responses: [
-            new OA\Response(response: 200, description: 'Available templates', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object', properties: [
-                new OA\Property(property: 'key', type: 'string', example: 'ch_kmu_pme'),
-                new OA\Property(property: 'standard', type: 'string', example: 'ch_kmu_pme'),
-                new OA\Property(property: 'name', type: 'string'),
-                new OA\Property(property: 'country', type: 'string', example: 'CH'),
-                new OA\Property(property: 'currency', type: 'string', example: 'CHF'),
-                new OA\Property(property: 'accounts', type: 'integer'),
-            ]))])),
+            new OA\Response(response: 200, description: 'Available templates', content: new OA\JsonContent(type: 'object', properties: [
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object', properties: [
+                    new OA\Property(property: 'key', type: 'string', example: 'ch_kmu_pme'),
+                    new OA\Property(property: 'standard', type: 'string', example: 'ch_kmu_pme'),
+                    new OA\Property(property: 'name', type: 'string'),
+                    new OA\Property(property: 'subtitle', type: 'string'),
+                    new OA\Property(property: 'statutory_reference', type: 'string'),
+                    new OA\Property(property: 'country', type: 'string', example: 'CH'),
+                    new OA\Property(property: 'currency', type: 'string', example: 'CHF'),
+                    new OA\Property(property: 'accounts', type: 'integer'),
+                    new OA\Property(property: 'account_count', type: 'integer'),
+                    new OA\Property(property: 'default_mappings_count', type: 'integer'),
+                ])),
+                new OA\Property(property: 'ui_copy', type: 'object'),
+            ])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
@@ -46,13 +57,18 @@ final class ChartTemplateController extends Controller
     {
         $this->authorize('viewAny', ChartOfAccount::class);
 
-        $templates = [];
+        $result = $this->listTemplates->handle(new ListChartTemplatesQuery(app()->getLocale()));
 
-        foreach ($this->importer->templates() as $key => $template) {
-            $templates[] = ['key' => $key, ...$template];
-        }
+        $data = array_map(static function (array $item): array {
+            $item['accounts'] = $item['account_count'];
 
-        return response()->json(['data' => $templates]);
+            return $item;
+        }, $result['data']);
+
+        return response()->json([
+            'data' => $data,
+            'ui_copy' => $result['ui_copy'],
+        ]);
     }
 
     /**
@@ -61,7 +77,7 @@ final class ChartTemplateController extends Controller
     #[OA\Post(
         path: '/api/v1/general-ledger/account-templates/{template}/import',
         operationId: 'importGeneralLedgerAccountTemplate',
-        description: 'Loads a standard chart of accounts into the active tenant. The import is idempotent: accounts whose code already exists are left untouched and counted as skipped.',
+        description: '1-click idempotent provisioning of a standard chart of accounts (and optional default cross-standard mappings) into the active tenant.',
         summary: 'Import a chart of accounts template',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Accounts'],
@@ -73,13 +89,14 @@ final class ChartTemplateController extends Controller
                 new OA\Property(property: 'template', type: 'string'),
                 new OA\Property(property: 'created', type: 'integer'),
                 new OA\Property(property: 'skipped', type: 'integer'),
+                new OA\Property(property: 'mappings_created', type: 'integer'),
             ])])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Unknown template', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function import(Request $request, string $template): JsonResponse
+    public function import(ProvisionChartTemplateRequest $request, string $template): JsonResponse
     {
         $this->authorize('create', ChartOfAccount::class);
 
@@ -88,6 +105,23 @@ final class ChartTemplateController extends Controller
         $tenantId = $this->tenantContext->getTenantId() ?? $request->user()?->tenant_id;
         abort_unless($tenantId !== null && $tenantId !== '', 403, 'Missing or unresolvable tenant context');
 
-        return response()->json(['data' => $this->importer->import((string) $tenantId, $template)]);
+        $validated = $request->validated();
+        $companyId = $request->header('X-Company-ID');
+        $result = $this->provisionTemplate->handle(new ProvisionChartTemplateCommand(
+            tenantId: (string) $tenantId,
+            companyId: is_string($companyId) && $companyId !== '' ? $companyId : null,
+            templateKey: $template,
+            includeDefaultMappings: (bool) ($validated['include_default_mappings'] ?? true),
+            locale: (string) ($validated['locale'] ?? app()->getLocale()),
+        ));
+
+        return response()->json([
+            'data' => [
+                'template' => $result['template'],
+                'created' => $result['created_count'],
+                'skipped' => $result['skipped_count'],
+                'mappings_created' => $result['mappings_created'],
+            ],
+        ]);
     }
 }

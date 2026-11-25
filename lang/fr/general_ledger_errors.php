@@ -9,6 +9,14 @@ return [
         'has_sub_accounts' => 'Le compte :code a des sous-comptes : déplacez-les ou supprimez-les d\'abord.',
         'is_default_posting' => 'Le compte :code est un compte d\'imputation par défaut : choisissez d\'abord un autre compte dans les paramètres de la comptabilité.',
         'parent_cycle' => 'Un compte ne peut pas être placé sous lui-même ni sous l\'un de ses sous-comptes.',
+        'is_not_postable' => 'Le compte :code est un nœud de regroupement structurel et n\'accepte pas d\'écritures directes.',
+        'currency_not_allowed' => 'La devise :currency n\'est pas autorisée pour le compte :code.',
+        'code_locked' => 'Le compte :code porte déjà des écritures : son code ne peut pas être modifié.',
+    ],
+    'mapping' => [
+        'self_mapping' => 'Un compte ne peut pas être mappé sur lui-même.',
+        'duplicate' => 'Un mappage entre ce compte source et cette cible existe déjà.',
+        'allocation_exceeded' => 'Le pourcentage total de répartition pour la norme :standard dépasse 100 %.',
     ],
     'accrual' => [
         'cutoff_outside_coverage' => 'La date d\'arrêté doit tomber dans la période couverte, avant son dernier jour.',

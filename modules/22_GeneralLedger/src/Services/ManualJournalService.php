@@ -41,9 +41,11 @@ final readonly class ManualJournalService
     public function create(array $data, ?string $actorId): JournalEntry
     {
         $tenantId = (string) $data['tenant_id'];
-        $this->assertManualLines($tenantId, $data['lines'] ?? []);
+        $data['lines'] = $this->applyAccountDefaults($tenantId, $data['lines']);
+        $currency = isset($data['currency']) ? (string) $data['currency'] : null;
+        $this->assertManualLines($tenantId, $data['lines'], $currency);
         $requested = $data['status'] ?? 'posted';
-        $needsApproval = $requested === 'posted' && $this->settings->approvalRequiredFor($tenantId, $this->totalDebit($data['lines'] ?? []));
+        $needsApproval = $requested === 'posted' && $this->settings->approvalRequiredFor($tenantId, $this->totalDebit($data['lines']));
         $data['status'] = $needsApproval ? 'pending_approval' : $requested;
 
         $siblings = $this->siblingBooks($data);
@@ -167,7 +169,42 @@ final readonly class ManualJournalService
      *
      * @throws ValidationException
      */
-    public function assertManualLines(string $tenantId, array $lines): void
+    /**
+     * @param  list<array<string, mixed>>  $lines
+     * @return list<array<string, mixed>>
+     */
+    private function applyAccountDefaults(string $tenantId, array $lines): array
+    {
+        $accountIds = array_values(array_filter(array_map(static fn (array $line): string => (string) ($line['account_id'] ?? ''), $lines)));
+        if ($accountIds === []) {
+            return $lines;
+        }
+
+        $defaults = ChartOfAccount::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('id', $accountIds)
+            ->whereNotNull('default_cost_center_id')
+            ->pluck('default_cost_center_id', 'id');
+
+        return array_map(static function (array $line) use ($defaults): array {
+            $accountId = (string) ($line['account_id'] ?? '');
+            if (empty($line['cost_center_id']) && $defaults->has($accountId)) {
+                $line['cost_center_id'] = $defaults->get($accountId);
+            }
+
+            return $line;
+        }, $lines);
+    }
+
+    /**
+     * Checks every line's account exists in this tenant, is active, allows manual posting,
+     * respects allowed currencies, and carries a cost centre when mandatory.
+     *
+     * @param  list<array<string, mixed>>  $lines
+     *
+     * @throws ValidationException
+     */
+    public function assertManualLines(string $tenantId, array $lines, ?string $currency = null): void
     {
         $accounts = ChartOfAccount::withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
@@ -176,7 +213,7 @@ final readonly class ManualJournalService
             ->keyBy(static fn (ChartOfAccount $account): string => (string) $account->id);
         $errors = [];
 
-        foreach (array_values($lines) as $index => $line) {
+        foreach ($lines as $index => $line) {
             $account = $accounts->get((string) ($line['account_id'] ?? ''));
 
             if ($account === null) {
@@ -187,9 +224,23 @@ final readonly class ManualJournalService
 
             if ($account->is_active === false) {
                 $errors["lines.{$index}.account_id"] = [__('general_ledger_errors.journal.account_inactive', ['code' => $account->account_code])];
+            } elseif ($account->is_postable === false) {
+                $errors["lines.{$index}.account_id"] = [__('general_ledger_errors.account.is_not_postable', ['code' => $account->account_code])];
             } elseif ($account->allows_manual_posting === false) {
                 $errors["lines.{$index}.account_id"] = [__('general_ledger_errors.journal.account_automatic_only', ['code' => $account->account_code])];
-            } elseif ($account->is_cost_center_mandatory === true && empty($line['cost_center_id'])) {
+            } elseif (is_array($account->allowed_currencies) && $account->allowed_currencies !== []) {
+                $lineCurrency = strtoupper((string) ($line['currency'] ?? $currency ?? ''));
+                $allowed = array_map('strtoupper', $account->allowed_currencies);
+                if ($lineCurrency !== '' && ! in_array($lineCurrency, $allowed, true)) {
+                    $errors["lines.{$index}.account_id"] = [__('general_ledger_errors.account.currency_not_allowed', [
+                        'code' => $account->account_code,
+                        'currency' => $lineCurrency,
+                        'allowed' => implode(', ', $allowed),
+                    ])];
+                }
+            }
+
+            if (! isset($errors["lines.{$index}.account_id"]) && $account->is_cost_center_mandatory === true && empty($line['cost_center_id'])) {
                 $errors["lines.{$index}.cost_center_id"] = [__('general_ledger_errors.journal.cost_center_required', ['code' => $account->account_code])];
             }
         }
