@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Services\Consolidation;
 
 use Carbon\CarbonImmutable;
+use Modules\GeneralLedger\Contracts\ConsolidationRateOverrides;
 use Modules\GeneralLedger\Exceptions\ConsolidationException;
 use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Services\LedgerBalanceReader;
@@ -42,6 +43,7 @@ final readonly class ConsolidationTranslator
     public function __construct(
         private EntityBalanceReader $reader,
         private LedgerReportService $rates,
+        private ConsolidationRateOverrides $overrides,
     ) {}
 
     /**
@@ -92,16 +94,18 @@ final readonly class ConsolidationTranslator
             return ['closing' => '1.000000', 'average' => '1.000000', 'historical' => '1.000000'];
         }
 
+        $fixed = $this->overrides->overridesFor($currency, $groupCurrency, $periodEnd);
+
         try {
-            $closing = $this->rates->closingTranslationRate($currency, $groupCurrency, $periodEnd);
+            $closing = $fixed['closing'] ?? $this->rates->closingTranslationRate($currency, $groupCurrency, $periodEnd);
         } catch (LedgerPostingException) {
             throw new ConsolidationException("No {$currency}/{$groupCurrency} exchange rate is published on or before {$periodEnd->toDateString()}: publish it before consolidating.");
         }
 
         return [
             'closing' => $closing,
-            'average' => $this->rates->averageTranslationRate($currency, $groupCurrency, $yearStart, $periodEnd, $closing),
-            'historical' => $this->rates->historicalTranslationRate($currency, $groupCurrency, $yearStart, $closing),
+            'average' => $fixed['average'] ?? $this->rates->averageTranslationRate($currency, $groupCurrency, $yearStart, $periodEnd, $closing),
+            'historical' => $fixed['historical'] ?? $this->rates->historicalTranslationRate($currency, $groupCurrency, $yearStart, $closing),
         ];
     }
 

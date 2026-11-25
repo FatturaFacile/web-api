@@ -13,6 +13,7 @@ use Modules\GeneralLedger\Console\OpenFiscalYearCommand;
 use Modules\GeneralLedger\Console\PostPendingDocumentsCommand;
 use Modules\GeneralLedger\Console\RunScheduledJournalsCommand;
 use Modules\GeneralLedger\Contracts\AccountingReconciliationServiceInterface;
+use Modules\GeneralLedger\Contracts\ConsolidationRateOverrides;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Contracts\FinancialStatementServiceInterface;
 use Modules\GeneralLedger\Contracts\PeriodClosingServiceInterface;
@@ -55,6 +56,7 @@ use Modules\GeneralLedger\Policies\JournalEntryPolicy;
 use Modules\GeneralLedger\Policies\ReconciliationPolicy;
 use Modules\GeneralLedger\Policies\VatSettlementPolicy;
 use Modules\GeneralLedger\Services\AccountingReconciliationService;
+use Modules\GeneralLedger\Services\Consolidation\NoRateOverrides;
 use Modules\GeneralLedger\Services\DoubleEntryPostingService;
 use Modules\GeneralLedger\Services\FinancialStatementService;
 use Modules\GeneralLedger\Services\InventoryLedgerGateway;
@@ -97,6 +99,7 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(DoubleEntryPostingServiceInterface::class, DoubleEntryPostingService::class);
+        $this->app->singleton(ConsolidationRateOverrides::class, NoRateOverrides::class);
         $this->app->singleton(FinancialStatementServiceInterface::class, FinancialStatementService::class);
         $this->app->singleton(PeriodClosingServiceInterface::class, PeriodClosingService::class);
         $this->app->singleton(AccountingReconciliationServiceInterface::class, AccountingReconciliationService::class);

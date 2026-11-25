@@ -50286,7 +50286,6 @@ CREATE INDEX "cpq_configured_instances_tenant_id_status_index" on "cpq_configure
   "tenant_id",
   "status"
 );
-
 CREATE TABLE "exm_categories"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -50725,6 +50724,596 @@ CREATE INDEX "exm_audit_report_ix" on "exm_audit_logs"(
   "tenant_id",
   "expense_report_id"
 );
+CREATE TABLE "signature_provider_configs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "provider" varchar not null,
+  "jurisdiction" varchar not null default 'BOTH',
+  "name" varchar not null,
+  "credentials" text,
+  "certificate_path" varchar,
+  "is_sandbox" tinyint(1) not null default '1',
+  "is_active" tinyint(1) not null default '1',
+  "is_default" tinyint(1) not null default '0',
+  "settings" text,
+  "last_tested_at" datetime,
+  "last_test_status" varchar,
+  "last_test_message" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sig_provider_configs_tenant_idx" on "signature_provider_configs"(
+  "tenant_id",
+  "provider",
+  "is_active"
+);
+CREATE TABLE "signature_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "document_type" varchar not null,
+  "required_level" varchar not null,
+  "jurisdiction" varchar not null default 'eIDAS',
+  "provider_config_id" varchar,
+  "routing_mode" varchar not null default 'sequential',
+  "expiration_days" integer not null default '14',
+  "reminder_days" text,
+  "min_amount" numeric,
+  "amount_currency" varchar,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("provider_config_id") references "signature_provider_configs"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "sig_templates_tenant_type_idx" on "signature_templates"(
+  "tenant_id",
+  "document_type",
+  "is_active"
+);
+CREATE TABLE "signature_envelopes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "signable_type" varchar,
+  "signable_id" varchar,
+  "verification_code" varchar not null,
+  "title" varchar not null,
+  "subject" varchar,
+  "message" text,
+  "required_level" varchar not null,
+  "jurisdiction" varchar not null,
+  "routing_mode" varchar not null,
+  "status" varchar not null default 'draft',
+  "provider_config_id" varchar,
+  "provider" varchar not null,
+  "locale" varchar not null default 'it',
+  "document_format" varchar not null default 'pades',
+  "file_name" varchar,
+  "original_path" varchar,
+  "original_sha256" varchar,
+  "working_path" varchar,
+  "signed_path" varchar,
+  "signed_sha256" varchar,
+  "external_id" varchar,
+  "sent_at" datetime,
+  "expires_at" datetime,
+  "completed_at" datetime,
+  "last_reminder_at" datetime,
+  "reminders_sent" text,
+  "metadata" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("provider_config_id") references "signature_provider_configs"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "sig_envelopes_tenant_status_idx" on "signature_envelopes"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "sig_envelopes_signable_idx" on "signature_envelopes"(
+  "tenant_id",
+  "signable_type",
+  "signable_id"
+);
+CREATE INDEX "sig_envelopes_expiry_idx" on "signature_envelopes"(
+  "status",
+  "expires_at"
+);
+CREATE INDEX "sig_envelopes_original_hash_idx" on "signature_envelopes"(
+  "original_sha256"
+);
+CREATE INDEX "sig_envelopes_signed_hash_idx" on "signature_envelopes"(
+  "signed_sha256"
+);
+CREATE INDEX "sig_envelopes_external_idx" on "signature_envelopes"(
+  "external_id"
+);
+CREATE UNIQUE INDEX "signature_envelopes_verification_code_unique" on "signature_envelopes"(
+  "verification_code"
+);
+CREATE TABLE "signature_recipients"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "envelope_id" varchar not null,
+  "signing_order" integer not null default '1',
+  "role" varchar not null default 'SIGNER',
+  "full_name" varchar not null,
+  "email" varchar not null,
+  "phone" varchar,
+  "identity_metadata" text,
+  "auth_method" varchar not null default 'email_link',
+  "access_token_hash" varchar,
+  "access_token" text,
+  "token_expires_at" datetime,
+  "otp_hash" varchar,
+  "otp_expires_at" datetime,
+  "otp_attempts" integer not null default '0',
+  "signature_box" text,
+  "status" varchar not null default 'waiting',
+  "external_id" varchar,
+  "prepared_path" varchar,
+  "signature_data" text,
+  "signature_method" varchar,
+  "certificate_serial" varchar,
+  "certificate_subject" varchar,
+  "notified_at" datetime,
+  "viewed_at" datetime,
+  "consent_at" datetime,
+  "signed_at" datetime,
+  "declined_at" datetime,
+  "decline_reason" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("envelope_id") references "signature_envelopes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sig_recipients_token_uq" on "signature_recipients"(
+  "access_token_hash"
+);
+CREATE INDEX "sig_recipients_envelope_idx" on "signature_recipients"(
+  "tenant_id",
+  "envelope_id",
+  "signing_order"
+);
+CREATE INDEX "sig_recipients_external_idx" on "signature_recipients"(
+  "external_id"
+);
+CREATE TABLE "signature_audit_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "envelope_id" varchar not null,
+  "recipient_id" varchar,
+  "sequence" integer not null,
+  "event" varchar not null,
+  "actor_type" varchar not null,
+  "actor_id" varchar,
+  "ip_address" varchar,
+  "user_agent" varchar,
+  "metadata" text,
+  "document_sha256" varchar,
+  "receipt" text,
+  "timestamp_token" text,
+  "previous_hash" varchar not null,
+  "entry_hash" varchar not null,
+  "occurred_at" datetime not null,
+  "created_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("envelope_id") references "signature_envelopes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sig_audit_sequence_uq" on "signature_audit_logs"(
+  "envelope_id",
+  "sequence"
+);
+CREATE INDEX "sig_audit_envelope_idx" on "signature_audit_logs"(
+  "tenant_id",
+  "envelope_id"
+);
+CREATE TABLE "ic_group_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "mirror_mode" varchar not null default 'draft',
+  "auto_mirror" tinyint(1) not null default '1',
+  "sync_payments" tinyint(1) not null default '1',
+  "netting_enabled" tinyint(1) not null default '1',
+  "amount_tolerance" numeric not null default '1',
+  "date_tolerance_days" integer not null default '5',
+  "default_standard" varchar not null default 'fer30',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ic_group_settings_group_uq" on "ic_group_settings"(
+  "tenant_id",
+  "group_id"
+);
+CREATE TABLE "ic_party_links"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "entity_tenant_id" varchar not null,
+  "counterparty_tenant_id" varchar not null,
+  "contact_id" varchar not null,
+  "role" varchar not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ic_party_links_uq" on "ic_party_links"(
+  "group_id",
+  "entity_tenant_id",
+  "counterparty_tenant_id",
+  "role"
+);
+CREATE INDEX "ic_party_links_contact_idx" on "ic_party_links"(
+  "entity_tenant_id",
+  "contact_id"
+);
+CREATE INDEX "ic_party_links_group_id_index" on "ic_party_links"("group_id");
+CREATE TABLE "ic_transaction_links"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "pair_id" varchar not null,
+  "document_type" varchar not null,
+  "source_tenant_id" varchar not null,
+  "source_document_id" varchar not null,
+  "source_document_number" varchar,
+  "mirror_tenant_id" varchar not null,
+  "mirror_document_id" varchar,
+  "mirror_document_number" varchar,
+  "mirror_status" varchar,
+  "status" varchar not null default 'pending',
+  "currency" varchar not null,
+  "net_amount" numeric not null default '0',
+  "tax_amount" numeric not null default '0',
+  "gross_amount" numeric not null default '0',
+  "document_date" date not null,
+  "payment_status" varchar not null default 'unpaid',
+  "synced_paid_amount" numeric not null default '0',
+  "paid_variance" numeric not null default '0',
+  "error_message" varchar,
+  "idempotency_key" varchar not null,
+  "version" integer not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ic_tx_links_idem_uq" on "ic_transaction_links"(
+  "tenant_id",
+  "idempotency_key"
+);
+CREATE INDEX "ic_tx_links_status_idx" on "ic_transaction_links"(
+  "group_id",
+  "status"
+);
+CREATE INDEX "ic_tx_links_source_idx" on "ic_transaction_links"(
+  "source_tenant_id",
+  "source_document_id"
+);
+CREATE INDEX "ic_tx_links_mirror_idx" on "ic_transaction_links"(
+  "mirror_tenant_id",
+  "mirror_document_id"
+);
+CREATE INDEX "ic_transaction_links_pair_id_index" on "ic_transaction_links"(
+  "pair_id"
+);
+CREATE TABLE "ic_sync_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "transaction_id" varchar,
+  "event" varchar not null,
+  "message_key" varchar,
+  "context" text,
+  "amount" numeric,
+  "occurred_at" datetime not null,
+  "user_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_sync_events_group_id_index" on "ic_sync_events"("group_id");
+CREATE INDEX "ic_sync_events_transaction_id_index" on "ic_sync_events"(
+  "transaction_id"
+);
+CREATE TABLE "ic_netting_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "entity_a_tenant_id" varchar not null,
+  "entity_b_tenant_id" varchar not null,
+  "as_of_date" date not null,
+  "currency" varchar not null,
+  "status" varchar not null default 'draft',
+  "receivable_total" numeric not null default '0',
+  "payable_total" numeric not null default '0',
+  "net_amount" numeric not null default '0',
+  "net_direction" varchar not null default 'balanced',
+  "fx_variance" numeric not null default '0',
+  "amount_variance" numeric not null default '0',
+  "cancel_reason" varchar,
+  "version" integer not null default '1',
+  "confirmed_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_netting_runs_status_idx" on "ic_netting_runs"(
+  "group_id",
+  "status"
+);
+CREATE INDEX "ic_netting_runs_group_id_index" on "ic_netting_runs"(
+  "group_id"
+);
+CREATE TABLE "ic_netting_items"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "netting_run_id" varchar not null,
+  "transaction_id" varchar,
+  "side" varchar not null,
+  "document_number" varchar,
+  "currency" varchar not null,
+  "open_amount" numeric not null,
+  "applied_amount" numeric not null default '0',
+  "fx_rate" numeric not null default '1',
+  "variance" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_netting_items_netting_run_id_index" on "ic_netting_items"(
+  "netting_run_id"
+);
+CREATE TABLE "ic_reconciliation_batches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar not null,
+  "as_of_date" date not null,
+  "status" varchar not null default 'open',
+  "totals" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_reconciliation_batches_group_id_index" on "ic_reconciliation_batches"(
+  "group_id"
+);
+CREATE TABLE "ic_reconciliation_items"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "batch_id" varchar not null,
+  "group_id" varchar not null,
+  "entity_a_tenant_id" varchar not null,
+  "entity_b_tenant_id" varchar not null,
+  "a_document_id" varchar,
+  "a_document_number" varchar,
+  "a_document_date" date,
+  "a_currency" varchar,
+  "a_amount" numeric,
+  "a_tax" numeric not null default '0',
+  "b_document_id" varchar,
+  "b_document_number" varchar,
+  "b_document_date" date,
+  "b_currency" varchar,
+  "b_amount" numeric,
+  "b_tax" numeric,
+  "difference" numeric not null default '0',
+  "difference_group_currency" numeric not null default '0',
+  "status" varchar not null default 'unmatched',
+  "anomaly_type" varchar not null default 'none',
+  "anomaly_reason" varchar,
+  "match_kind" varchar,
+  "resolution_reason" varchar,
+  "adjustment_amount" numeric,
+  "resolved_by" varchar,
+  "resolved_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_recon_items_status_idx" on "ic_reconciliation_items"(
+  "batch_id",
+  "status"
+);
+CREATE INDEX "ic_recon_items_anomaly_idx" on "ic_reconciliation_items"(
+  "batch_id",
+  "anomaly_type"
+);
+CREATE INDEX "ic_reconciliation_items_batch_id_index" on "ic_reconciliation_items"(
+  "batch_id"
+);
+CREATE TABLE "ic_period_rates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_id" varchar,
+  "group_currency" varchar not null,
+  "currency" varchar not null,
+  "rate_type" varchar not null,
+  "period_end" date not null,
+  "rate" numeric not null,
+  "note" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ic_period_rates_uq" on "ic_period_rates"(
+  "tenant_id",
+  "group_currency",
+  "currency",
+  "rate_type",
+  "period_end"
+);
+CREATE INDEX "ic_period_rates_group_id_index" on "ic_period_rates"(
+  "group_id"
+);
+CREATE TABLE "ic_run_workflows"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "status" varchar not null default 'draft',
+  "version" integer not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ic_run_workflows_run_uq" on "ic_run_workflows"(
+  "tenant_id",
+  "run_id"
+);
+CREATE TABLE "ic_run_workflow_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "from_status" varchar,
+  "to_status" varchar not null,
+  "action" varchar not null,
+  "reason" varchar,
+  "user_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_run_workflow_events_run_id_index" on "ic_run_workflow_events"(
+  "run_id"
+);
+CREATE TABLE "ic_consolidation_packages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "standard" varchar not null,
+  "payload" text not null,
+  "checksum" varchar not null,
+  "generated_at" datetime not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_consolidation_packages_run_id_index" on "ic_consolidation_packages"(
+  "run_id"
+);
+CREATE TABLE "ic_manual_adjustments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "run_id" varchar not null,
+  "reference" varchar not null,
+  "reason" varchar not null,
+  "status" varchar not null default 'active',
+  "amount" numeric not null default '0',
+  "lines" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ic_manual_adjustments_run_id_index" on "ic_manual_adjustments"(
+  "run_id"
+);
+
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
 INSERT INTO migrations VALUES(3,'0001_01_01_000002_create_jobs_table',1);
@@ -51187,3 +51776,5 @@ INSERT INTO migrations VALUES(459,'2028_01_04_000100_create_liquidity_planning_t
 INSERT INTO migrations VALUES(460,'2028_01_05_000100_create_debt_collection_mod014_tables',22);
 INSERT INTO migrations VALUES(461,'2028_01_04_000100_create_cpq_configurator_mod230_tables',23);
 INSERT INTO migrations VALUES(462,'2028_01_04_000100_create_expense_management_mod075_tables',24);
+INSERT INTO migrations VALUES(463,'2028_01_04_000100_create_electronic_signature_tables',25);
+INSERT INTO migrations VALUES(464,'2028_01_06_000100_create_intercompany_tables',25);
