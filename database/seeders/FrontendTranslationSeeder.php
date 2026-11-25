@@ -58,6 +58,7 @@ use Database\Seeders\Translations\MobileFeatureTranslations;
 use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
+use Database\Seeders\Translations\PassengerTransportFrontendTranslations;
 use Database\Seeders\Translations\PayablesFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
@@ -178,6 +179,7 @@ class FrontendTranslationSeeder extends Seeder
             + GdoTradeTermsFrontendTranslations::all($locale)
             + IndustrialLaundryFrontendTranslations::all($locale)
             + StatutoryFinancialsFrontendTranslations::all($locale)
+            + PassengerTransportFrontendTranslations::all($locale)
             + ElectronicSignatureFrontendTranslations::all($locale)
             + ElectronicSignatureNotificationTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)

@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             GdoTradeTermsDemoSeeder::class,
             IndustrialLaundryDemoSeeder::class,
             StatutoryFinancialsReferenceSeeder::class,
+            PassengerTransportDemoSeeder::class,
             TreasuryBankingReferenceSeeder::class,
             CpqLocalizationSeeder::class,
             CpqConfiguratorLocalizationSeeder::class,
