@@ -19,6 +19,7 @@ use Modules\Manufacturing\Models\MfgProductionOrder;
 use Modules\Manufacturing\Models\MfgProductionOrderLine;
 use Modules\Manufacturing\Models\MfgProductionOrderOperation;
 use Modules\Manufacturing\Support\Money;
+use Modules\Plm\Models\PlmItemRevision;
 
 /**
  * Read model of the operator board: one flat, UI-ready row per phase, or per operation nobody has taken over yet. Times
@@ -188,14 +189,17 @@ final class PhaseViewFactory
     private function operationBlock(MfgProductionOrderOperation $operation, array $context): array
     {
         $entry = $context[(string) $operation->production_order_id] ?? null;
+        $order = $entry['order'] ?? null;
+        $item = $entry['item'] ?? null;
+        $drawing = $this->engineeringDrawingFor($order, $item);
 
         return [
             'production_order' => [
                 'id' => (string) $operation->production_order_id,
-                'order_number' => $entry['order']->order_number ?? null,
-                'item_code' => $entry['item']->item_code ?? null,
-                'item_name' => $entry['item']->name ?? null,
-                'target_quantity' => isset($entry['order']) ? Money::qty($entry['order']->target_quantity) : null,
+                'order_number' => $order?->order_number,
+                'item_code' => $item?->item_code,
+                'item_name' => $item?->name,
+                'target_quantity' => $order !== null ? Money::qty($order->target_quantity) : null,
             ],
             'operation' => [
                 'id' => (string) $operation->id,
@@ -204,6 +208,44 @@ final class PhaseViewFactory
                 'completed_quantity' => Money::qty($operation->completed_quantity),
                 'scrapped_quantity' => Money::qty($operation->scrapped_quantity),
             ],
+            'engineering_drawing' => $drawing,
+        ];
+    }
+
+    /**
+     * Active or superseded PLM revision & drawing state for the MES tablet (Mod 061).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function engineeringDrawingFor(?MfgProductionOrder $order, ?MfgItem $item): ?array
+    {
+        if (! $item instanceof MfgItem) {
+            return null;
+        }
+
+        $revision = PlmItemRevision::query()
+            ->where('tenant_id', $item->tenant_id)
+            ->where('mfg_item_id', $item->id)
+            ->when($order?->bom_id !== null, static fn ($q) => $q->orderByRaw('CASE WHEN mbom_id = ? THEN 0 ELSE 1 END', [(string) $order->bom_id]))
+            ->orderByDesc('released_at')
+            ->orderByDesc('created_at')
+            ->first();
+
+        if (! $revision instanceof PlmItemRevision) {
+            return null;
+        }
+
+        $isObsolete = $revision->isObsoleteForMes();
+
+        return [
+            'revision_id' => (string) $revision->id,
+            'revision_code' => $revision->revision,
+            'lifecycle_state' => $revision->lifecycle_state,
+            'is_obsolete' => $isObsolete,
+            'obsolete_watermark' => $isObsolete,
+            'watermark_label' => $isObsolete ? 'SUPERATO / OBSOLETO' : null,
+            'technical_file_ref' => $revision->technical_file_ref,
+            'attachments' => $revision->cad_drawing_pdf_and_step_file_ids ?? [],
         ];
     }
 }

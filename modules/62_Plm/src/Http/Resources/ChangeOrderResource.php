@@ -9,7 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Plm\Models\PlmChangeOrder;
 
 /**
- * A change order with its approval flow and, when loaded, the affected items and bills of material.
+ * A change order with its approval flow, departmental matrix, stock disposition, and cutover summary.
  *
  * @mixin PlmChangeOrder
  */
@@ -28,6 +28,16 @@ final class ChangeOrderResource extends JsonResource
             'change_type' => $this->change_type,
             'priority' => $this->priority,
             'status' => $this->status,
+            'workflow_stage' => $this->workflow_stage ?? $this->workflowStageEnum()->value,
+            'change_reason' => $this->change_reason ?? $this->changeReasonEnum()->value,
+            'is_safety_immediate_cutover' => (bool) $this->is_safety_immediate_cutover,
+            'existing_stock_disposition_rule' => $this->existing_stock_disposition_rule ?? $this->dispositionRuleEnum()->value,
+            'effective_date_or_lot_cutover' => $this->effective_date_or_lot_cutover,
+            'lot_serial_cutover_code' => $this->lot_serial_cutover_code,
+            'approvals_matrix_json' => $this->approvals_matrix_json,
+            'ecn_number' => $this->ecn_number,
+            'ecn_released_at' => $this->ecn_released_at?->toIso8601String(),
+            'cutover_summary_json' => $this->cutover_summary_json,
             'requested_by' => $this->requested_by,
             'effective_date' => $this->effective_date?->toDateString(),
             'submitted_at' => $this->submitted_at?->toIso8601String(),
@@ -41,6 +51,9 @@ final class ChangeOrderResource extends JsonResource
                 'approver_name' => $approval->relationLoaded('approver') ? $approval->approver?->name : null,
                 'sequence' => $approval->sequence,
                 'status' => $approval->status,
+                'department' => $approval->department,
+                'actor_role' => $approval->actor_role,
+                'sign_off_hash' => $approval->sign_off_hash,
                 'decided_at' => $approval->decided_at?->toIso8601String(),
                 'comment' => $approval->comment,
             ])->all()),
@@ -51,6 +64,12 @@ final class ChangeOrderResource extends JsonResource
                 'item_name' => $affected->relationLoaded('item') ? $affected->item?->name : null,
                 'to_revision' => $affected->to_revision,
                 'change_summary' => $affected->change_summary,
+                'disposition_rule' => $affected->disposition_rule,
+                'cutover_mode' => $affected->cutover_mode,
+                'effective_date' => $affected->effective_date?->toDateString(),
+                'lot_serial_cutover' => $affected->lot_serial_cutover,
+                'quarantined_lots_count' => $affected->quarantined_lots_count,
+                'mes_drawings_obsoleted_count' => $affected->mes_drawings_obsoleted_count,
             ])->all()),
             'affected_boms' => $this->whenLoaded('affectedBoms', fn (): array => $this->affectedBoms->map(static fn ($affected): array => [
                 'id' => $affected->id,

@@ -146,6 +146,7 @@ class DatabaseSeeder extends Seeder
             ManufacturingReferenceSeeder::class,
             AssociationsReferenceSeeder::class,
             ManufacturingDemoDataSeeder::class,
+            PlmReferenceAndDemoSeeder::class,
             NewerModulesReferenceSeeder::class,
             GelatoReferenceSeeder::class,
             EnterpriseDemoMasterSeeder::class,
