@@ -429,6 +429,17 @@ return [
                 'write' => ['gdo_trade_terms.write', 'gdo_trade_terms.settle', 'gdo_trade_terms.*'],
             ],
         ],
+        // Statutory financial statements (Mod 167): XBRL civil-code and Swiss CO / Swiss GAAP FER dossier, notes, crisis indicators, PDF/A
+        // deposit package. Finance roles read; owners, administrators and accountants write. StatutoryFinancialsPolicy reserves locking,
+        // reopening and filing a dossier to finance (or statutory_financials.file).
+        'statutory_financials' => [
+            'read' => [...$financeReaders],
+            'write' => [...$finance],
+            'grants' => [
+                'read' => ['statutory_financials.read', 'statutory_financials.write', 'statutory_financials.file', 'statutory_financials.*'],
+                'write' => ['statutory_financials.write', 'statutory_financials.file', 'statutory_financials.*'],
+            ],
+        ],
         // Advanced pricing (price lists, cascading discounts, promotions, margin guardrails): finance and sales roles read;
         // owners, administrators, accountants and sales managers write. Authorizing a below-margin document is further
         // limited by the policy to owners, administrators and the role of the margin policy.

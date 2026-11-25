@@ -100,6 +100,7 @@
             "Modules\\ExpenseManagement\\": "modules/78_ExpenseManagement/src/",
             "Modules\\TenderManagement\\": "modules/79_TenderManagement/src/",
             "Modules\\GdoTradeTerms\\": "modules/79_GdoTradeTerms/src/",
+            "Modules\\StatutoryFinancials\\": "modules/80_StatutoryFinancials/src/",
             "Modules\\SwissVat\\": "modules/75_SwissVat/src/",
             "Modules\\LeaveManagement\\": "modules/76_LeaveManagement/src/",
             "Modules\\MarketingAutomation\\": "modules/77_MarketingAutomation/src/",

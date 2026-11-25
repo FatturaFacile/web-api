@@ -22,6 +22,10 @@ final class TenantSchemaBaseline
      */
     public const GLOBAL_TABLES = [
         'abac_rules',
+        'sfs_account_mappings',
+        'sfs_line_definitions',
+        'sfs_ratio_definitions',
+        'sfs_text_templates',
         'accounting_templates',
         'core_cross_border_transfer_rules',
         'core_sovereign_region_nodes',

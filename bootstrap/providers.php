@@ -91,6 +91,7 @@ use Modules\Returns\Providers\ReturnsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
+use Modules\StatutoryFinancials\Providers\StatutoryFinancialsServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
 use Modules\Sustainability\Providers\SustainabilityServiceProvider;
@@ -209,6 +210,7 @@ return [
     ExpenseManagementServiceProvider::class,
     TenderManagementServiceProvider::class,
     GdoTradeTermsServiceProvider::class,
+    StatutoryFinancialsServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,
