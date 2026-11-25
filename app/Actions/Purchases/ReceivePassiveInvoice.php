@@ -59,7 +59,8 @@ class ReceivePassiveInvoice
                     $supplier->id, $document['document_type'], $document['number'], $document['date'], number_format($document['total'], 2, '.', ''),
                 ]));
 
-                $existing = PassiveInvoice::where('document_hash', $hash)->first();
+                // A deleted document still holds its hash (unique per company): it is reported as already received, not re-inserted.
+                $existing = PassiveInvoice::withTrashed()->where('document_hash', $hash)->first();
 
                 if ($existing !== null) {
                     $results[] = ['invoice' => $existing, 'duplicate' => true];

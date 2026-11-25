@@ -436,3 +436,16 @@ test('an invoice with immediate or deferred VAT is not split payment', function 
     expect($invoice->isSplitPayment())->toBeFalse()
         ->and($invoice->amountDue())->toBe('305.00');
 });
+
+test('re-importing a document that was deleted reports it as already received instead of failing', function (): void {
+    $this->tenant->update(['vat_number' => '00811720580']);
+    $upload = static fn () => UploadedFile::fake()->createWithContent('f.xml', importSdiXml());
+
+    $first = apiRequest()->postJson('/api/v1/purchases/passive-invoices/import-sdi', ['xml_file' => $upload()])->assertCreated();
+    PassiveInvoice::findOrFail($first->json('data.id'))->delete();
+
+    $again = apiRequest()->postJson('/api/v1/purchases/passive-invoices/import-sdi', ['xml_file' => $upload()])->assertOk();
+
+    expect($again->json('data.id'))->toBe($first->json('data.id'))
+        ->and($again->json('data.duplicate'))->toBeTrue();
+});

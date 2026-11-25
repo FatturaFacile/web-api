@@ -210,7 +210,7 @@ class PurchasesController extends Controller
 
         // The same bill (creditor account, reference, amount and currency) is booked once, however often it is scanned.
         $documentHash = hash('sha256', implode('|', [$qrIban, $referenceType, $scorRef, number_format($amount, 2, '.', ''), $currency, $creditorName, (string) $bill->message]));
-        $existing = PassiveInvoice::query()->where('document_hash', $documentHash)->first();
+        $existing = PassiveInvoice::withTrashed()->where('document_hash', $documentHash)->first();
 
         if ($existing !== null) {
             return $this->successResponse(
