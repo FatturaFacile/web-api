@@ -105,7 +105,7 @@ final readonly class SupplierQualificationService
     public function expireQualifications(): int
     {
         $suppliers = Supplier::query()
-            ->whereIn('qualification_status', [SupplierQualificationStatus::Qualified->value, SupplierQualificationStatus::Conditional->value])
+            ->whereIn('qualification_status', [SupplierQualificationStatus::Qualified->value, SupplierQualificationStatus::Conditional->value, SupplierQualificationStatus::Preferred->value])
             ->whereHas('documents', static fn ($query) => $query->where('is_mandatory', true)->whereNotNull('expires_at')->where('expires_at', '<', now()->toDateString()))
             ->get();
 
