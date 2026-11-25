@@ -61,6 +61,7 @@ return [
         'industrial_laundry' => env('FEATURE_MODULE_INDUSTRIAL_LAUNDRY'),
         'statutory_financials' => env('FEATURE_MODULE_STATUTORY_FINANCIALS'),
         'passenger_transport' => env('FEATURE_MODULE_PASSENGER_TRANSPORT'),
+        'franchise_network' => env('FEATURE_MODULE_FRANCHISE_NETWORK'),
         'electronic_signature' => env('FEATURE_MODULE_ELECTRONIC_SIGNATURE'),
         'intercompany' => env('FEATURE_MODULE_INTERCOMPANY'),
         'shift_planning' => env('FEATURE_MODULE_SHIFT_PLANNING'),

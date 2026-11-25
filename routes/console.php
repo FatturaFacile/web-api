@@ -30,6 +30,9 @@ use Modules\ElectronicSignature\Jobs\ProcessSignatureLifecycleJob;
 use Modules\Facility\Jobs\GenerateFacilityInspectionsJob;
 use Modules\Facility\Jobs\ReleaseNoShowBookingsJob;
 use Modules\FiscalRetail\Jobs\RetryCorrispettiviTransmissionsJob;
+use Modules\FranchiseNetwork\Jobs\CalculateRoyaltiesJob;
+use Modules\FranchiseNetwork\Jobs\MaintainFranchiseNetworkJob;
+use Modules\FranchiseNetwork\Jobs\SnapshotBenchmarksJob;
 use Modules\Hospitality\Jobs\ReleaseExpiredGroupBlocksJob;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
 use Modules\HumanResources\Jobs\PurgeExpiredApplicationsJob;
@@ -248,6 +251,12 @@ Schedule::command('mfg:mes-prune-changes')->dailyAt('03:45')->withoutOverlapping
 
 // GDO trade terms (Mod 231): monthly accrual of the rebates and trade contributions of the month that just ended.
 Schedule::command('gdo-trade-terms:accrue')->monthlyOn(1, '04:30')->withoutOverlapping()->onOneServer();
+
+// Franchise network governance (Mod 244): daily upkeep (renewals, reminders, entry fee deferral, push retries), the royalty and marketing
+// fund run of the month that just ended on the 2nd, and the anonymous benchmark snapshot once the sell-out of the month is in.
+$completenessTenantJob('franchise-network:maintenance', static fn (Tenant $tenant): object => new MaintainFranchiseNetworkJob($tenant->id))->dailyAt('03:10');
+$completenessTenantJob('franchise-network:royalties', static fn (Tenant $tenant): object => new CalculateRoyaltiesJob($tenant->id))->monthlyOn(2, '04:00');
+$completenessTenantJob('franchise-network:benchmark', static fn (Tenant $tenant): object => new SnapshotBenchmarksJob($tenant->id))->monthlyOn(3, '04:30');
 
 // Passenger transport (Mod 176): follows the flights of the airport transfers and moves the pickup to the real arrival.
 Schedule::command('passenger-transport:track-flights')->everyTenMinutes()->withoutOverlapping()->onOneServer();

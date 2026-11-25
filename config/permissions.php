@@ -463,6 +463,17 @@ return [
                 'write' => ['passenger_transport.write', 'passenger_transport.bill', 'passenger_transport.*'],
             ],
         ],
+        // Franchise network governance (Mod 244): the franchise director (owner, administrator, franchise_director) governs the network,
+        // the area manager audits the stores assigned to them, the franchisee owner and manager use the portal of their own store.
+        // FranchiseNetworkPolicy reserves every action to its role.
+        'franchise_network' => [
+            'read' => $anyMember,
+            'write' => [...$finance, 'franchise_director', 'area_manager', 'franchisee_owner', 'franchisee_manager'],
+            'grants' => [
+                'read' => ['franchise_network.read', 'franchise_network.write', 'franchise_network.manage', 'franchise_network.audit', 'franchise_network.portal', 'franchise_network.*'],
+                'write' => ['franchise_network.write', 'franchise_network.manage', 'franchise_network.audit', 'franchise_network.portal', 'franchise_network.*'],
+            ],
+        ],
         // Advanced pricing (price lists, cascading discounts, promotions, margin guardrails): finance and sales roles read;
         // owners, administrators, accountants and sales managers write. Authorizing a below-margin document is further
         // limited by the policy to owners, administrators and the role of the margin policy.

@@ -27,6 +27,7 @@ use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
 use Database\Seeders\Translations\ExpenseManagementFrontendTranslations;
 use Database\Seeders\Translations\FieldServiceManagementFrontendTranslations;
 use Database\Seeders\Translations\FixedAssetsFrontendTranslations;
+use Database\Seeders\Translations\FranchiseNetworkFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GdoTradeTermsFrontendTranslations;
@@ -180,6 +181,7 @@ class FrontendTranslationSeeder extends Seeder
             + IndustrialLaundryFrontendTranslations::all($locale)
             + StatutoryFinancialsFrontendTranslations::all($locale)
             + PassengerTransportFrontendTranslations::all($locale)
+            + FranchiseNetworkFrontendTranslations::all($locale)
             + ElectronicSignatureFrontendTranslations::all($locale)
             + ElectronicSignatureNotificationTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)

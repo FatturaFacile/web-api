@@ -103,6 +103,7 @@
             "Modules\\IndustrialLaundry\\": "modules/80_IndustrialLaundry/src/",
             "Modules\\StatutoryFinancials\\": "modules/80_StatutoryFinancials/src/",
             "Modules\\PassengerTransport\\": "modules/80_PassengerTransport/src/",
+            "Modules\\FranchiseNetwork\\": "modules/81_FranchiseNetwork/src/",
             "Modules\\SwissVat\\": "modules/75_SwissVat/src/",
             "Modules\\LeaveManagement\\": "modules/76_LeaveManagement/src/",
             "Modules\\MarketingAutomation\\": "modules/77_MarketingAutomation/src/",
