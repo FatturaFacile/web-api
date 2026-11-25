@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Purchases\ReceivePassiveInvoice;
+use App\Actions\Purchases\RecordSupplierPayment;
 use App\Actions\Sdi\CreateSelfInvoice;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Purchases\StoreSelfInvoiceRequest;
@@ -89,7 +90,10 @@ class SupplierInvoiceController extends Controller
     )]
     public function show(string $id): JsonResponse
     {
-        return $this->successResponse(new CatalogResource(PassiveInvoice::findOrFail($id)), __('purchases.messages.supplier_invoice'));
+        $invoice = PassiveInvoice::query()->with('supplier')->findOrFail($id);
+        $invoice->append('supplier_name');
+
+        return $this->successResponse(new CatalogResource($invoice), __('purchases.messages.supplier_invoice'));
     }
 
     /**
@@ -201,7 +205,7 @@ class SupplierInvoiceController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]
-    public function markPaid(string $id): JsonResponse
+    public function markPaid(string $id, RecordSupplierPayment $record): JsonResponse
     {
         $invoice = PassiveInvoice::findOrFail($id);
 
@@ -217,7 +221,17 @@ class SupplierInvoiceController extends Controller
             throw ValidationException::withMessages(['invoice' => __('purchases_errors.invoice.not_approved_for_payment', ['number' => $invoice->invoice_number])]);
         }
 
-        $invoice->update(['payment_status' => 'paid']);
+        // The open balance (total less withholding and what was already paid) is settled through a real payment, so the payable,
+        // the bank and the withholding settlement stay consistent with the invoice status.
+        $open = round((float) $invoice->amountDue() - (float) $invoice->total_paid, 2);
+
+        if ($open > 0) {
+            $record->execute($invoice, ['amount' => $open, 'paid_at' => now()->toDateString(), 'type' => 'payment', 'notes' => 'Marked as paid']);
+            $invoice = PassiveInvoice::findOrFail($id);
+        } else {
+            $invoice->update(['payment_status' => 'paid']);
+        }
+
         $this->events->record($invoice, 'marked_paid');
 
         return $this->successResponse(new CatalogResource($invoice), __('purchases.messages.marked_paid'));

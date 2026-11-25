@@ -34,6 +34,10 @@ class RecordSupplierPayment
                 ->firstOrFail();
             $amount = round((float) $data['amount'], 2);
 
+            if ($invoice->document_type === 'TD04') {
+                throw ValidationException::withMessages(['invoice' => __('purchases.credit_note_not_payable')]);
+            }
+
             if ($invoice->isPaymentBlocked()) {
                 throw ValidationException::withMessages(['invoice' => __('purchases_errors.invoice.not_approved_for_payment', ['number' => $invoice->invoice_number])]);
             }

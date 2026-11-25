@@ -267,7 +267,8 @@ final class WithholdingSettlementService
         $after = Decimal::add($before, (string) $payment->amount);
         $shares = [];
 
-        foreach ($this->withholdingsByType($invoice) as $type => $withholding) {
+        foreach ($this->withholdingBlocks($invoice) as $withholding) {
+            $type = $withholding['type'];
             $withheld = Decimal::sub($this->shareOf($withholding['amount'], $after, $due), $this->shareOf($withholding['amount'], $before, $due));
             $grossPaid = Decimal::sub($this->shareOf((string) ($invoice->total_net ?? $invoice->total_amount), $after, $due), $this->shareOf((string) ($invoice->total_net ?? $invoice->total_amount), $before, $due));
             $rate = $withholding['rate'];
@@ -297,27 +298,35 @@ final class WithholdingSettlementService
      * by hand, or received before the detail was kept) counts as one RT01 of that amount, flagged as assumed, so that it
      * stays in the F24 and the CU instead of vanishing.
      *
-     * @return array<string, array{amount: string, rate: ?string, reason: ?string, assumed: bool}>
+     * One entry per withholding type, causale and rate: blocks that differ in any of them go to different F24 codes and CU
+     * causali, so they are never merged.
+     *
+     * @return list<array{type: string, amount: string, rate: ?string, reason: ?string, assumed: bool}>
      */
-    private function withholdingsByType(PassiveInvoice $invoice): array
+    private function withholdingBlocks(PassiveInvoice $invoice): array
     {
-        $byType = [];
+        $blocks = [];
+        $positions = [];
 
         if (($invoice->withholdings ?? []) === [] && Decimal::isPositive((string) $invoice->withholding_tax_amount)) {
-            return [TipoRitenuta::Rt01->value => ['amount' => (string) $invoice->withholding_tax_amount, 'rate' => null, 'reason' => null, 'assumed' => true]];
+            return [['type' => TipoRitenuta::Rt01->value, 'amount' => (string) $invoice->withholding_tax_amount, 'rate' => null, 'reason' => null, 'assumed' => true]];
         }
 
         foreach ($invoice->withholdings ?? [] as $withholding) {
             $type = (string) $withholding['type'];
-            $byType[$type] = [
-                'amount' => Decimal::add($byType[$type]['amount'] ?? '0', (string) $withholding['amount']),
+            $key = $type.'|'.(string) ($withholding['reason'] ?? '').'|'.(string) ($withholding['rate'] ?? '');
+            $at = $positions[$key] ?? count($blocks);
+            $positions[$key] = $at;
+            $blocks[$at] = [
+                'type' => $type,
+                'amount' => Decimal::add($blocks[$at]['amount'] ?? '0', (string) $withholding['amount']),
                 'rate' => $withholding['rate'] ?? null,
                 'reason' => $withholding['reason'] ?? null,
                 'assumed' => false,
             ];
         }
 
-        return $byType;
+        return $blocks;
     }
 
     private function shareOf(string $amount, string $paid, string $due): string

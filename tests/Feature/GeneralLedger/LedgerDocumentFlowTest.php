@@ -16,6 +16,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Sanctum;
 use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\GeneralLedger\Actions\PostPassiveInvoiceAction;
@@ -461,7 +462,11 @@ test('the QR reference is the element after its type', function (): void {
     $lines[1] = '0200';
     $lines[2] = '1';
     $lines[3] = 'CH4431999123000889012';
+    $lines[4] = 'S';
     $lines[5] = 'Swiss Telecom AG';
+    $lines[8] = '8000';
+    $lines[9] = 'Zurich';
+    $lines[10] = 'CH';
     $lines[18] = '162.15';
     $lines[19] = 'CHF';
     $lines[27] = 'QRR';
@@ -608,4 +613,104 @@ test('a Swiss cash rounding reaches its own account and the entry balances', fun
     expect((float) $response->json('data.total_gross'))->toEqual(108.15)
         ->and(ledgerAccountBalance($tenantId, '1100'))->toBe('108.15')
         ->and(ledgerAccountBalance($tenantId, '6960'))->toBe('-0.02');
+});
+
+/**
+ * A complete SPC 0200 payload of a QR-IBAN bill; the overrides replace elements by index.
+ *
+ * @param  array<int, string>  $overrides
+ */
+function swissQrPayload(array $overrides = []): string
+{
+    $lines = array_fill(0, 32, '');
+    $defaults = [
+        0 => 'SPC', 1 => '0200', 2 => '1', 3 => 'CH4431999123000889012', 4 => 'S', 5 => 'Swiss Telecom AG',
+        8 => '8000', 9 => 'Zurich', 10 => 'CH', 18 => '162.15', 19 => 'CHF', 27 => 'QRR',
+        28 => '210000000003139471430009017', 30 => 'EPD',
+    ];
+
+    foreach ($overrides + $defaults as $index => $value) {
+        $lines[$index] = $value;
+    }
+
+    return implode("\n", $lines);
+}
+
+test('a QR bill that breaks the Swiss specification is refused before anything is booked', function (array $override): void {
+    ledgerCompany('CH');
+
+    $this->postJson('/api/v1/purchases/passive-invoices/scan-qr-bill', ['qr_payload' => swissQrPayload($override)])->assertUnprocessable();
+
+    expect(PassiveInvoice::withoutGlobalScopes()->count())->toBe(0);
+})->with([
+    'QR reference on a normal IBAN' => [[3 => 'CH9300762011623852957']],
+    'reference with a wrong check digit' => [[28 => '210000000003139471430009018']],
+    'currency other than CHF or EUR' => [[19 => 'USD']],
+    'missing end-of-payment trailer' => [[30 => '']],
+    'unsupported version' => [[1 => '0100']],
+]);
+
+test('scanning the same QR bill twice books it once', function (): void {
+    $company = ledgerCompany('CH');
+    $tenantId = $company['tenant']->id;
+    $payload = swissQrPayload();
+
+    $first = $this->postJson('/api/v1/purchases/passive-invoices/scan-qr-bill', ['qr_payload' => $payload, 'total_tax' => 12.15])->assertCreated();
+    $second = $this->postJson('/api/v1/purchases/passive-invoices/scan-qr-bill', ['qr_payload' => $payload, 'total_tax' => 12.15])->assertOk();
+
+    expect($first->json('data.duplicate'))->toBeFalse()
+        ->and($second->json('data.duplicate'))->toBeTrue()
+        ->and($second->json('data.id'))->toBe($first->json('data.id'))
+        ->and($first->json('data.is_qr_iban'))->toBeTrue()
+        ->and(PassiveInvoice::withoutGlobalScopes()->where('tenant_id', $tenantId)->count())->toBe(1)
+        ->and(ledgerAccountBalance($tenantId, '2000'))->toBe('-162.15');
+});
+
+test('marking a supplier invoice as paid records a real payment that clears the payable', function (): void {
+    $company = ledgerCompany('IT');
+    $tenantId = $company['tenant']->id;
+    $invoice = PassiveInvoice::create([
+        'tenant_id' => $tenantId,
+        'supplier_id' => $company['supplier']->id,
+        'invoice_number' => 'SUP-PAY',
+        'date' => now()->toDateString(),
+        'total_amount' => '366.00',
+        'total_net' => '300.00',
+        'total_tax' => '66.00',
+        'currency' => $company['tenant']->default_currency,
+        'payment_status' => 'unpaid',
+    ]);
+    app(PostPassiveInvoiceAction::class)->execute($invoice);
+
+    $this->postJson("/api/v1/purchases/supplier-invoices/{$invoice->id}/mark-paid")->assertOk();
+
+    $invoice->refresh();
+
+    expect($invoice->payment_status)->toBe('paid')
+        ->and((float) $invoice->total_paid)->toEqual(366.0)
+        ->and($invoice->payments()->count())->toBe(1)
+        ->and(ledgerAccountBalance($tenantId, '2000'))->toBe('0.00');
+
+    $this->postJson("/api/v1/purchases/supplier-invoices/{$invoice->id}/mark-paid")->assertUnprocessable();
+});
+
+test('a credit note can neither be paid nor matched against an order', function (): void {
+    $company = ledgerCompany('IT');
+    $credit = PassiveInvoice::create([
+        'tenant_id' => $company['tenant']->id,
+        'supplier_id' => $company['supplier']->id,
+        'invoice_number' => 'NC-1',
+        'document_type' => 'TD04',
+        'date' => now()->toDateString(),
+        'total_amount' => '122.00',
+        'total_net' => '100.00',
+        'total_tax' => '22.00',
+        'currency' => $company['tenant']->default_currency,
+        'payment_status' => 'unpaid',
+    ]);
+
+    expect(fn () => app(RecordSupplierPayment::class)->execute($credit, ['amount' => 10, 'paid_at' => now()->toDateString()]))
+        ->toThrow(ValidationException::class);
+
+    $this->postJson('/api/v1/procurement/invoice-matching/run', ['passive_invoice_id' => (string) $credit->id])->assertUnprocessable();
 });

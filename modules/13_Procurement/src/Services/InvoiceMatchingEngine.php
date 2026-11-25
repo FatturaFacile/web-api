@@ -625,8 +625,17 @@ final class InvoiceMatchingEngine
     private function unitPriceOf(PassiveInvoiceLine $line, string $quantity): string
     {
         $price = (string) ($line->unit_price ?? '0');
+        $total = (string) ($line->line_total ?? '0');
 
         if (Decimal::isPositive($price)) {
+            // A line discount (ScontoMaggiorazione) leaves the list price in `unit_price` and the discounted amount in
+            // `line_total`: the price actually invoiced is the total over the quantity. A gap within a cent is rounding.
+            $gap = Decimal::abs(Decimal::sub(Decimal::mul($price, $quantity, 2), $total, 2), 2);
+
+            if (Decimal::isPositive($total) && Decimal::cmp($gap, '0.01', 2) > 0) {
+                return Decimal::div($total, $quantity, 6);
+            }
+
             return Decimal::of($price, 6);
         }
 

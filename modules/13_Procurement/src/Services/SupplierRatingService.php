@@ -30,6 +30,9 @@ final readonly class SupplierRatingService
         'rfq_responsiveness_rate' => 10,
     ];
 
+    /** @var list<string> */
+    public const array SortFields = ['score', 'name', 'on_time_delivery_rate', 'quality_acceptance_rate', 'price_competitiveness_score', 'invoice_accuracy_rate', 'rfq_responsiveness_rate'];
+
     public function __construct(private SupplierPerformanceService $performance) {}
 
     /**
@@ -77,7 +80,7 @@ final readonly class SupplierRatingService
      *
      * @return list<array<string, mixed>>
      */
-    public function ranking(string $tenantId, string $from, string $to, int $limit = 50): array
+    public function ranking(string $tenantId, string $from, string $to, ?int $limit = null): array
     {
         $active = DB::table('purchase_orders')->where('tenant_id', $tenantId)->whereNull('deleted_at')
             ->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->distinct()->pluck('supplier_id')->all();
@@ -102,7 +105,67 @@ final readonly class SupplierRatingService
             return Decimal::cmp($b['score'], $a['score'], 2) ?: strcmp($a['supplier_name'], $b['supplier_name']);
         });
 
-        return array_slice($ratings, 0, max(1, $limit));
+        return $limit === null ? $ratings : array_slice($ratings, 0, max(1, $limit));
+    }
+
+    /**
+     * One page of the ranking after filtering by supplier name and tier and sorting by score, name or a component.
+     * Suppliers without a value for the sort field always come last. The ratings are computed from the documents of the
+     * period, so the whole active set is rated before the page is cut.
+     *
+     * @param  array{search: ?string, tier: ?string, sort: string, direction: string, page: int, per_page: int}  $listing
+     * @return array{data: list<array<string, mixed>>, meta: array{current_page: int, per_page: int, total: int, last_page: int, from: ?int, to: ?int}}
+     */
+    public function page(string $tenantId, string $from, string $to, array $listing): array
+    {
+        $rows = $this->ranking($tenantId, $from, $to);
+
+        if ($listing['search'] !== null && trim($listing['search']) !== '') {
+            $term = mb_strtolower(trim($listing['search']));
+            $rows = array_values(array_filter($rows, static fn (array $row): bool => str_contains(mb_strtolower((string) $row['supplier_name']), $term)));
+        }
+
+        if ($listing['tier'] !== null) {
+            $rows = array_values(array_filter($rows, static fn (array $row): bool => $row['tier'] === $listing['tier']));
+        }
+
+        $descending = $listing['direction'] === 'desc';
+        $value = static fn (array $row): ?string => match ($listing['sort']) {
+            'name' => (string) $row['supplier_name'],
+            'score' => $row['score'],
+            default => $row['components'][$listing['sort']] ?? null,
+        };
+
+        usort($rows, static function (array $a, array $b) use ($value, $descending, $listing): int {
+            [$left, $right] = [$value($a), $value($b)];
+
+            if ($left === null || $right === null) {
+                return ($left === null) <=> ($right === null);
+            }
+
+            $order = $listing['sort'] === 'name' ? strcasecmp($left, $right) : Decimal::cmp($left, $right, 2);
+
+            return ($descending ? -$order : $order) ?: strcasecmp((string) $a['supplier_name'], (string) $b['supplier_name']);
+        });
+
+        $total = count($rows);
+        $perPage = max(1, $listing['per_page']);
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $current = min(max(1, $listing['page']), $lastPage);
+        $offset = ($current - 1) * $perPage;
+        $data = array_slice($rows, $offset, $perPage);
+
+        return [
+            'data' => $data,
+            'meta' => [
+                'current_page' => $current,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => $lastPage,
+                'from' => $data === [] ? null : $offset + 1,
+                'to' => $data === [] ? null : $offset + count($data),
+            ],
+        ];
     }
 
     /**

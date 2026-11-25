@@ -161,11 +161,16 @@ test('purchases controller scans swiss qr bill payload and exports pain001', fun
     $qrLines[1] = '0200';
     $qrLines[2] = '1';
     $qrLines[3] = 'CH4431999123000889012';
+    $qrLines[4] = 'S';
     $qrLines[5] = 'Swiss Telecom AG';
+    $qrLines[8] = '8000';
+    $qrLines[9] = 'Zurich';
+    $qrLines[10] = 'CH';
     $qrLines[18] = '149.90';
     $qrLines[19] = 'CHF';
     $qrLines[27] = 'QRR';
     $qrLines[28] = '210000000003139471430009017';
+    $qrLines[30] = 'EPD';
 
     $payload = implode("\n", $qrLines);
 

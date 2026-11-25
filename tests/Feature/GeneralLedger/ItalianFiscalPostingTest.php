@@ -265,6 +265,23 @@ test('the month holds what was paid in it, and partial payments add up to the ex
         ->and($march->due_date->toDateString())->toBe('2027-04-16');
 });
 
+test('withholding blocks of the same type with different causali stay separate lines', function (): void {
+    $invoice = passiveWithWithholding($this->tenant, $this->supplier, [
+        ['type' => 'RT01', 'amount' => '60.00', 'rate' => '20.00', 'reason' => 'A'],
+        ['type' => 'RT01', 'amount' => '40.00', 'rate' => '10.00', 'reason' => 'M'],
+    ]);
+
+    app(RecordSupplierPayment::class)->execute($invoice, ['amount' => 900, 'paid_at' => '2027-03-05']);
+
+    $march = app(WithholdingSettlementService::class)->calculate($this->tenant->id, 2027, 3);
+    $byReason = $march->lines->keyBy('reason');
+
+    expect($march->lines)->toHaveCount(2)
+        ->and((string) $byReason['A']->withheld_amount)->toBe('60.00')
+        ->and((string) $byReason['M']->withheld_amount)->toBe('40.00')
+        ->and((string) $byReason['A']->rate_percent)->toBe('20.00')
+        ->and((string) $byReason['M']->rate_percent)->toBe('10.00');
+});
 test('the due date moves past a weekend', function (): void {
     // 16 May 2027 is a Sunday.
     $settlement = app(WithholdingSettlementService::class)->calculate($this->tenant->id, 2027, 4);
