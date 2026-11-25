@@ -17,17 +17,45 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'account_code', type: 'string', maxLength: 50),
         new OA\Property(property: 'name', type: 'string', maxLength: 255),
+        new OA\Property(property: 'account_name', type: 'string', maxLength: 255, nullable: true),
+        new OA\Property(property: 'description', type: 'string', maxLength: 2000, nullable: true),
         new OA\Property(property: 'account_class', type: 'string', maxLength: 30, nullable: true),
         new OA\Property(property: 'account_type', type: 'string', enum: ['asset', 'liability', 'equity', 'revenue', 'expense', 'cogs', 'wip', 'memo', 'statistical']),
         new OA\Property(property: 'normal_balance', type: 'string', enum: ['debit', 'credit']),
         new OA\Property(property: 'parent_account_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'currency', type: 'string', minLength: 3, maxLength: 3, nullable: true),
+        new OA\Property(property: 'vat_code_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'default_cost_center_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'open_items_enabled', type: 'boolean', nullable: true),
+        new OA\Property(property: 'allowed_currencies', type: 'array', items: new OA\Items(type: 'string'), nullable: true),
+        new OA\Property(property: 'is_postable', type: 'boolean', nullable: true),
         new OA\Property(property: 'is_reconciliation_account', type: 'boolean', nullable: true),
         new OA\Property(property: 'reconciliation_type', type: 'string', maxLength: 20, nullable: true),
         new OA\Property(property: 'allows_manual_posting', type: 'boolean', nullable: true),
         new OA\Property(property: 'is_cost_center_mandatory', type: 'boolean', nullable: true),
         new OA\Property(property: 'is_active', type: 'boolean', nullable: true),
+        new OA\Property(property: 'template_code', type: 'string', maxLength: 50, nullable: true),
+        new OA\Property(property: 'statutory_code', type: 'string', maxLength: 50, nullable: true),
         new OA\Property(property: 'reporting_class', type: 'string', nullable: true, enum: ['cash', 'receivable', 'inventory', 'other_current_asset', 'non_current_asset', 'current_liability', 'non_current_liability', 'equity', 'non_cash_expense'], description: 'Drives the cash flow statement and the ratios'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerStoreAccountMappingRequest',
+    description: 'Request payload validated by StoreAccountMappingRequest',
+    required: ['source_account_id', 'target_standard', 'target_account_code', 'target_account_name'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'source_account_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'target_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'source_standard', type: 'string', maxLength: 50, nullable: true),
+        new OA\Property(property: 'target_standard', type: 'string', maxLength: 50),
+        new OA\Property(property: 'target_account_code', type: 'string', maxLength: 50),
+        new OA\Property(property: 'target_account_name', type: 'string', maxLength: 255),
+        new OA\Property(property: 'mapping_type', type: 'string', enum: ['direct', 'split', 'aggregation', 'reclassification'], nullable: true),
+        new OA\Property(property: 'is_bidirectional', type: 'boolean', nullable: true),
+        new OA\Property(property: 'allocation_percentage', type: 'number', format: 'float', nullable: true),
+        new OA\Property(property: 'notes', type: 'string', maxLength: 2000, nullable: true),
+        new OA\Property(property: 'is_active', type: 'boolean', nullable: true),
     ]
 )]
 #[OA\Schema(

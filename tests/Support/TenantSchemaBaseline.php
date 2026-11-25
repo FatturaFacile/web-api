@@ -69,6 +69,7 @@ final class TenantSchemaBaseline
         'inventory_movement_types',
         'lookup_categories',
         'gelato_technical_ingredients',
+        'gl_coa_templates',
         'lookup_item_translations',
         'lookup_items',
         'notification_type_translations',

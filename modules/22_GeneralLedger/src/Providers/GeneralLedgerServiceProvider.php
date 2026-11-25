@@ -41,6 +41,7 @@ use Modules\GeneralLedger\Listeners\ProcurementAccountingListener;
 use Modules\GeneralLedger\Listeners\ProjectsAccountingListener;
 use Modules\GeneralLedger\Listeners\TreasuryAccountingListener;
 use Modules\GeneralLedger\Listeners\WorkflowApprovalGeneralLedgerListener;
+use Modules\GeneralLedger\Models\AccountMapping;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
@@ -120,6 +121,7 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
     private function registerPolicies(): void
     {
         Gate::policy(ChartOfAccount::class, ChartOfAccountPolicy::class);
+        Gate::policy(AccountMapping::class, ChartOfAccountPolicy::class);
         Gate::policy(FiscalYear::class, FiscalYearPolicy::class);
         Gate::policy(FiscalPeriod::class, FiscalPeriodPolicy::class);
         Gate::policy(JournalEntry::class, JournalEntryPolicy::class);

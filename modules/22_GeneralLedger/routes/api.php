@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\GeneralLedger\Http\Controllers\AccountingTemplateController;
+use Modules\GeneralLedger\Http\Controllers\AccountMappingController;
 use Modules\GeneralLedger\Http\Controllers\AccrualController;
 use Modules\GeneralLedger\Http\Controllers\ChartOfAccountController;
 use Modules\GeneralLedger\Http\Controllers\ChartTemplateController;
@@ -41,11 +42,20 @@ use Modules\GeneralLedger\Http\Controllers\YearEndClosingWorkflowController;
 Route::prefix('api/v1/general-ledger')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:ledger'])
     ->group(function (): void {
-        // Chart of Accounts
+        // Chart of Accounts & Multi-Standard Mappings
         Route::get('accounts-tree', [ChartOfAccountController::class, 'hierarchy']);
+        Route::get('accounts/export', [ChartOfAccountController::class, 'export']);
+        Route::post('accounts/{account}/move', [ChartOfAccountController::class, 'move'])->whereUuid('account');
         Route::get('account-templates', [ChartTemplateController::class, 'index']);
         Route::post('account-templates/{template}/import', [ChartTemplateController::class, 'import']);
         Route::apiResource('accounts', ChartOfAccountController::class);
+
+        Route::get('account-mappings', [AccountMappingController::class, 'index']);
+        Route::post('account-mappings', [AccountMappingController::class, 'store']);
+        Route::post('account-mappings/seed-defaults', [AccountMappingController::class, 'seedDefaults']);
+        Route::put('account-mappings/{mapping}', [AccountMappingController::class, 'update'])->whereUuid('mapping');
+        Route::patch('account-mappings/{mapping}', [AccountMappingController::class, 'update'])->whereUuid('mapping');
+        Route::delete('account-mappings/{mapping}', [AccountMappingController::class, 'destroy'])->whereUuid('mapping');
 
         // Fiscal Calendar
         Route::apiResource('fiscal-years', FiscalYearController::class)->except(['update', 'destroy']);
