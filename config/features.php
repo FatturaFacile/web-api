@@ -63,6 +63,7 @@ return [
         'passenger_transport' => env('FEATURE_MODULE_PASSENGER_TRANSPORT'),
         'customer_satisfaction' => env('FEATURE_MODULE_CUSTOMER_SATISFACTION'),
         'franchise_network' => env('FEATURE_MODULE_FRANCHISE_NETWORK'),
+        'corporate_conventions' => env('FEATURE_MODULE_CORPORATE_CONVENTIONS'),
         'electronic_signature' => env('FEATURE_MODULE_ELECTRONIC_SIGNATURE'),
         'intercompany' => env('FEATURE_MODULE_INTERCOMPANY'),
         'shift_planning' => env('FEATURE_MODULE_SHIFT_PLANNING'),

@@ -15,6 +15,7 @@ use Database\Seeders\Translations\ArtisanalGelatoFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\BomManagementFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
+use Database\Seeders\Translations\CorporateConventionsFrontendTranslations;
 use Database\Seeders\Translations\CpqConfiguratorFrontendTranslations;
 use Database\Seeders\Translations\CpqQuotesFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
@@ -187,6 +188,7 @@ class FrontendTranslationSeeder extends Seeder
             + PassengerTransportFrontendTranslations::all($locale)
             + CustomerSatisfactionFrontendTranslations::all($locale)
             + FranchiseNetworkFrontendTranslations::all($locale)
+            + CorporateConventionsFrontendTranslations::all($locale)
             + ElectronicSignatureFrontendTranslations::all($locale)
             + ElectronicSignatureNotificationTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)

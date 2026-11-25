@@ -31,6 +31,7 @@ use Modules\ConstructionTrades\Providers\ConstructionTradesServiceProvider;
 use Modules\Contracts\Providers\ContractsServiceProvider;
 use Modules\Controlling\Providers\ControllingServiceProvider;
 use Modules\Copilot\Providers\CopilotServiceProvider;
+use Modules\CorporateConventions\Providers\CorporateConventionsServiceProvider;
 use Modules\CorporateGroup\Providers\CorporateGroupServiceProvider;
 use Modules\CpqConfigurator\Providers\CpqConfiguratorServiceProvider;
 use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
@@ -221,6 +222,7 @@ return [
     PassengerTransportServiceProvider::class,
     CustomerSatisfactionServiceProvider::class,
     FranchiseNetworkServiceProvider::class,
+    CorporateConventionsServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,

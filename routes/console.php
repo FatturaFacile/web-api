@@ -267,3 +267,5 @@ Schedule::command('returns:scan-overdue-replacements')->dailyAt('07:45')->withou
 // Customer satisfaction (Mod 245): sends the due survey invitations and schedules the semi-annual relationship survey of the active clients.
 Schedule::command('surveys:process-dispatches')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('surveys:enqueue-semi-annual')->dailyAt('06:30')->withoutOverlapping()->onOneServer();
+// Corporate conventions (Mod 358): expires the conventions and beneficiary passes past their end date.
+Schedule::command('corporate-conventions:expire')->dailyAt('01:15')->withoutOverlapping()->onOneServer();
