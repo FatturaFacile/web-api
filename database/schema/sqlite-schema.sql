@@ -52815,6 +52815,304 @@ CREATE INDEX "ilr_billing_run_lines_billing_run_id_position_index" on "ilr_billi
 CREATE INDEX "ilr_billing_run_lines_tenant_id_index" on "ilr_billing_run_lines"(
   "tenant_id"
 );
+CREATE TABLE "sfs_line_definitions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "family" varchar not null,
+  "statement" varchar not null,
+  "variant" varchar not null default 'any',
+  "parent_code" varchar,
+  "sign" integer not null default '1',
+  "side" varchar not null,
+  "sort_order" integer not null default '0',
+  "schemes" text not null,
+  "formula" text,
+  "cf_group" varchar,
+  "xbrl_element" varchar,
+  "is_rounding" tinyint(1) not null default '0',
+  "labels" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sfs_line_definitions_tenant_id_code_unique" on "sfs_line_definitions"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "sfs_line_definitions_family_statement_index" on "sfs_line_definitions"(
+  "family",
+  "statement"
+);
+CREATE INDEX "sfs_line_definitions_tenant_id_index" on "sfs_line_definitions"(
+  "tenant_id"
+);
+CREATE TABLE "sfs_account_mappings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "family" varchar not null,
+  "code_prefix" varchar not null,
+  "line_code" varchar not null,
+  "alt_line_code" varchar,
+  "is_bifront" tinyint(1) not null default '0',
+  "priority" integer not null default '0',
+  "notes" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sfs_account_mappings_tenant_id_family_code_prefix_unique" on "sfs_account_mappings"(
+  "tenant_id",
+  "family",
+  "code_prefix"
+);
+CREATE INDEX "sfs_account_mappings_family_code_prefix_index" on "sfs_account_mappings"(
+  "family",
+  "code_prefix"
+);
+CREATE INDEX "sfs_account_mappings_tenant_id_index" on "sfs_account_mappings"(
+  "tenant_id"
+);
+CREATE TABLE "sfs_text_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "template_key" varchar not null,
+  "kind" varchar not null,
+  "family" varchar not null default 'ALL',
+  "sort_order" integer not null default '0',
+  "content" text not null,
+  "placeholders" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sfs_text_templates_tenant_id_template_key_unique" on "sfs_text_templates"(
+  "tenant_id",
+  "template_key"
+);
+CREATE INDEX "sfs_text_templates_kind_family_index" on "sfs_text_templates"(
+  "kind",
+  "family"
+);
+CREATE INDEX "sfs_text_templates_tenant_id_index" on "sfs_text_templates"(
+  "tenant_id"
+);
+CREATE TABLE "sfs_ratio_definitions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "family" varchar not null default 'ALL',
+  "unit" varchar not null,
+  "direction" varchar,
+  "warning_threshold" numeric,
+  "critical_threshold" numeric,
+  "is_crisis_indicator" tinyint(1) not null default '0',
+  "sort_order" integer not null default '0',
+  "labels" text not null,
+  "descriptions" text not null,
+  "alert_messages" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sfs_ratio_definitions_tenant_id_code_unique" on "sfs_ratio_definitions"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "sfs_ratio_definitions_tenant_id_index" on "sfs_ratio_definitions"(
+  "tenant_id"
+);
+CREATE TABLE "sfs_dossiers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "fiscal_year_id" varchar not null,
+  "comparative_prior_year_id" varchar,
+  "title" varchar,
+  "accounting_standard" varchar not null,
+  "status" varchar not null default 'draft',
+  "rounding_to_unit_mode" varchar not null default 'ExactCents',
+  "income_statement_method" varchar not null default 'total_cost',
+  "cash_flow_method" varchar not null default 'indirect',
+  "locale" varchar not null default 'it',
+  "currency" varchar not null default 'EUR',
+  "share_capital" numeric,
+  "balance_sheet_lines" text,
+  "income_statement_lines" text,
+  "cash_flow_statement" text,
+  "profit_allocation_proposal" text,
+  "hidden_reserves_config" text,
+  "options" text,
+  "eligibility" text,
+  "reclassification_report" text,
+  "quadrature" text,
+  "generated_at" datetime,
+  "validated_at" datetime,
+  "locked_at" datetime,
+  "filed_at" datetime,
+  "filing_reference" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("fiscal_year_id") references "fiscal_years"("id") on delete restrict,
+  foreign key("comparative_prior_year_id") references "fiscal_years"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "sfs_dossiers_tenant_id_fiscal_year_id_index" on "sfs_dossiers"(
+  "tenant_id",
+  "fiscal_year_id"
+);
+CREATE INDEX "sfs_dossiers_tenant_id_status_index" on "sfs_dossiers"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "sfs_dossiers_tenant_id_index" on "sfs_dossiers"("tenant_id");
+CREATE TABLE "sfs_dossier_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar not null,
+  "statement" varchar not null,
+  "line_code" varchar not null,
+  "parent_code" varchar,
+  "sort_order" integer not null default '0',
+  "is_total" tinyint(1) not null default '0',
+  "is_rounding" tinyint(1) not null default '0',
+  "exact_amount" numeric not null default '0',
+  "amount" numeric not null default '0',
+  "comparative_amount" numeric,
+  "sources" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("dossier_id") references "sfs_dossiers"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sfs_dossier_lines_dossier_id_statement_line_code_unique" on "sfs_dossier_lines"(
+  "dossier_id",
+  "statement",
+  "line_code"
+);
+CREATE INDEX "sfs_dossier_lines_tenant_id_index" on "sfs_dossier_lines"(
+  "tenant_id"
+);
+CREATE TABLE "sfs_notes_workspaces"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar not null,
+  "taxonomy_version" varchar not null,
+  "quantitative_tables" text,
+  "narrative_text_sections" text,
+  "sources" text,
+  "populated_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("dossier_id") references "sfs_dossiers"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sfs_notes_workspaces_dossier_id_unique" on "sfs_notes_workspaces"(
+  "dossier_id"
+);
+CREATE INDEX "sfs_notes_workspaces_tenant_id_index" on "sfs_notes_workspaces"(
+  "tenant_id"
+);
+CREATE TABLE "sfs_deposit_packages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar not null,
+  "generated_xbrl_instance_file_id" varchar,
+  "tebeni_validation_report" text,
+  "validation_status" varchar not null default 'not_run',
+  "management_report_pdf_a_id" varchar,
+  "shareholders_minutes_pdf_a_id" varchar,
+  "board_minutes_pdf_a_id" varchar,
+  "dossier_pdf_a_id" varchar,
+  "financial_ratios_crisi_impresa" text,
+  "exported_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("dossier_id") references "sfs_dossiers"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sfs_deposit_packages_dossier_id_unique" on "sfs_deposit_packages"(
+  "dossier_id"
+);
+CREATE INDEX "sfs_deposit_packages_tenant_id_index" on "sfs_deposit_packages"(
+  "tenant_id"
+);
+CREATE TABLE "sfs_artifacts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "dossier_id" varchar not null,
+  "kind" varchar not null,
+  "disk" varchar not null,
+  "path" varchar not null,
+  "file_name" varchar not null,
+  "mime_type" varchar not null,
+  "size_bytes" integer not null default '0',
+  "sha256" varchar not null,
+  "pdfa_conformance" varchar,
+  "verification" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("dossier_id") references "sfs_dossiers"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sfs_artifacts_dossier_id_kind_index" on "sfs_artifacts"(
+  "dossier_id",
+  "kind"
+);
+CREATE INDEX "sfs_artifacts_tenant_id_index" on "sfs_artifacts"("tenant_id");
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -53285,3 +53583,4 @@ INSERT INTO migrations VALUES(466,'2028_01_06_000100_create_intercompany_tables'
 INSERT INTO migrations VALUES(467,'2028_01_06_000100_create_tender_management_mod169_tables',26);
 INSERT INTO migrations VALUES(468,'2028_01_06_000100_create_gdo_trade_terms_mod231_tables',27);
 INSERT INTO migrations VALUES(469,'2028_01_07_000100_create_industrial_laundry_mod177_tables',28);
+INSERT INTO migrations VALUES(470,'2028_01_07_000100_create_statutory_financials_mod167_tables',29);

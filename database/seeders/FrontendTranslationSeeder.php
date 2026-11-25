@@ -74,6 +74,7 @@ use Database\Seeders\Translations\SalesPipelineFrontendTranslations;
 use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
 use Database\Seeders\Translations\ShiftPlanningFrontendTranslations;
 use Database\Seeders\Translations\SrmFrontendTranslations;
+use Database\Seeders\Translations\StatutoryFinancialsFrontendTranslations;
 use Database\Seeders\Translations\SupplierRebatesFrontendTranslations;
 use Database\Seeders\Translations\SwissQrBillSlipFrontendTranslations;
 use Database\Seeders\Translations\SwissVatFrontendTranslations;
@@ -176,6 +177,7 @@ class FrontendTranslationSeeder extends Seeder
             + IntercompanyFrontendTranslations::all($locale)
             + GdoTradeTermsFrontendTranslations::all($locale)
             + IndustrialLaundryFrontendTranslations::all($locale)
+            + StatutoryFinancialsFrontendTranslations::all($locale)
             + ElectronicSignatureFrontendTranslations::all($locale)
             + ElectronicSignatureNotificationTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)
