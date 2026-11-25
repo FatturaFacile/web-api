@@ -43,6 +43,7 @@ use Modules\DigitalPreservation\Providers\DigitalPreservationServiceProvider;
 use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
+use Modules\ElectronicSignature\Providers\ElectronicSignatureServiceProvider;
 use Modules\Events\Providers\EventsServiceProvider;
 use Modules\ExpenseManagement\Providers\ExpenseManagementServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
@@ -203,6 +204,7 @@ return [
     AgentCommissionsServiceProvider::class,
     DebtCollectionServiceProvider::class,
     ExpenseManagementServiceProvider::class,
+    ElectronicSignatureServiceProvider::class,
     DataResidencyServiceProvider::class,
     ArtisanalGelatoServiceProvider::class,
     CpqConfiguratorServiceProvider::class,

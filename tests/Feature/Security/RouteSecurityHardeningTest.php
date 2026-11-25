@@ -93,6 +93,9 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         // Proposal portal (Mod 036): the unguessable token (plus PIN session, OTP or HMAC-signed provider callback) is the credential, see Quoting\CpqQuotingTest.
         'api/v1/public/proposals',
         'api/v1/public/signature-webhooks',
+        // Electronic signatures: the unguessable token of the signing link is the credential, verification is open to anybody with the file or code, see ElectronicSignature\SigningPortalTest.
+        'api/v1/public/sign',
+        'api/v1/public/signatures',
         'api/v1/lookups',
         'api/v1/webhooks',
         'api/v1/portal',

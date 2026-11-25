@@ -20,6 +20,8 @@ use Database\Seeders\Translations\CpqQuotesFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\DebtCollectionFrontendTranslations;
+use Database\Seeders\Translations\ElectronicSignatureFrontendTranslations;
+use Database\Seeders\Translations\ElectronicSignatureNotificationTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
 use Database\Seeders\Translations\ExpenseManagementFrontendTranslations;
@@ -168,6 +170,8 @@ class FrontendTranslationSeeder extends Seeder
             + AgentCommissionsFrontendTranslations::all($locale)
             + DebtCollectionFrontendTranslations::all($locale)
             + ExpenseManagementFrontendTranslations::all($locale)
+            + ElectronicSignatureFrontendTranslations::all($locale)
+            + ElectronicSignatureNotificationTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)
             + TreasuryBankingFrontendTranslations::all($locale)
             + LiquidityPlanningFrontendTranslations::all($locale)

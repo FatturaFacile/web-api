@@ -102,6 +102,7 @@
             "Modules\\LeaveManagement\\": "modules/76_LeaveManagement/src/",
             "Modules\\MarketingAutomation\\": "modules/77_MarketingAutomation/src/",
             "Modules\\CpqConfigurator\\": "modules/78_CpqConfigurator/src/",
+            "Modules\\ElectronicSignature\\": "modules/78_ElectronicSignature/src/",
             "Modules\\ArtisanalGelato\\": "modules/72_ArtisanalGelato/src/",
             "Modules\\DataResidency\\": "modules/69_DataResidency/src/",
             "Modules\\Payroll\\": "modules/18_Payroll/src/",
