@@ -172,6 +172,7 @@ class FrontendTranslationSeeder extends Seeder
             + ExpenseManagementFrontendTranslations::all($locale)
             + ElectronicSignatureFrontendTranslations::all($locale)
             + ElectronicSignatureNotificationTranslations::all($locale)
+            + IntercompanyFrontendTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)
             + TreasuryBankingFrontendTranslations::all($locale)
             + LiquidityPlanningFrontendTranslations::all($locale)
