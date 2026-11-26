@@ -57,7 +57,7 @@ jobs:
           extensions: dom, curl, libxml, mbstring, zip, pdo_sqlite, xmlreader, redis, bcmath
           coverage: none
           # Swagger and the OpenAPI coverage tests scan the whole API
-          ini-values: memory_limit=2G
+          ini-values: memory_limit=8G
           tools: composer:v2
 
       # Validate composer.json and composer.lock consistency
@@ -159,7 +159,7 @@ jobs:
           extensions: dom, curl, libxml, mbstring, zip, pdo_sqlite, xmlreader, redis, bcmath, pcov
           coverage: pcov
           # pcov collects only app/ and modules/ (the <source> of phpunit.xml): any other path is excluded
-          ini-values: memory_limit=10G, max_memory_limit=10G, pcov.directory=${{ github.workspace }}, pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
+          ini-values: memory_limit=8G, max_memory_limit=16G, pcov.directory=${{ github.workspace }}, pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
           tools: composer:v2
 
       - name: Get Composer Cache Directory

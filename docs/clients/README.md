@@ -14,7 +14,7 @@ The API is described by an OpenAPI 3.1 specification generated from the real rou
 ## Regenerating the documentation
 
 ```bash
-php -d memory_limit=2G artisan docs:export
+php -d memory_limit=8G artisan docs:export
 ```
 
 The command writes `openapi.json`, `openapi.yaml` and `postman_collection.json` into `docs/api`. Run it whenever routes,

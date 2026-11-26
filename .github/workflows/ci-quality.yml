@@ -63,7 +63,7 @@ jobs:
           php-version: '8.6'
           extensions: dom, curl, libxml, mbstring, xml, ctype, iconv, intl, pdo, sqlite, pdo_sqlite, pdo_pgsql, xmlreader, redis, bcmath, zip, pcov
           coverage: pcov
-          ini-values: memory_limit=10G, max_memory_limit=10G, pcov.directory=${{ github.workspace }}, pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
+          ini-values: memory_limit=8G, max_memory_limit=16G, pcov.directory=${{ github.workspace }}, pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
 
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-interaction --no-progress

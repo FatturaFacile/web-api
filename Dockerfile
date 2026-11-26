@@ -32,7 +32,7 @@ RUN apk add --no-cache --virtual .phpredis-build $PHPIZE_DEPS \
 
 # The startup CMD caches about 2000 routes and the deploy runs migrations, Swagger generation and demo:reset: the
 # 128M default is not enough. Applies to both the CLI and php-fpm.
-RUN echo "memory_limit = 2048M" > /usr/local/etc/php/conf.d/zz-memory-limit.ini
+RUN echo "memory_limit=8G" > /usr/local/etc/php/conf.d/zz-memory-limit.ini
 
 # Upload limits (PHP defaults are 2M/8M). The largest file the API validates is the withholding-tax tariff import
 # (max:102400 KB = 100M); documents, attachments and the backup restore are capped at 25600 KB. post_max_size sits above

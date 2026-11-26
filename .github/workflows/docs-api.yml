@@ -35,7 +35,7 @@ jobs:
           php-version: '8.6'
           extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath
           coverage: none
-          ini-values: memory_limit=2G
+          ini-values: memory_limit=8G
           tools: composer:v2
 
       - name: Install Composer Dependencies
@@ -47,7 +47,7 @@ jobs:
           # Scramble inspects models/schema while analysing routes, so the sqlite file must exist (an empty one is enough).
           touch database/database.sqlite
           php artisan key:generate
-          php -d memory_limit=2048M artisan docs:export
+          php -d memory_limit=8G artisan docs:export
 
       - name: Open or update the pull request with the regenerated files
         env:
