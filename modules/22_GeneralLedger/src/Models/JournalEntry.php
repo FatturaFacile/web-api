@@ -7,11 +7,13 @@ namespace Modules\GeneralLedger\Models;
 use App\Domain\Audit\Concerns\HasImmutableAuditTrail;
 use App\Domain\Audit\Contracts\AuditableEntityInterface;
 use App\Models\Concerns\ProtectsPostedJournalEntry;
+use App\Models\User;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Enterprise\MultiTenant\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Modules\FiduciaryPortal\Models\FiduciaryEntryNote;
 use Modules\GeneralLedger\Services\JournalNumberSequence;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 
@@ -105,12 +107,12 @@ final class JournalEntry extends BaseEnterpriseModel implements AuditableEntityI
 
     public function fiduciaryNotes(): HasMany
     {
-        return $this->hasMany(\Modules\FiduciaryPortal\Models\FiduciaryEntryNote::class, 'journal_entry_id');
+        return $this->hasMany(FiduciaryEntryNote::class, 'journal_entry_id');
     }
 
     public function fiduciaryVerifier(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'fiduciary_verified_by');
+        return $this->belongsTo(User::class, 'fiduciary_verified_by');
     }
 
     /**

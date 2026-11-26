@@ -10,14 +10,21 @@ use App\Services\Tenancy\TenantContext;
 final class FiduciaryPortalPolicy
 {
     public const string ABILITY_VIEW = 'fiduciary-portal.view';
+
     public const string ABILITY_VERIFY = 'fiduciary-portal.verify';
+
     public const string ABILITY_TRANSCODE = 'fiduciary-portal.transcode';
+
     public const string ABILITY_EXPORT = 'fiduciary-portal.export';
+
     public const string ABILITY_LOCK_PERIOD = 'fiduciary-portal.lock-period';
+
     public const string ABILITY_NOTES = 'fiduciary-portal.notes';
+
     public const string ABILITY_DOSSIER = 'fiduciary-portal.dossier';
 
     private const array VIEW_ROLES = ['owner', 'admin', 'accountant', 'accountant_readonly', 'external_fiduciary', 'finance_director'];
+
     private const array WRITE_ROLES = ['owner', 'admin', 'accountant', 'external_fiduciary', 'finance_director'];
 
     public function __construct(private readonly TenantContext $tenantContext) {}

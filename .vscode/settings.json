@@ -2,5 +2,6 @@
     "sonarlint.connectedMode.project": {
         "connectionId": "fatturafacile",
         "projectKey": "FatturaFacile_web-api"
-    }
+    },
+    "python.terminal.useEnvFile": true
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Models\ChartOfAccount;
 use App\Models\Contact;
 use App\Models\Invoice;
-use App\Models\PassiveInvoice;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\Translation;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\DataMigration\Application\Queries;
 
+use Illuminate\Database\Eloquent\Collection;
 use Modules\DataMigration\Models\MigrationJob;
 use Modules\DataMigration\Models\MigrationStagingRow;
 use Modules\DataMigration\Models\MigrationValidationError;
@@ -14,8 +15,8 @@ final readonly class GetMigrationDryRunReportHandler
      * @return array{
      *     job: MigrationJob,
      *     summary: array<string, mixed>,
-     *     errors: \Illuminate\Database\Eloquent\Collection<int, MigrationValidationError>,
-     *     staging_rows: \Illuminate\Database\Eloquent\Collection<int, MigrationStagingRow>
+     *     errors: Collection<int, MigrationValidationError>,
+     *     staging_rows: Collection<int, MigrationStagingRow>
      * }
      */
     public function handle(GetMigrationDryRunReportQuery $query): array

@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\Models\Concerns;
 
 use App\Support\Database\Concerns\ProtectsRecords;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Modules\FiduciaryPortal\Models\FiduciaryAuditLog;
+use Modules\GeneralLedger\Models\FiscalPeriod;
 
 /**
  * A posted journal entry is corrected by reversing it: from posted it may only step to reversed, and only the
@@ -56,22 +60,22 @@ trait ProtectsPostedJournalEntry
             return false;
         }
 
-        $period = \Modules\GeneralLedger\Models\FiscalPeriod::withoutGlobalScopes()->find($periodId);
+        $period = FiscalPeriod::withoutGlobalScopes()->find($periodId);
 
         return $period !== null && $period->isFiduciaryLocked();
     }
 
     private function logBlockedLockedPeriodMutation(string $operation): void
     {
-        if (! \Illuminate\Support\Facades\Schema::hasTable('fiduciary_audit_logs')) {
+        if (! Schema::hasTable('fiduciary_audit_logs')) {
             return;
         }
 
         $tenantId = $this->getAttribute('tenant_id');
         $actor = auth()->user();
 
-        \Modules\FiduciaryPortal\Models\FiduciaryAuditLog::withoutGlobalScopes()->create([
-            'id' => (string) \Illuminate\Support\Str::uuid7(),
+        FiduciaryAuditLog::withoutGlobalScopes()->create([
+            'id' => (string) Str::uuid7(),
             'tenant_id' => is_string($tenantId) ? $tenantId : null,
             'company_id' => $this->getAttribute('company_id'),
             'actor_user_id' => $actor?->getKey() !== null ? (string) $actor->getKey() : null,
