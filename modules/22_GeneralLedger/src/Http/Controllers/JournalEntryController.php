@@ -57,8 +57,16 @@ final class JournalEntryController extends Controller
 
         $entries = JournalEntry::where('tenant_id', $tenantId)
             ->with('lines')
+            ->withCount(['fiduciaryNotes as fiduciary_notes_count' => fn ($q) => $q->where('status', 'open')])
             ->when($request->query('status'), fn ($q, $st) => $q->where('status', $st))
             ->when($request->query('fiscal_period_id'), fn ($q, $fp) => $q->where('fiscal_period_id', $fp))
+            ->when($request->query('fiscal_year_id'), fn ($q, $fy) => $q->whereHas('fiscalPeriod', fn ($p) => $p->where('fiscal_year_id', $fy)))
+            ->when($request->query('fiduciary_verified') !== null, function ($q) use ($request): void {
+                $verified = filter_var($request->query('fiduciary_verified'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                if ($verified !== null) {
+                    $q->where('fiduciary_verified', $verified);
+                }
+            })
             ->orderBy('posting_date', 'desc')
             ->gridPaginate((int) $request->query('per_page', 25));
 

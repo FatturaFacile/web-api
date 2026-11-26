@@ -61,6 +61,14 @@ class UserSeeder extends Seeder
                 'locale' => 'it',
                 'permissions' => ['service.*', 'assets.*', 'dispatch.*'],
             ],
+            [
+                'email' => 'fiduciary@studio-fiduciario.ch',
+                'name' => 'Dott.ssa Chiara Bernasconi (Studio Fiduciario)',
+                'role' => 'external_fiduciary',
+                'phone' => '+41 91 8001122',
+                'locale' => 'it-CH',
+                'permissions' => ['fiduciary_portal.*', 'gl.*'],
+            ],
         ];
 
         foreach ($usersData as $data) {

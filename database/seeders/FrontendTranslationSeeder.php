@@ -31,6 +31,7 @@ use Database\Seeders\Translations\ElectronicSignatureNotificationTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
 use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
 use Database\Seeders\Translations\ExpenseManagementFrontendTranslations;
+use Database\Seeders\Translations\FiduciaryPortalFrontendTranslations;
 use Database\Seeders\Translations\FieldServiceManagementFrontendTranslations;
 use Database\Seeders\Translations\FixedAssetsFrontendTranslations;
 use Database\Seeders\Translations\FranchiseNetworkFrontendTranslations;
@@ -207,7 +208,8 @@ class FrontendTranslationSeeder extends Seeder
             + VanSellingFieldSalesFrontendTranslations::all($locale)
             + SalesBoundedContextBatch1FrontendTranslations::all($locale)
             + ScheduledErpReportFrontendTranslations::all($locale)
-            + DataMigrationFrontendTranslations::all($locale);
+            + DataMigrationFrontendTranslations::all($locale)
+            + FiduciaryPortalFrontendTranslations::all($locale);
     }
 
     /**

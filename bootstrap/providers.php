@@ -50,6 +50,7 @@ use Modules\ElectronicSignature\Providers\ElectronicSignatureServiceProvider;
 use Modules\Events\Providers\EventsServiceProvider;
 use Modules\ExpenseManagement\Providers\ExpenseManagementServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
+use Modules\FiduciaryPortal\Providers\FiduciaryPortalServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\Fleet\Providers\FleetServiceProvider;
 use Modules\Forecasting\Providers\ForecastingServiceProvider;
@@ -229,6 +230,7 @@ return [
     CorporateConventionsServiceProvider::class,
     ProductCatalogServiceProvider::class,
     DataMigrationServiceProvider::class,
+    FiduciaryPortalServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,

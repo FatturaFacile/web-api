@@ -21,6 +21,7 @@ final class FiscalPeriod extends BaseEnterpriseModel
             'period_number' => 'integer',
             'start_date' => 'date',
             'end_date' => 'date',
+            'fiduciary_locked_at' => 'datetime',
         ];
     }
 
@@ -42,9 +43,14 @@ final class FiscalPeriod extends BaseEnterpriseModel
         return $this->hasMany(JournalEntry::class, 'fiscal_period_id');
     }
 
+    public function isFiduciaryLocked(): bool
+    {
+        return $this->status === 'locked_by_fiduciary' || $this->fiduciary_locked_at !== null;
+    }
+
     public function isLockedFor(string $subledger = 'GL'): bool
     {
-        if (in_array($this->status, ['hard_locked', 'closed'], true)) {
+        if (in_array($this->status, ['hard_locked', 'closed', 'locked_by_fiduciary'], true) || $this->fiduciary_locked_at !== null) {
             return true;
         }
 

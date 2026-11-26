@@ -60,6 +60,8 @@ final class JournalEntry extends BaseEnterpriseModel implements AuditableEntityI
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
             'rejected_at' => 'datetime',
+            'fiduciary_verified' => 'boolean',
+            'fiduciary_verified_at' => 'datetime',
         ];
     }
 
@@ -99,6 +101,16 @@ final class JournalEntry extends BaseEnterpriseModel implements AuditableEntityI
     public function anomalies(): HasMany
     {
         return $this->hasMany(AccountingAnomaly::class, 'journal_entry_id');
+    }
+
+    public function fiduciaryNotes(): HasMany
+    {
+        return $this->hasMany(\Modules\FiduciaryPortal\Models\FiduciaryEntryNote::class, 'journal_entry_id');
+    }
+
+    public function fiduciaryVerifier(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'fiduciary_verified_by');
     }
 
     /**
