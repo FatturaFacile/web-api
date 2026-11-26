@@ -269,3 +269,6 @@ Schedule::command('surveys:process-dispatches')->everyFiveMinutes()->withoutOver
 Schedule::command('surveys:enqueue-semi-annual')->dailyAt('06:30')->withoutOverlapping()->onOneServer();
 // Corporate conventions (Mod 358): expires the conventions and beneficiary passes past their end date.
 Schedule::command('corporate-conventions:expire')->dailyAt('01:15')->withoutOverlapping()->onOneServer();
+
+// GitHub Issue #245: Nightly / Scheduled ERP Daily Summary Email Reports (two-tier per-tenant timezone dispatch).
+Schedule::command('reports:dispatch-scheduled')->everyMinute()->withoutOverlapping()->onOneServer();

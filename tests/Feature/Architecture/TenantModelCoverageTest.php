@@ -36,6 +36,7 @@ function unscopedModelsWithTenantColumn(): array
         'Modules\Platform\Models\NotificationDelivery' => 'Per-user omnichannel notification data, addressed to a central user account and read by user id.',
         'Modules\Platform\Models\NotificationDevice' => 'Per-user omnichannel notification data, addressed to a central user account and read by user id.',
         'Modules\Platform\Models\NotificationDigestItem' => 'Per-user omnichannel notification data, addressed to a central user account and read by user id.',
+        'Modules\Platform\Models\NotificationPreference' => 'Per-user notification channel preferences, addressed to a central user account and read by user id.',
         'Modules\Platform\Models\NotificationSetting' => 'Per-user omnichannel notification data, addressed to a central user account and read by user id.',
         'App\Models\CustomsTaricCode' => 'Global catalog of HS / CN / TARIC codes, shared by every tenant.',
         'App\Models\FreeTradeAgreement' => 'Global catalog of free trade agreements, shared by every tenant.',

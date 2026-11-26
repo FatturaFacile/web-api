@@ -34,6 +34,9 @@ function writeRoutesWithoutModule(): array
         'POST api/v1/auth/sessions/revoke-others' => 'own sessions',
         // In-app notification centre and its preferences: the notifications of the user themselves.
         'PUT api/v1/platform/notifications/preferences' => 'own notification preferences',
+        'PUT api/v1/notification-preferences' => 'own scheduled ERP report preferences',
+        'POST api/v1/reports/daily-summary/send-test' => 'own test report dispatch',
+        'POST api/v1/reports/daily-summary/send-now' => 'own or admin-checked on-demand report dispatch',
         'POST api/v1/platform/notifications/read-all' => 'own notifications',
         'POST api/v1/platform/notifications/{id}/read' => 'own notifications',
         'DELETE api/v1/platform/notifications/{id}' => 'own notifications',
