@@ -12,12 +12,16 @@ use Enterprise\EventBus\Contracts\EventBusInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use Modules\Workflow\Contracts\ApprovableDocument;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
-use Modules\Workflow\Contracts\ReactsToWorkflowOutcome;
 use Modules\Workflow\Contracts\WorkflowEngineInterface;
 use Modules\Workflow\DTOs\RecordDecisionDTO;
 use Modules\Workflow\DTOs\StartWorkflowDTO;
+use Modules\Workflow\Enums\ApprovalOutcome;
+use Modules\Workflow\Enums\DecisionType;
+use Modules\Workflow\Events\WorkflowChangesRequestedEvent;
 use Modules\Workflow\Events\WorkflowDecisionRecordedEvent;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceExpiredEvent;
@@ -26,6 +30,7 @@ use Modules\Workflow\Events\WorkflowInstanceStartedEvent;
 use Modules\Workflow\Events\WorkflowStepAssignedEvent;
 use Modules\Workflow\Events\WorkflowStepEscalatedEvent;
 use Modules\Workflow\Events\WorkflowStepReminderEvent;
+use Modules\Workflow\Exceptions\StepAlreadyDecidedException;
 use Modules\Workflow\Models\ApprovalDecision;
 use Modules\Workflow\Models\WorkflowDefinition;
 use Modules\Workflow\Models\WorkflowDelegation;
@@ -75,6 +80,10 @@ final class WorkflowEngineService implements WorkflowEngineInterface
         private readonly DocumentLockingBridgeService $lockingBridge,
         private readonly WorkflowWebhookDispatcherService $webhookDispatcher,
         private readonly WorkflowAssigneeResolver $assignees,
+        private readonly ApprovalOutcomeNotifier $outcomes,
+        private readonly ApprovalGuardService $guard,
+        private readonly WorkflowLifecycleService $lifecycle,
+        private readonly WorkflowDelegationResolver $delegations,
         private readonly ?EventBusInterface $eventBus = null
     ) {}
 
@@ -119,6 +128,7 @@ final class WorkflowEngineService implements WorkflowEngineInterface
                 'id' => $definition->id,
                 'code' => $definition->code,
                 'version' => $definition->version,
+                'configuration' => $definition->configuration,
                 'nodes' => $definition->nodes->toArray(),
                 'transitions' => $definition->transitions->toArray(),
             ];
@@ -134,7 +144,9 @@ final class WorkflowEngineService implements WorkflowEngineInterface
                 'approvable_id' => (string) $dto->approvable->getKey(),
                 'current_node_id' => $startNode->id,
                 'status' => 'pending',
-                'context_snapshot' => $dto->contextSnapshot,
+                'context_snapshot' => $dto->approvable instanceof ApprovableDocument
+                    ? [...$dto->approvable->approvalAttributes(), ...$dto->contextSnapshot]
+                    : $dto->contextSnapshot,
                 'started_at' => now(),
                 'created_by' => $dto->initiatorUserId,
             ]);
@@ -187,23 +199,40 @@ final class WorkflowEngineService implements WorkflowEngineInterface
                 }
             }
 
-            $this->assertActive($instance);
+            if (! in_array($instance->status, self::ActiveStatuses, true)) {
+                // The node was completed by somebody else meanwhile: the late decision gets the decision that won.
+                throw new StepAlreadyDecidedException($step, "Workflow instance [{$instance->id}] is not active (status: {$instance->status}).");
+            }
 
             if ($step->status !== 'pending') {
-                throw new InvalidArgumentException("Workflow step [{$step->id}] is not pending (status: {$step->status}).");
+                throw new StepAlreadyDecidedException($step, "Workflow step [{$step->id}] is not pending (status: {$step->status}).");
             }
 
             $userId = $dto->userId ?? auth()->id() ?? self::SystemActor;
             $effectiveUserId = $this->resolveEffectiveUserId($step, $userId);
+            $type = DecisionType::fromInput($dto->decision);
 
             $this->assertFourEyes($instance, $userId, $effectiveUserId);
+            $this->guard->assertMayDecide($instance, $step, $userId, $effectiveUserId, $type ?? DecisionType::Reject);
+
+            if ($type === DecisionType::RequestChanges) {
+                $this->commitRequestChanges($instance, $step, $effectiveUserId, $dto->comment);
+
+                return $step;
+            }
+
+            if ($type === DecisionType::Reassign) {
+                $this->commitReassign($instance, $step, $effectiveUserId, $dto->reassignToUserId, $dto->comment);
+
+                return $step;
+            }
 
             $this->commitDecision(
                 $instance,
                 $step,
                 $userId,
                 $effectiveUserId,
-                strtolower($dto->decision),
+                $type !== null ? $type->value : strtolower($dto->decision),
                 $dto->comment,
                 [
                     'ip_address' => $dto->ipAddress ?? request()->ip(),
@@ -240,6 +269,95 @@ final class WorkflowEngineService implements WorkflowEngineInterface
 
             return $locked;
         });
+    }
+
+    /**
+     * An approver sends the document back to the requester. The reason is mandatory; the approval ends, the other pending
+     * steps are closed and the consumer is told `changes_requested` so it returns the document to draft.
+     *
+     * @throws ValidationException when no reason is given
+     */
+    private function commitRequestChanges(WorkflowInstance $instance, WorkflowInstanceStep $step, string $userId, ?string $reason): void
+    {
+        if (trim((string) $reason) === '') {
+            throw ValidationException::withMessages(['comment' => __('workflow_errors.lifecycle.reason_required')]);
+        }
+
+        ApprovalDecision::create([
+            'id' => (string) Str::uuid7(),
+            'tenant_id' => $instance->tenant_id,
+            'workflow_instance_step_id' => $step->id,
+            'user_id' => $userId,
+            'effective_user_id' => $userId,
+            'decision' => DecisionType::RequestChanges->value,
+            'comment' => $reason,
+            'ip_address' => request()->ip(),
+            'user_agent' => substr((string) request()->userAgent(), 0, 500),
+            'decided_at' => now(),
+        ]);
+
+        $step->update(['status' => 'changes_requested', 'completed_at' => now()]);
+        $this->closeNodeSteps($instance, $step->node);
+        $instance->update(['status' => 'rejected', 'completed_at' => now(), 'closing_reason' => 'changes_requested']);
+
+        $this->auditLedger->record($instance, 'changes_requested', ['step_id' => $step->id, 'reason' => $reason], $step, $userId);
+        $this->dispatchDomainEvent(new WorkflowChangesRequestedEvent(
+            aggregateId: (string) $instance->id,
+            requestedBy: $userId,
+            reason: $reason,
+            requesterId: $this->guard->requesterOf($instance),
+            tenantId: (string) $instance->tenant_id,
+            companyId: (string) ($instance->company_id ?? $instance->tenant_id)
+        ));
+        $this->webhookDispatcher->dispatch((string) $instance->tenant_id, 'workflow.changes_requested', ['instance_id' => $instance->id, 'status' => 'changes_requested', 'approvable_id' => $instance->approvable_id]);
+        $this->outcomes->notify($instance, ApprovalOutcome::ChangesRequested);
+    }
+
+    /**
+     * Hands a pending step to another member of the company, when the node allows it (`ui_metadata.allow_reassign`).
+     *
+     * @throws ValidationException when the new approver is not a member
+     * @throws AuthorizationException when the node does not allow reassignment
+     */
+    private function commitReassign(WorkflowInstance $instance, WorkflowInstanceStep $step, string $actorId, ?string $targetUserId, ?string $comment): void
+    {
+        if (($step->node->ui_metadata['allow_reassign'] ?? true) === false) {
+            throw new AuthorizationException(__('workflow_errors.lifecycle.reassign_not_allowed'));
+        }
+
+        if ($targetUserId === null || ! $this->assignees->isMember($targetUserId, (string) $instance->tenant_id)) {
+            throw ValidationException::withMessages(['reassign_to_user_id' => __('workflow_errors.lifecycle.reassign_target')]);
+        }
+
+        $from = $step->assigned_user_id !== null ? (string) $step->assigned_user_id : $step->assigned_role;
+        $step->update(['assigned_user_id' => $targetUserId, 'assigned_role' => null]);
+
+        $this->auditLedger->record($instance, 'step_reassigned', ['step_id' => $step->id, 'from' => $from, 'to' => $targetUserId, 'comment' => $comment], $step, $actorId);
+        $this->dispatchDomainEvent(new WorkflowStepAssignedEvent(
+            instanceId: $instance->id,
+            stepId: $step->id,
+            assignedUserId: $targetUserId,
+            assignedRole: null,
+            dueAt: $step->due_at?->toIso8601String() ?? now()->toIso8601String(),
+            tenantId: $instance->tenant_id,
+            companyId: (string) ($instance->company_id ?? $instance->tenant_id)
+        ));
+    }
+
+    /**
+     * A matrix may approve small amounts by itself (`auto_approve_below`). The approval is then recorded by the engine's
+     * own actor, so the audit trail shows who decided: nobody, by configuration.
+     */
+    private function autoApproveIfConfigured(WorkflowInstance $instance, WorkflowNode $node): bool
+    {
+        if (! $this->matrixEvaluator->autoApproves((string) $instance->tenant_id, (string) $instance->approvable_type, $instance->approvable, (array) $instance->context_snapshot)) {
+            return false;
+        }
+
+        $step = $this->createStep($instance, $node, null, 'system', 1, now());
+        $this->commitDecision($instance, $step, self::SystemActor, self::SystemActor, 'approved', 'Auto-approved: amount below the configured threshold.', [], ['automatic' => true, 'reason' => 'auto_approve_below']);
+
+        return true;
     }
 
     /**
@@ -342,11 +460,83 @@ final class WorkflowEngineService implements WorkflowEngineInterface
             return false;
         }
 
+        if ($instance->currentNode?->node_type === 'parallel_split') {
+            return $this->resolveBranch($instance, $step, $eval['outcome']);
+        }
+
         if ($eval['outcome'] === 'approved' && $this->openNextTier($instance, $step)) {
             return true;
         }
 
         $this->advance($instance, $eval['outcome']);
+
+        return true;
+    }
+
+    /**
+     * A parallel split activates every branch at once: the steps of all branch nodes are open together.
+     */
+    private function activateBranches(WorkflowInstance $instance, WorkflowNode $split): void
+    {
+        $branches = WorkflowTransition::where('from_node_id', $split->id)->orderBy('priority')->with('toNode')->get();
+
+        foreach ($branches as $branch) {
+            if ($instance->status === 'blocked') {
+                return;
+            }
+
+            if ($branch->toNode !== null && $branch->toNode->node_type === 'approval') {
+                $this->createStepsForNode($instance, $branch->toNode);
+            }
+        }
+    }
+
+    /**
+     * A branch node of a parallel region finished. A rejection closes the other branches and ends the instance negatively;
+     * an approval waits for the remaining branches and then continues after the join.
+     */
+    private function resolveBranch(WorkflowInstance $instance, WorkflowInstanceStep $step, string $outcome): bool
+    {
+        if ($outcome === 'rejected') {
+            $ids = WorkflowInstanceStep::where('workflow_instance_id', $instance->id)->where('status', 'pending')->pluck('id');
+            WorkflowInstanceStep::whereIn('id', $ids)->update(['status' => 'skipped', 'completed_at' => now()]);
+            $this->advance($instance, 'rejected');
+
+            return true;
+        }
+
+        if ($this->openNextTier($instance, $step)) {
+            return true;
+        }
+
+        $split = $instance->currentNode;
+        $branches = WorkflowTransition::where('from_node_id', $split->id)->orderBy('priority')->with('toNode')->get();
+
+        foreach ($branches as $branch) {
+            $node = $branch->toNode;
+
+            if ($node === null || $node->node_type !== 'approval') {
+                continue;
+            }
+
+            $steps = WorkflowInstanceStep::where('workflow_instance_id', $instance->id)->where('workflow_node_id', $node->id)->with('decisions')->get();
+            $eval = $this->votingEvaluator->evaluate($node, $steps);
+
+            if ($steps->isEmpty() || ! $eval['completed'] || $eval['outcome'] !== 'approved') {
+                // Another branch is still open.
+                return false;
+            }
+        }
+
+        $exit = WorkflowTransition::where('from_node_id', $step->workflow_node_id)->whereIn('action_trigger', ['approved', '*'])->orderBy('priority')->first();
+
+        if ($exit === null) {
+            return false;
+        }
+
+        $instance->update(['current_node_id' => $exit->to_node_id]);
+        $instance->unsetRelation('currentNode');
+        $this->tryAdvance($instance, 'approved');
 
         return true;
     }
@@ -374,6 +564,11 @@ final class WorkflowEngineService implements WorkflowEngineInterface
         }
 
         if ($node->assignee_type !== 'matrix_sequential') {
+            return false;
+        }
+
+        // An automatic approval below the threshold is final: no further level opens after it.
+        if ($step->assigned_role === 'system') {
             return false;
         }
 
@@ -407,15 +602,42 @@ final class WorkflowEngineService implements WorkflowEngineInterface
         $dueAt = $this->dueAtFor($node);
 
         foreach ($tiers as $tier) {
+            [$userId, $role] = match ($tier['approver_type']) {
+                'user' => [$tier['approver_value'] !== '' ? $tier['approver_value'] : null, null],
+                'role' => [null, $tier['approver_value'] !== '' ? $tier['approver_value'] : null],
+                // The reporting manager of the requester; the administrators when the requester has none.
+                'reporting_manager' => $this->managerOrAdministrators($instance),
+                default => [null, null],
+            };
+
+            if ($userId === null && $role === null) {
+                $this->lifecycle->block($instance, __('workflow_errors.lifecycle.blocked_no_approver', ['node' => $node->name]));
+
+                return;
+            }
+
             $this->createStep(
                 instance: $instance,
                 node: $node,
-                userId: $tier['approver_type'] === 'user' ? $tier['approver_value'] : null,
-                role: $tier['approver_type'] === 'role' ? $tier['approver_value'] : null,
+                userId: $userId,
+                role: $role,
                 tierLevel: $tier['tier_level'],
                 dueAt: $dueAt
             );
         }
+    }
+
+    /**
+     * The user an approval step goes to when the matrix says "reporting manager": the manager of the requester, or the
+     * administrators when the requester has none, so the step never waits on nobody.
+     *
+     * @return array{0: ?string, 1: ?string} user and role
+     */
+    private function managerOrAdministrators(WorkflowInstance $instance): array
+    {
+        $manager = $instance->created_by === null ? null : $this->assignees->managerUserIdOf((string) $instance->created_by, (string) $instance->tenant_id);
+
+        return $manager !== null ? [$manager, null] : [null, 'admin'];
     }
 
     private function dueAtFor(WorkflowNode $node, ?Carbon $from = null): Carbon
@@ -425,11 +647,7 @@ final class WorkflowEngineService implements WorkflowEngineInterface
 
     private function notifyApprovable(WorkflowInstance $instance, string $outcome): void
     {
-        $approvable = $instance->approvable;
-
-        if ($approvable instanceof ReactsToWorkflowOutcome) {
-            $approvable->onWorkflowOutcome($instance, $outcome);
-        }
+        $this->outcomes->notify($instance, $outcome);
     }
 
     /**
@@ -527,8 +745,14 @@ final class WorkflowEngineService implements WorkflowEngineInterface
 
         if ($targetNode->node_type === 'approval') {
             $this->createStepsForNode($instance, $targetNode);
-        } elseif ($targetNode->node_type === 'conditional') {
+        } elseif ($targetNode->node_type === 'parallel_split') {
+            $this->activateBranches($instance, $targetNode);
+        } elseif (in_array($targetNode->node_type, ['conditional', 'condition'], true)) {
             $this->advance($instance, 'condition_true');
+        } elseif (in_array($targetNode->node_type, ['parallel_join', 'notification'], true)) {
+            // Passes through: a join is reached after its branches approved, a notification only tells and moves on.
+            $this->auditLedger->record($instance, 'node_passed', ['node_id' => $targetNode->id, 'node_type' => $targetNode->node_type]);
+            $this->tryAdvance($instance, 'approved');
         }
 
         return true;
@@ -798,7 +1022,18 @@ final class WorkflowEngineService implements WorkflowEngineInterface
         $dueAt = $this->dueAtFor($node);
 
         if (in_array($node->assignee_type, ['matrix_lookup', 'matrix_sequential'], true)) {
+            if ($this->autoApproveIfConfigured($instance, $node)) {
+                return;
+            }
+
             $tiers = $this->matrixEvaluator->tiersFor((string) $instance->tenant_id, (string) $instance->approvable_type, $instance->approvable, $instance->context_snapshot);
+
+            if ($tiers === []) {
+                // Never an implicit approval: no rule matches and there is no default or fallback approver.
+                $this->lifecycle->block($instance, __('workflow_errors.lifecycle.blocked_no_matrix_rule'));
+
+                return;
+            }
 
             if ($tiers !== null) {
                 if ($node->assignee_type === 'matrix_sequential') {
@@ -827,12 +1062,21 @@ final class WorkflowEngineService implements WorkflowEngineInterface
 
         $assignedUserId = $node->assignee_type === 'direct_user' ? $node->assignee_id : null;
         $assignedRole = $node->assignee_type === 'role' ? $node->assignee_id : null;
+        $assignedUserId = $assignedUserId === '' ? null : $assignedUserId;
+        $assignedRole = $assignedRole === '' ? null : $assignedRole;
 
         if ($node->assignee_type === 'reporting_manager') {
             $manager = $instance->created_by === null ? null : $this->assignees->managerUserIdOf((string) $instance->created_by, (string) $instance->tenant_id);
             $assignedUserId = $manager;
             // Nobody to report to: the administrators decide, rather than leaving a step nobody can see.
             $assignedRole = $manager === null ? 'admin' : null;
+        }
+
+        if ($assignedUserId === null && $assignedRole === null) {
+            // An empty role or a missing user: nothing is approved implicitly, the administrators are alerted.
+            $this->lifecycle->block($instance, __('workflow_errors.lifecycle.blocked_no_approver', ['node' => $node->name]));
+
+            return;
         }
 
         $this->createStep(
@@ -853,6 +1097,8 @@ final class WorkflowEngineService implements WorkflowEngineInterface
         int $tierLevel,
         Carbon $dueAt
     ): WorkflowInstanceStep {
+        [$userId, $role] = $this->guard->substituteRequester($instance, $userId, $role);
+
         $step = WorkflowInstanceStep::create([
             'id' => (string) Str::uuid7(),
             'tenant_id' => $instance->tenant_id,
@@ -950,9 +1196,14 @@ final class WorkflowEngineService implements WorkflowEngineInterface
                 ->where('starts_at', '<=', now())
                 ->where('ends_at', '>=', now())
                 ->get()
-                ->first(static fn (WorkflowDelegation $candidate): bool => $candidate->coversApprovable($approvableType));
+                ->first(fn (WorkflowDelegation $candidate): bool => $candidate->coversApprovable($approvableType, $step->instance !== null ? $this->guard->amountOf($step->instance) : null));
 
             if ($delegation !== null) {
+                return $actingUserId;
+            }
+
+            // A -> B -> C: the last delegate of the chain (up to three hops) stands in for the assignee as well.
+            if ($step->instance !== null && $this->delegations->resolve($assignedUserId, (string) $step->tenant_id, $approvableType, $this->guard->amountOf($step->instance)) === $actingUserId) {
                 return $actingUserId;
             }
         }

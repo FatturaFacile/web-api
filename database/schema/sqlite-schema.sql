@@ -1169,6 +1169,7 @@ CREATE TABLE "approval_matrix_tiers"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "threshold_min_inclusive" tinyint(1) not null default '1',
   foreign key("approval_matrix_id") references "approval_matrixes"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -1194,6 +1195,12 @@ CREATE TABLE "approval_matrixes"(
   "updated_at" datetime,
   "deleted_at" datetime,
   "deleted_by" varchar,
+  "priority" integer not null default '100',
+  "currency" varchar,
+  "auto_approve_below" numeric,
+  "is_default" tinyint(1) not null default '0',
+  "fallback_approver_type" varchar,
+  "fallback_approver_value" varchar,
   primary key("id")
 );
 
@@ -1272,6 +1279,9 @@ CREATE TABLE "approval_tokens"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "requires_reauth" tinyint(1) not null default '0',
+  "amount" numeric,
+  "channel" varchar not null default 'email',
   foreign key("workflow_instance_step_id") references "workflow_instance_steps"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -4488,6 +4498,8 @@ CREATE TABLE "business_calendar_holidays"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "holiday_type" varchar not null default 'national',
+  "region" varchar,
   foreign key("business_calendar_id") references "business_calendars"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -27676,6 +27688,7 @@ CREATE TABLE "tenant_user"(
   "updated_by" varchar,
   "deleted_by" varchar,
   "custom_role_id" varchar,
+  "approval_limit" numeric,
   foreign key("user_id") references "users"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -29785,6 +29798,7 @@ CREATE TABLE "workflow_definitions"(
   "updated_at" datetime,
   "deleted_at" datetime,
   "deleted_by" varchar,
+  "lock_version" integer not null default '1',
   primary key("id")
 );
 
@@ -29821,6 +29835,10 @@ CREATE TABLE "workflow_delegations"(
   "updated_at" datetime,
   "deleted_at" datetime,
   "deleted_by" varchar,
+  "document_types" text,
+  "amount_cap" numeric,
+  "source_type" varchar,
+  "source_id" varchar,
   primary key("id")
 );
 
@@ -29956,6 +29974,12 @@ CREATE TABLE "workflow_instances"(
   "workflow_definition_snapshot" text not null default('{}'),
   "locked_fiscal_document" tinyint(1) not null default('0'),
   "deleted_by" varchar,
+  "blocked_reason" text,
+  "blocked_at" datetime,
+  "withdrawn_at" datetime,
+  "closing_reason" text,
+  "approved_snapshot" text,
+  "restarted_from_id" varchar,
   foreign key("workflow_definition_id") references "workflow_definitions"("id") on delete restrict on update no action,
   primary key("id")
 );
@@ -33755,6 +33779,7 @@ CREATE TABLE "dms_approval_requests"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "workflow_instance_id" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("document_id") references "dms_documents"("id") on delete cascade,
   primary key("id")
@@ -56767,6 +56792,12 @@ CREATE UNIQUE INDEX "uq_audit_key_versions_tenant_version" on "audit_key_version
   "tenant_id",
   "key_version"
 );
+CREATE INDEX "workflow_delegations_source_id_index" on "workflow_delegations"(
+  "source_id"
+);
+CREATE INDEX "dms_approval_requests_workflow_instance_id_index" on "dms_approval_requests"(
+  "workflow_instance_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -57251,3 +57282,488 @@ INSERT INTO migrations VALUES(480,'2028_01_09_000100_create_product_catalog_mod0
 INSERT INTO migrations VALUES(481,'2028_01_09_000100_create_scheduled_erp_report_tables',34);
 INSERT INTO migrations VALUES(482,'2028_01_09_000100_extend_enterprise_audit_ledger_for_forensic_trail',35);
 INSERT INTO migrations VALUES(483,'2028_01_09_000200_create_audit_ledger_forensic_tables',35);
+INSERT INTO migrations VALUES(484,'2028_01_10_000100_extend_workflow_for_approval_engine_mod006',36);
+INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
+INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
+INSERT INTO migrations VALUES(3,'0001_01_01_000002_create_jobs_table',1);
+INSERT INTO migrations VALUES(4,'0001_01_01_000003_create_core_tenancy_tables',1);
+INSERT INTO migrations VALUES(5,'0001_01_01_000004_create_crm_contacts_tables',1);
+INSERT INTO migrations VALUES(6,'0001_01_01_000005_create_sales_invoicing_tables',1);
+INSERT INTO migrations VALUES(7,'0001_01_01_000006_create_purchasing_ap_tables',1);
+INSERT INTO migrations VALUES(8,'0001_01_01_000007_create_treasury_banking_tables',1);
+INSERT INTO migrations VALUES(9,'0001_01_01_000008_create_inventory_logistics_tables',1);
+INSERT INTO migrations VALUES(10,'0001_01_01_000009_create_field_service_tickets_tables',1);
+INSERT INTO migrations VALUES(11,'0001_01_01_000010_create_automotive_tire_tables',1);
+INSERT INTO migrations VALUES(12,'0001_01_01_000011_create_fleet_rental_tables',1);
+INSERT INTO migrations VALUES(13,'0001_01_01_000012_create_construction_craftsmen_tables',1);
+INSERT INTO migrations VALUES(14,'0001_01_01_000013_create_professional_practices_tables',1);
+INSERT INTO migrations VALUES(15,'0001_01_01_000014_create_manufacturing_mrp_tables',1);
+INSERT INTO migrations VALUES(16,'0001_01_01_000015_create_retail_pos_tables',1);
+INSERT INTO migrations VALUES(17,'0001_01_01_000016_create_time_attendance_tables',1);
+INSERT INTO migrations VALUES(18,'0001_01_01_000017_create_cross_border_hr_tables',1);
+INSERT INTO migrations VALUES(19,'0001_01_01_000018_create_fiscal_accounting_tables',1);
+INSERT INTO migrations VALUES(20,'0001_01_01_000019_create_system_audit_tables',1);
+INSERT INTO migrations VALUES(21,'2026_10_20_184718_create_personal_access_tokens_table',1);
+INSERT INTO migrations VALUES(22,'2026_10_23_170000_create_sales_payments_numbering_tables',1);
+INSERT INTO migrations VALUES(23,'2026_10_23_170100_create_sales_pipeline_conversion_tables',1);
+INSERT INTO migrations VALUES(24,'2026_10_23_180000_create_catalog_pricing_payment_terms_tables',1);
+INSERT INTO migrations VALUES(25,'2026_10_23_190000_create_subscription_tables',1);
+INSERT INTO migrations VALUES(26,'2026_10_23_200000_create_alerts_loyalty_reminders_imports_tables',1);
+INSERT INTO migrations VALUES(27,'2026_10_23_210000_create_sdi_logs_and_uuid_links_tables',1);
+INSERT INTO migrations VALUES(28,'2026_10_24_100000_add_sales_extras_columns',1);
+INSERT INTO migrations VALUES(29,'2026_10_24_110000_create_work_order_lines_and_extend_work_orders',1);
+INSERT INTO migrations VALUES(30,'2026_10_24_120000_add_pos_and_stock_columns',1);
+INSERT INTO migrations VALUES(31,'2026_10_24_130000_create_goods_receipts_and_extend_passive_invoices',1);
+INSERT INTO migrations VALUES(32,'2026_10_24_140000_add_fees_and_channel_to_payment_imports',1);
+INSERT INTO migrations VALUES(33,'2026_10_24_150000_create_document_emails_and_attachments_tables',1);
+INSERT INTO migrations VALUES(34,'2026_10_25_100000_add_attachment_name_to_document_emails',1);
+INSERT INTO migrations VALUES(35,'2026_10_25_110000_widen_contacts_country_to_iso_codes',1);
+INSERT INTO migrations VALUES(36,'2026_10_26_100000_create_ecommerce_tables',1);
+INSERT INTO migrations VALUES(37,'2026_10_26_100100_add_variant_columns_to_products',1);
+INSERT INTO migrations VALUES(38,'2026_10_27_081702_create_translations_table',1);
+INSERT INTO migrations VALUES(39,'2026_10_27_100000_create_dashboard_layouts_table',1);
+INSERT INTO migrations VALUES(40,'2026_10_27_100100_add_min_stock_to_products',1);
+INSERT INTO migrations VALUES(41,'2026_10_27_100200_add_last_sync_summary_to_ecommerce_channels',1);
+INSERT INTO migrations VALUES(42,'2026_10_27_110000_create_erp_lookups_tables',1);
+INSERT INTO migrations VALUES(43,'2026_10_28_100000_create_tenant_backups_table',1);
+INSERT INTO migrations VALUES(44,'2026_10_29_100000_create_bank_statements_tables',1);
+INSERT INTO migrations VALUES(45,'2026_10_30_100000_extend_bank_reconciliation_for_outflows',1);
+INSERT INTO migrations VALUES(46,'2026_10_31_100000_add_is_maintenance_to_tenants',1);
+INSERT INTO migrations VALUES(47,'2026_10_31_110000_widen_columns_for_postgresql_compatibility',1);
+INSERT INTO migrations VALUES(48,'2026_11_01_000000_add_tenant_id_indexes_to_multi_tenant_tables',1);
+INSERT INTO migrations VALUES(49,'2026_11_02_000000_create_comprehensive_lookups_and_translations_tables',1);
+INSERT INTO migrations VALUES(50,'2026_11_03_000000_add_tenant_id_to_reference_and_translation_tables',1);
+INSERT INTO migrations VALUES(51,'2026_11_03_000000_create_service_reports_tables',1);
+INSERT INTO migrations VALUES(52,'2026_11_04_000000_create_customer_portal_tables',1);
+INSERT INTO migrations VALUES(53,'2026_11_05_000000_create_appointments_tables',1);
+INSERT INTO migrations VALUES(54,'2026_11_06_000000_restrict_fiscal_document_foreign_keys',1);
+INSERT INTO migrations VALUES(55,'2026_11_06_154124_add_sdi_channel_to_tenants_table',1);
+INSERT INTO migrations VALUES(56,'2026_11_07_000000_add_disk_to_attachments_table',1);
+INSERT INTO migrations VALUES(57,'2026_11_07_010000_add_performance_indexes_for_postgresql',1);
+INSERT INTO migrations VALUES(58,'2026_11_08_000000_create_expenses_tables',1);
+INSERT INTO migrations VALUES(59,'2026_11_10_000000_create_enterprise_audit_ledger_table',1);
+INSERT INTO migrations VALUES(60,'2026_11_10_000001_create_transactional_outbox_inbox_tables',1);
+INSERT INTO migrations VALUES(61,'2026_11_10_000002_enforce_audit_ledger_immutability',1);
+INSERT INTO migrations VALUES(62,'2026_11_10_000003_add_retry_after_to_transactional_outbox',1);
+INSERT INTO migrations VALUES(63,'2026_11_10_000004_create_enterprise_feature_flags_table',1);
+INSERT INTO migrations VALUES(64,'2026_11_14_115207_create_transaction_locks_table',1);
+INSERT INTO migrations VALUES(65,'2026_11_15_000000_create_workflow_engine_tables',1);
+INSERT INTO migrations VALUES(66,'2026_11_15_000001_create_esm_equipment_passports_and_warranty_extensions_tables',1);
+INSERT INTO migrations VALUES(67,'2026_11_15_000001_create_workflow_engine_v2_enterprise_tables',1);
+INSERT INTO migrations VALUES(68,'2026_11_15_000002_add_soft_deletes_to_workflow_engine_tables',1);
+INSERT INTO migrations VALUES(69,'2026_11_15_000002_create_esm_rma_orders_and_diagnosis_tables',1);
+INSERT INTO migrations VALUES(70,'2026_11_15_000003_create_esm_vendor_claims_and_loaners_tables',1);
+INSERT INTO migrations VALUES(71,'2026_11_17_221211_create_recurring_contracts_and_billing_engine_tables',1);
+INSERT INTO migrations VALUES(72,'2026_12_01_000000_create_procurement_enterprise_tables',1);
+INSERT INTO migrations VALUES(73,'2026_12_15_000000_create_inventory_warehouse_enterprise_tables',1);
+INSERT INTO migrations VALUES(74,'2026_12_15_000001_add_soft_deletes_to_inventory_tables',1);
+INSERT INTO migrations VALUES(75,'2027_01_15_000000_create_projects_job_costing_enterprise_tables',1);
+INSERT INTO migrations VALUES(76,'2027_01_15_000001_add_soft_deletes_to_project_tables',1);
+INSERT INTO migrations VALUES(77,'2027_01_22_000000_create_general_ledger_enterprise_tables',1);
+INSERT INTO migrations VALUES(78,'2027_01_22_000001_enhance_chart_of_accounts_and_vat_settlements_tables',1);
+INSERT INTO migrations VALUES(79,'2027_01_22_000002_enhance_vat_codes_table',1);
+INSERT INTO migrations VALUES(80,'2027_01_24_000000_create_treasury_enterprise_tables',1);
+INSERT INTO migrations VALUES(81,'2027_01_24_000001_enhance_bank_accounts_batches_and_statements_tables',1);
+INSERT INTO migrations VALUES(82,'2027_01_24_000002_add_deleted_at_to_bank_statement_lines',1);
+INSERT INTO migrations VALUES(83,'2027_01_25_000000_create_sales_invoicing_enterprise_tables',1);
+INSERT INTO migrations VALUES(84,'2027_01_25_000001_enhance_sales_and_invoicing_tables',1);
+INSERT INTO migrations VALUES(85,'2027_01_25_000002_add_soft_deletes_to_sales_invoicing_items_tables',1);
+INSERT INTO migrations VALUES(86,'2027_01_26_000000_create_transactional_outbox_archive_table',1);
+INSERT INTO migrations VALUES(87,'2027_01_28_000001_create_crm_enterprise_core_tables',1);
+INSERT INTO migrations VALUES(88,'2027_01_28_000002_create_crm_enterprise_pipeline_tables',1);
+INSERT INTO migrations VALUES(89,'2027_01_29_000001_create_eam_enterprise_core_tables',1);
+INSERT INTO migrations VALUES(90,'2027_01_29_000002_create_eam_lifecycle_depreciation_maintenance_tables',1);
+INSERT INTO migrations VALUES(91,'2027_01_29_000003_create_eam_assignments_activities_and_workflow_locks',1);
+INSERT INTO migrations VALUES(92,'2027_01_30_000001_create_hr_organization_and_employee_core_tables',1);
+INSERT INTO migrations VALUES(93,'2027_01_30_000002_create_hr_leave_time_performance_training_tables',1);
+INSERT INTO migrations VALUES(94,'2027_01_31_000001_create_esm_service_contracts_catalogs_and_sla_tables',1);
+INSERT INTO migrations VALUES(95,'2027_01_31_000002_create_esm_tickets_incidents_problems_changes_tables',1);
+INSERT INTO migrations VALUES(96,'2027_01_31_000003_create_esm_work_orders_field_service_and_csat_tables',1);
+INSERT INTO migrations VALUES(97,'2027_02_15_000001_create_sub_plans_pricing_tiers_and_metrics_tables',1);
+INSERT INTO migrations VALUES(98,'2027_02_15_000002_create_sub_subscriptions_items_versions_and_usage_tables',1);
+INSERT INTO migrations VALUES(99,'2027_02_15_000003_create_sub_revenue_recognition_dunning_and_churn_tables',1);
+INSERT INTO migrations VALUES(100,'2027_03_01_000001_create_mfg_items_boms_and_routings_tables',1);
+INSERT INTO migrations VALUES(101,'2027_03_01_000002_create_mfg_mrp_production_orders_and_shop_floor_tables',1);
+INSERT INTO migrations VALUES(102,'2027_03_01_000003_create_mfg_quality_costing_and_metrics_tables',1);
+INSERT INTO migrations VALUES(103,'2027_03_02_000000_create_enterprise_audit_ledger_archive_table',1);
+INSERT INTO migrations VALUES(104,'2027_03_03_000000_add_self_registration_to_users_table',1);
+INSERT INTO migrations VALUES(105,'2027_03_04_000000_create_password_reset_flow',1);
+INSERT INTO migrations VALUES(106,'2027_03_04_000100_create_time_tracking_tables',1);
+INSERT INTO migrations VALUES(107,'2027_03_04_000200_enforce_time_audit_immutability',1);
+INSERT INTO migrations VALUES(108,'2027_03_04_000300_add_agreement_validity_to_time_recording_profiles',1);
+INSERT INTO migrations VALUES(109,'2027_03_04_000400_encrypt_employee_personal_data',1);
+INSERT INTO migrations VALUES(110,'2027_03_05_000100_create_payroll_reference_tables',1);
+INSERT INTO migrations VALUES(111,'2027_03_05_000200_create_payroll_employee_tables',1);
+INSERT INTO migrations VALUES(112,'2027_03_05_000300_create_payroll_run_tables',1);
+INSERT INTO migrations VALUES(113,'2027_03_05_000400_enforce_payroll_immutability',1);
+INSERT INTO migrations VALUES(114,'2027_03_06_000100_extend_vat_settlements_for_tax_returns',1);
+INSERT INTO migrations VALUES(115,'2027_03_06_000200_create_vat_tax_settings_table',1);
+INSERT INTO migrations VALUES(116,'2027_03_06_000300_add_vat_detail_to_journal_tables',1);
+INSERT INTO migrations VALUES(117,'2027_03_06_000400_create_vat_register_entries_table',1);
+INSERT INTO migrations VALUES(118,'2027_03_06_000500_enforce_vat_settlement_immutability',1);
+INSERT INTO migrations VALUES(119,'2027_03_07_000100_add_ledger_links_to_documents',1);
+INSERT INTO migrations VALUES(120,'2027_03_07_000200_create_payroll_ledger_tables',1);
+INSERT INTO migrations VALUES(121,'2027_03_07_000300_enforce_fiscal_document_immutability',1);
+INSERT INTO migrations VALUES(122,'2027_03_08_000100_create_declarations_of_intent_table',1);
+INSERT INTO migrations VALUES(123,'2027_03_08_000200_add_italian_fiscal_fields_to_invoices',1);
+INSERT INTO migrations VALUES(124,'2027_03_08_000300_add_withholding_fields_to_passive_invoices',1);
+INSERT INTO migrations VALUES(125,'2027_03_08_000400_create_enasarco_and_withholding_settlement_tables',1);
+INSERT INTO migrations VALUES(126,'2027_03_10_000100_create_commercial_documents_tables',1);
+INSERT INTO migrations VALUES(127,'2027_03_10_000200_create_health_expense_tables',1);
+INSERT INTO migrations VALUES(128,'2027_03_10_000300_create_riba_tables',1);
+INSERT INTO migrations VALUES(129,'2027_03_10_000400_create_passive_invoice_lines_and_cost_rules',1);
+INSERT INTO migrations VALUES(130,'2027_03_10_000500_create_api_keys_table',1);
+INSERT INTO migrations VALUES(131,'2027_03_10_000600_create_communication_tables',1);
+INSERT INTO migrations VALUES(132,'2027_03_10_000700_create_document_templates_table',1);
+INSERT INTO migrations VALUES(133,'2027_03_10_000800_create_payment_link_tables',1);
+INSERT INTO migrations VALUES(134,'2027_03_10_000900_create_document_trust_tables',1);
+INSERT INTO migrations VALUES(135,'2027_03_10_001000_allow_cbi_riba_payment_batch_format',1);
+INSERT INTO migrations VALUES(136,'2027_03_12_000100_create_association_registry_tables',1);
+INSERT INTO migrations VALUES(137,'2027_03_12_000200_create_association_membership_tables',1);
+INSERT INTO migrations VALUES(138,'2027_03_12_000300_create_association_enrolment_tables',1);
+INSERT INTO migrations VALUES(139,'2027_03_12_000400_create_association_course_tables',1);
+INSERT INTO migrations VALUES(140,'2027_03_12_000500_create_association_fee_tables',1);
+INSERT INTO migrations VALUES(141,'2027_03_12_000600_create_association_medical_certificates_table',1);
+INSERT INTO migrations VALUES(142,'2027_03_12_000700_create_association_access_tables',1);
+INSERT INTO migrations VALUES(143,'2027_03_12_000800_enforce_association_access_log_immutability',1);
+INSERT INTO migrations VALUES(144,'2027_03_12_000900_create_association_network_tables',1);
+INSERT INTO migrations VALUES(145,'2027_03_13_000100_add_sdi_excluded_to_invoices_table',1);
+INSERT INTO migrations VALUES(146,'2027_03_14_000100_create_customs_master_data_tables',1);
+INSERT INTO migrations VALUES(147,'2027_03_14_000200_create_customs_declaration_tables',1);
+INSERT INTO migrations VALUES(148,'2027_03_14_000300_create_customs_assessment_tables',1);
+INSERT INTO migrations VALUES(149,'2027_03_14_000400_enforce_customs_assessment_immutability',1);
+INSERT INTO migrations VALUES(150,'2027_03_14_000500_create_customs_dossier_tables',1);
+INSERT INTO migrations VALUES(151,'2027_03_15_000001_create_customs_taric_codes_and_free_trade_agreements_tables',1);
+INSERT INTO migrations VALUES(152,'2027_03_16_000100_create_shift_planning_tables',1);
+INSERT INTO migrations VALUES(153,'2027_03_16_000200_create_time_clock_detail_tables',1);
+INSERT INTO migrations VALUES(154,'2027_03_16_000300_create_payroll_legal_parameters_and_withholding_declarations',1);
+INSERT INTO migrations VALUES(155,'2027_03_16_000400_create_short_time_and_construction_tables',1);
+INSERT INTO migrations VALUES(156,'2027_03_16_000500_create_payslip_delivery_and_payment_link_tables',1);
+INSERT INTO migrations VALUES(157,'2027_03_16_000600_create_recruiting_tables',1);
+INSERT INTO migrations VALUES(158,'2027_03_16_000700_create_sales_target_and_commission_statement_tables',1);
+INSERT INTO migrations VALUES(159,'2027_03_18_000100_add_lot_strategy_and_genealogy_to_inventory',1);
+INSERT INTO migrations VALUES(160,'2027_03_18_000200_add_picking_packing_and_terminal_tables',1);
+INSERT INTO migrations VALUES(161,'2027_03_18_000300_create_shipping_tables',1);
+INSERT INTO migrations VALUES(162,'2027_03_18_000400_create_product_charge_tables',1);
+INSERT INTO migrations VALUES(163,'2027_03_18_000500_create_safety_data_sheet_tables',1);
+INSERT INTO migrations VALUES(164,'2027_03_18_000600_create_weighbridge_tables',1);
+INSERT INTO migrations VALUES(165,'2027_03_18_000700_add_price_list_hierarchy',1);
+INSERT INTO migrations VALUES(166,'2027_03_18_000800_create_portal_movement_requests_table',1);
+INSERT INTO migrations VALUES(167,'2027_03_18_000900_create_warranty_and_repair_tables',1);
+INSERT INTO migrations VALUES(168,'2027_03_20_000001_add_lead_capture_routing_and_scoring',1);
+INSERT INTO migrations VALUES(169,'2027_03_20_000001_create_corporate_group_tables',1);
+INSERT INTO migrations VALUES(170,'2027_03_20_000001_create_mobile_companion_tables',1);
+INSERT INTO migrations VALUES(171,'2027_03_20_000100_create_document_management_tables',1);
+INSERT INTO migrations VALUES(172,'2027_03_20_000200_add_approval_columns_to_passive_invoices',1);
+INSERT INTO migrations VALUES(173,'2027_03_20_000300_create_contract_register_tables',1);
+INSERT INTO migrations VALUES(174,'2027_03_20_000400_create_document_extraction_tables',1);
+INSERT INTO migrations VALUES(175,'2027_03_20_000500_create_assistant_question_logs_table',1);
+INSERT INTO migrations VALUES(176,'2027_03_20_000600_create_ledger_budget_tables',1);
+INSERT INTO migrations VALUES(177,'2027_03_20_000700_create_statement_scheme_tables',1);
+INSERT INTO migrations VALUES(178,'2027_03_20_000800_create_edocument_transmissions_table',1);
+INSERT INTO migrations VALUES(179,'2027_03_20_000900_create_open_banking_tables',1);
+INSERT INTO migrations VALUES(180,'2027_03_20_001000_create_workspace_sync_tables',1);
+INSERT INTO migrations VALUES(181,'2027_03_22_000100_create_association_meeting_tables',1);
+INSERT INTO migrations VALUES(182,'2027_03_22_000200_create_association_book_and_volunteer_tables',1);
+INSERT INTO migrations VALUES(183,'2027_03_22_000300_create_association_privacy_tables',1);
+INSERT INTO migrations VALUES(184,'2027_03_22_000400_create_association_fundraising_tables',1);
+INSERT INTO migrations VALUES(185,'2027_03_22_000500_create_association_third_sector_statement_tables',1);
+INSERT INTO migrations VALUES(186,'2027_03_22_000600_create_association_lex398_tables',1);
+INSERT INTO migrations VALUES(187,'2027_03_22_000700_create_association_sport_work_tables',1);
+INSERT INTO migrations VALUES(188,'2027_03_22_000800_create_association_section_tables',1);
+INSERT INTO migrations VALUES(189,'2027_03_24_000100_create_workshop_tables',1);
+INSERT INTO migrations VALUES(190,'2027_03_24_000200_create_construction_trades_tables',1);
+INSERT INTO migrations VALUES(191,'2027_03_24_000300_create_childcare_tables',1);
+INSERT INTO migrations VALUES(192,'2027_03_24_000400_create_practice_management_tables',1);
+INSERT INTO migrations VALUES(193,'2027_03_24_000500_create_hospitality_tables',1);
+INSERT INTO migrations VALUES(194,'2027_03_24_000600_add_requester_to_esm_tickets',1);
+INSERT INTO migrations VALUES(195,'2027_03_26_000100_add_sales_commission_uniqueness',1);
+INSERT INTO migrations VALUES(196,'2027_03_26_000200_add_stamp_duty_to_passive_invoices',1);
+INSERT INTO migrations VALUES(197,'2027_03_26_000300_add_detail_assumed_to_withholding_settlement_lines',1);
+INSERT INTO migrations VALUES(198,'2027_03_26_000500_encrypt_bank_connection_credentials',1);
+INSERT INTO migrations VALUES(199,'2027_03_26_000600_make_esm_ticket_customer_optional',1);
+INSERT INTO migrations VALUES(200,'2027_03_28_000100_add_bank_account_to_payments',1);
+INSERT INTO migrations VALUES(201,'2027_03_28_000200_add_fee_payment_reversal_and_line_cost_centre',1);
+INSERT INTO migrations VALUES(202,'2027_03_28_000300_create_enasarco_principal_statements_table',1);
+INSERT INTO migrations VALUES(203,'2027_03_28_000400_add_invoice_to_repair_orders',1);
+INSERT INTO migrations VALUES(204,'2027_03_30_100100_make_esm_work_order_customer_optional',1);
+INSERT INTO migrations VALUES(205,'2027_03_30_100200_drop_legacy_customs_declarations_table',1);
+INSERT INTO migrations VALUES(206,'2027_03_30_100300_add_revoked_at_to_payroll_payslip_deliveries',1);
+INSERT INTO migrations VALUES(207,'2027_03_30_100400_create_visitor_management_tables',1);
+INSERT INTO migrations VALUES(208,'2027_04_01_000100_add_helpdesk_lifecycle_to_esm_tickets',1);
+INSERT INTO migrations VALUES(209,'2027_04_01_000200_create_esm_ticket_conversation_tables',1);
+INSERT INTO migrations VALUES(210,'2027_04_01_000300_create_esm_support_mailbox_tables',1);
+INSERT INTO migrations VALUES(211,'2027_04_01_000400_create_esm_routing_and_sla_tracking',1);
+INSERT INTO migrations VALUES(212,'2027_04_01_000500_create_esm_agent_productivity_tables',1);
+INSERT INTO migrations VALUES(213,'2027_04_01_000600_extend_esm_knowledge_base',1);
+INSERT INTO migrations VALUES(214,'2027_04_01_000700_add_survey_link_to_esm_csat_surveys',1);
+INSERT INTO migrations VALUES(215,'2027_04_01_000800_create_esm_helpdesk_notification_tables',1);
+INSERT INTO migrations VALUES(216,'2027_04_02_000100_add_two_factor_columns_to_users_table',1);
+INSERT INTO migrations VALUES(217,'2027_04_02_000200_create_intrastat_tables',1);
+INSERT INTO migrations VALUES(218,'2027_04_03_000100_add_progressive_journal_number_to_journal_entries',1);
+INSERT INTO migrations VALUES(219,'2027_04_03_000100_add_transmission_claim_and_inbound_quarantine_to_sdi_tables',1);
+INSERT INTO migrations VALUES(220,'2027_04_03_000200_add_invoice_foreign_key_indexes_to_ledger_and_credit_applications',1);
+INSERT INTO migrations VALUES(221,'2027_04_03_000200_create_notifications_table',1);
+INSERT INTO migrations VALUES(222,'2027_04_10_000100_harden_commercial_document_transmission',1);
+INSERT INTO migrations VALUES(223,'2027_04_10_000200_make_stock_quant_slot_unique_without_lot',1);
+INSERT INTO migrations VALUES(224,'2027_04_10_000300_add_product_index_to_stock_movements',1);
+INSERT INTO migrations VALUES(225,'2027_04_10_000400_add_period_uniqueness_to_eam_depreciation_runs',1);
+INSERT INTO migrations VALUES(226,'2027_04_10_100001_add_valuation_method_and_volume_to_stock_items',1);
+INSERT INTO migrations VALUES(227,'2027_04_10_100002_create_inventory_cost_layers_table',1);
+INSERT INTO migrations VALUES(228,'2027_04_10_100003_create_landed_cost_documents_tables',1);
+INSERT INTO migrations VALUES(229,'2027_04_10_100004_create_inventory_revaluations_and_book_tables',1);
+INSERT INTO migrations VALUES(230,'2027_04_11_000100_remap_legacy_sales_document_statuses',1);
+INSERT INTO migrations VALUES(231,'2027_04_12_000100_create_legacy_ledger_migration_log_table',1);
+INSERT INTO migrations VALUES(232,'2027_04_12_000200_migrate_legacy_general_ledger_entries',1);
+INSERT INTO migrations VALUES(233,'2027_04_12_000300_link_products_to_stock_items_and_add_stock_shortfalls',1);
+INSERT INTO migrations VALUES(234,'2027_04_12_000400_book_legacy_stock_movements_into_inventory_module',1);
+INSERT INTO migrations VALUES(235,'2027_04_12_000500_link_crm_accounts_to_party_master',1);
+INSERT INTO migrations VALUES(236,'2027_04_12_000600_create_crm_engagement_tables',1);
+INSERT INTO migrations VALUES(237,'2027_04_13_000500_extend_projects_enterprise_management',1);
+INSERT INTO migrations VALUES(238,'2027_04_14_001600_extend_eam_asset_management_enterprise',1);
+INSERT INTO migrations VALUES(239,'2027_04_15_190100_extend_subscription_billing_engine_tables',1);
+INSERT INTO migrations VALUES(240,'2027_04_15_190200_migrate_legacy_subscriptions_into_subscription_engine',1);
+INSERT INTO migrations VALUES(241,'2027_04_16_000100_extend_manufacturing_enterprise',1);
+INSERT INTO migrations VALUES(242,'2027_04_16_000200_migrate_legacy_production_orders_into_manufacturing',1);
+INSERT INTO migrations VALUES(243,'2027_04_17_000100_extend_treasury_enterprise_banking',1);
+INSERT INTO migrations VALUES(244,'2027_04_18_000100_extend_procurement_enterprise_tables',1);
+INSERT INTO migrations VALUES(245,'2027_04_18_000200_remap_legacy_purchase_order_statuses',1);
+INSERT INTO migrations VALUES(246,'2027_04_19_000100_extend_human_resources_and_payroll_tables',1);
+INSERT INTO migrations VALUES(247,'2027_04_19_000200_copy_legacy_time_entries_to_clock_events',1);
+INSERT INTO migrations VALUES(248,'2027_04_20_000100_extend_invoicing_enterprise_billing',1);
+INSERT INTO migrations VALUES(249,'2027_04_20_194001_add_intake_dedup_and_routing_fields_to_crm_leads_and_sources',1);
+INSERT INTO migrations VALUES(250,'2027_04_20_194002_create_crm_lead_scoring_rules_and_settings_tables',1);
+INSERT INTO migrations VALUES(251,'2027_04_20_194003_create_crm_lead_activity_events_table',1);
+INSERT INTO migrations VALUES(252,'2027_04_20_194004_create_crm_lead_routing_rules_table',1);
+INSERT INTO migrations VALUES(253,'2027_04_20_194005_create_crm_lead_duplicate_candidates_table',1);
+INSERT INTO migrations VALUES(254,'2027_04_20_194006_create_notifications_table',1);
+INSERT INTO migrations VALUES(255,'2027_04_20_286001_add_italian_tax_fields_to_invoices_and_items_issue_286',1);
+INSERT INTO migrations VALUES(256,'2027_04_20_286002_create_enasarco_annual_limits_table_issue_286',1);
+INSERT INTO migrations VALUES(257,'2027_04_20_286003_create_passive_invoice_withholdings_table_issue_286',1);
+INSERT INTO migrations VALUES(258,'2027_04_21_000100_add_wms_enterprise_tables',1);
+INSERT INTO migrations VALUES(259,'2027_04_22_000100_create_analytics_report_definitions_table',1);
+INSERT INTO migrations VALUES(260,'2027_04_22_000200_add_check_out_to_dms_documents',1);
+INSERT INTO migrations VALUES(261,'2027_04_22_000300_add_escalation_state_and_audit_sequence_to_workflow',1);
+INSERT INTO migrations VALUES(262,'2027_04_22_000400_create_contract_lifecycle_obligation_and_party_tables',1);
+INSERT INTO migrations VALUES(263,'2027_04_22_000500_create_communication_templates_and_extend_delivery_logs',1);
+INSERT INTO migrations VALUES(264,'2027_04_23_000100_create_general_ledger_controlling_tables',1);
+INSERT INTO migrations VALUES(265,'2027_04_24_000100_extend_sales_cycle_enterprise',1);
+INSERT INTO migrations VALUES(266,'2027_04_26_000100_create_hospitality_reservations_table',1);
+INSERT INTO migrations VALUES(267,'2027_04_26_000200_create_construction_site_management_tables',1);
+INSERT INTO migrations VALUES(268,'2027_04_26_000300_create_practice_retainer_tables',1);
+INSERT INTO migrations VALUES(269,'2027_04_26_000400_create_workshop_time_entries_table',1);
+INSERT INTO migrations VALUES(270,'2027_04_27_100000_make_esm_service_technician_email_optional',1);
+INSERT INTO migrations VALUES(271,'2027_04_28_000100_add_functional_amounts_to_journal_lines',1);
+INSERT INTO migrations VALUES(272,'2027_04_28_000200_backfill_functional_amounts_on_journal_lines',1);
+INSERT INTO migrations VALUES(273,'2027_04_30_000100_add_parent_foreign_key_and_tenant_indexes',1);
+INSERT INTO migrations VALUES(274,'2027_05_01_000001_create_logistics_ddt_transfers_and_consignment_tables',1);
+INSERT INTO migrations VALUES(275,'2027_05_01_000100_enhance_swiss_accounting_and_vat_compliance',1);
+INSERT INTO migrations VALUES(276,'2027_05_01_000200_enhance_swiss_payroll_elm_and_lohnausweis',1);
+INSERT INTO migrations VALUES(277,'2027_05_01_000300_enhance_time_dunning_security_and_privacy_compliance',1);
+INSERT INTO migrations VALUES(278,'2027_05_02_000100_add_missing_soft_delete_columns',1);
+INSERT INTO migrations VALUES(279,'2027_05_02_000100_create_consolidation_tables',1);
+INSERT INTO migrations VALUES(280,'2027_05_02_000100_create_enterprise_authentication_tables',1);
+INSERT INTO migrations VALUES(281,'2027_05_02_000100_create_preservation_packages_tables',1);
+INSERT INTO migrations VALUES(282,'2027_05_02_000200_create_saml_providers_and_extend_sso_identities',1);
+INSERT INTO migrations VALUES(283,'2027_05_02_100100_extend_privacy_compliance_workflow',1);
+INSERT INTO migrations VALUES(284,'2027_05_02_100200_create_quality_management_tables',1);
+INSERT INTO migrations VALUES(285,'2027_05_03_000100_add_preservation_disposal_and_timestamp_settings',1);
+INSERT INTO migrations VALUES(286,'2027_05_03_000100_add_sso_logout_binding_and_client_auth',1);
+INSERT INTO migrations VALUES(287,'2027_05_03_000100_extend_consolidation_tables',1);
+INSERT INTO migrations VALUES(288,'2027_05_04_000100_extend_consolidation_tax_release_and_currency',1);
+INSERT INTO migrations VALUES(289,'2027_05_05_000100_extend_consolidation_provision_and_interim',1);
+INSERT INTO migrations VALUES(290,'2027_05_10_000100_create_analytics_self_service_reporting_tables',1);
+INSERT INTO migrations VALUES(291,'2027_05_10_000100_create_mfg_mes_operator_board_tables',1);
+INSERT INTO migrations VALUES(292,'2027_05_10_000100_create_webhook_tables',1);
+INSERT INTO migrations VALUES(293,'2027_05_10_000200_add_below_minimum_since_to_stock_reorder_rules',1);
+INSERT INTO migrations VALUES(294,'2027_05_11_000100_add_below_minimum_since_to_products',1);
+INSERT INTO migrations VALUES(295,'2027_05_12_000100_add_vat_carry_over_option',1);
+INSERT INTO migrations VALUES(296,'2027_05_12_000200_add_tenant_foreign_keys',1);
+INSERT INTO migrations VALUES(297,'2027_05_20_000100_apply_nullable_tenant_id_policy',1);
+INSERT INTO migrations VALUES(298,'2027_05_20_000200_add_soft_delete_column_to_price_list_items',1);
+INSERT INTO migrations VALUES(299,'2027_05_21_000100_add_legal_type_to_contacts',1);
+INSERT INTO migrations VALUES(300,'2027_05_22_000100_drop_postgres_immutability_triggers',1);
+INSERT INTO migrations VALUES(301,'2027_05_22_000200_restore_partial_indexes_on_sqlite',1);
+INSERT INTO migrations VALUES(302,'2027_05_22_000300_enforce_one_stock_quant_per_slot_on_every_engine',1);
+INSERT INTO migrations VALUES(303,'2027_05_23_000100_create_pagopa_payment_notices',1);
+INSERT INTO migrations VALUES(304,'2027_05_27_273001_create_rec_recruiting_core_tables',1);
+INSERT INTO migrations VALUES(305,'2027_05_27_273002_create_rec_offers_emails_and_settings_tables',1);
+INSERT INTO migrations VALUES(306,'2027_06_01_000001_extend_contacts_for_customer_registry',1);
+INSERT INTO migrations VALUES(307,'2027_06_10_000100_create_configurator_tables',1);
+INSERT INTO migrations VALUES(308,'2027_06_10_000100_create_supplier_portal_tables',1);
+INSERT INTO migrations VALUES(309,'2027_06_20_000100_create_lease_accounting_tables',1);
+INSERT INTO migrations VALUES(310,'2027_06_20_000100_create_travel_expense_tables',1);
+INSERT INTO migrations VALUES(311,'2027_06_20_043000_create_facility_management_tables',1);
+INSERT INTO migrations VALUES(312,'2027_06_20_100000_create_sustainability_tables',1);
+INSERT INTO migrations VALUES(313,'2027_06_22_100000_create_governance_tables',1);
+INSERT INTO migrations VALUES(314,'2027_06_23_100000_create_returns_tables',1);
+INSERT INTO migrations VALUES(315,'2027_06_24_100000_create_fleet_tables',1);
+INSERT INTO migrations VALUES(316,'2027_06_25_100000_create_hr_goals_and_offboarding_tables',1);
+INSERT INTO migrations VALUES(317,'2027_06_26_100000_create_communication_inbox_campaign_tables',1);
+INSERT INTO migrations VALUES(318,'2027_06_26_100000_create_crm_extension_tables',1);
+INSERT INTO migrations VALUES(319,'2027_06_26_100000_create_dms_approval_ocr_and_chain_tables',1);
+INSERT INTO migrations VALUES(320,'2027_06_26_100000_create_esrs_reporting_tables',1);
+INSERT INTO migrations VALUES(321,'2027_06_26_100000_create_retail_pos_extension_tables',1);
+INSERT INTO migrations VALUES(322,'2027_06_26_200000_create_contract_authoring_tables',1);
+INSERT INTO migrations VALUES(323,'2027_06_26_200000_create_practice_trust_expense_proposal_tables',1);
+INSERT INTO migrations VALUES(324,'2027_06_26_300000_create_quality_spc_calibration_complaint_tables',1);
+INSERT INTO migrations VALUES(325,'2027_06_26_400000_create_hospitality_lodging_tables',1);
+INSERT INTO migrations VALUES(326,'2027_06_26_500000_create_workshop_scheduling_tables',1);
+INSERT INTO migrations VALUES(327,'2027_07_01_100000_create_business_intelligence_tables',1);
+INSERT INTO migrations VALUES(328,'2027_07_01_100000_create_credit_management_tables',1);
+INSERT INTO migrations VALUES(329,'2027_07_01_100000_create_wms_tables',1);
+INSERT INTO migrations VALUES(330,'2027_07_01_110000_create_marketplace_tables',1);
+INSERT INTO migrations VALUES(331,'2027_07_02_100000_create_talent_learning_tables',1);
+INSERT INTO migrations VALUES(332,'2027_07_02_100000_create_transportation_tables',1);
+INSERT INTO migrations VALUES(333,'2027_07_10_100000_create_planning_tables',1);
+INSERT INTO migrations VALUES(334,'2027_07_11_100000_create_budgeting_tables',1);
+INSERT INTO migrations VALUES(335,'2027_07_20_100000_create_us_tax_localization_tables',1);
+INSERT INTO migrations VALUES(336,'2027_07_21_100000_create_gov_sod_tables',1);
+INSERT INTO migrations VALUES(337,'2027_07_21_110000_add_currency_to_supplier_payments_and_intragroup_transactions',1);
+INSERT INTO migrations VALUES(338,'2027_07_22_100000_make_tenants_country_a_portable_string',1);
+INSERT INTO migrations VALUES(339,'2027_07_22_110000_add_currency_to_standalone_money_tables',1);
+INSERT INTO migrations VALUES(340,'2027_11_15_100000_create_workshop_estimates_warranty_and_parts_tables',1);
+INSERT INTO migrations VALUES(341,'2027_11_15_110000_create_hospitality_group_blocks',1);
+INSERT INTO migrations VALUES(342,'2027_11_15_120000_add_stock_posting_to_wms_tasks',1);
+INSERT INTO migrations VALUES(343,'2027_11_15_125500_create_marketplace_import_tables',1);
+INSERT INTO migrations VALUES(344,'2027_11_15_130000_create_localization_gap_tables',1);
+INSERT INTO migrations VALUES(345,'2027_11_15_130000_extend_practice_expenses_trust_postings_and_fee_notes',1);
+INSERT INTO migrations VALUES(346,'2027_11_15_140000_create_gov_sod_document_rules_table',1);
+INSERT INTO migrations VALUES(347,'2027_11_15_150000_create_data_export_tables',1);
+INSERT INTO migrations VALUES(348,'2027_11_15_150000_create_platform_tables',1);
+INSERT INTO migrations VALUES(349,'2027_11_15_150100_add_failure_tracking_to_edocument_transmissions',1);
+INSERT INTO migrations VALUES(350,'2027_11_15_150200_create_assistant_threads_and_feedback',1);
+INSERT INTO migrations VALUES(351,'2027_11_16_000100_add_legal_compliance_to_time_tracking',1);
+INSERT INTO migrations VALUES(352,'2027_11_16_000200_add_geolocation_consent_fields_to_time_tables',1);
+INSERT INTO migrations VALUES(353,'2027_11_16_100000_create_collaboration_tables',1);
+INSERT INTO migrations VALUES(354,'2027_11_17_000001_add_subscription_indexation',1);
+INSERT INTO migrations VALUES(355,'2027_11_17_100000_create_rebates_tables',1);
+INSERT INTO migrations VALUES(356,'2027_11_17_110000_create_events_tables',1);
+INSERT INTO migrations VALUES(357,'2027_11_17_120000_create_plm_tables',1);
+INSERT INTO migrations VALUES(358,'2027_11_18_100000_add_tenant_index_to_child_tables',1);
+INSERT INTO migrations VALUES(359,'2027_11_18_110000_make_tenant_id_nullable_on_late_tables',1);
+INSERT INTO migrations VALUES(360,'2027_11_19_100000_add_audit_columns_to_all_tables',1);
+INSERT INTO migrations VALUES(361,'2027_11_20_100000_add_frequency_and_quiet_hours_to_notifications',1);
+INSERT INTO migrations VALUES(362,'2027_11_20_110000_create_omnichannel_notification_tables',1);
+INSERT INTO migrations VALUES(363,'2027_11_21_100000_add_tracking_and_shipment_flow_to_delivery_notes',1);
+INSERT INTO migrations VALUES(364,'2027_11_22_000100_complete_tenant_columns_and_indexes',1);
+INSERT INTO migrations VALUES(365,'2027_11_22_100000_create_access_management_tables',1);
+INSERT INTO migrations VALUES(366,'2027_11_23_100000_add_swiss_qr_bill_settings_and_invoice_qr_reference',1);
+INSERT INTO migrations VALUES(367,'2027_11_23_100000_create_cpq_lite_quoting_tables',1);
+INSERT INTO migrations VALUES(368,'2027_11_23_100000_create_field_service_preventive_and_digital_report_tables',1);
+INSERT INTO migrations VALUES(369,'2027_11_23_100000_create_portal_settings_and_login_challenges',1);
+INSERT INTO migrations VALUES(370,'2027_11_23_100000_create_vat_validation_logs_table',1);
+INSERT INTO migrations VALUES(371,'2027_11_24_100000_add_cross_border_customs_compliance',1);
+INSERT INTO migrations VALUES(372,'2027_11_24_100000_add_idempotency_to_bank_statement_lines',1);
+INSERT INTO migrations VALUES(373,'2027_11_25_090000_make_customs_tables_tenant_id_nullable',1);
+INSERT INTO migrations VALUES(374,'2027_11_25_100000_create_advanced_pricing_tables',1);
+INSERT INTO migrations VALUES(375,'2027_11_25_100000_create_vat_settlement_periods_table',1);
+INSERT INTO migrations VALUES(376,'2027_12_01_000100_create_esm_maintenance_hour_bank_tables',1);
+INSERT INTO migrations VALUES(377,'2027_12_01_000200_make_customs_tenant_id_nullable',1);
+INSERT INTO migrations VALUES(378,'2027_12_02_000100_complete_audit_and_tenant_columns_on_late_tables',1);
+INSERT INTO migrations VALUES(379,'2027_12_03_000100_add_incoterm_to_invoices_table',1);
+INSERT INTO migrations VALUES(380,'2027_12_03_000100_complete_tenant_fks_and_enum_checks',1);
+INSERT INTO migrations VALUES(381,'2027_12_03_000100_create_blanket_agreements_and_sales_order_extensions',1);
+INSERT INTO migrations VALUES(382,'2027_12_03_000200_add_foreign_trade_fields_to_orders_contacts_and_tenants',1);
+INSERT INTO migrations VALUES(383,'2027_12_10_000100_create_fpa_documents_and_sdi_configuration_tables',1);
+INSERT INTO migrations VALUES(384,'2027_12_10_000100_extend_analytics_reporting_for_pivot_studio',1);
+INSERT INTO migrations VALUES(385,'2027_12_10_000200_add_simplified_and_vehicle_data_to_invoices',1);
+INSERT INTO migrations VALUES(386,'2027_12_10_100000_create_controlling_tables',1);
+INSERT INTO migrations VALUES(387,'2027_12_11_000100_add_sdi_optional_blocks_to_invoices_and_items',1);
+INSERT INTO migrations VALUES(388,'2027_12_11_000100_create_immutable_audit_trail',1);
+INSERT INTO migrations VALUES(389,'2027_12_12_000100_create_privacy_governance_tables',1);
+INSERT INTO migrations VALUES(390,'2027_12_13_000100_add_blind_indexes_to_contacts',1);
+INSERT INTO migrations VALUES(391,'2027_12_13_000100_add_minimum_contribution_to_enasarco_parameters',1);
+INSERT INTO migrations VALUES(392,'2027_12_13_000100_add_payment_method_to_payment_links',1);
+INSERT INTO migrations VALUES(393,'2027_12_13_000100_add_return_delivery_note_to_esm_rma_orders',1);
+INSERT INTO migrations VALUES(394,'2027_12_13_000100_create_digital_preservation_tables',1);
+INSERT INTO migrations VALUES(395,'2027_12_13_000200_create_offline_audit_entries_table',1);
+INSERT INTO migrations VALUES(396,'2027_12_14_000100_create_ai_forecasting_tables',1);
+INSERT INTO migrations VALUES(397,'2027_12_14_000100_create_copilot_tables',1);
+INSERT INTO migrations VALUES(398,'2027_12_14_000100_create_iam_tables',1);
+INSERT INTO migrations VALUES(399,'2027_12_15_000100_create_academy_tables',1);
+INSERT INTO migrations VALUES(400,'2027_12_15_000100_create_ocr_extraction_tables',1);
+INSERT INTO migrations VALUES(401,'2027_12_16_000100_create_ai_cognitive_tables',1);
+INSERT INTO migrations VALUES(402,'2027_12_16_000100_create_analytics_dss_tables',1);
+INSERT INTO migrations VALUES(403,'2027_12_16_000100_create_kpi_dashboard_tables',1);
+INSERT INTO migrations VALUES(404,'2027_12_17_000100_create_cpq_quote_tables',1);
+INSERT INTO migrations VALUES(405,'2027_12_17_000100_create_data_residency_tables',1);
+INSERT INTO migrations VALUES(406,'2027_12_17_000100_create_hse_tables',1);
+INSERT INTO migrations VALUES(407,'2027_12_17_000100_create_italian_payroll_preprocessing_tables',1);
+INSERT INTO migrations VALUES(408,'2027_12_17_000100_create_shift_planning_tables',1);
+INSERT INTO migrations VALUES(409,'2027_12_17_000100_extend_bom_management',1);
+INSERT INTO migrations VALUES(410,'2027_12_17_000100_extend_warehouse_locations_for_directed_putaway',1);
+INSERT INTO migrations VALUES(411,'2027_12_17_000100_upgrade_procurement_rfq_module_045',1);
+INSERT INTO migrations VALUES(412,'2027_12_17_000200_add_audit_columns_to_mfg_bom_co_products',1);
+INSERT INTO migrations VALUES(413,'2027_12_18_000100_create_hse_incident_photos_table',1);
+INSERT INTO migrations VALUES(414,'2027_12_18_000100_upgrade_purchase_requisitions_module_044',1);
+INSERT INTO migrations VALUES(415,'2027_12_19_000100_add_mes_integration_to_manufacturing',1);
+INSERT INTO migrations VALUES(416,'2027_12_19_000100_add_posting_uuid_to_mfg_operation_confirmations',1);
+INSERT INTO migrations VALUES(417,'2027_12_19_000100_create_mrp_planning_tables',1);
+INSERT INTO migrations VALUES(418,'2027_12_19_000100_extend_manufacturing_production_engineering',1);
+INSERT INTO migrations VALUES(419,'2027_12_19_000200_create_mfg_mes_integration_tables',1);
+INSERT INTO migrations VALUES(420,'2027_12_19_000300_add_mes_profile_to_mfg_machine_centers',2);
+INSERT INTO migrations VALUES(421,'2027_12_20_000100_create_accounting_templates_table',3);
+INSERT INTO migrations VALUES(422,'2027_12_20_000200_create_year_end_closing_stages_table',3);
+INSERT INTO migrations VALUES(423,'2027_12_20_000200_add_audit_columns_to_accounting_templates',4);
+INSERT INTO migrations VALUES(424,'2027_12_20_000300_add_audit_columns_to_gl_templates_and_closing_stages',5);
+INSERT INTO migrations VALUES(425,'2027_12_20_000100_create_project_evm_profitability_tables',6);
+INSERT INTO migrations VALUES(426,'2027_12_21_000100_create_artisanal_gelato_tables',7);
+INSERT INTO migrations VALUES(427,'2027_12_21_000100_extend_inventory_counting_abc_blind_multilevel',7);
+INSERT INTO migrations VALUES(428,'2027_12_22_000100_create_esm_work_order_photos_table',7);
+INSERT INTO migrations VALUES(429,'2027_12_21_000100_add_helpdesk_sla_escalation_chains_and_ticket_time_billing',8);
+INSERT INTO migrations VALUES(430,'2027_12_21_000100_create_analytical_accounting_tables',8);
+INSERT INTO migrations VALUES(431,'2027_12_22_000100_add_soft_deletes_to_esm_ticket_escalation_logs',9);
+INSERT INTO migrations VALUES(432,'2027_12_22_000200_add_billing_type_to_esm_work_orders',10);
+INSERT INTO migrations VALUES(433,'2027_11_22_100000_extend_rebates_for_supplier_programs',11);
+INSERT INTO migrations VALUES(434,'2027_11_22_100100_add_blanket_thresholds_to_supplier_contracts',11);
+INSERT INTO migrations VALUES(435,'2027_12_20_000100_create_purchase_order_confirmation_dropship_tables',11);
+INSERT INTO migrations VALUES(436,'2027_12_22_000200_create_project_wbs_portfolio_tables',11);
+INSERT INTO migrations VALUES(437,'2027_12_23_000100_create_accounts_receivable_credit_tables',11);
+INSERT INTO migrations VALUES(438,'2027_12_23_000100_create_project_billing_contract_tables',11);
+INSERT INTO migrations VALUES(439,'2027_12_23_000100_create_resource_planning_tables',11);
+INSERT INTO migrations VALUES(440,'2027_12_24_000100_complete_audit_and_tenant_columns_on_recent_tables',12);
+INSERT INTO migrations VALUES(441,'2027_12_24_000100_create_italian_vat_compliance_tables',13);
+INSERT INTO migrations VALUES(442,'2027_12_25_000100_create_accounts_payable_tables',14);
+INSERT INTO migrations VALUES(443,'2027_12_25_000100_create_swiss_vat_compliance_tables',15);
+INSERT INTO migrations VALUES(444,'2027_12_26_000100_create_leave_management_mod074_tables',15);
+INSERT INTO migrations VALUES(445,'2027_12_27_000100_add_competence_dates_and_extend_accruals_mod022',15);
+INSERT INTO migrations VALUES(446,'2027_05_01_001670_enhance_eam_fixed_assets_ch_it_parallel_books',16);
+INSERT INTO migrations VALUES(447,'2027_12_28_000100_create_receivable_provision_postings_table',16);
+INSERT INTO migrations VALUES(448,'2027_12_29_000100_link_gelato_ingredients_to_inventory',16);
+INSERT INTO migrations VALUES(449,'2027_12_30_000200_create_mfg_machine_signal_tables',16);
+INSERT INTO migrations VALUES(450,'2027_12_31_000100_create_invoice_matching_mod048_tables',17);
+INSERT INTO migrations VALUES(451,'2027_12_31_000100_complete_audit_and_tenant_columns_on_vat_and_eam_tables',18);
+INSERT INTO migrations VALUES(452,'2027_12_31_000100_create_crm_sales_pipeline_tables',18);
+INSERT INTO migrations VALUES(453,'2027_12_31_000200_add_leading_tenant_indexes_to_accounts_payable_children',18);
+INSERT INTO migrations VALUES(454,'2028_01_02_000100_create_marketing_automation_mod155_tables',18);
+INSERT INTO migrations VALUES(455,'2027_12_31_000100_create_agent_commissions_mod041_tables',19);
+INSERT INTO migrations VALUES(456,'2027_12_20_000100_create_treasury_settlement_tables',20);
+INSERT INTO migrations VALUES(457,'2028_01_03_000100_add_split_payment_to_passive_invoices',20);
+INSERT INTO migrations VALUES(458,'2028_01_04_000100_enhance_chart_of_accounts_and_mappings_mod011',21);
+INSERT INTO migrations VALUES(459,'2028_01_04_000100_create_liquidity_planning_tables',22);
+INSERT INTO migrations VALUES(460,'2028_01_05_000100_create_debt_collection_mod014_tables',22);
+INSERT INTO migrations VALUES(461,'2028_01_04_000100_create_cpq_configurator_mod230_tables',23);
+INSERT INTO migrations VALUES(462,'2028_01_04_000100_create_expense_management_mod075_tables',24);
+INSERT INTO migrations VALUES(463,'2028_01_04_000100_create_electronic_signature_tables',25);
+INSERT INTO migrations VALUES(464,'2028_01_06_000100_create_budgeting_spend_control_mod019_tables',25);
+INSERT INTO migrations VALUES(465,'2027_11_25_150000_upgrade_plm_mod168_tables',26);
+INSERT INTO migrations VALUES(466,'2028_01_06_000100_create_intercompany_tables',26);
+INSERT INTO migrations VALUES(467,'2028_01_06_000100_create_tender_management_mod169_tables',26);
+INSERT INTO migrations VALUES(468,'2028_01_06_000100_create_gdo_trade_terms_mod231_tables',27);
+INSERT INTO migrations VALUES(469,'2028_01_07_000100_create_industrial_laundry_mod177_tables',28);
+INSERT INTO migrations VALUES(470,'2028_01_07_000100_create_statutory_financials_mod167_tables',29);
+INSERT INTO migrations VALUES(471,'2028_01_06_000200_create_passenger_transport_mod176_tables',30);
+INSERT INTO migrations VALUES(472,'2028_01_07_000200_create_corporate_conventions_mod358_tables',31);
+INSERT INTO migrations VALUES(473,'2026_11_25_213000_create_sales_bounded_context_sd139_batch1_tables',32);
+INSERT INTO migrations VALUES(474,'2026_11_25_220000_create_sales_bounded_context_sd139_batch2_tables',32);
+INSERT INTO migrations VALUES(475,'2028_01_07_000200_create_customer_returns_reverse_logistics_mod232_tables',32);
+INSERT INTO migrations VALUES(476,'2028_01_07_000300_create_van_selling_field_sales_mod233_tables',32);
+INSERT INTO migrations VALUES(477,'2028_01_08_000100_create_customer_satisfaction_mod245_tables',32);
+INSERT INTO migrations VALUES(478,'2028_01_08_000100_create_franchise_network_mod244_tables',32);
+INSERT INTO migrations VALUES(479,'2028_01_09_000100_create_currency_fx_mod003_tables',33);
+INSERT INTO migrations VALUES(480,'2028_01_09_000100_create_product_catalog_mod052_tables',34);
+INSERT INTO migrations VALUES(481,'2028_01_09_000100_create_scheduled_erp_report_tables',34);
+INSERT INTO migrations VALUES(482,'2028_01_09_000100_extend_enterprise_audit_ledger_for_forensic_trail',35);
+INSERT INTO migrations VALUES(483,'2028_01_09_000200_create_audit_ledger_forensic_tables',35);
+INSERT INTO migrations VALUES(484,'2028_01_10_000100_extend_workflow_for_approval_engine_mod006',36);

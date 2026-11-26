@@ -61,11 +61,59 @@ final readonly class WorkflowSlaReportService
             'avg_hours_to_decide' => $decided === 0 ? null : $weighted / $decided,
         ];
 
+        $byNode = $this->breakdown($from, $to, 'nodes.name', 'nodes.id', 'node');
+        $byApprover = $this->breakdown($from, $to, 'users.name', 'steps.assigned_user_id', 'approver', true);
+
         return [
             'period' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
             'totals' => $this->shape($total),
             'by_definition' => $by,
+            'by_node' => $byNode,
+            'by_approver' => $byApprover,
+            // The slowest decided nodes first: where approvals wait the longest.
+            'bottlenecks' => collect($byNode)->filter(static fn (array $row): bool => $row['avg_hours_to_decide'] !== null)
+                ->sortByDesc(static fn (array $row): float => (float) $row['avg_hours_to_decide'])->take(5)->values()->all(),
         ];
+    }
+
+    /**
+     * Average decision time, overdue and open items per node or per approver.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function breakdown(CarbonImmutable $from, CarbonImmutable $to, string $labelColumn, string $groupColumn, string $kind, bool $approver = false): array
+    {
+        $now = DB::getPDO()->quote(now()->toDateTimeString());
+
+        $query = DB::table('workflow_instance_steps as steps')
+            ->join('workflow_nodes as nodes', 'nodes.id', '=', 'steps.workflow_node_id')
+            ->where('steps.tenant_id', (string) $this->tenantContext->getTenantId())
+            ->whereNull('steps.deleted_at')
+            ->whereBetween('steps.created_at', [$from->startOfDay(), $to->endOfDay()]);
+
+        if ($approver) {
+            $query->join('users', 'users.id', '=', 'steps.assigned_user_id')->whereNotNull('steps.assigned_user_id');
+        }
+
+        return $query
+            ->groupBy($groupColumn, $labelColumn)
+            ->orderBy($labelColumn)
+            ->selectRaw("{$groupColumn} AS ref, {$labelColumn} AS label")
+            ->selectRaw('COUNT(*) AS steps')
+            ->selectRaw("COUNT(CASE WHEN steps.status = 'pending' AND steps.due_at IS NOT NULL AND steps.due_at < {$now} THEN 1 END) AS overdue")
+            ->selectRaw("COUNT(CASE WHEN steps.status = 'pending' THEN 1 END) AS open")
+            ->selectRaw("AVG(CASE WHEN steps.status IN ('approved', 'rejected') THEN ".SqlDialect::secondsBetween('steps.created_at', 'steps.completed_at').' / 3600.0 END) AS avg_hours')
+            ->get()
+            ->map(static fn (object $row): array => [
+                $kind.'_id' => (string) $row->ref,
+                $kind.'_name' => (string) $row->label,
+                'steps' => (int) $row->steps,
+                'overdue' => (int) $row->overdue,
+                'open' => (int) $row->open,
+                'avg_hours_to_decide' => $row->avg_hours === null ? null : bcround(number_format((float) $row->avg_hours, 4, '.', ''), 2),
+            ])
+            ->values()
+            ->all();
     }
 
     /**

@@ -10,6 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\ExpenseManagement\Domain\Enums\ReportStatus;
+use Modules\ExpenseManagement\Services\ExpenseApprovalBridge;
+use Modules\Workflow\Contracts\ApprovableDocument;
+use Modules\Workflow\Enums\ApprovalOutcome;
+use Modules\Workflow\Support\FunctionalAmount;
 
 /**
  * An expense report of an employee for a period, with its lines, per-diem allowances, payouts and audit trail.
@@ -38,7 +42,7 @@ use Modules\ExpenseManagement\Domain\Enums\ReportStatus;
  * @property Carbon|null $reimbursed_at
  * @property Carbon|null $cancelled_at
  */
-final class ExpenseReport extends BaseEnterpriseModel
+final class ExpenseReport extends BaseEnterpriseModel implements ApprovableDocument
 {
     protected $table = 'exm_reports';
 
@@ -59,6 +63,53 @@ final class ExpenseReport extends BaseEnterpriseModel
             'reimbursed_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return HasMany<ExpenseLine, $this>
+     */
+    /**
+     * {@inheritDoc}
+     */
+    public function approvalSubjectType(): string
+    {
+        return 'expense_report';
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * The amount is what the company would reimburse; the matrix can also look at the cost centre and the jurisdiction.
+     */
+    public function approvalAttributes(): array
+    {
+        $amount = (float) ($this->reimbursable_amount ?? $this->total_amount ?? 0);
+
+        return array_filter([
+            'amount' => $amount,
+            'amount_functional' => FunctionalAmount::of($amount, $this->currency, null),
+            'currency' => $this->currency,
+            'cost_center_id' => $this->cost_center_id,
+            'company_id' => $this->company_id,
+            'jurisdiction' => $this->jurisdiction,
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function requesterId(): string
+    {
+        return $this->user_id;
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function onApprovalCompleted(ApprovalOutcome $outcome): void
+    {
+        app(ExpenseApprovalBridge::class)->apply($this, $outcome);
     }
 
     /**

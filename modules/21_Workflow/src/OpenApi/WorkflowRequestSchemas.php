@@ -27,7 +27,8 @@ use OpenApi\Attributes as OA;
     required: ['decision'],
     type: 'object',
     properties: [
-        new OA\Property(property: 'decision', type: 'string', enum: ['approved', 'rejected', 'abstained']),
+        new OA\Property(property: 'decision', type: 'string', enum: ['approve', 'approved', 'reject', 'rejected', 'abstained', 'request_changes', 'reassign']),
+        new OA\Property(property: 'reassign_to_user_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'comment', type: 'string', maxLength: 2000, nullable: true),
         new OA\Property(property: 'idempotency_key', type: 'string', maxLength: 64, nullable: true),
         new OA\Property(property: 'signature_payload', type: 'array', nullable: true, items: new OA\Items),
@@ -41,6 +42,8 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'delegate_user_id', type: 'string', format: 'uuid', description: 'Must differ from `delegator_user_id`.'),
         new OA\Property(property: 'scope', type: 'string', enum: ['all', 'procurement', 'expenses', 'invoicing', 'hr', 'custom']),
+        new OA\Property(property: 'document_types', type: 'array', nullable: true, items: new OA\Items(type: 'string'), description: 'Subject type codes the delegation is limited to.'),
+        new OA\Property(property: 'amount_cap', type: 'number', nullable: true, description: 'Largest amount (functional currency) the delegate may approve.'),
         new OA\Property(property: 'starts_at', type: 'string', format: 'date'),
         new OA\Property(property: 'ends_at', type: 'string', format: 'date', description: 'Must be after `starts_at`.'),
         new OA\Property(property: 'reason', type: 'string', maxLength: 1000, nullable: true),
@@ -54,6 +57,7 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'token', type: 'string', minLength: 32),
         new OA\Property(property: 'action', type: 'string', enum: ['approve', 'reject']),
+        new OA\Property(property: 'confirm', type: 'boolean'),
         new OA\Property(property: 'comment', type: 'string', maxLength: 1000, nullable: true),
     ]
 )]
@@ -87,7 +91,7 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'node_key', type: 'string', maxLength: 100, pattern: '^[a-z0-9_]+$'),
         new OA\Property(property: 'name', type: 'string', maxLength: 255),
-        new OA\Property(property: 'node_type', type: 'string', enum: ['start', 'approval', 'conditional', 'notification', 'end']),
+        new OA\Property(property: 'node_type', type: 'string', enum: ['start', 'approval', 'condition', 'conditional', 'parallel_split', 'parallel_join', 'notification', 'end']),
         new OA\Property(property: 'approval_type', type: 'string', enum: ['single', 'and_parallel', 'or_parallel', 'majority', 'supermajority', 'unanimous'], nullable: true),
         new OA\Property(property: 'assignee_type', type: 'string', enum: ['direct_user', 'role', 'reporting_manager', 'matrix_lookup', 'matrix_sequential'], nullable: true),
         new OA\Property(property: 'assignee_id', type: 'string', nullable: true),

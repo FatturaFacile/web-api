@@ -87,7 +87,9 @@ final class WorkflowDelegationController extends Controller
             startsAt: Carbon::parse($request->string('starts_at')->value()),
             endsAt: Carbon::parse($request->string('ends_at')->value()),
             scope: $request->string('scope', 'all')->value(),
-            reason: $request->input('reason')
+            reason: $request->input('reason'),
+            documentTypes: $request->input('document_types'),
+            amountCap: $request->input('amount_cap') !== null ? (string) $request->input('amount_cap') : null
         );
 
         $delegation = $action->execute($dto);

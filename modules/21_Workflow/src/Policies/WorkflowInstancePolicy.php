@@ -9,6 +9,8 @@ use App\Services\Tenancy\TenantContext;
 use Modules\Workflow\Models\WorkflowDelegation;
 use Modules\Workflow\Models\WorkflowInstance;
 use Modules\Workflow\Models\WorkflowInstanceStep;
+use Modules\Workflow\Services\ApprovalGuardService;
+use Modules\Workflow\Services\WorkflowDelegationResolver;
 
 final class WorkflowInstancePolicy
 {
@@ -32,6 +34,15 @@ final class WorkflowInstancePolicy
      * The audit trail shows every decision and comment: the initiator, the approvers of the instance and the owners and
      * administrators of the tenant read it.
      */
+    /**
+     * The requester takes an approval back; owners and administrators cancel instead.
+     */
+    public function withdraw(User $user, WorkflowInstance $instance): bool
+    {
+        return (string) $user->tenant_id === (string) $instance->tenant_id
+            && app(ApprovalGuardService::class)->requesterOf($instance) === (string) $user->id;
+    }
+
     public function viewAuditTrail(User $user, WorkflowInstance $instance): bool
     {
         if ((string) $user->tenant_id !== (string) $instance->tenant_id) {
@@ -82,14 +93,19 @@ final class WorkflowInstancePolicy
         if ($step->assigned_user_id !== null) {
             $approvableType = (string) $step->instance?->approvable_type;
 
-            return WorkflowDelegation::query()
+            $amount = $step->instance !== null ? app(ApprovalGuardService::class)->amountOf($step->instance) : null;
+
+            $direct = WorkflowDelegation::query()
                 ->where('delegate_user_id', $user->id)
                 ->where('delegator_user_id', $step->assigned_user_id)
                 ->where('is_active', true)
                 ->where('starts_at', '<=', now())
                 ->where('ends_at', '>=', now())
                 ->get()
-                ->contains(static fn ($delegation): bool => $delegation->coversApprovable($approvableType));
+                ->contains(static fn ($delegation): bool => $delegation->coversApprovable($approvableType, $amount));
+
+            // A -> B -> C: the last delegate of a chain (up to three hops) decides as well.
+            return $direct || app(WorkflowDelegationResolver::class)->resolve((string) $step->assigned_user_id, (string) $step->tenant_id, $approvableType, $amount) === (string) $user->id;
         }
 
         return false;

@@ -40,6 +40,15 @@ final class WorkflowAssigneeResolver
     }
 
     /**
+     * The role of a user in a tenant, read from the membership row (never from a global roles table, which may be absent or
+     * shaped differently on a given installation); an empty string when the user is no member.
+     */
+    public function roleOf(string $userId, string $tenantId): string
+    {
+        return (string) DB::table('tenant_user')->where('user_id', $userId)->where('tenant_id', $tenantId)->value('role');
+    }
+
+    /**
      * Whether the user is a member of the tenant.
      */
     public function isMember(string $userId, string $tenantId): bool

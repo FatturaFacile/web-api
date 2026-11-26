@@ -121,6 +121,9 @@ final class ReportService
             $report->update(['status' => ReportStatus::Submitted, 'submitted_at' => now(), 'rejection_reason' => null]);
             $this->audit($report, 'submitted', $userId, $from, ReportStatus::Submitted);
 
+            // A tenant with an EXPENSE_REPORT_APPROVAL workflow gets the unified approval engine (matrix, delegations, SLA).
+            app(ExpenseApprovalBridge::class)->startIfConfigured($report, $userId);
+
             return $report;
         });
     }

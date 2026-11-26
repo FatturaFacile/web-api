@@ -142,7 +142,7 @@ test('a requisition with a matrix waits for the workflow and the configured appr
     $instance = WorkflowInstance::query()->where('approvable_id', $requisitionId)->sole();
     $step = WorkflowInstanceStep::query()->where('workflow_instance_id', $instance->id)->where('status', 'pending')->sole();
     procActAs($this->owner, $this->tenant);
-    $this->postJson("/api/v1/workflows/steps/{$step->id}/decide", ['decision' => 'rejected'])->assertOk();
+    $this->postJson("/api/v1/workflows/steps/{$step->id}/decide", ['decision' => 'rejected', 'comment' => 'Quote not competitive.'])->assertOk();
 
     expect(PurchaseRequisition::find($requisitionId)->status)->toBe('rejected');
 });

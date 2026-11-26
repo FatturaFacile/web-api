@@ -195,6 +195,8 @@ final class WorkflowApprovalFrontendTranslations
             'workflows.designer.nodeType.start' => ['Avvio', 'Start', 'Start', 'Départ'],
             'workflows.designer.nodeType.approval' => ['Approvazione', 'Approval', 'Genehmigung', 'Approbation'],
             'workflows.designer.nodeType.condition' => ['Condizione', 'Condition', 'Bedingung', 'Condition'],
+            'workflows.designer.nodeType.parallel_split' => ['Divisione parallela', 'Parallel split', 'Parallele Verzweigung', 'Séparation parallèle'],
+            'workflows.designer.nodeType.parallel_join' => ['Unione parallela', 'Parallel join', 'Parallele Zusammenführung', 'Jonction parallèle'],
             'workflows.designer.nodeType.notification' => ['Notifica', 'Notification', 'Benachrichtigung', 'Notification'],
             'workflows.designer.nodeType.end' => ['Fine', 'End', 'Ende', 'Fin'],
             'workflows.designer.connect' => ['Collega due nodi', 'Connect two nodes', 'Zwei Knoten verbinden', 'Relier deux nœuds'],

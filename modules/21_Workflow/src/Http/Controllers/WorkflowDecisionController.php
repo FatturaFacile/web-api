@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use InvalidArgumentException;
 use Modules\Workflow\Actions\RecordDecisionAction;
 use Modules\Workflow\DTOs\RecordDecisionDTO;
+use Modules\Workflow\Exceptions\StepAlreadyDecidedException;
 use Modules\Workflow\Http\Requests\RecordDecisionRequest;
 use Modules\Workflow\Http\Resources\WorkflowInstanceStepResource;
 use Modules\Workflow\Models\WorkflowInstanceStep;
@@ -83,11 +84,19 @@ final class WorkflowDecisionController extends Controller
             idempotencyKey: $request->input('idempotency_key'),
             ipAddress: $request->ip(),
             userAgent: $request->userAgent(),
-            signaturePayload: $request->input('signature_payload')
+            signaturePayload: $request->input('signature_payload'),
+            reassignToUserId: $request->input('reassign_to_user_id')
         );
 
         try {
             $step = $action->execute($dto);
+        } catch (StepAlreadyDecidedException $exception) {
+            // Two approvers acting at once: the first one won, the second one is told which decision stands.
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'data' => $exception->existingDecision(),
+            ], 409);
         } catch (InvalidArgumentException $exception) {
             // The step was already decided, skipped or timed out, or its instance ended: nothing left to decide.
             throw new ConflictHttpException($exception->getMessage(), $exception);

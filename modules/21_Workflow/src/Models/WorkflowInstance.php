@@ -54,6 +54,12 @@ final class WorkflowInstance extends BaseEnterpriseModel
         'assigned_to_user_id',
         'started_at',
         'completed_at',
+        'blocked_reason',
+        'blocked_at',
+        'withdrawn_at',
+        'closing_reason',
+        'approved_snapshot',
+        'restarted_from_id',
         'created_by',
         'updated_by',
     ];
@@ -99,6 +105,9 @@ final class WorkflowInstance extends BaseEnterpriseModel
             'locked_fiscal_document' => 'boolean',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
+            'blocked_at' => 'datetime',
+            'withdrawn_at' => 'datetime',
+            'approved_snapshot' => 'array',
         ];
     }
 
@@ -136,6 +145,9 @@ final class WorkflowInstance extends BaseEnterpriseModel
         return $this->belongsTo(WorkflowNode::class, 'current_node_id');
     }
 
+    /**
+     * @return HasMany<WorkflowInstanceStep, $this>
+     */
     public function steps(): HasMany
     {
         return $this->hasMany(WorkflowInstanceStep::class, 'workflow_instance_id');

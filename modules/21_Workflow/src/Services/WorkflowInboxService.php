@@ -25,7 +25,7 @@ final readonly class WorkflowInboxService
     /**
      * Inject the collaborators.
      */
-    public function __construct(private TenantContext $tenantContext) {}
+    public function __construct(private TenantContext $tenantContext, private WorkflowAssigneeResolver $assignees) {}
 
     /**
      * Pending steps the user can decide, soonest deadline first.
@@ -127,7 +127,7 @@ final readonly class WorkflowInboxService
 
     private function roleOf(User $user): string
     {
-        return (string) $user->getRoleInTenant((string) $this->tenantContext->getTenantId());
+        return $this->assignees->roleOf((string) $user->id, (string) $this->tenantContext->getTenantId());
     }
 
     /**

@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?int $timeout_hours
  * @property ?string $escalation_rule_id
  * @property bool $locks_approvable_on_completion
+ * @property string $name
+ * @property array<string, mixed> $ui_metadata
  */
 final class WorkflowNode extends BaseEnterpriseModel
 {

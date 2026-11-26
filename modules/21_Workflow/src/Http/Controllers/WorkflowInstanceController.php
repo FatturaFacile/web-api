@@ -19,8 +19,10 @@ use Modules\Workflow\Http\Requests\StartWorkflowRequest;
 use Modules\Workflow\Http\Resources\WorkflowAuditEntryResource;
 use Modules\Workflow\Http\Resources\WorkflowInstanceResource;
 use Modules\Workflow\Models\WorkflowInstance;
+use Modules\Workflow\Services\ApprovableRegistry;
 use Modules\Workflow\Services\WorkflowAuditLedgerService;
 use Modules\Workflow\Services\WorkflowEngineService;
+use Modules\Workflow\Services\WorkflowLifecycleService;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -55,7 +57,12 @@ final class WorkflowInstanceController extends Controller
         $instances = WorkflowInstance::query()
             ->with(['definition', 'creator'])
             ->when($request->query('status'), fn ($q, $status) => $q->where('status', $status))
-            ->when($request->query('approvable_type'), fn ($q, $type) => $q->where('approvable_type', $type))
+            ->when($request->query('approvable_type'), function ($q, $type): void {
+                // The alias of a subject type (`purchase_order`) is accepted as well as the class name.
+                $registry = app(ApprovableRegistry::class);
+                $code = $registry->resolve((string) $type);
+                $q->whereIn('approvable_type', array_values(array_unique(array_filter([(string) $type, $code !== null && $registry->moduleOf($code) !== null ? $registry->classFor($code) : null]))));
+            })
             ->when($request->query('approvable_id'), fn ($q, $id) => $q->where('approvable_id', $id))
             ->orderBy('started_at', 'desc')
             ->gridPaginate((int) $request->query('per_page', 25));
@@ -176,7 +183,13 @@ final class WorkflowInstanceController extends Controller
     {
         $instance = WorkflowInstance::findOrFail($id);
         $this->authorize('cancel', $instance);
-        $engine->cancel($instance, $request->input('reason'));
+
+        if ((string) $instance->created_by === (string) $request->user()?->id) {
+            $engine->cancel($instance, $request->input('reason'));
+        } else {
+            // An administrator cancelling somebody else's request must say why: the reason is part of the audit trail.
+            app(WorkflowLifecycleService::class)->cancelWithReason($instance, (string) $request->input('reason'), (string) $request->user()?->id);
+        }
 
         return response()->json(['message' => 'Workflow instance successfully cancelled.']);
     }

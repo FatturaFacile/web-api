@@ -18,11 +18,14 @@ use Modules\Workflow\Models\WorkflowTransition;
  *   transition a rejection ends the instance as rejected;
  * - end nodes have no outgoing transitions;
  * - every node is reachable from the start node and an end node is reachable;
- * - transitions join nodes of the same definition.
+ * - transitions join nodes of the same definition;
+ * - a parallel split has at least two branches, every branch is an approval node, and all branches meet in the same
+ *   parallel join, which in turn has at least two incoming branches (no orphan join);
+ * - there is no cycle (a "rejected" or "timeout" path may lead back: that is a loop of the process, not a cycle of the graph).
  */
 final class WorkflowGraphValidator
 {
-    public const array NodeTypes = ['start', 'approval', 'conditional', 'notification', 'end'];
+    public const array NodeTypes = ['start', 'approval', 'condition', 'conditional', 'parallel_split', 'parallel_join', 'notification', 'end'];
 
     public const array ApprovalTypes = ['single', 'and_parallel', 'or_parallel', 'majority', 'supermajority', 'unanimous'];
 
@@ -39,7 +42,7 @@ final class WorkflowGraphValidator
      */
     public function problems(WorkflowDefinition $definition): array
     {
-        /** @var Collection<int, WorkflowNode> $nodes */
+        /** @var Collection<string, WorkflowNode> $nodes */
         $nodes = WorkflowNode::withoutGlobalScopes()->where('workflow_definition_id', $definition->id)->get()->keyBy('id');
         /** @var Collection<int, WorkflowTransition> $transitions */
         $transitions = WorkflowTransition::withoutGlobalScopes()->where('workflow_definition_id', $definition->id)->get();
@@ -91,6 +94,47 @@ final class WorkflowGraphValidator
             }
         }
 
+        $incoming = $transitions->groupBy('to_node_id');
+
+        foreach ($nodes as $node) {
+            $branches = $outgoing->get($node->id) ?? collect();
+
+            if ($node->node_type === 'parallel_split') {
+                if ($branches->count() < 2) {
+                    $problems[] = "The parallel split [{$node->node_key}] needs at least two branches.";
+                }
+
+                $joins = [];
+
+                foreach ($branches as $branch) {
+                    $target = $nodes->get($branch->to_node_id);
+
+                    if ($target === null || $target->node_type !== 'approval') {
+                        $problems[] = "Every branch of the parallel split [{$node->node_key}] must lead to an approval node.";
+
+                        continue;
+                    }
+
+                    $exit = ($outgoing->get($target->id) ?? collect())->first(fn (WorkflowTransition $transition): bool => in_array($transition->action_trigger, ['approved', '*'], true));
+                    $joins[(string) ($exit->to_node_id ?? '')] = true;
+                }
+
+                $joinIds = array_keys($joins);
+
+                if ($joinIds !== [] && (count($joinIds) !== 1 || $nodes->get($joinIds[0])?->node_type !== 'parallel_join')) {
+                    $problems[] = "The branches of the parallel split [{$node->node_key}] must meet in one parallel join.";
+                }
+            }
+
+            if ($node->node_type === 'parallel_join' && ($incoming->get($node->id) ?? collect())->count() < 2) {
+                $problems[] = "The parallel join [{$node->node_key}] needs at least two incoming branches.";
+            }
+        }
+
+        if ($this->hasCycle(array_map('strval', $nodes->keys()->all()), $transitions)) {
+            $problems[] = 'The graph contains a cycle.';
+        }
+
         if ($starts->count() === 1) {
             $reached = $this->reachableFrom((string) $starts->first()->id, $outgoing);
 
@@ -106,6 +150,46 @@ final class WorkflowGraphValidator
         }
 
         return array_values(array_unique($problems));
+    }
+
+    /**
+     * Depth-first search for a cycle over the forward transitions (the "rejected" and "timeout" paths may loop back).
+     *
+     * @param  list<string>  $nodeIds
+     * @param  Collection<int, WorkflowTransition>  $transitions
+     */
+    private function hasCycle(array $nodeIds, Collection $transitions): bool
+    {
+        $edges = [];
+
+        foreach ($transitions as $transition) {
+            if (! in_array($transition->action_trigger, ['rejected', 'timeout'], true)) {
+                $edges[(string) $transition->from_node_id][] = (string) $transition->to_node_id;
+            }
+        }
+
+        $state = [];
+        $visit = function (string $node) use (&$visit, &$state, $edges): bool {
+            $state[$node] = 1;
+
+            foreach ($edges[$node] ?? [] as $next) {
+                if (($state[$next] ?? 0) === 1 || (($state[$next] ?? 0) === 0 && $visit($next))) {
+                    return true;
+                }
+            }
+
+            $state[$node] = 2;
+
+            return false;
+        };
+
+        foreach ($nodeIds as $id) {
+            if (($state[(string) $id] ?? 0) === 0 && $visit((string) $id)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

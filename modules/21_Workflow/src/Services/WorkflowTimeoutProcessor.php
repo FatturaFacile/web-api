@@ -27,12 +27,25 @@ final readonly class WorkflowTimeoutProcessor
     ) {}
 
     /**
+     * Everything the clock asks for: steps past their deadline, then reminders and escalations.
+     *
      * @return array{timeouts: int, auto_decisions: int, escalations: int, reminders: int}
      */
     public function run(): array
     {
         $counts = ['timeouts' => 0, 'auto_decisions' => 0, 'escalations' => 0, 'reminders' => 0];
 
+        return $this->reminders($this->deadlines($counts));
+    }
+
+    /**
+     * Steps past their deadline: automatic decisions of the escalation rule, or the timeout of the node.
+     *
+     * @param  array{timeouts: int, auto_decisions: int, escalations: int, reminders: int}  $counts
+     * @return array{timeouts: int, auto_decisions: int, escalations: int, reminders: int}
+     */
+    public function deadlines(array $counts = ['timeouts' => 0, 'auto_decisions' => 0, 'escalations' => 0, 'reminders' => 0]): array
+    {
         $due = WorkflowInstanceStep::where('status', 'pending')
             ->whereNotNull('due_at')
             ->where('due_at', '<=', now())
@@ -63,6 +76,18 @@ final readonly class WorkflowTimeoutProcessor
             });
         }
 
+        return $counts;
+    }
+
+    /**
+     * Reminders after X working hours and escalations after Y working hours, counted on the business calendar of the node
+     * (weekends and the holidays of the calendar do not count).
+     *
+     * @param  array{timeouts: int, auto_decisions: int, escalations: int, reminders: int}  $counts
+     * @return array{timeouts: int, auto_decisions: int, escalations: int, reminders: int}
+     */
+    public function reminders(array $counts = ['timeouts' => 0, 'auto_decisions' => 0, 'escalations' => 0, 'reminders' => 0]): array
+    {
         $scheduled = WorkflowInstanceStep::where('status', 'pending')
             ->where(static fn ($query) => $query->whereNull('due_at')->orWhere('due_at', '>', now()))
             ->whereHas('node', static fn ($query) => $query->whereNotNull('escalation_rule_id'))
