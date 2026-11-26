@@ -43,6 +43,7 @@ class DatabaseSeeder extends Seeder
             FranchiseNetworkReferenceSeeder::class,
             FranchiseNetworkDemoSeeder::class,
             CorporateConventionsDemoSeeder::class,
+            ProductCatalogDemoSeeder::class,
             TreasuryBankingReferenceSeeder::class,
             CpqLocalizationSeeder::class,
             CpqConfiguratorLocalizationSeeder::class,

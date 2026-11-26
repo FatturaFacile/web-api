@@ -21831,67 +21831,6 @@ CREATE UNIQUE INDEX "production_orders_tenant_id_order_number_unique" on "produc
   "tenant_id",
   "order_number"
 );
-CREATE TABLE "products"(
-  "id" varchar not null,
-  "tenant_id" varchar,
-  "sku" varchar not null,
-  "barcode" varchar,
-  "name" varchar not null,
-  "description" text,
-  "unit_measure" varchar not null default('PZ'),
-  "cost_price" numeric not null default('0'),
-  "sale_price" numeric not null default('0'),
-  "tax_rate" numeric not null default('22'),
-  "hs_code" varchar,
-  "track_inventory" tinyint(1) not null default('1'),
-  "is_active" tinyint(1) not null default('1'),
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "category_id" varchar,
-  "brand_id" varchar,
-  "unit_of_measure_id" varchar,
-  "parent_id" varchar,
-  "is_variant" tinyint(1) not null default('0'),
-  "attributes" text,
-  "min_stock" numeric,
-  "customs_taric_code_id" varchar,
-  "taric_code" varchar,
-  "country_of_origin" varchar,
-  "origin_type" varchar,
-  "made_in_label" varchar,
-  "preferential_agreement_id" varchar,
-  "eur1_required" tinyint(1) not null default('0'),
-  "origin_rule_notes" text,
-  "below_minimum_since" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "swiss_hs_code" varchar,
-  "supplementary_unit" varchar,
-  "customs_duty_rate" numeric,
-  "net_weight_kg" numeric,
-  "gross_weight_kg" numeric,
-  "packages_count" integer,
-  "preferential_origin_eligible" tinyint(1) not null default '0',
-  foreign key("preferential_agreement_id") references "free_trade_agreements"("id") on delete set null on update no action,
-  foreign key("customs_taric_code_id") references "customs_taric_codes"("id") on delete set null on update no action,
-  foreign key("unit_of_measure_id") references "units_of_measure"("id") on delete set null on update no action,
-  foreign key("brand_id") references "product_brands"("id") on delete set null on update no action,
-  foreign key("category_id") references "product_categories"("id") on delete set null on update no action,
-  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
-  foreign key("parent_id") references "products"("id") on delete cascade on update no action,
-  primary key("id")
-);
-
-CREATE INDEX "products_barcode_index" on "products"("barcode");
-CREATE INDEX "products_is_variant_index" on "products"("is_variant");
-CREATE INDEX "products_sku_index" on "products"("sku");
-CREATE INDEX "products_taric_code_index" on "products"("taric_code");
-CREATE UNIQUE INDEX "products_tenant_id_sku_unique" on "products"(
-  "tenant_id",
-  "sku"
-);
 CREATE TABLE "profit_centers"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -37771,30 +37710,6 @@ CREATE INDEX "idempotency_keys_tenant_id_index" on "idempotency_keys"(
 );
 CREATE INDEX "idempotency_keys_expires_at_index" on "idempotency_keys"(
   "expires_at"
-);
-CREATE TABLE "notification_preferences"(
-  "id" varchar not null,
-  "user_id" varchar not null,
-  "channel" varchar not null,
-  "category" varchar not null,
-  "enabled" tinyint(1) not null default '1',
-  "created_at" datetime,
-  "updated_at" datetime,
-  "deleted_at" datetime,
-  "created_by" varchar,
-  "updated_by" varchar,
-  "deleted_by" varchar,
-  "frequency" varchar not null default 'immediate',
-  primary key("id")
-);
-
-CREATE UNIQUE INDEX "notification_preferences_user_id_channel_category_unique" on "notification_preferences"(
-  "user_id",
-  "channel",
-  "category"
-);
-CREATE INDEX "notification_preferences_user_id_index" on "notification_preferences"(
-  "user_id"
 );
 CREATE TABLE "assistant_threads"(
   "id" varchar not null,
@@ -56281,6 +56196,424 @@ CREATE INDEX "currency_realized_fx_differences_tenant_id_payment_date_index" on 
 CREATE INDEX "currency_realized_fx_differences_tenant_id_index" on "currency_realized_fx_differences"(
   "tenant_id"
 );
+CREATE TABLE "products"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "sku" varchar not null,
+  "barcode" varchar,
+  "name" varchar not null,
+  "description" text,
+  "unit_measure" varchar not null default('PZ'),
+  "cost_price" numeric not null default('0'),
+  "sale_price" numeric not null default('0'),
+  "tax_rate" numeric not null default('22'),
+  "hs_code" varchar,
+  "track_inventory" tinyint(1) not null default('1'),
+  "is_active" tinyint(1) not null default('1'),
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "category_id" varchar,
+  "brand_id" varchar,
+  "unit_of_measure_id" varchar,
+  "parent_id" varchar,
+  "is_variant" tinyint(1) not null default('0'),
+  "attributes" text,
+  "min_stock" numeric,
+  "customs_taric_code_id" varchar,
+  "taric_code" varchar,
+  "country_of_origin" varchar,
+  "origin_type" varchar,
+  "made_in_label" varchar,
+  "preferential_agreement_id" varchar,
+  "eur1_required" tinyint(1) not null default('0'),
+  "origin_rule_notes" text,
+  "below_minimum_since" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "swiss_hs_code" varchar,
+  "supplementary_unit" varchar,
+  "customs_duty_rate" numeric,
+  "net_weight_kg" numeric,
+  "gross_weight_kg" numeric,
+  "packages_count" integer,
+  "preferential_origin_eligible" tinyint(1) not null default('0'),
+  "product_type" varchar not null default 'storable',
+  "kit_type" varchar,
+  "purchase_uom_id" varchar,
+  "sales_uom_id" varchar,
+  "uom_rounding" varchar not null default 'half_up',
+  "uom_precision" integer not null default '4',
+  "price_delta" numeric,
+  "price_delta_type" varchar,
+  "cost_delta" numeric,
+  "cost_delta_type" varchar,
+  "price_overridden" tinyint(1) not null default '0',
+  "cost_overridden" tinyint(1) not null default '0',
+  "vat_code_it_id" varchar,
+  "vat_code_ch_id" varchar,
+  foreign key("parent_id") references "products"("id") on delete cascade on update no action,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
+  foreign key("category_id") references "product_categories"("id") on delete set null on update no action,
+  foreign key("brand_id") references "product_brands"("id") on delete set null on update no action,
+  foreign key("unit_of_measure_id") references "units_of_measure"("id") on delete set null on update no action,
+  foreign key("customs_taric_code_id") references "customs_taric_codes"("id") on delete set null on update no action,
+  foreign key("preferential_agreement_id") references "free_trade_agreements"("id") on delete set null on update no action,
+  foreign key("purchase_uom_id") references "units_of_measure"("id") on delete set null,
+  foreign key("sales_uom_id") references "units_of_measure"("id") on delete set null,
+  foreign key("vat_code_it_id") references "vat_codes"("id") on delete set null,
+  foreign key("vat_code_ch_id") references "vat_codes"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "products_barcode_index" on "products"("barcode");
+CREATE INDEX "products_is_variant_index" on "products"("is_variant");
+CREATE INDEX "products_sku_index" on "products"("sku");
+CREATE INDEX "products_taric_code_index" on "products"("taric_code");
+CREATE UNIQUE INDEX "products_tenant_id_sku_unique" on "products"(
+  "tenant_id",
+  "sku"
+);
+CREATE INDEX "products_product_type_index" on "products"("product_type");
+CREATE INDEX "products_kit_type_index" on "products"("kit_type");
+CREATE TABLE "catalog_attributes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" text not null,
+  "sku_token" varchar not null,
+  "sort_order" integer not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "catalog_attributes_tenant_id_code_unique" on "catalog_attributes"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "catalog_attributes_tenant_id_index" on "catalog_attributes"(
+  "tenant_id"
+);
+CREATE TABLE "catalog_attribute_values"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "attribute_id" varchar not null,
+  "code" varchar not null,
+  "label" text not null,
+  "sku_token" varchar not null,
+  "price_delta" numeric,
+  "price_delta_type" varchar,
+  "cost_delta" numeric,
+  "cost_delta_type" varchar,
+  "sort_order" integer not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("attribute_id") references "catalog_attributes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "catalog_attribute_values_attribute_id_code_unique" on "catalog_attribute_values"(
+  "attribute_id",
+  "code"
+);
+CREATE INDEX "catalog_attribute_values_tenant_id_index" on "catalog_attribute_values"(
+  "tenant_id"
+);
+CREATE TABLE "catalog_product_axes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "product_id" varchar not null,
+  "attribute_id" varchar not null,
+  "sort_order" integer not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("product_id") references "products"("id") on delete cascade,
+  foreign key("attribute_id") references "catalog_attributes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "catalog_product_axes_product_id_attribute_id_unique" on "catalog_product_axes"(
+  "product_id",
+  "attribute_id"
+);
+CREATE INDEX "catalog_product_axes_tenant_id_index" on "catalog_product_axes"(
+  "tenant_id"
+);
+CREATE TABLE "catalog_variant_values"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "variant_id" varchar not null,
+  "attribute_id" varchar not null,
+  "attribute_value_id" varchar not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("variant_id") references "products"("id") on delete cascade,
+  foreign key("attribute_id") references "catalog_attributes"("id") on delete cascade,
+  foreign key("attribute_value_id") references "catalog_attribute_values"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "catalog_variant_values_variant_id_attribute_id_unique" on "catalog_variant_values"(
+  "variant_id",
+  "attribute_id"
+);
+CREATE INDEX "catalog_variant_values_tenant_id_index" on "catalog_variant_values"(
+  "tenant_id"
+);
+CREATE TABLE "catalog_packagings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "product_id" varchar not null,
+  "code" varchar not null,
+  "role" varchar not null default 'logistic',
+  "uom_id" varchar not null,
+  "parent_packaging_id" varchar,
+  "units_per_parent" numeric not null,
+  "quantity_base" numeric not null,
+  "level" integer not null default '1',
+  "gtin" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("product_id") references "products"("id") on delete cascade,
+  foreign key("uom_id") references "units_of_measure"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "catalog_packagings_product_id_code_unique" on "catalog_packagings"(
+  "product_id",
+  "code"
+);
+CREATE INDEX "catalog_packagings_tenant_id_index" on "catalog_packagings"(
+  "tenant_id"
+);
+CREATE TABLE "catalog_kit_components"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "kit_id" varchar not null,
+  "component_id" varchar not null,
+  "quantity" numeric not null,
+  "is_optional" tinyint(1) not null default '0',
+  "sort_order" integer not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("kit_id") references "products"("id") on delete cascade,
+  foreign key("component_id") references "products"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "catalog_kit_components_kit_id_component_id_unique" on "catalog_kit_components"(
+  "kit_id",
+  "component_id"
+);
+CREATE INDEX "catalog_kit_components_tenant_id_index" on "catalog_kit_components"(
+  "tenant_id"
+);
+CREATE TABLE "notification_preferences"(
+  "id" varchar not null,
+  "user_id" varchar not null,
+  "channel" varchar not null,
+  "category" varchar not null,
+  "enabled" tinyint(1) not null default('1'),
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "frequency" varchar not null default('immediate'),
+  "tenant_id" varchar,
+  "custom_cron" varchar,
+  "send_time" varchar not null default '07:00',
+  "day_of_week" integer,
+  "day_of_month" integer,
+  "language" varchar not null default 'it-CH',
+  "include_dashboard" tinyint(1) not null default '1',
+  "include_billing" tinyint(1) not null default '1',
+  "include_deadlines" tinyint(1) not null default '1',
+  "include_crm" tinyint(1) not null default '1',
+  "include_calendar" tinyint(1) not null default '1',
+  "include_inventory" tinyint(1) not null default '1',
+  "include_support" tinyint(1) not null default '1',
+  "include_news" tinyint(1) not null default '1',
+  "include_insights" tinyint(1) not null default '1',
+  "last_sent_at" datetime,
+  "last_period_key" varchar,
+  "unsubscribed_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "notification_preferences_user_id_channel_category_unique" on "notification_preferences"(
+  "user_id",
+  "channel",
+  "category"
+);
+CREATE INDEX "notification_preferences_user_id_index" on "notification_preferences"(
+  "user_id"
+);
+CREATE UNIQUE INDEX "notification_preferences_tenant_user_unique" on "notification_preferences"(
+  "tenant_id",
+  "user_id"
+);
+CREATE INDEX "notification_preferences_tenant_enabled_idx" on "notification_preferences"(
+  "tenant_id",
+  "enabled"
+);
+CREATE TABLE "tenant_report_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "timezone" varchar not null default 'Europe/Zurich',
+  "default_frequency" varchar not null default 'daily',
+  "default_send_time" varchar not null default '07:00',
+  "sender_name" varchar,
+  "sender_email" varchar,
+  "logo_url" varchar,
+  "primary_color" varchar not null default '#1890ff',
+  "secondary_color" varchar not null default '#001529',
+  "custom_header_html" text,
+  "custom_footer_html" text,
+  "enabled_modules" text,
+  "rate_limit_per_hour" integer not null default '1000',
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "tenant_report_settings_tenant_idx" on "tenant_report_settings"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "tenant_report_settings_tenant_id_unique" on "tenant_report_settings"(
+  "tenant_id"
+);
+CREATE TABLE "email_blacklist"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "email" varchar not null,
+  "reason" varchar not null default 'manual',
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "email_blacklist_tenant_email_idx" on "email_blacklist"(
+  "tenant_id",
+  "email"
+);
+CREATE INDEX "email_blacklist_email_idx" on "email_blacklist"("email");
+CREATE TABLE "scheduled_report_deliveries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar,
+  "notification_preference_id" varchar,
+  "recipient_email" varchar not null,
+  "frequency" varchar not null default 'daily',
+  "period_key" varchar not null,
+  "language" varchar not null default 'it-CH',
+  "is_test" tinyint(1) not null default '0',
+  "status" varchar not null default 'queued',
+  "message_id" varchar,
+  "provider_status" varchar,
+  "error_message" text,
+  "error_trace" text,
+  "queued_at" datetime,
+  "sent_at" datetime,
+  "opened_at" datetime,
+  "clicked_at" datetime,
+  "open_count" integer not null default '0',
+  "click_count" integer not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("user_id") references "users"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "srd_tenant_user_idx" on "scheduled_report_deliveries"(
+  "tenant_id",
+  "user_id"
+);
+CREATE INDEX "srd_tenant_created_idx" on "scheduled_report_deliveries"(
+  "tenant_id",
+  "created_at"
+);
+CREATE INDEX "srd_pref_idx" on "scheduled_report_deliveries"(
+  "notification_preference_id"
+);
+CREATE INDEX "srd_email_idx" on "scheduled_report_deliveries"(
+  "recipient_email"
+);
+CREATE INDEX "srd_period_idx" on "scheduled_report_deliveries"("period_key");
+CREATE INDEX "srd_status_idx" on "scheduled_report_deliveries"("status");
+CREATE TABLE "scheduled_report_audit_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "user_id" varchar,
+  "delivery_id" varchar,
+  "event_type" varchar not null,
+  "recipient_email" varchar,
+  "period_key" varchar,
+  "message_id" varchar,
+  "provider_status" varchar,
+  "ip_address" varchar,
+  "user_agent" varchar,
+  "error_trace" text,
+  "metadata" text,
+  "occurred_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sral_tenant_occurred_idx" on "scheduled_report_audit_logs"(
+  "tenant_id",
+  "occurred_at"
+);
+CREATE INDEX "sral_user_idx" on "scheduled_report_audit_logs"("user_id");
+CREATE INDEX "sral_delivery_idx" on "scheduled_report_audit_logs"(
+  "delivery_id"
+);
+CREATE INDEX "sral_event_idx" on "scheduled_report_audit_logs"("event_type");
+CREATE INDEX "sral_occurred_idx" on "scheduled_report_audit_logs"(
+  "occurred_at"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -56761,3 +57094,5 @@ INSERT INTO migrations VALUES(476,'2028_01_07_000300_create_van_selling_field_sa
 INSERT INTO migrations VALUES(477,'2028_01_08_000100_create_customer_satisfaction_mod245_tables',32);
 INSERT INTO migrations VALUES(478,'2028_01_08_000100_create_franchise_network_mod244_tables',32);
 INSERT INTO migrations VALUES(479,'2028_01_09_000100_create_currency_fx_mod003_tables',33);
+INSERT INTO migrations VALUES(480,'2028_01_09_000100_create_product_catalog_mod052_tables',34);
+INSERT INTO migrations VALUES(481,'2028_01_09_000100_create_scheduled_erp_report_tables',34);

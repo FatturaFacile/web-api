@@ -491,6 +491,16 @@ return [
                 'write' => ['franchise_network.write', 'franchise_network.manage', 'franchise_network.audit', 'franchise_network.portal', 'franchise_network.*'],
             ],
         ],
+        // Product catalog (Mod 052): every member reads; owners, administrators, accountants, warehouse, purchasing and sales roles
+        // maintain products, variant matrices, kits, units of measure and the CH / IT classification, and import / export the catalog.
+        'product_catalog' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'warehouse', 'purchasing', 'sales', 'sales_manager', 'member'],
+            'grants' => [
+                'read' => ['product_catalog.read', 'product_catalog.write', 'product_catalog.*'],
+                'write' => ['product_catalog.write', 'product_catalog.*'],
+            ],
+        ],
         // Corporate conventions, partner employee discounts and welfare cards (Mod 358): sales and finance roles read and write the
         // conventions, the till and the welfare vouchers; ConventionPolicy reserves the B2B invoice of the employer quota and the
         // settlement of welfare vouchers to finance (or corporate_conventions.bill).
