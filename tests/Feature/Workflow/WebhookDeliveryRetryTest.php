@@ -7,7 +7,7 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use Modules\Workflow\Jobs\DispatchOutboundWebhooksJob;
+use Modules\Workflow\Jobs\DispatchWorkflowWebhooksJob;
 use Modules\Workflow\Models\WorkflowDeliveryAttempt;
 use Modules\Workflow\Models\WorkflowWebhookSubscription;
 use Modules\Workflow\Services\WorkflowWebhookDispatcherService;
@@ -88,8 +88,8 @@ test('claimed deliveries are marked processing and are not handed to a second wo
 test('running the job twice sends a delivery once', function () {
     Http::fake(['https://receiver.test/*' => Http::response(['ok' => true], 200)]);
 
-    (new DispatchOutboundWebhooksJob)->handle($this->dispatcher);
-    (new DispatchOutboundWebhooksJob)->handle($this->dispatcher);
+    (new DispatchWorkflowWebhooksJob)->handle($this->dispatcher);
+    (new DispatchWorkflowWebhooksJob)->handle($this->dispatcher);
 
     Http::assertSentCount(1);
     expect($this->attempt->refresh()->status)->toBe('successful');

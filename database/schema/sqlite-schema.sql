@@ -1173,6 +1173,7 @@ CREATE TABLE "approval_matrix_tiers"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "threshold_min_inclusive" tinyint(1) not null default '1',
   foreign key("approval_matrix_id") references "approval_matrixes"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -1198,6 +1199,12 @@ CREATE TABLE "approval_matrixes"(
   "updated_at" datetime,
   "deleted_at" datetime,
   "deleted_by" varchar,
+  "priority" integer not null default '100',
+  "currency" varchar,
+  "auto_approve_below" numeric,
+  "is_default" tinyint(1) not null default '0',
+  "fallback_approver_type" varchar,
+  "fallback_approver_value" varchar,
   primary key("id")
 );
 
@@ -1276,6 +1283,9 @@ CREATE TABLE "approval_tokens"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "requires_reauth" tinyint(1) not null default '0',
+  "amount" numeric,
+  "channel" varchar not null default 'email',
   foreign key("workflow_instance_step_id") references "workflow_instance_steps"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -4492,6 +4502,8 @@ CREATE TABLE "business_calendar_holidays"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "holiday_type" varchar not null default 'national',
+  "region" varchar,
   foreign key("business_calendar_id") references "business_calendars"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -12797,6 +12809,9 @@ CREATE TABLE "fiscal_periods"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "fiduciary_locked_at" datetime,
+  "fiduciary_locked_by" varchar,
+  "fiduciary_lock_reason" text,
   foreign key("fiscal_year_id") references "fiscal_years"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -16596,6 +16611,10 @@ CREATE TABLE "journal_entries"(
   "recurring_journal_id" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "fiduciary_verified" tinyint(1) not null default '0',
+  "fiduciary_verified_at" datetime,
+  "fiduciary_verified_by" varchar,
+  "fiduciary_verification_note" text,
   foreign key("fiscal_period_id") references "fiscal_periods"("id") on delete restrict on update no action,
   foreign key("batch_id") references "journal_batches"("id") on delete set null on update no action,
   primary key("id")
@@ -27685,6 +27704,7 @@ CREATE TABLE "tenant_user"(
   "custom_role_id" varchar,
   "scim_granted_role" varchar,
   "scim_base_role" varchar,
+  "approval_limit" numeric,
   foreign key("user_id") references "users"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -29794,6 +29814,7 @@ CREATE TABLE "workflow_definitions"(
   "updated_at" datetime,
   "deleted_at" datetime,
   "deleted_by" varchar,
+  "lock_version" integer not null default '1',
   primary key("id")
 );
 
@@ -29830,6 +29851,10 @@ CREATE TABLE "workflow_delegations"(
   "updated_at" datetime,
   "deleted_at" datetime,
   "deleted_by" varchar,
+  "document_types" text,
+  "amount_cap" numeric,
+  "source_type" varchar,
+  "source_id" varchar,
   primary key("id")
 );
 
@@ -29965,6 +29990,12 @@ CREATE TABLE "workflow_instances"(
   "workflow_definition_snapshot" text not null default('{}'),
   "locked_fiscal_document" tinyint(1) not null default('0'),
   "deleted_by" varchar,
+  "blocked_reason" text,
+  "blocked_at" datetime,
+  "withdrawn_at" datetime,
+  "closing_reason" text,
+  "approved_snapshot" text,
+  "restarted_from_id" varchar,
   foreign key("workflow_definition_id") references "workflow_definitions"("id") on delete restrict on update no action,
   primary key("id")
 );
@@ -33764,6 +33795,7 @@ CREATE TABLE "dms_approval_requests"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "workflow_instance_id" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade,
   foreign key("document_id") references "dms_documents"("id") on delete cascade,
   primary key("id")
@@ -57038,6 +57070,202 @@ CREATE INDEX "migration_validation_errors_error_code_index" on "migration_valida
 CREATE INDEX "migration_validation_errors_is_resolved_index" on "migration_validation_errors"(
   "is_resolved"
 );
+CREATE INDEX "workflow_delegations_source_id_index" on "workflow_delegations"(
+  "source_id"
+);
+CREATE INDEX "dms_approval_requests_workflow_instance_id_index" on "dms_approval_requests"(
+  "workflow_instance_id"
+);
+CREATE INDEX "idx_je_fiduciary_verified" on "journal_entries"(
+  "fiduciary_verified"
+);
+CREATE TABLE "fiduciary_account_transcodings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "practitioner_user_id" varchar,
+  "studio_system" varchar not null default 'universal',
+  "source_account_id" varchar not null,
+  "source_account_code" varchar not null,
+  "source_account_name" varchar not null,
+  "source_standard" varchar not null default 'it_oic',
+  "studio_account_code" varchar not null,
+  "studio_account_name" varchar not null,
+  "studio_vat_code" varchar,
+  "studio_cost_center_code" varchar,
+  "notes" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("practitioner_user_id") references "users"("id") on delete set null,
+  foreign key("source_account_id") references "chart_of_accounts"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_fiduciary_transcoding_account" on "fiduciary_account_transcodings"(
+  "tenant_id",
+  "studio_system",
+  "source_account_id"
+);
+CREATE INDEX "idx_fid_transcoding_tenant_system" on "fiduciary_account_transcodings"(
+  "tenant_id",
+  "studio_system",
+  "is_active"
+);
+CREATE INDEX "fiduciary_account_transcodings_tenant_id_index" on "fiduciary_account_transcodings"(
+  "tenant_id"
+);
+CREATE INDEX "fiduciary_account_transcodings_company_id_index" on "fiduciary_account_transcodings"(
+  "company_id"
+);
+CREATE INDEX "fiduciary_account_transcodings_studio_system_index" on "fiduciary_account_transcodings"(
+  "studio_system"
+);
+CREATE TABLE "fiduciary_entry_notes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "journal_entry_id" varchar not null,
+  "parent_note_id" varchar,
+  "author_user_id" varchar,
+  "author_name" varchar not null,
+  "author_role" varchar not null default 'fiduciary',
+  "body" text not null,
+  "status" varchar not null default 'open',
+  "resolved_at" datetime,
+  "resolved_by" varchar,
+  "resolution_comment" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("journal_entry_id") references "journal_entries"("id") on delete cascade,
+  foreign key("author_user_id") references "users"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "idx_fid_notes_tenant_entry_status" on "fiduciary_entry_notes"(
+  "tenant_id",
+  "journal_entry_id",
+  "status"
+);
+CREATE INDEX "fiduciary_entry_notes_tenant_id_index" on "fiduciary_entry_notes"(
+  "tenant_id"
+);
+CREATE INDEX "fiduciary_entry_notes_company_id_index" on "fiduciary_entry_notes"(
+  "company_id"
+);
+CREATE INDEX "fiduciary_entry_notes_parent_note_id_index" on "fiduciary_entry_notes"(
+  "parent_note_id"
+);
+CREATE INDEX "fiduciary_entry_notes_status_index" on "fiduciary_entry_notes"(
+  "status"
+);
+CREATE TABLE "fiduciary_export_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "fiscal_year_id" varchar,
+  "fiscal_period_id" varchar,
+  "format_code" varchar not null,
+  "jurisdiction" varchar not null default 'ALL',
+  "from_date" date not null,
+  "to_date" date not null,
+  "only_verified" tinyint(1) not null default '0',
+  "apply_transcoding" tinyint(1) not null default '1',
+  "entries_count" integer not null default '0',
+  "lines_count" integer not null default '0',
+  "unmapped_accounts_count" integer not null default '0',
+  "total_debit" numeric not null default '0',
+  "total_credit" numeric not null default '0',
+  "currency" varchar not null default 'EUR',
+  "file_name" varchar not null,
+  "mime_type" varchar not null,
+  "content_payload" text,
+  "diagnostics_json" text,
+  "exported_by" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_fid_exports_tenant_format" on "fiduciary_export_runs"(
+  "tenant_id",
+  "format_code",
+  "created_at"
+);
+CREATE INDEX "fiduciary_export_runs_tenant_id_index" on "fiduciary_export_runs"(
+  "tenant_id"
+);
+CREATE INDEX "fiduciary_export_runs_company_id_index" on "fiduciary_export_runs"(
+  "company_id"
+);
+CREATE INDEX "fiduciary_export_runs_fiscal_year_id_index" on "fiduciary_export_runs"(
+  "fiscal_year_id"
+);
+CREATE INDEX "fiduciary_export_runs_fiscal_period_id_index" on "fiduciary_export_runs"(
+  "fiscal_period_id"
+);
+CREATE INDEX "fiduciary_export_runs_format_code_index" on "fiduciary_export_runs"(
+  "format_code"
+);
+CREATE TABLE "fiduciary_audit_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "actor_user_id" varchar,
+  "actor_name" varchar,
+  "actor_role" varchar,
+  "action" varchar not null,
+  "target_type" varchar,
+  "target_id" varchar,
+  "target_reference" varchar,
+  "summary" varchar not null,
+  "metadata_json" text,
+  "ip_address" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_fid_audit_tenant_action" on "fiduciary_audit_logs"(
+  "tenant_id",
+  "action",
+  "created_at"
+);
+CREATE INDEX "fiduciary_audit_logs_tenant_id_index" on "fiduciary_audit_logs"(
+  "tenant_id"
+);
+CREATE INDEX "fiduciary_audit_logs_company_id_index" on "fiduciary_audit_logs"(
+  "company_id"
+);
+CREATE INDEX "fiduciary_audit_logs_actor_user_id_index" on "fiduciary_audit_logs"(
+  "actor_user_id"
+);
+CREATE INDEX "fiduciary_audit_logs_action_index" on "fiduciary_audit_logs"(
+  "action"
+);
+CREATE INDEX "fiduciary_audit_logs_target_id_index" on "fiduciary_audit_logs"(
+  "target_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -57527,3 +57755,5 @@ INSERT INTO migrations VALUES(485,'2028_01_09_000200_add_lockout_backoff_and_bre
 INSERT INTO migrations VALUES(486,'2028_01_09_000300_add_advanced_mfa_tables',36);
 INSERT INTO migrations VALUES(487,'2028_01_09_000400_add_sms_two_factor_columns',36);
 INSERT INTO migrations VALUES(488,'2028_01_10_000100_create_data_migration_mod104_tables',36);
+INSERT INTO migrations VALUES(489,'2028_01_10_000100_extend_workflow_for_approval_engine_mod006',37);
+INSERT INTO migrations VALUES(490,'2028_01_11_000100_create_fiduciary_portal_mod032_tables',37);

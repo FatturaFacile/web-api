@@ -19,16 +19,25 @@ final class WorkflowTransition extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<WorkflowNode, $this>
+     */
     public function fromNode(): BelongsTo
     {
         return $this->belongsTo(WorkflowNode::class, 'from_node_id');
     }
 
+    /**
+     * @return BelongsTo<WorkflowNode, $this>
+     */
     public function toNode(): BelongsTo
     {
         return $this->belongsTo(WorkflowNode::class, 'to_node_id');
     }
 
+    /**
+     * @return BelongsTo<WorkflowDefinition, $this>
+     */
     public function definition(): BelongsTo
     {
         return $this->belongsTo(WorkflowDefinition::class, 'workflow_definition_id');

@@ -7,6 +7,13 @@ namespace Modules\Workflow\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property string $id
+ * @property string $code
+ * @property string $name
+ * @property int $lock_version
+ * @property array<string, mixed> $configuration
+ */
 final class WorkflowDefinition extends BaseEnterpriseModel
 {
     protected $table = 'workflow_definitions';
@@ -35,11 +42,17 @@ final class WorkflowDefinition extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return HasMany<WorkflowNode, $this>
+     */
     public function nodes(): HasMany
     {
         return $this->hasMany(WorkflowNode::class, 'workflow_definition_id');
     }
 
+    /**
+     * @return HasMany<WorkflowTransition, $this>
+     */
     public function transitions(): HasMany
     {
         return $this->hasMany(WorkflowTransition::class, 'workflow_definition_id');

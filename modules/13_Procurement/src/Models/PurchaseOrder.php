@@ -14,9 +14,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Modules\Procurement\Services\ProcurementApprovalService;
+use Modules\Workflow\Contracts\ApprovableDocument;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
+use Modules\Workflow\Contracts\ReactsToApprovalRestart;
 use Modules\Workflow\Contracts\ReactsToWorkflowOutcome;
+use Modules\Workflow\Enums\ApprovalOutcome;
 use Modules\Workflow\Models\WorkflowInstance;
+use Modules\Workflow\Support\FunctionalAmount;
 
 /**
  * A purchase order of the procurement module. The table is shared with the purchasing API of the app: both write the
@@ -78,7 +82,7 @@ use Modules\Workflow\Models\WorkflowInstance;
  * @property int $reminder_count
  * @property Carbon|null $last_reminder_at
  */
-final class PurchaseOrder extends BaseEnterpriseModel implements LockableByWorkflowInterface, ReactsToWorkflowOutcome
+final class PurchaseOrder extends BaseEnterpriseModel implements ApprovableDocument, LockableByWorkflowInterface, ReactsToApprovalRestart, ReactsToWorkflowOutcome
 {
     protected $table = 'purchase_orders';
 
@@ -157,6 +161,72 @@ final class PurchaseOrder extends BaseEnterpriseModel implements LockableByWorkf
     /**
      * Applies the outcome of the approval workflow in the transaction of the decision.
      */
+    /**
+     * {@inheritDoc}
+     */
+    public function approvalSubjectType(): string
+    {
+        return 'purchase_order';
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * The amount is the order total; a foreign-currency order is converted with the rate stored on the order.
+     */
+    public function approvalAttributes(): array
+    {
+        $amount = (float) ($this->total_amount ?? $this->total_gross ?? 0);
+
+        return array_filter([
+            'amount' => $amount,
+            'amount_functional' => FunctionalAmount::of($amount, $this->currency, $this->exchange_rate),
+            'currency' => $this->currency,
+            'exchange_rate' => $this->exchange_rate,
+            'cost_center_id' => $this->cost_center_id,
+            'company_id' => $this->company_id,
+            'supplier_id' => $this->supplier_id,
+            'order_type' => $this->order_type,
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function requesterId(): ?string
+    {
+        return $this->created_by !== null ? (string) $this->created_by : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * The engine reaches an order through `onWorkflowOutcome`; this entry point serves callers that use the typed contract.
+     */
+    public function onApprovalCompleted(ApprovalOutcome $outcome): void
+    {
+        app(ProcurementApprovalService::class)->applyOutcome($this, null, match ($outcome) {
+            ApprovalOutcome::Approved => 'approved',
+            ApprovalOutcome::Rejected, ApprovalOutcome::ChangesRequested => 'rejected',
+            default => 'cancelled',
+        });
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * An approved order whose amount, supplier or cost centre changed waits for approval again and is locked.
+     */
+    public function onApprovalRestarted(WorkflowInstance $instance): void
+    {
+        $this->forceFill([
+            'status' => PurchaseOrderStatus::PendingApproval->value,
+            'is_locked' => true,
+            'approved_at' => null,
+            'workflow_instance_id' => $instance->id,
+        ])->saveQuietly();
+    }
+
     public function onWorkflowOutcome(WorkflowInstance $instance, string $outcome): void
     {
         app(ProcurementApprovalService::class)->applyOutcome($this, $instance, $outcome);

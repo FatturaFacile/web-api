@@ -70,9 +70,10 @@ use Modules\Treasury\Currency\Infrastructure\Jobs\ReverseRevaluationsJob;
 use Modules\Treasury\Currency\Infrastructure\Jobs\SyncDailyRatesJob;
 use Modules\Treasury\Currency\Infrastructure\Jobs\SyncEstvMonthlyRatesJob;
 use Modules\Visitors\Jobs\PurgeExpiredVisitorsJob;
-use Modules\Workflow\Jobs\DispatchOutboundWebhooksJob;
-use Modules\Workflow\Jobs\ProcessBusinessCalendarTimeoutsJob;
+use Modules\Workflow\Jobs\DispatchWorkflowWebhooksJob;
+use Modules\Workflow\Jobs\ProcessWorkflowTimeoutsJob;
 use Modules\Workflow\Jobs\PruneExpiredApprovalTokensJob;
+use Modules\Workflow\Jobs\SendApprovalRemindersJob;
 use Modules\WorkspaceSync\Jobs\SyncWorkspaceConnectionsJob;
 
 Artisan::command('inspire', function () {
@@ -157,8 +158,9 @@ $forEachTenant = static fn (string $name, Closure $job): CallbackEvent => Schedu
 
 // AI cognitive layer (Mod 093): predictive recommendations and the anomaly scan after the forecasting models (03:00-03:40).
 $forEachTenant('ai-cognitive:nightly-scoring', static fn (Tenant $tenant): object => new NightlyPredictiveScoringJob($tenant->id))->dailyAt('04:10');
-$forEachTenant('workflow:webhooks', static fn (): object => new DispatchOutboundWebhooksJob)->everyMinute();
-$forEachTenant('workflow:timeouts', static fn (): object => new ProcessBusinessCalendarTimeoutsJob)->everyFifteenMinutes();
+$forEachTenant('workflow:webhooks', static fn (): object => new DispatchWorkflowWebhooksJob)->everyMinute();
+$forEachTenant('workflow:timeouts', static fn (): object => new ProcessWorkflowTimeoutsJob)->everyFiveMinutes();
+$forEachTenant('workflow:reminders', static fn (): object => new SendApprovalRemindersJob)->everyFifteenMinutes();
 $forEachTenant('workflow:prune-tokens', static fn (): object => new PruneExpiredApprovalTokensJob)->dailyAt('03:20');
 $forEachTenant('crm:activity-reminders', static fn (Tenant $tenant): object => new SendCrmActivityRemindersJob($tenant->id))->everyFiveMinutes();
 // Projects (Mod 082): nightly earned value snapshot of the running projects; raises the CPI, SPI and budget alerts.

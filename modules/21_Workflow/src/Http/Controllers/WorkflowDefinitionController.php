@@ -148,9 +148,12 @@ final class WorkflowDefinitionController extends Controller
     )]
     public function update(SaveWorkflowDefinitionRequest $request, WorkflowDefinitionManager $definitions, string $id): JsonResponse
     {
-        $definition = $definitions->update(WorkflowDefinition::query()->findOrFail($id), $request->validated(), $request->user()?->id);
+        $ifMatch = $request->header('If-Match');
+        $expected = $ifMatch !== null && preg_match('/(\d+)/', $ifMatch, $matches) === 1 ? (int) $matches[1] : null;
 
-        return response()->json(new WorkflowDefinitionResource($definition->load(['nodes', 'transitions'])));
+        $definition = $definitions->update(WorkflowDefinition::query()->findOrFail($id), $request->validated(), $request->user()?->id, $expected);
+
+        return response()->json(new WorkflowDefinitionResource($definition->load(['nodes', 'transitions'])))->header('ETag', '"'.$definition->lock_version.'"');
     }
 
     /**

@@ -11,8 +11,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use Modules\Documents\Services\DocumentApprovalWorkflowBridge;
 use Modules\DocumentTrust\Exceptions\PreservationImmutableException;
 use Modules\DocumentTrust\Services\PreservationLock;
+use Modules\Workflow\Contracts\ApprovableDocument;
+use Modules\Workflow\Enums\ApprovalOutcome;
 
 /**
  * Eloquent model of the dms document (tenant scoped where it has a tenant_id).
@@ -24,7 +27,7 @@ use Modules\DocumentTrust\Services\PreservationLock;
  * @property ?string $checkout_note
  * @property array<string, mixed>|null $metadata
  */
-final class DmsDocument extends BaseEnterpriseModel
+final class DmsDocument extends BaseEnterpriseModel implements ApprovableDocument
 {
     protected $table = 'dms_documents';
 
@@ -52,6 +55,45 @@ final class DmsDocument extends BaseEnterpriseModel
                 throw new PreservationImmutableException('This document is part of a closed preservation package and cannot be deleted.');
             }
         });
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function approvalSubjectType(): string
+    {
+        return 'dms_document';
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * A document has no amount: the matrices of the DMS look at its type and folder.
+     */
+    public function approvalAttributes(): array
+    {
+        return array_filter([
+            'document_type' => $this->document_type,
+            'folder_id' => $this->folder_id,
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function requesterId(): ?string
+    {
+        return $this->created_by !== null ? (string) $this->created_by : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * The request of the document manager mirrors the end of the instance.
+     */
+    public function onApprovalCompleted(ApprovalOutcome $outcome): void
+    {
+        app(DocumentApprovalWorkflowBridge::class)->applyOutcome($this, $outcome);
     }
 
     protected function casts(): array

@@ -7,6 +7,8 @@ namespace Modules\Workflow\Models;
 use App\Models\User;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+use Modules\Workflow\Services\ApprovableRegistry;
 
 /**
  * An out-of-office delegation: for a period and a scope, the delegate decides what is assigned to the delegator.
@@ -15,6 +17,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $delegate_user_id
  * @property string $scope
  * @property bool $is_active
+ * @property ?list<string> $document_types
+ * @property ?string $amount_cap
+ * @property Carbon $starts_at
+ * @property Carbon $ends_at
  */
 final class WorkflowDelegation extends BaseEnterpriseModel
 {
@@ -39,6 +45,8 @@ final class WorkflowDelegation extends BaseEnterpriseModel
         return [
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
+            'document_types' => 'array',
+            'amount_cap' => 'decimal:4',
             'is_active' => 'boolean',
         ];
     }
@@ -65,9 +73,23 @@ final class WorkflowDelegation extends BaseEnterpriseModel
      * that module. A scope with no module (`custom`, `expenses`) covers no approval at all: delegating is never wider
      * than what the delegator chose.
      */
-    public function coversApprovable(string $approvableType): bool
+    public function coversApprovable(string $approvableType, ?float $amount = null): bool
     {
-        if ($this->scope === 'all') {
+        // The delegator may have narrowed the delegation to some document types and to an amount ceiling.
+        $types = $this->document_types;
+        if (is_array($types) && $types !== []) {
+            $subject = app(ApprovableRegistry::class)->resolve($approvableType);
+
+            if (! in_array($approvableType, $types, true) && ($subject === null || ! in_array($subject, $types, true))) {
+                return false;
+            }
+        }
+
+        if ($this->amount_cap !== null && $amount !== null && $amount > (float) $this->amount_cap) {
+            return false;
+        }
+
+        if ($this->scope === 'all' || (is_array($types) && $types !== [])) {
             return true;
         }
 

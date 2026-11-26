@@ -22,6 +22,9 @@ final class ConsumeRemoteTokenRequest extends FormRequest
             'token' => ['required', 'string', 'min:32'],
             'action' => ['required', 'string', 'in:approve,reject'],
             'comment' => ['nullable', 'string', 'max:1000'],
+            'confirm' => ['required', 'accepted'],
+            'password' => ['nullable', 'string', 'max:255'],
+            'otp' => ['nullable', 'string', 'max:32'],
         ];
     }
 }

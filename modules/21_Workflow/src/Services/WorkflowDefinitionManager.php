@@ -12,6 +12,7 @@ use Modules\Workflow\Models\WorkflowDefinition;
 use Modules\Workflow\Models\WorkflowInstance;
 use Modules\Workflow\Models\WorkflowNode;
 use Modules\Workflow\Models\WorkflowTransition;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 /**
  * Writes workflow definitions and their graph.
@@ -75,9 +76,16 @@ final class WorkflowDefinitionManager
     /**
      * @param  array<string, mixed>  $data
      */
-    public function update(WorkflowDefinition $definition, array $data, ?string $userId): WorkflowDefinition
+    public function update(WorkflowDefinition $definition, array $data, ?string $userId, ?int $expectedLockVersion = null): WorkflowDefinition
     {
-        return DB::transaction(function () use ($definition, $data, $userId): WorkflowDefinition {
+        return DB::transaction(function () use ($definition, $data, $userId, $expectedLockVersion): WorkflowDefinition {
+            // Optimistic lock of the editor: the version the client read must still be the stored one (If-Match, 409 otherwise).
+            $current = (int) WorkflowDefinition::withoutGlobalScopes()->whereKey($definition->id)->lockForUpdate()->value('lock_version');
+
+            if ($expectedLockVersion !== null && $expectedLockVersion !== $current) {
+                throw new ConflictHttpException(__('workflow_errors.definition.stale'));
+            }
+
             if (array_key_exists('is_active', $data)) {
                 if ((bool) $data['is_active'] && $definition->status !== 'published') {
                     throw ValidationException::withMessages(['is_active' => __('workflow_errors.definition.publish_to_activate')]);
@@ -88,7 +96,7 @@ final class WorkflowDefinitionManager
                 }
             }
 
-            $definition->update([...Arr::only($data, ['name', 'description', 'target_entity_type', 'configuration', 'is_active']), 'updated_by' => $userId]);
+            $definition->update([...Arr::only($data, ['name', 'description', 'target_entity_type', 'configuration', 'is_active']), 'updated_by' => $userId, 'lock_version' => $current + 1]);
 
             return $definition;
         });

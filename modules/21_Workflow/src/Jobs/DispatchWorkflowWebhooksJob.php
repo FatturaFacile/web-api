@@ -15,7 +15,7 @@ use Modules\Workflow\Services\WorkflowWebhookDispatcherService;
  * Sends the due webhook deliveries of the tenant in context. The deliveries are claimed first, so two workers running
  * this job at the same time never send the same delivery twice.
  */
-final class DispatchOutboundWebhooksJob implements ShouldQueue
+final class DispatchWorkflowWebhooksJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 

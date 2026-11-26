@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             AgentCommissionsReferenceSeeder::class,
             DebtCollectionReferenceSeeder::class,
             ExpenseManagementReferenceSeeder::class,
+            WorkflowApprovalEngineSeeder::class,
             ExpenseManagementDemoSeeder::class,
             TenderManagementDemoSeeder::class,
             GdoTradeTermsDemoSeeder::class,

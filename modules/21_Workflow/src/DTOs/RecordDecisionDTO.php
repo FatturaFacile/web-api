@@ -18,6 +18,7 @@ final readonly class RecordDecisionDTO
         public ?string $approvalTokenId = null,
         public ?string $ipAddress = null,
         public ?string $userAgent = null,
-        public ?array $signaturePayload = null
+        public ?array $signaturePayload = null,
+        public ?string $reassignToUserId = null
     ) {}
 }

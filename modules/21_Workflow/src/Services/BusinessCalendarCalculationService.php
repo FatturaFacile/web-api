@@ -68,7 +68,7 @@ final class BusinessCalendarCalculationService implements BusinessCalendarCalcul
         }
 
         $dateString = $localTime->toDateString();
-        $isHoliday = $cal->holidays()->where('holiday_date', $dateString)->exists();
+        $isHoliday = $cal->holidays()->whereDate('holiday_date', $dateString)->exists();
         if ($isHoliday) {
             return false;
         }

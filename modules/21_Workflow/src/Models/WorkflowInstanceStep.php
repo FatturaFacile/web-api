@@ -80,6 +80,9 @@ final class WorkflowInstanceStep extends BaseEnterpriseModel
         return $this->belongsTo(User::class, 'assigned_user_id');
     }
 
+    /**
+     * @return HasMany<ApprovalDecision, $this>
+     */
     public function decisions(): HasMany
     {
         return $this->hasMany(ApprovalDecision::class, 'workflow_instance_step_id');

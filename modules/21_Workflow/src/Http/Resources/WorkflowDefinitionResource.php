@@ -25,6 +25,7 @@ final class WorkflowDefinitionResource extends JsonResource
             'description' => $this->description,
             'target_entity_type' => $this->target_entity_type,
             'version' => $this->version,
+            'lock_version' => (int) $this->lock_version,
             'status' => $this->status,
             'is_active' => $this->is_active,
             'configuration' => $this->configuration,

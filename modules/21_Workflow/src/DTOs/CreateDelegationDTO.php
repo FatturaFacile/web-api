@@ -16,6 +16,11 @@ final readonly class CreateDelegationDTO
         public string $scope = 'all',
         public ?string $reason = null,
         public ?string $tenantId = null,
-        public ?string $companyId = null
+        public ?string $companyId = null,
+        /** @var list<string>|null subject type codes the delegation is limited to */
+        public ?array $documentTypes = null,
+        public ?string $amountCap = null,
+        public ?string $sourceType = null,
+        public ?string $sourceId = null
     ) {}
 }

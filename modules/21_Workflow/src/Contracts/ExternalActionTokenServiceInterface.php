@@ -13,10 +13,10 @@ interface ExternalActionTokenServiceInterface
     /**
      * Generates a single-use action token and returns the signed URL.
      */
-    public function generateActionToken(WorkflowInstanceStep $step, User $user, string $actionType): string;
+    public function generateActionToken(WorkflowInstanceStep $step, User $user, string $actionType, string $channel = 'email'): string;
 
     /**
      * Verifies and consumes a raw action token secret.
      */
-    public function verifyAndConsumeToken(string $rawToken, string $actionType): ApprovalToken;
+    public function verifyAndConsumeToken(string $rawToken, string $actionType, ?User $signedIn = null, ?string $password = null, ?string $otp = null): ApprovalToken;
 }

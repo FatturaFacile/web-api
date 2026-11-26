@@ -25,6 +25,9 @@ final class BusinessCalendar extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return HasMany<BusinessCalendarHoliday, $this>
+     */
     public function holidays(): HasMany
     {
         return $this->hasMany(BusinessCalendarHoliday::class, 'business_calendar_id');

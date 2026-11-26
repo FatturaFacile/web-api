@@ -26,7 +26,7 @@ final readonly class DocumentApprovalService
     /**
      * Inject the collaborators.
      */
-    public function __construct(private TenantContext $tenantContext, private DocumentAccess $access) {}
+    public function __construct(private TenantContext $tenantContext, private DocumentAccess $access, private DocumentApprovalWorkflowBridge $workflow) {}
 
     /**
      * Creates a template with its steps.
@@ -115,7 +115,7 @@ final readonly class DocumentApprovalService
                 throw new ConflictHttpException(__('documents_errors.approval.already_pending'));
             }
 
-            return DmsApprovalRequest::create([
+            $request = DmsApprovalRequest::create([
                 'tenant_id' => $lockedDocument->tenant_id,
                 'document_id' => $lockedDocument->id,
                 'document_version_id' => $lockedDocument->latestVersion?->id,
@@ -127,6 +127,11 @@ final readonly class DocumentApprovalService
                 'requested_by' => $requester->id,
                 'note' => $note,
             ]);
+
+            // The request runs on the unified workflow engine (dms_document); the row stays as the read model of the DMS screens.
+            $this->workflow->start($request, $template, $lockedDocument, $requester);
+
+            return $request;
         });
     }
 
@@ -151,6 +156,9 @@ final readonly class DocumentApprovalService
                 throw new AccessDeniedHttpException(__('documents_errors.approval.not_approver'));
             }
 
+            // The engine records the same decision (audit trail, SLA, delegations); the DMS rows mirror it below.
+            $this->workflow->decide($locked, $user, $approve, $comment);
+
             DmsApprovalDecision::create([
                 'tenant_id' => $locked->tenant_id,
                 'request_id' => $locked->id,
@@ -168,6 +176,11 @@ final readonly class DocumentApprovalService
                 $locked->update(['status' => ApprovalStatus::Approved, 'completed_at' => now()]);
             } else {
                 $locked->update(['current_step' => $locked->current_step + 1]);
+            }
+
+            if ($locked->status !== ApprovalStatus::Pending) {
+                // A request decided here ends its instance too, whatever the engine saw.
+                $this->workflow->close($locked, 'Decided in the document manager.');
             }
 
             return $locked;
@@ -194,6 +207,7 @@ final readonly class DocumentApprovalService
             }
 
             $locked->update(['status' => ApprovalStatus::Cancelled, 'completed_at' => now()]);
+            $this->workflow->close($locked, 'Cancelled in the document manager.');
 
             return $locked;
         });
