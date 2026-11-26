@@ -63,6 +63,9 @@ use Modules\SubscriptionBilling\Jobs\ProcessRecurringBillingJob;
 use Modules\SubscriptionBilling\Jobs\ProcessSubscriptionIndexationJob;
 use Modules\SubscriptionBilling\Jobs\ProcessSubscriptionRenewalsJob;
 use Modules\SubscriptionBilling\Jobs\RecognizeRevenueScheduleJob;
+use Modules\Treasury\Currency\Infrastructure\Jobs\ReverseRevaluationsJob;
+use Modules\Treasury\Currency\Infrastructure\Jobs\SyncDailyRatesJob;
+use Modules\Treasury\Currency\Infrastructure\Jobs\SyncEstvMonthlyRatesJob;
 use Modules\Visitors\Jobs\PurgeExpiredVisitorsJob;
 use Modules\Workflow\Jobs\DispatchOutboundWebhooksJob;
 use Modules\Workflow\Jobs\ProcessBusinessCalendarTimeoutsJob;
@@ -88,6 +91,12 @@ if (config('backup.schedule.check_hourly', true)) {
 Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
 // Movements of the open banking consents (PSD2 / SIX bLink) imported as bank statements (idempotent).
 Schedule::command('treasury:open-banking-sync')->dailyAt('06:15')->withoutOverlapping()->onOneServer();
+
+// Multi-currency engine (Mod 003): the ECB and SNB rates after the ECB publication (around 16:00 CET), the ESTV monthly averages for
+// Swiss VAT, and the reversal of the posted FX revaluations on the first day of the next period.
+Schedule::job(new SyncDailyRatesJob)->dailyAt((string) config('currency_fx.daily_sync_at', '16:30'))->timezone('Europe/Zurich')->withoutOverlapping()->onOneServer();
+Schedule::job(new SyncEstvMonthlyRatesJob)->monthlyOn(3, '07:00')->timezone('Europe/Zurich')->withoutOverlapping()->onOneServer();
+Schedule::job(new ReverseRevaluationsJob)->dailyAt('00:20')->withoutOverlapping()->onOneServer();
 
 // Recurring journals and automatic reversals (accruals, deferrals, FX revaluations) due, per tenant business day.
 Schedule::command('general-ledger:run-scheduled')->dailyAt('02:30')->withoutOverlapping()->onOneServer();

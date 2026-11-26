@@ -10,12 +10,15 @@ use App\Services\ExchangeRate\EuropeanCentralBankProvider;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Listeners\ProcurementAccountingListener;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
 use Modules\Procurement\Events\PurchaseOrderCancelledEvent;
+use Modules\Treasury\Currency\Domain\Exceptions\RateProviderException;
 
 uses(DatabaseTransactions::class);
 
@@ -100,18 +103,21 @@ test('procurement accounting listener uses dynamic commitment amount instead of 
         ->and($capturedPayload['lines'][1]['credit_amount'])->toBe('4850.7500');
 });
 
-test('european central bank provider returns valid currency pairs', function (): void {
-    $provider = new EuropeanCentralBankProvider;
-    $rates = $provider->getRates();
+test('european central bank provider returns valid currency pairs and has no built-in fallback', function (): void {
+    $feed = '<?xml version="1.0" encoding="UTF-8"?><gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01" xmlns="http://www.ecb.int/vocabulary/2002-08-01/eurofxref"><Cube><Cube time="2026-11-24"><Cube currency="USD" rate="1.0560"/><Cube currency="CHF" rate="0.9412"/></Cube></Cube></gesmes:Envelope>';
+    Sleep::fake();
+    Http::fake(['*ecb.europa.eu*' => Http::response($feed, 200)]);
 
-    expect($rates)->toBeArray()
-        ->and(count($rates))->toBeGreaterThan(0);
+    $rates = (new EuropeanCentralBankProvider)->getRates();
 
-    $sources = array_column($rates, 'source');
-    $targets = array_column($rates, 'target');
+    expect($rates)->toBe([
+        ['source' => 'EUR', 'target' => 'USD', 'rate' => '1.056000'],
+        ['source' => 'EUR', 'target' => 'CHF', 'rate' => '0.941200'],
+    ]);
 
-    expect($sources)->toContain('EUR')
-        ->and($targets)->toContain('CHF');
+    Http::fake(['*ecb.europa.eu*' => Http::response('', 500)]);
+
+    expect(fn () => (new EuropeanCentralBankProvider)->getRates())->toThrow(RateProviderException::class);
 });
 
 test('sync exchange rates endpoint populates exchange rates via provider', function (): void {

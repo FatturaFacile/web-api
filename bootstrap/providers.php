@@ -107,6 +107,7 @@ use Modules\TalentLearning\Providers\TalentLearningServiceProvider;
 use Modules\TenderManagement\Providers\TenderManagementServiceProvider;
 use Modules\Transportation\Providers\TransportationServiceProvider;
 use Modules\TravelExpense\Providers\TravelExpenseServiceProvider;
+use Modules\Treasury\Currency\Providers\CurrencyServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\VanSalesAndFieldForce\Providers\VanSalesAndFieldForceServiceProvider;
 use Modules\Visitors\Providers\VisitorsServiceProvider;
@@ -132,6 +133,7 @@ return [
     ProjectsServiceProvider::class,
     GeneralLedgerServiceProvider::class,
     TreasuryServiceProvider::class,
+    CurrencyServiceProvider::class,
     InvoicingServiceProvider::class,
     CRMServiceProvider::class,
     AssetManagementServiceProvider::class,
