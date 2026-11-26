@@ -6,6 +6,8 @@ namespace App\Services\Privacy;
 
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Enterprise\AuditLedger\Application\Commands\EraseAuditSubjectCommand;
+use Enterprise\AuditLedger\Application\Commands\EraseAuditSubjectHandler;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -81,11 +83,26 @@ final readonly class UserErasureService
             if ($holds === []) {
                 $this->anonymiseProfile($userId);
                 $erased = array_merge($erased, ['profile', 'password_histories', 'api_tokens', 'sso_identities_all_companies']);
+                $this->erasePseudonyms($userId, $actorId);
+                $erased[] = 'audit_ledger_pseudonyms';
                 $this->audit->record($tenantId, 'PRIVACY_USER_ANONYMISED', User::class, $userId, [], $actorId);
             }
 
             return ['legal_holds' => $holds, 'erased_fields' => array_values(array_unique($erased)), 'retained' => $retained, 'anonymised' => $anonymised];
         });
+    }
+
+    /**
+     * The profile is anonymised: the name behind the pseudonym of the user in every audit chain is erased with it. The
+     * entries stay and the hash chains stay valid; the actor is shown as an erased subject from now on (Mod 005).
+     */
+    private function erasePseudonyms(string $userId, ?string $actorId): void
+    {
+        $tenants = DB::table('audit_subject_map')->where('subject_type', 'user')->where('subject_id', $userId)->distinct()->pluck('tenant_id');
+
+        foreach ($tenants as $tenantId) {
+            app(EraseAuditSubjectHandler::class)->handle(new EraseAuditSubjectCommand((string) $tenantId, 'user', $userId, $actorId));
+        }
     }
 
     /**

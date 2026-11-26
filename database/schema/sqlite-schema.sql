@@ -10623,6 +10623,16 @@ CREATE TABLE "enterprise_audit_ledger"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "sequence" integer,
+  "category" varchar,
+  "actor_ref" varchar,
+  "impersonator_ref" varchar,
+  "channel" varchar,
+  "request_id" varchar,
+  "changes" text,
+  "context" text,
+  "key_version" integer,
+  "hash_version" integer not null default '1',
   primary key("id", "event_timestamp")
 );
 
@@ -10660,6 +10670,16 @@ CREATE TABLE "enterprise_audit_ledger_archive"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "sequence" integer,
+  "category" varchar,
+  "actor_ref" varchar,
+  "impersonator_ref" varchar,
+  "channel" varchar,
+  "request_id" varchar,
+  "changes" text,
+  "context" text,
+  "key_version" integer,
+  "hash_version" integer not null default '1',
   primary key("archive_id")
 );
 
@@ -56614,6 +56634,139 @@ CREATE INDEX "sral_event_idx" on "scheduled_report_audit_logs"("event_type");
 CREATE INDEX "sral_occurred_idx" on "scheduled_report_audit_logs"(
   "occurred_at"
 );
+CREATE UNIQUE INDEX "uq_audit_ledger_tenant_sequence" on "enterprise_audit_ledger"(
+  "tenant_id",
+  "sequence"
+);
+CREATE INDEX "idx_audit_ledger_category" on "enterprise_audit_ledger"(
+  "tenant_id",
+  "category",
+  "event_timestamp"
+);
+CREATE INDEX "idx_audit_ledger_actor_ref" on "enterprise_audit_ledger"(
+  "tenant_id",
+  "actor_ref"
+);
+CREATE INDEX "idx_audit_archive_sequence" on "enterprise_audit_ledger_archive"(
+  "tenant_id",
+  "restore_id",
+  "sequence"
+);
+CREATE TABLE "audit_checkpoints"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "type" varchar not null,
+  "period_ref" varchar,
+  "sequence" integer not null,
+  "hash" varchar not null,
+  "signature" varchar not null,
+  "key_version" integer not null,
+  "created_at" datetime not null,
+  "anchored_at" datetime,
+  "anchor_uri" varchar,
+  primary key("id")
+);
+
+CREATE INDEX "idx_audit_checkpoints_tenant_type" on "audit_checkpoints"(
+  "tenant_id",
+  "type",
+  "created_at"
+);
+CREATE UNIQUE INDEX "uq_audit_checkpoints_period" on "audit_checkpoints"(
+  "tenant_id",
+  "type",
+  "period_ref"
+);
+CREATE TABLE "audit_integrity_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "trigger" varchar not null,
+  "status" varchar not null,
+  "outcome" varchar,
+  "broken_at_sequence" integer,
+  "missing_from_sequence" integer,
+  "missing_to_sequence" integer,
+  "verified_entries" integer not null default '0',
+  "last_sequence" integer,
+  "requested_by" varchar,
+  "error" text,
+  "started_at" datetime,
+  "finished_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  primary key("id")
+);
+
+CREATE INDEX "idx_audit_runs_tenant_status" on "audit_integrity_runs"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "idx_audit_runs_tenant_created" on "audit_integrity_runs"(
+  "tenant_id",
+  "created_at"
+);
+CREATE TABLE "audit_subject_map"(
+  "token" varchar not null,
+  "tenant_id" varchar,
+  "subject_type" varchar not null,
+  "subject_id" varchar not null,
+  "display_name" text not null,
+  "created_at" datetime not null,
+  primary key("token")
+);
+
+CREATE INDEX "idx_audit_subject_map_subject" on "audit_subject_map"(
+  "tenant_id",
+  "subject_type",
+  "subject_id"
+);
+CREATE TABLE "audit_exports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "requested_by" varchar,
+  "idempotency_key" varchar,
+  "status" varchar not null,
+  "from_date" date not null,
+  "to_date" date not null,
+  "filters" text,
+  "from_sequence" integer,
+  "to_sequence" integer,
+  "start_hash" varchar,
+  "end_hash" varchar,
+  "entries_count" integer,
+  "verification_outcome" varchar,
+  "disk" varchar,
+  "path" varchar,
+  "sha256" varchar,
+  "signature" varchar,
+  "error" text,
+  "completed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  primary key("id")
+);
+
+CREATE INDEX "idx_audit_exports_tenant_created" on "audit_exports"(
+  "tenant_id",
+  "created_at"
+);
+CREATE UNIQUE INDEX "uq_audit_exports_idempotency" on "audit_exports"(
+  "tenant_id",
+  "idempotency_key"
+);
+CREATE TABLE "audit_key_versions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "key_version" integer not null,
+  "activated_by" varchar,
+  "activated_at" datetime not null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_audit_key_versions_tenant_version" on "audit_key_versions"(
+  "tenant_id",
+  "key_version"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -57096,3 +57249,5 @@ INSERT INTO migrations VALUES(478,'2028_01_08_000100_create_franchise_network_mo
 INSERT INTO migrations VALUES(479,'2028_01_09_000100_create_currency_fx_mod003_tables',33);
 INSERT INTO migrations VALUES(480,'2028_01_09_000100_create_product_catalog_mod052_tables',34);
 INSERT INTO migrations VALUES(481,'2028_01_09_000100_create_scheduled_erp_report_tables',34);
+INSERT INTO migrations VALUES(482,'2028_01_09_000100_extend_enterprise_audit_ledger_for_forensic_trail',35);
+INSERT INTO migrations VALUES(483,'2028_01_09_000200_create_audit_ledger_forensic_tables',35);

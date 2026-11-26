@@ -13,6 +13,8 @@ use App\Models\Privacy\PrivacyProcessingActivity;
 use App\Models\Privacy\PrivacySensitiveAccessLog;
 use App\Models\Privacy\PrivacySubprocessor;
 use Carbon\CarbonImmutable;
+use Enterprise\AuditLedger\Application\Commands\EraseAuditSubjectCommand;
+use Enterprise\AuditLedger\Application\Commands\EraseAuditSubjectHandler;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -303,6 +305,10 @@ final class GlobalPrivacyComplianceService
                 $erasedFields = ['email', 'phone', 'pec', 'iban', 'qr_iban'];
                 if ($legalHolds === []) {
                     $erasedFields = array_merge($erasedFields, ['first_name', 'last_name', 'company_name']);
+                    // The audit ledger keeps only pseudonym tokens of the contact: erasing the mapping removes the personal data
+                    // from the trail and leaves every hash chain valid (Mod 005).
+                    app(EraseAuditSubjectHandler::class)->handle(new EraseAuditSubjectCommand($tenantId, Contact::class, (string) $contact->id, $actorId));
+                    $erasedFields[] = 'audit_ledger_pseudonyms';
                 }
             } elseif ($dsr->subject_type === 'employee') {
                 $employee = Employee::withoutGlobalScope(TenantScope::class)

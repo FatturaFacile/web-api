@@ -166,7 +166,7 @@ final class DocumentLifecycleController extends Controller
                 'actor_user_id' => $entry->actor_user_id,
                 'occurred_at' => Carbon::parse($entry->event_timestamp)->toIso8601String(),
                 'ip_address' => $entry->ip_address,
-                'details' => (object) array_diff_key((array) ($entry->payload_after ?? []), array_flip(self::HiddenFields)),
+                'details' => (object) array_diff_key((array) ($entry->new_values ?? []), array_flip(self::HiddenFields)),
             ];
         }
 

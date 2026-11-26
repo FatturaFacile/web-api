@@ -45,4 +45,15 @@ final class PaymentAuditObserver
             moduleCode: 'TREASURY'
         );
     }
+
+    public function restored(Payment $payment): void
+    {
+        $this->auditLedger->record(
+            action: 'RESTORED',
+            model: $payment,
+            payloadBefore: null,
+            payloadAfter: ['restored' => true],
+            moduleCode: 'TREASURY'
+        );
+    }
 }

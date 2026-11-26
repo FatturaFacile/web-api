@@ -51,4 +51,15 @@ final class InvoiceAuditObserver
             moduleCode: 'INVOICING'
         );
     }
+
+    public function restored(Invoice $invoice): void
+    {
+        $this->auditLedger->record(
+            action: 'RESTORED',
+            model: $invoice,
+            payloadBefore: null,
+            payloadAfter: ['restored' => true],
+            moduleCode: 'INVOICING'
+        );
+    }
 }

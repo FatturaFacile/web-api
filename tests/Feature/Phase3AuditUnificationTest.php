@@ -46,7 +46,7 @@ beforeEach(function (): void {
     app(TenantContext::class)->setTenant($this->tenant);
 });
 
-test('settings audit-logs endpoint requires strict admin or compliance role', function (): void {
+test('settings audit-logs endpoint requires an auditor role (owner, admin, external auditor, DPO)', function (): void {
     // 1. Unauthenticated request -> 401
     $this->getJson('/api/v1/settings/audit-logs')
         ->assertUnauthorized();
@@ -65,11 +65,8 @@ test('settings audit-logs endpoint requires strict admin or compliance role', fu
     $response->assertOk()
         ->assertJsonStructure([
             'success',
-            'data' => [
-                'data',
-                'current_page',
-                'total',
-            ],
+            'data',
+            'meta' => ['next_cursor', 'limit'],
             'message',
         ]);
 });

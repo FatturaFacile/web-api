@@ -12,6 +12,7 @@ use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
 use Database\Seeders\Translations\AnalyticalAccountingFrontendTranslations;
 use Database\Seeders\Translations\ArtisanalGelatoFrontendTranslations;
+use Database\Seeders\Translations\AuditLedgerFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\BomManagementFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
@@ -134,6 +135,7 @@ class FrontendTranslationSeeder extends Seeder
             + PrivacyGovernanceFrontendTranslations::all($locale)
             + ReleaseAuditFrontendTranslations::all($locale)
             + AuditTrailFrontendTranslations::all($locale)
+            + AuditLedgerFrontendTranslations::all($locale)
             + PreservationFrontendTranslations::all($locale)
             + IdentityFrontendTranslations::all($locale)
             + AiForecastingFrontendTranslations::all($locale)

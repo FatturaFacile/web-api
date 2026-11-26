@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\Audit\AuditLedgerController;
 use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\OfflineAuditBatchController;
 use Illuminate\Support\Facades\Route;
@@ -29,3 +30,8 @@ Route::middleware('module.access:audit_trail')->prefix('audit-logs')->name('audi
     Route::get('/entity/{type}/{id}', [AuditLogController::class, 'entity'])->middleware('audit.permission:audit.view')->name('entity');
     Route::get('/{id}', [AuditLogController::class, 'show'])->middleware('audit.permission:audit.view')->whereUuid('id')->name('show');
 });
+
+// History of one record (Mod 005 ledger): gated by AuditPolicy::history, i.e. by the right to read that record's module. An entry
+// of the ledger can never be edited or deleted: those methods are refused with 405.
+Route::get('audit/history/{resourceType}/{resourceId}', [AuditLedgerController::class, 'history'])->name('audit.history');
+Route::match(['PUT', 'PATCH', 'DELETE', 'POST'], 'audit/history/{resourceType}/{resourceId}', [AuditLedgerController::class, 'rejectMutation'])->name('audit.history.reject-mutation');

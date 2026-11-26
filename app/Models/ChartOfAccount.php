@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Enterprise\Foundation\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class ChartOfAccount extends Model
 {
-    use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+    use Auditable, BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'chart_of_accounts';
 

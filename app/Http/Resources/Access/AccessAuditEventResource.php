@@ -29,8 +29,8 @@ final class AccessAuditEventResource extends JsonResource
             'type' => implode('.', array_slice(explode('.', $event), 0, 2)),
             'subject_id' => $this->resource_id,
             'actor' => $this->user === null ? null : ['id' => $this->user->id, 'name' => $this->user->name, 'email' => $this->user->email],
-            'old_values' => $this->payload_before,
-            'new_values' => $this->payload_after,
+            'old_values' => $this->old_values,
+            'new_values' => $this->new_values,
             'ip_address' => $this->ip_address,
             'created_at' => Carbon::parse($this->event_timestamp)->toIso8601String(),
         ];

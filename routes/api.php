@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\V1\Admin\UserTenantAccessController;
 use App\Http\Controllers\Api\V1\AlertController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AttachmentController;
+use App\Http\Controllers\Api\V1\Audit\AuditLedgerController;
+use App\Http\Controllers\Api\V1\Audit\AuditLedgerExportController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\AutomotiveController;
 use App\Http\Controllers\Api\V1\Banking\BankReconciliationRuleController;
@@ -146,7 +148,7 @@ Route::prefix('v1')->group(function (): void {
     // ----------------------------------------------------
     // Public Auth & Bootstrap Routes
     // ----------------------------------------------------
-    Route::post('/auth/login', [AuthController::class, 'login'])->middleware(['locale', 'throttle:login'])->name('auth.login');
+    Route::post('/auth/login', [AuthController::class, 'login'])->middleware(['locale', 'audit.login.throttle', 'throttle:login'])->name('auth.login');
     Route::post('/auth/two-factor-challenge', [AuthController::class, 'twoFactorChallenge'])->middleware(['locale', 'throttle:two-factor-challenge'])->name('auth.two-factor-challenge');
     Route::middleware('locale')->prefix('auth')->name('auth.')->group(function (): void {
         Route::post('/register', [RegistrationController::class, 'register'])->middleware('throttle:registration')->name('register');
@@ -807,6 +809,19 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/branches', [SettingsController::class, 'branches'])->name('branches');
             Route::get('/document-quota', [DocumentQuotaController::class, 'usage'])->name('document-quota');
 
+            // Probative audit ledger (Mod 005): gated by AuditPolicy (owner, admin, external auditor, DPO), not by a module, and
+            // append only: every attempt to edit or delete an entry is answered with 405.
+            Route::prefix('audit-logs')->name('audit-logs.')->group(function (): void {
+                Route::get('/', [AuditLedgerController::class, 'index'])->name('index');
+                Route::get('/integrity', [AuditLedgerController::class, 'integrity'])->name('integrity');
+                Route::post('/integrity/verify', [AuditLedgerController::class, 'verify'])->middleware('throttle:10,1')->name('integrity.verify');
+                Route::get('/archive', [AuditLedgerController::class, 'archive'])->name('archive');
+                Route::post('/exports', [AuditLedgerExportController::class, 'store'])->middleware('throttle:10,1')->name('exports.store');
+                Route::get('/exports/{id}', [AuditLedgerExportController::class, 'show'])->whereUuid('id')->name('exports.show');
+                Route::get('/exports/{id}/download', [AuditLedgerExportController::class, 'download'])->whereUuid('id')->middleware('throttle:20,1')->name('exports.download');
+                Route::match(['PUT', 'PATCH', 'DELETE', 'POST'], '/{entry}', [AuditLedgerController::class, 'rejectMutation'])->name('reject-mutation');
+            });
+
             Route::middleware('module.access:system')->group(function (): void {
                 Route::put('/preferences/{group}', [TenantPreferencesController::class, 'update'])->name('preferences.update');
                 Route::put('/tenant', [SettingsController::class, 'updateTenant'])->name('tenant.update');
@@ -847,7 +862,6 @@ Route::prefix('v1')->group(function (): void {
                     Route::get('/audit', [AccessOverviewController::class, 'audit'])->name('audit');
                 });
                 Route::get('/access-options', [TenantMemberController::class, 'options'])->name('access-options');
-                Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');
                 Route::get('/security/two-factor', [TwoFactorController::class, 'policy'])->name('security.two-factor');
                 Route::put('/security/two-factor', [TwoFactorController::class, 'updatePolicy'])->name('security.two-factor.update');
                 Route::post('/users/{userId}/two-factor/reset', [TwoFactorController::class, 'resetMember'])->whereUuid('userId')->name('users.two-factor.reset');

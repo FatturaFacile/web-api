@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Access;
 
 use App\Models\Concerns\BelongsToTenant;
+use Enterprise\Foundation\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class TenantCustomRole extends Model
 {
-    use BelongsToTenant, HasUuids, SoftDeletes;
+    use Auditable, BelongsToTenant, HasUuids, SoftDeletes;
 
     protected $table = 'tenant_custom_roles';
 

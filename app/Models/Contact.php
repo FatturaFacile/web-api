@@ -70,6 +70,17 @@ class Contact extends Model implements AuditableEntityInterface
         'fiscal_verification_source',
     ];
 
+    /**
+     * Attributes the audit ledger records as pseudonym tokens, so that the right to erasure removes them from the trail
+     * without touching a hash (fiscal code and IBAN are pseudonymised by the ledger for every model).
+     *
+     * @return list<string>
+     */
+    public function auditPersonalAttributes(): array
+    {
+        return ['first_name', 'last_name', 'email', 'phone', 'pec'];
+    }
+
     protected function casts(): array
     {
         return [
