@@ -100,12 +100,12 @@ final class WebAuthnLibAuthenticator implements PasskeyAuthenticator
         ];
     }
 
-    public function loginOptions(): array
+    public function loginOptions(array $allowCredentialIds = []): array
     {
         $options = PublicKeyCredentialRequestOptions::create(
             random_bytes(32),
             $this->rpId(),
-            [],
+            array_map(static fn (string $id): PublicKeyCredentialDescriptor => PublicKeyCredentialDescriptor::create(PublicKeyCredentialDescriptor::CREDENTIAL_TYPE_PUBLIC_KEY, self::decode($id)), $allowCredentialIds),
             PublicKeyCredentialRequestOptions::USER_VERIFICATION_REQUIREMENT_REQUIRED,
             (int) config('passkeys.timeout_ms'),
         );

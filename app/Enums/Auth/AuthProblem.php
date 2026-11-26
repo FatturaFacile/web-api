@@ -31,6 +31,9 @@ enum AuthProblem: string
     case PermissionDenied = 'urn:fatturafacile:problem:permission-denied';
     case CompanyAccessRevoked = 'urn:fatturafacile:problem:company-access-revoked';
     case MfaCannotBeDisabled = 'urn:fatturafacile:problem:mfa-cannot-be-disabled';
+    case TwoFactorMethodUnavailable = 'urn:fatturafacile:problem:two-factor-method-unavailable';
+    case TwoFactorEmailThrottled = 'urn:fatturafacile:problem:two-factor-email-throttled';
+    case TrustedDeviceNotFound = 'urn:fatturafacile:problem:trusted-device-not-found';
 
     /** Machine-readable `code` member that clients (web, desktop, mobile) switch on for a 403. */
     public function code(): ?string

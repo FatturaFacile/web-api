@@ -48,7 +48,59 @@ final class LoginResponder
         private readonly SsoSignInCodes $signInCodes,
         private readonly SsoBrowserBinding $binding,
         private readonly RegistrationAudit $audit,
+        private readonly TrustedDevices $trustedDevices,
+        private readonly EmailOtp $emailOtp,
     ) {}
+
+    /**
+     * The second step of a login that passed the first factor: null when the user has no second factor or the request
+     * carries a valid trusted-device token (audited with mfa_method `trusted_device`), otherwise the challenge answer
+     * with the methods the user can answer it with. A user whose only factor is the email code gets the code sent right
+     * away. The challenge keeps the auth method, the tenant and the access mode of the login.
+     */
+    public function secondFactorStep(Request $request, User $user, ?string $tenantId, string $authMethod, bool $tokenMode): ?JsonResponse
+    {
+        if (! $this->twoFactor->isEnabled($user)) {
+            return null;
+        }
+
+        $trusted = $request->input('trusted_device_token');
+
+        if (is_string($trusted) && $trusted !== '' && $this->trustedDevices->verify($user, $trusted) !== null) {
+            $this->audit->record(RegistrationAudit::TRUSTED_DEVICE_USED, (string) $user->id, [
+                'auth_method' => $authMethod,
+                'mfa_method' => TwoFactorAuthentication::METHOD_TRUSTED_DEVICE,
+            ], $tenantId);
+
+            return null;
+        }
+
+        $methods = $this->twoFactor->availableMethods($user);
+        $emailCodeSent = false;
+
+        if (in_array(TwoFactorAuthentication::METHOD_EMAIL, $methods, true) && ! in_array(TwoFactorAuthentication::METHOD_TOTP, $methods, true)) {
+            try {
+                $this->emailOtp->send($user, EmailOtp::PURPOSE_VERIFY);
+                $emailCodeSent = true;
+                $this->audit->record(RegistrationAudit::TWO_FACTOR_EMAIL_CODE_SENT, (string) $user->id, ['auth_method' => $authMethod], $tenantId);
+            } catch (EmailOtpThrottledException) {
+                // A code was sent a moment ago: the client resends after the delay.
+            }
+        }
+
+        return $this->successResponse(
+            data: [
+                'two_factor_required' => true,
+                'challenge_token' => $this->twoFactor->createChallenge($user, $tenantId, $authMethod, $tokenMode),
+                'expires_in' => $this->twoFactor->challengeTtlMinutes() * 60,
+                'methods' => $methods,
+                'default_method' => $methods[0] ?? null,
+                'email_code_sent' => $emailCodeSent,
+                'trusted_devices_enabled' => $this->trustedDevices->enabled(),
+            ],
+            message: __('two_factor.messages.challenge_required')
+        );
+    }
 
     /**
      * The problem answered to a login that can neither open a cookie session (the request does not come from a stateful
@@ -93,15 +145,8 @@ final class LoginResponder
             );
         }
 
-        if ($this->twoFactor->isEnabled($user)) {
-            return $this->successResponse(
-                data: [
-                    'two_factor_required' => true,
-                    'challenge_token' => $this->twoFactor->createChallenge($user, (string) $tenant->id, self::METHOD_SSO, $tokenMode),
-                    'expires_in' => $this->twoFactor->challengeTtlMinutes() * 60,
-                ],
-                message: __('two_factor.messages.challenge_required')
-            );
+        if (($challenge = $this->secondFactorStep($request, $user, (string) $tenant->id, self::METHOD_SSO, $tokenMode)) !== null) {
+            return $challenge;
         }
 
         return $this->respond($request, $user, $tenants->firstWhere('id', $tenant->id), $tenants, self::METHOD_SSO, $tokenMode);
@@ -129,8 +174,9 @@ final class LoginResponder
 
     /**
      * @param  Collection<int, Tenant>  $tenants
+     * @param  array<string, mixed>  $extra  further keys of the response data (for example the trusted-device token)
      */
-    public function respond(Request $request, User $user, ?Tenant $activeTenant, Collection $tenants, string $authMethod = self::METHOD_PASSWORD, bool $tokenMode = false): JsonResponse
+    public function respond(Request $request, User $user, ?Tenant $activeTenant, Collection $tenants, string $authMethod = self::METHOD_PASSWORD, bool $tokenMode = false, array $extra = []): JsonResponse
     {
         if ($tokenMode && ! $this->tokenModes->enabled()) {
             return $this->problemDetailsResponse(
@@ -163,6 +209,11 @@ final class LoginResponder
 
         event(new Login('sanctum', $user, false));
 
+        // Single sign-on and passkey sign-ins are audited where they are verified; the password sign-in completes here.
+        if ($authMethod === self::METHOD_PASSWORD) {
+            $this->audit->record(RegistrationAudit::LOGIN_SUCCEEDED, (string) $user->id, ['auth_method' => self::METHOD_PASSWORD], $activeTenant === null ? null : (string) $activeTenant->id);
+        }
+
         $role = $this->roleIn($activeTenant);
 
         $credential = $tokenMode
@@ -173,12 +224,14 @@ final class LoginResponder
             data: [
                 'auth_mode' => $tokenMode ? 'token' : 'cookie',
                 ...$credential,
+                ...$extra,
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
                     'locale' => $user->locale,
                     'two_factor_enabled' => $this->twoFactor->isEnabled($user),
+                    'two_factor_methods' => $this->twoFactor->availableMethods($user),
                 ],
                 'two_factor_setup_required' => ! $this->twoFactor->isEnabled($user) && $this->policies->requiresTwoFactor($activeTenant, $role),
                 'active_tenant' => $activeTenant ? [

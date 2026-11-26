@@ -65,6 +65,7 @@ use App\Http\Controllers\Api\V1\Mobile\MobileSyncController;
 use App\Http\Controllers\Api\V1\Mobile\MobileTenantController;
 use App\Http\Controllers\Api\V1\Mobile\MobileWorkforceController;
 use App\Http\Controllers\Api\V1\PasswordChangeController;
+use App\Http\Controllers\Api\V1\PasswordPolicyController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\PaymentImportController;
 use App\Http\Controllers\Api\V1\PaymentReminderController;
@@ -102,6 +103,7 @@ use App\Http\Controllers\Api\V1\Settings\AccessRoleController;
 use App\Http\Controllers\Api\V1\Settings\AccessTeamController;
 use App\Http\Controllers\Api\V1\Settings\InvitationController;
 use App\Http\Controllers\Api\V1\Settings\MemberLifecycleController;
+use App\Http\Controllers\Api\V1\Settings\MemberUnlockController;
 use App\Http\Controllers\Api\V1\Settings\TenantMemberController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
@@ -151,6 +153,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/resend-reset-password-email', [PasswordResetController::class, 'resend'])->middleware('throttle:password-reset-request')->name('resend-reset-password-email');
         Route::get('/validate-reset-token', [PasswordResetController::class, 'validateToken'])->middleware('throttle:password-reset-attempt')->name('validate-reset-token');
         Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset-attempt')->name('reset-password');
+        Route::get('/password-policy/rules', [PasswordPolicyController::class, 'rules'])->middleware('throttle:60,1')->name('password-policy.rules');
+        Route::post('/password-policy/check', [PasswordPolicyController::class, 'check'])->middleware('throttle:30,1')->name('password-policy.check');
         // The token of the e-mail is the credential: whoever already has an account accepts while signed in with it.
         Route::get('/invitations/{token}', [InvitationAcceptanceController::class, 'show'])->middleware('throttle:invitation')->name('invitations.show');
         Route::post('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'accept'])->middleware('throttle:invitation')->name('invitations.accept');
@@ -278,6 +282,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/refresh', [AuthController::class, 'refresh'])->name('refresh');
             Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
             Route::put('/password', [PasswordChangeController::class, 'update'])->middleware('throttle:password-change')->name('password.update');
+            Route::get('/password-policy', [PasswordPolicyController::class, 'show'])->name('password-policy');
             Route::post('/switch-tenant', [AuthController::class, 'switchTenant'])->name('switch-tenant');
             Route::get('/two-factor', [TwoFactorController::class, 'status'])->name('two-factor.status');
             Route::get('/sessions', [SessionController::class, 'index'])->name('sessions.index');
@@ -839,6 +844,7 @@ Route::prefix('v1')->group(function (): void {
                 Route::get('/security/two-factor', [TwoFactorController::class, 'policy'])->name('security.two-factor');
                 Route::put('/security/two-factor', [TwoFactorController::class, 'updatePolicy'])->name('security.two-factor.update');
                 Route::post('/users/{userId}/two-factor/reset', [TwoFactorController::class, 'resetMember'])->whereUuid('userId')->name('users.two-factor.reset');
+                Route::post('/users/{userId}/unlock', [MemberUnlockController::class, 'unlock'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.unlock');
 
                 // GDPR (EU 2016/679) & Swiss nLPD (RS 235.1) Compliance
                 Route::prefix('privacy')->name('privacy.')->group(function (): void {

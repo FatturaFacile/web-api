@@ -88,6 +88,9 @@ final class UserSessions
      */
     public function revokeAll(User $user): array
     {
+        // A remembered device skips the second factor: it must not outlive a password change or a revoked access.
+        app(TrustedDevices::class)->revokeAll($user);
+
         return $this->revokeOthers($user, null, null);
     }
 

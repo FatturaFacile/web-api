@@ -33,9 +33,12 @@ class UpdateSecurityPolicyRequest extends FormRequest
             'password.require_symbols' => ['sometimes', 'boolean'],
             'password.history_count' => ['sometimes', 'integer', 'min:0', 'max:24'],
             'password.max_age_days' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:730'],
+            'password.check_breached' => ['sometimes', 'boolean'],
             'lockout' => ['sometimes', 'array'],
             'lockout.max_attempts' => ['sometimes', 'integer', Rule::in([0, ...range(3, 20)])],
             'lockout.minutes' => ['sometimes', 'integer', 'min:1', 'max:1440'],
+            'lockout.backoff' => ['sometimes', 'boolean'],
+            'lockout.max_minutes' => ['sometimes', 'integer', 'min:1', 'max:10080'],
             'session' => ['sometimes', 'array'],
             'session.idle_timeout_minutes' => ['sometimes', 'nullable', 'integer', 'min:5', 'max:1440'],
             'session.max_concurrent_sessions' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:50'],
@@ -54,6 +57,13 @@ class UpdateSecurityPolicyRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
+                $minutes = $this->input('lockout.minutes');
+                $cap = $this->input('lockout.max_minutes');
+
+                if ($minutes !== null && $cap !== null && (int) $cap < (int) $minutes) {
+                    $validator->errors()->add('lockout.max_minutes', __('advanced_auth.errors.lockout_cap_too_small'));
+                }
+
                 if ($this->input('two_factor.require_for') === 'roles' && $this->input('two_factor.roles', []) === []) {
                     $validator->errors()->add('two_factor.roles', __('enterprise_auth.errors.roles_required'));
                 }

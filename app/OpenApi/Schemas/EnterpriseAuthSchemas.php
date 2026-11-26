@@ -25,6 +25,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'require_symbols', type: 'boolean'),
         new OA\Property(property: 'history_count', type: 'integer', minimum: 0, maximum: 24, description: 'How many previous passwords cannot be reused (0 = no check).'),
         new OA\Property(property: 'max_age_days', type: 'integer', minimum: 1, maximum: 730, nullable: true, description: 'Password older than this cannot sign in until it is reset (null = never expires).'),
+        new OA\Property(property: 'check_breached', type: 'boolean', description: 'Refuse passwords found in known data breaches (Have I Been Pwned range API, k-anonymity; fails open when the service is unreachable).'),
     ]
 )]
 #[OA\Schema(
@@ -32,6 +33,8 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'max_attempts', type: 'integer', description: '0 = no lockout, otherwise 3 to 20 wrong passwords lock the account.'),
         new OA\Property(property: 'minutes', type: 'integer', minimum: 1, maximum: 1440),
+        new OA\Property(property: 'backoff', type: 'boolean', description: 'Progressive lockout: every lockout without a successful login in between doubles the lock duration, up to max_minutes.'),
+        new OA\Property(property: 'max_minutes', type: 'integer', minimum: 1, maximum: 10080, description: 'Cap of the progressive lock duration.'),
     ]
 )]
 #[OA\Schema(
@@ -137,6 +140,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'last_used_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'expires_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'token', type: 'string', nullable: true, description: 'The plain token: present only in the response that creates it.'),
+        new OA\Property(property: 'sync', ref: '#/components/schemas/ScimSyncStatus', description: 'Sync status of the identity provider; only in the status response.'),
     ]
 )]
 #[OA\Schema(

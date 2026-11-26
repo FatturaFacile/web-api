@@ -37,6 +37,7 @@ class PasswordChangeController extends Controller
                 new OA\Property(property: 'password_confirmation', type: 'string', format: 'password'),
                 new OA\Property(property: 'code', type: 'string', example: '123456', nullable: true, description: 'Required with two-factor authentication, unless recovery_code is given'),
                 new OA\Property(property: 'recovery_code', type: 'string', example: 'abcde-fghjk', nullable: true),
+                new OA\Property(property: 'email_code', type: 'string', example: '482913', nullable: true, description: 'Code sent by POST /auth/two-factor/email/send, for users with the email factor'),
             ]
         )),
         responses: [
@@ -57,6 +58,7 @@ class PasswordChangeController extends Controller
             $request->validated('password'),
             $request->validated('code'),
             $request->validated('recovery_code'),
+            $request->validated('email_code'),
         );
 
         if ($problem === AuthProblem::PasswordChangeLocked) {

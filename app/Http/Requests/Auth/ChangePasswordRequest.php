@@ -29,6 +29,7 @@ class ChangePasswordRequest extends FormRequest
             'password' => ['required', 'string', 'confirmed', 'different:current_password', Password::defaults()],
             'code' => ['nullable', 'string', 'max:16'],
             'recovery_code' => ['nullable', 'string', 'max:32'],
+            'email_code' => ['nullable', 'string', 'max:16'],
         ];
     }
 

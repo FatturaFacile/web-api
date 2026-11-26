@@ -9,6 +9,7 @@ use App\Http\Requests\Auth\ConfirmedPasswordRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\TrustedDevices;
 use App\Services\Auth\UserSessions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -102,8 +103,10 @@ class SessionController extends Controller
         /** @var User $user */
         $user = $request->user();
         $revoked = $this->sessions->revokeOthers($user, $this->currentTokenId($user), $this->currentSessionId($request));
+        // Signing every other access out also ends the remembered devices.
+        $trustedDevices = app(TrustedDevices::class)->revokeAll($user);
 
-        $this->audit->record(RegistrationAudit::OTHER_SESSIONS_REVOKED, (string) $user->id, $revoked);
+        $this->audit->record(RegistrationAudit::OTHER_SESSIONS_REVOKED, (string) $user->id, [...$revoked, 'trusted_devices' => $trustedDevices]);
 
         return $this->successResponse(data: $revoked, message: __('sessions.messages.others_revoked'));
     }

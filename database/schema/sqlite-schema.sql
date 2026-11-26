@@ -36,6 +36,8 @@ CREATE TABLE "users"(
   "updated_by" varchar,
   "deleted_by" varchar,
   "ui_preferences" text,
+  "lockout_streak" integer not null default '0',
+  "two_factor_email_confirmed_at" datetime,
   primary key("id")
 );
 
@@ -27692,6 +27694,9 @@ CREATE TABLE "tenant_security_policies"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "lockout_backoff" tinyint(1) not null default '0',
+  "lockout_max_minutes" integer not null default '1440',
+  "password_check_breached" tinyint(1) not null default '0',
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -27715,6 +27720,8 @@ CREATE TABLE "tenant_user"(
   "updated_by" varchar,
   "deleted_by" varchar,
   "custom_role_id" varchar,
+  "scim_granted_role" varchar,
+  "scim_base_role" varchar,
   foreign key("user_id") references "users"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -56090,6 +56097,106 @@ CREATE INDEX "frn_collection_batches_tenant_id_index" on "frn_collection_batches
 CREATE INDEX "frn_collection_batches_run_id_index" on "frn_collection_batches"(
   "run_id"
 );
+CREATE TABLE "scim_groups"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "display_name" varchar not null,
+  "external_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "scim_groups_tenant_id_display_name_unique" on "scim_groups"(
+  "tenant_id",
+  "display_name"
+);
+CREATE INDEX "scim_groups_tenant_id_external_id_index" on "scim_groups"(
+  "tenant_id",
+  "external_id"
+);
+CREATE TABLE "scim_group_members"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "scim_group_id" varchar not null,
+  "user_id" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("scim_group_id") references "scim_groups"("id") on delete cascade,
+  foreign key("user_id") references "users"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "scim_group_members_scim_group_id_user_id_unique" on "scim_group_members"(
+  "scim_group_id",
+  "user_id"
+);
+CREATE INDEX "scim_group_members_tenant_id_user_id_index" on "scim_group_members"(
+  "tenant_id",
+  "user_id"
+);
+CREATE TABLE "scim_group_mappings"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "group_name" varchar not null,
+  "role" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "scim_group_mappings_tenant_id_group_name_unique" on "scim_group_mappings"(
+  "tenant_id",
+  "group_name"
+);
+CREATE TABLE "scim_provisioning_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "resource" varchar not null,
+  "operation" varchar not null,
+  "status" varchar not null,
+  "resource_id" varchar,
+  "resource_name" varchar,
+  "scim_token_id" varchar,
+  "error" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "scim_provisioning_logs_tenant_id_created_at_index" on "scim_provisioning_logs"(
+  "tenant_id",
+  "created_at"
+);
+CREATE INDEX "scim_provisioning_logs_tenant_id_status_index" on "scim_provisioning_logs"(
+  "tenant_id",
+  "status"
+);
+CREATE TABLE "trusted_devices"(
+  "id" varchar not null,
+  "user_id" varchar not null,
+  "token_hash" varchar not null,
+  "label" varchar,
+  "ip_address" varchar,
+  "last_used_at" datetime,
+  "expires_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("user_id") references "users"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "trusted_devices_user_id_expires_at_index" on "trusted_devices"(
+  "user_id",
+  "expires_at"
+);
+CREATE UNIQUE INDEX "trusted_devices_token_hash_unique" on "trusted_devices"(
+  "token_hash"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -56569,3 +56676,6 @@ INSERT INTO migrations VALUES(475,'2028_01_07_000200_create_customer_returns_rev
 INSERT INTO migrations VALUES(476,'2028_01_07_000300_create_van_selling_field_sales_mod233_tables',32);
 INSERT INTO migrations VALUES(477,'2028_01_08_000100_create_customer_satisfaction_mod245_tables',32);
 INSERT INTO migrations VALUES(478,'2028_01_08_000100_create_franchise_network_mod244_tables',32);
+INSERT INTO migrations VALUES(479,'2028_01_09_000100_create_scim_groups_and_provisioning_logs',33);
+INSERT INTO migrations VALUES(480,'2028_01_09_000200_add_lockout_backoff_and_breached_password_check',33);
+INSERT INTO migrations VALUES(481,'2028_01_09_000300_add_advanced_mfa_tables',33);

@@ -11,6 +11,8 @@ use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
+ * @property array<string, mixed>|null $payload_before
+ * @property array<string, mixed>|null $payload_after
  * @property array<string, mixed>|null $diff_json
  * @property Carbon $event_timestamp
  */

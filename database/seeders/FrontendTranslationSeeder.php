@@ -7,6 +7,8 @@ namespace Database\Seeders;
 use Database\Seeders\Translations\AcademyFrontendTranslations;
 use Database\Seeders\Translations\AccountsPayableFrontendTranslations;
 use Database\Seeders\Translations\AccrualsDeferralsFrontendTranslations;
+use Database\Seeders\Translations\AdvancedAuthEnterpriseFrontendTranslations;
+use Database\Seeders\Translations\AdvancedAuthMfaFrontendTranslations;
 use Database\Seeders\Translations\AgentCommissionsFrontendTranslations;
 use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
@@ -155,6 +157,8 @@ class FrontendTranslationSeeder extends Seeder
             + MobileFrontendTranslations::all($locale)
             + MobileFeatureTranslations::all($locale)
             + SecurityCenterFrontendTranslations::all($locale)
+            + AdvancedAuthMfaFrontendTranslations::all($locale)
+            + AdvancedAuthEnterpriseFrontendTranslations::all($locale)
             + RfqFrontendTranslations::all($locale)
             + PurchaseRequisitionFrontendTranslations::all($locale)
             + ManufacturingCommandCenterFrontendTranslations::all($locale)

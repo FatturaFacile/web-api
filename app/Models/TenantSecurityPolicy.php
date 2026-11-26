@@ -28,6 +28,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $max_concurrent_sessions
  * @property list<string>|null $two_factor_roles
  * @property bool $sso_only
+ * @property bool $lockout_backoff
+ * @property int $lockout_max_minutes
+ * @property bool $password_check_breached
  */
 class TenantSecurityPolicy extends Model
 {
@@ -51,6 +54,9 @@ class TenantSecurityPolicy extends Model
             'max_concurrent_sessions' => 'integer',
             'two_factor_roles' => 'array',
             'sso_only' => 'boolean',
+            'lockout_backoff' => 'boolean',
+            'lockout_max_minutes' => 'integer',
+            'password_check_breached' => 'boolean',
         ];
     }
 }

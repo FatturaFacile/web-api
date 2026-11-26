@@ -3,6 +3,7 @@
 use App\Jobs\Appointments\QueueAppointmentRemindersJob;
 use App\Models\PasswordResetToken;
 use App\Models\Tenant;
+use App\Models\TrustedDevice;
 use Enterprise\EventBus\Jobs\MaintainOutboxLifecycleJob;
 use Enterprise\EventBus\Jobs\RelayOutboxEventsJob;
 use Enterprise\MultiTenant\Queue\TenantJobDispatcher;
@@ -111,7 +112,7 @@ Schedule::command('supplier-portal:alert-expiring-documents')->dailyAt('05:50')-
 Schedule::command('auth:prune-unverified-users')->dailyAt('04:00')->withoutOverlapping()->onOneServer();
 // Expired Bearer tokens stop working at once; this only removes their rows.
 Schedule::command('sanctum:prune-expired', ['--hours' => 24])->dailyAt('04:05')->withoutOverlapping()->onOneServer();
-Schedule::command('model:prune', ['--model' => [PasswordResetToken::class]])->dailyAt('04:15')->withoutOverlapping()->onOneServer();
+Schedule::command('model:prune', ['--model' => [PasswordResetToken::class, TrustedDevice::class]])->dailyAt('04:15')->withoutOverlapping()->onOneServer();
 Schedule::command('ecommerce:sync-orders')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('sdi:poll')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('sdi:expire-pa-deadlines')->dailyAt('03:30')->withoutOverlapping()->onOneServer();

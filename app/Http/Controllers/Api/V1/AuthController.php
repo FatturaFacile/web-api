@@ -20,7 +20,9 @@ use App\Services\Auth\Security\PasswordPolicy;
 use App\Services\Auth\Security\TenantSecurityPolicies;
 use App\Services\Auth\Sso\SsoLogout;
 use App\Services\Auth\TokenMode;
+use App\Services\Auth\TrustedDevices;
 use App\Services\Auth\TwoFactorAuthentication;
+use App\Services\Auth\TwoFactorChallengeVerifier;
 use App\Services\Tenancy\TenantContext;
 use App\Services\Tenancy\TenantMembershipService;
 use Illuminate\Auth\Events\Failed;
@@ -51,6 +53,8 @@ class AuthController extends Controller
         private readonly TokenMode $tokenModes,
         private readonly SsoLogout $ssoLogout,
         private readonly BreakGlassAccess $breakGlass,
+        private readonly TwoFactorChallengeVerifier $verifier,
+        private readonly TrustedDevices $trustedDevices,
     ) {}
 
     /**
@@ -70,7 +74,7 @@ class AuthController extends Controller
     #[OA\Post(
         path: '/api/v1/auth/login',
         operationId: 'login',
-        description: 'Cookie authentication (default and only mode unless the token mode is enabled on the server): a first-party SPA served over https from a Sanctum stateful domain first calls GET /sanctum/csrf-cookie, then logs in with credentials included and the X-XSRF-TOKEN header; the response sets the HttpOnly + Secure session cookie (the session id is regenerated at login) and carries no token (auth_mode=cookie). A request that does not come from a stateful origin is a 400. Token mode (server setting auth.token_mode.enabled, off by default): a client that sends token_mode=true receives an expiring Bearer token (auth_mode=token, token, expires_at); with the setting off token_mode=true is a 422. With two-factor authentication the response carries a challenge_token instead, exchanged at /auth/two-factor-challenge in the same mode.',
+        description: 'Cookie authentication (default and only mode unless the token mode is enabled on the server): a first-party SPA served over https from a Sanctum stateful domain first calls GET /sanctum/csrf-cookie, then logs in with credentials included and the X-XSRF-TOKEN header; the response sets the HttpOnly + Secure session cookie (the session id is regenerated at login) and carries no token (auth_mode=cookie). A request that does not come from a stateful origin is a 400. Token mode (server setting auth.token_mode.enabled, off by default): a client that sends token_mode=true receives an expiring Bearer token (auth_mode=token, token, expires_at); with the setting off token_mode=true is a 422. With two-factor authentication the response carries a challenge_token instead (with the available methods: totp, email, webauthn, recovery_code), exchanged at /auth/two-factor-challenge in the same mode; a valid trusted_device_token of the user skips the challenge.',
         summary: 'User login',
         tags: ['Authentication'],
         requestBody: new OA\RequestBody(
@@ -82,6 +86,7 @@ class AuthController extends Controller
                     new OA\Property(property: 'password', type: 'string', format: 'password', example: 'secret123'),
                     new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', nullable: true, example: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'),
                     new OA\Property(property: 'token_mode', description: 'Ask for a Bearer token instead of the cookie session. Accepted only when the server enables the token mode (auth.token_mode.enabled); otherwise a 422.', type: 'boolean', default: false),
+                    new OA\Property(property: 'trusted_device_token', description: 'Token returned by an earlier challenge with remember_device=true; when valid for the user the second factor is skipped.', type: 'string', nullable: true),
                 ]
             )
         ),
@@ -120,6 +125,7 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
             'tenant_id' => ['nullable', 'uuid'],
             TokenMode::PARAMETER => ['sometimes', 'boolean'],
+            'trusted_device_token' => ['sometimes', 'nullable', 'string', 'size:64'],
         ]);
 
         $tokenMode = $this->tokenModes->resolve($request);
@@ -138,6 +144,7 @@ class AuthController extends Controller
             event(new Failed('sanctum', $user, ['email' => $validated['email']]));
 
             if ($user !== null) {
+                $this->audit->recordForUserTenants(RegistrationAudit::LOGIN_FAILED, $user, ['reason' => 'invalid_credentials'], $validated['tenant_id'] ?? null);
                 $this->lockout->recordFailure($user);
             }
 
@@ -150,6 +157,8 @@ class AuthController extends Controller
 
         // Only someone who knows the password learns that the account is locked: the answer to a wrong password stays the same.
         if ($this->lockout->isLocked($user)) {
+            $this->audit->recordForUserTenants(RegistrationAudit::LOGIN_FAILED, $user, ['reason' => 'account_locked'], $validated['tenant_id'] ?? null);
+
             return $this->problemDetailsResponse(
                 title: __('enterprise_auth.errors.account_locked_title'),
                 detail: __('enterprise_auth.errors.account_locked_detail'),
@@ -228,7 +237,7 @@ class AuthController extends Controller
         if ($ssoOnly && $this->breakGlass->allows($user, (string) $activeTenant->id)) {
             $this->audit->record(RegistrationAudit::PASSWORD_LOGIN_BREAK_GLASS, (string) $user->id, [], (string) $activeTenant->id);
         } elseif ($ssoOnly) {
-            $this->audit->record(RegistrationAudit::PASSWORD_LOGIN_DENIED_SSO_ONLY, (string) $user->id, [], (string) $activeTenant->id);
+            $this->audit->record(RegistrationAudit::PASSWORD_LOGIN_DENIED_SSO_ONLY, (string) $user->id, ['reason' => 'sso_required'], (string) $activeTenant->id);
 
             return $this->problemDetailsResponse(
                 title: __('enterprise_auth.errors.sso_required_title'),
@@ -239,7 +248,7 @@ class AuthController extends Controller
         }
 
         if ($this->passwordPolicy->passwordIsExpired($user)) {
-            $this->audit->record(RegistrationAudit::PASSWORD_EXPIRED_LOGIN_DENIED, (string) $user->id, [], $activeTenant?->id);
+            $this->audit->record(RegistrationAudit::PASSWORD_EXPIRED_LOGIN_DENIED, (string) $user->id, ['reason' => 'password_expired'], $activeTenant?->id);
 
             return $this->problemDetailsResponse(
                 title: __('enterprise_auth.errors.password_expired_title'),
@@ -250,15 +259,8 @@ class AuthController extends Controller
         }
 
         // With two factors the password alone gives no access token: a short-lived challenge is exchanged for one.
-        if ($this->twoFactor->isEnabled($user)) {
-            return $this->successResponse(
-                data: [
-                    'two_factor_required' => true,
-                    'challenge_token' => $this->twoFactor->createChallenge($user, $activeTenant?->id, LoginResponder::METHOD_PASSWORD, $tokenMode),
-                    'expires_in' => $this->twoFactor->challengeTtlMinutes() * 60,
-                ],
-                message: __('two_factor.messages.challenge_required')
-            );
+        if (($challenge = $this->responder->secondFactorStep($request, $user, $activeTenant?->id, LoginResponder::METHOD_PASSWORD, $tokenMode)) !== null) {
+            return $challenge;
         }
 
         return $this->authenticatedResponse($request, $user, $activeTenant, $tenants, LoginResponder::METHOD_PASSWORD, $tokenMode);
@@ -281,6 +283,19 @@ class AuthController extends Controller
                     new OA\Property(property: 'challenge_token', type: 'string', example: 'wq3...64 chars'),
                     new OA\Property(property: 'code', description: 'Six-digit code of the authenticator app. Required without recovery_code.', type: 'string', example: '123456', nullable: true),
                     new OA\Property(property: 'recovery_code', description: 'Single-use recovery code. Required without code.', type: 'string', example: 'abcde-fghjk', nullable: true),
+                    new OA\Property(property: 'email_code', description: 'Six-digit code sent by email (POST /auth/two-factor/challenge/email, or sent at login for a user whose only factor is email).', type: 'string', example: '482913', nullable: true),
+                    new OA\Property(
+                        property: 'webauthn',
+                        description: 'Assertion of a security key or passkey: the ceremony_id and the options come from POST /auth/two-factor/challenge/webauthn/options, the credential is the PublicKeyCredential JSON of navigator.credentials.get().',
+                        properties: [
+                            new OA\Property(property: 'ceremony_id', type: 'string', format: 'uuid'),
+                            new OA\Property(property: 'credential', type: 'object'),
+                        ],
+                        type: 'object',
+                        nullable: true
+                    ),
+                    new OA\Property(property: 'remember_device', description: 'Remember this device: the response carries a trusted_device_token (shown once) that lets the next logins of the user skip the second factor for auth.two_factor.trusted_device_days days.', type: 'boolean', default: false),
+                    new OA\Property(property: 'device_name', description: 'Optional label of the remembered device (defaults to the browser and system).', type: 'string', maxLength: 120, nullable: true),
                 ]
             )
         ),
@@ -316,21 +331,47 @@ class AuthController extends Controller
             return $blocked;
         }
 
-        $method = $this->twoFactor->verifyCode($user, $validated['code'] ?? null, $validated['recovery_code'] ?? null);
+        $authMethod = (string) ($challenge['auth_method'] ?? LoginResponder::METHOD_PASSWORD);
 
-        if ($method === null) {
-            $this->twoFactor->recordFailedAttempt($token);
-            $this->audit->record(RegistrationAudit::TWO_FACTOR_CHALLENGE_FAILED, (string) $user->id);
-            event(new Failed('sanctum', $user, ['two_factor' => true]));
+        // Repeated wrong second-factor answers lock the account like repeated wrong passwords do.
+        if ($this->lockout->isLocked($user)) {
+            $this->twoFactor->forgetChallenge($token);
 
             return $this->problemDetailsResponse(
-                title: __('two_factor.errors.code_invalid_title'),
-                detail: __('two_factor.errors.code_invalid_detail'),
+                title: __('enterprise_auth.errors.account_locked_title'),
+                detail: __('enterprise_auth.errors.account_locked_detail'),
+                status: Response::HTTP_LOCKED,
+                type: AuthProblem::AccountLocked->value,
+            );
+        }
+
+        $result = $this->verifier->verify($user, $validated);
+
+        if (! $result->isPassed()) {
+            $exhausted = $this->twoFactor->recordFailedAttempt($token);
+            $this->audit->record(RegistrationAudit::TWO_FACTOR_CHALLENGE_FAILED, (string) $user->id, [
+                'auth_method' => $authMethod,
+                'mfa_method' => $result->attemptedMethod,
+                'reason' => $result->failureReason,
+                'challenge_exhausted' => $exhausted,
+            ], $challenge['tenant_id']);
+            event(new Failed('sanctum', $user, ['two_factor' => true]));
+
+            if ($exhausted) {
+                $this->lockout->recordFailure($user);
+            }
+
+            $webauthn = $result->attemptedMethod === TwoFactorAuthentication::METHOD_WEBAUTHN;
+
+            return $this->problemDetailsResponse(
+                title: __($webauthn ? 'two_factor.errors.webauthn_failed_title' : 'two_factor.errors.code_invalid_title'),
+                detail: __($webauthn ? 'two_factor.errors.webauthn_failed_detail' : 'two_factor.errors.code_invalid_detail'),
                 status: Response::HTTP_UNAUTHORIZED,
                 type: AuthProblem::TwoFactorCodeInvalid->value,
             );
         }
 
+        $method = (string) $result->method;
         $this->twoFactor->forgetChallenge($token);
 
         // The access is opened in the mode chosen at login: the challenge carries it, the client cannot switch here.
@@ -356,13 +397,38 @@ class AuthController extends Controller
             );
         }
 
+        $details = ['auth_method' => $authMethod, 'mfa_method' => $method];
+        $tenantId = $activeTenant?->id;
+
+        $this->audit->record(RegistrationAudit::TWO_FACTOR_CHALLENGE_PASSED, (string) $user->id, $details, $tenantId);
+
         if ($method === TwoFactorAuthentication::METHOD_RECOVERY_CODE) {
             $this->audit->record(RegistrationAudit::TWO_FACTOR_RECOVERY_CODE_USED, (string) $user->id, [
+                ...$details,
                 'remaining_recovery_codes' => $this->twoFactor->remainingRecoveryCodes($user),
-            ]);
+            ], $tenantId);
         }
 
-        return $this->authenticatedResponse($request, $user, $activeTenant, $tenants, (string) ($challenge['auth_method'] ?? LoginResponder::METHOD_PASSWORD), $challengeTokenMode);
+        if ($method === TwoFactorAuthentication::METHOD_WEBAUTHN) {
+            $this->audit->record(RegistrationAudit::TWO_FACTOR_WEBAUTHN_USED, (string) $user->id, $details, $tenantId);
+        }
+
+        $extra = [];
+
+        if ($request->boolean('remember_device') && $this->trustedDevices->enabled()) {
+            $remembered = $this->trustedDevices->issue($user, $request, $request->filled('device_name') ? (string) $request->input('device_name') : null);
+            $this->audit->record(RegistrationAudit::TRUSTED_DEVICE_CREATED, (string) $user->id, [...$details, 'device_id' => $remembered['device']->id], $tenantId);
+            $extra = [
+                'trusted_device_token' => $remembered['token'],
+                'trusted_device' => [
+                    'id' => $remembered['device']->id,
+                    'label' => $remembered['device']->label,
+                    'expires_at' => $remembered['device']->expires_at->toIso8601String(),
+                ],
+            ];
+        }
+
+        return $this->responder->respond($request, $user, $activeTenant, $tenants, $authMethod, $challengeTokenMode, $extra);
     }
 
     /**

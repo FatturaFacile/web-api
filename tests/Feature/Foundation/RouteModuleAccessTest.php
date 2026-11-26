@@ -187,6 +187,12 @@ function writeRoutesWithoutModule(): array
         'PUT api/v1/settings/users/{user}/roles' => 'can:settings.users.update',
         'POST api/v1/settings/users/{user}/revoke-sessions' => 'can:settings.users.update',
         // Two-factor enrolment and the sessions belong to the signed-in user, who manages their own.
+        'POST api/v1/auth/two-factor/email/enable' => 'own two-factor',
+        'POST api/v1/auth/two-factor/email/confirm' => 'own two-factor',
+        'POST api/v1/auth/two-factor/email/send' => 'own two-factor',
+        'DELETE api/v1/auth/two-factor/email' => 'own two-factor',
+        'DELETE api/v1/auth/two-factor/trusted-devices' => 'own trusted devices',
+        'DELETE api/v1/auth/two-factor/trusted-devices/{id}' => 'own trusted devices',
         'POST api/v1/auth/2fa/totp' => 'own two-factor',
         'POST api/v1/auth/2fa/totp/confirm' => 'own two-factor',
         'DELETE api/v1/auth/2fa/totp' => 'own two-factor',

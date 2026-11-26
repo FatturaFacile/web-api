@@ -136,11 +136,12 @@ final readonly class UserErasureService
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
+            'two_factor_email_confirmed_at' => null,
             'email_verification_token' => null,
             'deleted_at' => CarbonImmutable::now(),
         ]);
 
-        foreach (['password_histories' => 'user_id', 'sso_identities' => 'user_id'] as $table => $column) {
+        foreach (['password_histories' => 'user_id', 'sso_identities' => 'user_id', 'trusted_devices' => 'user_id'] as $table => $column) {
             if (Schema::hasTable($table)) {
                 DB::table($table)->where($column, $userId)->delete();
             }

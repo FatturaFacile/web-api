@@ -50,6 +50,9 @@ final class TenantSecurityPolicies
             maxConcurrentSessions: $row?->max_concurrent_sessions,
             twoFactorRoles: array_map('strval', $row->two_factor_roles ?? []),
             ssoOnly: (bool) ($row->sso_only ?? false),
+            lockoutBackoff: (bool) ($row->lockout_backoff ?? false),
+            lockoutMaxMinutes: max(1, (int) ($row->lockout_max_minutes ?? 1440)),
+            passwordCheckBreached: (bool) config('auth.registration.password.check_breached') || ($row !== null && $row->password_check_breached),
         );
     }
 
@@ -128,10 +131,13 @@ final class TenantSecurityPolicies
                 'require_symbols' => $policy->passwordRequireSymbols,
                 'history_count' => $policy->passwordHistoryCount,
                 'max_age_days' => $policy->passwordMaxAgeDays,
+                'check_breached' => $policy->passwordCheckBreached,
             ],
             'lockout' => [
                 'max_attempts' => $policy->lockoutMaxAttempts,
                 'minutes' => $policy->lockoutMinutes,
+                'backoff' => $policy->lockoutBackoff,
+                'max_minutes' => $policy->lockoutMaxMinutes,
             ],
             'session' => [
                 'idle_timeout_minutes' => $policy->sessionIdleTimeoutMinutes,

@@ -33,7 +33,7 @@ use Illuminate\Support\Str;
  *
  * Supported: filter `userName eq "x"` and `externalId eq "x"`, startIndex/count paging, PATCH add/replace/remove on
  * `active`, `externalId`, `displayName`, `name.givenName`, `name.familyName` (also as a value object without path).
- * Not supported: groups, bulk, sort, ETags, change password.
+ * Groups are in ScimGroups. Not supported: bulk, sort, ETags, change password.
  */
 final class ScimUsers
 {
