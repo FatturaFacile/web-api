@@ -14,7 +14,7 @@ $tiers = [
 it('earns the rate of a tier only on the part of the base that falls inside it', function () use ($tiers): void {
     expect(TieredRateCalculator::calculate('4000', '0', $tiers))->toBe(['commission' => '80.00', 'effective_rate' => '2.0000'])
         ->and(TieredRateCalculator::calculate('4000', '8000', $tiers)['commission'])->toBe('100.00') // 2000 at 2% + 2000 at 3%
-        ->and(TieredRateCalculator::calculate('4000', '48000', $tiers)['commission'])->toBe('140.00') // 2000 at 3% + 2000 at 5%
+        ->and(TieredRateCalculator::calculate('4000', '48000', $tiers)['commission'])->toBe('160.00') // 2000 at 3% + 2000 at 5%
         ->and(TieredRateCalculator::calculate('4000', '60000', $tiers)['commission'])->toBe('200.00');
 });
 

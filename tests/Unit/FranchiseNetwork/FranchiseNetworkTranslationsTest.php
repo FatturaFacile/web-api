@@ -55,7 +55,7 @@ it('has a message in every language for each error code thrown by the module', f
         $errors = frnLang($locale)['errors'];
 
         foreach (array_unique($codes) as $code) {
-            expect($errors)->toHaveKey($code, $locale.':'.$code);
+            expect($errors)->toHaveKey($code);
         }
     }
 });

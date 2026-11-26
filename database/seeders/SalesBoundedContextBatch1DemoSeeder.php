@@ -71,8 +71,8 @@ final class SalesBoundedContextBatch1DemoSeeder extends Seeder
                     'hierarchy_role' => CustomerHierarchyRole::Subsidiary,
                     'country' => 'IT',
                     'currency' => 'EUR',
-                    'vat_number' => 'IT08923410962',
-                    'fiscal_code' => '08923410962',
+                    'vat_number' => 'IT08923410966',
+                    'fiscal_code' => '08923410966',
                     'sdi_code' => 'M5UXCR1',
                     'pec_email' => 'amministrazione@alpineprecision.pec.it',
                     'addresses' => [

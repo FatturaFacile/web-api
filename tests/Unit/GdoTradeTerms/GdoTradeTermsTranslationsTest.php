@@ -81,7 +81,7 @@ it('translates every error code the module can raise, in the frontend and the ba
         $errors = (require lang_path("{$locale}/gdo_trade_terms.php"))['errors'];
 
         foreach ($codes as $code) {
-            expect($errors)->toHaveKey($code, "{$locale} backend");
+            expect($errors)->toHaveKey($code);
         }
     }
 

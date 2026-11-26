@@ -33,8 +33,8 @@ it('validates Swiss UID and QR-IBAN and Italian P.IVA, Codice Fiscale, SDI, and 
 
     $it = FiscalIdentity::fromArray([
         'country' => 'IT',
-        'vat_number' => 'IT08923410962',
-        'fiscal_code' => '08923410962',
+        'vat_number' => 'IT08923410966',
+        'fiscal_code' => '08923410966',
         'sdi_code' => 'm5uxcr1',
         'pec_email' => 'PEC@EXAMPLE.IT',
     ]);
