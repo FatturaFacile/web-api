@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Product;
 use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\VanSalesAndFieldForce\Domain\Enums\ThermalPrinterProfile;
@@ -22,6 +23,8 @@ it('parses GS1-128 variable-weight barcodes (AI 01, 3103, 10, 17) and EAN-13 sca
         'country' => 'IT',
         'default_currency' => 'EUR',
     ]);
+
+    app(TenantContext::class)->setTenant($tenant);
 
     $product = Product::create([
         'tenant_id' => $tenant->id,

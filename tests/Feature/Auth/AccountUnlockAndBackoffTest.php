@@ -170,7 +170,7 @@ test('failed and successful password sign-ins are audited with the standard keys
     lockoutFail($this->member, 1);
     $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertOk();
 
-    $failed = AuditLedgerEntry::query()->where('action', 'LOGIN_FAILED')->sole();
+    $failed = AuditLedgerEntry::query()->where('action', 'LOGIN_FAILED')->where('payload_after->auth_method', 'password')->sole();
     expect($failed->tenant_id)->toBe($this->tenant->id)
         ->and($failed->payload_after)->toMatchArray(['reason' => 'invalid_credentials', 'auth_method' => 'password', 'status' => 'failure', 'user_id' => $this->member->id]);
 

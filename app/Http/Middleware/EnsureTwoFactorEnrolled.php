@@ -29,6 +29,11 @@ final class EnsureTwoFactorEnrolled
      */
     private const ALLOWED_ROUTE_PREFIX = 'auth.';
 
+    /**
+     * The passkey routes that enrol a security key, which counts as the second factor itself.
+     */
+    private const ALLOWED_ROUTE_NAMES = ['api.v1.iam.passkeys.index', 'api.v1.iam.passkeys.options', 'api.v1.iam.passkeys.store'];
+
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly TwoFactorAuthentication $twoFactor,
@@ -46,7 +51,9 @@ final class EnsureTwoFactorEnrolled
             return $next($request);
         }
 
-        if (str_starts_with((string) $request->route()?->getName(), self::ALLOWED_ROUTE_PREFIX)) {
+        $routeName = (string) $request->route()?->getName();
+
+        if (str_starts_with($routeName, self::ALLOWED_ROUTE_PREFIX) || in_array($routeName, self::ALLOWED_ROUTE_NAMES, true)) {
             return $next($request);
         }
 

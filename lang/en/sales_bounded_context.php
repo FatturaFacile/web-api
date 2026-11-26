@@ -108,7 +108,7 @@ return [
     ],
     'presets' => [
         'ch_uid_example' => 'CHE-116.281.710',
-        'it_vat_example' => 'IT08923410962',
+        'it_vat_example' => 'IT08923410966',
         'it_sdi_example' => 'M5UXCR1',
         'ch_qr_iban_example' => 'CH4431999123000889012',
     ],

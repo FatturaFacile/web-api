@@ -20,7 +20,7 @@ use Illuminate\Support\Carbon;
 final class SecurityAuditReader
 {
     /**
-     * @param  array<string, mixed>  $filters  from, to, user_id, event_type (list or comma separated), status, auth_method
+     * @param  array<string, mixed>  $filters  from, to, subject_user_id, event_type (list or comma separated), status, auth_method
      * @return LengthAwarePaginator<int, AuditLedgerEntry>
      */
     public function paginate(string $tenantId, array $filters, int $perPage = 25): LengthAwarePaginator
@@ -56,8 +56,8 @@ final class SecurityAuditReader
             $query->where('event_timestamp', '<=', $to->setTimezone('UTC')->format('Y-m-d H:i:s.u'));
         }
 
-        if (! empty($filters['user_id'])) {
-            $userId = (string) $filters['user_id'];
+        if (! empty($filters['subject_user_id'])) {
+            $userId = (string) $filters['subject_user_id'];
             $query->where(fn (Builder $who) => $who->where('resource_id', $userId)->orWhere('payload_after->user_id', $userId));
         }
 

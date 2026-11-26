@@ -87,7 +87,7 @@ final class VanSellingFieldSalesDemoSeeder extends Seeder
                 [
                     'type' => 'customer',
                     'country' => 'IT',
-                    'vat_number' => 'IT08923410962',
+                    'vat_number' => 'IT08923410966',
                     'sdi_code' => 'M5UXCR1',
                     'payment_terms_days' => 30,
                 ]

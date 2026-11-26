@@ -32,7 +32,7 @@ it('generates unique slugs and avoids reserved words', function (): void {
     $taken = ['acme-spa'];
     $exists = static fn (string $slug): bool => in_array($slug, $taken, true);
 
-    expect(SlugGenerator::generate('ACME S.p.A.', static fn (): bool => false))->toBe('acme-s-p-a')
+    expect(SlugGenerator::generate('ACME S.p.A.', static fn (): bool => false))->toBe('acme-spa')
         ->and(SlugGenerator::generate('Acme Spa', $exists))->toBe('acme-spa-2')
         ->and(SlugGenerator::generate('Passes', static fn (): bool => false, ['passes']))->toBe('passes-2')
         ->and(SlugGenerator::generate('!!!', static fn (): bool => false))->toBe('convention')

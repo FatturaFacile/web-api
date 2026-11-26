@@ -44,7 +44,7 @@ final readonly class CsvStatementMapping
             hasHeader: (bool) ($data['has_header'] ?? true),
             dateFormat: (string) ($data['date_format'] ?? 'd/m/Y'),
             decimalSeparator: (string) ($data['decimal_separator'] ?? ','),
-            thousandsSeparator: isset($data['thousands_separator']) && $data['thousands_separator'] !== '' ? (string) $data['thousands_separator'] : null,
+            thousandsSeparator: array_key_exists('thousands_separator', $data) ? ($data['thousands_separator'] !== null && $data['thousands_separator'] !== '' ? (string) $data['thousands_separator'] : null) : '.',
         );
     }
 }

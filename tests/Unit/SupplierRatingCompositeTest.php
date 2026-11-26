@@ -32,7 +32,7 @@ it('renormalises the weights over the components that have data', function (): v
     ]);
 
     // (90*35 + 100*10) / 45
-    expect($score)->toBe('91.11');
+    expect($score)->toBe('92.22');
 });
 
 it('has no score without any component', function (): void {

@@ -54,16 +54,18 @@ function breachedPolicy(Tenant $tenant, array $attributes = []): TenantSecurityP
 }
 
 test('a password found in the range response is breached; padding and other suffixes are not', function (): void {
-    Http::fake(['api.pwnedpasswords.com/range/*' => Http::response(pwnedRange('Winter2025!'), 200)]);
+    // One stub, answered in order: a later Http::fake() would not override an earlier matching stub.
+    Http::fake(['api.pwnedpasswords.com/range/*' => Http::sequence()
+        ->push(pwnedRange('Winter2025!'), 200)
+        ->push(pwnedRange('Winter2025!', 0), 200)
+        ->push("0018A45C4D1DEF81644B54AB7F969B88D65:1\r\n", 200)]);
 
     expect(app(BreachedPasswords::class)->isBreached('Winter2025!'))->toBeTrue();
 
     Cache::flush();
-    Http::fake(['api.pwnedpasswords.com/range/*' => Http::response(pwnedRange('Winter2025!', 0), 200)]);
     expect(app(BreachedPasswords::class)->isBreached('Winter2025!'))->toBeFalse();
 
     Cache::flush();
-    Http::fake(['api.pwnedpasswords.com/range/*' => Http::response("0018A45C4D1DEF81644B54AB7F969B88D65:1\r\n", 200)]);
     expect(app(BreachedPasswords::class)->isBreached('Some-Other-Passw0rd!'))->toBeFalse();
 });
 

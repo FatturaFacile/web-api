@@ -50,7 +50,7 @@ test('the owner renames a passkey and the change reaches the security audit trai
     $this->getJson('/api/v1/auth/passkeys')->assertOk()->assertJsonPath('data.0.name', 'YubiKey 5C');
 
     $entry = AuditLedgerEntry::query()->where('action', 'ACCESS.SECURITY.PASSKEY_RENAMED')->sole();
-    expect($entry->model_id)->toBe((string) $this->user->id)
+    expect($entry->resource_id)->toBe((string) $this->user->id)
         ->and($entry->payload_after)->toMatchArray(['credentialId' => $id])
         ->and(json_encode($entry->payload_after))->not->toContain('YubiKey');
 });
