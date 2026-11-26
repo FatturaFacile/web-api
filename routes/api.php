@@ -87,6 +87,11 @@ use App\Http\Controllers\Api\V1\RecurringContracts\PriceIndexRateController;
 use App\Http\Controllers\Api\V1\RecurringContracts\RecurringBillingRunController;
 use App\Http\Controllers\Api\V1\RecurringContracts\RecurringContractController;
 use App\Http\Controllers\Api\V1\RegistrationController;
+use App\Http\Controllers\Api\V1\Reports\DailySummaryReportController;
+use App\Http\Controllers\Api\V1\Reports\EmailBlacklistController;
+use App\Http\Controllers\Api\V1\Reports\NotificationPreferenceController;
+use App\Http\Controllers\Api\V1\Reports\ReportTrackingController;
+use App\Http\Controllers\Api\V1\Reports\TenantReportSettingController;
 use App\Http\Controllers\Api\V1\SalesKpiController;
 use App\Http\Controllers\Api\V1\SalesOrderController;
 use App\Http\Controllers\Api\V1\SalesOrderFulfillmentController;
@@ -256,6 +261,13 @@ Route::prefix('v1')->group(function (): void {
 
     // Enterprise authentication: SSO (OpenID Connect), tenant security policy, SCIM 2.0.
     require __DIR__.'/enterprise_auth.php';
+
+    // Public signed tracking and one-click unsubscribe routes for scheduled ERP daily reports.
+    Route::prefix('reports')->name('reports.')->middleware('throttle:120,1')->group(function (): void {
+        Route::match(['get', 'post'], '/unsubscribe/{preference}', [ReportTrackingController::class, 'unsubscribe'])->whereUuid('preference')->name('unsubscribe');
+        Route::get('/track/open/{delivery}', [ReportTrackingController::class, 'trackOpen'])->whereUuid('delivery')->name('track.open');
+        Route::get('/track/click/{delivery}', [ReportTrackingController::class, 'trackClick'])->whereUuid('delivery')->name('track.click');
+    });
 
     // ----------------------------------------------------
     // Protected Enterprise Routes (Sanctum + Tenant + Locale)
@@ -868,6 +880,25 @@ Route::prefix('v1')->group(function (): void {
                 Route::put('/document-templates/{type}', [DocumentTemplateController::class, 'update'])->name('document-templates.update');
                 Route::delete('/document-templates/{type}', [DocumentTemplateController::class, 'destroy'])->name('document-templates.destroy');
             });
+        });
+
+        // Scheduled ERP Daily Reports & User Notification Preferences (Issue #245)
+        Route::get('/notification-preferences', [NotificationPreferenceController::class, 'show'])->name('notification-preferences.show');
+        Route::put('/notification-preferences', [NotificationPreferenceController::class, 'update'])->name('notification-preferences.update');
+
+        Route::prefix('reports/daily-summary')->name('reports.daily-summary.')->group(function (): void {
+            Route::get('/preview', [DailySummaryReportController::class, 'preview'])->name('preview');
+            Route::post('/send-test', [DailySummaryReportController::class, 'sendTest'])->name('send-test');
+            Route::post('/send-now', [DailySummaryReportController::class, 'sendNow'])->name('send-now');
+            Route::get('/audit-logs', [DailySummaryReportController::class, 'auditLogs'])->name('audit-logs');
+        });
+
+        Route::get('/tenant-report-settings', [TenantReportSettingController::class, 'show'])->name('tenant-report-settings.show');
+        Route::middleware('module.access:system')->group(function (): void {
+            Route::put('/tenant-report-settings', [TenantReportSettingController::class, 'update'])->name('tenant-report-settings.update');
+            Route::get('/email-blacklist', [EmailBlacklistController::class, 'index'])->name('email-blacklist.index');
+            Route::post('/email-blacklist', [EmailBlacklistController::class, 'store'])->name('email-blacklist.store');
+            Route::delete('/email-blacklist/{id}', [EmailBlacklistController::class, 'destroy'])->whereUuid('id')->name('email-blacklist.destroy');
         });
     });
 });

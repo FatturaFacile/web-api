@@ -62,6 +62,7 @@ final class TenantSchemaBaseline
         'customs_tariff_numbers',
         'document_status_translations',
         'document_statuses',
+        'email_blacklist',
         'eam_fiscal_depreciation_rates',
         'enasarco_annual_limits',
         'enasarco_parameters',
