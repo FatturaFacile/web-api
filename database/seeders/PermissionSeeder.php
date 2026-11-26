@@ -73,6 +73,9 @@ class PermissionSeeder extends GlobalDataSeeder
             ['code' => 'sales_bc.view', 'label_it' => 'Consultazione CRM & Vendite Omnicanale (SD#139)', 'label_en' => 'View Omnichannel CRM & Sales Pipeline (SD#139)'],
             ['code' => 'sales_bc.manage', 'label_it' => 'Gestione Pipeline CRM, CPQ, Ordini, DDT & Provvigioni (SD#139)', 'label_en' => 'Manage CRM, CPQ, Orders, DDT & Commissions (SD#139)'],
             ['code' => 'sales_bc.approve_margin', 'label_it' => 'Approvazione Deroga Margine Minimo (Mod 038)', 'label_en' => 'Approve Minimum Margin Guardrail Override (Mod 038)'],
+            ['code' => 'data_migration.view', 'label_it' => 'Consultazione Migrazione Dati Guidata (Mod 104)', 'label_en' => 'View Guided Data Migration (Mod 104)'],
+            ['code' => 'data_migration.manage', 'label_it' => 'Esecuzione Migrazione Dati Guidata (Mod 104)', 'label_en' => 'Manage & Execute Guided Data Migration (Mod 104)'],
+            ['code' => 'data_migration.rollback', 'label_it' => 'Rollback Atomico Migrazione Dati (Mod 104)', 'label_en' => 'Rollback Data Migration Batches (Mod 104)'],
         ];
 
         foreach ($permissions as $idx => $perm) {

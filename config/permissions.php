@@ -573,6 +573,15 @@ return [
                 'write' => ['sales_bc.manage', 'sales_bc.approve_margin', 'sales_bc.*'],
             ],
         ],
+        // Guided Data Migration & Import/Export Wizard (Mod 104, Issue #253).
+        'data_migration' => [
+            'read' => $financeReaders,
+            'write' => $finance,
+            'grants' => [
+                'read' => ['data_migration.read', 'data_migration.view', 'data_migration.write', 'data_migration.manage', 'data_migration.execute', 'data_migration.rollback', 'data_migration.*'],
+                'write' => ['data_migration.write', 'data_migration.manage', 'data_migration.execute', 'data_migration.rollback', 'data_migration.*'],
+            ],
+        ],
     ],
 
     /*

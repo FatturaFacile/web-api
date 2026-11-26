@@ -107,6 +107,7 @@
             "Modules\\FranchiseNetwork\\": "modules/81_FranchiseNetwork/src/",
             "Modules\\CorporateConventions\\": "modules/81_CorporateConventions/src/",
             "Modules\\ProductCatalog\\": "modules/83_ProductCatalog/src/",
+            "Modules\\DataMigration\\": "modules/84_DataMigration/src/",
             "Modules\\SwissVat\\": "modules/75_SwissVat/src/",
             "Modules\\LeaveManagement\\": "modules/76_LeaveManagement/src/",
             "Modules\\MarketingAutomation\\": "modules/77_MarketingAutomation/src/",

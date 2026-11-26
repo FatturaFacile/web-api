@@ -23,6 +23,7 @@ use Database\Seeders\Translations\CurrencyFxFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\CustomerReturnsReverseLogisticsFrontendTranslations;
 use Database\Seeders\Translations\CustomerSatisfactionFrontendTranslations;
+use Database\Seeders\Translations\DataMigrationFrontendTranslations;
 use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\DebtCollectionFrontendTranslations;
 use Database\Seeders\Translations\ElectronicSignatureFrontendTranslations;
@@ -205,7 +206,8 @@ class FrontendTranslationSeeder extends Seeder
             + CustomerReturnsReverseLogisticsFrontendTranslations::all($locale)
             + VanSellingFieldSalesFrontendTranslations::all($locale)
             + SalesBoundedContextBatch1FrontendTranslations::all($locale)
-            + ScheduledErpReportFrontendTranslations::all($locale);
+            + ScheduledErpReportFrontendTranslations::all($locale)
+            + DataMigrationFrontendTranslations::all($locale);
     }
 
     /**

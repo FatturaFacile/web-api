@@ -172,6 +172,8 @@ class DatabaseSeeder extends Seeder
             SwissVatSeeder::class,
             LeaveManagementSeeder::class,
             MarketingAutomationSeeder::class,
+            DataMigrationLocalizationSeeder::class,
+            DataMigrationPresetSeeder::class,
         ]);
     }
 }
