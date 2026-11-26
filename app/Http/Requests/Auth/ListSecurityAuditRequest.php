@@ -28,7 +28,7 @@ class ListSecurityAuditRequest extends FormRequest
         return [
             'from' => ['sometimes', 'nullable', 'date'],
             'to' => ['sometimes', 'nullable', 'date', 'after_or_equal:from'],
-            'user_id' => ['sometimes', 'nullable', 'uuid'],
+            'subject_user_id' => ['sometimes', 'nullable', 'uuid'],
             'event_type' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'status' => ['sometimes', 'nullable', Rule::in(['success', 'failure'])],
             'auth_method' => ['sometimes', 'nullable', Rule::in(['password', 'sso', 'sso_saml', 'sso_oidc', 'passkey'])],

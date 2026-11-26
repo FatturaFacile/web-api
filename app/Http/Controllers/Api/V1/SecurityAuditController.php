@@ -33,14 +33,14 @@ class SecurityAuditController extends Controller
     #[OA\Get(
         path: '/api/v1/settings/security/audit',
         operationId: 'listSecurityAudit',
-        description: 'Paginated authentication and security events of the active tenant, newest first. Filters: from and to (dates or date-times), user_id, event_type (one type or a comma separated list, see /settings/security/audit/event-types), status (success|failure), auth_method (password|sso|sso_saml|sso_oidc|passkey). Each item has the structured fields id, occurred_at, tenant_id, user_id, event_type, status, ip_address, user_agent, auth_method, mfa_method and reason.',
+        description: 'Paginated authentication and security events of the active tenant, newest first. Filters: from and to (dates or date-times), subject_user_id (the user the event is about; user_id is reserved for the request context), event_type (one type or a comma separated list, see /settings/security/audit/event-types), status (success|failure), auth_method (password|sso|sso_saml|sso_oidc|passkey). Each item has the structured fields id, occurred_at, tenant_id, user_id, event_type, status, ip_address, user_agent, auth_method, mfa_method and reason.',
         summary: 'Security audit log',
         security: [['bearerAuth' => []]],
         tags: ['Settings'],
         parameters: [
             new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
             new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
-            new OA\Parameter(name: 'user_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'subject_user_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
             new OA\Parameter(name: 'event_type', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'LOGIN_LOCKED,SSO_LOGIN_FAILED')),
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['success', 'failure'])),
             new OA\Parameter(name: 'auth_method', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['password', 'sso', 'sso_saml', 'sso_oidc', 'passkey'])),
@@ -56,7 +56,7 @@ class SecurityAuditController extends Controller
     )]
     public function index(ListSecurityAuditRequest $request): JsonResponse
     {
-        $page = $this->reader->paginate((string) $this->activeTenant()->id, $request->safe()->only(['from', 'to', 'user_id', 'event_type', 'status', 'auth_method']), (int) $request->integer('per_page', 25));
+        $page = $this->reader->paginate((string) $this->activeTenant()->id, $request->safe()->only(['from', 'to', 'subject_user_id', 'event_type', 'status', 'auth_method']), (int) $request->integer('per_page', 25));
         $users = $this->reader->usersOf($page->getCollection());
 
         return $this->successResponse(

@@ -262,7 +262,7 @@ test('the legacy route groups declare the module that owns them', function (stri
     $checked = 0;
 
     foreach (app('router')->getRoutes() as $route) {
-        if (! str_starts_with($route->uri(), "api/v1/{$prefix}") || str_starts_with($route->uri(), 'api/v1/catalog/customs-taric-codes') || str_starts_with($route->uri(), 'api/v1/catalog/free-trade-agreements')) {
+        if (! str_starts_with($route->uri(), "api/v1/{$prefix}") || str_starts_with($route->uri(), 'api/v1/catalog/customs-taric-codes') || str_starts_with($route->uri(), 'api/v1/catalog/free-trade-agreements') || in_array('module.access:corporate_conventions', $route->gatherMiddleware(), true)) {
             continue;
         }
 

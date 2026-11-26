@@ -125,7 +125,7 @@ test('another tenant sees none of it', function (): void {
     expect($response->json('data.0.user_id'))->toBe($this->outsider->id)
         ->and($response->json('data.0.tenant_id'))->toBe($this->other->id);
 
-    $this->withHeaders(['X-Tenant-Id' => $this->other->id])->getJson($this->path.'?user_id='.$this->member->id)->assertOk()->assertJsonPath('meta.total', 0);
+    $this->withHeaders(['X-Tenant-Id' => $this->other->id])->getJson($this->path.'?subject_user_id='.$this->member->id)->assertOk()->assertJsonPath('meta.total', 0);
 });
 
 test('the filters narrow the list', function (): void {
@@ -141,8 +141,8 @@ test('the filters narrow the list', function (): void {
         ->and($get('auth_method=sso_oidc')->json('meta.total'))->toBe(1)
         ->and($get('auth_method=passkey')->json('meta.total'))->toBe(1)
         ->and($get('auth_method=password')->json('meta.total'))->toBe(2)
-        ->and($get('user_id='.$this->member->id)->json('meta.total'))->toBe(5)
-        ->and($get('user_id='.$this->admin->id)->json('meta.total'))->toBe(0)
+        ->and($get('subject_user_id='.$this->member->id)->json('meta.total'))->toBe(5)
+        ->and($get('subject_user_id='.$this->admin->id)->json('meta.total'))->toBe(0)
         ->and($get('status=failure&auth_method=sso_oidc')->json('meta.total'))->toBe(1)
         ->and($get('per_page=5&page=1')->json('meta.last_page'))->toBe(1);
 
@@ -161,7 +161,7 @@ test('bad filters are refused', function (): void {
     $get('event_type=NOT_AN_EVENT')->assertUnprocessable()->assertJsonValidationErrors('event_type');
     $get('status=maybe')->assertUnprocessable()->assertJsonValidationErrors('status');
     $get('auth_method=carrier-pigeon')->assertUnprocessable()->assertJsonValidationErrors('auth_method');
-    $get('user_id=nope')->assertUnprocessable()->assertJsonValidationErrors('user_id');
+    $get('subject_user_id=nope')->assertUnprocessable()->assertJsonValidationErrors('subject_user_id');
     $get('from=2028-03-02&to=2028-03-01')->assertUnprocessable()->assertJsonValidationErrors('to');
     $get('per_page=500')->assertUnprocessable()->assertJsonValidationErrors('per_page');
 });

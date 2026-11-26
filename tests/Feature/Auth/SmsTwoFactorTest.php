@@ -15,6 +15,7 @@ use App\Services\Sms\LogSmsGateway;
 use App\Services\Sms\PhoneNumber;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
@@ -109,6 +110,8 @@ test('the SMS factor is enrolled with the password, an E.164 number and the rece
         ->and(DB::table('users')->where('id', $user->id)->value('two_factor_sms_phone'))->not->toBe(MFA_PHONE)
         ->and(AuditLedgerEntry::query()->where('action', RegistrationAudit::TWO_FACTOR_SMS_ENABLED)->count())->toBe(1);
 
+    // The six attempts of the minute are used up (the limit is per user, shared by the second factor routes).
+    $this->withoutMiddleware(ThrottleRequests::class);
     $this->withHeaders($this->headers)->postJson('/api/v1/auth/two-factor/sms/enable', ['current_password' => MfaScenario::PASSWORD, 'phone' => MFA_PHONE])->assertStatus(409);
     $this->withHeaders($this->headers)->postJson('/api/v1/auth/two-factor/sms/confirm', ['code' => '123456'])->assertStatus(409);
 
@@ -337,7 +340,8 @@ test('the log gateway sends nothing out and the http gateway posts the message w
     app(LogSmsGateway::class)->send(MFA_PHONE, 'hello');
 
     config(['sms.http.url' => 'https://sms.example.test/send', 'sms.http.token' => 'secret-token', 'sms.http.sender' => 'Acme']);
-    Http::fake(['sms.example.test/*' => Http::response(['ok' => true])]);
+    // One stub, answered in order: a later Http::fake() would not override an earlier matching stub (the 500 is tried twice).
+    Http::fake(['sms.example.test/*' => Http::sequence()->push(['ok' => true])->push([], 500)->push([], 500)]);
 
     app(HttpSmsGateway::class)->send(MFA_PHONE, 'Your code');
 
@@ -347,7 +351,6 @@ test('the log gateway sends nothing out and the http gateway posts the message w
         && $request['message'] === 'Your code'
         && $request['sender'] === 'Acme');
 
-    Http::fake(['sms.example.test/*' => Http::response([], 500)]);
     expect(fn () => app(HttpSmsGateway::class)->send(MFA_PHONE, 'Your code'))->toThrow(SmsDeliveryException::class);
 
     config(['sms.http.url' => '']);
