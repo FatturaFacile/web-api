@@ -90,6 +90,7 @@ use Database\Seeders\Translations\SwissQrBillSlipFrontendTranslations;
 use Database\Seeders\Translations\SwissVatFrontendTranslations;
 use Database\Seeders\Translations\TreasuryBankingFrontendTranslations;
 use Database\Seeders\Translations\VanSellingFieldSalesFrontendTranslations;
+use Database\Seeders\Translations\WorkflowApprovalFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -205,7 +206,8 @@ class FrontendTranslationSeeder extends Seeder
             + CustomerReturnsReverseLogisticsFrontendTranslations::all($locale)
             + VanSellingFieldSalesFrontendTranslations::all($locale)
             + SalesBoundedContextBatch1FrontendTranslations::all($locale)
-            + ScheduledErpReportFrontendTranslations::all($locale);
+            + ScheduledErpReportFrontendTranslations::all($locale)
+            + WorkflowApprovalFrontendTranslations::all($locale);
     }
 
     /**
