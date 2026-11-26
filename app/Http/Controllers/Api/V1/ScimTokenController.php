@@ -10,6 +10,7 @@ use App\Models\ScimToken;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\Scim\ScimProvisioningLogger;
 use App\Services\Auth\Scim\ScimTokens;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
@@ -29,12 +30,13 @@ class ScimTokenController extends Controller
         private readonly TenantContext $tenantContext,
         private readonly ScimTokens $tokens,
         private readonly RegistrationAudit $audit,
+        private readonly ScimProvisioningLogger $provisioningLog,
     ) {}
 
     #[OA\Get(
         path: '/api/v1/settings/security/scim',
         operationId: 'getScimToken',
-        description: 'Whether the tenant has a usable SCIM token, its last four characters, its last use and expiry. The token itself is never returned again.',
+        description: 'Whether the tenant has a usable SCIM token, its last four characters, its last use and expiry, and the sync status of the identity provider (last sync time and status, users and groups provisioned, last error). The token itself is never returned again.',
         summary: 'SCIM token status',
         security: [['bearerAuth' => []]],
         tags: ['Settings'],
@@ -46,7 +48,9 @@ class ScimTokenController extends Controller
     )]
     public function show(): JsonResponse
     {
-        return $this->successResponse(data: $this->present($this->tokens->current((string) $this->activeTenant()->id)));
+        $tenantId = (string) $this->activeTenant()->id;
+
+        return $this->successResponse(data: $this->present($this->tokens->current($tenantId)) + ['sync' => $this->provisioningLog->summary($tenantId)]);
     }
 
     #[OA\Post(

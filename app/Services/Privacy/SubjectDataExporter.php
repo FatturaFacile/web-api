@@ -21,7 +21,7 @@ use ZipArchive;
 final readonly class SubjectDataExporter
 {
     /** Columns that are never exported, whatever the table. */
-    public const array NeverExported = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'search_vector', 'search_text', 'email_verification_token'];
+    public const array NeverExported = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_sms_phone', 'search_vector', 'search_text', 'email_verification_token'];
 
     public function __construct(private PersonalDataRegistry $registry, private SubjectResolver $resolver) {}
 

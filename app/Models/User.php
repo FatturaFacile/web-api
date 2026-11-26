@@ -25,6 +25,10 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @property int $failed_login_attempts
  * @property Carbon|null $login_locked_until
+ * @property int $lockout_streak
+ * @property Carbon|null $two_factor_email_confirmed_at
+ * @property string|null $two_factor_sms_phone
+ * @property Carbon|null $two_factor_sms_confirmed_at
  * @property array<string, mixed>|null $ui_preferences
  */
 class User extends Authenticatable implements AuditableEntityInterface
@@ -35,7 +39,7 @@ class User extends Authenticatable implements AuditableEntityInterface
     use HasImmutableAuditTrail;
 
     /** @var list<string> */
-    protected array $auditExclude = ['two_factor_secret', 'two_factor_recovery_codes', 'two_factor_last_used_step', 'failed_login_attempts', 'login_locked_until'];
+    protected array $auditExclude = ['two_factor_secret', 'two_factor_recovery_codes', 'two_factor_last_used_step', 'failed_login_attempts', 'login_locked_until', 'lockout_streak', 'two_factor_sms_phone'];
 
     public const array UiPreferenceDefaults = ['theme_preference' => 'system', 'ui_density' => 'comfortable', 'reduced_motion' => null];
 
@@ -57,6 +61,7 @@ class User extends Authenticatable implements AuditableEntityInterface
         'email_verification_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'two_factor_sms_phone',
         'two_factor_last_used_step',
     ];
 
@@ -88,8 +93,12 @@ class User extends Authenticatable implements AuditableEntityInterface
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',
+            'two_factor_email_confirmed_at' => 'datetime',
+            'two_factor_sms_phone' => 'encrypted',
+            'two_factor_sms_confirmed_at' => 'datetime',
             'two_factor_last_used_step' => 'integer',
             'failed_login_attempts' => 'integer',
+            'lockout_streak' => 'integer',
             'login_locked_until' => 'datetime',
             'ui_preferences' => 'array',
         ];

@@ -117,19 +117,84 @@ final class RegistrationAudit
 
     public const SCIM_USER_DEACTIVATED = 'SCIM_USER_DEACTIVATED';
 
+    public const SCIM_GROUP_CREATED = 'SCIM_GROUP_CREATED';
+
+    public const SCIM_GROUP_UPDATED = 'SCIM_GROUP_UPDATED';
+
+    public const SCIM_GROUP_DELETED = 'SCIM_GROUP_DELETED';
+
+    public const SCIM_GROUP_MEMBERS_CHANGED = 'SCIM_GROUP_MEMBERS_CHANGED';
+
+    public const SCIM_ROLE_APPLIED = 'SCIM_ROLE_APPLIED';
+
+    public const SCIM_OPERATION_FAILED = 'SCIM_OPERATION_FAILED';
+
+    public const SCIM_GROUP_MAPPING_SAVED = 'SCIM_GROUP_MAPPING_SAVED';
+
+    public const SCIM_GROUP_MAPPING_REMOVED = 'SCIM_GROUP_MAPPING_REMOVED';
+
+    public const LOGIN_SUCCEEDED = 'LOGIN_SUCCEEDED';
+
+    public const LOGIN_FAILED = 'LOGIN_FAILED';
+
+    public const LOGIN_UNLOCKED = 'LOGIN_UNLOCKED';
+
+    public const TWO_FACTOR_CHALLENGE_PASSED = 'TWO_FACTOR_CHALLENGE_PASSED';
+
+    public const TWO_FACTOR_EMAIL_ENABLED = 'TWO_FACTOR_EMAIL_ENABLED';
+
+    public const TWO_FACTOR_EMAIL_DISABLED = 'TWO_FACTOR_EMAIL_DISABLED';
+
+    public const TWO_FACTOR_EMAIL_CODE_SENT = 'TWO_FACTOR_EMAIL_CODE_SENT';
+
+    public const TWO_FACTOR_WEBAUTHN_USED = 'TWO_FACTOR_WEBAUTHN_USED';
+
+    public const TWO_FACTOR_SMS_ENABLED = 'TWO_FACTOR_SMS_ENABLED';
+
+    public const TWO_FACTOR_SMS_DISABLED = 'TWO_FACTOR_SMS_DISABLED';
+
+    public const TWO_FACTOR_SMS_CODE_SENT = 'TWO_FACTOR_SMS_CODE_SENT';
+
+    public const TRUSTED_DEVICE_CREATED = 'TRUSTED_DEVICE_CREATED';
+
+    public const TRUSTED_DEVICE_USED = 'TRUSTED_DEVICE_USED';
+
+    public const TRUSTED_DEVICE_REVOKED = 'TRUSTED_DEVICE_REVOKED';
+
+    public const TRUSTED_DEVICES_REVOKED = 'TRUSTED_DEVICES_REVOKED';
+
     public function __construct(private readonly AuditLedgerInterface $ledger) {}
 
     /**
+     * Failure convention: an action whose name carries one of these words is a failed or refused attempt
+     * (`SSO_LOGIN_FAILED`, `PASSWORD_LOGIN_DENIED_SSO_ONLY`, `LOGIN_LOCKED`, `PASSWORD_RESET_TOKEN_EXPIRED`...). Session
+     * housekeeping (`SESSION_*`) is never a failure.
+     */
+    private const FAILURE_PATTERN = '/(?:^|_)(?:FAILED|DENIED|INVALID|EXPIRED|EXCEEDED|LOCKED|REJECTED)(?:_|$)/';
+
+    /**
+     * Standard keys of the `payload_after` details, read by the security audit viewer:
+     * - `status`: `success` or `failure`; derived from the failure convention above unless the caller sets it;
+     * - `auth_method`: `password`, `sso_saml`, `sso_oidc` (`sso` when the protocol is unknown), `passkey`; derived for
+     *   login, password and SSO events unless the caller sets it;
+     * - `mfa_method`: the second factor used (`totp`, `recovery_code`, `email_otp`, `webauthn`), set by the MFA code;
+     * - `reason`: why an attempt failed, a short machine code;
+     * - `user_id`: the user the event is about (set from $userId; the ledger row itself only has it as resource id).
+     * The IP address, the user agent, the tenant and the user are columns of the ledger entry itself. Entries already on
+     * the ledger are never rewritten: only new entries carry the standard keys.
+     *
      * @param  array<string, mixed>  $details
      */
     public function record(string $action, ?string $userId = null, array $details = [], ?string $tenantId = null): void
     {
+        $details = $this->withStandardKeys($action, $details, $userId);
+
         $data = [
             'module_code' => 'AUTH',
             'action' => $action,
             'model_class' => User::class,
             'actor_user_id' => auth()->id() ?? $userId,
-            'payload_after' => $details === [] ? null : $details,
+            'payload_after' => $details,
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
         ];
@@ -144,5 +209,88 @@ final class RegistrationAudit
         }
 
         $this->ledger->recordPayload($data);
+    }
+
+    /**
+     * Records an event of a user on the ledger of every tenant the user belongs to (a lockout or a failed sign-in concerns
+     * all of them, and each tenant sees only its own ledger); a user without a tenant goes on the system chain.
+     *
+     * @param  array<string, mixed>  $details
+     * @param  string|null  $onlyTenantId  restrict to this tenant when the user is a member of it
+     */
+    public function recordForUserTenants(string $action, User $user, array $details = [], ?string $onlyTenantId = null): void
+    {
+        $tenantIds = $user->tenants()->pluck('tenants.id')->map(static fn (mixed $id): string => (string) $id)->all();
+
+        if ($onlyTenantId !== null && in_array($onlyTenantId, $tenantIds, true)) {
+            $tenantIds = [$onlyTenantId];
+        }
+
+        if ($tenantIds === []) {
+            $this->record($action, (string) $user->id, $details);
+
+            return;
+        }
+
+        foreach ($tenantIds as $tenantId) {
+            $this->record($action, (string) $user->id, $details, $tenantId);
+        }
+    }
+
+    /**
+     * `success` or `failure` for an action, by the failure convention of this class.
+     */
+    public static function statusOf(string $action): string
+    {
+        $action = strtoupper($action);
+
+        return ! str_starts_with($action, 'SESSION_') && preg_match(self::FAILURE_PATTERN, $action) === 1 ? 'failure' : 'success';
+    }
+
+    /**
+     * The authentication method an action implies, or null when it implies none.
+     *
+     * @param  array<string, mixed>  $details
+     */
+    public static function authMethodOf(string $action, array $details = []): ?string
+    {
+        $action = strtoupper($action);
+
+        if (in_array($action, ['SSO_LOGIN_STARTED', 'SSO_LOGIN_SUCCEEDED', 'SSO_LOGIN_FAILED', 'SSO_LOGOUT', 'SSO_USER_PROVISIONED', 'SSO_IDENTITY_LINKED'], true)) {
+            return match ($details['protocol'] ?? null) {
+                'saml' => 'sso_saml',
+                'oidc' => 'sso_oidc',
+                default => 'sso',
+            };
+        }
+
+        if ($action === self::LOGIN_UNLOCKED) {
+            return null;
+        }
+
+        if (str_starts_with($action, 'PASSWORD_') || str_starts_with($action, 'LOGIN_') || $action === self::TWO_FACTOR_CHALLENGE_FAILED) {
+            return 'password';
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $details
+     * @return array<string, mixed>
+     */
+    private function withStandardKeys(string $action, array $details, ?string $userId = null): array
+    {
+        if ($userId !== null) {
+            $details['user_id'] ??= $userId;
+        }
+
+        $details['status'] ??= self::statusOf($action);
+
+        if (! isset($details['auth_method']) && ($method = self::authMethodOf($action, $details)) !== null) {
+            $details['auth_method'] = $method;
+        }
+
+        return $details;
     }
 }

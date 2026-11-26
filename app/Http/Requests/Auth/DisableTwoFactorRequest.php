@@ -16,8 +16,10 @@ class DisableTwoFactorRequest extends ConfirmedPasswordRequest
     {
         return [
             ...parent::rules(),
-            'code' => ['nullable', 'required_without:recovery_code', 'string', 'max:16'],
-            'recovery_code' => ['nullable', 'required_without:code', 'string', 'max:32'],
+            'code' => ['nullable', 'required_without_all:recovery_code,email_code,sms_code', 'string', 'max:16'],
+            'recovery_code' => ['nullable', 'string', 'max:32'],
+            'email_code' => ['nullable', 'string', 'max:16'],
+            'sms_code' => ['nullable', 'string', 'max:16'],
         ];
     }
 }

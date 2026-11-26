@@ -26,6 +26,9 @@ final readonly class EffectivePolicy
         public ?int $maxConcurrentSessions,
         public array $twoFactorRoles,
         public bool $ssoOnly,
+        public bool $lockoutBackoff = false,
+        public int $lockoutMaxMinutes = 1440,
+        public bool $passwordCheckBreached = false,
     ) {}
 
     /**
@@ -49,6 +52,9 @@ final readonly class EffectivePolicy
             $smallest($this->maxConcurrentSessions, $other->maxConcurrentSessions),
             array_values(array_unique([...$this->twoFactorRoles, ...$other->twoFactorRoles])),
             $this->ssoOnly && $other->ssoOnly,
+            $this->lockoutBackoff || $other->lockoutBackoff,
+            max($this->lockoutMaxMinutes, $other->lockoutMaxMinutes),
+            $this->passwordCheckBreached || $other->passwordCheckBreached,
         );
     }
 }

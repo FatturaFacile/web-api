@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Scim;
 
-use App\Http\Controllers\Controller;
-use App\Services\Auth\Scim\ScimException;
+use App\Services\Auth\Scim\ScimProvisioningLogger;
 use App\Services\Auth\Scim\ScimUsers;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
@@ -18,14 +17,15 @@ use Symfony\Component\HttpFoundation\Response;
  * the tenant (see AuthenticateScim). Users are the members of that tenant; see ScimUsers for the decisions behind the
  * behaviour. Responses are `application/scim+json`.
  */
-class ScimUserController extends Controller
+class ScimUserController extends ScimController
 {
-    private const SCIM_CONTENT_TYPE = 'application/scim+json';
-
     public function __construct(
         private readonly ScimUsers $users,
-        private readonly TenantContext $tenantContext,
-    ) {}
+        TenantContext $tenantContext,
+        ScimProvisioningLogger $provisioningLog,
+    ) {
+        parent::__construct($tenantContext, $provisioningLog);
+    }
 
     #[OA\Get(
         path: '/api/v1/scim/v2/Users',
@@ -91,7 +91,7 @@ class ScimUserController extends Controller
     )]
     public function store(Request $request): JsonResponse
     {
-        return $this->respond(fn (): array => $this->users->create($this->tenantId(), $request->json()->all(), $this->tokenId($request)), Response::HTTP_CREATED);
+        return $this->write($request, 'user', 'create', null, fn (): array => $this->users->create($this->tenantId(), $request->json()->all(), $this->tokenId($request)), Response::HTTP_CREATED);
     }
 
     #[OA\Put(
@@ -112,7 +112,7 @@ class ScimUserController extends Controller
     )]
     public function replace(Request $request, string $id): JsonResponse
     {
-        return $this->respond(fn (): array => $this->users->replace($this->tenantId(), $id, $request->json()->all(), $this->tokenId($request)));
+        return $this->write($request, 'user', 'replace', $id, fn (): array => $this->users->replace($this->tenantId(), $id, $request->json()->all(), $this->tokenId($request)));
     }
 
     #[OA\Patch(
@@ -133,7 +133,7 @@ class ScimUserController extends Controller
     )]
     public function update(Request $request, string $id): JsonResponse
     {
-        return $this->respond(fn (): array => $this->users->patch($this->tenantId(), $id, $request->json()->all(), $this->tokenId($request)));
+        return $this->write($request, 'user', 'patch', $id, fn (): array => $this->users->patch($this->tenantId(), $id, $request->json()->all(), $this->tokenId($request)));
     }
 
     #[OA\Delete(
@@ -152,49 +152,6 @@ class ScimUserController extends Controller
     )]
     public function destroy(Request $request, string $id): JsonResponse
     {
-        try {
-            $this->users->deactivate($this->tenantId(), $id, $this->tokenId($request));
-        } catch (ScimException $exception) {
-            return $this->error($exception);
-        }
-
-        return response()->json(null, Response::HTTP_NO_CONTENT, ['Content-Type' => self::SCIM_CONTENT_TYPE]);
-    }
-
-    /**
-     * @param  callable(): array<string, mixed>  $action
-     */
-    private function respond(callable $action, int $status = Response::HTTP_OK): JsonResponse
-    {
-        try {
-            return response()->json($action(), $status, ['Content-Type' => self::SCIM_CONTENT_TYPE]);
-        } catch (ScimException $exception) {
-            return $this->error($exception);
-        }
-    }
-
-    private function error(ScimException $exception): JsonResponse
-    {
-        $body = [
-            'schemas' => ['urn:ietf:params:scim:api:messages:2.0:Error'],
-            'status' => (string) $exception->status,
-            'detail' => $exception->getMessage(),
-        ];
-
-        if ($exception->scimType !== null) {
-            $body['scimType'] = $exception->scimType;
-        }
-
-        return response()->json($body, $exception->status, ['Content-Type' => self::SCIM_CONTENT_TYPE]);
-    }
-
-    private function tenantId(): string
-    {
-        return (string) $this->tenantContext->getTenantId();
-    }
-
-    private function tokenId(Request $request): string
-    {
-        return (string) $request->attributes->get('scim_token_id');
+        return $this->remove($request, 'user', $id, fn () => $this->users->deactivate($this->tenantId(), $id, $this->tokenId($request)));
     }
 }

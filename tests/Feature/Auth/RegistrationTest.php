@@ -621,3 +621,24 @@ test('the bootstrapped support user does not get the platform administrator role
 
     expect($result->user->refresh()->is_platform_admin)->toBeFalse();
 });
+
+test('registration refuses a breached password when the system default turns the check on', function (): void {
+    config(['auth.registration.password.check_breached' => true]);
+    $password = 'Winter2025-Sun!';
+    $hash = strtoupper(sha1($password));
+    Http::fake(['api.pwnedpasswords.com/range/*' => Http::response(substr($hash, 5).':4242', 200)]);
+
+    $this->postJson('/api/v1/auth/register', registrationPayload(['password' => $password, 'password_confirmation' => $password]))
+        ->assertUnprocessable()->assertJsonValidationErrors('password');
+    expect(User::where('email', 'giuliabianchitest@example.com')->exists())->toBeFalse();
+
+    Http::fake(['api.pwnedpasswords.com/range/*' => Http::response('0018A45C4D1DEF81644B54AB7F969B88D65:1', 200)]);
+    $this->postJson('/api/v1/auth/register', registrationPayload())->assertStatus(202);
+});
+
+test('registration does not call the breach service while the check is off', function (): void {
+    Http::fake();
+
+    $this->postJson('/api/v1/auth/register', registrationPayload())->assertStatus(202);
+    Http::assertNothingSent();
+});

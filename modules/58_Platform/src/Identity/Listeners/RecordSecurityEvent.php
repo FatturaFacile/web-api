@@ -14,6 +14,7 @@ use Modules\Platform\Identity\Domain\Events\LoginSucceeded;
 use Modules\Platform\Identity\Domain\Events\MfaDisabled;
 use Modules\Platform\Identity\Domain\Events\MfaEnabled;
 use Modules\Platform\Identity\Domain\Events\PasskeyRegistered;
+use Modules\Platform\Identity\Domain\Events\PasskeyRenamed;
 use Modules\Platform\Identity\Domain\Events\PasskeyRevoked;
 use Modules\Platform\Identity\Domain\Events\RoleAssigned;
 use Modules\Platform\Identity\Domain\Events\RoleCreated;
@@ -81,7 +82,7 @@ final readonly class RecordSecurityEvent
     {
         return [
             RoleCreated::class, RoleUpdated::class, RoleAssigned::class, RoleRevoked::class,
-            PasskeyRegistered::class, PasskeyRevoked::class, MfaEnabled::class, MfaDisabled::class,
+            PasskeyRegistered::class, PasskeyRenamed::class, PasskeyRevoked::class, MfaEnabled::class, MfaDisabled::class,
             LoginSucceeded::class, LoginFailed::class, AccountLocked::class, SessionsRevoked::class, ImpersonationStarted::class, ImpersonationEnded::class,
         ];
     }

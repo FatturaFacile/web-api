@@ -5,8 +5,11 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\SamlLoginController;
 use App\Http\Controllers\Api\V1\SamlProviderController;
 use App\Http\Controllers\Api\V1\Scim\ScimDiscoveryController;
+use App\Http\Controllers\Api\V1\Scim\ScimGroupController;
 use App\Http\Controllers\Api\V1\Scim\ScimUserController;
+use App\Http\Controllers\Api\V1\ScimGroupSettingsController;
 use App\Http\Controllers\Api\V1\ScimTokenController;
+use App\Http\Controllers\Api\V1\SecurityAuditController;
 use App\Http\Controllers\Api\V1\SecurityPolicyController;
 use App\Http\Controllers\Api\V1\SsoDiscoveryController;
 use App\Http\Controllers\Api\V1\SsoLoginController;
@@ -59,6 +62,14 @@ Route::middleware(['auth:sanctum', 'tenant', 'locale', 'module.access:system'])
         Route::get('/scim', [ScimTokenController::class, 'show'])->name('scim');
         Route::post('/scim/token', [ScimTokenController::class, 'rotate'])->middleware('throttle:6,1')->name('scim.rotate');
         Route::delete('/scim/token', [ScimTokenController::class, 'revoke'])->name('scim.revoke');
+
+        Route::get('/scim/group-mappings', [ScimGroupSettingsController::class, 'index'])->name('scim.group-mappings');
+        Route::put('/scim/group-mappings', [ScimGroupSettingsController::class, 'upsert'])->middleware('throttle:30,1')->name('scim.group-mappings.upsert');
+        Route::delete('/scim/group-mappings/{id}', [ScimGroupSettingsController::class, 'destroy'])->whereUuid('id')->middleware('throttle:30,1')->name('scim.group-mappings.destroy');
+        Route::get('/scim/logs', [ScimGroupSettingsController::class, 'logs'])->name('scim.logs');
+
+        Route::get('/audit', [SecurityAuditController::class, 'index'])->name('audit');
+        Route::get('/audit/event-types', [SecurityAuditController::class, 'eventTypes'])->name('audit.event-types');
     });
 
 Route::prefix('scim/v2')
@@ -67,10 +78,21 @@ Route::prefix('scim/v2')
     ->group(function (): void {
         Route::get('/ServiceProviderConfig', [ScimDiscoveryController::class, 'serviceProviderConfig'])->name('service-provider-config');
         Route::get('/ResourceTypes', [ScimDiscoveryController::class, 'resourceTypes'])->name('resource-types');
+        Route::get('/Schemas', [ScimDiscoveryController::class, 'schemas'])->name('schemas');
+        Route::get('/Schemas/{id}', [ScimDiscoveryController::class, 'schema'])->name('schemas.show');
         Route::get('/Users', [ScimUserController::class, 'index'])->name('users.index');
         Route::post('/Users', [ScimUserController::class, 'store'])->name('users.store');
         Route::get('/Users/{id}', [ScimUserController::class, 'show'])->name('users.show');
         Route::put('/Users/{id}', [ScimUserController::class, 'replace'])->name('users.replace');
         Route::patch('/Users/{id}', [ScimUserController::class, 'update'])->name('users.update');
         Route::delete('/Users/{id}', [ScimUserController::class, 'destroy'])->name('users.destroy');
+        Route::get('/Groups', [ScimGroupController::class, 'index'])->name('groups.index');
+        Route::post('/Groups', [ScimGroupController::class, 'store'])->name('groups.store');
+        Route::get('/Groups/{id}', [ScimGroupController::class, 'show'])->name('groups.show');
+        Route::put('/Groups/{id}', [ScimGroupController::class, 'replace'])->name('groups.replace');
+        Route::patch('/Groups/{id}', [ScimGroupController::class, 'update'])->name('groups.update');
+        Route::delete('/Groups/{id}', [ScimGroupController::class, 'destroy'])->name('groups.destroy');
     });
+
+// Advanced second factors: email code, security key challenge, trusted devices.
+require __DIR__.'/advanced_mfa.php';

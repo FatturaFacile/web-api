@@ -36,6 +36,10 @@ CREATE TABLE "users"(
   "updated_by" varchar,
   "deleted_by" varchar,
   "ui_preferences" text,
+  "lockout_streak" integer not null default '0',
+  "two_factor_email_confirmed_at" datetime,
+  "two_factor_sms_phone" text,
+  "two_factor_sms_confirmed_at" datetime,
   primary key("id")
 );
 
@@ -27653,6 +27657,9 @@ CREATE TABLE "tenant_security_policies"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "lockout_backoff" tinyint(1) not null default '0',
+  "lockout_max_minutes" integer not null default '1440',
+  "password_check_breached" tinyint(1) not null default '0',
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -27676,6 +27683,8 @@ CREATE TABLE "tenant_user"(
   "updated_by" varchar,
   "deleted_by" varchar,
   "custom_role_id" varchar,
+  "scim_granted_role" varchar,
+  "scim_base_role" varchar,
   foreign key("user_id") references "users"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -56767,6 +56776,268 @@ CREATE UNIQUE INDEX "uq_audit_key_versions_tenant_version" on "audit_key_version
   "tenant_id",
   "key_version"
 );
+CREATE TABLE "scim_groups"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "display_name" varchar not null,
+  "external_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "scim_groups_tenant_id_display_name_unique" on "scim_groups"(
+  "tenant_id",
+  "display_name"
+);
+CREATE INDEX "scim_groups_tenant_id_external_id_index" on "scim_groups"(
+  "tenant_id",
+  "external_id"
+);
+CREATE TABLE "scim_group_members"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "scim_group_id" varchar not null,
+  "user_id" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("scim_group_id") references "scim_groups"("id") on delete cascade,
+  foreign key("user_id") references "users"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "scim_group_members_scim_group_id_user_id_unique" on "scim_group_members"(
+  "scim_group_id",
+  "user_id"
+);
+CREATE INDEX "scim_group_members_tenant_id_user_id_index" on "scim_group_members"(
+  "tenant_id",
+  "user_id"
+);
+CREATE TABLE "scim_group_mappings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "group_name" varchar not null,
+  "role" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "scim_group_mappings_tenant_id_group_name_unique" on "scim_group_mappings"(
+  "tenant_id",
+  "group_name"
+);
+CREATE TABLE "scim_provisioning_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "resource" varchar not null,
+  "operation" varchar not null,
+  "status" varchar not null,
+  "resource_id" varchar,
+  "resource_name" varchar,
+  "scim_token_id" varchar,
+  "error" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "scim_provisioning_logs_tenant_id_created_at_index" on "scim_provisioning_logs"(
+  "tenant_id",
+  "created_at"
+);
+CREATE INDEX "scim_provisioning_logs_tenant_id_status_index" on "scim_provisioning_logs"(
+  "tenant_id",
+  "status"
+);
+CREATE TABLE "trusted_devices"(
+  "id" varchar not null,
+  "user_id" varchar not null,
+  "token_hash" varchar not null,
+  "label" varchar,
+  "ip_address" varchar,
+  "last_used_at" datetime,
+  "expires_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("user_id") references "users"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "trusted_devices_user_id_expires_at_index" on "trusted_devices"(
+  "user_id",
+  "expires_at"
+);
+CREATE UNIQUE INDEX "trusted_devices_token_hash_unique" on "trusted_devices"(
+  "token_hash"
+);
+CREATE TABLE "migration_jobs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "legal_entity_id" varchar,
+  "created_by_user_id" varchar,
+  "source_system" varchar not null,
+  "target_entities" text not null,
+  "status" varchar not null default 'Uploaded',
+  "dry_run_passed" tinyint(1) not null default '0',
+  "total_rows" integer not null default '0',
+  "imported_rows" integer not null default '0',
+  "error_rows" integer not null default '0',
+  "source_file_path" varchar,
+  "source_metadata_json" text,
+  "dry_run_summary_json" text,
+  "rollback_manifest_json" text,
+  "dry_run_at" datetime,
+  "completed_at" datetime,
+  "rolled_back_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("created_by_user_id") references "users"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "migration_jobs_tenant_status_source_idx" on "migration_jobs"(
+  "tenant_id",
+  "status",
+  "source_system"
+);
+CREATE INDEX "migration_jobs_tenant_id_index" on "migration_jobs"(
+  "tenant_id"
+);
+CREATE INDEX "migration_jobs_legal_entity_id_index" on "migration_jobs"(
+  "legal_entity_id"
+);
+CREATE INDEX "migration_jobs_created_by_user_id_index" on "migration_jobs"(
+  "created_by_user_id"
+);
+CREATE INDEX "migration_jobs_source_system_index" on "migration_jobs"(
+  "source_system"
+);
+CREATE INDEX "migration_jobs_status_index" on "migration_jobs"("status");
+CREATE TABLE "migration_field_mapping_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "source_system" varchar not null,
+  "entity_type" varchar not null,
+  "column_mappings_json" text not null,
+  "value_transformations_json" text,
+  "is_system_preset" tinyint(1) not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "migration_templates_tenant_source_entity_idx" on "migration_field_mapping_templates"(
+  "tenant_id",
+  "source_system",
+  "entity_type"
+);
+CREATE INDEX "migration_field_mapping_templates_tenant_id_index" on "migration_field_mapping_templates"(
+  "tenant_id"
+);
+CREATE INDEX "migration_field_mapping_templates_source_system_index" on "migration_field_mapping_templates"(
+  "source_system"
+);
+CREATE INDEX "migration_field_mapping_templates_entity_type_index" on "migration_field_mapping_templates"(
+  "entity_type"
+);
+CREATE TABLE "migration_staging_rows"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "migration_job_id" varchar not null,
+  "row_index" integer not null,
+  "entity_type" varchar not null,
+  "source_record_identifier" varchar,
+  "raw_payload_json" text not null,
+  "mapped_payload_json" text,
+  "is_valid" tinyint(1) not null default '0',
+  "is_imported" tinyint(1) not null default '0',
+  "imported_record_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("migration_job_id") references "migration_jobs"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "migration_staging_job_entity_row_idx" on "migration_staging_rows"(
+  "migration_job_id",
+  "entity_type",
+  "row_index"
+);
+CREATE INDEX "migration_staging_rows_tenant_id_index" on "migration_staging_rows"(
+  "tenant_id"
+);
+CREATE INDEX "migration_staging_rows_migration_job_id_index" on "migration_staging_rows"(
+  "migration_job_id"
+);
+CREATE INDEX "migration_staging_rows_entity_type_index" on "migration_staging_rows"(
+  "entity_type"
+);
+CREATE TABLE "migration_validation_errors"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "migration_job_id" varchar not null,
+  "row_index" integer not null,
+  "source_record_identifier" varchar,
+  "entity_type" varchar not null,
+  "field_name" varchar not null,
+  "raw_value" text,
+  "error_code" varchar not null,
+  "message_key" varchar not null,
+  "suggested_fix" text,
+  "is_resolved" tinyint(1) not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("migration_job_id") references "migration_jobs"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "migration_errors_job_resolved_entity_idx" on "migration_validation_errors"(
+  "migration_job_id",
+  "is_resolved",
+  "entity_type"
+);
+CREATE INDEX "migration_validation_errors_tenant_id_index" on "migration_validation_errors"(
+  "tenant_id"
+);
+CREATE INDEX "migration_validation_errors_migration_job_id_index" on "migration_validation_errors"(
+  "migration_job_id"
+);
+CREATE INDEX "migration_validation_errors_entity_type_index" on "migration_validation_errors"(
+  "entity_type"
+);
+CREATE INDEX "migration_validation_errors_error_code_index" on "migration_validation_errors"(
+  "error_code"
+);
+CREATE INDEX "migration_validation_errors_is_resolved_index" on "migration_validation_errors"(
+  "is_resolved"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -57251,3 +57522,8 @@ INSERT INTO migrations VALUES(480,'2028_01_09_000100_create_product_catalog_mod0
 INSERT INTO migrations VALUES(481,'2028_01_09_000100_create_scheduled_erp_report_tables',34);
 INSERT INTO migrations VALUES(482,'2028_01_09_000100_extend_enterprise_audit_ledger_for_forensic_trail',35);
 INSERT INTO migrations VALUES(483,'2028_01_09_000200_create_audit_ledger_forensic_tables',35);
+INSERT INTO migrations VALUES(484,'2028_01_09_000100_create_scim_groups_and_provisioning_logs',36);
+INSERT INTO migrations VALUES(485,'2028_01_09_000200_add_lockout_backoff_and_breached_password_check',36);
+INSERT INTO migrations VALUES(486,'2028_01_09_000300_add_advanced_mfa_tables',36);
+INSERT INTO migrations VALUES(487,'2028_01_09_000400_add_sms_two_factor_columns',36);
+INSERT INTO migrations VALUES(488,'2028_01_10_000100_create_data_migration_mod104_tables',36);

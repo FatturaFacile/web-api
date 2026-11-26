@@ -156,6 +156,11 @@ return [
             'mixed_case' => (bool) env('AUTH_PASSWORD_MIXED_CASE', true),
             'numbers' => (bool) env('AUTH_PASSWORD_NUMBERS', true),
             'symbols' => (bool) env('AUTH_PASSWORD_SYMBOLS', true),
+            // System default of the compromised-password check (Have I Been Pwned range API, k-anonymity); a tenant can turn it on.
+            'check_breached' => (bool) env('AUTH_PASSWORD_CHECK_BREACHED', false),
+            'breached_api_url' => env('AUTH_PASSWORD_BREACHED_API_URL', 'https://api.pwnedpasswords.com/range/'),
+            'breached_cache_minutes' => (int) env('AUTH_PASSWORD_BREACHED_CACHE_MINUTES', 60),
+            'breached_timeout_seconds' => (int) env('AUTH_PASSWORD_BREACHED_TIMEOUT_SECONDS', 3),
         ],
         'rate_limits' => [
             'register_per_minute' => (int) env('AUTH_REGISTER_PER_MINUTE', 5),
@@ -207,6 +212,20 @@ return [
         'challenge_ttl_minutes' => (int) env('AUTH_TWO_FACTOR_CHALLENGE_TTL_MINUTES', 5),
         'max_challenge_attempts' => (int) env('AUTH_TWO_FACTOR_MAX_CHALLENGE_ATTEMPTS', 5),
         'recovery_codes' => (int) env('AUTH_TWO_FACTOR_RECOVERY_CODES', 8),
+        // "Remember this device": days a trusted device skips the second factor (0 turns the feature off).
+        'trusted_device_days' => (int) env('AUTH_TWO_FACTOR_TRUSTED_DEVICE_DAYS', 30),
+        'email' => [
+            'ttl_minutes' => (int) env('AUTH_TWO_FACTOR_EMAIL_TTL_MINUTES', 10),
+            'max_attempts' => (int) env('AUTH_TWO_FACTOR_EMAIL_MAX_ATTEMPTS', 5),
+            'resend_per_minute' => (int) env('AUTH_TWO_FACTOR_EMAIL_RESEND_PER_MINUTE', 1),
+            'resend_per_hour' => (int) env('AUTH_TWO_FACTOR_EMAIL_RESEND_PER_HOUR', 5),
+        ],
+        'sms' => [
+            'ttl_minutes' => (int) env('AUTH_TWO_FACTOR_SMS_TTL_MINUTES', 10),
+            'max_attempts' => (int) env('AUTH_TWO_FACTOR_SMS_MAX_ATTEMPTS', 5),
+            'resend_per_minute' => (int) env('AUTH_TWO_FACTOR_SMS_RESEND_PER_MINUTE', 1),
+            'resend_per_hour' => (int) env('AUTH_TWO_FACTOR_SMS_RESEND_PER_HOUR', 5),
+        ],
         'rate_limits' => [
             'challenge_per_minute' => (int) env('AUTH_TWO_FACTOR_CHALLENGE_PER_MINUTE', 10),
         ],

@@ -25,9 +25,10 @@ interface PasskeyAuthenticator
     public function verifyRegistration(string $state, array $credential): array;
 
     /**
+     * @param  list<string>  $allowCredentialIds  base64url ids the assertion is restricted to (second-factor use); empty for the discoverable passkey login
      * @return array{options: array<string, mixed>, state: string}
      */
-    public function loginOptions(): array;
+    public function loginOptions(array $allowCredentialIds = []): array;
 
     /**
      * Reads the credential id and user handle of an assertion, to find the stored record before verification.

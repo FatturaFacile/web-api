@@ -14,9 +14,10 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\RegistrationAudit;
-use App\Services\Auth\Security\TenantSecurityPolicies;
+use App\Services\Auth\TrustedDevices;
 use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Auth\UserSessions;
+use App\Services\Sms\PhoneNumber;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,6 +38,7 @@ class TwoFactorController extends Controller
         private readonly RegistrationAudit $audit,
         private readonly TenantContext $tenantContext,
         private readonly UserSessions $sessions,
+        private readonly TrustedDevices $trustedDevices,
     ) {}
 
     #[OA\Get(
@@ -80,7 +82,7 @@ class TwoFactorController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        if ($this->twoFactor->isEnabled($user)) {
+        if ($this->twoFactor->hasTotp($user)) {
             return $this->problemDetailsResponse(
                 title: __('two_factor.errors.already_enabled_title'),
                 detail: __('two_factor.errors.already_enabled_detail'),
@@ -118,7 +120,7 @@ class TwoFactorController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        if ($user->two_factor_secret === null || $this->twoFactor->isEnabled($user)) {
+        if ($user->two_factor_secret === null || $this->twoFactor->hasTotp($user)) {
             return $this->problemDetailsResponse(
                 title: __('two_factor.errors.no_pending_setup_title'),
                 detail: __('two_factor.errors.no_pending_setup_detail'),
@@ -194,6 +196,8 @@ class TwoFactorController extends Controller
                 new OA\Property(property: 'current_password', type: 'string', format: 'password'),
                 new OA\Property(property: 'code', type: 'string', example: '123456', nullable: true),
                 new OA\Property(property: 'recovery_code', type: 'string', example: 'abcde-fghjk', nullable: true),
+                new OA\Property(property: 'email_code', type: 'string', example: '482913', nullable: true, description: 'Code sent by POST /auth/two-factor/email/send, for users who also have the email factor'),
+                new OA\Property(property: 'sms_code', type: 'string', example: '482913', nullable: true, description: 'Code sent by POST /auth/two-factor/sms/send, for users who also have the SMS factor'),
             ]
         )),
         responses: [
@@ -209,23 +213,16 @@ class TwoFactorController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        if (! $this->twoFactor->isEnabled($user)) {
+        if (! $this->twoFactor->hasTotp($user)) {
             return $this->notEnabledResponse();
         }
 
-        if (config('iam.mandatory_mfa') === true && $this->holdsMandatoryMfaRole($user)) {
-            $response = $this->problemDetailsResponse(
-                title: 'Two-factor cannot be turned off',
-                detail: 'Owners and administrators must keep two-factor authentication on.',
-                status: Response::HTTP_FORBIDDEN,
-                type: AuthProblem::MfaCannotBeDisabled->value,
-            );
-            $response->setData([...(array) $response->getData(true), 'code' => AuthProblem::MfaCannotBeDisabled->code()]);
-
-            return $response;
+        // Taking the app away is fine while another factor (the email code) keeps the account protected.
+        if (! $this->twoFactor->otherFactorsExist($user, TwoFactorAuthentication::METHOD_TOTP) && ($blocked = $this->mandatoryMfaResponse($user)) !== null) {
+            return $blocked;
         }
 
-        if ($this->twoFactor->verifyCode($user, $request->validated('code'), $request->validated('recovery_code')) === null) {
+        if ($this->twoFactor->verifyCode($user, $request->validated('code'), $request->validated('recovery_code'), $request->validated('email_code')) === null) {
             return $this->problemDetailsResponse(
                 title: __('two_factor.errors.code_invalid_title'),
                 detail: __('two_factor.errors.code_invalid_detail'),
@@ -346,7 +343,7 @@ class TwoFactorController extends Controller
             );
         }
 
-        $this->twoFactor->disable($member);
+        $this->twoFactor->reset($member);
         // The member's open sessions were opened with the lost factor.
         $this->sessions->revokeAll($member);
         $this->audit->record(RegistrationAudit::TWO_FACTOR_RESET_BY_ADMIN, (string) $member->id, ['reset_by' => (string) $admin->id], (string) $tenant->id);
@@ -363,8 +360,17 @@ class TwoFactorController extends Controller
 
         return [
             'enabled' => $enabled,
-            'pending_setup' => ! $enabled && $user->two_factor_secret !== null,
+            'methods' => $this->twoFactor->availableMethods($user),
+            'totp_enabled' => $this->twoFactor->hasTotp($user),
+            'email_enabled' => $this->twoFactor->hasEmail($user),
+            'sms_enabled' => $this->twoFactor->hasSms($user),
+            'sms_phone' => $this->twoFactor->hasSms($user) ? PhoneNumber::mask((string) $user->two_factor_sms_phone) : null,
+            'sms_confirmed_at' => $user->two_factor_sms_confirmed_at?->toIso8601String(),
+            'webauthn_enabled' => $this->twoFactor->hasWebAuthn($user),
+            'pending_setup' => ! $this->twoFactor->hasTotp($user) && $user->two_factor_secret !== null,
             'confirmed_at' => $user->two_factor_confirmed_at?->toIso8601String(),
+            'email_confirmed_at' => $user->two_factor_email_confirmed_at?->toIso8601String(),
+            'trusted_devices' => $this->trustedDevices->list($user)->count(),
             'remaining_recovery_codes' => $enabled ? $this->twoFactor->remainingRecoveryCodes($user) : 0,
             'required_by_tenant' => $this->twoFactor->isRequiredBy($this->tenantContext->getTenant()),
         ];
@@ -375,7 +381,7 @@ class TwoFactorController extends Controller
      */
     private function policyOf(Tenant $tenant): array
     {
-        $members = $tenant->users()->get(['users.id', 'users.name', 'users.email', 'users.two_factor_confirmed_at', 'users.two_factor_secret']);
+        $members = $tenant->users()->get(['users.id', 'users.name', 'users.email', 'users.two_factor_confirmed_at', 'users.two_factor_secret', 'users.two_factor_email_confirmed_at', 'users.two_factor_sms_confirmed_at', 'users.two_factor_sms_phone']);
 
         return [
             'require_two_factor' => $this->twoFactor->isRequiredBy($tenant),
@@ -389,13 +395,25 @@ class TwoFactorController extends Controller
         ];
     }
 
-    private function holdsMandatoryMfaRole(User $user): bool
+    /**
+     * The 403 problem when the user holds a role that must keep two-factor authentication on (iam.mandatory_mfa), so
+     * their last factor cannot be removed.
+     */
+    private function mandatoryMfaResponse(User $user): ?JsonResponse
     {
-        $policies = app(TenantSecurityPolicies::class);
+        if (! $this->twoFactor->mustKeepTwoFactor($user)) {
+            return null;
+        }
 
-        return $user->tenants()->get()->contains(
-            fn (Tenant $tenant): bool => $policies->mandatoryFor(data_get($tenant->getRelations()['pivot'] ?? null, 'role')),
+        $response = $this->problemDetailsResponse(
+            title: 'Two-factor cannot be turned off',
+            detail: 'Owners and administrators must keep two-factor authentication on.',
+            status: Response::HTTP_FORBIDDEN,
+            type: AuthProblem::MfaCannotBeDisabled->value,
         );
+        $response->setData([...(array) $response->getData(true), 'code' => AuthProblem::MfaCannotBeDisabled->code()]);
+
+        return $response;
     }
 
     /**

@@ -33,6 +33,7 @@ Route::prefix('api/v1')
         Route::get('/auth/passkeys', [PasskeyController::class, 'index'])->name('passkeys.index');
         Route::post('/auth/passkeys/options', [PasskeyController::class, 'registrationOptions'])->middleware('throttle:6,1')->name('passkeys.options');
         Route::post('/auth/passkeys', [PasskeyController::class, 'register'])->middleware('throttle:6,1')->name('passkeys.store');
+        Route::patch('/auth/passkeys/{id}', [PasskeyController::class, 'rename'])->whereUuid('id')->middleware('throttle:20,1')->name('passkeys.rename');
         Route::delete('/auth/passkeys/{id}', [PasskeyController::class, 'destroy'])->whereUuid('id')->name('passkeys.destroy');
 
         Route::post('/auth/2fa/totp', [TwoFactorController::class, 'enable'])->middleware('throttle:6,1')->name('2fa.totp.enable');
