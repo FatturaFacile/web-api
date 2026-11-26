@@ -2,15 +2,12 @@
 
 declare(strict_types=1);
 
-use Enterprise\Foundation\Concerns\HasUuidV7;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 test('has uuid v7 concern generates valid RFC 9562 version 7 time-ordered UUIDs', function () {
     $model = new class extends Model
     {
-        use HasUuidV7;
-
         protected $table = 'tenants';
 
         public $incrementing = false;

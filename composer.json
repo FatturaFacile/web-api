@@ -187,20 +187,20 @@
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php scripts/dev/locked.php php -d memory_limit=8G artisan test --parallel --processes=2"
+            "@php scripts/dev/locked.php php -d memory_limit=6G artisan test --parallel --processes=2"
         ],
         "test:serial": [
             "@php artisan config:clear --ansi @no_additional_args",
             "@php scripts/dev/locked.php php artisan test"
         ],
-        "test:unit": "@php scripts/dev/locked.php php -d memory_limit=8G vendor/bin/pest --parallel --processes=2 --no-coverage --testsuite=Unit",
-        "test:arch": "@php scripts/dev/locked.php php -d memory_limit=8G vendor/bin/pest --no-coverage --testsuite=Architecture",
-        "test:fast": "@php scripts/dev/locked.php php -d memory_limit=8G vendor/bin/pest --parallel --processes=2 --no-coverage --testsuite=Unit,Architecture",
-        "test:changed": "@php scripts/dev/locked.php php -d memory_limit=8G vendor/bin/pest --parallel --processes=2 --no-coverage --dirty",
-        "test:module": "@php scripts/dev/locked.php php -d memory_limit=8G vendor/bin/pest --parallel --processes=2 --no-coverage",
+        "test:unit": "@php scripts/dev/locked.php php -d memory_limit=6G vendor/bin/pest --parallel --processes=2 --no-coverage --testsuite=Unit",
+        "test:arch": "@php scripts/dev/locked.php php -d memory_limit=6G vendor/bin/pest --no-coverage --testsuite=Architecture",
+        "test:fast": "@php scripts/dev/locked.php php -d memory_limit=6G vendor/bin/pest --parallel --processes=2 --no-coverage --testsuite=Unit,Architecture",
+        "test:changed": "@php scripts/dev/locked.php php -d memory_limit=6G vendor/bin/pest --parallel --processes=2 --no-coverage --dirty",
+        "test:module": "@php scripts/dev/locked.php php -d memory_limit=6G vendor/bin/pest --parallel --processes=2 --no-coverage",
         "lint": "@php vendor/bin/pint --test",
         "lint:dirty": "@php vendor/bin/pint --dirty",
-        "analyse": "@php -d memory_limit=8G vendor/bin/phpstan analyse --memory-limit=8G",
+        "analyse": "@php -d memory_limit=6G vendor/bin/phpstan analyse --memory-limit=6G",
         "analyse:dirty": "@php scripts/dev/analyse-dirty.php",
         "quality": [
             "@lint",

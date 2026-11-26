@@ -17,7 +17,7 @@ function openApiSpec(string $file): array
 /**
  * The tracked OpenAPI artefacts must describe the real authentication: the session cookie first, the Bearer token only
  * as the alternative of the optional token mode, and nothing on the public operations. Regenerate them with
- * `php -d memory_limit=8G artisan l5-swagger:generate` and `php artisan docs:export` when this test fails.
+ * `php -d memory_limit=6G artisan l5-swagger:generate` and `php artisan docs:export` when this test fails.
  *
  * @return list<array{0: string, 1: string, 2: array<string, mixed>}> path, method, operation
  */

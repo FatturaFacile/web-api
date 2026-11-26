@@ -20,9 +20,9 @@ echo "pre-push: Pint..."
 "$PHP_BIN" ./vendor/bin/pint --test || exit 1
 
 echo "pre-push: PHPStan (full project, cached)..."
-"$PHP_BIN" -d memory_limit=8G ./vendor/bin/phpstan analyse --memory-limit=2G --no-progress || exit 1
+"$PHP_BIN" -d memory_limit=6G ./vendor/bin/phpstan analyse --memory-limit=2G --no-progress || exit 1
 
 echo "pre-push: parallel test suite..."
-"$PHP_BIN" scripts/dev/locked.php "$PHP_BIN" -d memory_limit=8G artisan test --parallel --processes=6 || exit 1
+"$PHP_BIN" scripts/dev/locked.php "$PHP_BIN" -d memory_limit=6G artisan test --parallel --processes=2 || exit 1
 
 exit 0

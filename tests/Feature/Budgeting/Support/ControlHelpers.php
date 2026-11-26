@@ -27,7 +27,12 @@ if (! function_exists('ctlTenant')) {
     {
         return Tenant::create(['name' => $name.' '.Str::random(4), 'legal_name' => $name.' Srl', 'country' => 'IT', 'default_currency' => 'EUR']);
     }
+}
 
+if (! function_exists('ctlMember')) {
+    /**
+     * @param  array<int, string>  $permissions
+     */
     function ctlMember(Tenant $tenant, string $role, array $permissions = []): User
     {
         $user = User::create(['name' => ucfirst($role).' '.Str::random(4), 'email' => Str::random(10).'@budget-control.example', 'password' => bcrypt(Str::random(32)), 'locale' => 'en']);
@@ -35,24 +40,32 @@ if (! function_exists('ctlTenant')) {
 
         return $user;
     }
+}
 
+if (! function_exists('ctlAct')) {
     function ctlAct(User $user, Tenant $tenant): void
     {
         app(TenantContext::class)->setTenant($tenant);
         Sanctum::actingAs($user);
         test()->withHeaders(['X-Tenant-Id' => (string) $tenant->id]);
     }
+}
 
+if (! function_exists('ctlAccount')) {
     function ctlAccount(Tenant $tenant, string $kind = 'expense'): ChartOfAccount
     {
         return ChartOfAccount::factory()->create(['tenant_id' => $tenant->id, 'account_class' => $kind, 'account_type' => $kind, 'type' => $kind, 'normal_balance' => $kind === 'revenue' ? 'credit' : 'debit', 'name' => ucfirst($kind).' '.Str::random(4)]);
     }
+}
 
+if (! function_exists('ctlCostCenter')) {
     function ctlCostCenter(Tenant $tenant): CostCenter
     {
         return CostCenter::create(['tenant_id' => $tenant->id, 'code' => 'CC-'.Str::upper(Str::random(5)), 'name' => 'Cost center '.Str::random(4), 'is_active' => true]);
     }
+}
 
+if (! function_exists('ctlPost')) {
     /**
      * A posted journal line on an account in the ledger of the company.
      */
@@ -75,7 +88,9 @@ if (! function_exists('ctlTenant')) {
             'amount_in_functional_currency' => $debit,
         ]);
     }
+}
 
+if (! function_exists('ctlApprovedBudget')) {
     /**
      * An approved original budget of 2028 with the same amount in every month of the account and cost centre.
      */
@@ -99,7 +114,9 @@ if (! function_exists('ctlTenant')) {
 
         return $version;
     }
+}
 
+if (! function_exists('ctlRule')) {
     /**
      * @param  array<string, mixed>  $attributes
      */

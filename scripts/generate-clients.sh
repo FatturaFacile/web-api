@@ -27,11 +27,11 @@ for argument in "$@"; do
 done
 
 if [[ "$REFRESH" -eq 1 ]]; then
-    php -d memory_limit=8G artisan docs:export
+    php -d memory_limit=6G artisan docs:export
 fi
 
 if [[ ! -f "$SPEC" ]]; then
-    echo "Missing $SPEC: run 'php -d memory_limit=8G artisan docs:export' first." >&2
+    echo "Missing $SPEC: run 'php -d memory_limit=6G artisan docs:export' first." >&2
     exit 1
 fi
 

@@ -14,7 +14,7 @@ use Symfony\Component\Yaml\Yaml;
  * collection v2.1, both generated from the real routes through Scramble and completed with the security schemes
  * (bearer token and tenant header), the release version and the module tags.
  *
- * Run it with `php -d memory_limit=8G artisan docs:export` (the whole API is analysed). It is a development tool: it
+ * Run it with `php -d memory_limit=6G artisan docs:export` (the whole API is analysed). It is a development tool: it
  * needs the `symfony/yaml` package, which is available with the development dependencies.
  */
 class ExportApiDocumentation extends Command
@@ -65,7 +65,7 @@ class ExportApiDocumentation extends Command
             return self::FAILURE;
         }
 
-        ini_set('memory_limit', '8G');
+        ini_set('memory_limit', '6G');
 
         $directory = base_path((string) $this->option('path'));
         File::ensureDirectoryExists($directory);

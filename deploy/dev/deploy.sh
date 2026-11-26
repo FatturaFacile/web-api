@@ -61,11 +61,11 @@ docker compose exec -T web nginx -s reload
 docker compose exec -T app sh -c '
   set -e
   composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
-  php -d memory_limit=8G artisan migrate --force
-  php -d memory_limit=8G artisan db:seed --class=TranslationSeeder --force
-  php -d memory_limit=8G artisan db:seed --class=FrontendTranslationSeeder --force
-  php -d memory_limit=8G artisan demo:reset
-  php -d memory_limit=8G artisan l5-swagger:generate
+  php -d memory_limit=6G artisan migrate --force
+  php -d memory_limit=6G artisan db:seed --class=TranslationSeeder --force
+  php -d memory_limit=6G artisan db:seed --class=FrontendTranslationSeeder --force
+  php -d memory_limit=6G artisan demo:reset
+  php -d memory_limit=6G artisan l5-swagger:generate
 '
 
 docker compose up -d queue_worker scheduler

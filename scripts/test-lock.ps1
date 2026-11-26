@@ -8,7 +8,7 @@
     as soon as the previous run ends. A crashed holder releases the mutex automatically (abandoned mutex).
 
 .EXAMPLE
-    powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-lock.ps1 php artisan test --parallel --processes=6
+    powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-lock.ps1 php artisan test --parallel --processes=2
 
 .NOTES
     TEST_LOCK_TIMEOUT_MIN  Max minutes to wait for the lock (default 90).

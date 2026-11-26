@@ -57,7 +57,7 @@ jobs:
           extensions: dom, curl, libxml, mbstring, zip, pdo_sqlite, xmlreader, redis, bcmath
           coverage: none
           # Swagger and the OpenAPI coverage tests scan the whole API
-          ini-values: memory_limit=8G
+          ini-values: memory_limit=6G
           tools: composer:v2
 
       # Validate composer.json and composer.lock consistency
@@ -110,9 +110,9 @@ jobs:
       - name: Run Pest Architecture Boundary Tests
         run: ./vendor/bin/pest tests/Architecture --no-coverage
 
-      # Execute comprehensive application test suite in parallel (4 processes)
+      # Execute comprehensive application test suite in parallel (2 processes)
       - name: Run Pest Test Suite (Parallel)
-        run: ./vendor/bin/pest --parallel --processes=4 --compact --no-coverage
+        run: ./vendor/bin/pest --parallel --processes=2 --compact --no-coverage
 
   # Coverage runs in 4 parallel shards; each uploads its clover report and coverage-merge joins them. A single
   # `pest --coverage` run serialises the data of all the tests in one string and exhausts PHP's memory.
@@ -159,7 +159,7 @@ jobs:
           extensions: dom, curl, libxml, mbstring, zip, pdo_sqlite, xmlreader, redis, bcmath, pcov
           coverage: pcov
           # pcov collects only app/ and modules/ (the <source> of phpunit.xml): any other path is excluded
-          ini-values: memory_limit=8G, max_memory_limit=16G, pcov.directory=${{ github.workspace }}, pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
+          ini-values: memory_limit=6G, max_memory_limit=12G, pcov.directory=${{ github.workspace }}, pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
           tools: composer:v2
 
       - name: Get Composer Cache Directory

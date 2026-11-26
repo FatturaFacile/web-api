@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Models\Tenant;
-use Closure;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;

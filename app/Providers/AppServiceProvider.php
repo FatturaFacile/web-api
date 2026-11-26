@@ -96,8 +96,8 @@ class AppServiceProvider extends ServiceProvider
             // Never lower a limit the environment set higher (CI coverage runs with 2G): only raise a smaller one.
             $currentLimit = ini_parse_quantity((string) ini_get('memory_limit'));
 
-            if ($currentLimit !== -1 && $currentLimit < ini_parse_quantity('8G')) {
-                @ini_set('memory_limit', '8G');
+            if ($currentLimit !== -1 && $currentLimit < ini_parse_quantity('6G')) {
+                @ini_set('memory_limit', '6G');
             }
         }
 

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Http\Requests\Banking\ImportBankStatementRequest;
-use App\Http\Requests\Concerns\ValidatesUploadContentLength;
 use App\Http\Requests\Documents\StoreAttachmentRequest;
 use App\Http\Requests\Purchases\UploadPassiveInvoiceRequest;
 use App\Http\Requests\Sales\ImportPaymentsRequest;
@@ -16,8 +15,6 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 $createUploadRequest = function (): FormRequest {
     return new class extends FormRequest
     {
-        use ValidatesUploadContentLength;
-
         protected function maxContentLengthBytes(): int
         {
             return 5 * 1024 * 1024; // 5 MB
@@ -33,8 +30,6 @@ $createUploadRequest = function (): FormRequest {
 $createDefaultUploadRequest = function (): FormRequest {
     return new class extends FormRequest
     {
-        use ValidatesUploadContentLength;
-
         public function triggerValidation(): void
         {
             $this->prepareForValidation();

@@ -42,7 +42,7 @@
     <php>
         <!-- Rendering PDFs (dompdf) in the Feature suite needs more than PHP's default 128M;
              setup-php in CI runs with no limit, local PHP/Docker images do not. -->
-        <ini name="memory_limit" value="8G"/>
+        <ini name="memory_limit" value="6G"/>
         <env name="APP_ENV" value="testing"/>
         <!-- The system works over HTTPS only, tests included: requests are built as https and a plain-HTTP APP_URL stops the boot. -->
         <env name="APP_URL" value="https://localhost" force="true"/>
