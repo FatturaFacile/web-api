@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 $anyMember = ['*'];
 $finance = ['owner', 'admin', 'accountant'];
-$financeReaders = [...$finance, 'accountant_readonly'];
+$financeReaders = [...$finance, 'accountant_readonly', 'external_fiduciary'];
 $managers = ['owner', 'admin'];
 $contractManagers = ['owner', 'admin', 'accountant', 'sales_manager', 'procurement_manager', 'service_manager'];
 
@@ -60,6 +60,14 @@ return [
             'read' => $financeReaders,
             'write' => $finance,
             'grants' => ['read' => ['gl.*', 'gl.journals.post'], 'write' => ['gl.*']],
+        ],
+        'fiduciary_portal' => [
+            'read' => [...$financeReaders, 'finance_director'],
+            'write' => [...$finance, 'external_fiduciary', 'finance_director'],
+            'grants' => [
+                'read' => ['fiduciary_portal.*', 'gl.*'],
+                'write' => ['fiduciary_portal.*', 'gl.*'],
+            ],
         ],
         'procurement' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'purchasing', 'procurement_manager', 'department_manager', 'division_director', 'cfo', 'ceo', 'member']],
         // Valuation management and the inventory book export are granted one by one on the membership (see InventoryPermissionChecker), whatever the role.

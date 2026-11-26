@@ -23,6 +23,13 @@ final class FiscalPeriodException extends InvalidArgumentException
         return new self("Fiscal period [{$periodName}] containing the date {$date} is closed: the document cannot be posted to it.");
     }
 
+    public static function lockedByFiduciary(string $periodName, ?string $date = null): self
+    {
+        $suffix = $date !== null ? " (date {$date})" : '';
+
+        return new self("Fiscal period [{$periodName}]{$suffix} is locked by the external fiduciary: mutations are prohibited.");
+    }
+
     public static function dateOutsidePeriod(string $date, string $periodName): self
     {
         return new self("Posting date {$date} is outside fiscal period [{$periodName}].");

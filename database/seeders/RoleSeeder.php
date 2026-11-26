@@ -44,6 +44,15 @@ class RoleSeeder extends GlobalDataSeeder
                 ],
             ],
             [
+                'code' => 'external_fiduciary',
+                'translations' => [
+                    'it' => ['label' => 'Commercialista / Fiduciario Esterno', 'short_label' => 'FidExt', 'description' => 'Accesso multi-azienda per revisione contabile, blocco periodi, esportazioni studio e fascicolo bilancio'],
+                    'en' => ['label' => 'External Accountant & Fiduciary', 'short_label' => 'ExtFid', 'description' => 'Multi-client external audit workspace, period locks, studio exports and balance sheet dossier'],
+                    'de' => ['label' => 'Externer Treuhänder & Steuerberater', 'short_label' => 'ExtTreu', 'description' => 'Mandantenübergreifende Revision, Periodensperre, Studio-Exporte und Bilanzdossier'],
+                    'fr' => ['label' => 'Fiduciaire & Expert-Comptable Externe', 'short_label' => 'FidExt', 'description' => 'Espace multi-mandats pour révision comptable, verrouillage de périodes, exports et dossier de bilan'],
+                ],
+            ],
+            [
                 'code' => 'viewer',
                 'translations' => [
                     'it' => ['label' => 'Sola lettura', 'short_label' => 'Viewer', 'description' => 'Consultazione di DDT e logistica'],
