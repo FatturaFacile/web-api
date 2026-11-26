@@ -44,6 +44,11 @@ final class JournalEntryResource extends JsonResource
             'rejected_at' => LedgerDateFormat::instant($this->resource->getAttribute('rejected_at')),
             'rejection_reason' => $this->resource->getAttribute('rejection_reason'),
             'recurring_journal_id' => $this->resource->getAttribute('recurring_journal_id'),
+            'fiduciary_verified' => (bool) ($this->resource->getAttribute('fiduciary_verified') ?? false),
+            'fiduciary_verified_at' => LedgerDateFormat::instant($this->resource->getAttribute('fiduciary_verified_at')),
+            'fiduciary_verified_by' => $this->resource->getAttribute('fiduciary_verified_by'),
+            'fiduciary_verification_note' => $this->resource->getAttribute('fiduciary_verification_note'),
+            'open_notes_count' => $this->whenCounted('fiduciaryNotes'),
             'lines' => JournalLineResource::collection($this->whenLoaded('lines')),
         ];
     }

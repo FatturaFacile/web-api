@@ -23,6 +23,10 @@ final class FiscalPeriodResource extends JsonResource
             'start_date' => $this->start_date?->toDateString(),
             'end_date' => $this->end_date?->toDateString(),
             'status' => $this->status,
+            'is_fiduciary_locked' => $this->status === 'locked_by_fiduciary' || $this->fiduciary_locked_at !== null,
+            'fiduciary_locked_at' => LedgerDateFormat::instant($this->resource->getAttribute('fiduciary_locked_at')),
+            'fiduciary_locked_by' => $this->resource->getAttribute('fiduciary_locked_by'),
+            'fiduciary_lock_reason' => $this->resource->getAttribute('fiduciary_lock_reason'),
         ];
     }
 }

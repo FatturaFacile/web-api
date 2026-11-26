@@ -174,6 +174,7 @@ class DatabaseSeeder extends Seeder
             MarketingAutomationSeeder::class,
             DataMigrationLocalizationSeeder::class,
             DataMigrationPresetSeeder::class,
+            FiduciaryPortalLocalizationSeeder::class,
         ]);
     }
 }

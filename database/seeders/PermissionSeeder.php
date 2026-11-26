@@ -76,6 +76,13 @@ class PermissionSeeder extends GlobalDataSeeder
             ['code' => 'data_migration.view', 'label_it' => 'Consultazione Migrazione Dati Guidata (Mod 104)', 'label_en' => 'View Guided Data Migration (Mod 104)'],
             ['code' => 'data_migration.manage', 'label_it' => 'Esecuzione Migrazione Dati Guidata (Mod 104)', 'label_en' => 'Manage & Execute Guided Data Migration (Mod 104)'],
             ['code' => 'data_migration.rollback', 'label_it' => 'Rollback Atomico Migrazione Dati (Mod 104)', 'label_en' => 'Rollback Data Migration Batches (Mod 104)'],
+            ['code' => 'fiduciary_portal.view', 'label_it' => 'Consultazione Portale Commercialista e Fiduciaria (Mod 032)', 'label_en' => 'View External Accountant & Fiduciary Portal (Mod 032)'],
+            ['code' => 'fiduciary_portal.verify', 'label_it' => 'Verifica Scritture dal Fiduciario (Mod 032)', 'label_en' => 'Mark Journal Entries as Fiduciary Verified (Mod 032)'],
+            ['code' => 'fiduciary_portal.transcode', 'label_it' => 'Mappatura Personalizzata Piano dei Conti Studio (Mod 032)', 'label_en' => 'Manage Studio Chart of Accounts Transcoding (Mod 032)'],
+            ['code' => 'fiduciary_portal.export', 'label_it' => 'Esportazioni Contabili Studio (Abacus/DATEV/TeamSystem/Zucchetti)', 'label_en' => 'Generate Studio Accounting Exports (Abacus/DATEV/TeamSystem/Zucchetti)'],
+            ['code' => 'fiduciary_portal.lock_period', 'label_it' => 'Chiusura Periodo e Blocco Fiduciario (Mod 032)', 'label_en' => 'Manage Fiduciary Period Locks (Mod 032)'],
+            ['code' => 'fiduciary_portal.notes', 'label_it' => 'Gestione Registro delle Note su Scritture (Mod 032)', 'label_en' => 'Manage Anchored Entry Notes & Clarifications (Mod 032)'],
+            ['code' => 'fiduciary_portal.dossier', 'label_it' => 'Download Fascicolo Digitale di Bilancio (Mod 032)', 'label_en' => 'Download Digital Balance Sheet Dossier (Mod 032)'],
         ];
 
         foreach ($permissions as $idx => $perm) {
