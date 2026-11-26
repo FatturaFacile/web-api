@@ -1,0 +1,136 @@
+version=2.3
+
+# This file caches language service data to improve the performance of C# Dev Kit.
+# It is not intended for manual editing. It can safely be deleted and will be
+# regenerated automatically. For more information, see https://aka.ms/lscache
+#
+# To control where cache files are stored, use the following VS Code setting:
+#   "dotnet.projectsystem.cacheInProjectFolder": true
+
+[project]
+project=Mes.Infrastructure.LaravelSync.csproj
+language=C#
+primary
+lastDtbSucceeded
+
+[properties]
+AssemblyName=Mes.Infrastructure.LaravelSync
+BaseIntermediateOutputPath=obj/
+BaseOutputPath=bin/
+DebugSymbols=true
+EnableHotReloadInRuntimeConfigDevFile=true
+HotReloadBrowserToolsEnabled=false
+IntermediateOutputPath=obj/Debug/net9.0/
+MaxSupportedLangVersion=13.0
+Optimize=false
+OutputType=Library
+ProjectAssetsFile=<PATH>obj/project.assets.json
+RootNamespace=Mes.Infrastructure.LaravelSync
+TargetFramework=net9.0
+TargetFrameworkIdentifier=.NETCoreApp
+TargetFrameworkVersion=v9.0
+TargetPath=<PATH>bin/Debug/net9.0/Mes.Infrastructure.LaravelSync.dll
+TargetRefPath=<PATH>obj/Debug/net9.0/ref/Mes.Infrastructure.LaravelSync.dll
+TemporaryDependencyNodeTargetIdentifier=net9.0
+
+[commandLineArguments]
+/noconfig
+/unsafe-
+/checked-
+/nowarn:1701,1702,1701,1702,8002
+/fullpaths
+/nostdlib+
+/errorreport:prompt
+/warn:9
+/define:TRACE;DEBUG;NET;NET9_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
+/highentropyva+
+/nullable:enable
+/debug+
+/debug:portable
+/filealign:512
+/optimize-
+/out:obj/Debug/net9.0/Mes.Infrastructure.LaravelSync.dll
+/refout:obj/Debug/net9.0/refint/Mes.Infrastructure.LaravelSync.dll
+/target:library
+/warnaserror+
+/utf8output
+/deterministic+
+/langversion:13
+/warnaserror+:NU1605,SYSLIB0011
+
+[sourceFiles]
+obj/Debug/net9.0/
+ .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+ Mes.Infrastructure.LaravelSync.AssemblyInfo.cs
+ Mes.Infrastructure.LaravelSync.GlobalUsings.g.cs
+DependencyInjection.cs
+Hmac.cs
+LaravelReferenceSyncClient.cs
+OutboxRelay.cs
+
+[frameworkPacks]
+Microsoft.NETCore.App.Ref
+
+[metadataReferences]
+../
+ Mes.Application/obj/Debug/net9.0/ref/Mes.Application.dll
+ Mes.Domain/obj/Debug/net9.0/ref/Mes.Domain.dll
+<NUGET>/
+ microsoft.extensions.ambientmetadata.application/10.11.1/lib/net9.0/Microsoft.Extensions.AmbientMetadata.Application.dll
+ microsoft.extensions.compliance.abstractions/10.11.1/lib/net9.0/Microsoft.Extensions.Compliance.Abstractions.dll
+ microsoft.extensions.configuration.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.Abstractions.dll
+ microsoft.extensions.configuration.binder/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.Binder.dll
+ microsoft.extensions.configuration/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.dll
+ microsoft.extensions.dependencyinjection.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+ microsoft.extensions.dependencyinjection.autoactivation/10.11.1/lib/net9.0/Microsoft.Extensions.DependencyInjection.AutoActivation.dll
+ microsoft.extensions.dependencyinjection/10.0.15/lib/net9.0/Microsoft.Extensions.DependencyInjection.dll
+ microsoft.extensions.diagnostics.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Diagnostics.Abstractions.dll
+ microsoft.extensions.diagnostics.exceptionsummarization/10.11.1/lib/net9.0/Microsoft.Extensions.Diagnostics.ExceptionSummarization.dll
+ microsoft.extensions.diagnostics/10.0.15/lib/net9.0/Microsoft.Extensions.Diagnostics.dll
+ microsoft.extensions.fileproviders.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.FileProviders.Abstractions.dll
+ microsoft.extensions.hosting.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Hosting.Abstractions.dll
+ microsoft.extensions.http.diagnostics/10.11.1/lib/net9.0/Microsoft.Extensions.Http.Diagnostics.dll
+ microsoft.extensions.http.resilience/10.11.1/lib/net9.0/Microsoft.Extensions.Http.Resilience.dll
+ microsoft.extensions.http/10.0.15/lib/net9.0/Microsoft.Extensions.Http.dll
+ microsoft.extensions.logging.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.Abstractions.dll
+ microsoft.extensions.logging.configuration/9.0.21/lib/net9.0/Microsoft.Extensions.Logging.Configuration.dll
+ microsoft.extensions.logging/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.dll
+ microsoft.extensions.objectpool/9.0.21/lib/net9.0/Microsoft.Extensions.ObjectPool.dll
+ microsoft.extensions.options.configurationextensions/10.0.15/lib/net9.0/Microsoft.Extensions.Options.ConfigurationExtensions.dll
+ microsoft.extensions.options/10.0.15/lib/net9.0/Microsoft.Extensions.Options.dll
+ microsoft.extensions.primitives/10.0.15/lib/net9.0/Microsoft.Extensions.Primitives.dll
+ microsoft.extensions.resilience/10.11.1/lib/net9.0/Microsoft.Extensions.Resilience.dll
+ microsoft.extensions.telemetry.abstractions/10.11.1/lib/net9.0/Microsoft.Extensions.Telemetry.Abstractions.dll
+ microsoft.extensions.telemetry/10.11.1/lib/net9.0/Microsoft.Extensions.Telemetry.dll
+ polly.core/8.4.2/lib/net8.0/Polly.Core.dll
+ polly.extensions/8.4.2/lib/net8.0/Polly.Extensions.dll
+ polly.ratelimiting/8.4.2/lib/net8.0/Polly.RateLimiting.dll
+ system.diagnostics.diagnosticsource/10.0.15/lib/net9.0/System.Diagnostics.DiagnosticSource.dll
+ system.threading.ratelimiting/8.0.0/lib/net8.0/System.Threading.RateLimiting.dll
+
+[analyzerReferences]
+<NETSDK>/Sdks/Microsoft.NET.Sdk/analyzers/
+ Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
+ Microsoft.CodeAnalysis.NetAnalyzers.dll
+<NUGET>/
+ microsoft.extensions.options/10.0.15/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Options.SourceGeneration.dll
+ microsoft.extensions.telemetry.abstractions/10.11.1/analyzers/dotnet/cs/
+  Microsoft.Gen.Logging.dll
+  Microsoft.Gen.Metrics.dll
+
+[sdkAnalyzerConfigPolicy]
+Microsoft.NET.Sdk/analyzers
+
+[analyzerConfigFiles]
+../../.editorconfig
+obj/Debug/net9.0/Mes.Infrastructure.LaravelSync.GeneratedMSBuildEditorConfig.editorconfig
+
+[projectReferences]
+../
+ Mes.Application/Mes.Application.csproj
+ Mes.Domain/Mes.Domain.csproj
+
+[capabilities]
+NativeAOT
+Pack
+SupportsHotReload

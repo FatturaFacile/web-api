@@ -1,0 +1,167 @@
+version=2.3
+
+# This file caches language service data to improve the performance of C# Dev Kit.
+# It is not intended for manual editing. It can safely be deleted and will be
+# regenerated automatically. For more information, see https://aka.ms/lscache
+#
+# To control where cache files are stored, use the following VS Code setting:
+#   "dotnet.projectsystem.cacheInProjectFolder": true
+
+[project]
+project=Mes.Presentation.csproj
+language=C#
+primary
+lastDtbSucceeded
+
+[properties]
+AssemblyName=Mes.Presentation
+BaseIntermediateOutputPath=<PATH>obj/
+BaseOutputPath=bin/
+DebugSymbols=true
+EnableHotReloadInRuntimeConfigDevFile=true
+HotReloadBrowserToolsEnabled=true
+IntermediateOutputPath=obj/Debug/net9.0/
+MaxSupportedLangVersion=13.0
+Optimize=false
+OutputType=Exe
+ProjectAssetsFile=<PATH>obj/project.assets.json
+RootNamespace=Mes.Presentation
+TargetFramework=net9.0
+TargetFrameworkIdentifier=.NETCoreApp
+TargetFrameworkVersion=v9.0
+TargetPath=<PATH>bin/Debug/net9.0/Mes.Presentation.dll
+TargetRefPath=<PATH>obj/Debug/net9.0/ref/Mes.Presentation.dll
+TemporaryDependencyNodeTargetIdentifier=net9.0
+
+[commandLineArguments]
+/noconfig
+/unsafe-
+/checked-
+/nowarn:1701,1702,1701,1702,8002
+/fullpaths
+/nostdlib+
+/errorreport:prompt
+/warn:9
+/define:TRACE;DEBUG;NET;NET9_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
+/highentropyva+
+/nullable:enable
+/debug+
+/debug:portable
+/filealign:512
+/optimize-
+/out:obj/Debug/net9.0/Mes.Presentation.dll
+/refout:obj/Debug/net9.0/refint/Mes.Presentation.dll
+/target:exe
+/warnaserror+
+/utf8output
+/deterministic+
+/langversion:13
+/warnaserror+:NU1605,SYSLIB0011
+
+[sourceFiles]
+obj/Debug/net9.0/
+ .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+ Mes.Presentation.AssemblyInfo.cs
+ Mes.Presentation.GlobalUsings.g.cs
+GatewayAuth.cs
+Program.cs
+Realtime.cs
+
+[frameworkPacks]
+Microsoft.AspNetCore.App.Ref
+Microsoft.NETCore.App.Ref
+
+[metadataReferences]
+../
+ Mes.Application/obj/Debug/net9.0/ref/Mes.Application.dll
+ Mes.Domain/obj/Debug/net9.0/ref/Mes.Domain.dll
+ Mes.Infrastructure.LaravelSync/obj/Debug/net9.0/ref/Mes.Infrastructure.LaravelSync.dll
+ Mes.Infrastructure.Persistence/obj/Debug/net9.0/ref/Mes.Infrastructure.Persistence.dll
+<NUGET>/
+ microsoft.aspnetcore.authentication.certificate/9.0.23/lib/net9.0/Microsoft.AspNetCore.Authentication.Certificate.dll
+ microsoft.aspnetcore.authentication.jwtbearer/9.0.23/lib/net9.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+ microsoft.bcl.cryptography/10.0.2/lib/net9.0/Microsoft.Bcl.Cryptography.dll
+ microsoft.extensions.ambientmetadata.application/10.11.1/lib/net9.0/Microsoft.Extensions.AmbientMetadata.Application.dll
+ microsoft.extensions.compliance.abstractions/10.11.1/lib/net9.0/Microsoft.Extensions.Compliance.Abstractions.dll
+ microsoft.extensions.configuration.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.Abstractions.dll
+ microsoft.extensions.configuration.binder/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.Binder.dll
+ microsoft.extensions.configuration/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.dll
+ microsoft.extensions.dependencyinjection.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+ microsoft.extensions.dependencyinjection.autoactivation/10.11.1/lib/net9.0/Microsoft.Extensions.DependencyInjection.AutoActivation.dll
+ microsoft.extensions.dependencyinjection/10.0.15/lib/net9.0/Microsoft.Extensions.DependencyInjection.dll
+ microsoft.extensions.diagnostics.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Diagnostics.Abstractions.dll
+ microsoft.extensions.diagnostics.exceptionsummarization/10.11.1/lib/net9.0/Microsoft.Extensions.Diagnostics.ExceptionSummarization.dll
+ microsoft.extensions.diagnostics/10.0.15/lib/net9.0/Microsoft.Extensions.Diagnostics.dll
+ microsoft.extensions.fileproviders.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.FileProviders.Abstractions.dll
+ microsoft.extensions.hosting.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Hosting.Abstractions.dll
+ microsoft.extensions.http.diagnostics/10.11.1/lib/net9.0/Microsoft.Extensions.Http.Diagnostics.dll
+ microsoft.extensions.http.resilience/10.11.1/lib/net9.0/Microsoft.Extensions.Http.Resilience.dll
+ microsoft.extensions.http/10.0.15/lib/net9.0/Microsoft.Extensions.Http.dll
+ microsoft.extensions.logging.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.Abstractions.dll
+ microsoft.extensions.logging/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.dll
+ microsoft.extensions.options.configurationextensions/10.0.15/lib/net9.0/Microsoft.Extensions.Options.ConfigurationExtensions.dll
+ microsoft.extensions.options/10.0.15/lib/net9.0/Microsoft.Extensions.Options.dll
+ microsoft.extensions.primitives/10.0.15/lib/net9.0/Microsoft.Extensions.Primitives.dll
+ microsoft.extensions.resilience/10.11.1/lib/net9.0/Microsoft.Extensions.Resilience.dll
+ microsoft.extensions.telemetry.abstractions/10.11.1/lib/net9.0/Microsoft.Extensions.Telemetry.Abstractions.dll
+ microsoft.extensions.telemetry/10.11.1/lib/net9.0/Microsoft.Extensions.Telemetry.dll
+ microsoft.identitymodel.abstractions/8.19.2/lib/net9.0/Microsoft.IdentityModel.Abstractions.dll
+ microsoft.identitymodel.jsonwebtokens/8.19.2/lib/net9.0/Microsoft.IdentityModel.JsonWebTokens.dll
+ microsoft.identitymodel.logging/8.19.2/lib/net9.0/Microsoft.IdentityModel.Logging.dll
+ microsoft.identitymodel.protocols.openidconnect/8.19.2/lib/net9.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+ microsoft.identitymodel.protocols/8.19.2/lib/net9.0/Microsoft.IdentityModel.Protocols.dll
+ microsoft.identitymodel.tokens/8.19.2/lib/net9.0/Microsoft.IdentityModel.Tokens.dll
+ npgsql/9.0.5/lib/net8.0/Npgsql.dll
+ polly.core/8.4.2/lib/net8.0/Polly.Core.dll
+ polly.extensions/8.4.2/lib/net8.0/Polly.Extensions.dll
+ polly.ratelimiting/8.4.2/lib/net8.0/Polly.RateLimiting.dll
+ respite/3.4.35/lib/net8.0/RESPite.dll
+ stackexchange.redis/3.4.35/lib/net8.0/StackExchange.Redis.dll
+ system.diagnostics.diagnosticsource/10.0.15/lib/net9.0/System.Diagnostics.DiagnosticSource.dll
+ system.identitymodel.tokens.jwt/8.19.2/lib/net9.0/System.IdentityModel.Tokens.Jwt.dll
+ system.io.hashing/10.0.13/lib/net9.0/System.IO.Hashing.dll
+ system.io.pipelines/10.0.13/lib/net9.0/System.IO.Pipelines.dll
+
+[analyzerReferences]
+<NETSDK>/Sdks/
+ Microsoft.NET.Sdk.Razor/source-generators/
+  Microsoft.AspNetCore.Razor.Utilities.Shared.dll
+  Microsoft.CodeAnalysis.Razor.Compiler.dll
+ Microsoft.NET.Sdk.Web/analyzers/cs/
+  Microsoft.AspNetCore.Analyzers.dll
+  Microsoft.AspNetCore.Mvc.Analyzers.dll
+ Microsoft.NET.Sdk/analyzers/
+  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
+  Microsoft.CodeAnalysis.NetAnalyzers.dll
+<NUGET>/
+ microsoft.extensions.options/10.0.15/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Options.SourceGeneration.dll
+ microsoft.extensions.telemetry.abstractions/10.11.1/analyzers/dotnet/cs/
+  Microsoft.Gen.Logging.dll
+  Microsoft.Gen.Metrics.dll
+ stackexchange.redis/3.4.35/analyzers/dotnet/cs/
+  StackExchange.Redis.Build.dll
+  StackExchange.Redis.CodeFixes.dll
+
+[sdkAnalyzerConfigPolicy]
+Microsoft.NET.Sdk/analyzers
+
+[analyzerConfigFiles]
+../../.editorconfig
+obj/Debug/net9.0/Mes.Presentation.GeneratedMSBuildEditorConfig.editorconfig
+
+[projectReferences]
+../
+ Mes.Application/Mes.Application.csproj
+ Mes.Domain/Mes.Domain.csproj
+ Mes.Infrastructure.LaravelSync/Mes.Infrastructure.LaravelSync.csproj
+ Mes.Infrastructure.Persistence/Mes.Infrastructure.Persistence.csproj
+
+[capabilities]
+AspNetCore
+CrossPlatformExecutable
+DotNetCoreRazor
+DotNetCoreWeb
+NativeAOT
+Pack
+SupportsHotReload
+Web

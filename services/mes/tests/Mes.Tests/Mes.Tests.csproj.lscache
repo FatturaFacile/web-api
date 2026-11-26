@@ -1,0 +1,262 @@
+version=2.3
+
+# This file caches language service data to improve the performance of C# Dev Kit.
+# It is not intended for manual editing. It can safely be deleted and will be
+# regenerated automatically. For more information, see https://aka.ms/lscache
+#
+# To control where cache files are stored, use the following VS Code setting:
+#   "dotnet.projectsystem.cacheInProjectFolder": true
+
+[project]
+project=Mes.Tests.csproj
+language=C#
+primary
+lastDtbSucceeded
+
+[properties]
+AssemblyName=Mes.Tests
+BaseIntermediateOutputPath=obj/
+BaseOutputPath=bin/
+DebugSymbols=true
+EnableHotReloadInRuntimeConfigDevFile=true
+HotReloadBrowserToolsEnabled=false
+IntermediateOutputPath=obj/Debug/net9.0/
+IsTestProject=true
+MaxSupportedLangVersion=13.0
+Optimize=false
+OutputType=Exe
+ProjectAssetsFile=<PATH>obj/project.assets.json
+RootNamespace=Mes.Tests
+TargetFramework=net9.0
+TargetFrameworkIdentifier=.NETCoreApp
+TargetFrameworkVersion=v9.0
+TargetPath=<PATH>bin/Debug/net9.0/Mes.Tests.dll
+TargetRefPath=<PATH>obj/Debug/net9.0/ref/Mes.Tests.dll
+TemporaryDependencyNodeTargetIdentifier=net9.0
+
+[commandLineArguments]
+/noconfig
+/unsafe-
+/checked-
+/nowarn:1701,1702,1701,1702,8002
+/fullpaths
+/nostdlib+
+/errorreport:prompt
+/warn:9
+/define:TRACE;DEBUG;NET;NET9_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
+/highentropyva+
+/nullable:enable
+/debug+
+/debug:portable
+/filealign:512
+/optimize-
+/out:obj/Debug/net9.0/Mes.Tests.dll
+/refout:obj/Debug/net9.0/refint/Mes.Tests.dll
+/target:exe
+/warnaserror+
+/utf8output
+/deterministic+
+/langversion:13
+/warnaserror+:NU1605,SYSLIB0011
+
+[sourceFiles]
+<NUGET>/microsoft.net.test.sdk/18.12.0/build/net8.0/Microsoft.NET.Test.Sdk.Program.cs
+obj/Debug/net9.0/
+ .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+ Mes.Tests.AssemblyInfo.cs
+ Mes.Tests.GlobalUsings.g.cs
+Support/
+ Harness.cs
+ InMemoryMes.cs
+ TestOpcUaServer.cs
+ApplicationTests.cs
+ArchitectureTests.cs
+ConnectorTests.cs
+ContractFixtureTests.cs
+DomainTests.cs
+EdgeLaravelTests.cs
+EdgeTests.cs
+HardeningTests.cs
+LaravelSyncTests.cs
+MqttHarnessTests.cs
+OpcUaHarnessTests.cs
+PostgresIntegrationTests.cs
+RedisIntegrationTests.cs
+
+[frameworkPacks]
+Microsoft.AspNetCore.App.Ref
+Microsoft.NETCore.App.Ref
+
+[metadataReferences]
+../../src/
+ Edge.Gateway/obj/Debug/net9.0/ref/Edge.Gateway.dll
+ Mes.Application/obj/Debug/net9.0/ref/Mes.Application.dll
+ Mes.Domain/obj/Debug/net9.0/ref/Mes.Domain.dll
+ Mes.Infrastructure.Connectors/obj/Debug/net9.0/ref/Mes.Infrastructure.Connectors.dll
+ Mes.Infrastructure.LaravelSync/obj/Debug/net9.0/ref/Mes.Infrastructure.LaravelSync.dll
+ Mes.Infrastructure.Persistence/obj/Debug/net9.0/ref/Mes.Infrastructure.Persistence.dll
+ Mes.Presentation/obj/Debug/net9.0/ref/Mes.Presentation.dll
+<NUGET>/
+ bitfaster.caching/2.6.0/lib/net6.0/BitFaster.Caching.dll
+ bouncycastle.cryptography/2.7.0/lib/net6.0/BouncyCastle.Cryptography.dll
+ docker.dotnet.enhanced.handler.abstractions/4.3.3/lib/net9.0/Docker.DotNet.Handler.Abstractions.dll
+ docker.dotnet.enhanced.legacyhttp/4.3.3/lib/net9.0/Docker.DotNet.LegacyHttp.dll
+ docker.dotnet.enhanced.nativehttp/4.3.3/lib/net9.0/Docker.DotNet.NativeHttp.dll
+ docker.dotnet.enhanced.npipe/4.3.3/lib/net9.0/Docker.DotNet.NPipe.dll
+ docker.dotnet.enhanced.unix/4.3.3/lib/net9.0/Docker.DotNet.Unix.dll
+ docker.dotnet.enhanced.x509/4.3.3/lib/net9.0/
+  Docker.DotNet.X509.dll
+  Microsoft.Net.Http.Client.dll
+ docker.dotnet.enhanced/4.3.3/lib/net9.0/Docker.DotNet.dll
+ fluentassertions/7.2.0/lib/net6.0/FluentAssertions.dll
+ fscheck.xunit/3.6.0/lib/netstandard2.0/FsCheck.Xunit.dll
+ fscheck/3.6.0/lib/net8.0/FsCheck.dll
+ fsharp.core/5.0.2/lib/netstandard2.0/FSharp.Core.dll
+ google.protobuf/3.36.2/lib/net8.0/Google.Protobuf.dll
+ microsoft.aspnetcore.authentication.certificate/9.0.23/lib/net9.0/Microsoft.AspNetCore.Authentication.Certificate.dll
+ microsoft.aspnetcore.authentication.jwtbearer/9.0.23/lib/net9.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+ microsoft.bcl.cryptography/10.0.2/lib/net9.0/Microsoft.Bcl.Cryptography.dll
+ microsoft.codecoverage/18.12.0/lib/net8.0/Microsoft.VisualStudio.CodeCoverage.Shim.dll
+ microsoft.data.sqlite.core/9.0.23/lib/net8.0/Microsoft.Data.Sqlite.dll
+ microsoft.extensions.ambientmetadata.application/10.11.1/lib/net9.0/Microsoft.Extensions.AmbientMetadata.Application.dll
+ microsoft.extensions.compliance.abstractions/10.11.1/lib/net9.0/Microsoft.Extensions.Compliance.Abstractions.dll
+ microsoft.extensions.configuration.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.Abstractions.dll
+ microsoft.extensions.configuration.binder/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.Binder.dll
+ microsoft.extensions.configuration.commandline/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.CommandLine.dll
+ microsoft.extensions.configuration.environmentvariables/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.EnvironmentVariables.dll
+ microsoft.extensions.configuration.fileextensions/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.FileExtensions.dll
+ microsoft.extensions.configuration.json/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.Json.dll
+ microsoft.extensions.configuration.usersecrets/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.UserSecrets.dll
+ microsoft.extensions.configuration/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.dll
+ microsoft.extensions.dependencyinjection.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+ microsoft.extensions.dependencyinjection.autoactivation/10.11.1/lib/net9.0/Microsoft.Extensions.DependencyInjection.AutoActivation.dll
+ microsoft.extensions.dependencyinjection/10.0.15/lib/net9.0/Microsoft.Extensions.DependencyInjection.dll
+ microsoft.extensions.diagnostics.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Diagnostics.Abstractions.dll
+ microsoft.extensions.diagnostics.exceptionsummarization/10.11.1/lib/net9.0/Microsoft.Extensions.Diagnostics.ExceptionSummarization.dll
+ microsoft.extensions.diagnostics/10.0.15/lib/net9.0/Microsoft.Extensions.Diagnostics.dll
+ microsoft.extensions.fileproviders.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.FileProviders.Abstractions.dll
+ microsoft.extensions.fileproviders.physical/10.0.15/lib/net9.0/Microsoft.Extensions.FileProviders.Physical.dll
+ microsoft.extensions.filesystemglobbing/10.0.15/lib/net9.0/Microsoft.Extensions.FileSystemGlobbing.dll
+ microsoft.extensions.hosting.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Hosting.Abstractions.dll
+ microsoft.extensions.hosting/10.0.15/lib/net9.0/Microsoft.Extensions.Hosting.dll
+ microsoft.extensions.http.diagnostics/10.11.1/lib/net9.0/Microsoft.Extensions.Http.Diagnostics.dll
+ microsoft.extensions.http.resilience/10.11.1/lib/net9.0/Microsoft.Extensions.Http.Resilience.dll
+ microsoft.extensions.http/10.0.15/lib/net9.0/Microsoft.Extensions.Http.dll
+ microsoft.extensions.logging.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.Abstractions.dll
+ microsoft.extensions.logging.configuration/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.Configuration.dll
+ microsoft.extensions.logging.console/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.Console.dll
+ microsoft.extensions.logging.debug/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.Debug.dll
+ microsoft.extensions.logging.eventlog/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.EventLog.dll
+ microsoft.extensions.logging.eventsource/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.EventSource.dll
+ microsoft.extensions.logging/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.dll
+ microsoft.extensions.options.configurationextensions/10.0.15/lib/net9.0/Microsoft.Extensions.Options.ConfigurationExtensions.dll
+ microsoft.extensions.options/10.0.15/lib/net9.0/Microsoft.Extensions.Options.dll
+ microsoft.extensions.primitives/10.0.15/lib/net9.0/Microsoft.Extensions.Primitives.dll
+ microsoft.extensions.resilience/10.11.1/lib/net9.0/Microsoft.Extensions.Resilience.dll
+ microsoft.extensions.telemetry.abstractions/10.11.1/lib/net9.0/Microsoft.Extensions.Telemetry.Abstractions.dll
+ microsoft.extensions.telemetry/10.11.1/lib/net9.0/Microsoft.Extensions.Telemetry.dll
+ microsoft.identitymodel.abstractions/8.19.2/lib/net9.0/Microsoft.IdentityModel.Abstractions.dll
+ microsoft.identitymodel.jsonwebtokens/8.19.2/lib/net9.0/Microsoft.IdentityModel.JsonWebTokens.dll
+ microsoft.identitymodel.logging/8.19.2/lib/net9.0/Microsoft.IdentityModel.Logging.dll
+ microsoft.identitymodel.protocols.openidconnect/8.19.2/lib/net9.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+ microsoft.identitymodel.protocols/8.19.2/lib/net9.0/Microsoft.IdentityModel.Protocols.dll
+ microsoft.identitymodel.tokens/8.19.2/lib/net9.0/Microsoft.IdentityModel.Tokens.dll
+ microsoft.testplatform.testhost/18.12.0/lib/net8.0/
+  Microsoft.TestPlatform.CommunicationUtilities.dll
+  Microsoft.TestPlatform.CoreUtilities.dll
+  Microsoft.TestPlatform.CrossPlatEngine.dll
+  Microsoft.TestPlatform.PlatformAbstractions.dll
+  Microsoft.TestPlatform.Utilities.dll
+  Microsoft.VisualStudio.TestPlatform.Common.dll
+  Microsoft.VisualStudio.TestPlatform.ObjectModel.dll
+  testhost.dll
+ microsoft.win32.systemevents/6.0.0/lib/net6.0/Microsoft.Win32.SystemEvents.dll
+ mono.cecil/0.11.3/lib/netstandard2.0/
+  Mono.Cecil.dll
+  Mono.Cecil.Mdb.dll
+  Mono.Cecil.Pdb.dll
+  Mono.Cecil.Rocks.dll
+ mqttnet.server/5.2.0.1603/lib/net8.0/MQTTnet.Server.dll
+ mqttnet/5.2.0.1603/lib/net8.0/MQTTnet.dll
+ netarchtest.rules/1.3.2/lib/netstandard2.0/NetArchTest.Rules.dll
+ newtonsoft.json/13.0.4/lib/net6.0/Newtonsoft.Json.dll
+ npgsql/9.0.5/lib/net8.0/Npgsql.dll
+ opcfoundation.netstandard.opc.ua.client/1.5.378.196/lib/net9.0/Opc.Ua.Client.dll
+ opcfoundation.netstandard.opc.ua.configuration/1.5.378.196/lib/net9.0/Opc.Ua.Configuration.dll
+ opcfoundation.netstandard.opc.ua.core/1.5.378.196/lib/net9.0/Opc.Ua.Core.dll
+ opcfoundation.netstandard.opc.ua.security.certificates/1.5.378.196/lib/net9.0/Opc.Ua.Security.Certificates.dll
+ opcfoundation.netstandard.opc.ua.server/1.5.378.196/lib/net9.0/Opc.Ua.Server.dll
+ opcfoundation.netstandard.opc.ua.types/1.5.378.196/lib/net9.0/Opc.Ua.Types.dll
+ polly.core/8.9.1/lib/net8.0/Polly.Core.dll
+ polly.extensions/8.4.2/lib/net8.0/Polly.Extensions.dll
+ polly.ratelimiting/8.4.2/lib/net8.0/Polly.RateLimiting.dll
+ respite/3.4.35/lib/net8.0/RESPite.dll
+ sharpziplib/1.4.2/lib/net6.0/ICSharpCode.SharpZipLib.dll
+ sqlitepclraw.bundle_e_sqlite3/2.1.13/lib/netstandard2.0/SQLitePCLRaw.batteries_v2.dll
+ sqlitepclraw.core/2.1.13/lib/netstandard2.0/SQLitePCLRaw.core.dll
+ sqlitepclraw.provider.e_sqlite3/2.1.13/lib/net6.0/SQLitePCLRaw.provider.e_sqlite3.dll
+ ssh.net/2026.0.0/lib/net9.0/Renci.SshNet.dll
+ stackexchange.redis/3.4.35/lib/net8.0/StackExchange.Redis.dll
+ system.collections.immutable/10.0.8/lib/net9.0/System.Collections.Immutable.dll
+ system.configuration.configurationmanager/6.0.0/lib/net6.0/System.Configuration.ConfigurationManager.dll
+ system.diagnostics.diagnosticsource/10.0.15/lib/net9.0/System.Diagnostics.DiagnosticSource.dll
+ system.diagnostics.eventlog/10.0.15/lib/net9.0/System.Diagnostics.EventLog.dll
+ system.drawing.common/6.0.0/lib/net6.0/System.Drawing.Common.dll
+ system.formats.asn1/10.0.8/lib/net9.0/System.Formats.Asn1.dll
+ system.identitymodel.tokens.jwt/8.19.2/lib/net9.0/System.IdentityModel.Tokens.Jwt.dll
+ system.io.hashing/10.0.13/lib/net9.0/System.IO.Hashing.dll
+ system.io.pipelines/10.0.15/lib/net9.0/System.IO.Pipelines.dll
+ system.security.cryptography.protecteddata/6.0.0/lib/net6.0/System.Security.Cryptography.ProtectedData.dll
+ system.security.permissions/6.0.0/lib/net6.0/System.Security.Permissions.dll
+ system.text.encodings.web/10.0.15/lib/net9.0/System.Text.Encodings.Web.dll
+ system.text.json/10.0.15/lib/net9.0/System.Text.Json.dll
+ system.windows.extensions/6.0.0/lib/net6.0/System.Windows.Extensions.dll
+ testcontainers.postgresql/4.17.0/lib/net9.0/Testcontainers.PostgreSql.dll
+ testcontainers.redis/4.17.0/lib/net9.0/Testcontainers.Redis.dll
+ testcontainers/4.17.0/lib/net9.0/Testcontainers.dll
+ xunit.abstractions/2.0.3/lib/netstandard2.0/xunit.abstractions.dll
+ xunit.assert/2.9.3/lib/net6.0/xunit.assert.dll
+ xunit.extensibility.core/2.9.3/lib/netstandard1.1/xunit.core.dll
+ xunit.extensibility.execution/2.9.3/lib/netstandard1.1/xunit.execution.dotnet.dll
+
+[analyzerReferences]
+<NETSDK>/Sdks/Microsoft.NET.Sdk/analyzers/
+ Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
+ Microsoft.CodeAnalysis.NetAnalyzers.dll
+<NUGET>/
+ microsoft.extensions.options/10.0.15/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Options.SourceGeneration.dll
+ microsoft.extensions.telemetry.abstractions/10.11.1/analyzers/dotnet/cs/
+  Microsoft.Gen.Logging.dll
+  Microsoft.Gen.Metrics.dll
+ stackexchange.redis/3.4.35/analyzers/dotnet/cs/
+  StackExchange.Redis.Build.dll
+  StackExchange.Redis.CodeFixes.dll
+ system.text.json/10.0.15/analyzers/dotnet/roslyn4.4/cs/System.Text.Json.SourceGeneration.dll
+ xunit.analyzers/1.18.0/analyzers/dotnet/cs/
+  xunit.analyzers.dll
+  xunit.analyzers.fixes.dll
+
+[sdkAnalyzerConfigPolicy]
+Microsoft.NET.Sdk/analyzers
+
+[analyzerConfigFiles]
+../../.editorconfig
+obj/Debug/net9.0/Mes.Tests.GeneratedMSBuildEditorConfig.editorconfig
+
+[projectReferences]
+../../src/
+ Edge.Gateway/Edge.Gateway.csproj
+ Mes.Application/Mes.Application.csproj
+ Mes.Domain/Mes.Domain.csproj
+ Mes.Infrastructure.Connectors/Mes.Infrastructure.Connectors.csproj
+ Mes.Infrastructure.LaravelSync/Mes.Infrastructure.LaravelSync.csproj
+ Mes.Infrastructure.Persistence/Mes.Infrastructure.Persistence.csproj
+ Mes.Presentation/Mes.Presentation.csproj
+
+[capabilities]
+CrossPlatformExecutable
+LocalUserSecrets
+NativeAOT
+Pack
+SupportsHotReload
+TestContainer

@@ -1,0 +1,96 @@
+version=2.3
+
+# This file caches language service data to improve the performance of C# Dev Kit.
+# It is not intended for manual editing. It can safely be deleted and will be
+# regenerated automatically. For more information, see https://aka.ms/lscache
+#
+# To control where cache files are stored, use the following VS Code setting:
+#   "dotnet.projectsystem.cacheInProjectFolder": true
+
+[project]
+project=Mes.Domain.csproj
+language=C#
+primary
+lastDtbSucceeded
+
+[properties]
+AssemblyName=Mes.Domain
+BaseIntermediateOutputPath=obj/
+BaseOutputPath=bin/
+DebugSymbols=true
+EnableHotReloadInRuntimeConfigDevFile=true
+HotReloadBrowserToolsEnabled=false
+IntermediateOutputPath=obj/Debug/net9.0/
+MaxSupportedLangVersion=13.0
+Optimize=false
+OutputType=Library
+ProjectAssetsFile=<PATH>obj/project.assets.json
+RootNamespace=Mes.Domain
+TargetFramework=net9.0
+TargetFrameworkIdentifier=.NETCoreApp
+TargetFrameworkVersion=v9.0
+TargetPath=<PATH>bin/Debug/net9.0/Mes.Domain.dll
+TargetRefPath=<PATH>obj/Debug/net9.0/ref/Mes.Domain.dll
+TemporaryDependencyNodeTargetIdentifier=net9.0
+
+[commandLineArguments]
+/noconfig
+/unsafe-
+/checked-
+/nowarn:1701,1702,1701,1702,8002
+/fullpaths
+/nostdlib+
+/errorreport:prompt
+/warn:9
+/define:TRACE;DEBUG;NET;NET9_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
+/highentropyva+
+/nullable:enable
+/debug+
+/debug:portable
+/filealign:512
+/optimize-
+/out:obj/Debug/net9.0/Mes.Domain.dll
+/refout:obj/Debug/net9.0/refint/Mes.Domain.dll
+/target:library
+/warnaserror+
+/utf8output
+/deterministic+
+/langversion:13
+/warnaserror+:NU1605,SYSLIB0011
+
+[sourceFiles]
+Common/ValueObjects.cs
+Counters/CounterTracker.cs
+Energy/EnergyCalculator.cs
+Machines/Aggregates.cs
+obj/Debug/net9.0/
+ .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+ Mes.Domain.AssemblyInfo.cs
+ Mes.Domain.GlobalUsings.g.cs
+Oee/Oee.cs
+State/MachineStateMachine.cs
+Telemetry/Telemetry.cs
+
+[frameworkPacks]
+Microsoft.NETCore.App.Ref
+
+[metadataReferences]
+
+[analyzerReferences]
+<NETSDK>/Sdks/Microsoft.NET.Sdk/analyzers/
+ Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
+ Microsoft.CodeAnalysis.NetAnalyzers.dll
+
+[sdkAnalyzerConfigPolicy]
+Microsoft.NET.Sdk/analyzers
+
+[analyzerConfigFiles]
+../../.editorconfig
+obj/Debug/net9.0/Mes.Domain.GeneratedMSBuildEditorConfig.editorconfig
+
+[projectReferences]
+
+[capabilities]
+NativeAOT
+Pack
+SupportsHotReload

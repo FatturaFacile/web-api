@@ -1,0 +1,130 @@
+version=2.3
+
+# This file caches language service data to improve the performance of C# Dev Kit.
+# It is not intended for manual editing. It can safely be deleted and will be
+# regenerated automatically. For more information, see https://aka.ms/lscache
+#
+# To control where cache files are stored, use the following VS Code setting:
+#   "dotnet.projectsystem.cacheInProjectFolder": true
+
+[project]
+project=Mes.Infrastructure.Persistence.csproj
+language=C#
+primary
+lastDtbSucceeded
+
+[properties]
+AssemblyName=Mes.Infrastructure.Persistence
+BaseIntermediateOutputPath=obj/
+BaseOutputPath=bin/
+DebugSymbols=true
+EnableHotReloadInRuntimeConfigDevFile=true
+HotReloadBrowserToolsEnabled=false
+IntermediateOutputPath=obj/Debug/net9.0/
+MaxSupportedLangVersion=13.0
+Optimize=false
+OutputType=Library
+ProjectAssetsFile=<PATH>obj/project.assets.json
+RootNamespace=Mes.Infrastructure.Persistence
+TargetFramework=net9.0
+TargetFrameworkIdentifier=.NETCoreApp
+TargetFrameworkVersion=v9.0
+TargetPath=<PATH>bin/Debug/net9.0/Mes.Infrastructure.Persistence.dll
+TargetRefPath=<PATH>obj/Debug/net9.0/ref/Mes.Infrastructure.Persistence.dll
+TemporaryDependencyNodeTargetIdentifier=net9.0
+
+[commandLineArguments]
+/noconfig
+/unsafe-
+/checked-
+/nowarn:1701,1702,1701,1702,8002
+/fullpaths
+/nostdlib+
+/errorreport:prompt
+/warn:9
+/define:TRACE;DEBUG;NET;NET9_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
+/highentropyva+
+/nullable:enable
+/debug+
+/debug:portable
+/filealign:512
+/optimize-
+/out:obj/Debug/net9.0/Mes.Infrastructure.Persistence.dll
+/refout:obj/Debug/net9.0/refint/Mes.Infrastructure.Persistence.dll
+/target:library
+/warnaserror+
+/utf8output
+/deterministic+
+/langversion:13
+/warnaserror+:NU1605,SYSLIB0011
+
+[sourceFiles]
+obj/Debug/net9.0/
+ .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+ Mes.Infrastructure.Persistence.AssemblyInfo.cs
+ Mes.Infrastructure.Persistence.GlobalUsings.g.cs
+Pipeline/TelemetryPipeline.cs
+DependencyInjection.cs
+PgCounterCheckpointStore.cs
+PgMesStore.cs
+PgOutboxStore.cs
+PgSession.cs
+RedisOeeLiveStore.cs
+RefMachineProfileProvider.cs
+RefShiftCalendarProvider.cs
+
+[frameworkPacks]
+Microsoft.NETCore.App.Ref
+
+[metadataReferences]
+../
+ Mes.Application/obj/Debug/net9.0/ref/Mes.Application.dll
+ Mes.Domain/obj/Debug/net9.0/ref/Mes.Domain.dll
+<NUGET>/
+ microsoft.extensions.configuration.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Configuration.Abstractions.dll
+ microsoft.extensions.dependencyinjection.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+ microsoft.extensions.diagnostics.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Diagnostics.Abstractions.dll
+ microsoft.extensions.fileproviders.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.FileProviders.Abstractions.dll
+ microsoft.extensions.hosting.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Hosting.Abstractions.dll
+ microsoft.extensions.logging.abstractions/10.0.15/lib/net9.0/Microsoft.Extensions.Logging.Abstractions.dll
+ microsoft.extensions.options/10.0.15/lib/net9.0/Microsoft.Extensions.Options.dll
+ microsoft.extensions.primitives/10.0.15/lib/net9.0/Microsoft.Extensions.Primitives.dll
+ npgsql/9.0.5/lib/net8.0/Npgsql.dll
+ respite/3.4.35/lib/net8.0/RESPite.dll
+ stackexchange.redis/3.4.35/lib/net8.0/StackExchange.Redis.dll
+ system.diagnostics.diagnosticsource/10.0.15/lib/net9.0/System.Diagnostics.DiagnosticSource.dll
+ system.io.hashing/10.0.13/lib/net9.0/System.IO.Hashing.dll
+ system.io.pipelines/10.0.13/lib/net9.0/System.IO.Pipelines.dll
+
+[analyzerReferences]
+<NETSDK>/Sdks/Microsoft.NET.Sdk/analyzers/
+ Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
+ Microsoft.CodeAnalysis.NetAnalyzers.dll
+<NUGET>/
+ microsoft.extensions.logging.abstractions/10.0.15/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Logging.Generators.dll
+ microsoft.extensions.options/10.0.15/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Options.SourceGeneration.dll
+ stackexchange.redis/3.4.35/analyzers/dotnet/cs/
+  StackExchange.Redis.Build.dll
+  StackExchange.Redis.CodeFixes.dll
+
+[sdkAnalyzerConfigPolicy]
+Microsoft.NET.Sdk/analyzers
+
+[analyzerConfigFiles]
+../../.editorconfig
+obj/Debug/net9.0/Mes.Infrastructure.Persistence.GeneratedMSBuildEditorConfig.editorconfig
+
+[embeddedResources]
+Schema/
+ 001_mes_schema.sql
+ 002_counter_checkpoint.sql
+
+[projectReferences]
+../
+ Mes.Application/Mes.Application.csproj
+ Mes.Domain/Mes.Domain.csproj
+
+[capabilities]
+NativeAOT
+Pack
+SupportsHotReload

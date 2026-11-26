@@ -45,7 +45,7 @@ jobs:
         run: ./vendor/bin/pint --test
 
       - name: Run PHPStan / Larastan
-        run: ./vendor/bin/phpstan analyse --memory-limit=2G --no-progress
+        run: ./vendor/bin/phpstan analyse --memory-limit=6G --no-progress
 
       - name: Run Pest Architecture Boundary Tests
         run: ./vendor/bin/pest tests/Architecture --no-coverage
