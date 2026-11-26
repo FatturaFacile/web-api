@@ -3,6 +3,8 @@
 use App\Jobs\Appointments\QueueAppointmentRemindersJob;
 use App\Models\PasswordResetToken;
 use App\Models\Tenant;
+use Enterprise\AuditLedger\Jobs\CreateDailyCheckpointsJob;
+use Enterprise\AuditLedger\Jobs\VerifyAuditChainsJob;
 use Enterprise\EventBus\Jobs\MaintainOutboxLifecycleJob;
 use Enterprise\EventBus\Jobs\RelayOutboxEventsJob;
 use Enterprise\MultiTenant\Queue\TenantJobDispatcher;
@@ -269,3 +271,8 @@ Schedule::command('surveys:process-dispatches')->everyFiveMinutes()->withoutOver
 Schedule::command('surveys:enqueue-semi-annual')->dailyAt('06:30')->withoutOverlapping()->onOneServer();
 // Corporate conventions (Mod 358): expires the conventions and beneficiary passes past their end date.
 Schedule::command('corporate-conventions:expire')->dailyAt('01:15')->withoutOverlapping()->onOneServer();
+
+// Probative audit ledger (Mod 005): the daily checkpoint of every active tenant chain (anchored on the write-once target
+// by AnchorCheckpointJob) and the nightly verification of every chain, one run per tenant with isolated failures.
+Schedule::job(new CreateDailyCheckpointsJob)->dailyAt('00:10')->withoutOverlapping()->onOneServer();
+Schedule::job(new VerifyAuditChainsJob)->dailyAt('02:45')->withoutOverlapping()->onOneServer();

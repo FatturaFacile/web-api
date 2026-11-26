@@ -7,6 +7,7 @@ namespace Enterprise\AuditLedger\Listeners;
 use App\Models\User;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
+use Enterprise\AuditLedger\Support\LoginThrottle;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -22,7 +23,8 @@ final class AuthAuditListener
     public const int DEFAULT_NETWORK_METADATA_RETENTION_DAYS = 90;
 
     public function __construct(
-        private readonly AuditLedgerInterface $auditLedger
+        private readonly AuditLedgerInterface $auditLedger,
+        private readonly LoginThrottle $throttle,
     ) {}
 
     public function handleLogin(Login $event): void
@@ -96,6 +98,27 @@ final class AuthAuditListener
             'ip_address' => self::anonymizeIp(request()->ip()),
             'user_agent' => self::sanitizeUserAgent(request()->userAgent()),
         ]);
+
+        // Repeated failures from one address: refuse that address for a while (EnforceAuditLoginThrottle) and say so on the chain.
+        if ($this->throttle->hit(request()->ip())) {
+            $this->auditLedger->recordPayload([
+                'tenant_id' => $tenantId,
+                'company_id' => $tenantId,
+                'module_code' => 'AUTH',
+                'action' => 'LOGIN_RATE_LIMITED',
+                'category' => 'security',
+                'model_class' => User::class,
+                'model_id' => $user !== null ? (string) $user->id : (string) Str::uuid7(),
+                'actor_user_id' => $user?->id,
+                'payload_after' => [
+                    'max_failures' => (int) config('audit_ledger.login_throttle.max_failures'),
+                    'window_minutes' => (int) config('audit_ledger.login_throttle.window_minutes'),
+                    'block_minutes' => (int) config('audit_ledger.login_throttle.block_minutes'),
+                ],
+                'ip_address' => self::anonymizeIp(request()->ip()),
+                'user_agent' => self::sanitizeUserAgent(request()->userAgent()),
+            ]);
+        }
     }
 
     /**

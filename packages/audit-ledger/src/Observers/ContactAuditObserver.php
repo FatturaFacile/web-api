@@ -45,4 +45,15 @@ final class ContactAuditObserver
             moduleCode: 'CRM'
         );
     }
+
+    public function restored(Contact $contact): void
+    {
+        $this->auditLedger->record(
+            action: 'RESTORED',
+            model: $contact,
+            payloadBefore: null,
+            payloadAfter: ['restored' => true],
+            moduleCode: 'CRM'
+        );
+    }
 }

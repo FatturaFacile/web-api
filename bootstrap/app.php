@@ -3,6 +3,7 @@
 use App\Enums\Auth\AuthProblem;
 use App\Exceptions\SodDocumentConflictException;
 use App\Http\Middleware\AuditSensitiveAccess;
+use App\Http\Middleware\EnforceAuditLoginThrottle;
 use App\Http\Middleware\EnforceHttps;
 use App\Http\Middleware\EnforceSessionPolicy;
 use App\Http\Middleware\EnsureAuditPermission;
@@ -100,6 +101,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'feature' => EnsureFeatureFlagEnabled::class,
             'audit.access' => AuditSensitiveAccess::class,
             'audit.permission' => EnsureAuditPermission::class,
+            'audit.login.throttle' => EnforceAuditLoginThrottle::class,
             'portal.session' => EnsurePortalSession::class,
             'rfq.invitation.token' => ValidateRfqInvitationToken::class,
         ]);

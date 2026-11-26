@@ -14,6 +14,9 @@ use LogicException;
  * triggers refuse them again whoever connects. The tenant is filtered explicitly by the readers (the trail also holds
  * system level events with a null tenant), like the enterprise audit ledger.
  *
+ * @deprecated Legacy trail kept readable so existing references keep working. The probative audit trail (Mod 005) is
+ *             the keyed hash chain of Enterprise\AuditLedger (enterprise_audit_ledger); write new events there.
+ *
  * @property string $id
  * @property string|null $tenant_id
  * @property int $sequence_number

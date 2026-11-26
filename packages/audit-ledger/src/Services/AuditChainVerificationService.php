@@ -4,123 +4,64 @@ declare(strict_types=1);
 
 namespace Enterprise\AuditLedger\Services;
 
-use Enterprise\AuditLedger\Actions\RecordAuditAction;
+use Enterprise\AuditLedger\Domain\Services\IntegrityVerifier;
+use Enterprise\AuditLedger\Domain\ValueObjects\VerificationResult;
 use Enterprise\AuditLedger\Models\AuditLedgerArchiveEntry;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
-use Illuminate\Support\Collection;
+use Enterprise\AuditLedger\Support\ChainReader;
 
+/**
+ * Synchronous verification of a chain (kept for the callers of the first ledger). The queued, persisted verification of
+ * Mod 005 is VerifyChainIntegrityHandler. Both use the IntegrityVerifier, which checks legacy SHA-256 entries and keyed
+ * HMAC entries in one chain.
+ */
 final class AuditChainVerificationService
 {
+    public function __construct(
+        private readonly IntegrityVerifier $verifier,
+        private readonly ChainReader $reader,
+    ) {}
+
     /**
-     * Verifies the cryptographic SHA-256 chain of records for a given tenant.
+     * Verifies the chain of a tenant, with the checkpoints as anchors.
      *
-     * @return array{
-     *     valid: bool,
-     *     total_verified: int,
-     *     tampered_record_id: ?string,
-     *     error_message: ?string
-     * }
+     * @return array{valid: bool, total_verified: int, tampered_record_id: ?string, error_message: ?string, outcome: string, broken_at_sequence: ?int, missing_range: ?array{from: int, to: int}}
      */
     public function verifyTenantChain(string $tenantId): array
     {
-        /** @var Collection<int, AuditLedgerEntry> $entries */
-        $entries = AuditLedgerEntry::where('tenant_id', $tenantId)
-            ->orderBy('event_timestamp', 'asc')
-            ->orderBy('id', 'asc')
-            ->get();
+        $result = $this->verifier->verify($this->reader->entries($tenantId), $this->reader->anchors($tenantId));
 
-        return $this->verifyChain($entries);
+        return $this->format($result, fn (int $sequence): ?string => AuditLedgerEntry::query()->where('tenant_id', $tenantId)->where('sequence', $sequence)->value('id'));
     }
 
     /**
-     * Verifies the chain of the audit entries archived by one restore.
+     * Verifies the chain of the entries archived by one restore.
      *
-     * @return array{
-     *     valid: bool,
-     *     total_verified: int,
-     *     tampered_record_id: ?string,
-     *     error_message: ?string
-     * }
+     * @return array{valid: bool, total_verified: int, tampered_record_id: ?string, error_message: ?string, outcome: string, broken_at_sequence: ?int, missing_range: ?array{from: int, to: int}}
      */
     public function verifyArchivedChain(string $tenantId, string $restoreId): array
     {
-        /** @var Collection<int, AuditLedgerArchiveEntry> $entries */
-        $entries = AuditLedgerArchiveEntry::where('tenant_id', $tenantId)
-            ->where('restore_id', $restoreId)
-            ->orderBy('event_timestamp', 'asc')
-            ->orderBy('id', 'asc')
-            ->get();
+        $result = $this->verifier->verify($this->reader->entries($tenantId, $restoreId));
 
-        return $this->verifyChain($entries);
+        return $this->format($result, fn (int $sequence): ?string => AuditLedgerArchiveEntry::query()->where('tenant_id', $tenantId)->where('restore_id', $restoreId)->where('sequence', $sequence)->value('id'));
     }
 
     /**
-     * @param  Collection<int, AuditLedgerEntry|AuditLedgerArchiveEntry>  $entries
-     * @return array{
-     *     valid: bool,
-     *     total_verified: int,
-     *     tampered_record_id: ?string,
-     *     error_message: ?string
-     * }
+     * @param  callable(int): ?string  $idOf
+     * @return array{valid: bool, total_verified: int, tampered_record_id: ?string, error_message: ?string, outcome: string, broken_at_sequence: ?int, missing_range: ?array{from: int, to: int}}
      */
-    private function verifyChain(Collection $entries): array
+    private function format(VerificationResult $result, callable $idOf): array
     {
-        if ($entries->isEmpty()) {
-            return [
-                'valid' => true,
-                'total_verified' => 0,
-                'tampered_record_id' => null,
-                'error_message' => null,
-            ];
-        }
-
-        $expectedPreviousHash = str_repeat('0', 64);
-        $count = 0;
-
-        foreach ($entries as $index => $entry) {
-            // Verify link to previous entry
-            if ($entry->previous_hash !== $expectedPreviousHash) {
-                return [
-                    'valid' => false,
-                    'total_verified' => $count,
-                    'tampered_record_id' => $entry->id,
-                    'error_message' => "Chain break at entry {$entry->id}: previous_hash does not match preceding record_hash.",
-                ];
-            }
-
-            // Recompute record hash deterministically
-            $recalculatedHash = RecordAuditAction::computeRecordHash(
-                previousHash: $entry->previous_hash,
-                tenantId: (string) $entry->tenant_id,
-                companyId: (string) $entry->company_id,
-                timestampIso: $entry->event_timestamp->copy()->setTimezone('UTC')->format('Y-m-d\TH:i:s\Z'),
-                moduleCode: (string) $entry->module_code,
-                action: (string) $entry->action,
-                resourceType: (string) $entry->resource_type,
-                resourceId: (string) $entry->resource_id,
-                actorUserId: (string) ($entry->actor_user_id ?? 'SYSTEM'),
-                payloadBefore: $entry->payload_before,
-                payloadAfter: $entry->payload_after
-            );
-
-            if ($entry->record_hash !== $recalculatedHash) {
-                return [
-                    'valid' => false,
-                    'total_verified' => $count,
-                    'tampered_record_id' => $entry->id,
-                    'error_message' => "Tampering detected at entry {$entry->id}: record_hash [{$entry->record_hash}] does not match recalculated hash [{$recalculatedHash}].",
-                ];
-            }
-
-            $expectedPreviousHash = $entry->record_hash;
-            $count++;
-        }
+        $broken = $result->brokenAtSequence;
 
         return [
-            'valid' => true,
-            'total_verified' => $count,
-            'tampered_record_id' => null,
-            'error_message' => null,
+            'valid' => $result->isValid(),
+            'total_verified' => $result->verifiedEntries,
+            'tampered_record_id' => $broken !== null ? $idOf($broken) : null,
+            'error_message' => $result->message,
+            'outcome' => $result->outcome->value,
+            'broken_at_sequence' => $broken,
+            'missing_range' => $result->missingFromSequence === null ? null : ['from' => $result->missingFromSequence, 'to' => (int) $result->missingToSequence],
         ];
     }
 }

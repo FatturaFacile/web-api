@@ -40,6 +40,8 @@ use App\Policies\SalesOrderPolicy;
 use App\Policies\SalesReturnPolicy;
 use App\Policies\ServiceReportPolicy;
 use App\Policies\WorkOrderPolicy;
+use App\Services\Audit\DocumentTrustPackageSigner;
+use App\Services\Audit\NotificationAuditAlertGateway;
 use App\Services\Dashboard\WidgetRegistry;
 use App\Services\Ecommerce\EcommerceManager;
 use App\Services\ExchangeRate\EuropeanCentralBankProvider;
@@ -59,6 +61,8 @@ use App\Support\Database\SafeDropPostgresConnection;
 use App\Support\Http\GridQuery;
 use App\Validation\LocalizedAttributeValidator;
 use Dedoc\Scramble\Scramble;
+use Enterprise\AuditLedger\Contracts\AuditAlertGateway;
+use Enterprise\AuditLedger\Contracts\PackageSigner as AuditPackageSigner;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Database\Connection;
@@ -122,6 +126,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Audit ledger (Mod 005): the application plugs the document signature service (Mod 144) in as the signer of the export
+        // packages and the notification engine (Mod 008) in as the channel of the chain-broken incident alert. The package only
+        // knows the two ports, with an HMAC signer and a log line as defaults.
+        $this->app->singleton(AuditPackageSigner::class, DocumentTrustPackageSigner::class);
+        $this->app->singleton(AuditAlertGateway::class, NotificationAuditAlertGateway::class);
+
         // Mobile companion: interactive approval pushes and offboarding revocation.
         Event::listen(WorkflowStepAssignedEvent::class, NotifyApproversOnStepAssigned::class);
         Event::listen(EmployeeTerminatedEvent::class, RevokeMobileDevicesOnEmployeeTerminated::class);

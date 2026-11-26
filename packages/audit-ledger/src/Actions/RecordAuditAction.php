@@ -6,16 +6,23 @@ namespace Enterprise\AuditLedger\Actions;
 
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
-use App\Support\Database\TransactionLock;
-use Enterprise\AuditLedger\Events\AuditRecordedEvent;
+use Enterprise\AuditLedger\Application\Commands\AppendAuditEntryCommand;
+use Enterprise\AuditLedger\Application\Commands\AppendAuditEntryHandler;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
+use Enterprise\AuditLedger\Support\AuditIds;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
+/**
+ * Entry point of the synchronous append (see AuditLedgerService) and home of the frozen formula of the version 1 hash.
+ *
+ * Entries written before the forensic extension (`hash_version` 1) were hashed with plain SHA-256 over a pipe separated
+ * string whose payloads were normalised by the three static methods below. Those methods must never change: they are
+ * what keeps those entries verifiable. New entries (version 2) use the keyed chain of Domain\Services\ChainHasher.
+ */
 final class RecordAuditAction
 {
+    public function __construct(private readonly AppendAuditEntryHandler $handler) {}
+
     /**
      * @param  array<string, mixed>|null  $payloadBefore
      * @param  array<string, mixed>|null  $payloadAfter
@@ -32,29 +39,23 @@ final class RecordAuditAction
             ?? ($model instanceof Tenant ? $model->getKey() : null)
             ?? (app()->bound(TenantContext::class) ? app(TenantContext::class)->getTenantId() : null)
             ?? (auth()->check() ? auth()->user()->tenant_id : null)
-            ?? '00000000-0000-0000-0000-000000000000'
+            ?? AuditIds::NIL_TENANT
         );
 
-        $companyId = (string) ($model->getAttribute('company_id') ?? $tenantId);
-        $resolvedModule = $moduleCode ?? $this->resolveModuleCode($model);
-        $resourceType = substr($model::class, 0, 60);
-        $rawKey = $model->getKey() ?: $model->getAttribute('id');
-        $resourceId = (string) ($rawKey ?: Str::uuid7());
-        $actorId = (string) (auth()->id() ?? 'SYSTEM');
+        $personal = method_exists($model, 'auditPersonalAttributes') ? $model->auditPersonalAttributes() : [];
+        $excluded = method_exists($model, 'auditExcludedAttributes') ? $model->auditExcludedAttributes() : [];
 
-        return $this->recordEntry(
+        return $this->handler->handle(AppendAuditEntryCommand::forModel(
+            action: $action,
+            model: $model,
+            before: $payloadBefore,
+            after: $payloadAfter,
             tenantId: $tenantId,
-            companyId: $companyId,
-            moduleCode: $resolvedModule,
-            action: substr(strtoupper($action), 0, 50),
-            resourceType: $resourceType,
-            resourceId: $resourceId,
-            actorUserId: auth()->id() ? (string) auth()->id() : null,
-            payloadBefore: $payloadBefore,
-            payloadAfter: $payloadAfter,
-            ipAddress: request()->ip(),
-            userAgent: request()->userAgent()
-        );
+            companyId: (string) ($model->getAttribute('company_id') ?? $tenantId),
+            moduleCode: $moduleCode ?? $this->resolveModuleCode($model),
+            personalAttributes: $personal,
+            excludedAttributes: $excluded,
+        ));
     }
 
     /**
@@ -62,129 +63,11 @@ final class RecordAuditAction
      */
     public function executeFromPayload(array $data): AuditLedgerEntry
     {
-        $tenantId = (string) ($data['tenant_id'] ?? '00000000-0000-0000-0000-000000000000');
-        $companyId = (string) ($data['company_id'] ?? $tenantId);
-        $resolvedModule = (string) ($data['module_code'] ?? 'CORE');
-        $resourceType = substr((string) ($data['model_class'] ?? 'Unknown'), 0, 60);
-        $resourceId = (string) ($data['model_id'] ?? Str::uuid7());
-        $actorUserId = isset($data['actor_user_id']) ? (string) $data['actor_user_id'] : null;
-        $action = substr(strtoupper((string) ($data['action'] ?? 'ACTION')), 0, 50);
-
-        return $this->recordEntry(
-            tenantId: $tenantId,
-            companyId: $companyId,
-            moduleCode: $resolvedModule,
-            action: $action,
-            resourceType: $resourceType,
-            resourceId: $resourceId,
-            actorUserId: $actorUserId,
-            payloadBefore: $data['payload_before'] ?? null,
-            payloadAfter: $data['payload_after'] ?? null,
-            ipAddress: $data['ip_address'] ?? null,
-            userAgent: $data['user_agent'] ?? null
-        );
+        return $this->handler->handle(AppendAuditEntryCommand::fromPayload($data));
     }
 
     /**
-     * @param  array<string, mixed>|null  $payloadBefore
-     * @param  array<string, mixed>|null  $payloadAfter
-     */
-    private function recordEntry(
-        string $tenantId,
-        string $companyId,
-        string $moduleCode,
-        string $action,
-        string $resourceType,
-        string $resourceId,
-        ?string $actorUserId,
-        ?array $payloadBefore,
-        ?array $payloadAfter,
-        ?string $ipAddress = null,
-        ?string $userAgent = null
-    ): AuditLedgerEntry {
-        $normalizedBefore = self::normalizePayload($payloadBefore);
-        $normalizedAfter = self::normalizePayload($payloadAfter);
-
-        return DB::transaction(function () use (
-            $tenantId,
-            $companyId,
-            $moduleCode,
-            $action,
-            $resourceType,
-            $resourceId,
-            $actorUserId,
-            $normalizedBefore,
-            $normalizedAfter,
-            $ipAddress,
-            $userAgent
-        ): AuditLedgerEntry {
-            TransactionLock::acquire("audit_tenant_{$tenantId}");
-
-            $lastEntry = AuditLedgerEntry::where('tenant_id', $tenantId)
-                ->orderBy('event_timestamp', 'desc')
-                ->orderBy('id', 'desc')
-                ->lockForUpdate()
-                ->first();
-
-            $previousHash = $lastEntry?->record_hash ?? str_repeat('0', 64);
-
-            $now = Carbon::now('UTC');
-            if ($lastEntry && $now->lessThanOrEqualTo($lastEntry->event_timestamp)) {
-                $now = $lastEntry->event_timestamp->copy()->addMicrosecond();
-            }
-            $timestampIso = $now->format('Y-m-d\TH:i:s\Z');
-
-            $recordHash = self::computeRecordHash(
-                previousHash: $previousHash,
-                tenantId: $tenantId,
-                companyId: $companyId,
-                timestampIso: $timestampIso,
-                moduleCode: $moduleCode,
-                action: $action,
-                resourceType: $resourceType,
-                resourceId: $resourceId,
-                actorUserId: $actorUserId,
-                payloadBefore: $normalizedBefore,
-                payloadAfter: $normalizedAfter
-            );
-
-            $auditId = (string) Str::uuid7();
-
-            $entry = AuditLedgerEntry::create([
-                'id' => $auditId,
-                'tenant_id' => $tenantId,
-                'company_id' => $companyId,
-                'event_timestamp' => $now,
-                'module_code' => $moduleCode,
-                'action' => $action,
-                'resource_type' => $resourceType,
-                'resource_id' => $resourceId,
-                'actor_user_id' => $actorUserId,
-                'actor_type' => $actorUserId ? 'user' : 'system_job',
-                'payload_before' => $normalizedBefore,
-                'payload_after' => $normalizedAfter,
-                'diff_json' => $this->calculateDiff($normalizedBefore, $normalizedAfter),
-                'ip_address' => $ipAddress,
-                'user_agent' => $userAgent,
-                'record_hash' => $recordHash,
-                'previous_hash' => $previousHash,
-            ]);
-
-            AuditRecordedEvent::dispatch(
-                $auditId,
-                $tenantId,
-                $action,
-                $resourceType,
-                $resourceId,
-                $recordHash
-            );
-
-            return $entry;
-        });
-    }
-
-    /**
-     * Deterministically calculates SHA-256 hash across all immutable audit block parameters.
+     * Deterministically calculates the SHA-256 of the version 1 entries (frozen, see the class comment).
      *
      * @param  array<string, mixed>|null  $payloadBefore
      * @param  array<string, mixed>|null  $payloadAfter
@@ -226,7 +109,7 @@ final class RecordAuditAction
     }
 
     /**
-     * Normalizes payload by recursively sorting keys and redacting GDPR PII.
+     * Frozen: normalises a version 1 payload by recursively sorting keys and redacting PII.
      *
      * @param  array<string, mixed>|null  $payload
      * @return array<string, mixed>|null
@@ -244,8 +127,8 @@ final class RecordAuditAction
     }
 
     /**
-     * Recursively redacts sensitive PII and secrets to ensure GDPR right-to-erasure compliance
-     * without compromising tamper-evident ledger block hashes.
+     * Frozen: the redaction rules the version 1 entries were written with (substring match on purpose: changing it
+     * would change the recomputed hash of entries already in the chain). New entries use PayloadSanitizer.
      *
      * @param  array<string, mixed>  $array
      * @return array<string, mixed>
@@ -299,8 +182,7 @@ final class RecordAuditAction
     }
 
     /**
-     * Recursively sorts dictionary keys to guarantee canonical JSON serialization
-     * regardless of PostgreSQL JSONB key reordering.
+     * Frozen: recursively sorts dictionary keys.
      *
      * @param  array<mixed, mixed>  $array
      */
@@ -325,29 +207,5 @@ final class RecordAuditAction
         }
 
         return 'CORE';
-    }
-
-    /**
-     * @param  array<string, mixed>|null  $before
-     * @param  array<string, mixed>|null  $after
-     * @return array<string, mixed>|null
-     */
-    private function calculateDiff(?array $before, ?array $after): ?array
-    {
-        if ($before === null || $after === null) {
-            return null;
-        }
-
-        $diff = [];
-        foreach ($after as $key => $value) {
-            if (! array_key_exists($key, $before) || $before[$key] !== $value) {
-                $diff[$key] = [
-                    'old' => $before[$key] ?? null,
-                    'new' => $value,
-                ];
-            }
-        }
-
-        return ! empty($diff) ? $diff : null;
     }
 }

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasTranslations;
+use Enterprise\Foundation\Concerns\Auditable;
 use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VatCode extends Model
 {
-    use AllowsGlobalRecords, BelongsToTenant, HasFactory, HasTranslations, HasUuids;
+    use AllowsGlobalRecords, Auditable, BelongsToTenant, HasFactory, HasTranslations, HasUuids;
 
     protected $table = 'vat_codes';
 
