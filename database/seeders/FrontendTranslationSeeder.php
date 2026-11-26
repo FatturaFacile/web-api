@@ -66,6 +66,7 @@ use Database\Seeders\Translations\PassengerTransportFrontendTranslations;
 use Database\Seeders\Translations\PayablesFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
+use Database\Seeders\Translations\ProductCatalogFrontendTranslations;
 use Database\Seeders\Translations\ProjectBillingFrontendTranslations;
 use Database\Seeders\Translations\ProjectEvmFrontendTranslations;
 use Database\Seeders\Translations\ProjectPortfolioFrontendTranslations;
@@ -189,6 +190,7 @@ class FrontendTranslationSeeder extends Seeder
             + CustomerSatisfactionFrontendTranslations::all($locale)
             + FranchiseNetworkFrontendTranslations::all($locale)
             + CorporateConventionsFrontendTranslations::all($locale)
+            + ProductCatalogFrontendTranslations::all($locale)
             + ElectronicSignatureFrontendTranslations::all($locale)
             + ElectronicSignatureNotificationTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)

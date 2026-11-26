@@ -87,6 +87,7 @@ use Modules\Plm\Providers\PlmServiceProvider;
 use Modules\PracticeManagement\Providers\PracticeManagementServiceProvider;
 use Modules\Pricing\Providers\PricingServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
+use Modules\ProductCatalog\Providers\ProductCatalogServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
 use Modules\Quality\Providers\QualityServiceProvider;
 use Modules\Quoting\Providers\QuotingServiceProvider;
@@ -223,6 +224,7 @@ return [
     CustomerSatisfactionServiceProvider::class,
     FranchiseNetworkServiceProvider::class,
     CorporateConventionsServiceProvider::class,
+    ProductCatalogServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,
