@@ -83,7 +83,7 @@ test('the API-served dictionary is complete in the four languages', function ():
             expect(advancedAuthPlaceholders($text, 'js'))->toBe(advancedAuthPlaceholders($values[1], 'js'), $key.' #'.$index);
         }
 
-        expect($key)->toMatch('/^security\.(audit|scim\.groups|lockout|password)\./');
+        expect($key)->toMatch('/^security\.(audit|scim\.groups|lockout|password|sessions)\./');
     }
 
     $dictionaries = [];
