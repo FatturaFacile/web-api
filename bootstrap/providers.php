@@ -39,6 +39,7 @@ use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\CustomerSatisfaction\Providers\CustomerSatisfactionServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
+use Modules\DataMigration\Providers\DataMigrationServiceProvider;
 use Modules\DataResidency\Providers\DataResidencyServiceProvider;
 use Modules\DebtCollection\Providers\DebtCollectionServiceProvider;
 use Modules\DigitalPreservation\Providers\DigitalPreservationServiceProvider;
@@ -227,6 +228,7 @@ return [
     FranchiseNetworkServiceProvider::class,
     CorporateConventionsServiceProvider::class,
     ProductCatalogServiceProvider::class,
+    DataMigrationServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,

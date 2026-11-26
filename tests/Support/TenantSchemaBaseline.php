@@ -77,6 +77,7 @@ final class TenantSchemaBaseline
         'gl_coa_templates',
         'lookup_item_translations',
         'lookup_items',
+        'migration_field_mapping_templates',
         'notification_type_translations',
         'notification_types',
         'password_histories',
