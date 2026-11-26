@@ -18,7 +18,7 @@ return new class extends Migration
     {
         Schema::create('scim_groups', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('display_name', 255);
             $table->string('external_id', 255)->nullable();
             $table->timestamps();
@@ -29,7 +29,7 @@ return new class extends Migration
 
         Schema::create('scim_group_members', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('scim_group_id')->constrained('scim_groups')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
@@ -40,7 +40,7 @@ return new class extends Migration
 
         Schema::create('scim_group_mappings', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('group_name', 255);
             $table->string('role', 60);
             $table->timestamps();
@@ -50,7 +50,7 @@ return new class extends Migration
 
         Schema::create('scim_provisioning_logs', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('resource', 20);
             $table->string('operation', 30);
             $table->string('status', 20);

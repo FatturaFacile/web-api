@@ -284,6 +284,7 @@ class AuthController extends Controller
                     new OA\Property(property: 'code', description: 'Six-digit code of the authenticator app. Required without recovery_code.', type: 'string', example: '123456', nullable: true),
                     new OA\Property(property: 'recovery_code', description: 'Single-use recovery code. Required without code.', type: 'string', example: 'abcde-fghjk', nullable: true),
                     new OA\Property(property: 'email_code', description: 'Six-digit code sent by email (POST /auth/two-factor/challenge/email, or sent at login for a user whose only factor is email).', type: 'string', example: '482913', nullable: true),
+                    new OA\Property(property: 'sms_code', description: 'Six-digit code sent by SMS (POST /auth/two-factor/challenge/sms, or sent at login for a user whose only code factor is SMS).', type: 'string', example: '482913', nullable: true),
                     new OA\Property(
                         property: 'webauthn',
                         description: 'Assertion of a security key or passkey: the ceremony_id and the options come from POST /auth/two-factor/challenge/webauthn/options, the credential is the PublicKeyCredential JSON of navigator.credentials.get().',

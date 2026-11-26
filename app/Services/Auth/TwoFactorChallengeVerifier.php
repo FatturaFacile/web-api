@@ -22,7 +22,7 @@ final class TwoFactorChallengeVerifier
     public function __construct(private readonly TwoFactorAuthentication $twoFactor) {}
 
     /**
-     * @param  array{code?: string|null, recovery_code?: string|null, email_code?: string|null, webauthn?: array{ceremony_id?: string, credential?: array<string, mixed>}|null}  $input
+     * @param  array{code?: string|null, recovery_code?: string|null, email_code?: string|null, sms_code?: string|null, webauthn?: array{ceremony_id?: string, credential?: array<string, mixed>}|null}  $input
      */
     public function verify(User $user, array $input): ChallengeResult
     {
@@ -30,6 +30,18 @@ final class TwoFactorChallengeVerifier
 
         if (is_array($webauthn) && $webauthn !== []) {
             return $this->verifyWebAuthn($user, $webauthn);
+        }
+
+        $smsCode = $input['sms_code'] ?? null;
+
+        if (is_string($smsCode) && $smsCode !== '') {
+            $method = $this->twoFactor->hasSms($user)
+                ? $this->twoFactor->verifyCode($user, null, null, null, $smsCode)
+                : null;
+
+            return $method === null
+                ? ChallengeResult::failed(TwoFactorAuthentication::METHOD_SMS, $this->twoFactor->hasSms($user) ? self::REASON_INVALID : self::REASON_METHOD_UNAVAILABLE)
+                : ChallengeResult::passed($method);
         }
 
         $emailCode = $input['email_code'] ?? null;

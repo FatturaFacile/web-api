@@ -17,6 +17,9 @@ return [
         'webauthn_options' => 'Usa la chiave di sicurezza o la passkey per continuare.',
         'trusted_device_revoked' => 'Il dispositivo attendibile è stato rimosso.',
         'trusted_devices_revoked' => 'Tutti i dispositivi attendibili sono stati rimossi.',
+        'sms_code_sent' => 'Abbiamo inviato un codice di sei cifre via SMS.',
+        'sms_enabled' => 'Verifica con codice via SMS attivata.',
+        'sms_disabled' => 'Verifica con codice via SMS disattivata.',
     ],
     'errors' => [
         'challenge_invalid_title' => 'Accesso scaduto',
@@ -54,6 +57,16 @@ return [
         'last_factor_detail' => 'Titolari e amministratori devono mantenere almeno un metodo a due fattori.',
         'account_locked_title' => 'Account bloccato',
         'account_locked_detail' => 'Troppi codici errati. L\'account è bloccato per un po\'.',
+        'sms_already_enabled_title' => 'Già attivo',
+        'sms_already_enabled_detail' => 'La verifica con codice via SMS è già attiva. Disattivala prima per usare un altro numero.',
+        'sms_not_enabled_title' => 'Non attivo',
+        'sms_not_enabled_detail' => 'La verifica con codice via SMS non è attiva.',
+        'sms_unavailable_title' => 'SMS non inviato',
+        'sms_unavailable_detail' => 'Non è stato possibile recapitare il messaggio. Riprova più tardi o usa un altro metodo.',
+        'phone_invalid' => 'Inserisci il numero di telefono in formato internazionale, ad esempio +41791234567.',
+    ],
+    'sms' => [
+        'code' => ':app: il tuo codice di verifica è :code. Vale :minutes minuti. Non condividerlo.',
     ],
     'mail' => [
         'code' => [

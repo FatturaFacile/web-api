@@ -9,12 +9,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ConfirmedPasswordRequest;
 use App\Http\Requests\Auth\ConfirmEmailTwoFactorRequest;
 use App\Http\Responses\ApiResponse;
-use App\Models\Tenant;
 use App\Models\User;
-use App\Services\Auth\EmailOtp;
-use App\Services\Auth\EmailOtpThrottledException;
+use App\Services\Auth\OtpThrottledException;
 use App\Services\Auth\RegistrationAudit;
-use App\Services\Auth\Security\TenantSecurityPolicies;
+use App\Services\Auth\SecondFactorCodes;
 use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Auth\UserSessions;
 use App\Services\Tenancy\TenantContext;
@@ -35,7 +33,7 @@ class TwoFactorEmailController extends Controller
 
     public function __construct(
         private readonly TwoFactorAuthentication $twoFactor,
-        private readonly EmailOtp $emailOtp,
+        private readonly SecondFactorCodes $emailOtp,
         private readonly RegistrationAudit $audit,
         private readonly TenantContext $tenantContext,
         private readonly UserSessions $sessions,
@@ -70,7 +68,7 @@ class TwoFactorEmailController extends Controller
             );
         }
 
-        return $this->sendCode($user, EmailOtp::PURPOSE_ENROL, RegistrationAudit::TWO_FACTOR_SETUP_STARTED, ['mfa_method' => TwoFactorAuthentication::METHOD_EMAIL]);
+        return $this->sendCode($user, SecondFactorCodes::PURPOSE_ENROL, RegistrationAudit::TWO_FACTOR_SETUP_STARTED, ['mfa_method' => TwoFactorAuthentication::METHOD_EMAIL]);
     }
 
     #[OA\Post(
@@ -153,7 +151,7 @@ class TwoFactorEmailController extends Controller
             return $this->notEnabledResponse();
         }
 
-        return $this->sendCode($user, EmailOtp::PURPOSE_VERIFY, RegistrationAudit::TWO_FACTOR_EMAIL_CODE_SENT, ['auth_method' => 'session']);
+        return $this->sendCode($user, SecondFactorCodes::PURPOSE_VERIFY, RegistrationAudit::TWO_FACTOR_EMAIL_CODE_SENT, ['auth_method' => 'session']);
     }
 
     #[OA\Delete(
@@ -181,9 +179,9 @@ class TwoFactorEmailController extends Controller
             return $this->notEnabledResponse();
         }
 
-        $lastFactor = ! $this->twoFactor->hasTotp($user);
+        $lastFactor = ! $this->twoFactor->otherFactorsExist($user, TwoFactorAuthentication::METHOD_EMAIL);
 
-        if ($lastFactor && $this->mustKeepTwoFactor($user)) {
+        if ($lastFactor && $this->twoFactor->mustKeepTwoFactor($user)) {
             $response = $this->problemDetailsResponse(
                 title: __('two_factor.errors.last_factor_title'),
                 detail: __('two_factor.errors.last_factor_detail'),
@@ -210,14 +208,14 @@ class TwoFactorEmailController extends Controller
     }
 
     /**
-     * @param  EmailOtp::PURPOSE_*  $purpose
+     * @param  SecondFactorCodes::PURPOSE_*  $purpose
      * @param  array<string, mixed>  $details
      */
     private function sendCode(User $user, string $purpose, string $auditAction, array $details): JsonResponse
     {
         try {
             $expiresIn = $this->emailOtp->send($user, $purpose);
-        } catch (EmailOtpThrottledException $e) {
+        } catch (OtpThrottledException $e) {
             return $this->problemDetailsResponse(
                 title: __('two_factor.errors.email_throttled_title'),
                 detail: __('two_factor.errors.email_throttled_detail', ['seconds' => $e->retryAfterSeconds]),
@@ -231,22 +229,6 @@ class TwoFactorEmailController extends Controller
         return $this->successResponse(
             data: ['expires_in' => $expiresIn, 'resend_available_in' => $this->emailOtp->resendAvailableIn($user)],
             message: __('two_factor.messages.email_code_sent'),
-        );
-    }
-
-    /**
-     * Whether the iam.mandatory_mfa setting is on and the user holds a role that must keep two-factor authentication.
-     */
-    private function mustKeepTwoFactor(User $user): bool
-    {
-        if (config('iam.mandatory_mfa') !== true) {
-            return false;
-        }
-
-        $policies = app(TenantSecurityPolicies::class);
-
-        return $user->tenants()->get()->contains(
-            fn (Tenant $tenant): bool => $policies->mandatoryFor(data_get($tenant->getRelations()['pivot'] ?? null, 'role')),
         );
     }
 

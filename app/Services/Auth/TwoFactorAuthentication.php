@@ -6,6 +6,7 @@ namespace App\Services\Auth;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Auth\Security\TenantSecurityPolicies;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -41,15 +42,82 @@ final class TwoFactorAuthentication
 
     private const RECOVERY_CODE_ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789';
 
-    public function __construct(private readonly Totp $totp, private readonly EmailOtp $emailOtp) {}
+    public const METHOD_SMS = 'sms';
+
+    public function __construct(private readonly Totp $totp, private readonly SecondFactorCodes $codes) {}
 
     /**
-     * Whether the user has at least one confirmed factor (authenticator app or email code): the login asks for the
-     * second step, the tenant policies are met, recovery codes exist.
+     * Whether the user has at least one enrolled factor (authenticator app, email code, SMS code, or a registered
+     * security key or passkey): the password login asks for the second step, the tenant policies are met, recovery
+     * codes exist. A passwordless passkey login does not use this: the passkey itself verifies the user.
      */
     public function isEnabled(User $user): bool
     {
-        return $this->hasTotp($user) || $this->hasEmail($user);
+        return $this->hasTotp($user) || $this->hasEmail($user) || $this->hasSms($user) || $this->hasWebAuthn($user);
+    }
+
+    public function hasSms(User $user): bool
+    {
+        return $user->two_factor_sms_confirmed_at !== null && is_string($user->two_factor_sms_phone) && $user->two_factor_sms_phone !== '';
+    }
+
+    /**
+     * Whether the user keeps an enrolled factor other than the given one (the one being removed). A security key
+     * counts as one factor however many credentials the user holds; removing a single credential is checked by the
+     * caller against the credential count.
+     *
+     * @param  self::METHOD_TOTP|self::METHOD_EMAIL|self::METHOD_SMS|self::METHOD_WEBAUTHN  $except
+     */
+    public function otherFactorsExist(User $user, string $except): bool
+    {
+        return ($except !== self::METHOD_TOTP && $this->hasTotp($user))
+            || ($except !== self::METHOD_EMAIL && $this->hasEmail($user))
+            || ($except !== self::METHOD_SMS && $this->hasSms($user))
+            || ($except !== self::METHOD_WEBAUTHN && $this->hasWebAuthn($user));
+    }
+
+    /**
+     * Whether the iam.mandatory_mfa setting is on and the user holds a role that must keep two-factor authentication
+     * (their last factor cannot be removed).
+     */
+    public function mustKeepTwoFactor(User $user): bool
+    {
+        if (config('iam.mandatory_mfa') !== true) {
+            return false;
+        }
+
+        $policies = app(TenantSecurityPolicies::class);
+
+        return $user->tenants()->get()->contains(
+            fn (Tenant $tenant): bool => $policies->mandatoryFor(data_get($tenant->getRelations()['pivot'] ?? null, 'role')),
+        );
+    }
+
+    /**
+     * Called after a passkey was revoked: the factors changed, so the trusted devices end, and a user left without any
+     * factor loses the recovery codes that belonged to them.
+     */
+    public function afterPasskeyRemoved(User $user): void
+    {
+        if (! $this->isEnabled($user) && $this->remainingRecoveryCodes($user) > 0) {
+            $user->forceFill(['two_factor_recovery_codes' => null])->save();
+        }
+
+        app(TrustedDevices::class)->revokeAll($user);
+    }
+
+    /**
+     * Creates the recovery codes when the user has none and returns them (shown only once), otherwise null.
+     *
+     * @return list<string>|null
+     */
+    public function ensureRecoveryCodes(User $user): ?array
+    {
+        if ($this->remainingRecoveryCodes($user) > 0) {
+            return null;
+        }
+
+        return $this->regenerateRecoveryCodes($user);
     }
 
     public function hasTotp(User $user): bool
@@ -87,6 +155,10 @@ final class TwoFactorAuthentication
 
         if ($this->hasEmail($user)) {
             $methods[] = self::METHOD_EMAIL;
+        }
+
+        if ($this->hasSms($user)) {
+            $methods[] = self::METHOD_SMS;
         }
 
         if ($this->hasWebAuthn($user)) {
@@ -138,7 +210,7 @@ final class TwoFactorAuthentication
             'two_factor_secret' => $secret,
             'two_factor_confirmed_at' => null,
             // The recovery codes of a user who already has the email factor stay valid.
-            'two_factor_recovery_codes' => $this->hasEmail($user) ? $user->two_factor_recovery_codes : null,
+            'two_factor_recovery_codes' => $this->otherFactorsExist($user, self::METHOD_TOTP) ? $user->two_factor_recovery_codes : null,
             'two_factor_last_used_step' => null,
         ])->save();
 
@@ -185,7 +257,7 @@ final class TwoFactorAuthentication
         $user->forceFill([
             'two_factor_secret' => null,
             'two_factor_confirmed_at' => null,
-            'two_factor_recovery_codes' => $this->hasEmail($user) ? $user->two_factor_recovery_codes : null,
+            'two_factor_recovery_codes' => $this->otherFactorsExist($user, self::METHOD_TOTP) ? $user->two_factor_recovery_codes : null,
             'two_factor_last_used_step' => null,
         ])->save();
 
@@ -202,11 +274,13 @@ final class TwoFactorAuthentication
             'two_factor_secret' => null,
             'two_factor_confirmed_at' => null,
             'two_factor_email_confirmed_at' => null,
+            'two_factor_sms_phone' => null,
+            'two_factor_sms_confirmed_at' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_last_used_step' => null,
         ])->save();
 
-        $this->emailOtp->forget($user);
+        $this->codes->forget($user);
         app(TrustedDevices::class)->revokeAll($user);
     }
 
@@ -218,7 +292,7 @@ final class TwoFactorAuthentication
      */
     public function confirmEmail(User $user, string $code): ?array
     {
-        if ($this->hasEmail($user) || ! $this->emailOtp->verify($user, EmailOtp::PURPOSE_ENROL, $code)) {
+        if ($this->hasEmail($user) || ! $this->codes->verify($user, SecondFactorCodes::PURPOSE_ENROL, $code)) {
             return null;
         }
 
@@ -242,13 +316,57 @@ final class TwoFactorAuthentication
     {
         $attributes = ['two_factor_email_confirmed_at' => null];
 
-        if (! $this->hasTotp($user)) {
+        if (! $this->otherFactorsExist($user, self::METHOD_EMAIL)) {
             $attributes['two_factor_recovery_codes'] = null;
         }
 
         $user->forceFill($attributes)->save();
 
-        $this->emailOtp->forget($user);
+        $this->codes->forget($user, SecondFactorCodes::CHANNEL_EMAIL);
+        app(TrustedDevices::class)->revokeAll($user);
+    }
+
+    /**
+     * Activates the SMS factor after the code sent to the number being enrolled was entered; the number is stored
+     * (encrypted) with the factor. Recovery codes are created when the user has none, as for the email factor.
+     *
+     * @return list<string>|null null when there is no pending number or the code is wrong
+     */
+    public function confirmSms(User $user, string $code): ?array
+    {
+        $phone = $this->codes->pendingPhone($user);
+
+        if ($this->hasSms($user) || $phone === null || ! $this->codes->verify($user, SecondFactorCodes::PURPOSE_ENROL, $code, SecondFactorCodes::CHANNEL_SMS)) {
+            return null;
+        }
+
+        $plain = null;
+        $attributes = ['two_factor_sms_phone' => $phone, 'two_factor_sms_confirmed_at' => now()];
+
+        if ($this->remainingRecoveryCodes($user) === 0) {
+            [$plain, $hashes] = $this->newRecoveryCodes();
+            $attributes['two_factor_recovery_codes'] = $hashes;
+        }
+
+        $user->forceFill($attributes)->save();
+
+        return $plain ?? [];
+    }
+
+    /**
+     * Removes the SMS factor and its number; without another factor the recovery codes and trusted devices go too.
+     */
+    public function disableSms(User $user): void
+    {
+        $attributes = ['two_factor_sms_phone' => null, 'two_factor_sms_confirmed_at' => null];
+
+        if (! $this->otherFactorsExist($user, self::METHOD_SMS)) {
+            $attributes['two_factor_recovery_codes'] = null;
+        }
+
+        $user->forceFill($attributes)->save();
+
+        $this->codes->forget($user, SecondFactorCodes::CHANNEL_SMS);
         app(TrustedDevices::class)->revokeAll($user);
     }
 
@@ -277,10 +395,16 @@ final class TwoFactorAuthentication
      *
      * @return self::METHOD_*|null
      */
-    public function verifyCode(User $user, ?string $code, ?string $recoveryCode, ?string $emailCode = null): ?string
+    public function verifyCode(User $user, ?string $code, ?string $recoveryCode, ?string $emailCode = null, ?string $smsCode = null): ?string
     {
-        if (is_string($emailCode) && $emailCode !== '' && ! (is_string($code) && $code !== '')) {
-            return $this->hasEmail($user) && $this->emailOtp->verify($user, EmailOtp::PURPOSE_VERIFY, $emailCode)
+        if (is_string($code) && $code !== '') {
+            // The authenticator app code is checked below.
+        } elseif (is_string($smsCode) && $smsCode !== '') {
+            return $this->hasSms($user) && $this->codes->verify($user, SecondFactorCodes::PURPOSE_VERIFY, $smsCode, SecondFactorCodes::CHANNEL_SMS)
+                ? self::METHOD_SMS
+                : null;
+        } elseif (is_string($emailCode) && $emailCode !== '') {
+            return $this->hasEmail($user) && $this->codes->verify($user, SecondFactorCodes::PURPOSE_VERIFY, $emailCode)
                 ? self::METHOD_EMAIL
                 : null;
         }

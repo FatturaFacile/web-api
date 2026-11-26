@@ -17,6 +17,9 @@ return [
         'webauthn_options' => 'Utilisez votre clé de sécurité ou votre passkey pour continuer.',
         'trusted_device_revoked' => 'L\'appareil de confiance a été supprimé.',
         'trusted_devices_revoked' => 'Tous les appareils de confiance ont été supprimés.',
+        'sms_code_sent' => 'Nous avons envoyé un code à six chiffres par SMS.',
+        'sms_enabled' => 'Vérification par code SMS activée.',
+        'sms_disabled' => 'Vérification par code SMS désactivée.',
     ],
     'errors' => [
         'challenge_invalid_title' => 'Connexion expirée',
@@ -54,6 +57,16 @@ return [
         'last_factor_detail' => 'Les propriétaires et les administrateurs doivent conserver au moins une méthode à deux facteurs.',
         'account_locked_title' => 'Compte verrouillé',
         'account_locked_detail' => 'Trop de codes erronés. Le compte est verrouillé pendant un certain temps.',
+        'sms_already_enabled_title' => 'Déjà activé',
+        'sms_already_enabled_detail' => 'La vérification par code SMS est déjà activée. Désactivez-la d\'abord pour utiliser un autre numéro.',
+        'sms_not_enabled_title' => 'Non activé',
+        'sms_not_enabled_detail' => 'La vérification par code SMS n\'est pas activée.',
+        'sms_unavailable_title' => 'SMS non envoyé',
+        'sms_unavailable_detail' => 'Le message n\'a pas pu être remis. Réessayez plus tard ou utilisez une autre méthode.',
+        'phone_invalid' => 'Saisissez le numéro de téléphone au format international, par exemple +41791234567.',
+    ],
+    'sms' => [
+        'code' => ':app : votre code de vérification est :code. Il est valable :minutes minutes. Ne le partagez pas.',
     ],
     'mail' => [
         'code' => [

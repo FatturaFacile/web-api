@@ -38,6 +38,8 @@ CREATE TABLE "users"(
   "ui_preferences" text,
   "lockout_streak" integer not null default '0',
   "two_factor_email_confirmed_at" datetime,
+  "two_factor_sms_phone" text,
+  "two_factor_sms_confirmed_at" datetime,
   primary key("id")
 );
 
@@ -56679,3 +56681,4 @@ INSERT INTO migrations VALUES(478,'2028_01_08_000100_create_franchise_network_mo
 INSERT INTO migrations VALUES(479,'2028_01_09_000100_create_scim_groups_and_provisioning_logs',33);
 INSERT INTO migrations VALUES(480,'2028_01_09_000200_add_lockout_backoff_and_breached_password_check',33);
 INSERT INTO migrations VALUES(481,'2028_01_09_000300_add_advanced_mfa_tables',33);
+INSERT INTO migrations VALUES(482,'2028_01_09_000400_add_sms_two_factor_columns',34);

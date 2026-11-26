@@ -51,6 +51,25 @@ final class PasswordPolicy
     }
 
     /**
+     * The messages of every rule a password breaks under the platform defaults (config/auth.php, including the system
+     * default of the compromised-password check): for a new account, which has no tenant policy yet.
+     *
+     * @return list<string>
+     */
+    public function platformViolations(string $password): array
+    {
+        $violations = [];
+
+        foreach ($this->checklist($this->policies->forTenant(null), $password) as $rule) {
+            if (! $rule['passed']) {
+                $violations[] = $rule['message'];
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
      * Every rule of the policy with whether the password meets it: `min_length`, `mixed_case`, `numbers`, `symbols`
      * (the complexity ones only when the policy asks for them), `reused` (only with a user and a history rule) and
      * `breached` (only with the compromised-password check on; it is asked last and only when the other rules pass, so a

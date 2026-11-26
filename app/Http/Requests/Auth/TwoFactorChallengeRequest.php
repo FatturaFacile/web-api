@@ -24,9 +24,10 @@ class TwoFactorChallengeRequest extends FormRequest
     {
         return [
             'challenge_token' => ['required', 'string', 'size:64'],
-            'code' => ['nullable', 'required_without_all:recovery_code,email_code,webauthn', 'string', 'max:16'],
+            'code' => ['nullable', 'required_without_all:recovery_code,email_code,sms_code,webauthn', 'string', 'max:16'],
             'recovery_code' => ['nullable', 'string', 'max:32'],
             'email_code' => ['nullable', 'string', 'max:16'],
+            'sms_code' => ['nullable', 'string', 'max:16'],
             'webauthn' => ['nullable', 'array'],
             'webauthn.ceremony_id' => ['required_with:webauthn', 'string', 'max:64'],
             'webauthn.credential' => ['required_with:webauthn', 'array'],

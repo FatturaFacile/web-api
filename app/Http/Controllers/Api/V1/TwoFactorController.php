@@ -14,10 +14,10 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\RegistrationAudit;
-use App\Services\Auth\Security\TenantSecurityPolicies;
 use App\Services\Auth\TrustedDevices;
 use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Auth\UserSessions;
+use App\Services\Sms\PhoneNumber;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -197,6 +197,7 @@ class TwoFactorController extends Controller
                 new OA\Property(property: 'code', type: 'string', example: '123456', nullable: true),
                 new OA\Property(property: 'recovery_code', type: 'string', example: 'abcde-fghjk', nullable: true),
                 new OA\Property(property: 'email_code', type: 'string', example: '482913', nullable: true, description: 'Code sent by POST /auth/two-factor/email/send, for users who also have the email factor'),
+                new OA\Property(property: 'sms_code', type: 'string', example: '482913', nullable: true, description: 'Code sent by POST /auth/two-factor/sms/send, for users who also have the SMS factor'),
             ]
         )),
         responses: [
@@ -217,7 +218,7 @@ class TwoFactorController extends Controller
         }
 
         // Taking the app away is fine while another factor (the email code) keeps the account protected.
-        if (! $this->twoFactor->hasEmail($user) && ($blocked = $this->mandatoryMfaResponse($user)) !== null) {
+        if (! $this->twoFactor->otherFactorsExist($user, TwoFactorAuthentication::METHOD_TOTP) && ($blocked = $this->mandatoryMfaResponse($user)) !== null) {
             return $blocked;
         }
 
@@ -362,6 +363,9 @@ class TwoFactorController extends Controller
             'methods' => $this->twoFactor->availableMethods($user),
             'totp_enabled' => $this->twoFactor->hasTotp($user),
             'email_enabled' => $this->twoFactor->hasEmail($user),
+            'sms_enabled' => $this->twoFactor->hasSms($user),
+            'sms_phone' => $this->twoFactor->hasSms($user) ? PhoneNumber::mask((string) $user->two_factor_sms_phone) : null,
+            'sms_confirmed_at' => $user->two_factor_sms_confirmed_at?->toIso8601String(),
             'webauthn_enabled' => $this->twoFactor->hasWebAuthn($user),
             'pending_setup' => ! $this->twoFactor->hasTotp($user) && $user->two_factor_secret !== null,
             'confirmed_at' => $user->two_factor_confirmed_at?->toIso8601String(),
@@ -377,7 +381,7 @@ class TwoFactorController extends Controller
      */
     private function policyOf(Tenant $tenant): array
     {
-        $members = $tenant->users()->get(['users.id', 'users.name', 'users.email', 'users.two_factor_confirmed_at', 'users.two_factor_secret', 'users.two_factor_email_confirmed_at']);
+        $members = $tenant->users()->get(['users.id', 'users.name', 'users.email', 'users.two_factor_confirmed_at', 'users.two_factor_secret', 'users.two_factor_email_confirmed_at', 'users.two_factor_sms_confirmed_at', 'users.two_factor_sms_phone']);
 
         return [
             'require_two_factor' => $this->twoFactor->isRequiredBy($tenant),
@@ -397,7 +401,7 @@ class TwoFactorController extends Controller
      */
     private function mandatoryMfaResponse(User $user): ?JsonResponse
     {
-        if (config('iam.mandatory_mfa') !== true || ! $this->holdsMandatoryMfaRole($user)) {
+        if (! $this->twoFactor->mustKeepTwoFactor($user)) {
             return null;
         }
 
@@ -410,15 +414,6 @@ class TwoFactorController extends Controller
         $response->setData([...(array) $response->getData(true), 'code' => AuthProblem::MfaCannotBeDisabled->code()]);
 
         return $response;
-    }
-
-    private function holdsMandatoryMfaRole(User $user): bool
-    {
-        $policies = app(TenantSecurityPolicies::class);
-
-        return $user->tenants()->get()->contains(
-            fn (Tenant $tenant): bool => $policies->mandatoryFor(data_get($tenant->getRelations()['pivot'] ?? null, 'role')),
-        );
     }
 
     /**

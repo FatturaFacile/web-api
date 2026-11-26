@@ -17,6 +17,9 @@ return [
         'webauthn_options' => 'Use your security key or passkey to continue.',
         'trusted_device_revoked' => 'The trusted device was removed.',
         'trusted_devices_revoked' => 'Every trusted device was removed.',
+        'sms_code_sent' => 'We sent a six-digit code by SMS.',
+        'sms_enabled' => 'SMS code verification enabled.',
+        'sms_disabled' => 'SMS code verification disabled.',
     ],
     'errors' => [
         'challenge_invalid_title' => 'Sign-in expired',
@@ -54,6 +57,16 @@ return [
         'last_factor_detail' => 'Owners and administrators must keep at least one two-factor method.',
         'account_locked_title' => 'Account locked',
         'account_locked_detail' => 'Too many wrong codes. The account is locked for a while.',
+        'sms_already_enabled_title' => 'Already enabled',
+        'sms_already_enabled_detail' => 'SMS code verification is already enabled. Turn it off first to use another number.',
+        'sms_not_enabled_title' => 'Not enabled',
+        'sms_not_enabled_detail' => 'SMS code verification is not enabled.',
+        'sms_unavailable_title' => 'SMS not sent',
+        'sms_unavailable_detail' => 'The text message could not be delivered. Try again later or use another method.',
+        'phone_invalid' => 'Enter the phone number in international format, for example +41791234567.',
+    ],
+    'sms' => [
+        'code' => ':app: your verification code is :code. It is valid for :minutes minutes. Do not share it.',
     ],
     'mail' => [
         'code' => [

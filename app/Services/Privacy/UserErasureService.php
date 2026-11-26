@@ -137,6 +137,8 @@ final readonly class UserErasureService
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
             'two_factor_email_confirmed_at' => null,
+            'two_factor_sms_phone' => null,
+            'two_factor_sms_confirmed_at' => null,
             'email_verification_token' => null,
             'deleted_at' => CarbonImmutable::now(),
         ]);

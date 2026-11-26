@@ -220,6 +220,12 @@ return [
             'resend_per_minute' => (int) env('AUTH_TWO_FACTOR_EMAIL_RESEND_PER_MINUTE', 1),
             'resend_per_hour' => (int) env('AUTH_TWO_FACTOR_EMAIL_RESEND_PER_HOUR', 5),
         ],
+        'sms' => [
+            'ttl_minutes' => (int) env('AUTH_TWO_FACTOR_SMS_TTL_MINUTES', 10),
+            'max_attempts' => (int) env('AUTH_TWO_FACTOR_SMS_MAX_ATTEMPTS', 5),
+            'resend_per_minute' => (int) env('AUTH_TWO_FACTOR_SMS_RESEND_PER_MINUTE', 1),
+            'resend_per_hour' => (int) env('AUTH_TWO_FACTOR_SMS_RESEND_PER_HOUR', 5),
+        ],
         'rate_limits' => [
             'challenge_per_minute' => (int) env('AUTH_TWO_FACTOR_CHALLENGE_PER_MINUTE', 10),
         ],

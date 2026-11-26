@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Auth;
 
+use App\Contracts\Sms\SmsDeliveryException;
 use App\Enums\Auth\AuthProblem;
 use App\Http\Middleware\EnforceSessionPolicy;
 use App\Http\Responses\ApiResponse;
@@ -49,7 +50,7 @@ final class LoginResponder
         private readonly SsoBrowserBinding $binding,
         private readonly RegistrationAudit $audit,
         private readonly TrustedDevices $trustedDevices,
-        private readonly EmailOtp $emailOtp,
+        private readonly SecondFactorCodes $codes,
     ) {}
 
     /**
@@ -76,15 +77,17 @@ final class LoginResponder
         }
 
         $methods = $this->twoFactor->availableMethods($user);
-        $emailCodeSent = false;
+        $codeSent = ['email' => false, 'sms' => false];
+        $default = $methods[0] ?? null;
 
-        if (in_array(TwoFactorAuthentication::METHOD_EMAIL, $methods, true) && ! in_array(TwoFactorAuthentication::METHOD_TOTP, $methods, true)) {
+        // When the first method is a code sent to the user (no authenticator app), it is sent right away.
+        if ($default === TwoFactorAuthentication::METHOD_EMAIL || $default === TwoFactorAuthentication::METHOD_SMS) {
             try {
-                $this->emailOtp->send($user, EmailOtp::PURPOSE_VERIFY);
-                $emailCodeSent = true;
-                $this->audit->record(RegistrationAudit::TWO_FACTOR_EMAIL_CODE_SENT, (string) $user->id, ['auth_method' => $authMethod], $tenantId);
-            } catch (EmailOtpThrottledException) {
-                // A code was sent a moment ago: the client resends after the delay.
+                $this->codes->send($user, SecondFactorCodes::PURPOSE_VERIFY, $default);
+                $codeSent[$default] = true;
+                $this->audit->record($default === TwoFactorAuthentication::METHOD_SMS ? RegistrationAudit::TWO_FACTOR_SMS_CODE_SENT : RegistrationAudit::TWO_FACTOR_EMAIL_CODE_SENT, (string) $user->id, ['auth_method' => $authMethod], $tenantId);
+            } catch (OtpThrottledException|SmsDeliveryException) {
+                // A code was sent a moment ago, or the SMS gateway is down: the client resends or switches method.
             }
         }
 
@@ -95,7 +98,8 @@ final class LoginResponder
                 'expires_in' => $this->twoFactor->challengeTtlMinutes() * 60,
                 'methods' => $methods,
                 'default_method' => $methods[0] ?? null,
-                'email_code_sent' => $emailCodeSent,
+                'email_code_sent' => $codeSent['email'],
+                'sms_code_sent' => $codeSent['sms'],
                 'trusted_devices_enabled' => $this->trustedDevices->enabled(),
             ],
             message: __('two_factor.messages.challenge_required')

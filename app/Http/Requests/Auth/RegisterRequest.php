@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Requests\Auth;
 
 use App\Enums\SupportedCountry;
+use App\Services\Auth\Security\PasswordPolicy;
 use App\Services\Auth\TaxIdentifier;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Validator;
 
 class RegisterRequest extends FormRequest
 {
@@ -46,6 +48,26 @@ class RegisterRequest extends FormRequest
             }],
             'terms_accepted' => ['accepted'],
             'privacy_accepted' => ['accepted'],
+        ];
+    }
+
+    /**
+     * The platform password policy, including the compromised-password check when the system default turns it on.
+     *
+     * @return array<int, callable(Validator): void>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                if ($validator->errors()->has('password') || ! is_string($this->input('password'))) {
+                    return;
+                }
+
+                foreach (app(PasswordPolicy::class)->platformViolations((string) $this->input('password')) as $message) {
+                    $validator->errors()->add('password', $message);
+                }
+            },
         ];
     }
 }

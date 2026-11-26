@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\TrustedDeviceController;
 use App\Http\Controllers\Api\V1\TwoFactorChallengeController;
 use App\Http\Controllers\Api\V1\TwoFactorEmailController;
+use App\Http\Controllers\Api\V1\TwoFactorSmsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth/two-factor/challenge')->middleware(['locale', 'throttle:two-factor-challenge'])->name('auth.two-factor.challenge.')->group(function (): void {
     Route::post('/email', [TwoFactorChallengeController::class, 'sendEmail'])->name('email');
+    Route::post('/sms', [TwoFactorChallengeController::class, 'sendSms'])->name('sms');
     Route::post('/webauthn/options', [TwoFactorChallengeController::class, 'webauthnOptions'])->name('webauthn.options');
 });
 
@@ -29,6 +31,11 @@ Route::middleware(['auth:sanctum', 'mobile.device', 'tenant', 'locale'])->prefix
     Route::post('/email/confirm', [TwoFactorEmailController::class, 'confirm'])->middleware('throttle:6,1')->name('email.confirm');
     Route::post('/email/send', [TwoFactorEmailController::class, 'send'])->middleware('throttle:6,1')->name('email.send');
     Route::delete('/email', [TwoFactorEmailController::class, 'destroy'])->middleware('throttle:6,1')->name('email.destroy');
+
+    Route::post('/sms/enable', [TwoFactorSmsController::class, 'enable'])->middleware('throttle:6,1')->name('sms.enable');
+    Route::post('/sms/confirm', [TwoFactorSmsController::class, 'confirm'])->middleware('throttle:6,1')->name('sms.confirm');
+    Route::post('/sms/send', [TwoFactorSmsController::class, 'send'])->middleware('throttle:6,1')->name('sms.send');
+    Route::delete('/sms', [TwoFactorSmsController::class, 'destroy'])->middleware('throttle:6,1')->name('sms.destroy');
 
     Route::get('/trusted-devices', [TrustedDeviceController::class, 'index'])->name('trusted-devices.index');
     Route::delete('/trusted-devices', [TrustedDeviceController::class, 'destroyAll'])->name('trusted-devices.destroy-all');

@@ -34,6 +34,7 @@ enum AuthProblem: string
     case TwoFactorMethodUnavailable = 'urn:fatturafacile:problem:two-factor-method-unavailable';
     case TwoFactorEmailThrottled = 'urn:fatturafacile:problem:two-factor-email-throttled';
     case TrustedDeviceNotFound = 'urn:fatturafacile:problem:trusted-device-not-found';
+    case SmsDeliveryFailed = 'urn:fatturafacile:problem:sms-delivery-failed';
 
     /** Machine-readable `code` member that clients (web, desktop, mobile) switch on for a 403. */
     public function code(): ?string

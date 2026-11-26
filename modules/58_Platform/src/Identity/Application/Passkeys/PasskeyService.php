@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Modules\Platform\Identity\Domain\Events\PasskeyRegistered;
+use Modules\Platform\Identity\Domain\Events\PasskeyRenamed;
 use Modules\Platform\Identity\Domain\Events\PasskeyRevoked;
 use Modules\Platform\Identity\Infrastructure\Models\WebAuthnCredential;
 
@@ -196,6 +197,36 @@ final class PasskeyService
         $this->announceRevoked($stored, 'user');
 
         return true;
+    }
+
+    /**
+     * Renames one active passkey of the user; null when it is not theirs (or revoked).
+     */
+    public function rename(User $user, string $credentialId, string $name, ?string $tenantId): ?WebAuthnCredential
+    {
+        $stored = WebAuthnCredential::query()->where('user_id', $user->id)->whereNull('revoked_at')->whereKey($credentialId)->first();
+
+        if ($stored === null) {
+            return null;
+        }
+
+        $stored->forceFill(['name' => $name])->save();
+
+        $tenantId ??= $stored->tenant_id ?? $user->tenants()->value('tenants.id');
+
+        if (is_string($tenantId)) {
+            event(new PasskeyRenamed($tenantId, (string) $user->id, (string) $stored->id, (string) $user->id));
+        }
+
+        return $stored;
+    }
+
+    /**
+     * Number of active (not revoked) credentials of the user.
+     */
+    public function activeCount(User $user): int
+    {
+        return WebAuthnCredential::query()->where('user_id', $user->id)->whereNull('revoked_at')->count();
     }
 
     /**

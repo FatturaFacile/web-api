@@ -11,6 +11,7 @@ use App\Contracts\MobilePushGateway;
 use App\Contracts\PdfGenerator;
 use App\Contracts\SdiProvider;
 use App\Contracts\Security\HostResolver;
+use App\Contracts\Sms\SmsGateway;
 use App\Contracts\SwissQrBill\SwissQrBillGeneratorInterface;
 use App\Contracts\SwissQrBill\SwissQrBillParserInterface;
 use App\Listeners\Mobile\NotifyApproversOnStepAssigned;
@@ -50,6 +51,8 @@ use App\Services\Pdf\DompdfPdfGenerator;
 use App\Services\Retail\LocalFiscalPrinterGateway;
 use App\Services\Security\DnsHostResolver;
 use App\Services\Security\OutboundUrlGuard;
+use App\Services\Sms\HttpSmsGateway;
+use App\Services\Sms\LogSmsGateway;
 use App\Services\SwissQrBill\SwissQrBillParserService;
 use App\Services\SwissQrBill\SwissQrBillService;
 use App\Services\Tenancy\DocumentQuotaService;
@@ -100,6 +103,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SdiProvider::class, TenantSdiProvider::class);
         $this->app->bind(FiscalPrinterGateway::class, LocalFiscalPrinterGateway::class);
         $this->app->bind(PdfGenerator::class, DompdfPdfGenerator::class);
+        $this->app->bind(SmsGateway::class, fn (): SmsGateway => config('sms.driver') === 'http'
+            ? new HttpSmsGateway
+            : new LogSmsGateway);
         $this->app->bind(SwissQrBillGeneratorInterface::class, SwissQrBillService::class);
         $this->app->bind(SwissQrBillParserInterface::class, SwissQrBillParserService::class);
         $this->app->singleton(EcommerceManager::class);

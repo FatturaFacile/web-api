@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Platform\Identity\Http\Controllers;
 
+use App\Enums\Auth\AuthProblem;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Services\Auth\LoginResponder;
 use App\Services\Auth\Security\TenantSecurityPolicies;
 use App\Services\Auth\TokenMode;
+use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +20,8 @@ use Modules\Platform\Identity\Application\Passkeys\PasskeyService;
 use Modules\Platform\Identity\Domain\Events\LoginSucceeded;
 use Modules\Platform\Identity\Http\Requests\FinishPasskeyRegistrationRequest;
 use Modules\Platform\Identity\Http\Requests\PasskeyLoginRequest;
+use Modules\Platform\Identity\Http\Requests\RenamePasskeyRequest;
+use Modules\Platform\Identity\Http\Resources\PasskeyResource;
 use Modules\Platform\Identity\Infrastructure\Models\WebAuthnCredential;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -35,6 +39,7 @@ final class PasskeyController extends Controller
         private readonly LoginResponder $responder,
         private readonly TenantSecurityPolicies $policies,
         private readonly TokenMode $tokenModes,
+        private readonly TwoFactorAuthentication $twoFactor,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -64,7 +69,23 @@ final class PasskeyController extends Controller
             return $this->problem($e);
         }
 
-        return $this->successResponse($this->present($credential), 'Passkey registered', Response::HTTP_CREATED);
+        // The first passkey of a user without any recovery code makes the passkey their second factor: the codes that
+        // let them in without it are created now and shown only this once.
+        $recoveryCodes = $this->twoFactor->ensureRecoveryCodes($user);
+
+        return $this->successResponse([...$this->present($credential), 'recovery_codes' => $recoveryCodes], 'Passkey registered', Response::HTTP_CREATED);
+    }
+
+    public function rename(RenamePasskeyRequest $request, string $id): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $credential = $this->passkeys->rename($user, $id, (string) $request->validated('name'), $this->tenantContext->getTenantId());
+
+        return $credential === null
+            ? $this->problemDetailsResponse('Not Found', 'Passkey not found.', Response::HTTP_NOT_FOUND)
+            : $this->successResponse(new PasskeyResource($credential), 'Passkey renamed');
     }
 
     public function destroy(Request $request, string $id): JsonResponse
@@ -72,9 +93,29 @@ final class PasskeyController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        return $this->passkeys->revoke($user, $id)
-            ? $this->successResponse(null, 'Passkey revoked')
-            : $this->problemDetailsResponse('Not Found', 'Passkey not found.', Response::HTTP_NOT_FOUND);
+        // The last security key of a role that must keep two-factor authentication cannot be removed.
+        if ($this->passkeys->activeCount($user) <= 1
+            && ! $this->twoFactor->otherFactorsExist($user, TwoFactorAuthentication::METHOD_WEBAUTHN)
+            && $this->twoFactor->mustKeepTwoFactor($user)
+            && $this->passkeys->list($user)->contains('id', $id)) {
+            $response = $this->problemDetailsResponse(
+                'Two-factor cannot be turned off',
+                'Owners and administrators must keep two-factor authentication on.',
+                Response::HTTP_FORBIDDEN,
+                AuthProblem::MfaCannotBeDisabled->value,
+            );
+            $response->setData([...(array) $response->getData(true), 'code' => AuthProblem::MfaCannotBeDisabled->code()]);
+
+            return $response;
+        }
+
+        if (! $this->passkeys->revoke($user, $id)) {
+            return $this->problemDetailsResponse('Not Found', 'Passkey not found.', Response::HTTP_NOT_FOUND);
+        }
+
+        $this->twoFactor->afterPasskeyRemoved($user);
+
+        return $this->successResponse(null, 'Passkey revoked');
     }
 
     public function loginOptions(): JsonResponse

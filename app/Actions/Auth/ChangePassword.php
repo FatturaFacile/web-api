@@ -41,7 +41,7 @@ class ChangePassword
      *
      * @throws ValidationException when the current password or the second factor is missing or wrong
      */
-    public function execute(User $user, string $currentPassword, string $newPassword, ?string $code, ?string $recoveryCode, ?string $emailCode = null): ?AuthProblem
+    public function execute(User $user, string $currentPassword, string $newPassword, ?string $code, ?string $recoveryCode, ?string $emailCode = null, ?string $smsCode = null): ?AuthProblem
     {
         if ($this->isLocked($user)) {
             return AuthProblem::PasswordChangeLocked;
@@ -53,15 +53,15 @@ class ChangePassword
 
         $usesTwoFactor = $this->twoFactor->isEnabled($user);
 
-        if ($usesTwoFactor && blank($code) && blank($recoveryCode) && blank($emailCode)) {
+        if ($usesTwoFactor && blank($code) && blank($recoveryCode) && blank($emailCode) && blank($smsCode)) {
             throw ValidationException::withMessages(['code' => __('password_change.errors.code_required')]);
         }
 
         if ($usesTwoFactor) {
-            $method = $this->twoFactor->verifyCode($user, $code, $recoveryCode, $emailCode);
+            $method = $this->twoFactor->verifyCode($user, $code, $recoveryCode, $emailCode, $smsCode);
 
             if ($method === null) {
-                $this->failed($user, filled($code) ? 'code' : (filled($emailCode) ? 'email_code' : 'recovery_code'), __('two_factor.errors.code_invalid_detail'));
+                $this->failed($user, filled($code) ? 'code' : (filled($emailCode) ? 'email_code' : (filled($smsCode) ? 'sms_code' : 'recovery_code')), __('two_factor.errors.code_invalid_detail'));
             }
 
             if ($method === TwoFactorAuthentication::METHOD_RECOVERY_CODE) {

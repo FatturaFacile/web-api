@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\Auth\AuthProblem;
 use App\Models\TrustedDevice;
+use App\Models\User;
 use App\Services\Auth\RegistrationAudit;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -180,14 +181,98 @@ test('a counter that does not grow revokes the key as a clone and the challenge 
     expect($login->json('data.methods'))->toBe(['totp', 'recovery_code']);
 });
 
-test('a user with only passkeys and no enrolled factor is not challenged after the password', function (): void {
-    $solo = MfaScenario::member($this->tenant);
+/**
+ * A member whose only factor is a registered security key. Returns the user, the key and the recovery codes shown at registration.
+ *
+ * @return array{0: User, 1: SoftwarePasskey, 2: list<string>}
+ */
+function mfaPasskeyOnlyMember(object $t): array
+{
+    $solo = MfaScenario::member($t->tenant);
     $soloKey = new SoftwarePasskey('app.test', 'https://app.test');
-    mfaRegisterKey($this, $solo, $soloKey);
 
-    MfaScenario::login($solo)->assertOk()->assertJsonPath('data.two_factor_required', null)->assertJsonPath('data.user.two_factor_methods', []);
+    Sanctum::actingAs($solo);
+    $begin = test()->withHeaders($t->headers)->postJson('/api/v1/auth/passkeys/options')->assertOk();
+    $codes = test()->withHeaders($t->headers)->postJson('/api/v1/auth/passkeys', [
+        'ceremony_id' => $begin->json('data.ceremony_id'),
+        'name' => 'YubiKey',
+        'credential' => $soloKey->create($begin->json('data.options')),
+    ])->assertCreated()->json('data.recovery_codes');
+
+    return [$solo, $soloKey, $codes];
+}
+
+test('the first passkey of a user without factors creates the recovery codes once and makes the passkey a second factor', function (): void {
+    [$solo, $soloKey, $codes] = mfaPasskeyOnlyMember($this);
+
+    expect($codes)->toHaveCount(8);
+
+    // A second passkey does not create new codes.
+    $begin = $this->withHeaders($this->headers)->postJson('/api/v1/auth/passkeys/options')->assertOk();
+    $this->withHeaders($this->headers)->postJson('/api/v1/auth/passkeys', [
+        'ceremony_id' => $begin->json('data.ceremony_id'),
+        'name' => 'Backup',
+        'credential' => (new SoftwarePasskey('app.test', 'https://app.test'))->create($begin->json('data.options')),
+    ])->assertCreated()->assertJsonPath('data.recovery_codes', null);
+
+    $login = MfaScenario::login($solo)->assertOk();
+
+    expect($login->json('data.two_factor_required'))->toBeTrue()
+        ->and($login->json('data.methods'))->toBe(['webauthn', 'recovery_code'])
+        ->and($login->json('data.default_method'))->toBe('webauthn')
+        ->and($login->json('data.token'))->toBeNull();
+
+    $token = $login->json('data.challenge_token');
+    $options = mfaKeyOptions($token);
+    MfaScenario::answer($token, ['webauthn' => ['ceremony_id' => $options['ceremony_id'], 'credential' => $soloKey->assert($options['options'], (string) $solo->id)]])->assertOk();
+
+    MfaScenario::answer(MfaScenario::challengeToken($solo), ['recovery_code' => $codes[0]])->assertOk();
 });
 
+test('a passwordless passkey login never asks for a second challenge', function (): void {
+    [$solo, $soloKey] = mfaPasskeyOnlyMember($this);
+    app('auth')->forgetGuards();
+
+    $begin = $this->postJson('/api/v1/auth/passkeys/login/options')->assertOk();
+    $login = $this->postJson('/api/v1/auth/passkeys/login', [
+        'ceremony_id' => $begin->json('data.ceremony_id'),
+        'credential' => $soloKey->assert($begin->json('data.options'), (string) $solo->id),
+        'token_mode' => true,
+    ])->assertOk();
+
+    expect($login->json('data.token'))->toBeString()
+        ->and($login->json('data.two_factor_required'))->toBeNull();
+});
+
+test('a tenant that requires two-factor accepts a passkey as the factor, and the last one cannot be removed by a mandatory role', function (): void {
+    config(['iam.mandatory_mfa' => true]);
+    $owner = MfaScenario::member($this->tenant, null, 'owner');
+    $ownerKey = new SoftwarePasskey('app.test', 'https://app.test');
+    mfaRegisterKey($this, $owner, $ownerKey);
+    $id = WebAuthnCredential::query()->where('user_id', $owner->id)->value('id');
+
+    $this->withHeaders($this->headers)->deleteJson("/api/v1/auth/passkeys/{$id}")
+        ->assertForbidden()
+        ->assertJsonPath('code', 'mfa_cannot_be_disabled');
+    expect(WebAuthnCredential::query()->whereKey($id)->value('revoked_at'))->toBeNull();
+
+    // With another factor the passkey can go.
+    MfaScenario::enableEmail($owner, $this->tenant);
+    $this->withHeaders($this->headers)->deleteJson("/api/v1/auth/passkeys/{$id}")->assertOk();
+});
+
+test('removing the last passkey of a user without other factors drops the recovery codes and trusted devices', function (): void {
+    [$solo, , $codes] = mfaPasskeyOnlyMember($this);
+    $id = WebAuthnCredential::query()->where('user_id', $solo->id)->value('id');
+    TrustedDevice::query()->create(['user_id' => $solo->id, 'token_hash' => hash('sha256', 'y'), 'expires_at' => now()->addDay()]);
+
+    $this->withHeaders($this->headers)->deleteJson("/api/v1/auth/passkeys/{$id}")->assertOk();
+
+    expect($solo->fresh()->two_factor_recovery_codes)->toBeNull()
+        ->and(TrustedDevice::query()->count())->toBe(0)
+        ->and($codes)->toHaveCount(8);
+    MfaScenario::login($solo)->assertOk()->assertJsonPath('data.two_factor_required', null);
+});
 test('the status lists the methods of the user including the security key', function (): void {
     mfaRegisterKey($this, $this->user, $this->key);
 

@@ -233,6 +233,7 @@ final class AdvancedAuthEnterpriseFrontendTranslations
             'access_security_role_assigned' => ['Ruolo assegnato', 'Role assigned', 'Rolle zugewiesen', 'Rôle attribué'],
             'access_security_role_revoked' => ['Ruolo revocato', 'Role revoked', 'Rolle entzogen', 'Rôle retiré'],
             'access_security_passkey_registered' => ['Passkey registrata', 'Passkey registered', 'Passkey registriert', 'Passkey enregistrée'],
+            'access_security_passkey_renamed' => ['Passkey rinominata', 'Passkey renamed', 'Passkey umbenannt', 'Passkey renommée'],
             'access_security_passkey_revoked' => ['Passkey revocata', 'Passkey revoked', 'Passkey widerrufen', 'Passkey révoquée'],
             'access_security_mfa_enabled' => ['Autenticazione a più fattori attivata', 'Multi-factor authentication enabled', 'Mehrfaktor-Authentifizierung aktiviert', 'Authentification multifacteur activée'],
             'access_security_mfa_disabled' => ['Autenticazione a più fattori disattivata', 'Multi-factor authentication disabled', 'Mehrfaktor-Authentifizierung deaktiviert', 'Authentification multifacteur désactivée'],

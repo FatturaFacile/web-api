@@ -17,6 +17,9 @@ return [
         'webauthn_options' => 'Verwenden Sie Ihren Sicherheitsschlüssel oder Passkey, um fortzufahren.',
         'trusted_device_revoked' => 'Das vertrauenswürdige Gerät wurde entfernt.',
         'trusted_devices_revoked' => 'Alle vertrauenswürdigen Geräte wurden entfernt.',
+        'sms_code_sent' => 'Wir haben einen sechsstelligen Code per SMS gesendet.',
+        'sms_enabled' => 'Bestätigung per SMS-Code aktiviert.',
+        'sms_disabled' => 'Bestätigung per SMS-Code deaktiviert.',
     ],
     'errors' => [
         'challenge_invalid_title' => 'Anmeldung abgelaufen',
@@ -54,6 +57,16 @@ return [
         'last_factor_detail' => 'Inhaber und Administratoren müssen mindestens eine Zwei-Faktor-Methode behalten.',
         'account_locked_title' => 'Konto gesperrt',
         'account_locked_detail' => 'Zu viele falsche Codes. Das Konto ist für einige Zeit gesperrt.',
+        'sms_already_enabled_title' => 'Bereits aktiviert',
+        'sms_already_enabled_detail' => 'Die Bestätigung per SMS-Code ist bereits aktiviert. Deaktivieren Sie sie zuerst, um eine andere Nummer zu verwenden.',
+        'sms_not_enabled_title' => 'Nicht aktiviert',
+        'sms_not_enabled_detail' => 'Die Bestätigung per SMS-Code ist nicht aktiviert.',
+        'sms_unavailable_title' => 'SMS nicht gesendet',
+        'sms_unavailable_detail' => 'Die Textnachricht konnte nicht zugestellt werden. Versuchen Sie es später erneut oder verwenden Sie eine andere Methode.',
+        'phone_invalid' => 'Geben Sie die Telefonnummer im internationalen Format ein, zum Beispiel +41791234567.',
+    ],
+    'sms' => [
+        'code' => ':app: Ihr Bestätigungscode lautet :code. Er ist :minutes Minuten gültig. Geben Sie ihn nicht weiter.',
     ],
     'mail' => [
         'code' => [

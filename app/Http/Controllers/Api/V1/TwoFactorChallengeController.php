@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Contracts\Sms\SmsDeliveryException;
 use App\Enums\Auth\AuthProblem;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\TwoFactorChallengeTokenRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
-use App\Services\Auth\EmailOtp;
-use App\Services\Auth\EmailOtpThrottledException;
+use App\Services\Auth\OtpThrottledException;
 use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\SecondFactorCodes;
 use App\Services\Auth\TwoFactorAuthentication;
 use Illuminate\Http\JsonResponse;
 use Modules\Platform\Identity\Application\Passkeys\PasskeyException;
@@ -29,7 +30,7 @@ class TwoFactorChallengeController extends Controller
 
     public function __construct(
         private readonly TwoFactorAuthentication $twoFactor,
-        private readonly EmailOtp $emailOtp,
+        private readonly SecondFactorCodes $emailOtp,
         private readonly RegistrationAudit $audit,
     ) {}
 
@@ -65,8 +66,8 @@ class TwoFactorChallengeController extends Controller
         }
 
         try {
-            $expiresIn = $this->emailOtp->send($user, EmailOtp::PURPOSE_VERIFY);
-        } catch (EmailOtpThrottledException $e) {
+            $expiresIn = $this->emailOtp->send($user, SecondFactorCodes::PURPOSE_VERIFY);
+        } catch (OtpThrottledException $e) {
             return $this->throttled($e);
         }
 
@@ -77,6 +78,61 @@ class TwoFactorChallengeController extends Controller
         return $this->successResponse(
             data: ['expires_in' => $expiresIn, 'resend_available_in' => $this->emailOtp->resendAvailableIn($user)],
             message: __('two_factor.messages.email_code_sent'),
+        );
+    }
+
+    #[OA\Post(
+        path: '/api/v1/auth/two-factor/challenge/sms',
+        operationId: 'twoFactorChallengeSendSms',
+        description: 'Sends the six-digit code by SMS to the confirmed phone number of the user of the challenge (valid 10 minutes, five tries). Throttled to one code a minute and five an hour per user: a 429 carries Retry-After. The code is then sent as sms_code to /auth/two-factor-challenge.',
+        summary: 'Send the SMS code of a login challenge',
+        tags: ['Authentication'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(
+            required: ['challenge_token'],
+            properties: [new OA\Property(property: 'challenge_token', type: 'string', example: 'wq3...64 chars')]
+        )),
+        responses: [
+            new OA\Response(response: 200, description: 'Code sent: expires_in and resend_available_in in seconds', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Challenge expired or unknown', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 409, description: 'The user has no SMS factor', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 429, description: 'Code asked for too often', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 503, description: 'The SMS gateway could not deliver the message', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function sendSms(TwoFactorChallengeTokenRequest $request): JsonResponse
+    {
+        $challenge = $this->twoFactor->findChallenge((string) $request->validated('challenge_token'));
+        $user = $challenge === null ? null : User::query()->find($challenge['user_id']);
+
+        if ($challenge === null || $user === null) {
+            return $this->invalidChallenge();
+        }
+
+        if (! $this->twoFactor->hasSms($user)) {
+            return $this->methodUnavailable();
+        }
+
+        try {
+            $expiresIn = $this->emailOtp->send($user, SecondFactorCodes::PURPOSE_VERIFY, SecondFactorCodes::CHANNEL_SMS);
+        } catch (OtpThrottledException $e) {
+            return $this->throttled($e);
+        } catch (SmsDeliveryException) {
+            return $this->problemDetailsResponse(
+                title: __('two_factor.errors.sms_unavailable_title'),
+                detail: __('two_factor.errors.sms_unavailable_detail'),
+                status: Response::HTTP_SERVICE_UNAVAILABLE,
+                type: AuthProblem::SmsDeliveryFailed->value,
+            );
+        }
+
+        $this->audit->record(RegistrationAudit::TWO_FACTOR_SMS_CODE_SENT, (string) $user->id, [
+            'auth_method' => (string) ($challenge['auth_method'] ?? 'password'),
+        ], $challenge['tenant_id']);
+
+        return $this->successResponse(
+            data: ['expires_in' => $expiresIn, 'resend_available_in' => $this->emailOtp->resendAvailableIn($user, SecondFactorCodes::CHANNEL_SMS)],
+            message: __('two_factor.messages.sms_code_sent'),
         );
     }
 
@@ -136,7 +192,7 @@ class TwoFactorChallengeController extends Controller
         );
     }
 
-    private function throttled(EmailOtpThrottledException $e): JsonResponse
+    private function throttled(OtpThrottledException $e): JsonResponse
     {
         return $this->problemDetailsResponse(
             title: __('two_factor.errors.email_throttled_title'),

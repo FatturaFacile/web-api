@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 use App\Enums\Auth\AuthProblem;
 use App\Mail\TwoFactorEmailCodeMail;
-use App\Services\Auth\EmailOtp;
-use App\Services\Auth\EmailOtpThrottledException;
+use App\Services\Auth\OtpThrottledException;
 use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\SecondFactorCodes;
 use App\Services\Auth\TwoFactorAuthentication;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -44,7 +44,7 @@ test('the email factor is enrolled with the password and the emailed code, and r
 
     expect($code)->toMatch('/^\d{6}$/');
 
-    $stored = Cache::get('auth:two-factor-email:enrol:'.$this->user->id);
+    $stored = Cache::get('auth:two-factor-code:email:enrol:'.$this->user->id);
     expect($stored['hash'])->not->toBe($code)
         ->and(json_encode($stored))->not->toContain($code);
 
@@ -73,12 +73,12 @@ test('the email factor is enrolled with the password and the emailed code, and r
 });
 
 test('a code is only valid for the confirmed enrolment code, not for another purpose', function (): void {
-    $otp = app(EmailOtp::class);
-    $otp->send($this->user, EmailOtp::PURPOSE_ENROL);
+    $otp = app(SecondFactorCodes::class);
+    $otp->send($this->user, SecondFactorCodes::PURPOSE_ENROL);
     $code = MfaScenario::lastEmailCode($this->user);
 
-    expect($otp->verify($this->user, EmailOtp::PURPOSE_VERIFY, $code))->toBeFalse()
-        ->and($otp->verify($this->user, EmailOtp::PURPOSE_ENROL, $code))->toBeTrue();
+    expect($otp->verify($this->user, SecondFactorCodes::PURPOSE_VERIFY, $code))->toBeFalse()
+        ->and($otp->verify($this->user, SecondFactorCodes::PURPOSE_ENROL, $code))->toBeTrue();
 });
 
 test('a user with only the email factor gets the code at login and signs in with it', function (): void {
@@ -140,80 +140,80 @@ test('the email code of the challenge cannot be sent for an unknown challenge or
 });
 
 test('an email code is refused when wrong, and dies after five wrong tries', function (): void {
-    $otp = app(EmailOtp::class);
-    $otp->send($this->user, EmailOtp::PURPOSE_VERIFY);
+    $otp = app(SecondFactorCodes::class);
+    $otp->send($this->user, SecondFactorCodes::PURPOSE_VERIFY);
     $code = MfaScenario::lastEmailCode($this->user);
 
     for ($attempt = 0; $attempt < 5; $attempt++) {
-        expect($otp->verify($this->user, EmailOtp::PURPOSE_VERIFY, $code === '000000' ? '111111' : '000000'))->toBeFalse();
+        expect($otp->verify($this->user, SecondFactorCodes::PURPOSE_VERIFY, $code === '000000' ? '111111' : '000000'))->toBeFalse();
     }
 
-    expect($otp->verify($this->user, EmailOtp::PURPOSE_VERIFY, $code))->toBeFalse();
+    expect($otp->verify($this->user, SecondFactorCodes::PURPOSE_VERIFY, $code))->toBeFalse();
 });
 
 test('a correct code after a few wrong tries still works, once', function (): void {
-    $otp = app(EmailOtp::class);
-    $otp->send($this->user, EmailOtp::PURPOSE_VERIFY);
+    $otp = app(SecondFactorCodes::class);
+    $otp->send($this->user, SecondFactorCodes::PURPOSE_VERIFY);
     $code = MfaScenario::lastEmailCode($this->user);
 
-    expect($otp->verify($this->user, EmailOtp::PURPOSE_VERIFY, $code === '000000' ? '111111' : '000000'))->toBeFalse()
-        ->and($otp->verify($this->user, EmailOtp::PURPOSE_VERIFY, $code))->toBeTrue()
-        ->and($otp->verify($this->user, EmailOtp::PURPOSE_VERIFY, $code))->toBeFalse();
+    expect($otp->verify($this->user, SecondFactorCodes::PURPOSE_VERIFY, $code === '000000' ? '111111' : '000000'))->toBeFalse()
+        ->and($otp->verify($this->user, SecondFactorCodes::PURPOSE_VERIFY, $code))->toBeTrue()
+        ->and($otp->verify($this->user, SecondFactorCodes::PURPOSE_VERIFY, $code))->toBeFalse();
 });
 
 test('an email code expires after ten minutes', function (): void {
-    $otp = app(EmailOtp::class);
-    $otp->send($this->user, EmailOtp::PURPOSE_VERIFY);
+    $otp = app(SecondFactorCodes::class);
+    $otp->send($this->user, SecondFactorCodes::PURPOSE_VERIFY);
     $code = MfaScenario::lastEmailCode($this->user);
 
     $this->travel(11)->minutes();
 
-    expect($otp->verify($this->user, EmailOtp::PURPOSE_VERIFY, $code))->toBeFalse();
+    expect($otp->verify($this->user, SecondFactorCodes::PURPOSE_VERIFY, $code))->toBeFalse();
 });
 
 test('the code of one user is never valid for another', function (): void {
     $other = MfaScenario::member($this->tenant);
-    $otp = app(EmailOtp::class);
-    $otp->send($this->user, EmailOtp::PURPOSE_VERIFY);
+    $otp = app(SecondFactorCodes::class);
+    $otp->send($this->user, SecondFactorCodes::PURPOSE_VERIFY);
 
-    expect($otp->verify($other, EmailOtp::PURPOSE_VERIFY, MfaScenario::lastEmailCode($this->user)))->toBeFalse();
+    expect($otp->verify($other, SecondFactorCodes::PURPOSE_VERIFY, MfaScenario::lastEmailCode($this->user)))->toBeFalse();
 });
 
 test('a new code replaces the pending one', function (): void {
-    $otp = app(EmailOtp::class);
-    $otp->send($this->user, EmailOtp::PURPOSE_VERIFY);
+    $otp = app(SecondFactorCodes::class);
+    $otp->send($this->user, SecondFactorCodes::PURPOSE_VERIFY);
     $first = MfaScenario::lastEmailCode($this->user);
 
     $this->travel(61)->seconds();
-    $otp->send($this->user, EmailOtp::PURPOSE_VERIFY);
+    $otp->send($this->user, SecondFactorCodes::PURPOSE_VERIFY);
     $second = MfaScenario::lastEmailCode($this->user);
 
-    expect($first === $second || ! $otp->verify($this->user, EmailOtp::PURPOSE_VERIFY, $first))->toBeTrue()
-        ->and($otp->verify($this->user, EmailOtp::PURPOSE_VERIFY, $second))->toBeTrue();
+    expect($first === $second || ! $otp->verify($this->user, SecondFactorCodes::PURPOSE_VERIFY, $first))->toBeTrue()
+        ->and($otp->verify($this->user, SecondFactorCodes::PURPOSE_VERIFY, $second))->toBeTrue();
 });
 
 test('sending is limited to one code a minute and five an hour per user', function (): void {
-    $otp = app(EmailOtp::class);
-    $otp->send($this->user, EmailOtp::PURPOSE_VERIFY);
+    $otp = app(SecondFactorCodes::class);
+    $otp->send($this->user, SecondFactorCodes::PURPOSE_VERIFY);
 
     try {
-        $otp->send($this->user, EmailOtp::PURPOSE_VERIFY);
+        $otp->send($this->user, SecondFactorCodes::PURPOSE_VERIFY);
         $this->fail('The second code in a minute must be throttled.');
-    } catch (EmailOtpThrottledException $e) {
+    } catch (OtpThrottledException $e) {
         expect($e->retryAfterSeconds)->toBeGreaterThan(0)->toBeLessThanOrEqual(60);
     }
 
     for ($sent = 1; $sent < 5; $sent++) {
         $this->travel(61)->seconds();
-        $otp->send($this->user, EmailOtp::PURPOSE_VERIFY);
+        $otp->send($this->user, SecondFactorCodes::PURPOSE_VERIFY);
     }
 
     $this->travel(61)->seconds();
 
     try {
-        $otp->send($this->user, EmailOtp::PURPOSE_VERIFY);
+        $otp->send($this->user, SecondFactorCodes::PURPOSE_VERIFY);
         $this->fail('The sixth code in an hour must be throttled.');
-    } catch (EmailOtpThrottledException $e) {
+    } catch (OtpThrottledException $e) {
         expect($e->retryAfterSeconds)->toBeGreaterThan(60);
     }
 
