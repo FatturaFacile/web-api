@@ -29,6 +29,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\GeneralLedger\Models\EnasarcoParameter;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\SDI\Enums\RegimeFiscale;
+use Modules\Treasury\Currency\Domain\Exceptions\RateProviderException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -269,7 +270,14 @@ class SettingsController extends Controller
     public function syncExchangeRates(ExchangeRateProviderInterface $rateProvider): JsonResponse
     {
         $today = now()->toDateString();
-        $rates = $rateProvider->getRates();
+
+        try {
+            $rates = $rateProvider->getRates();
+        } catch (RateProviderException $exception) {
+            // No built-in rates stand in for a feed that failed: nothing is synchronised.
+            return $this->problemDetailsResponse('Exchange-rate feed unavailable', $exception->getMessage(), 502);
+        }
+
         // A tenant stores its own copy of the rates: the global rows (null tenant) are changed by platform code only.
         $tenantId = app(TenantContext::class)->getTenantId();
 

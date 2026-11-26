@@ -34,6 +34,13 @@ return [
         'professionals' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'project_manager', 'member']],
         'manufacturing' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'production', 'technician', 'member']],
         'treasury' => ['read' => $financeReaders, 'write' => $finance],
+        // Multi-currency engine (Mod 003): every member reads the rates and the active currencies (documents need them); finance
+        // enters manual and contract rates, triggers the synchronisation and changes the currency settings.
+        'currencies' => [
+            'read' => $anyMember,
+            'write' => $finance,
+            'grants' => ['read' => ['currencies.read', 'currencies.write', 'currencies.*'], 'write' => ['currencies.write', 'currencies.*']],
+        ],
         // Approval process definitions: every member reads them, owners and admins design them.
         'workflow_design' => ['read' => $anyMember, 'write' => $managers],
         // Backups hold every record of the company, and a restore replaces them.

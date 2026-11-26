@@ -9,7 +9,7 @@ interface ExchangeRateProviderInterface
     /**
      * Retrieve current currency exchange rates.
      *
-     * @return array<int, array{source: string, target: string, rate: float}>
+     * @return array<int, array{source: string, target: string, rate: float|string}>
      */
     public function getRates(string $baseCurrency = 'EUR'): array;
 }

@@ -99,8 +99,8 @@ beforeEach(function (): void {
     $this->fxLoss = fcAccount($this->tenant, '6810', 'expense', 'debit');
     $this->rounding = fcAccount($this->tenant, '6960', 'expense', 'debit');
 
-    // 1 EUR = 1.25 USD at the invoice (0.8 EUR per USD), 1 EUR = 1.20 USD at the collection (0.833333 EUR per USD)
-    ExchangeRate::create(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.250000', 'effective_date' => '2026-06-01']);
+    // 1 EUR = 1.25 USD at the invoice day (0.8 EUR per USD), 1 EUR = 1.20 USD at the collection (0.833333 EUR per USD)
+    ExchangeRate::create(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.250000', 'effective_date' => '2026-06-15']);
     ExchangeRate::create(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.200000', 'effective_date' => '2026-06-25']);
 });
 

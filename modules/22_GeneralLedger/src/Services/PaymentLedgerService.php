@@ -9,6 +9,7 @@ use App\Models\PassiveInvoice;
 use App\Models\Payment;
 use App\Models\SupplierPayment;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -22,6 +23,8 @@ use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\GeneralLedger\Services\Tax\LedgerAmount;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
+use Modules\Treasury\Currency\Domain\Enums\FxDirection;
+use Modules\Treasury\Currency\Domain\Events\PaymentAllocated;
 use Modules\Treasury\Models\BankAccount;
 
 /**
@@ -101,6 +104,10 @@ final class PaymentLedgerService
         ];
 
         $entry = $this->post($tenantId, self::SOURCE_CUSTOMER, (string) $payment->id, $payment->paid_at, (string) $invoice->invoice_number, 'Collection', $this->withExchangeDifference($tenantId, $lines, "Exchange difference: Invoice {$invoice->invoice_number}"), $options);
+
+        if (! in_array($payment->type, ['bank_fee', 'adjustment'], true)) {
+            $this->announceAllocation($tenantId, FxDirection::Receivable, self::SOURCE_CUSTOMER.':'.$payment->id, $currency, $amount, $documentRate, $paymentRate, $payment->paid_at, (string) $invoice->invoice_number, (string) $invoice->contact_id);
+        }
 
         $this->customerLedger->recordPaymentEntry(
             customerId: (string) $invoice->contact_id,
@@ -184,7 +191,13 @@ final class PaymentLedgerService
             default => [$payables, $this->line($bank, '0', $amount, $currency, $paymentRate, $description)],
         };
 
-        return $this->post($tenantId, self::SOURCE_SUPPLIER, (string) $payment->id, $payment->paid_at, (string) $invoice->invoice_number, 'Supplier payment', $this->withExchangeDifference($tenantId, $lines, "Exchange difference: Invoice {$invoice->invoice_number}"), $options);
+        $entry = $this->post($tenantId, self::SOURCE_SUPPLIER, (string) $payment->id, $payment->paid_at, (string) $invoice->invoice_number, 'Supplier payment', $this->withExchangeDifference($tenantId, $lines, "Exchange difference: Invoice {$invoice->invoice_number}"), $options);
+
+        if (! in_array($payment->type, ['bank_fee', 'adjustment', 'cash_discount', 'credit_offset'], true)) {
+            $this->announceAllocation($tenantId, FxDirection::Payable, self::SOURCE_SUPPLIER.':'.$payment->id, $currency, $amount, $rate, $paymentRate, $payment->paid_at, (string) $invoice->invoice_number, (string) $invoice->supplier_id);
+        }
+
+        return $entry;
     }
 
     /**
@@ -295,6 +308,32 @@ final class PaymentLedgerService
             'exchange_rate' => $exchangeRate,
             'description' => $description,
         ];
+    }
+
+    /**
+     * Tells the currency engine (Mod 003) that a receipt or payment was allocated to an open item in a foreign currency: it
+     * records the realised exchange difference for reporting. The settlement entry above already carries the difference, so the
+     * engine posts nothing a second time.
+     */
+    private function announceAllocation(string $tenantId, FxDirection $direction, string $allocationId, string $currency, string $amount, string $documentRate, string $paymentRate, mixed $paidAt, string $reference, string $partnerId): void
+    {
+        if (strtoupper($currency) === TenantAccountingCurrency::of($tenantId)) {
+            return;
+        }
+
+        Event::dispatch(new PaymentAllocated(
+            tenantId: $tenantId,
+            allocationId: $allocationId,
+            direction: $direction,
+            documentCurrency: strtoupper($currency),
+            settledAmount: $amount,
+            documentRate: $documentRate,
+            paymentDate: CarbonImmutable::parse($paidAt)->toDateString(),
+            paymentRate: $paymentRate,
+            documentReference: $reference,
+            partnerId: $partnerId,
+            ledgerPostedDifference: true,
+        ));
     }
 
     /**

@@ -29,7 +29,9 @@ beforeEach(function (): void {
     $this->contact = Contact::create(['company_name' => 'Cliente']);
 
     // Franc invoices of a company without an accounting currency (euro) take the rate of the exchange-rate service.
-    ExchangeRate::create(['source' => 'EUR', 'target' => 'CHF', 'rate' => '1.000000', 'effective_date' => '2026-01-01']);
+    // The rate of the day (or of the five days before it) is needed: one rate for each month the tests invoice in.
+    ExchangeRate::create(['source' => 'EUR', 'target' => 'CHF', 'rate' => '1.000000', 'effective_date' => '2026-06-01']);
+    ExchangeRate::create(['source' => 'EUR', 'target' => 'CHF', 'rate' => '1.000000', 'effective_date' => '2026-07-01']);
 });
 
 /**

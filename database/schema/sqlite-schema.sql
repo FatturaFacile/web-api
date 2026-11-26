@@ -120,14 +120,16 @@ CREATE TABLE "exchange_rates"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "rate_type" varchar not null default 'mid',
+  "rate_source" varchar not null default 'manual',
+  "is_derived" tinyint(1) not null default '0',
+  "version" integer not null default '1',
+  "superseded_by" varchar,
+  "reason" text,
+  "contract_reference" varchar,
   primary key("id")
 );
 
-CREATE UNIQUE INDEX "exchange_rates_source_target_effective_date_unique" on "exchange_rates"(
-  "source",
-  "target",
-  "effective_date"
-);
 CREATE INDEX "exchange_rates_source_index" on "exchange_rates"("source");
 CREATE INDEX "exchange_rates_target_index" on "exchange_rates"("target");
 CREATE INDEX "exchange_rates_effective_date_index" on "exchange_rates"(
@@ -56090,6 +56092,195 @@ CREATE INDEX "frn_collection_batches_tenant_id_index" on "frn_collection_batches
 CREATE INDEX "frn_collection_batches_run_id_index" on "frn_collection_batches"(
   "run_id"
 );
+CREATE INDEX "exchange_rates_superseded_by_index" on "exchange_rates"(
+  "superseded_by"
+);
+CREATE INDEX "exchange_rates_contract_reference_index" on "exchange_rates"(
+  "contract_reference"
+);
+CREATE UNIQUE INDEX "exchange_rates_scope_pair_type_day_version_unique" on "exchange_rates"(
+  "tenant_id",
+  "source",
+  "target",
+  "rate_type",
+  "rate_source",
+  "effective_date",
+  "version"
+);
+CREATE INDEX "exchange_rates_lookup_index" on "exchange_rates"(
+  "source",
+  "target",
+  "rate_type",
+  "effective_date"
+);
+CREATE TABLE "exchange_rate_sync_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "provider" varchar not null,
+  "status" varchar not null default 'queued',
+  "trigger" varchar not null default 'scheduled',
+  "started_at" datetime,
+  "finished_at" datetime,
+  "rates_count" integer not null default '0',
+  "derived_count" integer not null default '0',
+  "latest_rate_date" date,
+  "error_message" text,
+  "requested_by" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "exchange_rate_sync_runs_provider_status_index" on "exchange_rate_sync_runs"(
+  "provider",
+  "status"
+);
+CREATE INDEX "exchange_rate_sync_runs_tenant_id_created_at_index" on "exchange_rate_sync_runs"(
+  "tenant_id",
+  "created_at"
+);
+CREATE INDEX "exchange_rate_sync_runs_tenant_id_index" on "exchange_rate_sync_runs"(
+  "tenant_id"
+);
+CREATE TABLE "currency_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "active_currencies" text not null,
+  "alert_threshold_percent" numeric default '2.00',
+  "unrealized_gain_treatment" varchar not null default 'recognise',
+  "vat_rate_method" varchar,
+  "vat_method_changed_at" datetime,
+  "unrealized_gain_account_id" varchar,
+  "unrealized_loss_account_id" varchar,
+  "unrealized_gain_provision_account_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "currency_settings_tenant_id_unique" on "currency_settings"(
+  "tenant_id"
+);
+CREATE INDEX "currency_settings_tenant_id_index" on "currency_settings"(
+  "tenant_id"
+);
+CREATE TABLE "currency_fx_revaluations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "period_end" date not null,
+  "period_type" varchar not null,
+  "status" varchar not null default 'draft',
+  "functional_currency" varchar not null,
+  "currencies" text,
+  "total_gain" numeric not null default '0',
+  "total_loss" numeric not null default '0',
+  "net_result" numeric not null default '0',
+  "deferred_gain" numeric not null default '0',
+  "reserve_amount" numeric not null default '0',
+  "journal_entry_id" varchar,
+  "reversal_journal_entry_id" varchar,
+  "reverse_on" date,
+  "posted_at" datetime,
+  "reversed_at" datetime,
+  "posted_by" varchar,
+  "idempotency_key" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "currency_fx_revaluations_tenant_id_period_end_status_index" on "currency_fx_revaluations"(
+  "tenant_id",
+  "period_end",
+  "status"
+);
+CREATE INDEX "currency_fx_revaluations_status_reverse_on_index" on "currency_fx_revaluations"(
+  "status",
+  "reverse_on"
+);
+CREATE INDEX "currency_fx_revaluations_tenant_id_index" on "currency_fx_revaluations"(
+  "tenant_id"
+);
+CREATE TABLE "currency_fx_revaluation_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "revaluation_id" varchar not null,
+  "line_type" varchar not null,
+  "currency" varchar not null,
+  "reference" varchar,
+  "account_id" varchar,
+  "currency_balance" numeric not null,
+  "book_value" numeric not null,
+  "closing_rate" numeric not null,
+  "revalued_value" numeric not null,
+  "difference" numeric not null,
+  "result" varchar not null,
+  "treatment" varchar not null default 'recognise',
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("revaluation_id") references "currency_fx_revaluations"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "currency_fx_revaluation_lines_tenant_id_index" on "currency_fx_revaluation_lines"(
+  "tenant_id"
+);
+CREATE TABLE "currency_realized_fx_differences"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "allocation_id" varchar not null,
+  "direction" varchar not null,
+  "currency" varchar not null,
+  "settled_amount" numeric not null,
+  "document_rate" numeric not null,
+  "payment_rate" numeric,
+  "document_value" numeric not null,
+  "payment_value" numeric not null,
+  "difference" numeric not null,
+  "effect" numeric not null,
+  "result" varchar not null,
+  "payment_date" date not null,
+  "document_reference" varchar,
+  "partner_id" varchar,
+  "journal_entry_id" varchar,
+  "ledger_posted" tinyint(1) not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "currency_realized_fx_differences_tenant_id_allocation_id_unique" on "currency_realized_fx_differences"(
+  "tenant_id",
+  "allocation_id"
+);
+CREATE INDEX "currency_realized_fx_differences_tenant_id_payment_date_index" on "currency_realized_fx_differences"(
+  "tenant_id",
+  "payment_date"
+);
+CREATE INDEX "currency_realized_fx_differences_tenant_id_index" on "currency_realized_fx_differences"(
+  "tenant_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -56569,3 +56760,4 @@ INSERT INTO migrations VALUES(475,'2028_01_07_000200_create_customer_returns_rev
 INSERT INTO migrations VALUES(476,'2028_01_07_000300_create_van_selling_field_sales_mod233_tables',32);
 INSERT INTO migrations VALUES(477,'2028_01_08_000100_create_customer_satisfaction_mod245_tables',32);
 INSERT INTO migrations VALUES(478,'2028_01_08_000100_create_franchise_network_mod244_tables',32);
+INSERT INTO migrations VALUES(479,'2028_01_09_000100_create_currency_fx_mod003_tables',33);
