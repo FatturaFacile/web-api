@@ -116,7 +116,22 @@ class ImportBankPayments
             return null;
         }
 
-        return $open()->get()->first(fn (Invoice $invoice): bool => str_contains($text, $invoice->invoice_number));
+        $byNumber = $open()->get()->first(fn (Invoice $invoice): bool => str_contains($text, $invoice->invoice_number));
+
+        if ($byNumber !== null) {
+            return $byNumber;
+        }
+
+        // Payment channels of other modules (eBill: EndToEndId, network transaction id) claim the entries without a QR / SCOR reference.
+        foreach (app()->tagged('bank.invoice_reference_resolvers') as $resolver) {
+            $claimed = $resolver->resolve($text);
+
+            if ($claimed !== null && $claimed->payment_status !== 'paid' && ! in_array($claimed->invoice_type, ['proforma', 'credit_note'], true)) {
+                return $claimed;
+            }
+        }
+
+        return null;
     }
 
     private function book(PaymentImportLine $line, Invoice $invoice): bool

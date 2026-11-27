@@ -24,6 +24,9 @@ use Modules\Invoicing\Models\DeclarationOfIntent;
  * @property array<string, mixed>|null $sdi_vehicle
  * @property array<string, mixed>|null $sdi_extra
  * @property Carbon|null $due_date
+ * @property string|null $ebill_status
+ * @property string|null $ebill_transmission_id
+ * @property Carbon|null $ebill_last_event_at
  */
 class Invoice extends Model implements AuditableEntityInterface
 {
@@ -140,6 +143,7 @@ class Invoice extends Model implements AuditableEntityInterface
             'total_tax' => 'decimal:2',
             'total_gross' => 'decimal:2',
             'rounding_amount' => 'decimal:2',
+            'ebill_last_event_at' => 'datetime',
             'split_payment' => 'boolean',
             'sdi_excluded' => 'boolean',
             'reverse_charge' => 'boolean',

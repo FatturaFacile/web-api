@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Sales;
 
+use App\Events\Sales\CustomerPaymentRecorded;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Services\Sales\DocumentEventRecorder;
@@ -74,6 +75,7 @@ class RecordPayment
 
             $this->ledger->postCustomerPayment($payment, $data['ledger_options'] ?? []);
             $this->events->record($invoice, 'payment_recorded', ['amount' => $amount, 'payment_id' => $payment->id]);
+            event(new CustomerPaymentRecorded((string) $invoice->id, (string) $payment->id, (string) $invoice->tenant_id));
 
             return $payment;
         });

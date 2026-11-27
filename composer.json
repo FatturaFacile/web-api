@@ -110,6 +110,7 @@
             "Modules\\DataMigration\\": "modules/84_DataMigration/src/",
             "Modules\\FiduciaryPortal\\": "modules/85_FiduciaryPortal/src/",
             "Modules\\Distribution\\": "modules/86_Distribution/src/",
+            "Modules\\SwissEbill\\": "modules/86_SwissEbill/src/",
             "Modules\\SwissVat\\": "modules/75_SwissVat/src/",
             "Modules\\LeaveManagement\\": "modules/76_LeaveManagement/src/",
             "Modules\\MarketingAutomation\\": "modules/77_MarketingAutomation/src/",

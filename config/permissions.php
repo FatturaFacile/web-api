@@ -498,6 +498,16 @@ return [
                 'write' => ['distribution.write', 'distribution.*'],
             ],
         ],
+        // Swiss eBill (Mod 025): direct SIX Paynet / PostFinance transmission of issued invoices, the participant directory of the customers, the
+        // lifecycle monitor and the settlement via camt.054. Finance configures and sends; sales roles read the delivery state of their invoices.
+        'swiss_ebill' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager'],
+            'write' => [...$finance, 'sales_manager'],
+            'grants' => [
+                'read' => ['swiss_ebill.read', 'swiss_ebill.write', 'swiss_ebill.*'],
+                'write' => ['swiss_ebill.write', 'swiss_ebill.*'],
+            ],
+        ],
         // Franchise network governance (Mod 244): the franchise director (owner, administrator, franchise_director) governs the network,
         // the area manager audits the stores assigned to them, the franchisee owner and manager use the portal of their own store.
         // FranchiseNetworkPolicy reserves every action to its role.

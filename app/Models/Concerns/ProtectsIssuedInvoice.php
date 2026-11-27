@@ -20,6 +20,8 @@ trait ProtectsIssuedInvoice
     private const array MUTABLE_AFTER_ISSUE = [
         'payment_status', 'total_paid', 'receivable_amount', 'due_date', 'notes', 'payment_method', 'payment_terms',
         'bank_name', 'bank_iban', 'gl_journal_entry_id', 'workflow_instance_id', 'updated_at',
+        // Swiss eBill delivery summary (module SwissEbill): a transport state, not a fiscal field.
+        'ebill_status', 'ebill_transmission_id', 'ebill_last_event_at',
     ];
 
     protected function recordProtectionViolation(string $operation): ?string
