@@ -9,9 +9,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * An imported bank statement (CBI, CAMT.053) or notification (CAMT.054) with its reconciliation progress.
+ *
+ * @property Carbon|null $statement_date
  */
 class BankStatement extends Model
 {

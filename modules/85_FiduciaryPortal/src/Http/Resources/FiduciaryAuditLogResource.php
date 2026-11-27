@@ -6,7 +6,11 @@ namespace Modules\FiduciaryPortal\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\FiduciaryPortal\Models\FiduciaryAuditLog;
 
+/**
+ * @mixin FiduciaryAuditLog
+ */
 final class FiduciaryAuditLogResource extends JsonResource
 {
     /**

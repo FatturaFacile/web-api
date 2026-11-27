@@ -6,7 +6,11 @@ namespace Modules\GeneralLedger\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\GeneralLedger\Models\FiscalPeriod;
 
+/**
+ * @mixin FiscalPeriod
+ */
 final class FiscalPeriodResource extends JsonResource
 {
     /**

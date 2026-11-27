@@ -15,6 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\Procurement\Models\Supplier;
+use Modules\Returns\Models\ReturnReasonCode;
 use Modules\Returns\Models\Rma;
 use Modules\Returns\Models\RmaLine;
 
@@ -455,7 +456,7 @@ it('isolates companies, keeps approvals for approvers and refuses writes to read
     $this->getJson("/api/v1/returns/rmas/{$rma['id']}")->assertNotFound();
     $this->postJson("/api/v1/returns/rmas/{$rma['id']}/approve")->assertNotFound();
     $this->getJson('/api/v1/returns/rmas')->assertOk()->assertJsonCount(0, 'data');
-    expect($this->getJson('/api/v1/returns/settings')->json('data.reason_codes'))->toHaveCount(6);
+    expect($this->getJson('/api/v1/returns/settings')->json('data.reason_codes'))->toHaveCount(count(ReturnReasonCode::Defaults));
 
     rtAct(rtMember($this->tenant, 'accountant_readonly'), $this->tenant);
     $this->getJson("/api/v1/returns/rmas/{$rma['id']}")->assertOk();

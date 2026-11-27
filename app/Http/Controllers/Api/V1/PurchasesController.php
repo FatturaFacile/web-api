@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Purchases\ReceivePassiveInvoice;
 use App\Contracts\SwissQrBill\SwissQrBillParserInterface;
+use App\Exceptions\QrBillParseException;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Contact;
@@ -191,7 +192,15 @@ class PurchasesController extends Controller
             'exchange_rate' => ['nullable', 'numeric', 'min:0.000001'],
         ]);
 
-        $bill = $parser->parsePayload($validated['qr_payload']);
+        try {
+            $bill = $parser->parsePayload($validated['qr_payload']);
+        } catch (QrBillParseException $e) {
+            return $this->problemDetailsResponse(
+                title: 'Invalid Swiss QR Code',
+                detail: $e->getMessage(),
+                status: Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
 
         if (! $bill->valid) {
             return $this->problemDetailsResponse(

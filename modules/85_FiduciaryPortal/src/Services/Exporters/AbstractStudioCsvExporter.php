@@ -17,10 +17,10 @@ abstract class AbstractStudioCsvExporter implements StudioExportStrategyInterfac
      */
     protected function resolveLineMapping(JournalLine $line, array $transcodingMap, bool $applyTranscoding): array
     {
-        $sourceCode = (string) ($line->account?->account_code ?? '');
-        $sourceName = (string) ($line->account?->name ?? '');
-        $sourceVat = (string) ($line->vatCode?->code ?? '');
-        $sourceCostCenter = (string) ($line->costCenter?->code ?? '');
+        $sourceCode = (string) ($line->account->account_code ?? '');
+        $sourceName = (string) ($line->account->name ?? '');
+        $sourceVat = (string) ($line->vatCode->code ?? '');
+        $sourceCostCenter = (string) ($line->costCenter->code ?? '');
 
         if (! $applyTranscoding) {
             return [

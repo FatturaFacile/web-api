@@ -575,7 +575,7 @@ final class MigrationDryRunValidator
         }
         $remainder = 0;
         foreach (str_split($numeric, 7) as $chunk) {
-            $remainder = (int) (($remainder.$chunk) % 97);
+            $remainder = ((int) ($remainder.$chunk)) % 97;
         }
         $check = str_pad((string) (98 - $remainder), 2, '0', STR_PAD_LEFT);
 

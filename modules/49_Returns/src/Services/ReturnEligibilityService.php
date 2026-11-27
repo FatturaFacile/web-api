@@ -67,7 +67,7 @@ final readonly class ReturnEligibilityService
             throw ReturnsError::on('delivery_note_id', 'rma.order_not_returnable');
         }
 
-        $sourceDate = Carbon::parse((string) ($invoice?->date ?? $deliveryNote?->date))->startOfDay();
+        $sourceDate = Carbon::parse((string) ($invoice->date ?? $deliveryNote?->date))->startOfDay();
         $daysSincePurchase = (int) $sourceDate->diffInDays($requestedOn, false);
         $daysSincePurchase = max(0, $daysSincePurchase);
 
@@ -82,7 +82,7 @@ final readonly class ReturnEligibilityService
             ->where('code', $reasonCode)
             ->first();
 
-        $isDefect = $reason?->is_defect ?? in_array($reasonCode, ['defective', 'damaged_in_transit', 'doa', 'warranty_defect'], true);
+        $isDefect = $reason->is_defect ?? in_array($reasonCode, ['defective', 'damaged_in_transit', 'doa', 'warranty_defect'], true);
         $isZeroFee = $isDefect || in_array($reasonCode, self::ZeroFeeReasonCodes, true);
 
         $grossAmount = '0';

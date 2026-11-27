@@ -58,7 +58,7 @@ final class CeUkcaMachineryRoHsStrategy implements IPlmRegulatoryComplianceStrat
             ->where('revision_id', $revision->id)
             ->first();
 
-        $checklist = $dossier?->checklist_items_json ?? $this->defaultChecklist($revision, $allRohsReach, $allConflictMinerals);
+        $checklist = $dossier->checklist_items_json ?? $this->defaultChecklist($revision, $allRohsReach, $allConflictMinerals);
         $omacchCompliant = $dossier !== null ? (bool) $dossier->omacch_mra_ch_eu_compliant : true;
         $isoReadiness = $this->verifyAuditReadiness($revision);
 
@@ -156,7 +156,7 @@ final class CeUkcaMachineryRoHsStrategy implements IPlmRegulatoryComplianceStrat
                     'mfg_item_id' => (string) $item->id,
                     'item_code' => $item->item_code,
                     'item_name' => $item->name,
-                    'revision' => $latestRev?->revision,
+                    'revision' => $latestRev->revision,
                     'rohs_and_reach_compliant' => $rohsReachOk,
                     'conflict_minerals_compliant' => $conflictOk,
                 ];

@@ -6,6 +6,9 @@ namespace Modules\SalesBoundedContext\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 
+/**
+ * @property array<int, array<string, mixed>>|null $breach_audit_log
+ */
 final class SbcPricingGuardrail extends BaseEnterpriseModel
 {
     protected $table = 'sbc_pricing_guardrails';

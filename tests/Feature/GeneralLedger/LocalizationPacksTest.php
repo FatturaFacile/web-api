@@ -31,7 +31,7 @@ test('the French, Spanish and German charts import with their VAT accounts, and 
     $again = $this->postJson("/api/v1/general-ledger/account-templates/{$template}/import")->assertOk()->json('data');
 
     expect($first['created'])->toBeGreaterThan(75)
-        ->and($again)->toBe(['template' => $template, 'created' => 0, 'skipped' => $first['created']])
+        ->and($again)->toBe(['template' => $template, 'created' => 0, 'skipped' => $first['created'], 'mappings_created' => 0])
         ->and(ChartOfAccount::where('account_code', $code)->count())->toBe(1)
         ->and(ChartOfAccount::where('account_code', $code)->value('standard'))->toBe($template);
 })->with([['fr_pcg', '44571'], ['es_pgc', '477'], ['de_skr03', '1776'], ['de_skr04', '3806']]);

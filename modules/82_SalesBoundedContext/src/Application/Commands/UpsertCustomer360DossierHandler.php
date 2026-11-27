@@ -46,7 +46,7 @@ final readonly class UpsertCustomer360DossierHandler
                 'contact_id' => $data['contact_id'] ?? $dossier->contact_id,
                 'customer_code' => (string) ($data['customer_code'] ?? $dossier->customer_code ?? 'CUST-'.strtoupper(substr(md5((string) now()->timestamp), 0, 6))),
                 'company_name' => (string) ($data['company_name'] ?? $dossier->company_name),
-                'hierarchy_role' => CustomerHierarchyRole::from((string) ($data['hierarchy_role'] ?? $dossier->hierarchy_role?->value ?? 'subsidiary')),
+                'hierarchy_role' => CustomerHierarchyRole::from((string) ($data['hierarchy_role'] ?? $dossier->hierarchy_role->value ?? 'subsidiary')),
                 'country' => $fiscal->country,
                 'currency' => (string) ($data['currency'] ?? ($fiscal->country === 'IT' ? 'EUR' : 'CHF')),
                 'uid_number' => $fiscal->uidNumber,

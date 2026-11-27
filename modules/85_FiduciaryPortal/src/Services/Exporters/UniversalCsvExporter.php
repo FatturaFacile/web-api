@@ -67,7 +67,7 @@ final class UniversalCsvExporter extends AbstractStudioCsvExporter
                     $entry->document_date?->toDateString() ?? '',
                     (string) ($entry->getAttribute('document_number') ?: ''),
                     (string) $line->line_number,
-                    (string) ($line->account?->account_code ?? ''),
+                    (string) ($line->account->account_code ?? ''),
                     $mapped['account_code'],
                     $mapped['account_name'],
                     $mapped['vat_code'],

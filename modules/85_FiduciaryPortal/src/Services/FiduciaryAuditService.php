@@ -42,7 +42,7 @@ final readonly class FiduciaryAuditService
             'target_reference' => $targetReference,
             'summary' => mb_substr($summary, 0, 500),
             'metadata_json' => $metadata,
-            'ip_address' => request()?->ip(),
+            'ip_address' => request()->ip(),
             'created_by' => $actor?->getKey() !== null ? (string) $actor->getKey() : null,
         ]);
 

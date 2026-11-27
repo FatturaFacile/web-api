@@ -46,7 +46,7 @@ final readonly class FiduciaryPeriodLockService
             return [
                 'id' => (string) $period->id,
                 'fiscal_year_id' => (string) $period->fiscal_year_id,
-                'year_code' => (string) ($period->fiscalYear?->year_code ?? ''),
+                'year_code' => (string) ($period->fiscalYear->year_code ?? ''),
                 'period_number' => (int) $period->period_number,
                 'period_name' => (string) $period->period_name,
                 'start_date' => $period->start_date?->toDateString(),

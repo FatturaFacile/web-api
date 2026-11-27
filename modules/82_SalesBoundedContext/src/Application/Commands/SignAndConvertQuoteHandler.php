@@ -76,7 +76,7 @@ final readonly class SignAndConvertQuoteHandler
                 'opportunity_id' => $data['opportunity_id'] ?? $parent?->opportunity_id,
                 'quote_number' => $quoteNumber,
                 'version_number' => $version,
-                'title' => (string) ($data['title'] ?? $parent?->title ?? 'CPQ Commercial Proposal'),
+                'title' => (string) ($data['title'] ?? $parent->title ?? 'CPQ Commercial Proposal'),
                 'valid_until' => $data['valid_until'] ?? now()->addDays(30)->toDateString(),
                 'currency' => $currency,
                 'payment_terms_code' => (string) ($data['payment_terms_code'] ?? 'NET_30'),
@@ -98,7 +98,7 @@ final readonly class SignAndConvertQuoteHandler
     private function sign(string $tenantId, string $quoteId, array $data): SbcCpqQuote
     {
         $quote = SbcCpqQuote::query()->where('tenant_id', $tenantId)->findOrFail($quoteId);
-        $standard = ElectronicSignatureStandard::from((string) ($data['signature_standard'] ?? $quote->signature_standard?->value ?? 'zertes_qes'));
+        $standard = ElectronicSignatureStandard::from((string) ($data['signature_standard'] ?? $quote->signature_standard->value ?? 'zertes_qes'));
         $docHash = hash('sha256', $quote->quote_number.'|v'.$quote->version_number.'|'.$quote->total_gross.'|'.json_encode($quote->lines));
 
         $trail = is_array($quote->signature_audit_trail) ? $quote->signature_audit_trail : [];

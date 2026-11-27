@@ -37,7 +37,7 @@ final readonly class CalculateAgentCommissionStatementHandler
             if ($remaining <= 0.0) {
                 break;
             }
-            $upTo = isset($tier['up_to']) && $tier['up_to'] !== null ? (float) $tier['up_to'] : null;
+            $upTo = isset($tier['up_to']) ? (float) $tier['up_to'] : null;
             $rate = (float) ($tier['rate_pct'] ?? 5.0);
             $slice = $upTo !== null ? min($remaining, max(0.0, $upTo - $prevLimit)) : $remaining;
             $grossCommissionFloat += ($slice * $rate) / 100.0;

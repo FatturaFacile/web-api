@@ -19,6 +19,12 @@ use Modules\GeneralLedger\Services\Tax\Decimal;
 
 /**
  * @property Carbon|null $posting_date
+ * @property Carbon|null $document_date
+ * @property string $ledger_type
+ * @property string $journal_type
+ * @property int|null $journal_number
+ * @property string $fiscal_period_id
+ * @property string|null $total_amount
  * @property string $entry_number
  * @property string $status
  * @property string|null $description
@@ -67,11 +73,17 @@ final class JournalEntry extends BaseEnterpriseModel implements AuditableEntityI
         ];
     }
 
+    /**
+     * @return BelongsTo<JournalBatch, $this>
+     */
     public function batch(): BelongsTo
     {
         return $this->belongsTo(JournalBatch::class, 'batch_id');
     }
 
+    /**
+     * @return BelongsTo<FiscalPeriod, $this>
+     */
     public function fiscalPeriod(): BelongsTo
     {
         return $this->belongsTo(FiscalPeriod::class, 'fiscal_period_id');
@@ -85,31 +97,49 @@ final class JournalEntry extends BaseEnterpriseModel implements AuditableEntityI
         return $this->hasMany(JournalLine::class, 'journal_entry_id')->orderBy('line_number');
     }
 
+    /**
+     * @return BelongsTo<self, $this>
+     */
     public function reversalEntry(): BelongsTo
     {
         return $this->belongsTo(self::class, 'reversal_journal_entry_id');
     }
 
+    /**
+     * @return HasMany<CustomerLedger, $this>
+     */
     public function customerLedgerItems(): HasMany
     {
         return $this->hasMany(CustomerLedger::class, 'journal_entry_id');
     }
 
+    /**
+     * @return HasMany<SupplierLedger, $this>
+     */
     public function supplierLedgerItems(): HasMany
     {
         return $this->hasMany(SupplierLedger::class, 'journal_entry_id');
     }
 
+    /**
+     * @return HasMany<AccountingAnomaly, $this>
+     */
     public function anomalies(): HasMany
     {
         return $this->hasMany(AccountingAnomaly::class, 'journal_entry_id');
     }
 
+    /**
+     * @return HasMany<FiduciaryEntryNote, $this>
+     */
     public function fiduciaryNotes(): HasMany
     {
         return $this->hasMany(FiduciaryEntryNote::class, 'journal_entry_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function fiduciaryVerifier(): BelongsTo
     {
         return $this->belongsTo(User::class, 'fiduciary_verified_by');

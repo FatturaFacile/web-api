@@ -26,6 +26,7 @@ use Modules\GeneralLedger\Models\CustomerLedger;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\JournalLine;
 use Modules\GeneralLedger\Models\SupplierLedger;
+use Modules\GeneralLedger\Services\FiscalPeriodResolver;
 
 /**
  * Atomically commits validated staging rows into target ERP tables and records
@@ -33,7 +34,10 @@ use Modules\GeneralLedger\Models\SupplierLedger;
  */
 final class MigrationCommitExecutor
 {
-    public function __construct(private readonly MigrationDryRunValidator $validator) {}
+    public function __construct(
+        private readonly MigrationDryRunValidator $validator,
+        private readonly FiscalPeriodResolver $fiscalPeriods,
+    ) {}
 
     /**
      * @return array{job: MigrationJob, imported_rows: int, manifest_entries: int}
@@ -100,7 +104,7 @@ final class MigrationCommitExecutor
                         'qr_iban' => ! empty($data['qr_iban']) ? (string) $data['qr_iban'] : null,
                         'sdi_code' => ! empty($data['sdi_code']) ? (string) $data['sdi_code'] : null,
                         'pec' => ! empty($data['pec']) ? (string) $data['pec'] : null,
-                        'payment_terms_days' => ! empty($data['payment_terms_days']) ? (int) $data['payment_terms_days'] : null,
+                        'payment_terms_days' => ! empty($data['payment_terms_days']) ? (int) $data['payment_terms_days'] : 30,
                     ]);
                     $manifest[] = ['entity' => $entityType, 'model' => Contact::class, 'id' => $contact->id];
 
@@ -177,15 +181,18 @@ final class MigrationCommitExecutor
             if ($glRows->isNotEmpty()) {
                 $firstGl = (array) ($glRows->first()->mapped_payload_json ?? $glRows->first()->raw_payload_json);
                 $entryDate = (string) ($firstGl['entry_date'] ?: now()->toDateString());
+                $period = $this->fiscalPeriods->forDate((string) $job->tenant_id, $entryDate);
                 $entry = JournalEntry::query()->create([
                     'tenant_id' => $job->tenant_id,
+                    'fiscal_period_id' => $period->id,
+                    'fiscal_year_id' => $period->fiscal_year_id,
                     'entry_number' => 'MIG-OPEN-'.substr($job->id, 0, 8),
                     'posting_date' => $entryDate,
                     'document_date' => $entryDate,
                     'description' => 'Opening Balances Migration ('.$job->source_system->value.')',
                     'status' => 'draft',
-                    'source_type' => 'data_migration',
-                    'source_id' => $job->id,
+                    'source_document_type' => 'data_migration',
+                    'source_document_id' => $job->id,
                 ]);
                 $manifest[] = ['entity' => MigrationTargetEntity::OpeningGlBalances->value, 'model' => JournalEntry::class, 'id' => $entry->id];
 

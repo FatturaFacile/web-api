@@ -33,7 +33,7 @@ final class CustomerReturnResource extends JsonResource
             'invoice_number' => $this->invoice?->invoice_number,
             'invoice_date' => $this->invoice?->date?->toDateString(),
             'delivery_note_id' => $this->delivery_note_id,
-            'delivery_note_number' => $this->deliveryNote?->document_number ?? $this->deliveryNote?->ddt_number ?? null,
+            'delivery_note_number' => $this->deliveryNote->document_number ?? $this->deliveryNote->ddt_number ?? null,
             'sales_order_id' => $this->sales_order_id,
             'warehouse_id' => $this->warehouse_id,
             'reason_code' => $this->reason_code,

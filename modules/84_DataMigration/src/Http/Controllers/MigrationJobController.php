@@ -81,11 +81,12 @@ final class MigrationJobController extends Controller
 
         $validated = $request->validated();
         $file = $request->file('file');
+        $uploaderId = $request->user()?->getKey();
 
         $job = $handler->handle(new UploadMigrationSourceArchiveCommand(
             tenantId: (string) $tenantContext->getTenantId(),
             legalEntityId: isset($validated['legal_entity_id']) ? (string) $validated['legal_entity_id'] : null,
-            userId: $request->user()?->getKey() !== null ? (string) $request->user()?->getKey() : null,
+            userId: $uploaderId !== null ? (string) $uploaderId : null,
             sourceSystem: MigrationSourceSystem::from((string) $validated['source_system']),
             targetEntities: array_values(array_map('strval', (array) $validated['target_entities'])),
             filePath: (string) $file?->getRealPath(),

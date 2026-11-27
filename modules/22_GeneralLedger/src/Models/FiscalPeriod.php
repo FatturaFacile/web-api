@@ -8,7 +8,21 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Enterprise\MultiTenant\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property string $id
+ * @property string $tenant_id
+ * @property string $fiscal_year_id
+ * @property int $period_number
+ * @property string $period_name
+ * @property Carbon|null $start_date
+ * @property Carbon|null $end_date
+ * @property string $status
+ * @property Carbon|null $fiduciary_locked_at
+ * @property string|null $fiduciary_locked_by
+ * @property string|null $fiduciary_lock_reason
+ */
 final class FiscalPeriod extends BaseEnterpriseModel
 {
     use BelongsToCompany;
@@ -33,11 +47,17 @@ final class FiscalPeriod extends BaseEnterpriseModel
         return $this->belongsTo(FiscalYear::class, 'fiscal_year_id');
     }
 
+    /**
+     * @return HasMany<PeriodLock, $this>
+     */
     public function locks(): HasMany
     {
         return $this->hasMany(PeriodLock::class, 'fiscal_period_id');
     }
 
+    /**
+     * @return HasMany<JournalEntry, $this>
+     */
     public function journalEntries(): HasMany
     {
         return $this->hasMany(JournalEntry::class, 'fiscal_period_id');

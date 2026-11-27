@@ -58,7 +58,7 @@ final class PlmEngineeringController extends Controller
     ])]
     public function dictionary(Request $request): JsonResponse
     {
-        $requested = (string) ($request->query('locale') ?? app()->getLocale() ?? 'it');
+        $requested = (string) ($request->query('locale') ?? app()->getLocale());
         $normalized = Translation::normalizeLocale($requested);
         $base = Translation::baseLocale($normalized);
         $dictionary = PlmFrontendTranslations::all($base);
@@ -219,9 +219,9 @@ final class PlmEngineeringController extends Controller
                     $bom = $boms->createBom(new CreateBomDTO(
                         tenantId: $this->tenantId(),
                         mfgItemId: (string) $session->product_id,
-                        name: (string) ($session->product?->name ?? $session->session_code),
+                        name: (string) ($session->product->name ?? $session->session_code),
                         components: $components,
-                        revision: $session->targetRevision?->revision ?? 'A',
+                        revision: $session->targetRevision->revision ?? 'A',
                     ), $this->userId());
                 }
 
@@ -334,8 +334,8 @@ final class PlmEngineeringController extends Controller
         return response()->json([
             'data' => [
                 'revision_id' => (string) $revision->id,
-                'item_code' => $revision->item?->item_code ?? $revision->engineering_part_number,
-                'item_name' => $revision->item?->name ?? $revision->description,
+                'item_code' => $revision->item->item_code ?? $revision->engineering_part_number,
+                'item_name' => $revision->item->name ?? $revision->description,
                 'revision_code' => $revision->revision,
                 'lifecycle_state' => $revision->lifecycle_state ?? $revision->lifecycleStateEnum()->value,
                 'is_obsolete' => $isObsolete,

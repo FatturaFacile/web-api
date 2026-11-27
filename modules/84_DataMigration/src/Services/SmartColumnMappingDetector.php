@@ -91,7 +91,7 @@ final class SmartColumnMappingDetector
         }
 
         $aliases = $this->registry->fieldAliases($entity, $sourceSystem);
-        $templateMappings = $template?->column_mappings_json ?? [];
+        $templateMappings = $template->column_mappings_json ?? [];
         $result = [];
 
         foreach ($entity->schemaFields() as $fieldDef) {

@@ -241,8 +241,8 @@ final class MigrationArchiveReader
      */
     private function parseFatturaPaDocuments(array $xmlDocuments, array $targetEntities, ?Tenant $tenant): array
     {
-        $tenantVat = $this->normalizeTaxId((string) ($tenant?->vat_number ?? ''));
-        $tenantCf = $this->normalizeTaxId((string) ($tenant?->fiscal_code ?? ''));
+        $tenantVat = $this->normalizeTaxId((string) ($tenant->vat_number ?? ''));
+        $tenantCf = $this->normalizeTaxId((string) ($tenant->fiscal_code ?? ''));
 
         $customers = [];
         $vendors = [];

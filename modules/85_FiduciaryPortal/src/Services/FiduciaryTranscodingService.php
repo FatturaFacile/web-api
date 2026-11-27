@@ -52,8 +52,8 @@ final readonly class FiduciaryTranscodingService
                 $haystack = mb_strtolower(implode(' ', [
                     (string) $account->account_code,
                     (string) $account->name,
-                    (string) ($rule?->studio_account_code ?? ''),
-                    (string) ($rule?->studio_account_name ?? ''),
+                    (string) ($rule->studio_account_code ?? ''),
+                    (string) ($rule->studio_account_name ?? ''),
                 ]));
                 if (! str_contains($haystack, $needle)) {
                     continue;

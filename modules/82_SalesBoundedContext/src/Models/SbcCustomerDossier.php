@@ -10,6 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\SalesBoundedContext\Domain\Enums\CustomerHierarchyRole;
 use Modules\SalesBoundedContext\Domain\Enums\InsolvencyRiskStatus;
 
+/**
+ * @property CustomerHierarchyRole|null $hierarchy_role
+ * @property InsolvencyRiskStatus|null $insolvency_status
+ */
 final class SbcCustomerDossier extends BaseEnterpriseModel
 {
     protected $table = 'sbc_customer_dossiers';

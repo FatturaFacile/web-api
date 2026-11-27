@@ -151,7 +151,7 @@ final readonly class FiduciaryMultiTenantOverviewService
             'currency' => (string) ($tenant->default_currency ?: ($country === 'CH' ? 'CHF' : 'EUR')),
             'vat_number' => $tenant->vat_number,
             'uid_number' => $tenant->uid_number,
-            'role' => $tenant->pivot?->role ?? 'external_fiduciary',
+            'role' => $tenant->pivot->role ?? 'external_fiduciary',
             'periods_total' => $totalPeriods,
             'periods_fiduciary_locked' => $lockedByFiduciary,
             'periods_closed' => $closedPeriods,

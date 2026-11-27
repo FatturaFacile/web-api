@@ -186,12 +186,12 @@ final readonly class AdvanceReplacementService
 
             $unitPrice = Decimal::isPositive((string) $locked->penalty_amount)
                 ? Decimal::round(Decimal::div((string) $locked->penalty_amount, (string) $locked->quantity), 4)
-                : Decimal::round((string) ($locked->replacementProduct?->sale_price ?? '0'), 4);
+                : Decimal::round((string) ($locked->replacementProduct->sale_price ?? '0'), 4);
 
-            $taxRate = (string) ($locked->replacementProduct?->tax_rate ?? '22.00');
+            $taxRate = (string) ($locked->replacementProduct->tax_rate ?? '22.00');
             $description = __('returns_errors.advance_replacement.penalty_invoice_line', [
                 'number' => $locked->replacement_number,
-                'product' => (string) ($locked->replacementProduct?->name ?? 'Replacement unit'),
+                'product' => (string) ($locked->replacementProduct->name ?? 'Replacement unit'),
                 'due' => $locked->return_due_on->toDateString(),
             ]);
 
