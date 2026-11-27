@@ -488,6 +488,17 @@ return [
                 'write' => ['customer_satisfaction.write', 'customer_satisfaction.*'],
             ],
         ],
+        // Subcontracting (Mod 065): conto lavoro passivo/attivo, stock at subcontractors and the Art. 53 DPR 633/72 register. Production,
+        // procurement and operations plan, dispatch and receive; finance reads and exports the register. SubcontractingPolicy
+        // adds the fine-grained subcontracting.* permissions (view, create, dispatch, receive, ledger.export).
+        'subcontracting' => [
+            'read' => [...$financeReaders, 'production', 'procurement_manager', 'operations_manager', 'sales_manager', 'technician'],
+            'write' => [...$finance, 'production', 'procurement_manager', 'operations_manager'],
+            'grants' => [
+                'read' => ['subcontracting.view', 'subcontracting.read', 'subcontracting.write', 'subcontracting.create', 'subcontracting.dispatch', 'subcontracting.receive', 'subcontracting.ledger.export', 'subcontracting.*'],
+                'write' => ['subcontracting.write', 'subcontracting.create', 'subcontracting.dispatch', 'subcontracting.receive', 'subcontracting.*'],
+            ],
+        ],
         // Franchise network governance (Mod 244): the franchise director (owner, administrator, franchise_director) governs the network,
         // the area manager audits the stores assigned to them, the franchisee owner and manager use the portal of their own store.
         // FranchiseNetworkPolicy reserves every action to its role.

@@ -10,6 +10,8 @@ enum DeliveryNoteType: string
     case InternalTransfer = 'internal_transfer';
     case SubcontractingOut = 'subcontracting_out';
     case SubcontractingReturn = 'subcontracting_return';
+    /** Processed goods sent back to the customer that owns them (conto lavoro attivo, reso lavorato): no transfer of ownership. */
+    case SubcontractingFinishedReturn = 'subcontracting_finished_return';
     case CustomerConsignment = 'customer_consignment';
     case CustomerConsignmentReturn = 'customer_consignment_return';
     case VendorConsignmentReturn = 'vendor_consignment_return';
@@ -23,7 +25,7 @@ enum DeliveryNoteType: string
         return match ($this) {
             self::OutboundSale, self::ReturnFromCustomer, self::RepairReturn => 'delivery_note',
             self::InternalTransfer => 'ddt_transfer',
-            self::SubcontractingOut, self::SubcontractingReturn => 'ddt_subcontract',
+            self::SubcontractingOut, self::SubcontractingReturn, self::SubcontractingFinishedReturn => 'ddt_subcontract',
             self::CustomerConsignment, self::CustomerConsignmentReturn, self::VendorConsignmentReturn => 'ddt_consignment',
         };
     }
@@ -35,6 +37,7 @@ enum DeliveryNoteType: string
             self::InternalTransfer => TransportReason::InternalTransfer,
             self::SubcontractingOut => TransportReason::Subcontracting,
             self::SubcontractingReturn => TransportReason::SubcontractorReturn,
+            self::SubcontractingFinishedReturn => TransportReason::SubcontractedGoodsReturn,
             self::CustomerConsignment => TransportReason::ConsignmentDelivery,
             self::CustomerConsignmentReturn, self::VendorConsignmentReturn => TransportReason::ConsignmentReturn,
             self::ReturnFromCustomer => TransportReason::Return,
