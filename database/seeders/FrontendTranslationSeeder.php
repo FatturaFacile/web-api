@@ -93,6 +93,7 @@ use Database\Seeders\Translations\SecurityCenterFrontendTranslations;
 use Database\Seeders\Translations\ShiftPlanningFrontendTranslations;
 use Database\Seeders\Translations\SrmFrontendTranslations;
 use Database\Seeders\Translations\StatutoryFinancialsFrontendTranslations;
+use Database\Seeders\Translations\SubcontractingFrontendTranslations;
 use Database\Seeders\Translations\SupplierRebatesFrontendTranslations;
 use Database\Seeders\Translations\SwissQrBillSlipFrontendTranslations;
 use Database\Seeders\Translations\SwissVatFrontendTranslations;
@@ -206,6 +207,7 @@ class FrontendTranslationSeeder extends Seeder
             + PassengerTransportFrontendTranslations::all($locale)
             + CustomerSatisfactionFrontendTranslations::all($locale)
             + EbillFrontendTranslations::all($locale)
+            + SubcontractingFrontendTranslations::all($locale)
             + FranchiseNetworkFrontendTranslations::all($locale)
             + CorporateConventionsFrontendTranslations::all($locale)
             + CurrencyFxFrontendTranslations::all($locale)

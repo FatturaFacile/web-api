@@ -10,7 +10,7 @@ use OpenApi\Attributes as OA;
     schema: 'DeliveryNoteInput',
     required: ['type', 'items'],
     properties: [
-        new OA\Property(property: 'type', type: 'string', enum: ['outbound_sale', 'internal_transfer', 'subcontracting_out', 'subcontracting_return', 'customer_consignment', 'customer_consignment_return', 'vendor_consignment_return', 'return_from_customer']),
+        new OA\Property(property: 'type', type: 'string', enum: ['outbound_sale', 'internal_transfer', 'subcontracting_out', 'subcontracting_return', 'subcontracting_finished_return', 'customer_consignment', 'customer_consignment_return', 'vendor_consignment_return', 'return_from_customer']),
         new OA\Property(property: 'transport_reason_code', type: 'string', enum: ['sale', 'internal_transfer', 'subcontracting', 'consignment', 'consignment_delivery', 'consignment_return', 'subcontractor_return', 'on_approval', 'repair', 'gift', 'return']),
         new OA\Property(property: 'carriage_terms', type: 'string', enum: ['free', 'collect', 'free_with_charge']),
         new OA\Property(property: 'transport_by', type: 'string', enum: ['sender', 'recipient', 'carrier']),
