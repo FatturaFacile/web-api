@@ -4308,4 +4308,12 @@ return [
     'output_warehouse_id' => 'entrepôt des marchandises usinées',
     'consumed_qty' => 'quantité consommée',
     'scrap_qty' => 'quantité de rebut',
+    'payment_account' => 'compte de paiement',
+    'impute_deposit_ids' => 'dépôts à imputer',
+    'refund_mode' => 'mode de restitution',
+    'template' => 'modèle de plan',
+    'milestone_label' => "libellé de l'échéance",
+    'calculation_mode' => 'mode de calcul',
+    'instrument_type' => 'instrument',
+    'contract' => 'contrat',
 ];

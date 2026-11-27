@@ -4308,4 +4308,12 @@ return [
     'output_warehouse_id' => 'magazzino di carico del lavorato',
     'consumed_qty' => 'quantità consumata',
     'scrap_qty' => 'quantità di sfrido',
+    'payment_account' => 'conto di incasso',
+    'impute_deposit_ids' => 'depositi da imputare',
+    'refund_mode' => 'modalità di restituzione',
+    'template' => 'modello di piano',
+    'milestone_label' => 'descrizione della rata',
+    'calculation_mode' => 'modalità di calcolo',
+    'instrument_type' => 'strumento',
+    'contract' => 'contratto',
 ];

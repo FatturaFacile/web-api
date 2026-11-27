@@ -33,6 +33,11 @@ final readonly class TreasuryCollectionEventListener
             ->whereKey($event->invoiceId)
             ->first();
 
+        // A proforma is no receivable: the collection of a down-payment request is converted into the TD02 by the down-payment chain
+        if ($invoice !== null && $invoice->invoice_type === 'proforma') {
+            return;
+        }
+
         if ($invoice !== null) {
             $this->recordPayment->execute($invoice, [
                 'amount' => number_format($event->collectedAmount, 2, '.', ''),

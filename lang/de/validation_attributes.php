@@ -4308,4 +4308,12 @@ return [
     'output_warehouse_id' => 'Lager für die bearbeitete Ware',
     'consumed_qty' => 'verbrauchte Menge',
     'scrap_qty' => 'Ausschussmenge',
+    'payment_account' => 'Zahlungskonto',
+    'impute_deposit_ids' => 'anzurechnende Kautionen',
+    'refund_mode' => 'Rückerstattungsart',
+    'template' => 'Planvorlage',
+    'milestone_label' => 'Ratenbezeichnung',
+    'calculation_mode' => 'Berechnungsart',
+    'instrument_type' => 'Instrument',
+    'contract' => 'Vertrag',
 ];

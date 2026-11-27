@@ -4308,4 +4308,12 @@ return [
     'output_warehouse_id' => 'warehouse for the processed goods',
     'consumed_qty' => 'consumed quantity',
     'scrap_qty' => 'scrap quantity',
+    'payment_account' => 'payment account',
+    'impute_deposit_ids' => 'deposits to impute',
+    'refund_mode' => 'refund mode',
+    'template' => 'plan template',
+    'milestone_label' => 'milestone label',
+    'calculation_mode' => 'calculation mode',
+    'instrument_type' => 'instrument',
+    'contract' => 'contract',
 ];

@@ -62,6 +62,11 @@ final class CreditNoteAccountingListener
             normalBalance: 'debit'
         );
 
+        // A credit note against a down-payment invoice (TD02) takes the net back from the customer advances, not from the revenue
+        if ($event->originalInvoiceId !== null && SalesInvoice::withoutGlobalScope(TenantScope::class)->where('tenant_id', $event->tenantId)->whereKey($event->originalInvoiceId)->where('is_deposit', true)->exists()) {
+            $revenueReversalAcc = $this->accounts->customerAdvances($event->tenantId);
+        }
+
         $vatReversalAcc = $this->accounts->outputVat($event->tenantId);
         $arAccount = $this->accounts->receivables($event->tenantId);
 

@@ -51,6 +51,8 @@ class DocumentNumberingService
         'pick_list' => 'PICK-',
         'pick_wave' => 'WAVE-',
         'transfer_order' => 'TO-',
+        'down_payment_chain' => 'DPC-',
+        'deposit_receipt' => 'CAP-',
     ];
 
     public function __construct(

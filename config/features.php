@@ -64,6 +64,7 @@ return [
         'customer_satisfaction' => env('FEATURE_MODULE_CUSTOMER_SATISFACTION'),
         'swiss_ebill' => env('FEATURE_MODULE_SWISS_EBILL'),
         'subcontracting' => env('FEATURE_MODULE_SUBCONTRACTING'),
+        'down_payments' => env('FEATURE_MODULE_DOWN_PAYMENTS'),
         'franchise_network' => env('FEATURE_MODULE_FRANCHISE_NETWORK'),
         'distribution' => env('FEATURE_MODULE_DISTRIBUTION'),
         'corporate_conventions' => env('FEATURE_MODULE_CORPORATE_CONVENTIONS'),

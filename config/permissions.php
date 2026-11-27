@@ -519,6 +519,17 @@ return [
                 'write' => ['subcontracting.write', 'subcontracting.create', 'subcontracting.dispatch', 'subcontracting.receive', 'subcontracting.*'],
             ],
         ],
+        // Down-payment chain (Mod 203): advance invoices (TD02), pro-forma requests, earnest money and security deposits, the final
+        // settlement with the multi-rate deduction and the advance credit notes. Sales plan and emit; finance resolves deposits, settles
+        // and credits. DownPaymentPolicy adds the fine-grained down_payments.* permissions.
+        'down_payments' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager'],
+            'write' => [...$finance, 'sales_manager'],
+            'grants' => [
+                'read' => ['down_payments.view', 'down_payments.read', 'down_payments.write', 'down_payments.create', 'down_payments.emit', 'down_payments.deposit.resolve', 'down_payments.settle', 'down_payments.credit_note', 'down_payments.*'],
+                'write' => ['down_payments.write', 'down_payments.create', 'down_payments.emit', 'down_payments.deposit.resolve', 'down_payments.settle', 'down_payments.credit_note', 'down_payments.*'],
+            ],
+        ],
         // Franchise network governance (Mod 244): the franchise director (owner, administrator, franchise_director) governs the network,
         // the area manager audits the stores assigned to them, the franchisee owner and manager use the portal of their own store.
         // FranchiseNetworkPolicy reserves every action to its role.

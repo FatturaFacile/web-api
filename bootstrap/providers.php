@@ -102,6 +102,7 @@ use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
 use Modules\StatutoryFinancials\Providers\StatutoryFinancialsServiceProvider;
+use Modules\DownPayments\Providers\DownPaymentsServiceProvider;
 use Modules\Subcontracting\Providers\SubcontractingServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
@@ -230,6 +231,7 @@ return [
     PassengerTransportServiceProvider::class,
     CustomerSatisfactionServiceProvider::class,
     SubcontractingServiceProvider::class,
+    DownPaymentsServiceProvider::class,
     FranchiseNetworkServiceProvider::class,
     DistributionServiceProvider::class,
     CorporateConventionsServiceProvider::class,
