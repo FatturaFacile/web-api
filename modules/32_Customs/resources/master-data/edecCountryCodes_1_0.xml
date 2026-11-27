@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <countryCodes version="00186" created="2026-08-25T02:56:36" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.ezv.admin.ch/pdf_linker.php?doc=edecCountryCodeSchema_v_1_0">
 <countryGroups>
 <countryGroup grpNr="100001" grpUser="Tarif" nameDe="Europäische Union" nameFr="Union européenne" nameIt="Unione europea" nameEn="European Union" validFrom="1988-01-01" validTo="2999-12-31" />

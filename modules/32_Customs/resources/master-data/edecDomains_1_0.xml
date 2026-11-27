@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <domains version="00427" created="2026-10-27T02:59:32" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.ezv.admin.ch/pdf_linker.php?doc=edecDomainSchema_v_1_0">
 <domain name="accountingMethodValues">
 <entry value="0" meaningDe="MWST-Nr. unbekannt" meaningFr="Numéro de TVA inconnu" meaningIt="Numero IVA sconosciuto" meaningEn="Vat code unknown" validFrom="2018-04-30" validTo="2999-12-31" validForImport="true" validForExport="true" />
