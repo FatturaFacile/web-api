@@ -15,6 +15,8 @@ concurrency:
 
 jobs:
   test-and-lint:
+    # Lint, static analysis, Swagger and architecture checks. The full test suite runs once, in the coverage shards below,
+    # in parallel with this job.
     name: Code Quality & Automated Tests
     runs-on: ubuntu-24.04
 
@@ -85,9 +87,17 @@ jobs:
       - name: Composer Security Audit
         run: composer audit
 
+      # Pint keeps its per-file result cache between runs, so only changed files are checked again
+      - name: Cache Pint
+        uses: actions/cache@v6
+        with:
+          path: .pint.cache
+          key: pint-${{ runner.os }}-${{ hashFiles('composer.lock', 'pint.json') }}-${{ github.sha }}
+          restore-keys: pint-${{ runner.os }}-${{ hashFiles('composer.lock', 'pint.json') }}-
+
       # Enforce strict code formatting standards via Laravel Pint (fails on any style violation)
       - name: Run Laravel Pint Code Formatter Check
-        run: ./vendor/bin/pint --test
+        run: ./vendor/bin/pint --test --parallel --cache-file=.pint.cache
 
       # Static analysis at level 5 (phpstan.neon); phpstan-baseline.neon holds the errors that predate it, so only new
       # ones fail the build.
@@ -110,16 +120,12 @@ jobs:
       - name: Run Pest Architecture Boundary Tests
         run: ./vendor/bin/pest tests/Architecture --no-coverage
 
-      # Execute comprehensive application test suite in parallel (2 processes)
-      - name: Run Pest Test Suite (Parallel)
-        run: ./vendor/bin/pest --parallel --processes=2 --compact --no-coverage
-
-  # Coverage runs in 4 parallel shards; each uploads its clover report and coverage-merge joins them. A single
+  # The whole test suite runs here, once: 4 parallel shards with coverage; each uploads its clover report and
+  # coverage-merge joins them. A single
   # `pest --coverage` run serialises the data of all the tests in one string and exhausts PHP's memory.
   coverage:
     name: Code Coverage (PCOV) shard ${{ matrix.shard }}/4
     runs-on: ubuntu-24.04
-    needs: test-and-lint
     strategy:
       fail-fast: false
       matrix:
