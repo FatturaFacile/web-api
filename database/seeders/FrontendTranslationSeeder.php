@@ -42,6 +42,7 @@ use Database\Seeders\Translations\FiduciaryPortalFrontendTranslations;
 use Database\Seeders\Translations\FieldServiceManagementFrontendTranslations;
 use Database\Seeders\Translations\FixedAssetsFrontendTranslations;
 use Database\Seeders\Translations\ForeignVatRefundFrontendTranslations;
+use Database\Seeders\Translations\GreenCareFrontendTranslations;
 use Database\Seeders\Translations\FranchiseNetworkFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
@@ -211,6 +212,7 @@ class FrontendTranslationSeeder extends Seeder
             + CustomerSatisfactionFrontendTranslations::all($locale)
             + EbillFrontendTranslations::all($locale)
             + ForeignVatRefundFrontendTranslations::all($locale)
+            + GreenCareFrontendTranslations::all($locale)
             + SubcontractingFrontendTranslations::all($locale)
             + DownPaymentsFrontendTranslations::all($locale)
             + FranchiseNetworkFrontendTranslations::all($locale)

@@ -521,6 +521,16 @@ return [
                 'write' => ['foreign_vat_refund.write', 'foreign_vat_refund.*'],
             ],
         ],
+        // Green care (Mod 126): sites, seasonal contracts, crews, routes, phytosanitary diary and green waste. Crews close their own stops and
+        // write the diary; finance and operations manage contracts and billing.
+        'green_care' => [
+            'read' => [...$financeReaders, 'operations_manager', 'service_manager', 'technician', 'project_manager', 'member'],
+            'write' => [...$finance, 'operations_manager', 'service_manager', 'technician', 'member'],
+            'grants' => [
+                'read' => ['green_care.read', 'green_care.write', 'green_care.*'],
+                'write' => ['green_care.write', 'green_care.*'],
+            ],
+        ],
         'subcontracting' => [
             'read' => [...$financeReaders, 'production', 'procurement_manager', 'operations_manager', 'sales_manager', 'technician'],
             'write' => [...$finance, 'production', 'procurement_manager', 'operations_manager'],
