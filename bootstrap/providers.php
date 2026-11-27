@@ -104,6 +104,7 @@ use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
 use Modules\StatutoryFinancials\Providers\StatutoryFinancialsServiceProvider;
 use Modules\DownPayments\Providers\DownPaymentsServiceProvider;
+use Modules\Esterometro\Providers\EsterometroServiceProvider;
 use Modules\Subcontracting\Providers\SubcontractingServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
@@ -233,6 +234,7 @@ return [
     CustomerSatisfactionServiceProvider::class,
     SubcontractingServiceProvider::class,
     DownPaymentsServiceProvider::class,
+    EsterometroServiceProvider::class,
     FranchiseNetworkServiceProvider::class,
     DistributionServiceProvider::class,
     CorporateConventionsServiceProvider::class,

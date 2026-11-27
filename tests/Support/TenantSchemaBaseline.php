@@ -99,6 +99,7 @@ final class TenantSchemaBaseline
         'region_translations',
         'regions',
         'rp_local_holidays',
+        'self_invoice_classification_rules',
         'shipping_carriers',
         'swiss_vat_tax_codes',
         'task_status_translations',

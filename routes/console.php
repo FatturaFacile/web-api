@@ -290,6 +290,8 @@ Schedule::command('surveys:enqueue-semi-annual')->dailyAt('06:30')->withoutOverl
 Schedule::command('ebill:poll-pending-statuses')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 // Foreign VAT refund (Mod 227): 60/30/15 day alerts before the peremptory deadlines of 30 June (ESTV) and 30 September (EU / Italy), expiring mandates and certificates.
 Schedule::command('foreign-vat:deadline-alerts')->dailyAt('07:00')->withoutOverlapping()->onOneServer();
+// Italian Esterometro & Reverse Charge (Mod 027): daily check for TD16-TD28 15th-of-following-month deadlines.
+Schedule::command('esterometro:check-deadlines')->dailyAt('07:30')->withoutOverlapping()->onOneServer();
 // Corporate conventions (Mod 358): expires the conventions and beneficiary passes past their end date.
 Schedule::command('corporate-conventions:expire')->dailyAt('01:15')->withoutOverlapping()->onOneServer();
 

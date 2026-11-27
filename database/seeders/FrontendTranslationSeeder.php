@@ -35,6 +35,7 @@ use Database\Seeders\Translations\EbillFrontendTranslations;
 use Database\Seeders\Translations\ElectronicSignatureFrontendTranslations;
 use Database\Seeders\Translations\ElectronicSignatureNotificationTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
+use Database\Seeders\Translations\EsterometroFrontendTranslations;
 use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
 use Database\Seeders\Translations\ExpenseManagementFrontendTranslations;
 use Database\Seeders\Translations\FiduciaryPortalFrontendTranslations;
@@ -233,7 +234,8 @@ class FrontendTranslationSeeder extends Seeder
             + WorkflowApprovalFrontendTranslations::all($locale)
             + BudgetingSpendControlFrontendTranslations::all($locale)
             + PlmFrontendTranslations::all($locale)
-            + TenderManagementFrontendTranslations::all($locale);
+            + TenderManagementFrontendTranslations::all($locale)
+            + EsterometroFrontendTranslations::all($locale);
     }
 
     /**
