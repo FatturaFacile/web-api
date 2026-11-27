@@ -33,9 +33,8 @@ final class DataMigrationPresetSeeder extends Seeder
                     'value_transformations_json' => $preset['value_transformations_json'],
                 ]);
             } else {
-                MigrationFieldMappingTemplate::query()->create([
+                MigrationFieldMappingTemplate::createGlobal([
                     'id' => (string) Str::uuid7(),
-                    'tenant_id' => null,
                     'name' => $preset['name'],
                     'source_system' => $preset['source_system'],
                     'entity_type' => $preset['entity_type'],

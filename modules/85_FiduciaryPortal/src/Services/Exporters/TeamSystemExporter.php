@@ -68,7 +68,7 @@ final class TeamSystemExporter extends AbstractStudioCsvExporter
                     (string) ($entry->getAttribute('document_number') ?: $entry->entry_number),
                     strtoupper((string) $entry->journal_type),
                     $mapped['account_code'],
-                    (string) ($line->account?->account_code ?? ''),
+                    (string) ($line->account->account_code ?? ''),
                     $isDebit ? 'D' : 'A',
                     Decimal::round2($isDebit ? $debit : $credit),
                     $mapped['vat_code'],

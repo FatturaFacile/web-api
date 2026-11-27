@@ -6,7 +6,11 @@ namespace Modules\Inventory\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $snapshot_date
+ */
 final class StockValuationSnapshot extends BaseEnterpriseModel
 {
     protected $table = 'stock_valuation_snapshots';

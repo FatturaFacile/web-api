@@ -158,7 +158,7 @@ final readonly class ImportCadBomAndCompareWithMbomHandler
                     $targetMbomId = (string) $revisedBom->id;
                 }
 
-                $targetRevision?->update(['mbom_id' => $targetMbomId]);
+                $targetRevision->update(['mbom_id' => $targetMbomId]);
                 $status = CadImportSessionStatus::Committed;
                 $committedAt = now();
             }

@@ -141,7 +141,7 @@ final readonly class GetWhereUsedImpactHandler
                 'item_name' => $order->mfgItem?->name,
                 'target_quantity' => Money::qty((string) $order->target_quantity),
                 'remaining_quantity' => Money::qty($remaining),
-                'planned_end_date' => $order->planned_end_date?->toDateString(),
+                'planned_end_date' => $order->planned_end_date->toDateString(),
             ];
         }
 
@@ -167,7 +167,7 @@ final readonly class GetWhereUsedImpactHandler
 
         $stockItemIds = $items->keys()->all();
         $quants = StockQuant::withoutGlobalScopes()
-            ->with(['lot', 'bin.rack.zone.warehouse'])
+            ->with(['lot', 'bin.rack.aisle.zone.warehouse'])
             ->where('tenant_id', $tenantId)
             ->whereIn('stock_item_id', $stockItemIds)
             ->whereNull('deleted_at')

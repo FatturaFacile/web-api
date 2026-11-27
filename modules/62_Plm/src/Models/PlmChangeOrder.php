@@ -83,8 +83,9 @@ final class PlmChangeOrder extends BaseEnterpriseModel
 
     public function workflowStageEnum(): EcoWorkflowStage
     {
-        if (is_string($this->workflow_stage) && $this->workflow_stage !== '') {
-            $parsed = EcoWorkflowStage::tryFrom($this->workflow_stage);
+        $stage = $this->getAttribute('workflow_stage');
+        if (is_string($stage) && $stage !== '') {
+            $parsed = EcoWorkflowStage::tryFrom($stage);
             if ($parsed !== null) {
                 return $parsed;
             }

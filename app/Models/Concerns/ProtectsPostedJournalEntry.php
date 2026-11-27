@@ -91,7 +91,7 @@ trait ProtectsPostedJournalEntry
                 'fiscal_period_id' => $this->getAttribute('fiscal_period_id'),
                 'posting_date' => $this->getAttribute('posting_date'),
             ],
-            'ip_address' => request()?->ip(),
+            'ip_address' => request()->ip(),
         ]);
     }
 }

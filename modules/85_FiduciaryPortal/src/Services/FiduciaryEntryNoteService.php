@@ -123,7 +123,7 @@ final readonly class FiduciaryEntryNoteService
             actor: $actor,
             targetType: 'fiduciary_entry_note',
             targetId: (string) $note->id,
-            targetReference: (string) ($note->journalEntry?->entry_number ?? ''),
+            targetReference: (string) ($note->journalEntry->entry_number ?? ''),
             metadata: ['status' => $note->status, 'resolution_comment' => $comment],
             auditModel: $note,
         );

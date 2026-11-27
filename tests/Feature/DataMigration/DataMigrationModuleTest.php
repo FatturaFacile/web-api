@@ -14,6 +14,7 @@ use Database\Seeders\DataMigrationLocalizationSeeder;
 use Database\Seeders\DataMigrationPresetSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use Modules\DataMigration\Application\Commands\AutoDetectColumnMappingCommand;
 use Modules\DataMigration\Application\Commands\AutoDetectColumnMappingHandler;
 use Modules\DataMigration\Application\Commands\CommitMigrationJobCommand;
@@ -36,6 +37,8 @@ use Modules\DataMigration\Domain\Enums\MigrationTargetEntity;
 use Modules\DataMigration\Models\MigrationFieldMappingTemplate;
 use Modules\DataMigration\Models\MigrationStagingRow;
 use Modules\DataMigration\Models\MigrationValidationError;
+use Modules\GeneralLedger\Models\FiscalPeriod;
+use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\JournalEntry;
 
 uses(RefreshDatabase::class);
@@ -43,11 +46,11 @@ uses(RefreshDatabase::class);
 function setupMigrationTenant(): array
 {
     $tenant = Tenant::factory()->create([
-        'vat_number' => '01234560153',
+        'vat_number' => '01234560157',
         'country' => 'IT',
     ]);
     $user = User::factory()->create();
-    $tenant->users()->attach($user->id, ['role' => 'owner', 'is_active' => true]);
+    $tenant->users()->attach($user->id, ['id' => (string) Str::uuid(), 'role' => 'owner']);
     app(TenantContext::class)->setTenant($tenant);
 
     return [$tenant, $user];
@@ -67,7 +70,7 @@ test('5-locale localization seeder and system preset seeder populate database cl
 test('dry-run catches invalid IT VAT, Swiss UID, IBAN, and unbalanced GL, then inline patch + commit + 1-click rollback succeed atomically', function (): void {
     [$tenant, $user] = setupMigrationTenant();
 
-    // Create a CSV with 1 customer having an invalid IT VAT (01234560159 instead of 01234560153)
+    // Create a CSV with 1 customer having an invalid IT VAT (01234560159 instead of 01234560157)
     $csvPath = tempnam(sys_get_temp_dir(), 'mig_cust_').'.csv';
     file_put_contents($csvPath, "company_name;country;vat_number;email\nAcme Srl;IT;01234560159;info@acme.it\n");
 
@@ -96,14 +99,14 @@ test('dry-run catches invalid IT VAT, Swiss UID, IBAN, and unbalanced GL, then i
 
     $error = MigrationValidationError::query()->where('migration_job_id', $job->id)->firstOrFail();
     expect($error->error_code)->toBe('INVALID_ITALIAN_VAT')
-        ->and($error->suggested_fix)->toBe('01234560153');
+        ->and($error->suggested_fix)->toBe('01234560157');
 
     // Patch inline with suggested fix
     $stagingRow = MigrationStagingRow::query()->where('migration_job_id', $job->id)->firstOrFail();
     app(PatchMigrationStagingRowHandler::class)->handle(new PatchMigrationStagingRowCommand(
         jobId: $job->id,
         rowId: $stagingRow->id,
-        values: ['vat_number' => '01234560153'],
+        values: ['vat_number' => '01234560157'],
     ));
 
     $revalidated = app(RunMigrationDryRunSimulationHandler::class)->handle(new RunMigrationDryRunSimulationCommand($job->id));
@@ -117,17 +120,20 @@ test('dry-run catches invalid IT VAT, Swiss UID, IBAN, and unbalanced GL, then i
     $committed = app(CommitMigrationJobHandler::class)->handle(new CommitMigrationJobCommand($job->id));
     expect($committed['job']->status)->toBe(MigrationJobStatus::Completed)
         ->and($committed['imported_rows'])->toBe(1)
-        ->and(Contact::query()->where('vat_number', '01234560153')->exists())->toBeTrue();
+        ->and(Contact::query()->where('vat_number', '01234560157')->exists())->toBeTrue();
 
     // 1-Click Rollback
     $rolledBack = app(RollbackMigrationBatchHandler::class)->handle(new RollbackMigrationBatchCommand($job->id));
     expect($rolledBack['job']->status)->toBe(MigrationJobStatus::RolledBack)
         ->and($rolledBack['reverted_records'])->toBeGreaterThanOrEqual(1)
-        ->and(Contact::query()->where('vat_number', '01234560153')->exists())->toBeFalse();
+        ->and(Contact::query()->where('vat_number', '01234560157')->exists())->toBeFalse();
 });
 
 test('OpeningGlBalances enforces double-entry dare == avere balance during dry-run and commits balanced journal entry', function (): void {
     [$tenant, $user] = setupMigrationTenant();
+
+    $year = FiscalYear::create(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'year_code' => 'FY2026', 'start_date' => '2026-01-01', 'end_date' => '2026-12-31', 'status' => 'open']);
+    FiscalPeriod::create(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'fiscal_year_id' => $year->id, 'period_number' => 1, 'period_name' => 'January 2026', 'start_date' => '2026-01-01', 'end_date' => '2026-01-31', 'status' => 'open']);
 
     ChartOfAccount::query()->create(['tenant_id' => $tenant->id, 'code' => '1020', 'name' => 'Bank', 'type' => 'asset', 'is_active' => true]);
     ChartOfAccount::query()->create(['tenant_id' => $tenant->id, 'code' => '2800', 'name' => 'Equity', 'type' => 'equity', 'is_active' => true]);
@@ -160,7 +166,7 @@ test('OpeningGlBalances enforces double-entry dare == avere balance during dry-r
 
     $committed = app(CommitMigrationJobHandler::class)->handle(new CommitMigrationJobCommand($job->id));
     expect($committed['job']->status)->toBe(MigrationJobStatus::Completed)
-        ->and(JournalEntry::query()->where('source_id', $job->id)->exists())->toBeTrue();
+        ->and(JournalEntry::query()->where('source_document_id', $job->id)->exists())->toBeTrue();
 });
 
 test('FatturaPA XML ZIP bulk importer extracts customers, products, and historical invoices with XXE protection', function (): void {
@@ -172,14 +178,14 @@ test('FatturaPA XML ZIP bulk importer extracts customers, products, and historic
   <FatturaElettronicaHeader>
     <CedentePrestatore>
       <DatiAnagrafici>
-        <IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>01234560153</IdCodice></IdFiscaleIVA>
+        <IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>01234560157</IdCodice></IdFiscaleIVA>
         <Anagrafica><Denominazione>Tenant Seller Srl</Denominazione></Anagrafica>
       </DatiAnagrafici>
       <Sede><Indirizzo>Via Roma 1</Indirizzo><CAP>20100</CAP><Comune>Milano</Comune><Nazione>IT</Nazione></Sede>
     </CedentePrestatore>
     <CessionarioCommittente>
       <DatiAnagrafici>
-        <IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>01234560153</IdCodice></IdFiscaleIVA>
+        <IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>01234560157</IdCodice></IdFiscaleIVA>
         <Anagrafica><Denominazione>Buyer Alpha Srl</Denominazione></Anagrafica>
       </DatiAnagrafici>
       <Sede><Indirizzo>Via Torino 10</Indirizzo><CAP>10100</CAP><Comune>Torino</Comune><Nazione>IT</Nazione></Sede>
@@ -219,7 +225,7 @@ XML;
     $zipPath = tempnam(sys_get_temp_dir(), 'mig_fpa_').'.zip';
     $zip = new ZipArchive;
     $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
-    $zip->addFromString('IT01234560153_00001.xml', $xml);
+    $zip->addFromString('IT01234560157_00001.xml', $xml);
     $zip->close();
 
     $job = app(UploadMigrationSourceArchiveHandler::class)->handle(new UploadMigrationSourceArchiveCommand(

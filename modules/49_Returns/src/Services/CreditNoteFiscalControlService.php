@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Returns\Services;
 
 use App\Models\Invoice;
-use App\Models\Tenant;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
@@ -54,8 +53,7 @@ final readonly class CreditNoteFiscalControlService
             throw ReturnsError::on('invoice_id', 'credit_note.original_invoice_required');
         }
 
-        $tenant = Tenant::query()->find($tenantId);
-        $jurisdiction = strtoupper((string) ($originalInvoice->jurisdiction ?: $tenant?->country ?: 'IT'));
+        $jurisdiction = strtoupper((string) $originalInvoice->jurisdiction);
         $issueDate = Carbon::parse((string) $originalInvoice->date)->startOfDay();
         $targetDate = Carbon::parse($creditDate ?? now()->toDateString())->startOfDay();
 

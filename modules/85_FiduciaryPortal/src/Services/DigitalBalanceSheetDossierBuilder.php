@@ -175,9 +175,9 @@ final readonly class DigitalBalanceSheetDossierBuilder
                     $entry->posting_date?->toDateString() ?? '',
                     (string) $entry->status,
                     $entry->getAttribute('fiduciary_verified') ? 'VERIFIED' : 'UNVERIFIED',
-                    (string) ($line->account?->account_code ?? ''),
-                    (string) ($rule?->studio_account_code ?? ''),
-                    (string) ($line->account?->name ?? ''),
+                    (string) ($line->account->account_code ?? ''),
+                    (string) ($rule->studio_account_code ?? ''),
+                    (string) ($line->account->name ?? ''),
                     (string) ($line->functional_debit ?? $line->debit_amount),
                     (string) ($line->functional_credit ?? $line->credit_amount),
                     (string) $line->currency,
@@ -197,7 +197,7 @@ final readonly class DigitalBalanceSheetDossierBuilder
 
             return [
                 (string) $row['account_code'],
-                (string) ($rule?->studio_account_code ?? ''),
+                (string) ($rule->studio_account_code ?? ''),
                 (string) $row['account_name'],
                 (string) $row['account_type'],
                 (string) $row['opening_balance'],
@@ -236,12 +236,12 @@ final readonly class DigitalBalanceSheetDossierBuilder
                 $xmlName = '02_fatture_attive/xml/'.preg_replace('/[^A-Za-z0-9._-]+/', '_', (string) ($sdi->file_name ?: $inv->invoice_number)).'.xml';
                 $zip->addFromString($xmlName, $sdi->xml_content);
             }
-            $counterparty = (string) ($inv->contact?->company_name ?: trim(($inv->contact?->first_name ?? '').' '.($inv->contact?->last_name ?? '')));
+            $counterparty = (string) ($inv->contact?->company_name ?: trim(($inv->contact->first_name ?? '').' '.($inv->contact->last_name ?? '')));
             $activeRows[] = [
                 (string) $inv->invoice_number,
                 $inv->date->toDateString(),
                 $counterparty,
-                (string) ($inv->contact?->vat_number ?? ''),
+                (string) ($inv->contact->vat_number ?? ''),
                 (string) $inv->total_net,
                 (string) $inv->total_tax,
                 (string) $inv->total_gross,
@@ -272,12 +272,12 @@ final readonly class DigitalBalanceSheetDossierBuilder
                 $xmlName = '03_fatture_passive/xml/'.preg_replace('/[^A-Za-z0-9._-]+/', '_', (string) ($pinv->sdi_file_name ?: $pinv->id)).'.xml';
                 $zip->addFromString($xmlName, $pinv->xml_payload);
             }
-            $supplierName = (string) ($pinv->supplier?->company_name ?: trim(($pinv->supplier?->first_name ?? '').' '.($pinv->supplier?->last_name ?? '')));
+            $supplierName = (string) ($pinv->supplier?->company_name ?: trim(($pinv->supplier->first_name ?? '').' '.($pinv->supplier->last_name ?? '')));
             $passiveRows[] = [
                 (string) $pinv->invoice_number,
                 $pinv->date->toDateString(),
                 $supplierName,
-                (string) ($pinv->supplier?->vat_number ?? ''),
+                (string) ($pinv->supplier->vat_number ?? ''),
                 (string) $pinv->total_net,
                 (string) $pinv->total_tax,
                 (string) $pinv->total_amount,
@@ -348,8 +348,8 @@ final readonly class DigitalBalanceSheetDossierBuilder
             ->orderBy('period_code')
             ->get();
         $depreciationRows = $schedules->map(static fn (DepreciationSchedule $s): array => [
-            (string) ($s->asset?->asset_number ?? ''),
-            (string) ($s->asset?->name ?? ''),
+            (string) ($s->asset->asset_number ?? ''),
+            (string) ($s->asset->name ?? ''),
             (string) ($s->period_code ?? ''),
             (string) ($s->depreciation_method ?? ''),
             (string) ($s->opening_book_value ?? '0.00'),
@@ -375,9 +375,9 @@ final readonly class DigitalBalanceSheetDossierBuilder
 
         $inventoryRows = $snapshots->map(static fn (StockValuationSnapshot $snap): array => [
             $snap->snapshot_date?->toDateString() ?? '',
-            (string) ($snap->warehouse?->code ?? ''),
-            (string) ($snap->item?->product?->sku ?? ''),
-            (string) ($snap->item?->product?->name ?? ''),
+            (string) ($snap->warehouse->code ?? ''),
+            (string) ($snap->item?->product->sku ?? ''),
+            (string) ($snap->item?->product->name ?? ''),
             (string) $snap->quantity_on_hand,
             (string) $snap->unit_cost,
             (string) $snap->total_valuation,
@@ -395,7 +395,7 @@ final readonly class DigitalBalanceSheetDossierBuilder
             ->orderByDesc('created_at')
             ->get();
         $noteRows = $notes->map(static fn (FiduciaryEntryNote $n): array => [
-            (string) ($n->journalEntry?->entry_number ?? ''),
+            (string) ($n->journalEntry->entry_number ?? ''),
             (string) $n->author_name,
             (string) $n->author_role,
             (string) $n->status,

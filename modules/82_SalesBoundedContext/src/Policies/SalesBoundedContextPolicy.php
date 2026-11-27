@@ -7,6 +7,7 @@ namespace Modules\SalesBoundedContext\Policies;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Database\Eloquent\Model;
 
 final class SalesBoundedContextPolicy
 {
@@ -47,11 +48,11 @@ final class SalesBoundedContextPolicy
     private function belongsToActiveTenant(User $user, mixed $model): bool
     {
         $tenantId = app(TenantContext::class)->getTenantId();
-        if ($tenantId === null || ! is_object($model) || ! property_exists($model, 'tenant_id')) {
+        if ($tenantId === null || ! $model instanceof Model) {
             return false;
         }
 
-        return (string) $model->tenant_id === (string) $tenantId && $this->hasTenantMembership($user);
+        return (string) $model->getAttribute('tenant_id') === (string) $tenantId && $this->hasTenantMembership($user);
     }
 
     private function hasWriteRole(User $user): bool
@@ -70,6 +71,6 @@ final class SalesBoundedContextPolicy
 
         $membership = $user->tenants()->where('tenants.id', $tenantId)->first();
 
-        return $membership?->pivot?->role ?? null;
+        return $membership?->pivot->role ?? null;
     }
 }

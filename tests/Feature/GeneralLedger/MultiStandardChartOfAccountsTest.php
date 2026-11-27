@@ -10,6 +10,8 @@ use Laravel\Sanctum\Sanctum;
 use Modules\GeneralLedger\Models\AccountMapping;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\CostCenter;
+use Modules\GeneralLedger\Models\FiscalPeriod;
+use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\JournalLine;
 use Modules\GeneralLedger\Models\VatCode;
@@ -18,10 +20,8 @@ use Modules\GeneralLedger\Services\ManualJournalService;
 function actingAsCoaAdmin(): array
 {
     $tenant = Tenant::factory()->create();
-    $user = User::factory()->create(['tenant_id' => $tenant->id]);
-    if (method_exists($user, 'assignRole')) {
-        $user->assignRole('admin');
-    }
+    $user = User::factory()->create();
+    $user->tenants()->attach($tenant->id, ['id' => (string) Str::uuid(), 'role' => 'owner']);
     Sanctum::actingAs($user);
 
     return [$tenant, $user];
@@ -163,6 +163,7 @@ it('validates and stores accounting properties and enforces journal entry rules'
         'id' => (string) Str::uuid7(),
         'tenant_id' => $tenant->id,
         'code' => 'IVA22',
+        'country_iso' => 'IT',
         'name' => 'IVA 22%',
         'rate' => 22.0,
         'is_active' => true,
@@ -247,11 +248,17 @@ it('protects accounts with journal postings from deletion and structural mutatio
         'is_active' => true,
     ]);
 
+    $year = FiscalYear::create(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'year_code' => 'FY2026', 'start_date' => '2026-01-01', 'end_date' => '2026-12-31', 'status' => 'open']);
+    $period = FiscalPeriod::create(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $tenant->id, 'fiscal_year_id' => $year->id, 'period_number' => 1, 'period_name' => 'January 2026', 'start_date' => '2026-01-01', 'end_date' => '2026-01-31', 'status' => 'open']);
+
     $entry = JournalEntry::create([
         'id' => (string) Str::uuid7(),
         'tenant_id' => $tenant->id,
+        'fiscal_period_id' => $period->id,
         'entry_number' => 'JE-TEST-001',
         'posting_date' => '2026-01-15',
+        'document_date' => '2026-01-15',
+        'description' => 'Opening balance',
         'journal_type' => 'manual',
         'status' => 'posted',
         'currency' => 'CHF',
@@ -263,8 +270,9 @@ it('protects accounts with journal postings from deletion and structural mutatio
         'journal_entry_id' => $entry->id,
         'account_id' => $account->id,
         'line_number' => 1,
-        'debit' => 100.00,
-        'credit' => 0.00,
+        'description' => 'Opening balance',
+        'debit_amount' => 100.00,
+        'credit_amount' => 0.00,
     ]);
 
     // Deletion blocked with 409
@@ -383,7 +391,7 @@ it('exports audit-ready Chart of Accounts in XLSX, CSV, and XML formats', functi
         ->get('/api/v1/general-ledger/accounts/export?format=csv');
     $csvRes->assertOk();
     expect($csvRes->headers->get('content-type'))->toContain('text/csv')
-        ->and($csvRes->getContent())->toContain('account_code;account_name');
+        ->and($csvRes->getContent())->toContain('"account_code";"account_name"');
 
     $xmlRes = $this->withHeader('X-Tenant-ID', (string) $tenant->id)
         ->get('/api/v1/general-ledger/accounts/export?format=xml');

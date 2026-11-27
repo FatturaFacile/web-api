@@ -74,7 +74,7 @@ final class PlmBomDiffService
                 'quantity' => $qty,
                 'unit_cost' => Money::round($unitCost, 4),
                 'extended_cost' => Money::round(Money::mul($qty, $unitCost), 4),
-                'path' => isset($part['parent_code']) && $part['parent_code'] !== null ? [$part['parent_code'], $code] : [$code],
+                'path' => isset($part['parent_code']) ? [$part['parent_code'], $code] : [$code],
             ];
         }
 

@@ -7,6 +7,10 @@ namespace Modules\SalesBoundedContext\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Modules\SalesBoundedContext\Domain\Enums\ElectronicSignatureStandard;
 
+/**
+ * @property ElectronicSignatureStandard|null $signature_standard
+ * @property array<int, array<string, mixed>>|null $signature_audit_trail
+ */
 final class SbcCpqQuote extends BaseEnterpriseModel
 {
     protected $table = 'sbc_cpq_quotes';

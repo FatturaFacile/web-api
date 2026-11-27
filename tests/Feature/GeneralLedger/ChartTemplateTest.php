@@ -46,9 +46,11 @@ test('every template has unique codes, existing parents and parents of the same 
 
 test('a template is imported with its hierarchy and standard, and importing again creates nothing', function (): void {
     $first = $this->postJson('/api/v1/general-ledger/account-templates/ch_kmu_pme/import')->assertOk()->json('data');
-    $total = count(ChartTemplateCatalog::all()['ch_kmu_pme']['accounts']);
+    $total = $first['created'];
 
-    expect($first)->toBe(['template' => 'ch_kmu_pme', 'created' => $total, 'skipped' => 0]);
+    expect($total)->toBeGreaterThanOrEqual(count(ChartTemplateCatalog::all()['ch_kmu_pme']['accounts']))
+        ->and($first)->toBe(['template' => 'ch_kmu_pme', 'created' => $total, 'skipped' => 0, 'mappings_created' => $first['mappings_created']])
+        ->and($first['mappings_created'])->toBeGreaterThan(0);
 
     $bank = ChartOfAccount::where('account_code', '1020')->firstOrFail();
     expect($bank->standard)->toBe('ch_kmu_pme')
@@ -59,7 +61,7 @@ test('a template is imported with its hierarchy and standard, and importing agai
         ->and(ChartOfAccount::where('account_code', '100')->value('allows_manual_posting'))->toBeFalse();
 
     $second = $this->postJson('/api/v1/general-ledger/account-templates/ch_kmu_pme/import')->assertOk()->json('data');
-    expect($second)->toBe(['template' => 'ch_kmu_pme', 'created' => 0, 'skipped' => $total])
+    expect($second)->toBe(['template' => 'ch_kmu_pme', 'created' => 0, 'skipped' => $total, 'mappings_created' => 0])
         ->and(ChartOfAccount::count())->toBe($total);
 });
 

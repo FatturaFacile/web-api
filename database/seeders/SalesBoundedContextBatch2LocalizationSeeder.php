@@ -7,21 +7,20 @@ namespace Database\Seeders;
 use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Idempotent 5-locale API seeder (it-CH, de-CH, fr-CH, en, it-IT) for Epic [Dominio 04] SD#139 Batch 2 (Mod 155-358).
  */
-final class SalesBoundedContextBatch2LocalizationSeeder extends Seeder
+final class SalesBoundedContextBatch2LocalizationSeeder extends GlobalDataSeeder
 {
     /**
      * @var list<string>
      */
     public const FIVE_LOCALES = ['it-CH', 'de-CH', 'fr-CH', 'en', 'it-IT'];
 
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $now = now();
 
@@ -165,13 +164,13 @@ final class SalesBoundedContextBatch2LocalizationSeeder extends Seeder
         $order = 1;
         foreach ($items as $code => $labels) {
             $item = LookupItem::updateOrCreate(
-                ['tenant_id' => null, 'category_id' => $category->id, 'code' => $code],
+                ['category_id' => $category->id, 'code' => $code],
                 ['sort_order' => $order++, 'is_active' => true, 'is_system' => true]
             );
 
             foreach ($labels as $locale => $label) {
                 LookupItemTranslation::updateOrCreate(
-                    ['tenant_id' => null, 'lookup_item_id' => $item->id, 'locale' => $locale],
+                    ['lookup_item_id' => $item->id, 'locale' => $locale],
                     ['label' => $label, 'short_label' => $code]
                 );
             }

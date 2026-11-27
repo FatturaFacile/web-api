@@ -34,6 +34,19 @@ trait ApiResponse
     }
 
     /**
+     * Return a standardized success JSON response for a newly created resource (HTTP 201).
+     *
+     * @param  array<string, mixed>  $meta
+     */
+    public function createdResponse(
+        mixed $data = null,
+        string $message = 'Resource created',
+        array $meta = []
+    ): JsonResponse {
+        return $this->successResponse($data, $message, Response::HTTP_CREATED, $meta);
+    }
+
+    /**
      * Return a standardized RFC 7807 Problem Details error response.
      *
      * @param  array<array-key, mixed>  $invalidParams  a list of {name, reason} entries, or a map of the offending values

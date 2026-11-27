@@ -60,13 +60,13 @@ final readonly class StudioExportEngine
                 $totalCredit = Decimal::add($totalCredit, (string) ($line->functional_credit ?? $line->credit_amount));
 
                 $rule = $transcodingMap[(string) $line->account_id] ?? null;
-                $sourceCode = (string) ($line->account?->account_code ?? '');
+                $sourceCode = (string) ($line->account->account_code ?? '');
 
                 if ($applyTranscoding && ($rule === null || trim((string) $rule->studio_account_code) === '')) {
                     $unmappedAccounts[(string) $line->account_id] = [
                         'account_id' => (string) $line->account_id,
                         'account_code' => $sourceCode,
-                        'account_name' => (string) ($line->account?->name ?? ''),
+                        'account_name' => (string) ($line->account->name ?? ''),
                     ];
                 }
 

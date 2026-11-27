@@ -69,7 +69,7 @@ final readonly class CustomerReturnService
                 'requested_on' => $data['requested_on'] ?? now()->toDateString(),
                 'within_return_window' => $eval['within_return_window'],
                 'within_warranty_window' => $eval['within_warranty_window'],
-                'window_overridden' => ! $eval['eligible'] && $overrideWindow,
+                'window_overridden' => ! $eval['eligible'],
                 'days_since_purchase' => $eval['days_since_purchase'],
                 'restocking_fee_applicable' => $eval['restocking_fee_applicable'],
                 'restocking_fee_percent' => $eval['restocking_fee_percent'],
@@ -143,7 +143,7 @@ final readonly class CustomerReturnService
                 'status' => CustomerReturn::StatusApproved,
                 'approved_at' => now(),
                 'approved_by' => $userId,
-                'warehouse_id' => $warehouse?->id ?? $locked->warehouse_id,
+                'warehouse_id' => $warehouse->id ?? $locked->warehouse_id,
             ]);
 
             $this->ledger->record('returns.customer_return_approved', $locked);

@@ -62,16 +62,25 @@ final class JournalLine extends BaseEnterpriseModel
         return $this->belongsTo(ChartOfAccount::class, 'account_id');
     }
 
+    /**
+     * @return BelongsTo<CostCenter, $this>
+     */
     public function costCenter(): BelongsTo
     {
         return $this->belongsTo(CostCenter::class, 'cost_center_id');
     }
 
+    /**
+     * @return BelongsTo<ProfitCenter, $this>
+     */
     public function profitCenter(): BelongsTo
     {
         return $this->belongsTo(ProfitCenter::class, 'profit_center_id');
     }
 
+    /**
+     * @return BelongsTo<VatCode, $this>
+     */
     public function vatCode(): BelongsTo
     {
         return $this->belongsTo(VatCode::class, 'vat_code_id');

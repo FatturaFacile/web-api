@@ -26,7 +26,7 @@ final class CopilotAuditLogResource extends JsonResource
             'actor_user_id' => $this->actor_user_id,
             'resource_type' => $this->resource_type,
             'resource_id' => $this->resource_id,
-            'details' => is_string($this->payload_after) ? json_decode($this->payload_after, true) : $this->payload_after,
+            'details' => $this->payload_after,
             'event_timestamp' => $this->event_timestamp->toIso8601String(),
         ];
     }

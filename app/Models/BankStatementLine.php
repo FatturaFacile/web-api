@@ -9,12 +9,15 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * One line of a bank statement. `amount` is the net amount booked, `fee_amount` the fee withheld by the bank, so the
  * gross amount paid by the debtor is `amount + fee_amount`.
  *
  * @property string|null $currency
+ * @property Carbon|null $booking_date
+ * @property Carbon|null $value_date
  */
 class BankStatementLine extends Model
 {

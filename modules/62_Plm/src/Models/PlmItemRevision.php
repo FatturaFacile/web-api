@@ -75,8 +75,9 @@ final class PlmItemRevision extends BaseEnterpriseModel
 
     public function lifecycleStateEnum(): RevisionLifecycleState
     {
-        if (is_string($this->lifecycle_state) && $this->lifecycle_state !== '') {
-            $parsed = RevisionLifecycleState::tryFrom($this->lifecycle_state);
+        $state = $this->getAttribute('lifecycle_state');
+        if (is_string($state) && $state !== '') {
+            $parsed = RevisionLifecycleState::tryFrom($state);
             if ($parsed !== null) {
                 return $parsed;
             }

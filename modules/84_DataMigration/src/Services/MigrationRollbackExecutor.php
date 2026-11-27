@@ -45,11 +45,8 @@ final class MigrationRollbackExecutor
                     continue;
                 }
 
-                if (method_exists($record, 'forceDelete')) {
-                    $record->forceDelete();
-                } else {
-                    $record->delete();
-                }
+                // Eloquent aliases forceDelete() to delete() on models without soft deletes.
+                $record->forceDelete();
 
                 $reverted++;
             }

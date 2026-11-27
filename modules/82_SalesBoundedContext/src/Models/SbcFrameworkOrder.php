@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace Modules\SalesBoundedContext\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $valid_from
+ * @property Carbon|null $valid_to
+ */
 final class SbcFrameworkOrder extends BaseEnterpriseModel
 {
     protected $table = 'sbc_framework_orders';
