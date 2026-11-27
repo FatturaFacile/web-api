@@ -47,6 +47,7 @@ use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
 use Modules\ElectronicSignature\Providers\ElectronicSignatureServiceProvider;
+use Modules\Distribution\Providers\DistributionServiceProvider;
 use Modules\Events\Providers\EventsServiceProvider;
 use Modules\ExpenseManagement\Providers\ExpenseManagementServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
@@ -227,6 +228,7 @@ return [
     PassengerTransportServiceProvider::class,
     CustomerSatisfactionServiceProvider::class,
     FranchiseNetworkServiceProvider::class,
+    DistributionServiceProvider::class,
     CorporateConventionsServiceProvider::class,
     ProductCatalogServiceProvider::class,
     DataMigrationServiceProvider::class,

@@ -57279,6 +57279,500 @@ CREATE INDEX "bank_statement_lines_exception_idx" on "bank_statement_lines"(
   "tenant_id",
   "exception_code"
 );
+CREATE TABLE "distribution_warehouse_profiles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "warehouse_id" varchar not null,
+  "role" varchar not null default 'internal',
+  "parent_warehouse_id" varchar,
+  "default_transit_warehouse_id" varchar,
+  "third_party_partner_id" varchar,
+  "external_reference" varchar,
+  "settlement_trigger" varchar,
+  "billing_frequency" varchar,
+  "max_consignment_days" integer,
+  "is_insured" tinyint(1) not null default '0',
+  "counts_in_valuation" tinyint(1) not null default '1',
+  "include_in_free_stock" tinyint(1) not null default '1',
+  "is_blocked" tinyint(1) not null default '0',
+  "is_counting" tinyint(1) not null default '0',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("warehouse_id") references "warehouses"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_dist_profile_warehouse" on "distribution_warehouse_profiles"(
+  "tenant_id",
+  "warehouse_id"
+);
+CREATE INDEX "distribution_warehouse_profiles_tenant_id_index" on "distribution_warehouse_profiles"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_warehouse_profiles_company_id_index" on "distribution_warehouse_profiles"(
+  "company_id"
+);
+CREATE INDEX "distribution_warehouse_profiles_role_index" on "distribution_warehouse_profiles"(
+  "role"
+);
+CREATE INDEX "distribution_warehouse_profiles_parent_warehouse_id_index" on "distribution_warehouse_profiles"(
+  "parent_warehouse_id"
+);
+CREATE INDEX "distribution_warehouse_profiles_third_party_partner_id_index" on "distribution_warehouse_profiles"(
+  "third_party_partner_id"
+);
+CREATE TABLE "distribution_lanes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "source_warehouse_id" varchar not null,
+  "destination_warehouse_id" varchar not null,
+  "lead_time_days" integer not null default '1',
+  "lead_time_hours" integer not null default '0',
+  "transport_mode" varchar not null default 'road',
+  "cost_per_unit" numeric not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("source_warehouse_id") references "warehouses"("id") on delete cascade,
+  foreign key("destination_warehouse_id") references "warehouses"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_dist_lane_route" on "distribution_lanes"(
+  "tenant_id",
+  "source_warehouse_id",
+  "destination_warehouse_id",
+  "transport_mode"
+);
+CREATE INDEX "idx_dist_lane_destination" on "distribution_lanes"(
+  "tenant_id",
+  "destination_warehouse_id"
+);
+CREATE INDEX "distribution_lanes_tenant_id_index" on "distribution_lanes"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_lanes_company_id_index" on "distribution_lanes"(
+  "company_id"
+);
+CREATE TABLE "distribution_transfer_meta"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "transfer_order_id" varchar not null,
+  "lane_id" varchar,
+  "carrier" varchar,
+  "tracking_number" varchar,
+  "ddt_reference" varchar,
+  "expected_arrival_date" date,
+  "dispatched_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("transfer_order_id") references "transfer_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_dist_transfer_meta_order" on "distribution_transfer_meta"(
+  "transfer_order_id"
+);
+CREATE INDEX "distribution_transfer_meta_tenant_id_index" on "distribution_transfer_meta"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_transfer_meta_company_id_index" on "distribution_transfer_meta"(
+  "company_id"
+);
+CREATE INDEX "distribution_transfer_meta_expected_arrival_date_index" on "distribution_transfer_meta"(
+  "expected_arrival_date"
+);
+CREATE TABLE "distribution_replenishment_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "warehouse_id" varchar not null,
+  "stock_item_id" varchar not null,
+  "policy" varchar not null default 'min_max',
+  "source_warehouse_id" varchar,
+  "safety_stock" numeric not null default '0',
+  "reorder_point" numeric not null default '0',
+  "max_stock" numeric not null default '0',
+  "fixed_quantity" numeric not null default '0',
+  "min_transfer_qty" numeric not null default '0',
+  "transfer_multiple" numeric not null default '0',
+  "lead_time_days" integer not null default '1',
+  "review_cycle_days" integer,
+  "target_days_of_supply" integer,
+  "priority" integer not null default '100',
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("warehouse_id") references "warehouses"("id") on delete cascade,
+  foreign key("stock_item_id") references "stock_items"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_dist_rule_warehouse_item" on "distribution_replenishment_rules"(
+  "tenant_id",
+  "warehouse_id",
+  "stock_item_id"
+);
+CREATE INDEX "distribution_replenishment_rules_tenant_id_index" on "distribution_replenishment_rules"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_replenishment_rules_company_id_index" on "distribution_replenishment_rules"(
+  "company_id"
+);
+CREATE INDEX "distribution_replenishment_rules_source_warehouse_id_index" on "distribution_replenishment_rules"(
+  "source_warehouse_id"
+);
+CREATE TABLE "distribution_drp_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "run_number" varchar not null,
+  "bucket_type" varchar not null default 'weekly',
+  "horizon" integer not null default '8',
+  "status" varchar not null default 'running',
+  "started_at" datetime,
+  "finished_at" datetime,
+  "parameters" text,
+  "summary" text,
+  "triggered_by" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_dist_drp_run_number" on "distribution_drp_runs"(
+  "tenant_id",
+  "run_number"
+);
+CREATE INDEX "distribution_drp_runs_tenant_id_index" on "distribution_drp_runs"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_drp_runs_company_id_index" on "distribution_drp_runs"(
+  "company_id"
+);
+CREATE INDEX "distribution_drp_runs_status_index" on "distribution_drp_runs"(
+  "status"
+);
+CREATE TABLE "distribution_drp_plan_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "drp_run_id" varchar not null,
+  "warehouse_id" varchar not null,
+  "stock_item_id" varchar not null,
+  "source_warehouse_id" varchar,
+  "lead_time_days" integer not null default '0',
+  "opening_balance" numeric not null default '0',
+  "safety_stock" numeric not null default '0',
+  "cells" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("drp_run_id") references "distribution_drp_runs"("id") on delete cascade,
+  foreign key("warehouse_id") references "warehouses"("id") on delete cascade,
+  foreign key("stock_item_id") references "stock_items"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_dist_plan_line_scope" on "distribution_drp_plan_lines"(
+  "drp_run_id",
+  "warehouse_id",
+  "stock_item_id"
+);
+CREATE INDEX "distribution_drp_plan_lines_tenant_id_index" on "distribution_drp_plan_lines"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_drp_plan_lines_company_id_index" on "distribution_drp_plan_lines"(
+  "company_id"
+);
+CREATE TABLE "distribution_drp_alerts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "drp_run_id" varchar not null,
+  "alert_type" varchar not null,
+  "severity" varchar not null default 'warning',
+  "warehouse_id" varchar,
+  "stock_item_id" varchar,
+  "bucket_index" integer,
+  "transfer_order_id" varchar,
+  "params" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("drp_run_id") references "distribution_drp_runs"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "distribution_drp_alerts_tenant_id_index" on "distribution_drp_alerts"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_drp_alerts_company_id_index" on "distribution_drp_alerts"(
+  "company_id"
+);
+CREATE INDEX "distribution_drp_alerts_alert_type_index" on "distribution_drp_alerts"(
+  "alert_type"
+);
+CREATE INDEX "distribution_drp_alerts_warehouse_id_index" on "distribution_drp_alerts"(
+  "warehouse_id"
+);
+CREATE INDEX "distribution_drp_alerts_stock_item_id_index" on "distribution_drp_alerts"(
+  "stock_item_id"
+);
+CREATE TABLE "distribution_replenishment_proposals"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "proposal_type" varchar not null default 'replenishment',
+  "status" varchar not null default 'pending',
+  "warehouse_id" varchar not null,
+  "stock_item_id" varchar not null,
+  "source_warehouse_id" varchar,
+  "rule_id" varchar,
+  "suggested_quantity" numeric not null default '0',
+  "original_quantity" numeric not null default '0',
+  "shortfall_quantity" numeric not null default '0',
+  "source_available_quantity" numeric not null default '0',
+  "projected_stockout_date" date,
+  "calculation" text,
+  "transfer_order_id" varchar,
+  "drp_run_id" varchar,
+  "generated_at" datetime,
+  "decided_by" varchar,
+  "decided_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("warehouse_id") references "warehouses"("id") on delete cascade,
+  foreign key("stock_item_id") references "stock_items"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "idx_dist_proposal_status" on "distribution_replenishment_proposals"(
+  "tenant_id",
+  "status",
+  "proposal_type"
+);
+CREATE INDEX "idx_dist_proposal_scope" on "distribution_replenishment_proposals"(
+  "tenant_id",
+  "warehouse_id",
+  "stock_item_id"
+);
+CREATE INDEX "distribution_replenishment_proposals_tenant_id_index" on "distribution_replenishment_proposals"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_replenishment_proposals_company_id_index" on "distribution_replenishment_proposals"(
+  "company_id"
+);
+CREATE INDEX "distribution_replenishment_proposals_source_warehouse_id_index" on "distribution_replenishment_proposals"(
+  "source_warehouse_id"
+);
+CREATE INDEX "distribution_replenishment_proposals_transfer_order_id_index" on "distribution_replenishment_proposals"(
+  "transfer_order_id"
+);
+CREATE TABLE "distribution_sales_channels"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "channel_type" varchar not null default 'custom',
+  "priority" integer not null default '100',
+  "is_active" tinyint(1) not null default '1',
+  "description" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_dist_channel_code" on "distribution_sales_channels"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "distribution_sales_channels_tenant_id_index" on "distribution_sales_channels"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_sales_channels_company_id_index" on "distribution_sales_channels"(
+  "company_id"
+);
+CREATE TABLE "distribution_sales_channel_warehouses"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "sales_channel_id" varchar not null,
+  "warehouse_id" varchar not null,
+  "allocation_mode" varchar not null default 'shared_pool',
+  "allocation_percentage" numeric,
+  "fixed_reserve_qty" numeric not null default '0',
+  "priority_rank" integer not null default '100',
+  "include_in_transit" tinyint(1) not null default '0',
+  "exclude_consignment" tinyint(1) not null default '1',
+  "exclude_3pl" tinyint(1) not null default '0',
+  "safety_buffer_qty" numeric not null default '0',
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("sales_channel_id") references "distribution_sales_channels"("id") on delete cascade,
+  foreign key("warehouse_id") references "warehouses"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_dist_channel_warehouse" on "distribution_sales_channel_warehouses"(
+  "tenant_id",
+  "sales_channel_id",
+  "warehouse_id"
+);
+CREATE INDEX "distribution_sales_channel_warehouses_tenant_id_index" on "distribution_sales_channel_warehouses"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_sales_channel_warehouses_company_id_index" on "distribution_sales_channel_warehouses"(
+  "company_id"
+);
+CREATE TABLE "distribution_consignment_settlements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "settlement_number" varchar not null,
+  "warehouse_id" varchar not null,
+  "direction" varchar not null default 'out',
+  "status" varchar not null default 'open',
+  "reference" varchar,
+  "settled_at" date not null,
+  "total_quantity" numeric not null default '0',
+  "total_value" numeric not null default '0',
+  "notes" text,
+  "invoice_document_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("warehouse_id") references "warehouses"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "uq_dist_settlement_number" on "distribution_consignment_settlements"(
+  "tenant_id",
+  "settlement_number"
+);
+CREATE INDEX "distribution_consignment_settlements_tenant_id_index" on "distribution_consignment_settlements"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_consignment_settlements_company_id_index" on "distribution_consignment_settlements"(
+  "company_id"
+);
+CREATE INDEX "distribution_consignment_settlements_status_index" on "distribution_consignment_settlements"(
+  "status"
+);
+CREATE TABLE "distribution_consignment_settlement_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "settlement_id" varchar not null,
+  "stock_item_id" varchar not null,
+  "quantity" numeric not null,
+  "unit_price" numeric not null default '0',
+  "line_total" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("settlement_id") references "distribution_consignment_settlements"("id") on delete cascade,
+  foreign key("stock_item_id") references "stock_items"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "distribution_consignment_settlement_lines_tenant_id_index" on "distribution_consignment_settlement_lines"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_consignment_settlement_lines_company_id_index" on "distribution_consignment_settlement_lines"(
+  "company_id"
+);
+CREATE TABLE "distribution_threepl_reconciliations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "company_id" varchar,
+  "warehouse_id" varchar not null,
+  "external_reference" varchar,
+  "status" varchar not null default 'balanced',
+  "reconciled_at" datetime,
+  "lines" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("warehouse_id") references "warehouses"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "distribution_threepl_reconciliations_tenant_id_index" on "distribution_threepl_reconciliations"(
+  "tenant_id"
+);
+CREATE INDEX "distribution_threepl_reconciliations_company_id_index" on "distribution_threepl_reconciliations"(
+  "company_id"
+);
+CREATE INDEX "distribution_threepl_reconciliations_status_index" on "distribution_threepl_reconciliations"(
+  "status"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -57771,3 +58265,4 @@ INSERT INTO migrations VALUES(488,'2028_01_10_000100_create_data_migration_mod10
 INSERT INTO migrations VALUES(489,'2028_01_10_000100_extend_workflow_for_approval_engine_mod006',37);
 INSERT INTO migrations VALUES(490,'2028_01_11_000100_create_fiduciary_portal_mod032_tables',37);
 INSERT INTO migrations VALUES(491,'2028_01_12_000100_add_swiss_iso20022_columns_mod282',38);
+INSERT INTO migrations VALUES(492,'2028_01_12_000100_create_distribution_drp_tables',39);
