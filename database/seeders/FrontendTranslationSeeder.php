@@ -35,6 +35,7 @@ use Database\Seeders\Translations\EbillFrontendTranslations;
 use Database\Seeders\Translations\ElectronicSignatureFrontendTranslations;
 use Database\Seeders\Translations\ElectronicSignatureNotificationTranslations;
 use Database\Seeders\Translations\EnglishFrontendTranslations;
+use Database\Seeders\Translations\EsterometroFrontendTranslations;
 use Database\Seeders\Translations\ExecutiveDssFrontendTranslations;
 use Database\Seeders\Translations\ExpenseManagementFrontendTranslations;
 use Database\Seeders\Translations\FiduciaryPortalFrontendTranslations;
@@ -47,6 +48,7 @@ use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GdoTradeTermsFrontendTranslations;
 use Database\Seeders\Translations\GeneralLedgerPrimaNotaFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
+use Database\Seeders\Translations\GreenCareFrontendTranslations;
 use Database\Seeders\Translations\HelpdeskSlaFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\HseFrontendTranslations;
@@ -211,6 +213,7 @@ class FrontendTranslationSeeder extends Seeder
             + CustomerSatisfactionFrontendTranslations::all($locale)
             + EbillFrontendTranslations::all($locale)
             + ForeignVatRefundFrontendTranslations::all($locale)
+            + GreenCareFrontendTranslations::all($locale)
             + SubcontractingFrontendTranslations::all($locale)
             + DownPaymentsFrontendTranslations::all($locale)
             + FranchiseNetworkFrontendTranslations::all($locale)
@@ -235,6 +238,7 @@ class FrontendTranslationSeeder extends Seeder
             + BudgetingSpendControlFrontendTranslations::all($locale)
             + PlmFrontendTranslations::all($locale)
             + TenderManagementFrontendTranslations::all($locale)
+            + EsterometroFrontendTranslations::all($locale)
             + ObservabilityFrontendTranslations::all($locale);
     }
 

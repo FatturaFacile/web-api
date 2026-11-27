@@ -49,6 +49,7 @@ use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\DownPayments\Providers\DownPaymentsServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
 use Modules\ElectronicSignature\Providers\ElectronicSignatureServiceProvider;
+use Modules\Esterometro\Providers\EsterometroServiceProvider;
 use Modules\Events\Providers\EventsServiceProvider;
 use Modules\ExpenseManagement\Providers\ExpenseManagementServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
@@ -61,6 +62,7 @@ use Modules\FranchiseNetwork\Providers\FranchiseNetworkServiceProvider;
 use Modules\GdoTradeTerms\Providers\GdoTradeTermsServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Governance\Providers\GovernanceServiceProvider;
+use Modules\GreenCare\Providers\GreenCareServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
 use Modules\Hospitality\Providers\HospitalityServiceProvider;
 use Modules\Hse\Providers\HseServiceProvider;
@@ -234,6 +236,7 @@ return [
     CustomerSatisfactionServiceProvider::class,
     SubcontractingServiceProvider::class,
     DownPaymentsServiceProvider::class,
+    EsterometroServiceProvider::class,
     FranchiseNetworkServiceProvider::class,
     DistributionServiceProvider::class,
     CorporateConventionsServiceProvider::class,
@@ -243,6 +246,7 @@ return [
     SwissEbillServiceProvider::class,
     ForeignVatRefundServiceProvider::class,
     ObservabilityServiceProvider::class,
+    GreenCareServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,
