@@ -43,11 +43,11 @@ use Modules\DataMigration\Providers\DataMigrationServiceProvider;
 use Modules\DataResidency\Providers\DataResidencyServiceProvider;
 use Modules\DebtCollection\Providers\DebtCollectionServiceProvider;
 use Modules\DigitalPreservation\Providers\DigitalPreservationServiceProvider;
+use Modules\Distribution\Providers\DistributionServiceProvider;
 use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
 use Modules\ElectronicSignature\Providers\ElectronicSignatureServiceProvider;
-use Modules\Distribution\Providers\DistributionServiceProvider;
 use Modules\Events\Providers\EventsServiceProvider;
 use Modules\ExpenseManagement\Providers\ExpenseManagementServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
@@ -55,6 +55,7 @@ use Modules\FiduciaryPortal\Providers\FiduciaryPortalServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\Fleet\Providers\FleetServiceProvider;
 use Modules\Forecasting\Providers\ForecastingServiceProvider;
+use Modules\ForeignVatRefund\Providers\ForeignVatRefundServiceProvider;
 use Modules\FranchiseNetwork\Providers\FranchiseNetworkServiceProvider;
 use Modules\GdoTradeTerms\Providers\GdoTradeTermsServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
@@ -237,6 +238,7 @@ return [
     DataMigrationServiceProvider::class,
     FiduciaryPortalServiceProvider::class,
     SwissEbillServiceProvider::class,
+    ForeignVatRefundServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,

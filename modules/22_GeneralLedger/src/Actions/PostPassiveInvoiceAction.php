@@ -8,6 +8,7 @@ use App\Models\PassiveInvoice;
 use Carbon\CarbonImmutable;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Facades\DB;
+use Modules\GeneralLedger\Events\PassiveInvoicePostedEvent;
 use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\PaymentLedgerService;
@@ -106,6 +107,8 @@ final readonly class PostPassiveInvoiceAction
         $invoice->refresh();
         $this->declarations->trackPurchase($invoice);
         $this->payments->postWaitingSupplierPayments((string) $invoice->id);
+
+        event(new PassiveInvoicePostedEvent((string) $invoice->id, $tenantId));
     }
 
     /**

@@ -39,6 +39,7 @@ use Database\Seeders\Translations\ExpenseManagementFrontendTranslations;
 use Database\Seeders\Translations\FiduciaryPortalFrontendTranslations;
 use Database\Seeders\Translations\FieldServiceManagementFrontendTranslations;
 use Database\Seeders\Translations\FixedAssetsFrontendTranslations;
+use Database\Seeders\Translations\ForeignVatRefundFrontendTranslations;
 use Database\Seeders\Translations\FranchiseNetworkFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
@@ -207,6 +208,7 @@ class FrontendTranslationSeeder extends Seeder
             + PassengerTransportFrontendTranslations::all($locale)
             + CustomerSatisfactionFrontendTranslations::all($locale)
             + EbillFrontendTranslations::all($locale)
+            + ForeignVatRefundFrontendTranslations::all($locale)
             + SubcontractingFrontendTranslations::all($locale)
             + FranchiseNetworkFrontendTranslations::all($locale)
             + CorporateConventionsFrontendTranslations::all($locale)

@@ -511,6 +511,16 @@ return [
         // Subcontracting (Mod 065): conto lavoro passivo/attivo, stock at subcontractors and the Art. 53 DPR 633/72 register. Production,
         // procurement and operations plan, dispatch and receive; finance reads and exports the register. SubcontractingPolicy
         // adds the fine-grained subcontracting.* permissions (view, create, dispatch, receive, ledger.export).
+        // Foreign VAT refund (Mod 227): ledger of the foreign VAT, claims to the EU portal / ESTV / Pescara, mandates of the fiscal representatives
+        // and the accounting of the refund. Finance roles work on it; purchasing and operations managers read the split of their documents.
+        'foreign_vat_refund' => [
+            'read' => [...$financeReaders, 'procurement_manager', 'operations_manager'],
+            'write' => [...$finance],
+            'grants' => [
+                'read' => ['foreign_vat_refund.read', 'foreign_vat_refund.write', 'foreign_vat_refund.*'],
+                'write' => ['foreign_vat_refund.write', 'foreign_vat_refund.*'],
+            ],
+        ],
         'subcontracting' => [
             'read' => [...$financeReaders, 'production', 'procurement_manager', 'operations_manager', 'sales_manager', 'technician'],
             'write' => [...$finance, 'production', 'procurement_manager', 'operations_manager'],

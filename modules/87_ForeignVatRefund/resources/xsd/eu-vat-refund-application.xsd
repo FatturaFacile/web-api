@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Electronic refund application of the VAT paid in another Member State (Directive 2008/9/EC, Art. 38-bis1 DPR 633/72), as uploaded to
+  the portal of the Member State of establishment: applicant, Member State of refund, period, the invoices by expense code 1-10 with
+  the supplier, taxable base, VAT and the deductible amount, and the totals.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
+           targetNamespace="urn:fatturafacile:foreign-vat-refund:eu-portal:1.0" xmlns="urn:fatturafacile:foreign-vat-refund:eu-portal:1.0">
+  <xs:simpleType name="CountryCode">
+    <xs:restriction base="xs:string"><xs:pattern value="[A-Z]{2}"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="CurrencyCode">
+    <xs:restriction base="xs:string"><xs:pattern value="[A-Z]{3}"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Amount">
+    <xs:restriction base="xs:decimal"><xs:fractionDigits value="2"/><xs:minInclusive value="0"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Percentage">
+    <xs:restriction base="xs:decimal"><xs:fractionDigits value="2"/><xs:minInclusive value="0"/><xs:maxInclusive value="100"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="ExpenseCode">
+    <xs:restriction base="xs:integer"><xs:minInclusive value="1"/><xs:maxInclusive value="10"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Text190">
+    <xs:restriction base="xs:string"><xs:minLength value="1"/><xs:maxLength value="190"/></xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="VatRefundApplication">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Applicant">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Name" type="Text190"/>
+              <xs:element name="VatNumber" type="Text190"/>
+              <xs:element name="CountryCode" type="CountryCode"/>
+              <xs:element name="Iban" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="RefundMemberState" type="CountryCode"/>
+        <xs:element name="Period">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Type" type="xs:string"/>
+              <xs:element name="StartDate" type="xs:date"/>
+              <xs:element name="EndDate" type="xs:date"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Currency" type="CurrencyCode"/>
+        <xs:element name="Items">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Item" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Sequence" type="xs:positiveInteger"/>
+                    <xs:element name="ExpenseCode" type="ExpenseCode"/>
+                    <xs:element name="SubCode" type="xs:string" minOccurs="0"/>
+                    <xs:element name="SupplierName" type="xs:string" minOccurs="0"/>
+                    <xs:element name="SupplierVatId" type="xs:string" minOccurs="0"/>
+                    <xs:element name="SupplierCountry" type="CountryCode"/>
+                    <xs:element name="InvoiceNumber" type="Text190"/>
+                    <xs:element name="InvoiceDate" type="xs:date"/>
+                    <xs:element name="TaxableBase" type="Amount"/>
+                    <xs:element name="VatAmount" type="Amount"/>
+                    <xs:element name="DeductiblePercentage" type="Percentage"/>
+                    <xs:element name="DeductibleVatAmount" type="Amount"/>
+                    <xs:element name="AttachmentRef" type="xs:string" minOccurs="0"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Totals">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="ItemCount" type="xs:nonNegativeInteger"/>
+              <xs:element name="TotalVatAmount" type="Amount"/>
+              <xs:element name="TotalRefundAmount" type="Amount"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="claimNumber" type="xs:string" use="required"/>
+      <xs:attribute name="version" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
