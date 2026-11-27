@@ -10,7 +10,7 @@ $extensions = ['php', 'md', 'json', 'yaml', 'yml', 'neon', 'xml', 'stub'];
 $dir = new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS);
 $filter = new RecursiveCallbackFilterIterator($dir, function (SplFileInfo $current) use ($excludeDirs): bool {
     if ($current->isDir()) {
-        return !in_array($current->getFilename(), $excludeDirs, true);
+        return ! in_array($current->getFilename(), $excludeDirs, true);
     }
 
     return true;
@@ -22,40 +22,42 @@ $fixed = [];
 
 /** @var SplFileInfo $file */
 foreach ($iterator as $file) {
-    if (!$file->isFile()) {
+    if (! $file->isFile()) {
         continue;
     }
 
     $ext = strtolower($file->getExtension());
     $filename = $file->getFilename();
 
-    if (!in_array($ext, $extensions, true) && !str_starts_with($filename, '.env')) {
+    if (! in_array($ext, $extensions, true) && ! str_starts_with($filename, '.env')) {
         continue;
     }
 
     $path = $file->getPathname();
-    $relativePath = ltrim(str_replace($root, '', $path), DIRECTORY_SEPARATOR . '/\\');
+    $relativePath = ltrim(str_replace($root, '', $path), DIRECTORY_SEPARATOR.'/\\');
     $content = file_get_contents($path);
 
     if ($content === false) {
         $errors[] = "[UNREADABLE] {$relativePath}";
+
         continue;
     }
 
     $hasBom = str_starts_with($content, "\xEF\xBB\xBF");
     $isValidUtf8 = mb_check_encoding($content, 'UTF-8');
 
-    if (!$hasBom && $isValidUtf8) {
+    if (! $hasBom && $isValidUtf8) {
         continue;
     }
 
-    if (!$fix) {
+    if (! $fix) {
         if ($hasBom) {
             $errors[] = "[UTF-8 BOM]  {$relativePath}";
         }
-        if (!$isValidUtf8) {
+        if (! $isValidUtf8) {
             $errors[] = "[NON-UTF8]   {$relativePath}";
         }
+
         continue;
     }
 
@@ -67,10 +69,11 @@ foreach ($iterator as $file) {
         $actions[] = 'stripped UTF-8 BOM';
     }
 
-    if (!mb_check_encoding($updated, 'UTF-8')) {
+    if (! mb_check_encoding($updated, 'UTF-8')) {
         $converted = mb_convert_encoding($updated, 'UTF-8', 'Windows-1252');
-        if ($converted === false || !mb_check_encoding($converted, 'UTF-8')) {
+        if ($converted === false || ! mb_check_encoding($converted, 'UTF-8')) {
             $errors[] = "[FIX FAILED] {$relativePath}";
+
             continue;
         }
         $updated = $converted;
@@ -79,21 +82,22 @@ foreach ($iterator as $file) {
 
     if (file_put_contents($path, $updated) === false) {
         $errors[] = "[WRITE FAIL] {$relativePath}";
+
         continue;
     }
 
-    $fixed[] = "{$relativePath} (" . implode(', ', $actions) . ')';
+    $fixed[] = "{$relativePath} (".implode(', ', $actions).')';
 }
 
 if ($fixed !== []) {
-    echo 'Fixed ' . count($fixed) . " file(s):\n";
+    echo 'Fixed '.count($fixed)." file(s):\n";
     foreach ($fixed as $item) {
         echo "  - {$item}\n";
     }
 }
 
 if ($errors !== []) {
-    fwrite(STDERR, 'Found ' . count($errors) . " file(s) with invalid encoding:\n");
+    fwrite(STDERR, 'Found '.count($errors)." file(s) with invalid encoding:\n");
     foreach ($errors as $error) {
         fwrite(STDERR, "  - {$error}\n");
     }

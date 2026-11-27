@@ -17,6 +17,7 @@ use Database\Seeders\Translations\ArtisanalGelatoFrontendTranslations;
 use Database\Seeders\Translations\AuditLedgerFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\BomManagementFrontendTranslations;
+use Database\Seeders\Translations\BudgetingSpendControlFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
 use Database\Seeders\Translations\CorporateConventionsFrontendTranslations;
 use Database\Seeders\Translations\CpqConfiguratorFrontendTranslations;
@@ -70,6 +71,7 @@ use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PassengerTransportFrontendTranslations;
 use Database\Seeders\Translations\PayablesFrontendTranslations;
+use Database\Seeders\Translations\PlmFrontendTranslations;
 use Database\Seeders\Translations\PreservationFrontendTranslations;
 use Database\Seeders\Translations\PrivacyGovernanceFrontendTranslations;
 use Database\Seeders\Translations\ProductCatalogFrontendTranslations;
@@ -92,6 +94,7 @@ use Database\Seeders\Translations\StatutoryFinancialsFrontendTranslations;
 use Database\Seeders\Translations\SupplierRebatesFrontendTranslations;
 use Database\Seeders\Translations\SwissQrBillSlipFrontendTranslations;
 use Database\Seeders\Translations\SwissVatFrontendTranslations;
+use Database\Seeders\Translations\TenderManagementFrontendTranslations;
 use Database\Seeders\Translations\TreasuryBankingFrontendTranslations;
 use Database\Seeders\Translations\VanSellingFieldSalesFrontendTranslations;
 use Database\Seeders\Translations\WorkflowApprovalFrontendTranslations;
@@ -215,7 +218,10 @@ class FrontendTranslationSeeder extends Seeder
             + ScheduledErpReportFrontendTranslations::all($locale)
             + DataMigrationFrontendTranslations::all($locale)
             + FiduciaryPortalFrontendTranslations::all($locale)
-            + WorkflowApprovalFrontendTranslations::all($locale);
+            + WorkflowApprovalFrontendTranslations::all($locale)
+            + BudgetingSpendControlFrontendTranslations::all($locale)
+            + PlmFrontendTranslations::all($locale)
+            + TenderManagementFrontendTranslations::all($locale);
     }
 
     /**

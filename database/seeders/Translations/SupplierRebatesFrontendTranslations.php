@@ -170,6 +170,9 @@ final class SupplierRebatesFrontendTranslations
             'SUPPLIER_REBATES.ALERT_CEILING_EXCEEDED' => ['Plafond superato', 'Ceiling exceeded', 'Plafond überschritten', 'Plafond dépassé'],
             'SUPPLIER_REBATES.ALERT_MINIMUM_AT_RISK' => ['Spesa minima a rischio', 'Minimum spend at risk', 'Mindestumsatz gefährdet', 'Dépenses minimales à risque'],
             'SUPPLIER_REBATES.ALERT_MINIMUM_NOT_MET' => ['Spesa minima non raggiunta', 'Minimum spend not met', 'Mindestumsatz nicht erreicht', 'Dépenses minimales non atteintes'],
+
+            'RES.F.minimum_spend_amount' => ['Spesa minima garantita', 'Guaranteed minimum spend', 'Garantierter Mindestumsatz', 'Dépenses minimales garanties'],
+            'RES.F.alert_threshold_percent' => ['Soglia di allerta %', 'Alert threshold %', 'Warnschwelle %', 'Seuil d’alerte %'],
         ];
     }
 
