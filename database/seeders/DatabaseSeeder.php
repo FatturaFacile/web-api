@@ -178,6 +178,7 @@ class DatabaseSeeder extends Seeder
             DataMigrationLocalizationSeeder::class,
             DataMigrationPresetSeeder::class,
             FiduciaryPortalLocalizationSeeder::class,
+            EsterometroClassificationRuleSeeder::class,
         ]);
     }
 }

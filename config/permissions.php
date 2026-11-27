@@ -642,6 +642,16 @@ return [
                 'write' => ['data_migration.write', 'data_migration.manage', 'data_migration.execute', 'data_migration.rollback', 'data_migration.*'],
             ],
         ],
+
+        // Italian Esterometro & Reverse Charge Self-Invoicing (Mod 027, Issue #287).
+        'esterometro' => [
+            'read' => $financeReaders,
+            'write' => $finance,
+            'grants' => [
+                'read' => ['esterometro.read', 'esterometro.view', 'esterometro.write', 'esterometro.manage', 'esterometro.send', 'esterometro.*'],
+                'write' => ['esterometro.write', 'esterometro.manage', 'esterometro.send', 'esterometro.*'],
+            ],
+        ],
     ],
 
     /*
