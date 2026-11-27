@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:swiss-ebill:invoice:1"
+           targetNamespace="urn:swiss-ebill:invoice:1"
+           elementFormDefault="qualified">
+
+  <xs:simpleType name="Amount">
+    <xs:restriction base="xs:decimal">
+      <xs:fractionDigits value="2"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Percent">
+    <xs:restriction base="xs:decimal">
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="100"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="BillerId">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{17}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CurrencyCode">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="CHF"/>
+      <xs:enumeration value="EUR"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Uid">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="CHE-[0-9]{3}\.[0-9]{3}\.[0-9]{3}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Sha256">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9a-f]{64}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NonEmpty">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+      <xs:maxLength value="500"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="Address">
+    <xs:sequence>
+      <xs:element name="Street" type="xs:string" minOccurs="0"/>
+      <xs:element name="HouseNumber" type="xs:string" minOccurs="0"/>
+      <xs:element name="PostalCode" type="NonEmpty"/>
+      <xs:element name="City" type="NonEmpty"/>
+      <xs:element name="Country" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Header">
+    <xs:sequence>
+      <xs:element name="TransmissionId" type="NonEmpty"/>
+      <xs:element name="BillerID" type="BillerId"/>
+      <xs:element name="RecipientID" type="NonEmpty"/>
+      <xs:element name="Channel">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="B2B"/>
+            <xs:enumeration value="B2C"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="CreatedAt" type="xs:dateTime"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Reference">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="type" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="QRR"/>
+              <xs:enumeration value="SCOR"/>
+              <xs:enumeration value="NON"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="PaymentAccount">
+    <xs:sequence>
+      <xs:element name="IBAN" type="NonEmpty"/>
+      <xs:element name="Reference" type="Reference"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Biller">
+    <xs:sequence>
+      <xs:element name="Name" type="NonEmpty"/>
+      <xs:element name="UID" type="Uid"/>
+      <xs:element name="VATNumber" type="xs:string" minOccurs="0"/>
+      <xs:element name="Address" type="Address"/>
+      <xs:element name="PaymentAccount" type="PaymentAccount"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Recipient">
+    <xs:sequence>
+      <xs:element name="Name" type="NonEmpty"/>
+      <xs:element name="UID" type="Uid" minOccurs="0"/>
+      <xs:element name="Email" type="xs:string" minOccurs="0"/>
+      <xs:element name="Address" type="Address"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Line">
+    <xs:sequence>
+      <xs:element name="Description" type="NonEmpty"/>
+      <xs:element name="Quantity" type="xs:decimal"/>
+      <xs:element name="UnitPrice" type="xs:decimal"/>
+      <xs:element name="DiscountPercent" type="Percent"/>
+      <xs:element name="VatRate" type="Percent"/>
+      <xs:element name="NetAmount" type="Amount"/>
+    </xs:sequence>
+    <xs:attribute name="pos" type="xs:positiveInteger" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="Lines">
+    <xs:sequence>
+      <xs:element name="Line" type="Line" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="VatEntry">
+    <xs:sequence>
+      <xs:element name="TaxableAmount" type="Amount"/>
+      <xs:element name="TaxAmount" type="Amount"/>
+    </xs:sequence>
+    <xs:attribute name="rate" type="Percent" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="VatSummary">
+    <xs:sequence>
+      <xs:element name="Vat" type="VatEntry" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Totals">
+    <xs:sequence>
+      <xs:element name="Net" type="Amount"/>
+      <xs:element name="Tax" type="Amount"/>
+      <xs:element name="Gross" type="Amount"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Invoice">
+    <xs:sequence>
+      <xs:element name="Number" type="NonEmpty"/>
+      <xs:element name="IssueDate" type="xs:date"/>
+      <xs:element name="DueDate" type="xs:date"/>
+      <xs:element name="Currency" type="CurrencyCode"/>
+      <xs:element name="PaymentTerms" type="xs:string" minOccurs="0"/>
+      <xs:element name="Lines" type="Lines"/>
+      <xs:element name="VatSummary" type="VatSummary"/>
+      <xs:element name="Totals" type="Totals"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="EmbeddedDocument">
+    <xs:simpleContent>
+      <xs:extension base="xs:base64Binary">
+        <xs:attribute name="mimeType" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="application/pdf"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="filename" type="NonEmpty" use="required"/>
+        <xs:attribute name="sha256" type="Sha256" use="required"/>
+        <xs:attribute name="sizeBytes" type="xs:positiveInteger" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="AdditionalInformation">
+    <xs:sequence>
+      <xs:element name="EmbeddedDocument" type="EmbeddedDocument" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="EbillInvoice">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Header" type="Header"/>
+        <xs:element name="Biller" type="Biller"/>
+        <xs:element name="Recipient" type="Recipient"/>
+        <xs:element name="Invoice" type="Invoice"/>
+        <xs:element name="AdditionalInformation" type="AdditionalInformation" minOccurs="0"/>
+      </xs:sequence>
+      <xs:attribute name="version" type="NonEmpty" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

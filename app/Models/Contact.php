@@ -20,6 +20,11 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property Carbon|null $fiscal_verified_at
+ * @property string|null $ebill_recipient_id
+ * @property string $ebill_status
+ * @property string|null $ebill_channel_type
+ * @property Carbon|null $ebill_verified_at
+ * @property bool $ebill_opt_in_preferred
  */
 class Contact extends Model implements AuditableEntityInterface
 {
@@ -68,6 +73,11 @@ class Contact extends Model implements AuditableEntityInterface
         'hierarchy_type',
         'fiscal_verified_at',
         'fiscal_verification_source',
+        'ebill_recipient_id',
+        'ebill_status',
+        'ebill_channel_type',
+        'ebill_verified_at',
+        'ebill_opt_in_preferred',
     ];
 
     /**
@@ -89,6 +99,8 @@ class Contact extends Model implements AuditableEntityInterface
             'processing_restricted_at' => 'datetime',
             'anonymized_at' => 'datetime',
             'fiscal_verified_at' => 'datetime',
+            'ebill_verified_at' => 'datetime',
+            'ebill_opt_in_preferred' => 'boolean',
             'portal_consent_at' => 'datetime',
         ];
     }

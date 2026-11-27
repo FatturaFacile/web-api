@@ -104,6 +104,7 @@ use Modules\StatutoryFinancials\Providers\StatutoryFinancialsServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
 use Modules\Sustainability\Providers\SustainabilityServiceProvider;
+use Modules\SwissEbill\Providers\SwissEbillServiceProvider;
 use Modules\SwissFiscal\Providers\SwissFiscalServiceProvider;
 use Modules\SwissVat\Providers\SwissVatServiceProvider;
 use Modules\TalentLearning\Providers\TalentLearningServiceProvider;
@@ -231,6 +232,7 @@ return [
     ProductCatalogServiceProvider::class,
     DataMigrationServiceProvider::class,
     FiduciaryPortalServiceProvider::class,
+    SwissEbillServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,

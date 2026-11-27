@@ -62,6 +62,7 @@ return [
         'statutory_financials' => env('FEATURE_MODULE_STATUTORY_FINANCIALS'),
         'passenger_transport' => env('FEATURE_MODULE_PASSENGER_TRANSPORT'),
         'customer_satisfaction' => env('FEATURE_MODULE_CUSTOMER_SATISFACTION'),
+        'swiss_ebill' => env('FEATURE_MODULE_SWISS_EBILL'),
         'franchise_network' => env('FEATURE_MODULE_FRANCHISE_NETWORK'),
         'corporate_conventions' => env('FEATURE_MODULE_CORPORATE_CONVENTIONS'),
         'product_catalog' => env('FEATURE_MODULE_PRODUCT_CATALOG'),
