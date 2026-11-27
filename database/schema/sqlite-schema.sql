@@ -5824,6 +5824,11 @@ CREATE TABLE "contacts"(
   "eori_number" varchar,
   "iban_bidx" varchar,
   "qr_iban_bidx" varchar,
+  "ebill_recipient_id" varchar,
+  "ebill_status" varchar not null default 'unknown',
+  "ebill_channel_type" varchar,
+  "ebill_verified_at" datetime,
+  "ebill_opt_in_preferred" tinyint(1) not null default '1',
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("price_list_id") references "price_lists"("id") on delete set null on update no action,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
@@ -16499,6 +16504,9 @@ CREATE TABLE "invoices"(
   "sdi_simplified" tinyint(1) not null default '0',
   "sdi_vehicle" text,
   "sdi_extra" text,
+  "ebill_status" varchar,
+  "ebill_transmission_id" varchar,
+  "ebill_last_event_at" datetime,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
   foreign key("quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("delivery_note_id") references "delivery_notes"("id") on delete set null on update no action,
@@ -57773,6 +57781,348 @@ CREATE INDEX "distribution_threepl_reconciliations_company_id_index" on "distrib
 CREATE INDEX "distribution_threepl_reconciliations_status_index" on "distribution_threepl_reconciliations"(
   "status"
 );
+CREATE TABLE "sct_orders"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "order_number" varchar not null,
+  "direction" varchar not null,
+  "subcontracting_type" varchar not null,
+  "status" varchar not null default 'draft',
+  "partner_type" varchar not null,
+  "partner_id" varchar not null,
+  "partner_name" varchar,
+  "source_warehouse_id" varchar,
+  "subcontractor_warehouse_id" varchar,
+  "bom_id" varchar,
+  "linked_production_order_id" varchar,
+  "linked_production_order_operation_id" varchar,
+  "routing_operation_label" varchar,
+  "linked_service_purchase_order_id" varchar,
+  "linked_customer_sales_order_id" varchar,
+  "outgoing_material_ddt_id" varchar,
+  "inbound_return_document_type" varchar,
+  "inbound_return_document_id" varchar,
+  "inbound_return_document_number" varchar,
+  "output_product_id" varchar not null,
+  "planned_quantity" numeric not null,
+  "received_quantity" numeric not null default '0',
+  "scrap_quantity" numeric not null default '0',
+  "delivered_quantity" numeric not null default '0',
+  "unit_service_cost" numeric not null default '0',
+  "currency" varchar not null default 'EUR',
+  "expected_return_date" date,
+  "customs_regime" varchar not null default 'none',
+  "customs_declaration_id" varchar,
+  "capitalized_service_amount" numeric not null default '0',
+  "capitalized_unit_cost" numeric not null default '0',
+  "service_billing" text,
+  "confirmed_at" datetime,
+  "completed_at" datetime,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sct_orders_tenant_id_order_number_unique" on "sct_orders"(
+  "tenant_id",
+  "order_number"
+);
+CREATE INDEX "sct_orders_tenant_id_direction_status_index" on "sct_orders"(
+  "tenant_id",
+  "direction",
+  "status"
+);
+CREATE INDEX "sct_orders_tenant_id_index" on "sct_orders"("tenant_id");
+CREATE INDEX "sct_orders_status_index" on "sct_orders"("status");
+CREATE INDEX "sct_orders_partner_id_index" on "sct_orders"("partner_id");
+CREATE INDEX "sct_orders_linked_production_order_id_index" on "sct_orders"(
+  "linked_production_order_id"
+);
+CREATE TABLE "sct_order_components"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "subcontracting_order_id" varchar not null,
+  "component_product_id" varchar not null,
+  "unit_of_measure" varchar not null default 'PCS',
+  "required_qty_per_unit" numeric not null,
+  "total_planned_qty" numeric not null,
+  "dispatched_qty" numeric not null default '0',
+  "consumed_qty" numeric not null default '0',
+  "scrap_qty" numeric not null default '0',
+  "returned_unused_qty" numeric not null default '0',
+  "lot_id" varchar,
+  "serial_number" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("subcontracting_order_id") references "sct_orders"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sct_order_components_tenant_id_index" on "sct_order_components"(
+  "tenant_id"
+);
+CREATE INDEX "sct_order_components_subcontracting_order_id_index" on "sct_order_components"(
+  "subcontracting_order_id"
+);
+CREATE INDEX "sct_order_components_component_product_id_index" on "sct_order_components"(
+  "component_product_id"
+);
+CREATE TABLE "sct_material_ledger_entries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "direction" varchar not null,
+  "subcontracting_order_id" varchar not null,
+  "partner_id" varchar not null,
+  "virtual_warehouse_id" varchar,
+  "component_product_id" varchar not null,
+  "lot_id" varchar,
+  "movement_type" varchar not null,
+  "entry_date" date not null,
+  "dispatched_qty" numeric not null default '0',
+  "consumed_in_returned_goods_qty" numeric not null default '0',
+  "scrap_reported_by_subcontractor_qty" numeric not null default '0',
+  "returned_unused_qty" numeric not null default '0',
+  "remaining_at_subcontractor_qty" numeric not null default '0',
+  "ddt_document_id" varchar,
+  "ddt_number" varchar,
+  "ddt_date" date,
+  "transport_reason" varchar,
+  "statutory_return_deadline" date,
+  "customs_declaration_id" varchar,
+  "valuation_amount" numeric not null default '0',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sct_material_ledger_entries_tenant_id_direction_entry_date_index" on "sct_material_ledger_entries"(
+  "tenant_id",
+  "direction",
+  "entry_date"
+);
+CREATE INDEX "sct_material_ledger_entries_subcontracting_order_id_component_product_id_index" on "sct_material_ledger_entries"(
+  "subcontracting_order_id",
+  "component_product_id"
+);
+CREATE INDEX "sct_material_ledger_entries_tenant_id_index" on "sct_material_ledger_entries"(
+  "tenant_id"
+);
+CREATE INDEX "sct_material_ledger_entries_subcontracting_order_id_index" on "sct_material_ledger_entries"(
+  "subcontracting_order_id"
+);
+CREATE INDEX "sct_material_ledger_entries_partner_id_index" on "sct_material_ledger_entries"(
+  "partner_id"
+);
+CREATE INDEX "sct_material_ledger_entries_virtual_warehouse_id_index" on "sct_material_ledger_entries"(
+  "virtual_warehouse_id"
+);
+CREATE INDEX "sct_material_ledger_entries_component_product_id_index" on "sct_material_ledger_entries"(
+  "component_product_id"
+);
+CREATE INDEX "sct_material_ledger_entries_statutory_return_deadline_index" on "sct_material_ledger_entries"(
+  "statutory_return_deadline"
+);
+CREATE TABLE "ebill_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ebill_enabled" tinyint(1) not null default '0',
+  "biller_id" varchar,
+  "provider" varchar not null default 'sandbox_simulator',
+  "channel_protocol" varchar not null default 'rest_json_xml',
+  "api_base_url" varchar,
+  "client_id" varchar,
+  "client_secret" text,
+  "signing_certificate_pem" text,
+  "private_key_pem" text,
+  "webhook_secret" text,
+  "webhook_slug" varchar not null,
+  "webhook_auth_mode" varchar not null default 'hmac_sha256',
+  "webhook_mtls_fingerprint" varchar,
+  "auto_send_on_invoice_issue" tinyint(1) not null default '0',
+  "attach_courtesy_pdf" tinyint(1) not null default '1',
+  "default_ebinterface_version" varchar not null default 'SIX eBill XML',
+  "last_connection_tested_at" datetime,
+  "connection_status" varchar not null default 'untested',
+  "last_connection_latency_ms" integer,
+  "last_connection_message" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ebill_settings_tenant_id_unique" on "ebill_settings"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "ebill_settings_webhook_slug_unique" on "ebill_settings"(
+  "webhook_slug"
+);
+CREATE TABLE "ebill_transmissions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "invoice_id" varchar not null,
+  "contact_id" varchar,
+  "supersedes_id" varchar,
+  "status" varchar not null default 'draft',
+  "channel_type" varchar,
+  "idempotency_key" varchar not null,
+  "attempt_count" integer not null default '0',
+  "biller_id" varchar not null,
+  "recipient_id" varchar not null,
+  "six_transaction_id" varchar,
+  "submission_timestamp" datetime,
+  "delivered_at" datetime,
+  "approved_at" datetime,
+  "scheduled_payment_date" date,
+  "rejected_at" datetime,
+  "rejection_code" varchar,
+  "rejection_reason" text,
+  "error_code" varchar,
+  "error_details" text,
+  "next_retry_at" datetime,
+  "paid_at" datetime,
+  "camt054_entry_id" varchar,
+  "settlement_value_date" date,
+  "settled_amount" numeric not null default '0',
+  "amount_discrepancy" numeric,
+  "cancelled_at" datetime,
+  "invoice_amount" numeric not null,
+  "currency" varchar not null,
+  "ebinterface_version" varchar,
+  "xml_payload" text,
+  "xml_sha256" varchar,
+  "pdf_sha256" varchar,
+  "pdf_size_bytes" integer,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("invoice_id") references "invoices"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "ebill_transmissions_tenant_id_status_index" on "ebill_transmissions"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "ebill_transmissions_tenant_id_invoice_id_index" on "ebill_transmissions"(
+  "tenant_id",
+  "invoice_id"
+);
+CREATE INDEX "ebill_transmissions_status_next_retry_at_index" on "ebill_transmissions"(
+  "status",
+  "next_retry_at"
+);
+CREATE INDEX "ebill_transmissions_tenant_id_index" on "ebill_transmissions"(
+  "tenant_id"
+);
+CREATE UNIQUE INDEX "ebill_transmissions_idempotency_key_unique" on "ebill_transmissions"(
+  "idempotency_key"
+);
+CREATE INDEX "ebill_transmissions_six_transaction_id_index" on "ebill_transmissions"(
+  "six_transaction_id"
+);
+CREATE TABLE "ebill_transmission_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "transmission_id" varchar not null,
+  "event_type" varchar not null,
+  "from_status" varchar,
+  "to_status" varchar,
+  "source" varchar not null,
+  "gateway_event_id" varchar,
+  "occurred_at" datetime not null,
+  "details" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("transmission_id") references "ebill_transmissions"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ebill_transmission_events_transmission_id_occurred_at_index" on "ebill_transmission_events"(
+  "transmission_id",
+  "occurred_at"
+);
+CREATE INDEX "ebill_transmission_events_tenant_id_index" on "ebill_transmission_events"(
+  "tenant_id"
+);
+CREATE TABLE "ebill_webhook_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "webhook_event_id" varchar not null,
+  "event_type" varchar,
+  "transmission_id" varchar,
+  "payload_hash" varchar not null,
+  "payload" text,
+  "outcome" varchar not null default 'received',
+  "received_at" datetime not null,
+  "processed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ebill_webhook_events_tenant_id_webhook_event_id_unique" on "ebill_webhook_events"(
+  "tenant_id",
+  "webhook_event_id"
+);
+CREATE INDEX "ebill_webhook_events_tenant_id_index" on "ebill_webhook_events"(
+  "tenant_id"
+);
+CREATE TABLE "ebill_participant_lookups"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lookup_type" varchar not null,
+  "lookup_key_hash" varchar not null,
+  "found" tinyint(1) not null default '0',
+  "result" text,
+  "fetched_at" datetime not null,
+  "expires_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ebill_lookup_unique" on "ebill_participant_lookups"(
+  "tenant_id",
+  "lookup_type",
+  "lookup_key_hash"
+);
+CREATE INDEX "ebill_participant_lookups_tenant_id_index" on "ebill_participant_lookups"(
+  "tenant_id"
+);
+CREATE INDEX "contacts_ebill_recipient_id_index" on "contacts"(
+  "ebill_recipient_id"
+);
+CREATE INDEX "invoices_ebill_status_index" on "invoices"("ebill_status");
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -58266,3 +58616,5 @@ INSERT INTO migrations VALUES(489,'2028_01_10_000100_extend_workflow_for_approva
 INSERT INTO migrations VALUES(490,'2028_01_11_000100_create_fiduciary_portal_mod032_tables',37);
 INSERT INTO migrations VALUES(491,'2028_01_12_000100_add_swiss_iso20022_columns_mod282',38);
 INSERT INTO migrations VALUES(492,'2028_01_12_000100_create_distribution_drp_tables',39);
+INSERT INTO migrations VALUES(493,'2028_01_12_000100_create_subcontracting_mod065_tables',40);
+INSERT INTO migrations VALUES(494,'2028_01_12_000100_create_swiss_ebill_tables',40);
