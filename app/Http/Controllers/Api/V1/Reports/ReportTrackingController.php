@@ -13,7 +13,6 @@ use App\Models\ScheduledReportDelivery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -37,9 +36,9 @@ final class ReportTrackingController extends Controller
     ];
 
     /**
-     * 1x1 transparent GIF binary.
+     * 1x1 transparent GIF encoded in base64 (ASCII-safe for static AST analysers).
      */
-    private const TRANSPARENT_GIF = "\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b";
+    private const TRANSPARENT_GIF_BASE64 = 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
     public function unsubscribe(Request $request, string $preference): JsonResponse
     {
@@ -83,7 +82,7 @@ final class ReportTrackingController extends Controller
             'event_type' => ScheduledReportAuditLog::EVENT_UNSUBSCRIBED,
             'recipient_email' => $email,
             'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+            'user_agent' => mb_substr((string) $request->userAgent(), 0, 500),
             'occurred_at' => now(),
         ]);
 
@@ -93,7 +92,12 @@ final class ReportTrackingController extends Controller
         );
     }
 
-    public function trackOpen(Request $request, string $delivery): HttpResponse
+    /**
+     * Track email open via 1x1 transparent GIF pixel.
+     *
+     * @response 200 scenario="Transparent 1x1 tracking pixel" string
+     */
+    public function trackOpen(Request $request, string $delivery): Response
     {
         if (! $request->hasValidSignature()) {
             abort(Response::HTTP_FORBIDDEN);
@@ -116,12 +120,12 @@ final class ReportTrackingController extends Controller
                 'recipient_email' => $record->recipient_email,
                 'period_key' => $record->period_key,
                 'ip_address' => $request->ip(),
-                'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                'user_agent' => mb_substr((string) $request->userAgent(), 0, 500),
                 'occurred_at' => now(),
             ]);
         }
 
-        return response(self::TRANSPARENT_GIF, Response::HTTP_OK, [
+        return response((string) base64_decode(self::TRANSPARENT_GIF_BASE64, true), Response::HTTP_OK, [
             'Content-Type' => 'image/gif',
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
             'Pragma' => 'no-cache',
@@ -155,7 +159,7 @@ final class ReportTrackingController extends Controller
                 'recipient_email' => $record->recipient_email,
                 'period_key' => $record->period_key,
                 'ip_address' => $request->ip(),
-                'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                'user_agent' => mb_substr((string) $request->userAgent(), 0, 500),
                 'metadata' => ['target' => $targetPath],
                 'occurred_at' => now(),
             ]);
