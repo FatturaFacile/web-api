@@ -4343,4 +4343,12 @@ return [
     'auto_intercept' => 'interception automatique',
     'receivable_account_id' => 'compte de créance de TVA étrangère',
     'non_recoverable_expense_account_id' => 'compte de charge de TVA étrangère non récupérable',
+    'payment_account' => 'compte de paiement',
+    'impute_deposit_ids' => 'dépôts à imputer',
+    'refund_mode' => 'mode de restitution',
+    'template' => 'modèle de plan',
+    'milestone_label' => "libellé de l'échéance",
+    'calculation_mode' => 'mode de calcul',
+    'instrument_type' => 'instrument',
+    'contract' => 'contrat',
 ];

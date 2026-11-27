@@ -4343,4 +4343,12 @@ return [
     'auto_intercept' => 'intercettazione automatica',
     'receivable_account_id' => 'conto del credito IVA estera',
     'non_recoverable_expense_account_id' => 'conto del costo IVA estera indetraibile',
+    'payment_account' => 'conto di incasso',
+    'impute_deposit_ids' => 'depositi da imputare',
+    'refund_mode' => 'modalità di restituzione',
+    'template' => 'modello di piano',
+    'milestone_label' => 'descrizione della rata',
+    'calculation_mode' => 'modalità di calcolo',
+    'instrument_type' => 'strumento',
+    'contract' => 'contratto',
 ];

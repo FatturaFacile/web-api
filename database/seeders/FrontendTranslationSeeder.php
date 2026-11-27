@@ -30,6 +30,7 @@ use Database\Seeders\Translations\DataMigrationFrontendTranslations;
 use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\DebtCollectionFrontendTranslations;
 use Database\Seeders\Translations\DistributionFrontendTranslations;
+use Database\Seeders\Translations\DownPaymentsFrontendTranslations;
 use Database\Seeders\Translations\EbillFrontendTranslations;
 use Database\Seeders\Translations\ElectronicSignatureFrontendTranslations;
 use Database\Seeders\Translations\ElectronicSignatureNotificationTranslations;
@@ -210,6 +211,7 @@ class FrontendTranslationSeeder extends Seeder
             + EbillFrontendTranslations::all($locale)
             + ForeignVatRefundFrontendTranslations::all($locale)
             + SubcontractingFrontendTranslations::all($locale)
+            + DownPaymentsFrontendTranslations::all($locale)
             + FranchiseNetworkFrontendTranslations::all($locale)
             + CorporateConventionsFrontendTranslations::all($locale)
             + CurrencyFxFrontendTranslations::all($locale)

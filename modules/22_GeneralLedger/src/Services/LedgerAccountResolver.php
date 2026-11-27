@@ -105,6 +105,40 @@ final class LedgerAccountResolver
         return $this->account($tenantId, '2235', 'Debiti v/enti previdenziali (Contributions payable)', 'liability', 'credit');
     }
 
+    /**
+     * What customers paid or were billed in advance and the goods or services are not delivered for yet: the VAT-bearing
+     * down-payment invoices (TD02) credit it, the final invoice closes it (Clienti c/anticipi).
+     */
+    public function customerAdvances(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '2160', 'Clienti c/anticipi (Customer advances)', 'liability', 'credit');
+    }
+
+    /**
+     * Earnest money (caparra confirmatoria) and security deposits received: a liability outside the VAT scope until the
+     * deposit is imputed to the price, forfeited or refunded.
+     */
+    public function customerDeposits(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '2165', 'Debiti per caparre e depositi cauzionali ricevuti (Deposits received)', 'liability', 'credit');
+    }
+
+    /**
+     * Forfeited deposits: compensatory income outside the VAT scope (Art. 15 DPR 633/72).
+     */
+    public function depositForfeitureIncome(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '4185', 'Sopravvenienze attive e risarcimenti fuori campo IVA (Forfeited deposits income)', 'revenue', 'credit');
+    }
+
+    /**
+     * The penalty paid on top of a deposit refunded in double (Art. 1385 par. 2 c.c.).
+     */
+    public function depositPenaltyExpense(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '6830', 'Penali e risarcimenti passivi (Deposit penalties paid)', 'expense', 'debit');
+    }
+
     public function stampDutyPayable(string $tenantId): ChartOfAccount
     {
         return $this->account($tenantId, '2240', 'Erario c/imposta di bollo (Stamp duty payable)', 'liability', 'credit');

@@ -111,10 +111,16 @@ final class InvoiceAccountingListener
             ],
         ];
 
-        // Lines 2+: Credit Revenue Lines
+        // Lines 2+: Credit Revenue Lines. The lines of a down-payment invoice (TD02) credit the customer advances, and the
+        // lines of a final invoice that deduct an advance debit them again, so the advances close with no suspense balance.
+        $advanceLineIds = $invoice !== null ? $this->advanceLineIds($invoice) : [];
+        $advancesAccountId = $advanceLineIds !== [] ? (string) $this->accounts->customerAdvances($event->tenantId)->id : null;
+
         if (! empty($event->revenueLines)) {
             foreach ($event->revenueLines as $revLine) {
-                $revAccountId = ! empty($revLine['account_id']) ? $revLine['account_id'] : $defaultRevenueAccount->id;
+                $revAccountId = isset($advanceLineIds[(string) ($revLine['line_id'] ?? '')])
+                    ? $advancesAccountId
+                    : (! empty($revLine['account_id']) ? $revLine['account_id'] : $defaultRevenueAccount->id);
                 $amount = LedgerAmount::of($revLine['amount']);
 
                 if (Decimal::isZero($amount)) {
@@ -232,6 +238,26 @@ final class InvoiceAccountingListener
             ],
             moduleCode: 'MODULE_22_GENERAL_LEDGER'
         );
+    }
+
+    /**
+     * The lines of the invoice that post to the customer advances instead of the revenue: every line of a down-payment
+     * invoice and the deduction lines of a final invoice.
+     *
+     * @return array<string, true>
+     */
+    private function advanceLineIds(SalesInvoice $invoice): array
+    {
+        $invoice->loadMissing('items');
+        $ids = [];
+
+        foreach ($invoice->items as $item) {
+            if ($invoice->is_deposit || ! empty($item->deducted_invoice_item_id)) {
+                $ids[(string) $item->id] = true;
+            }
+        }
+
+        return $ids;
     }
 
     /**

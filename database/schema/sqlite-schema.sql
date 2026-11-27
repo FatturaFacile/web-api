@@ -58341,6 +58341,282 @@ CREATE UNIQUE INDEX "fval_unique" on "foreign_vat_alert_logs"(
   "alert_key",
   "level"
 );
+CREATE TABLE "down_payment_chains"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "chain_number" varchar not null,
+  "source_type" varchar not null,
+  "source_id" varchar not null,
+  "source_number" varchar,
+  "sales_order_id" varchar,
+  "customer_id" varchar not null,
+  "customer_name" varchar,
+  "currency" varchar not null,
+  "jurisdiction" varchar not null default 'IT',
+  "total_contract_net" numeric not null default '0',
+  "total_contract_vat" numeric not null default '0',
+  "total_contract_gross" numeric not null default '0',
+  "total_earnest_deposits_held" numeric not null default '0',
+  "total_security_deposits_held" numeric not null default '0',
+  "total_advance_invoiced_net" numeric not null default '0',
+  "total_advance_invoiced_vat" numeric not null default '0',
+  "total_advance_invoiced_gross" numeric not null default '0',
+  "total_credited_advances_gross" numeric not null default '0',
+  "residual_order_gross" numeric not null default '0',
+  "status" varchar not null default 'draft',
+  "vat_bases" text,
+  "supply_lines" text,
+  "final_invoice_id" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "down_payment_chains_tenant_id_chain_number_unique" on "down_payment_chains"(
+  "tenant_id",
+  "chain_number"
+);
+CREATE INDEX "down_payment_chains_tenant_id_source_type_source_id_index" on "down_payment_chains"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "down_payment_chains_tenant_id_index" on "down_payment_chains"(
+  "tenant_id"
+);
+CREATE INDEX "down_payment_chains_source_id_index" on "down_payment_chains"(
+  "source_id"
+);
+CREATE INDEX "down_payment_chains_sales_order_id_index" on "down_payment_chains"(
+  "sales_order_id"
+);
+CREATE INDEX "down_payment_chains_customer_id_index" on "down_payment_chains"(
+  "customer_id"
+);
+CREATE INDEX "down_payment_chains_status_index" on "down_payment_chains"(
+  "status"
+);
+CREATE TABLE "down_payment_schedule_installments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "chain_id" varchar not null,
+  "sequence" integer not null,
+  "milestone_label" varchar not null,
+  "trigger_type" varchar not null,
+  "due_date" date,
+  "calculation_mode" varchar not null,
+  "percentage" numeric,
+  "amount_net" numeric not null default '0',
+  "amount_vat" numeric not null default '0',
+  "amount_gross" numeric not null default '0',
+  "instrument_type" varchar not null,
+  "status" varchar not null default 'planned',
+  "vat_breakdown" text,
+  "linked_document_id" varchar,
+  "linked_invoice_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("chain_id") references "down_payment_chains"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "down_payment_schedule_installments_chain_id_sequence_unique" on "down_payment_schedule_installments"(
+  "chain_id",
+  "sequence"
+);
+CREATE INDEX "down_payment_schedule_installments_tenant_id_index" on "down_payment_schedule_installments"(
+  "tenant_id"
+);
+CREATE INDEX "down_payment_schedule_installments_chain_id_index" on "down_payment_schedule_installments"(
+  "chain_id"
+);
+CREATE INDEX "down_payment_schedule_installments_status_index" on "down_payment_schedule_installments"(
+  "status"
+);
+CREATE TABLE "down_payment_links"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "chain_id" varchar not null,
+  "source_type" varchar not null,
+  "source_id" varchar not null,
+  "installment_id" varchar,
+  "link_type" varchar not null,
+  "document_id" varchar,
+  "document_number" varchar,
+  "document_date" date,
+  "parent_link_id" varchar,
+  "status" varchar not null default 'issued',
+  "net_amount" numeric not null default '0',
+  "vat_amount" numeric not null default '0',
+  "gross_amount" numeric not null default '0',
+  "credited_gross_amount" numeric not null default '0',
+  "settled_gross_amount" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("chain_id") references "down_payment_chains"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "down_payment_links_tenant_id_index" on "down_payment_links"(
+  "tenant_id"
+);
+CREATE INDEX "down_payment_links_chain_id_index" on "down_payment_links"(
+  "chain_id"
+);
+CREATE INDEX "down_payment_links_installment_id_index" on "down_payment_links"(
+  "installment_id"
+);
+CREATE INDEX "down_payment_links_link_type_index" on "down_payment_links"(
+  "link_type"
+);
+CREATE INDEX "down_payment_links_document_id_index" on "down_payment_links"(
+  "document_id"
+);
+CREATE INDEX "down_payment_links_parent_link_id_index" on "down_payment_links"(
+  "parent_link_id"
+);
+CREATE INDEX "down_payment_links_status_index" on "down_payment_links"(
+  "status"
+);
+CREATE TABLE "down_payment_link_vat_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "down_payment_link_id" varchar not null,
+  "vat_rate_id" varchar,
+  "vat_code" varchar not null,
+  "vat_percentage" numeric not null,
+  "net_amount" numeric not null default '0',
+  "vat_amount" numeric not null default '0',
+  "gross_amount" numeric not null default '0',
+  "credited_net_amount" numeric not null default '0',
+  "credited_vat_amount" numeric not null default '0',
+  "credited_gross_amount" numeric not null default '0',
+  "settled_net_amount" numeric not null default '0',
+  "settled_vat_amount" numeric not null default '0',
+  "settled_gross_amount" numeric not null default '0',
+  "residual_net_amount" numeric not null default '0',
+  "residual_vat_amount" numeric not null default '0',
+  "residual_gross_amount" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("down_payment_link_id") references "down_payment_links"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "down_payment_link_vat_lines_tenant_id_index" on "down_payment_link_vat_lines"(
+  "tenant_id"
+);
+CREATE INDEX "down_payment_link_vat_lines_down_payment_link_id_index" on "down_payment_link_vat_lines"(
+  "down_payment_link_id"
+);
+CREATE TABLE "earnest_and_security_deposits"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "chain_id" varchar not null,
+  "installment_id" varchar,
+  "deposit_type" varchar not null,
+  "receipt_number" varchar not null,
+  "issue_date" date not null,
+  "payment_date" date,
+  "amount" numeric not null,
+  "currency" varchar not null,
+  "vat_exemption_code" varchar,
+  "marca_da_bollo_applied" tinyint(1) not null default '0',
+  "marca_da_bollo_amount" numeric not null default '0',
+  "payment_account" varchar not null default 'bank',
+  "status" varchar not null default 'issued_unpaid',
+  "converted_invoice_id" varchar,
+  "journal_entry_id" varchar,
+  "resolution_journal_entry_id" varchar,
+  "resolution" varchar,
+  "resolved_at" date,
+  "penalty_amount" numeric not null default '0',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("chain_id") references "down_payment_chains"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "earnest_and_security_deposits_tenant_id_receipt_number_unique" on "earnest_and_security_deposits"(
+  "tenant_id",
+  "receipt_number"
+);
+CREATE INDEX "earnest_and_security_deposits_tenant_id_index" on "earnest_and_security_deposits"(
+  "tenant_id"
+);
+CREATE INDEX "earnest_and_security_deposits_chain_id_index" on "earnest_and_security_deposits"(
+  "chain_id"
+);
+CREATE INDEX "earnest_and_security_deposits_installment_id_index" on "earnest_and_security_deposits"(
+  "installment_id"
+);
+CREATE INDEX "earnest_and_security_deposits_status_index" on "earnest_and_security_deposits"(
+  "status"
+);
+CREATE TABLE "final_settlement_deduction_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "chain_id" varchar not null,
+  "final_invoice_id" varchar not null,
+  "final_invoice_item_id" varchar,
+  "referenced_link_id" varchar,
+  "referenced_invoice_number" varchar,
+  "referenced_invoice_date" date,
+  "vat_rate_id" varchar,
+  "vat_percentage" numeric not null,
+  "deducted_net" numeric not null default '0',
+  "deducted_vat" numeric not null default '0',
+  "deducted_gross" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("chain_id") references "down_payment_chains"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "final_settlement_deduction_lines_tenant_id_index" on "final_settlement_deduction_lines"(
+  "tenant_id"
+);
+CREATE INDEX "final_settlement_deduction_lines_chain_id_index" on "final_settlement_deduction_lines"(
+  "chain_id"
+);
+CREATE INDEX "final_settlement_deduction_lines_final_invoice_id_index" on "final_settlement_deduction_lines"(
+  "final_invoice_id"
+);
+CREATE INDEX "final_settlement_deduction_lines_referenced_link_id_index" on "final_settlement_deduction_lines"(
+  "referenced_link_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -58837,3 +59113,4 @@ INSERT INTO migrations VALUES(492,'2028_01_12_000100_create_distribution_drp_tab
 INSERT INTO migrations VALUES(493,'2028_01_12_000100_create_subcontracting_mod065_tables',40);
 INSERT INTO migrations VALUES(494,'2028_01_12_000100_create_swiss_ebill_tables',40);
 INSERT INTO migrations VALUES(495,'2028_01_13_000100_create_foreign_vat_refund_mod227_tables',41);
+INSERT INTO migrations VALUES(496,'2028_01_13_000100_create_down_payments_mod203_tables',42);

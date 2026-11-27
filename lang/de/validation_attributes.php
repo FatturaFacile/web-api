@@ -4343,4 +4343,12 @@ return [
     'auto_intercept' => 'automatische Erfassung',
     'receivable_account_id' => 'Konto Forderung ausländische Mehrwertsteuer',
     'non_recoverable_expense_account_id' => 'Konto nicht rückforderbare ausländische Mehrwertsteuer',
+    'payment_account' => 'Zahlungskonto',
+    'impute_deposit_ids' => 'anzurechnende Kautionen',
+    'refund_mode' => 'Rückerstattungsart',
+    'template' => 'Planvorlage',
+    'milestone_label' => 'Ratenbezeichnung',
+    'calculation_mode' => 'Berechnungsart',
+    'instrument_type' => 'Instrument',
+    'contract' => 'Vertrag',
 ];

@@ -4343,4 +4343,12 @@ return [
     'auto_intercept' => 'automatic interception',
     'receivable_account_id' => 'foreign VAT receivable account',
     'non_recoverable_expense_account_id' => 'non-recoverable foreign VAT expense account',
+    'payment_account' => 'payment account',
+    'impute_deposit_ids' => 'deposits to impute',
+    'refund_mode' => 'refund mode',
+    'template' => 'plan template',
+    'milestone_label' => 'milestone label',
+    'calculation_mode' => 'calculation mode',
+    'instrument_type' => 'instrument',
+    'contract' => 'contract',
 ];

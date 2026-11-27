@@ -65,6 +65,7 @@ return [
         'swiss_ebill' => env('FEATURE_MODULE_SWISS_EBILL'),
         'foreign_vat_refund' => env('FEATURE_MODULE_FOREIGN_VAT_REFUND'),
         'subcontracting' => env('FEATURE_MODULE_SUBCONTRACTING'),
+        'down_payments' => env('FEATURE_MODULE_DOWN_PAYMENTS'),
         'franchise_network' => env('FEATURE_MODULE_FRANCHISE_NETWORK'),
         'distribution' => env('FEATURE_MODULE_DISTRIBUTION'),
         'corporate_conventions' => env('FEATURE_MODULE_CORPORATE_CONVENTIONS'),

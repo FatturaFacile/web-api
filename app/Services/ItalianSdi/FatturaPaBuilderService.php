@@ -493,6 +493,10 @@ class FatturaPaBuilderService
             $datiGenerali->appendChild($linked);
         }
 
+        foreach ($this->advanceDocuments($dom, $invoice, $linked !== null ? (string) $invoice->linked_document_number : null) as $advance) {
+            $datiGenerali->appendChild($advance);
+        }
+
         $projectBlock = $this->projectReferenceBlock($dom, $invoice);
 
         if ($projectBlock !== null) {
@@ -657,6 +661,65 @@ class FatturaPaBuilderService
         }
 
         return $block;
+    }
+
+    /**
+     * DatiFattureCollegate of the advance invoices a final invoice deducts: one block per deducted advance line, with the numbers of
+     * the lines of this invoice that deduct it (RiferimentoNumeroLinea), the number and date of the advance invoice and the position of
+     * the deducted line in it (NumItem), in the order of the advance invoices.
+     *
+     * @param  string|null  $alreadyLinked  the document number already stated as the linked document, which is not repeated
+     * @return list<DOMElement>
+     */
+    private function advanceDocuments(DOMDocument $dom, Invoice $invoice, ?string $alreadyLinked): array
+    {
+        $lineNumbers = [];
+
+        foreach ($invoice->items->values() as $index => $item) {
+            $advanceItemId = $item->getAttribute('deducted_invoice_item_id');
+
+            if ($advanceItemId !== null && $advanceItemId !== '') {
+                $lineNumbers[(string) $advanceItemId][] = $index + 1;
+            }
+        }
+
+        if ($lineNumbers === []) {
+            return [];
+        }
+
+        $advances = DB::table('invoice_items')
+            ->join('invoices', 'invoices.id', '=', 'invoice_items.invoice_id')
+            ->where('invoices.tenant_id', $invoice->tenant_id)
+            ->whereIn('invoice_items.id', array_keys($lineNumbers))
+            ->orderBy('invoices.date')
+            ->orderBy('invoices.invoice_number')
+            ->orderBy('invoice_items.id')
+            ->get(['invoice_items.id as item_id', 'invoice_items.invoice_id as advance_id', 'invoices.invoice_number', 'invoices.date']);
+        $positions = [];
+        $elements = [];
+
+        foreach ($advances as $row) {
+            if ($alreadyLinked !== null && $alreadyLinked === (string) $row->invoice_number) {
+                continue;
+            }
+
+            $positions[(string) $row->advance_id] ??= DB::table('invoice_items')->where('invoice_id', $row->advance_id)->orderBy('id')->pluck('id')->map(static fn (mixed $id): string => (string) $id)->values()->all();
+            $position = array_search((string) $row->item_id, $positions[(string) $row->advance_id], true);
+            $linked = $dom->createElement('DatiFattureCollegate');
+            $referenced = $lineNumbers[(string) $row->item_id];
+            sort($referenced);
+
+            foreach (array_unique($referenced) as $lineNumber) {
+                $linked->appendChild($dom->createElement('RiferimentoNumeroLinea', (string) $lineNumber));
+            }
+
+            $linked->appendChild($dom->createElement('IdDocumento', htmlspecialchars(mb_substr((string) $row->invoice_number, 0, 20))));
+            $linked->appendChild($dom->createElement('Data', Carbon::parse((string) $row->date)->format('Y-m-d')));
+            $linked->appendChild($dom->createElement('NumItem', (string) ($position === false ? 1 : $position + 1)));
+            $elements[] = $linked;
+        }
+
+        return $elements;
     }
 
     /**
