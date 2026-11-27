@@ -18,6 +18,10 @@ return [
         'charset' => 'Le texte contient des caractères non autorisés dans un fichier de paiement.',
         'remittance_too_long' => 'Le motif dépasse :max caractères.',
         'reference_invalid' => 'La référence structurée n\'est ni une référence QR valide (27 chiffres) ni une référence ISO 11649.',
+        'duplicate_invoice_in_file' => 'Cette facture est déjà payée par la ligne :line de ce fichier.',
+        'duplicate_end_to_end_in_file' => 'L\'identifiant de bout en bout répète celui de la ligne :line de ce fichier.',
+        'invoice_already_in_batch' => 'Cette facture figure déjà dans le lot de paiement :batch.',
+        'end_to_end_already_used' => 'L\'identifiant de bout en bout est déjà utilisé par le lot de paiement :batch.',
     ],
     'f24' => [
         'not_generated' => 'Le fichier F24 n\'a pas encore été généré.',

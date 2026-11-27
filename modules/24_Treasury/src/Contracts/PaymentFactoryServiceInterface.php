@@ -6,6 +6,7 @@ namespace Modules\Treasury\Contracts;
 
 use Modules\Treasury\Models\PaymentBatch;
 use Modules\Treasury\Models\PaymentExecution;
+use Modules\Treasury\Services\PaymentFlows\Pain002\Pain002Result;
 
 interface PaymentFactoryServiceInterface
 {
@@ -55,6 +56,12 @@ interface PaymentFactoryServiceInterface
      * Apply the outcome reported by the bank in a pain.002 status report.
      */
     public function importPain002(string $paymentBatchId, string $xml, ?string $userId = null): PaymentBatch;
+
+    /**
+     * Apply a pain.002 report and describe what happened to every transaction. Without a batch identifier the batch is
+     * found through the message the report answers.
+     */
+    public function applyPain002(string $xml, ?string $paymentBatchId = null, ?string $userId = null): Pain002Result;
 
     /**
      * Cancel an unexecuted payment batch and release liabilities.

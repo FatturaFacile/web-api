@@ -4219,4 +4219,12 @@ return [
     'vat_code_it_id' => 'code TVA Italie',
     'vat_code_ch_id' => 'code TVA Suisse',
     'tares_code' => 'numéro Tares',
+    'qr_iid' => 'QR-IID',
+    'besr_id' => 'BESR-ID',
+    'preferred_pain_version' => 'version pain.001 préférée',
+    'reconciliation_tolerance' => 'tolérance de rapprochement',
+    'reconciliation_max_fee' => 'frais bancaires maximaux',
+    'category_purpose' => 'catégorie du paiement',
+    'charge_bearer' => 'répartition des frais',
+    'payment_batch_id' => 'lot de paiement',
 ];

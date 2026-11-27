@@ -30,10 +30,10 @@ function flowPayload(string $flow, string $bankId, array $overrides = []): array
     ], $overrides);
 }
 
-test('the catalogue lists the three flows with version, currencies and CUC requirement', function (): void {
+test('the catalogue lists the flows with version, currencies and CUC requirement', function (): void {
     $flows = collect($this->getJson('/api/v1/treasury/payment-flows')->assertOk()->json('data'))->keyBy('flow');
 
-    expect($flows->keys()->all())->toBe(['ch_pain001_09', 'sepa_pain001_03', 'cbi_sepa_03'])
+    expect($flows->keys()->all())->toBe(['ch_pain001_09', 'ch_pain001_03', 'sepa_pain001_03', 'cbi_sepa_03'])
         ->and($flows['ch_pain001_09']['pain_version'])->toBe('09')
         ->and($flows['ch_pain001_09']['currencies'])->toBe(['CHF', 'EUR'])
         ->and($flows['cbi_sepa_03']['requires_cuc'])->toBeTrue()

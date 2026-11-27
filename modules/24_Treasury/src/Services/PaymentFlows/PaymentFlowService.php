@@ -6,6 +6,8 @@ namespace Modules\Treasury\Services\PaymentFlows;
 
 use App\Exceptions\Pain001Exception;
 use App\Models\Tenant;
+use App\Services\Banking\Iso20022\Pain001CategoryPurpose;
+use App\Services\Banking\Iso20022\Pain001ChargeBearer;
 use App\Services\Banking\Iso20022\Pain001Message;
 use App\Services\Banking\Iso20022\Pain001Payment;
 use App\Services\Banking\Iso20022\Pain001SchemaValidator;
@@ -27,6 +29,7 @@ final readonly class PaymentFlowService
 {
     public function __construct(
         private PaymentFlowRules $rules,
+        private DuplicatePaymentGuard $duplicates,
         private Pain001XmlBuilder $builder,
         private Pain001SchemaValidator $schema,
         private CbiInitiatorDecorator $cbi,
@@ -41,13 +44,16 @@ final readonly class PaymentFlowService
      *
      * @throws ValidationException
      */
-    public function generate(PaymentFlow $flow, string $bankAccountId, string $executionDate, array $lines, ?string $cuc = null, ?string $currency = null): GeneratedPaymentFlow
+    public function generate(PaymentFlow $flow, string $bankAccountId, string $executionDate, array $lines, ?string $cuc = null, ?string $currency = null, ?Pain001CategoryPurpose $categoryPurpose = null, ?Pain001ChargeBearer $chargeBearer = null): GeneratedPaymentFlow
     {
         $account = BankAccount::query()->findOrFail($bankAccountId);
         $lines = $this->normalize($lines, strtoupper($currency ?? (string) ($account->currency ?? $flow->currencies()[0])));
         $cuc = $cuc !== null ? strtoupper(trim($cuc)) : null;
 
-        $this->assertNoIssues($this->rules->check($flow, (string) $account->iban, $lines, $cuc));
+        $this->assertNoIssues([
+            ...$this->rules->check($flow, (string) $account->iban, $lines, $cuc),
+            ...$this->duplicates->check($lines),
+        ]);
 
         $tenantId = (string) $this->tenantContext->getTenantId();
         $debtorName = (string) (Tenant::query()->whereKey($tenantId)->value('legal_name') ?: $account->bank_name);
@@ -75,6 +81,8 @@ final readonly class PaymentFlowService
                 debtorIban: (string) $account->iban,
                 debtorBic: $account->bic_swift !== null ? (string) $account->bic_swift : null,
                 payments: $payments,
+                categoryPurpose: $categoryPurpose,
+                chargeBearer: $chargeBearer,
             ), $flow->version());
 
             if ($flow->requiresCuc()) {
@@ -103,9 +111,9 @@ final readonly class PaymentFlowService
      *
      * @throws ValidationException
      */
-    public function createBatch(PaymentFlow $flow, string $bankAccountId, string $executionDate, array $lines, ?string $cuc, ?string $currency, string $userId): PaymentBatch
+    public function createBatch(PaymentFlow $flow, string $bankAccountId, string $executionDate, array $lines, ?string $cuc, ?string $currency, string $userId, ?Pain001CategoryPurpose $categoryPurpose = null, ?Pain001ChargeBearer $chargeBearer = null): PaymentBatch
     {
-        $generated = $this->generate($flow, $bankAccountId, $executionDate, $lines, $cuc, $currency);
+        $generated = $this->generate($flow, $bankAccountId, $executionDate, $lines, $cuc, $currency, $categoryPurpose, $chargeBearer);
         $tenantId = (string) $this->tenantContext->getTenantId();
         $normalized = $this->normalize($lines, $generated->currency);
 
@@ -118,6 +126,8 @@ final readonly class PaymentFlowService
             'format' => $flow->batchFormat(),
             'pain_version' => $flow->version()->value,
             'payment_method' => $flow->paymentMethod(),
+            'category_purpose' => $categoryPurpose?->value,
+            'charge_bearer' => $chargeBearer?->value,
         ], $normalized, $userId);
 
         if ($flow->requiresCuc()) {

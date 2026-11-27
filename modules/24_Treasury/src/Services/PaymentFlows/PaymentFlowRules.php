@@ -49,7 +49,7 @@ final readonly class PaymentFlowRules
             $issues[] = ['path' => 'bank_account_id', 'code' => 'debtor_iban_invalid', 'params' => []];
         } elseif ($flow === PaymentFlow::CbiSepaV03 && $debtor['country'] !== 'IT') {
             $issues[] = ['path' => 'bank_account_id', 'code' => 'debtor_iban_country', 'params' => ['country' => 'IT']];
-        } elseif ($flow === PaymentFlow::ChPain001V09 && ! in_array($debtor['country'], ['CH', 'LI'], true)) {
+        } elseif ($flow->isSwiss() && ! in_array($debtor['country'], ['CH', 'LI'], true)) {
             $issues[] = ['path' => 'bank_account_id', 'code' => 'debtor_iban_country', 'params' => ['country' => 'CH/LI']];
         }
 

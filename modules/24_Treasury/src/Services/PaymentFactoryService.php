@@ -6,15 +6,14 @@ namespace Modules\Treasury\Services;
 
 use App\Models\PassiveInvoice;
 use App\Models\Tenant;
+use App\Services\Banking\Iso20022\Pain001CategoryPurpose;
+use App\Services\Banking\Iso20022\Pain001ChargeBearer;
 use App\Services\Banking\Iso20022\Pain001Message;
 use App\Services\Banking\Iso20022\Pain001Payment;
 use App\Services\Banking\Iso20022\Pain001SchemaValidator;
 use App\Services\Banking\Iso20022\Pain001Version;
 use App\Services\Banking\Iso20022\Pain001XmlBuilder;
 use Carbon\CarbonImmutable;
-use DOMDocument;
-use DOMElement;
-use DOMXPath;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Facades\DB;
@@ -30,18 +29,19 @@ use Modules\Treasury\Models\PaymentBatch;
 use Modules\Treasury\Models\PaymentExecution;
 use Modules\Treasury\Models\PaymentLine;
 use Modules\Treasury\Services\PaymentFlows\CbiInitiatorDecorator;
+use Modules\Treasury\Services\PaymentFlows\Pain002\Pain002Parser;
+use Modules\Treasury\Services\PaymentFlows\Pain002\Pain002Report;
+use Modules\Treasury\Services\PaymentFlows\Pain002\Pain002Result;
 
 final readonly class PaymentFactoryService implements PaymentFactoryServiceInterface
 {
-    /** pain.002 statuses that mean the bank took the payment: settled, settling, accepted, accepted with change. */
-    private const array PAIN002_EXECUTED = ['ACSC', 'ACSP', 'ACCP', 'ACWC'];
-
     public function __construct(
         private AuditLedgerInterface $auditLedger,
         private EventDispatcherInterface $dispatcher,
         private TreasuryPositionServiceInterface $positionService,
         private Pain001XmlBuilder $pain001,
         private Pain001SchemaValidator $pain001Schema,
+        private Pain002Parser $pain002Parser,
     ) {}
 
     public function createBatch(array $batchData, array $lines, ?string $creatorUserId = null): PaymentBatch
@@ -77,6 +77,8 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
                 'payment_method' => $batchData['payment_method'] ?? 'sepa_credit_transfer',
                 'format' => $batchData['format'] ?? 'sepa_pain_001_it',
                 'pain_version' => $batchData['pain_version'] ?? '09',
+                'category_purpose' => $batchData['category_purpose'] ?? null,
+                'charge_bearer' => $batchData['charge_bearer'] ?? null,
                 'execution_date' => $batchData['execution_date'] ?? now()->toDateString(),
                 'total_amount' => $totalAmount,
                 'currency' => $batchData['currency'] ?? $bankAccount->currency ?? 'EUR',
@@ -179,6 +181,8 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
             debtorIban: (string) $batch->bankAccount->iban,
             debtorBic: $batch->bankAccount->bic_swift !== null ? (string) $batch->bankAccount->bic_swift : null,
             payments: $payments,
+            categoryPurpose: Pain001CategoryPurpose::tryFrom((string) $batch->getAttribute('category_purpose')),
+            chargeBearer: Pain001ChargeBearer::tryFrom((string) $batch->getAttribute('charge_bearer')),
         ), $this->version($batch));
 
         $cuc = (string) $batch->getAttribute('cbi_cuc');
@@ -373,72 +377,78 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
 
     public function importPain002(string $paymentBatchId, string $xml, ?string $userId = null): PaymentBatch
     {
-        return DB::transaction(function () use ($paymentBatchId, $xml, $userId) {
-            /** @var PaymentBatch $batch */
-            $batch = PaymentBatch::where('id', $paymentBatchId)->lockForUpdate()->firstOrFail();
-            $report = $this->parsePain002($xml);
+        return $this->applyPain002($xml, $paymentBatchId, $userId)->batch;
+    }
 
-            if ($report['original_message_id'] !== (string) $batch->pain001_message_id) {
-                throw new InvalidArgumentException("The status report refers to message [{$report['original_message_id']}], not to payment batch [{$batch->batch_reference}].");
+    /**
+     * Applies a pain.002 report. With no batch given, the batch is the one whose pain.001 message the report answers.
+     * Lines the bank accepted are executed; lines it rejected are closed with the ISO 20022 reason code and the
+     * additional information of the bank, which leaves their supplier invoice free for a new payment run.
+     *
+     * @throws InvalidArgumentException
+     */
+    public function applyPain002(string $xml, ?string $paymentBatchId = null, ?string $userId = null): Pain002Result
+    {
+        $report = $this->pain002Parser->parse($xml);
+
+        return DB::transaction(function () use ($report, $paymentBatchId, $userId): Pain002Result {
+            /** @var PaymentBatch|null $batch */
+            $batch = $paymentBatchId !== null
+                ? PaymentBatch::where('id', $paymentBatchId)->lockForUpdate()->firstOrFail()
+                : PaymentBatch::where('pain001_message_id', $report->originalMessageId)->lockForUpdate()->first();
+
+            if ($batch === null) {
+                throw new InvalidArgumentException("No payment batch was exported with message [{$report->originalMessageId}].");
+            }
+
+            if ($report->originalMessageId !== (string) $batch->pain001_message_id) {
+                throw new InvalidArgumentException("The status report refers to message [{$report->originalMessageId}], not to payment batch [{$batch->batch_reference}].");
             }
 
             $lines = PaymentLine::where('payment_batch_id', $batch->id)->where('status', 'pending')->get();
             $accepted = [];
             $rejected = [];
+            $reasons = [];
+            $results = [];
 
             foreach ($lines as $line) {
-                $code = $report['transactions'][(string) $line->end_to_end_id] ?? $report['group_status'];
+                $transaction = $report->transactionFor($line->end_to_end_id, $line->instruction_id);
+                $code = $transaction->status ?? $report->groupStatus;
+                $reason = $transaction->reasonCode ?? $report->groupReasonCode;
+                $info = $transaction->additionalInfo ?? $report->groupAdditionalInfo;
+                $lineStatus = 'pending';
 
-                if (in_array($code, self::PAIN002_EXECUTED, true)) {
+                if ($code !== null && in_array($code, Pain002Report::EXECUTED, true)) {
                     $accepted[] = (string) $line->id;
-                } elseif ($code === 'RJCT') {
+                    $lineStatus = 'executed';
+                } elseif ($code === Pain002Report::REJECTED) {
                     $rejected[] = (string) $line->id;
+                    $reasons[(string) $line->id] = ['code' => $reason ?? Pain002Report::REJECTED, 'info' => $info];
+                    $lineStatus = 'rejected';
                 }
+
+                $results[] = [
+                    'end_to_end_id' => $line->end_to_end_id,
+                    'instruction_id' => $line->instruction_id,
+                    'status' => $code,
+                    'reason_code' => $lineStatus === 'rejected' ? ($reason ?? Pain002Report::REJECTED) : $reason,
+                    'additional_info' => $info,
+                    'line_status' => $lineStatus,
+                ];
             }
 
-            return $this->applyBankOutcome($batch, $accepted, $rejected, $report['message_id'], (string) $report['group_status'], null, [
-                'report' => $report,
+            $batch = $this->applyBankOutcome($batch, $accepted, $rejected, $report->messageId, (string) $report->groupStatus, null, [
+                'report' => [
+                    'message_id' => $report->messageId,
+                    'original_message_id' => $report->originalMessageId,
+                    'group_status' => $report->groupStatus,
+                    'transactions' => $results,
+                ],
                 'imported_by' => $userId,
-            ]);
+            ], $reasons);
+
+            return new Pain002Result($batch, $report, count($accepted), count($rejected), count($lines) - count($accepted) - count($rejected), $results);
         });
-    }
-
-    /**
-     * @return array{message_id: string, original_message_id: string, group_status: ?string, transactions: array<string, string>}
-     */
-    private function parsePain002(string $xml): array
-    {
-        $dom = new DOMDocument;
-
-        if (trim($xml) === '' || ! @$dom->loadXML($xml, LIBXML_NONET)) {
-            throw new InvalidArgumentException('The file is not a valid pain.002 document.');
-        }
-
-        $xpath = new DOMXPath($dom);
-        $text = static fn (string $query, ?DOMElement $context = null): ?string => ($node = $xpath->query($query, $context)?->item(0)) !== null ? trim((string) $node->textContent) : null;
-        $originalMessageId = $text("//*[local-name()='OrgnlGrpInfAndSts']/*[local-name()='OrgnlMsgId']");
-
-        if ($originalMessageId === null) {
-            throw new InvalidArgumentException('The file is not a valid pain.002 document.');
-        }
-
-        $transactions = [];
-
-        foreach ($xpath->query("//*[local-name()='TxInfAndSts']") ?: [] as $node) {
-            $endToEndId = $text("*[local-name()='OrgnlEndToEndId']", $node);
-            $status = $text("*[local-name()='TxSts']", $node);
-
-            if ($endToEndId !== null && $status !== null) {
-                $transactions[$endToEndId] = $status;
-            }
-        }
-
-        return [
-            'message_id' => (string) ($text("//*[local-name()='GrpHdr']/*[local-name()='MsgId']") ?? $originalMessageId),
-            'original_message_id' => $originalMessageId,
-            'group_status' => $text("//*[local-name()='OrgnlGrpInfAndSts']/*[local-name()='GrpSts']") ?? $text("//*[local-name()='OrgnlPmtInfAndSts']/*[local-name()='PmtInfSts']"),
-            'transactions' => $transactions,
-        ];
     }
 
     /**
@@ -447,6 +457,7 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
      * @param  list<string>  $executedLineIds
      * @param  list<string>  $rejectedLineIds
      * @param  array<string, mixed>  $payload
+     * @param  array<string, array{code: string, info: ?string}>  $rejectionReasons  by payment line identifier
      */
     /**
      * Ri.Ba. batches collect money: they have their own file and outcome, and must never reach the outflow path.
@@ -460,7 +471,7 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
         }
     }
 
-    private function applyBankOutcome(PaymentBatch $batch, array $executedLineIds, array $rejectedLineIds, string $bankReference, string $statusCode, ?string $valueDate, array $payload): PaymentBatch
+    private function applyBankOutcome(PaymentBatch $batch, array $executedLineIds, array $rejectedLineIds, string $bankReference, string $statusCode, ?string $valueDate, array $payload, array $rejectionReasons = []): PaymentBatch
     {
         $this->assertNotRiba($batch);
 
@@ -477,7 +488,13 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
         }
 
         if ($rejectedLineIds !== []) {
-            PaymentLine::whereIn('id', $rejectedLineIds)->update(['status' => 'rejected', 'error_code' => 'RJCT', 'error_message' => 'Rejected by the bank']);
+            foreach ($rejectedLineIds as $lineId) {
+                PaymentLine::where('id', $lineId)->update([
+                    'status' => 'rejected',
+                    'error_code' => $rejectionReasons[$lineId]['code'] ?? 'RJCT',
+                    'error_message' => $rejectionReasons[$lineId]['info'] ?? 'Rejected by the bank',
+                ]);
+            }
         }
 
         $lines = PaymentLine::where('payment_batch_id', $batch->id)->get(['status']);
