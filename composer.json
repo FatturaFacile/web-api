@@ -114,6 +114,7 @@
             "Modules\\Distribution\\": "modules/86_Distribution/src/",
             "Modules\\SwissEbill\\": "modules/86_SwissEbill/src/",
             "Modules\\ForeignVatRefund\\": "modules/87_ForeignVatRefund/src/",
+            "Modules\\GreenCare\\": "modules/88_GreenCare/src/",
             "Modules\\SwissVat\\": "modules/75_SwissVat/src/",
             "Modules\\LeaveManagement\\": "modules/76_LeaveManagement/src/",
             "Modules\\MarketingAutomation\\": "modules/77_MarketingAutomation/src/",

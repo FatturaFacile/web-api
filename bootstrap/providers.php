@@ -56,6 +56,7 @@ use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\Fleet\Providers\FleetServiceProvider;
 use Modules\Forecasting\Providers\ForecastingServiceProvider;
 use Modules\ForeignVatRefund\Providers\ForeignVatRefundServiceProvider;
+use Modules\GreenCare\Providers\GreenCareServiceProvider;
 use Modules\FranchiseNetwork\Providers\FranchiseNetworkServiceProvider;
 use Modules\GdoTradeTerms\Providers\GdoTradeTermsServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
@@ -241,6 +242,7 @@ return [
     FiduciaryPortalServiceProvider::class,
     SwissEbillServiceProvider::class,
     ForeignVatRefundServiceProvider::class,
+    GreenCareServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,
