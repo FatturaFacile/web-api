@@ -26,6 +26,7 @@ use Modules\Contracts\Jobs\ExpireSignatureRequestsJob;
 use Modules\Contracts\Jobs\ProcessContractDeadlinesJob;
 use Modules\CRM\Jobs\SendCrmActivityRemindersJob;
 use Modules\Customs\Jobs\RetrieveAssessmentDecisionsJob;
+use Modules\Distribution\Jobs\RunDistributionPlanningJob;
 use Modules\Documents\Jobs\AnchorPreservationChainJob;
 use Modules\Documents\Jobs\ApplyDocumentRetentionJob;
 use Modules\DocumentTrust\Jobs\VerifyPreservationPackagesJob;
@@ -33,7 +34,6 @@ use Modules\ElectronicSignature\Jobs\ProcessSignatureLifecycleJob;
 use Modules\Facility\Jobs\GenerateFacilityInspectionsJob;
 use Modules\Facility\Jobs\ReleaseNoShowBookingsJob;
 use Modules\FiscalRetail\Jobs\RetryCorrispettiviTransmissionsJob;
-use Modules\Distribution\Jobs\RunDistributionPlanningJob;
 use Modules\FranchiseNetwork\Jobs\CalculateRoyaltiesJob;
 use Modules\FranchiseNetwork\Jobs\MaintainFranchiseNetworkJob;
 use Modules\FranchiseNetwork\Jobs\SnapshotBenchmarksJob;
@@ -288,6 +288,8 @@ Schedule::command('surveys:enqueue-semi-annual')->dailyAt('06:30')->withoutOverl
 
 // Swiss eBill (Mod 025): polling fallback of the SIX Paynet / PostFinance webhooks for companies behind a firewall; also re-queues lost deliveries.
 Schedule::command('ebill:poll-pending-statuses')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
+// Foreign VAT refund (Mod 227): 60/30/15 day alerts before the peremptory deadlines of 30 June (ESTV) and 30 September (EU / Italy), expiring mandates and certificates.
+Schedule::command('foreign-vat:deadline-alerts')->dailyAt('07:00')->withoutOverlapping()->onOneServer();
 // Corporate conventions (Mod 358): expires the conventions and beneficiary passes past their end date.
 Schedule::command('corporate-conventions:expire')->dailyAt('01:15')->withoutOverlapping()->onOneServer();
 

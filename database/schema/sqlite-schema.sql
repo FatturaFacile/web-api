@@ -58123,6 +58123,224 @@ CREATE INDEX "contacts_ebill_recipient_id_index" on "contacts"(
   "ebill_recipient_id"
 );
 CREATE INDEX "invoices_ebill_status_index" on "invoices"("ebill_status");
+CREATE TABLE "country_vat_refund_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "home_country_code" varchar not null,
+  "refund_country_code" varchar not null,
+  "regime_type" varchar not null,
+  "has_reciprocity" tinyint(1) not null default '1',
+  "expense_category_code" integer not null,
+  "sub_code" varchar,
+  "deductible_percentage" numeric not null default '100',
+  "min_annual_amount" numeric,
+  "min_quarterly_amount" numeric,
+  "currency_code" varchar not null,
+  "filing_deadline_month" integer not null,
+  "filing_deadline_day" integer not null,
+  "vat_rates" text,
+  "requires_fiscal_representative" tinyint(1) not null default '0',
+  "requires_taxable_status_certificate" tinyint(1) not null default '0',
+  "notes_key" varchar,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "cvrr_lookup_idx" on "country_vat_refund_rules"(
+  "tenant_id",
+  "home_country_code",
+  "refund_country_code",
+  "expense_category_code"
+);
+CREATE INDEX "cvrr_regime_idx" on "country_vat_refund_rules"(
+  "refund_country_code",
+  "regime_type"
+);
+CREATE TABLE "fiscal_representative_mandates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "country_code" varchar not null,
+  "representative_name" varchar not null,
+  "representative_tax_id" varchar,
+  "address" varchar,
+  "postal_code" varchar,
+  "city" varchar,
+  "email" varchar,
+  "phone" varchar,
+  "mandate_start_date" date not null,
+  "mandate_end_date" date,
+  "power_of_attorney_document_path" varchar,
+  "certificate_of_taxable_status_path" varchar,
+  "certificate_expiry_date" date,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "frm_country_idx" on "fiscal_representative_mandates"(
+  "tenant_id",
+  "country_code",
+  "is_active"
+);
+CREATE TABLE "foreign_vat_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "auto_intercept" tinyint(1) not null default '1',
+  "receivable_account_id" varchar,
+  "non_recoverable_expense_account_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "foreign_vat_settings_tenant_id_unique" on "foreign_vat_settings"(
+  "tenant_id"
+);
+CREATE TABLE "vat_refund_claims"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "claim_number" varchar not null,
+  "home_country_code" varchar not null,
+  "target_country_code" varchar not null,
+  "regime_type" varchar not null,
+  "period_type" varchar not null,
+  "fiscal_year" integer not null,
+  "period_start_date" date not null,
+  "period_end_date" date not null,
+  "statutory_deadline_date" date not null,
+  "currency_code" varchar not null,
+  "total_requested_amount" numeric not null default '0',
+  "total_approved_amount" numeric not null default '0',
+  "total_rejected_amount" numeric not null default '0',
+  "total_refunded_amount" numeric not null default '0',
+  "carried_base_amount" numeric not null default '0',
+  "refund_exchange_rate" numeric,
+  "fiscal_representative_mandate_id" varchar,
+  "status" varchar not null default 'DRAFT',
+  "submission_date" datetime,
+  "protocol_number" varchar,
+  "generated_xml_path" varchar,
+  "generated_pdf_dossier_path" varchar,
+  "zip_bundle_path" varchar,
+  "bank_account_id" varchar,
+  "rejection_journal_entry_id" varchar,
+  "reconciliation_journal_entry_id" varchar,
+  "refunded_on" date,
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "vrc_number_unique" on "vat_refund_claims"(
+  "tenant_id",
+  "claim_number"
+);
+CREATE INDEX "vrc_status_idx" on "vat_refund_claims"("tenant_id", "status");
+CREATE INDEX "vrc_country_year_idx" on "vat_refund_claims"(
+  "tenant_id",
+  "target_country_code",
+  "fiscal_year"
+);
+CREATE TABLE "foreign_vat_ledger"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source_type" varchar not null,
+  "source_id" varchar,
+  "document_number" varchar not null,
+  "document_date" date not null,
+  "supplier_name" varchar,
+  "supplier_vat_number" varchar,
+  "supplier_country_code" varchar not null,
+  "expense_category_code" integer not null default '10',
+  "net_amount" numeric not null default '0',
+  "foreign_vat_rate" numeric not null default '0',
+  "foreign_vat_amount" numeric not null default '0',
+  "currency_code" varchar not null,
+  "exchange_rate_to_base" numeric not null default '1',
+  "base_currency_foreign_vat_amount" numeric not null default '0',
+  "eligible_percentage" numeric not null default '0',
+  "recoverable_vat_amount" numeric not null default '0',
+  "non_recoverable_vat_amount" numeric not null default '0',
+  "base_recoverable_vat_amount" numeric not null default '0',
+  "transitory_account_id" varchar,
+  "journal_entry_id" varchar,
+  "status" varchar not null default 'PENDING_REVIEW',
+  "vat_refund_claim_id" varchar,
+  "fiscal_year" integer not null,
+  "fiscal_quarter" integer not null,
+  "attachment_path" varchar,
+  "posting_error" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fvl_source_unique" on "foreign_vat_ledger"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE INDEX "fvl_country_idx" on "foreign_vat_ledger"(
+  "tenant_id",
+  "supplier_country_code",
+  "fiscal_year",
+  "status"
+);
+CREATE INDEX "fvl_claim_idx" on "foreign_vat_ledger"("vat_refund_claim_id");
+CREATE TABLE "vat_refund_claim_events"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "vat_refund_claim_id" varchar not null,
+  "event" varchar not null,
+  "from_status" varchar,
+  "to_status" varchar,
+  "note" text,
+  "payload" text,
+  "user_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "vrce_claim_idx" on "vat_refund_claim_events"(
+  "vat_refund_claim_id",
+  "created_at"
+);
+CREATE TABLE "foreign_vat_alert_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "alert_key" varchar not null,
+  "level" integer not null default '0',
+  "sent_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fval_unique" on "foreign_vat_alert_logs"(
+  "tenant_id",
+  "alert_key",
+  "level"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -58618,3 +58836,4 @@ INSERT INTO migrations VALUES(491,'2028_01_12_000100_add_swiss_iso20022_columns_
 INSERT INTO migrations VALUES(492,'2028_01_12_000100_create_distribution_drp_tables',39);
 INSERT INTO migrations VALUES(493,'2028_01_12_000100_create_subcontracting_mod065_tables',40);
 INSERT INTO migrations VALUES(494,'2028_01_12_000100_create_swiss_ebill_tables',40);
+INSERT INTO migrations VALUES(495,'2028_01_13_000100_create_foreign_vat_refund_mod227_tables',41);
