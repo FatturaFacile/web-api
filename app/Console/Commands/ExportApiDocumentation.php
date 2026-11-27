@@ -65,6 +65,20 @@ class ExportApiDocumentation extends Command
             return self::FAILURE;
         }
 
+        $utf8Check = base_path('scripts/check-utf8.php');
+
+        if (is_file($utf8Check)) {
+            $output = [];
+            $exitCode = 0;
+            exec(escapeshellarg(PHP_BINARY).' '.escapeshellarg($utf8Check).' 2>&1', $output, $exitCode);
+
+            if ($exitCode !== 0) {
+                $this->error("UTF-8 encoding check failed before OpenAPI export:\n".implode("\n", $output));
+
+                return self::FAILURE;
+            }
+        }
+
         ini_set('memory_limit', '6G');
 
         $directory = base_path((string) $this->option('path'));
@@ -142,7 +156,7 @@ class ExportApiDocumentation extends Command
     }
 
     /**
-     * Every    ype: array schema needs an items keyword: where the analysis found none, any item is accepted.
+     * Every `type: array` schema needs an `items` keyword: where the analysis found none, any item is accepted.
      */
     private function completeArrays(mixed $node): void
     {

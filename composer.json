@@ -198,11 +198,14 @@
         "test:fast": "@php scripts/dev/locked.php php -d memory_limit=6G vendor/bin/pest --parallel --processes=2 --no-coverage --testsuite=Unit,Architecture",
         "test:changed": "@php scripts/dev/locked.php php -d memory_limit=6G vendor/bin/pest --parallel --processes=2 --no-coverage --dirty",
         "test:module": "@php scripts/dev/locked.php php -d memory_limit=6G vendor/bin/pest --parallel --processes=2 --no-coverage",
+        "check:utf8": "@php scripts/check-utf8.php",
+        "fix:utf8": "@php scripts/check-utf8.php --fix",
         "lint": "@php vendor/bin/pint --test",
         "lint:dirty": "@php vendor/bin/pint --dirty",
         "analyse": "@php -d memory_limit=6G vendor/bin/phpstan analyse --memory-limit=6G",
         "analyse:dirty": "@php scripts/dev/analyse-dirty.php",
         "quality": [
+            "@check:utf8",
             "@lint",
             "@analyse",
             "@test:arch"
@@ -216,8 +219,7 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi",
-            "git config core.hooksPath .githooks || true"
+            "@php artisan package:discover --ansi"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
