@@ -143,13 +143,13 @@ it('cancels a draft but refuses to cancel a shipped transfer', function (): void
 
     $shipped = $this->postJson('/api/v1/distribution/transfers', drpTransferPayload($this))->json('data.id');
     $this->postJson("/api/v1/distribution/transfers/{$shipped}/dispatch")->assertOk();
-    $this->postJson("/api/v1/distribution/transfers/{$shipped}/cancel")->assertStatus(422);
+    $this->postJson("/api/v1/distribution/transfers/{$shipped}/cancel")->assertStatus(422)->assertJsonPath('code', 'cannot_cancel_in_transit');
 });
 
 it('ships nothing when the source cannot cover the quantity', function (): void {
     $id = $this->postJson('/api/v1/distribution/transfers', drpTransferPayload($this, '50'))->assertCreated()->json('data.id');
 
-    $this->postJson("/api/v1/distribution/transfers/{$id}/dispatch")->assertStatus(422);
+    $this->postJson("/api/v1/distribution/transfers/{$id}/dispatch")->assertStatus(422)->assertJsonPath('code', 'insufficient_stock');
 
     expect(drpOnHand($this->hubBin, $this->item))->toBe('20.0000')
         ->and(TransferOrder::query()->findOrFail($id)->status)->toBe('approved');

@@ -10,6 +10,7 @@ use Modules\Distribution\Http\Controllers\LookupController;
 use Modules\Distribution\Http\Controllers\NetworkController;
 use Modules\Distribution\Http\Controllers\ReplenishmentController;
 use Modules\Distribution\Http\Controllers\TransferController;
+use Modules\Distribution\Http\Middleware\RenderRuleViolations;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,7 +20,7 @@ use Modules\Distribution\Http\Controllers\TransferController;
 | consignment and 3PL warehouses, sales channels and available-to-promise.
 */
 Route::prefix('api/v1/distribution')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:distribution'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:distribution', RenderRuleViolations::class])
     ->group(function (): void {
         Route::get('lookups', [LookupController::class, 'lookups'])->name('distribution.lookups');
         Route::get('dashboard', [LookupController::class, 'dashboard'])->name('distribution.dashboard');

@@ -92,7 +92,7 @@ final class ChannelController extends Controller
         Gate::authorize('update', $channel);
 
         if ($channel->rules()->where('warehouse_id', $request->input('warehouse_id'))->exists()) {
-            return response()->json(['message' => $this->message('channel_warehouse_exists')], 422);
+            return response()->json(['type' => 'https://httpstatuses.com/422', 'title' => 'Duplicate rule', 'status' => 422, 'detail' => $this->message('channel_warehouse_exists'), 'message' => $this->message('channel_warehouse_exists'), 'code' => 'rule_exists'], 422, ['Content-Type' => 'application/problem+json']);
         }
 
         $rule = $channel->rules()->create($request->validated() + ['priority_rank' => 100, 'fixed_reserve_qty' => 0, 'safety_buffer_qty' => 0]);
