@@ -1,5 +1,7 @@
 <?php
 
+use Modules\Observability\Logging\EnrichLogTap;
+use Modules\Observability\Logging\JsonLogTap;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -63,6 +65,7 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
+            'tap' => [EnrichLogTap::class],
         ],
 
         'daily' => [
@@ -71,6 +74,18 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'max_files' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
+            'tap' => [EnrichLogTap::class],
+        ],
+
+        // Structured logging (Issue #448): one JSON object per line on stderr with trace_id, span_id and tenant_id, personal data masked.
+        // Select it with LOG_STACK=observability (or add it to the stack) to feed Loki / ELK / the OpenTelemetry Collector.
+        'observability' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'debug'),
+            'handler' => StreamHandler::class,
+            'handler_with' => ['stream' => 'php://stderr'],
+            'processors' => [PsrLogMessageProcessor::class],
+            'tap' => [JsonLogTap::class],
         ],
 
         'monthly' => [

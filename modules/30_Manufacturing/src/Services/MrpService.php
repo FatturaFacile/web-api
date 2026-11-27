@@ -31,6 +31,8 @@ use Modules\Manufacturing\Models\MfgMrpShortage;
 use Modules\Manufacturing\Models\MfgProductionOrder;
 use Modules\Manufacturing\Models\MfgProductionOrderLine;
 use Modules\Manufacturing\Support\Money;
+use Modules\Observability\Metrics\DomainMetrics;
+use Modules\Observability\Metrics\MetricCatalog;
 
 /**
  * Regenerative MRP. Planned orders of earlier runs that were not converted are superseded. Items are netted level by
@@ -66,6 +68,11 @@ final readonly class MrpService implements MrpServiceInterface
      * {@inheritDoc}
      */
     public function executeMrpRun(RunMrpDTO $dto): MfgMrpRun
+    {
+        return DomainMetrics::time(MetricCatalog::MRP_DURATION, fn (): MfgMrpRun => $this->runMrp($dto));
+    }
+
+    private function runMrp(RunMrpDTO $dto): MfgMrpRun
     {
         return DB::transaction(function () use ($dto): MfgMrpRun {
             Tenant::query()->whereKey($dto->tenantId)->lockForUpdate()->first();

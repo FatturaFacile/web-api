@@ -46,8 +46,10 @@ use Modules\DigitalPreservation\Providers\DigitalPreservationServiceProvider;
 use Modules\Distribution\Providers\DistributionServiceProvider;
 use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
+use Modules\DownPayments\Providers\DownPaymentsServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
 use Modules\ElectronicSignature\Providers\ElectronicSignatureServiceProvider;
+use Modules\Esterometro\Providers\EsterometroServiceProvider;
 use Modules\Events\Providers\EventsServiceProvider;
 use Modules\ExpenseManagement\Providers\ExpenseManagementServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
@@ -56,11 +58,11 @@ use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\Fleet\Providers\FleetServiceProvider;
 use Modules\Forecasting\Providers\ForecastingServiceProvider;
 use Modules\ForeignVatRefund\Providers\ForeignVatRefundServiceProvider;
-use Modules\GreenCare\Providers\GreenCareServiceProvider;
 use Modules\FranchiseNetwork\Providers\FranchiseNetworkServiceProvider;
 use Modules\GdoTradeTerms\Providers\GdoTradeTermsServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Governance\Providers\GovernanceServiceProvider;
+use Modules\GreenCare\Providers\GreenCareServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
 use Modules\Hospitality\Providers\HospitalityServiceProvider;
 use Modules\Hse\Providers\HseServiceProvider;
@@ -82,6 +84,7 @@ use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\MarketingAutomation\Providers\MarketingAutomationServiceProvider;
 use Modules\Marketplace\Providers\MarketplaceServiceProvider;
 use Modules\MrpPlanning\Providers\MrpPlanningServiceProvider;
+use Modules\Observability\Providers\ObservabilityServiceProvider;
 use Modules\OcrExtraction\Providers\OcrExtractionServiceProvider;
 use Modules\PassengerTransport\Providers\PassengerTransportServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
@@ -104,8 +107,6 @@ use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
 use Modules\StatutoryFinancials\Providers\StatutoryFinancialsServiceProvider;
-use Modules\DownPayments\Providers\DownPaymentsServiceProvider;
-use Modules\Esterometro\Providers\EsterometroServiceProvider;
 use Modules\Subcontracting\Providers\SubcontractingServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
@@ -244,6 +245,7 @@ return [
     FiduciaryPortalServiceProvider::class,
     SwissEbillServiceProvider::class,
     ForeignVatRefundServiceProvider::class,
+    ObservabilityServiceProvider::class,
     GreenCareServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,

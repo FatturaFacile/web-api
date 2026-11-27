@@ -1,0 +1,51 @@
+# OpenTelemetry Collector placed in front of the tracing backend. The API exports OTLP/HTTP (JSON) to :4318; the Angular app sends OTLP/HTTP
+# from the browser (CORS allowed below); other clients (.NET, Flutter, WPF) can use OTLP gRPC on :4317. The collector converts every protocol
+# to the one of the backend (here Tempo over gRPC), so gRPC and protobuf are available without any PHP extension.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - "https://app.fatturafacile.example"
+          allowed_headers: ["*"]
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 400
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+  # Defence in depth: the API and the SPA already scrub personal data, the collector drops what slipped through.
+  attributes/pii:
+    actions:
+      - key: enduser.id
+        action: delete
+      - key: http.request.header.authorization
+        action: delete
+      - key: http.request.header.cookie
+        action: delete
+      - key: user_agent.original
+        action: hash
+
+exporters:
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  debug:
+    verbosity: basic
+
+service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/pii, batch]
+      exporters: [otlp/tempo]

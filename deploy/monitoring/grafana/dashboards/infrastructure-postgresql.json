@@ -1,0 +1,103 @@
+{
+  "uid": "ff-infra-postgresql",
+  "title": "FatturaFacile — Infrastructure & PostgreSQL Overview",
+  "tags": ["fatturafacile", "infrastructure", "postgresql"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Buffer cache hit ratio",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 0.9 }, { "color": "green", "value": 0.99 }] } }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "fatturafacile_pg_cache_hit_ratio" }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Connection pool usage",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 0.7 }, { "color": "red", "value": 0.9 }] } }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "sum(fatturafacile_pg_connections) / fatturafacile_pg_max_connections" }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Database size",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "fatturafacile_pg_database_size_bytes" }]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Deadlocks (since stats reset)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "fatturafacile_pg_deadlocks" }]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Connections by state",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "fatturafacile_pg_connections", "legendFormat": "{{state}}" },
+        { "refId": "B", "expr": "fatturafacile_pg_max_connections", "legendFormat": "max_connections" }
+      ]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Query latency p50 / p95 / p99",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(fatturafacile_db_query_duration_seconds_bucket[5m])))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(fatturafacile_db_query_duration_seconds_bucket[5m])))", "legendFormat": "p95" },
+        { "refId": "C", "expr": "histogram_quantile(0.99, sum by (le) (rate(fatturafacile_db_query_duration_seconds_bucket[5m])))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Slow queries per second (above the profiler threshold)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "sum(rate(fatturafacile_db_slow_queries_total[5m]))", "legendFormat": "slow queries" }]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "Queries per second",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "sum(rate(fatturafacile_db_query_duration_seconds_count[5m]))", "legendFormat": "queries" }]
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "HTTP latency p95 / p99",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le) (rate(fatturafacile_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" },
+        { "refId": "B", "expr": "histogram_quantile(0.99, sum by (le) (rate(fatturafacile_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "HTTP error rate (5xx)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0 }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "sum(rate(fatturafacile_http_requests_total{status=~\"5..\"}[5m])) / sum(rate(fatturafacile_http_requests_total[5m]))", "legendFormat": "5xx ratio" }]
+    },
+    {
+      "id": 11, "type": "table", "title": "Slowest routes (p95, last 15 min)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 29 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "options": { "showHeader": true },
+      "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": { "Value": "p95" } } }],
+      "targets": [{ "refId": "A", "instant": true, "format": "table", "expr": "topk(10, histogram_quantile(0.95, sum by (le, method, route) (rate(fatturafacile_http_request_duration_seconds_bucket[15m]))))" }]
+    }
+  ]
+}

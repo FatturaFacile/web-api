@@ -42,13 +42,13 @@ use Database\Seeders\Translations\FiduciaryPortalFrontendTranslations;
 use Database\Seeders\Translations\FieldServiceManagementFrontendTranslations;
 use Database\Seeders\Translations\FixedAssetsFrontendTranslations;
 use Database\Seeders\Translations\ForeignVatRefundFrontendTranslations;
-use Database\Seeders\Translations\GreenCareFrontendTranslations;
 use Database\Seeders\Translations\FranchiseNetworkFrontendTranslations;
 use Database\Seeders\Translations\FrenchFrontendTranslations;
 use Database\Seeders\Translations\GapViewsFrontendTranslations;
 use Database\Seeders\Translations\GdoTradeTermsFrontendTranslations;
 use Database\Seeders\Translations\GeneralLedgerPrimaNotaFrontendTranslations;
 use Database\Seeders\Translations\GermanFrontendTranslations;
+use Database\Seeders\Translations\GreenCareFrontendTranslations;
 use Database\Seeders\Translations\HelpdeskSlaFrontendTranslations;
 use Database\Seeders\Translations\HrAtsFrontendTranslations;
 use Database\Seeders\Translations\HseFrontendTranslations;
@@ -74,6 +74,7 @@ use Database\Seeders\Translations\MesOperatorBoardFrontendTranslations;
 use Database\Seeders\Translations\MobileFeatureTranslations;
 use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
+use Database\Seeders\Translations\ObservabilityFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PassengerTransportFrontendTranslations;
 use Database\Seeders\Translations\PayablesFrontendTranslations;
@@ -237,7 +238,8 @@ class FrontendTranslationSeeder extends Seeder
             + BudgetingSpendControlFrontendTranslations::all($locale)
             + PlmFrontendTranslations::all($locale)
             + TenderManagementFrontendTranslations::all($locale)
-            + EsterometroFrontendTranslations::all($locale);
+            + EsterometroFrontendTranslations::all($locale)
+            + ObservabilityFrontendTranslations::all($locale);
     }
 
     /**

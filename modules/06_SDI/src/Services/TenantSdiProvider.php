@@ -7,6 +7,7 @@ namespace Modules\SDI\Services;
 use App\Contracts\SdiProvider;
 use App\Exceptions\SdiProviderException;
 use App\Services\Tenancy\TenantContext;
+use Modules\Observability\Metrics\DomainMetrics;
 
 /**
  * The SDI provider of the active tenant: invoicing code keeps a single contract while each company picks its channel.
@@ -37,6 +38,6 @@ final class TenantSdiProvider implements SdiProvider
             }
         }
 
-        return $gateway->send($tenant, $fileName, $xml);
+        return DomainMetrics::transmission('SDI', fn (): array => $gateway->send($tenant, $fileName, $xml));
     }
 }
