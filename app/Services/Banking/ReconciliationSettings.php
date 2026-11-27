@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Banking;
 
+use App\Models\BankStatement;
 use App\Models\BankStatementLine;
+use Modules\Treasury\Models\BankAccount;
 use Modules\Treasury\Services\TreasuryLedgerAccounts;
 
 /**
@@ -65,6 +67,39 @@ final readonly class ReconciliationSettings
             allowPartial: (bool) ($value('reconciliation', 'allow_partial_reconciliation') ?? true),
             categoryAccounts: $accounts,
             autoCategorize: (bool) ($value('ledger_defaults', 'auto_categorize_standard_codes') ?? true),
+        );
+    }
+
+    /**
+     * The settings of the tenant, with the tolerance and the maximum bank fee of the bank account the statement
+     * belongs to when the company configured them on it.
+     */
+    public static function forStatement(BankStatement $statement): self
+    {
+        $settings = self::forTenant((string) $statement->tenant_id);
+        $iban = strtoupper(str_replace(' ', '', (string) $statement->account_iban));
+        $account = BankAccount::withoutGlobalScopes()
+            ->where('tenant_id', $statement->tenant_id)
+            ->whereNull('deleted_at')
+            ->where(function ($query) use ($iban, $statement): void {
+                $query->where('iban', $iban);
+
+                if ($statement->bank_account_id !== null) {
+                    $query->orWhere('id', $statement->bank_account_id);
+                }
+            })
+            ->first();
+
+        if ($account === null) {
+            return $settings;
+        }
+
+        return new self(
+            tolerance: $account->reconciliation_tolerance !== null ? (float) $account->reconciliation_tolerance : $settings->tolerance,
+            maxFee: $account->reconciliation_max_fee !== null ? (float) $account->reconciliation_max_fee : $settings->maxFee,
+            allowPartial: $settings->allowPartial,
+            categoryAccounts: $settings->categoryAccounts,
+            autoCategorize: $settings->autoCategorize,
         );
     }
 

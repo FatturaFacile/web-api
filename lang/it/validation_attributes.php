@@ -4219,4 +4219,12 @@ return [
     'vat_code_it_id' => 'codice IVA Italia',
     'vat_code_ch_id' => 'codice IVA Svizzera',
     'tares_code' => 'voce Tares',
+    'qr_iid' => 'QR-IID',
+    'besr_id' => 'BESR-ID',
+    'preferred_pain_version' => 'versione pain.001 preferita',
+    'reconciliation_tolerance' => 'tolleranza di riconciliazione',
+    'reconciliation_max_fee' => 'commissione bancaria massima',
+    'category_purpose' => 'categoria del pagamento',
+    'charge_bearer' => 'ripartizione delle spese',
+    'payment_batch_id' => 'distinta di pagamento',
 ];

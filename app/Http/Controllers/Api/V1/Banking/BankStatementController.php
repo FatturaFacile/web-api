@@ -230,7 +230,7 @@ class BankStatementController extends Controller
             $line,
             $document,
             (string) $request->validated('difference_handling', 'none'),
-            ReconciliationSettings::forTenant($statement->tenant_id),
+            ReconciliationSettings::forStatement($statement),
         );
 
         return $this->successResponse(new BankStatementLineResource($line), __('banking.messages.matched'));
@@ -276,7 +276,7 @@ class BankStatementController extends Controller
             $request->validated('category'),
             $request->validated('ledger_account_code'),
             $request->validated('notes'),
-            ReconciliationSettings::forTenant($line->tenant_id),
+            ReconciliationSettings::forStatement($line->statement),
         );
 
         return $this->successResponse(new BankStatementLineResource($line), __('banking.messages.categorized'));

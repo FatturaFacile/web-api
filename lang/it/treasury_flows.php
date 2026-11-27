@@ -18,6 +18,10 @@ return [
         'charset' => 'Il testo contiene caratteri non ammessi in un file di pagamento.',
         'remittance_too_long' => 'La causale supera :max caratteri.',
         'reference_invalid' => 'Il riferimento strutturato non è un riferimento QR valido (27 cifre) né un riferimento ISO 11649.',
+        'duplicate_invoice_in_file' => 'Questa fattura è già pagata dalla riga :line di questo file.',
+        'duplicate_end_to_end_in_file' => 'L\'identificativo end-to-end ripete quello della riga :line di questo file.',
+        'invoice_already_in_batch' => 'Questa fattura è già nella distinta di pagamento :batch.',
+        'end_to_end_already_used' => 'L\'identificativo end-to-end è già usato dalla distinta di pagamento :batch.',
     ],
     'f24' => [
         'not_generated' => 'Il file F24 non è ancora stato generato.',

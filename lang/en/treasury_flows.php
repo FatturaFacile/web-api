@@ -18,6 +18,10 @@ return [
         'charset' => 'The text contains characters that are not allowed in a payment file.',
         'remittance_too_long' => 'The remittance information exceeds :max characters.',
         'reference_invalid' => 'The structured reference is not a valid QR reference (27 digits) or ISO 11649 reference.',
+        'duplicate_invoice_in_file' => 'This invoice is already included in line :line of this file.',
+        'duplicate_end_to_end_in_file' => 'The end-to-end identifier repeats the one of line :line of this file.',
+        'invoice_already_in_batch' => 'This invoice is already in payment batch :batch.',
+        'end_to_end_already_used' => 'The end-to-end identifier is already used by payment batch :batch.',
     ],
     'f24' => [
         'not_generated' => 'The F24 file has not been generated yet.',

@@ -4219,4 +4219,12 @@ return [
     'vat_code_it_id' => 'MwSt-Code Italien',
     'vat_code_ch_id' => 'MwSt-Code Schweiz',
     'tares_code' => 'Tares-Nummer',
+    'qr_iid' => 'QR-IID',
+    'besr_id' => 'BESR-ID',
+    'preferred_pain_version' => 'bevorzugte pain.001-Version',
+    'reconciliation_tolerance' => 'Abstimmungstoleranz',
+    'reconciliation_max_fee' => 'maximale Bankgebühr',
+    'category_purpose' => 'Zahlungskategorie',
+    'charge_bearer' => 'Spesenregelung',
+    'payment_batch_id' => 'Zahlungslauf',
 ];

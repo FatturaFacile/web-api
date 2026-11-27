@@ -53,6 +53,11 @@ class Pain001XmlBuilder
         $this->child($dom, $information, 'PmtMtd', 'TRF');
         $this->child($dom, $information, 'NbOfTxs', $count);
         $this->child($dom, $information, 'CtrlSum', $sum);
+
+        if ($message->categoryPurpose !== null) {
+            $this->child($dom, $this->child($dom, $this->child($dom, $information, 'PmtTpInf'), 'CtgyPurp'), 'Cd', $message->categoryPurpose->value);
+        }
+
         $execution = $this->child($dom, $information, 'ReqdExctnDt');
 
         if ($version->wrapsExecutionDate()) {
@@ -64,6 +69,10 @@ class Pain001XmlBuilder
         $this->child($dom, $this->child($dom, $information, 'Dbtr'), 'Nm', $this->text($message->debtorName, 140));
         $this->child($dom, $this->child($dom, $this->child($dom, $information, 'DbtrAcct'), 'Id'), 'IBAN', $this->iban($message->debtorIban));
         $this->institution($dom, $this->child($dom, $information, 'DbtrAgt'), $version, $message->debtorBic, true);
+
+        if ($message->chargeBearer !== null) {
+            $this->child($dom, $information, 'ChrgBr', $message->chargeBearer->value);
+        }
 
         foreach ($message->payments as $payment) {
             $this->transaction($dom, $information, $version, $payment);

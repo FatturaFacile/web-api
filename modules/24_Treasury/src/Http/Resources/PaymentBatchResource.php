@@ -30,6 +30,8 @@ final class PaymentBatchResource extends JsonResource
             'currency' => $this->currency,
             'item_count' => (int) $this->item_count,
             'status' => $this->status,
+            'category_purpose' => $this->category_purpose,
+            'charge_bearer' => $this->charge_bearer,
             'lines' => PaymentLineResource::collection($this->whenLoaded('lines')),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

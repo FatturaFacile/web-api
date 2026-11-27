@@ -94,6 +94,7 @@ class BankReconciliationService
         private readonly RecordSupplierPayment $supplierPayments,
         private readonly PaymentLedgerService $ledger,
         private readonly BankLineLedgerPosting $linePosting,
+        private readonly ReconciliationExceptionClassifier $exceptions,
     ) {}
 
     /**
@@ -104,14 +105,21 @@ class BankReconciliationService
      */
     public function reconcileStatement(BankStatement $statement): array
     {
-        $settings = ReconciliationSettings::forTenant($statement->tenant_id);
+        $settings = ReconciliationSettings::forStatement($statement);
         $this->openNumbers = [];
         $this->rules = null;
         $reconciled = 0;
         $unmatched = 0;
 
         foreach ($statement->lines()->where('reconciled', false)->get() as $line) {
-            $this->reconcileLine($line, $statement, $settings) ? $reconciled++ : $unmatched++;
+            if ($this->reconcileLine($line, $statement, $settings)) {
+                $reconciled++;
+
+                continue;
+            }
+
+            $unmatched++;
+            $this->flagException($line, $statement);
         }
 
         $this->refreshStatus($statement);
@@ -131,6 +139,19 @@ class BankReconciliationService
         return $line->isCredit()
             ? $this->reconcileCredit($line, $statement, $settings)
             : $this->reconcileDebit($line, $statement, $settings);
+    }
+
+    /**
+     * Records why an open line could not be settled (`exception_code`), with the open document it probably belongs to.
+     */
+    private function flagException(BankStatementLine $line, BankStatement $statement): void
+    {
+        $suggested = $line->isCredit()
+            ? ($this->findByQrReference($line, $statement) ?? $this->findByDocumentNumber($line, $statement, true))
+            : $this->findByDocumentNumber($line, $statement, false);
+        $exception = $this->exceptions->classify($line, $suggested);
+
+        $line->update(['exception_code' => $exception['code'], 'exception_candidate_id' => $exception['candidate_id']]);
     }
 
     /**
@@ -582,6 +603,11 @@ class BankReconciliationService
         }
 
         $reference = strtoupper((string) preg_replace('/\s+/', '', $line->qr_reference));
+
+        // A reference whose checksum fails is a typing or truncation error, never evidence of an invoice.
+        if (! $this->exceptions->isValidReference($reference)) {
+            return null;
+        }
 
         // The reference printed on the payment slip is stored on the invoice (`qr_reference`); invoices that carry
         // QR-bill data of their own are matched through it as well.

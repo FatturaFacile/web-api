@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.002.001.10">
+  <CstmrPmtStsRpt>
+    <GrpHdr>
+      <MsgId>STS-20260316-0042</MsgId>
+      <CreDtTm>2026-03-16T07:30:00</CreDtTm>
+    </GrpHdr>
+    <OrgnlGrpInfAndSts>
+      <OrgnlMsgId>MSG-20260315-FF00AA11</OrgnlMsgId>
+      <OrgnlMsgNmId>pain.001.001.09</OrgnlMsgNmId>
+      <GrpSts>RJCT</GrpSts>
+      <StsRsnInf>
+        <Rsn><Cd>FF01</Cd></Rsn>
+        <AddtlInf>Invalid file format</AddtlInf>
+        <AddtlInf>Element PmtInf/ReqdExctnDt is not allowed</AddtlInf>
+      </StsRsnInf>
+    </OrgnlGrpInfAndSts>
+  </CstmrPmtStsRpt>
+</Document>

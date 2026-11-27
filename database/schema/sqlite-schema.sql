@@ -3963,6 +3963,11 @@ CREATE TABLE "bank_accounts"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "qr_iid" varchar,
+  "besr_id" varchar,
+  "preferred_pain_version" varchar,
+  "reconciliation_tolerance" numeric,
+  "reconciliation_max_fee" numeric,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -4214,6 +4219,8 @@ CREATE TABLE "bank_statement_lines"(
   "deleted_by" varchar,
   "entry_reference" varchar,
   "dedupe_key" varchar,
+  "exception_code" varchar,
+  "exception_candidate_id" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("bank_statement_id") references "bank_statements"("id") on delete cascade on update no action,
   primary key("id")
@@ -19085,6 +19092,8 @@ CREATE TABLE "payment_batches"(
   "deleted_by" varchar,
   "pain_version" varchar not null default '09',
   "cbi_cuc" varchar,
+  "category_purpose" varchar,
+  "charge_bearer" varchar,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -57266,6 +57275,10 @@ CREATE INDEX "fiduciary_audit_logs_action_index" on "fiduciary_audit_logs"(
 CREATE INDEX "fiduciary_audit_logs_target_id_index" on "fiduciary_audit_logs"(
   "target_id"
 );
+CREATE INDEX "bank_statement_lines_exception_idx" on "bank_statement_lines"(
+  "tenant_id",
+  "exception_code"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -57757,3 +57770,4 @@ INSERT INTO migrations VALUES(487,'2028_01_09_000400_add_sms_two_factor_columns'
 INSERT INTO migrations VALUES(488,'2028_01_10_000100_create_data_migration_mod104_tables',36);
 INSERT INTO migrations VALUES(489,'2028_01_10_000100_extend_workflow_for_approval_engine_mod006',37);
 INSERT INTO migrations VALUES(490,'2028_01_11_000100_create_fiduciary_portal_mod032_tables',37);
+INSERT INTO migrations VALUES(491,'2028_01_12_000100_add_swiss_iso20022_columns_mod282',38);

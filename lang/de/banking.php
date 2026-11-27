@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
 
     'messages' => [
+        'pain002_applied' => 'Zahlungsstatusbericht angewendet',
         'pain001_exported' => 'Zahlungsdatei erzeugt und gegen das ISO-20022-Schema validiert',
         'imported' => 'Kontoauszug erfolgreich importiert',
         'listed' => 'Kontoauszüge erfolgreich abgerufen',
@@ -19,6 +20,7 @@ return [
     ],
 
     'errors' => [
+        'pain001_not_importable' => 'Eine pain.001-Zahlungsdatei ist eine ausgehende Datei: Laden Sie das von der Bank gelieferte camt.053, camt.054 oder pain.002 hoch.',
         'not_iso20022' => 'Die Datei ist weder ein ISO-20022-Kontoauszug (camt.053) noch eine Avisierung (camt.054).',
         'duplicate_statement' => 'Dieser Kontoauszug wurde bereits importiert.',
         'line_not_credit' => 'Nur Haben-Umsätze können mit Ausgangsrechnungen abgeglichen werden.',

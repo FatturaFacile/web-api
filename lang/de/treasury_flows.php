@@ -18,6 +18,10 @@ return [
         'charset' => 'Der Text enthält Zeichen, die in einer Zahlungsdatei nicht zulässig sind.',
         'remittance_too_long' => 'Der Verwendungszweck überschreitet :max Zeichen.',
         'reference_invalid' => 'Die strukturierte Referenz ist weder eine gültige QR-Referenz (27 Ziffern) noch eine ISO-11649-Referenz.',
+        'duplicate_invoice_in_file' => 'Diese Rechnung wird bereits durch Zeile :line dieser Datei bezahlt.',
+        'duplicate_end_to_end_in_file' => 'Die End-to-End-Kennung wiederholt jene von Zeile :line dieser Datei.',
+        'invoice_already_in_batch' => 'Diese Rechnung befindet sich bereits im Zahlungslauf :batch.',
+        'end_to_end_already_used' => 'Die End-to-End-Kennung wird bereits vom Zahlungslauf :batch verwendet.',
     ],
     'f24' => [
         'not_generated' => 'Die F24-Datei wurde noch nicht erzeugt.',

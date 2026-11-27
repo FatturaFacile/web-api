@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
 
     'messages' => [
+        'pain002_applied' => 'Rapport de statut des paiements appliqué',
         'pain001_exported' => 'Fichier de paiement généré et validé selon le schéma ISO 20022',
         'imported' => 'Relevé bancaire importé avec succès',
         'listed' => 'Relevés bancaires récupérés avec succès',
@@ -19,6 +20,7 @@ return [
     ],
 
     'errors' => [
+        'pain001_not_importable' => 'Un fichier de paiement pain.001 est un fichier sortant : téléversez le camt.053, camt.054 ou pain.002 renvoyé par la banque.',
         'not_iso20022' => 'Le fichier n’est ni un relevé camt.053 ni une notification camt.054 ISO 20022.',
         'duplicate_statement' => 'Ce relevé bancaire a déjà été importé.',
         'line_not_credit' => 'Seules les lignes créditrices peuvent être rapprochées d\'une facture client.',

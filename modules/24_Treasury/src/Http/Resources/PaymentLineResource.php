@@ -30,6 +30,8 @@ final class PaymentLineResource extends JsonResource
             'currency' => $this->currency,
             'remittance_reference' => $this->remittance_reference,
             'status' => $this->status,
+            'error_code' => $this->error_code,
+            'error_message' => $this->error_message,
             'execution_date' => $this->execution_date?->toDateString(),
         ];
     }

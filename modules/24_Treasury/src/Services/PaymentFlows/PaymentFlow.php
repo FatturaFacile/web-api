@@ -15,6 +15,9 @@ enum PaymentFlow: string
     /** Swiss Payment Standards: pain.001.001.09 with QRR / SCOR structured references. */
     case ChPain001V09 = 'ch_pain001_09';
 
+    /** Swiss Payment Standards: pain.001.001.03 ("ch.02" generation still required by some banks), same QRR / SCOR rules. */
+    case ChPain001V03 = 'ch_pain001_03';
+
     /** EPC SEPA credit transfer: pain.001.001.03. */
     case SepaPain001V03 = 'sepa_pain001_03';
 
@@ -31,17 +34,22 @@ enum PaymentFlow: string
      */
     public function batchFormat(): string
     {
-        return $this === self::ChPain001V09 ? 'iso_pain_001_ch' : 'sepa_pain_001_it';
+        return $this->isSwiss() ? 'iso_pain_001_ch' : 'sepa_pain_001_it';
     }
 
     public function paymentMethod(): string
     {
-        return $this === self::ChPain001V09 ? 'swiss_qr_pain001' : 'sepa_credit_transfer';
+        return $this->isSwiss() ? 'swiss_qr_pain001' : 'sepa_credit_transfer';
     }
 
     public function isSepa(): bool
     {
-        return $this !== self::ChPain001V09;
+        return ! $this->isSwiss();
+    }
+
+    public function isSwiss(): bool
+    {
+        return $this === self::ChPain001V09 || $this === self::ChPain001V03;
     }
 
     public function requiresCuc(): bool
@@ -56,6 +64,6 @@ enum PaymentFlow: string
      */
     public function currencies(): array
     {
-        return $this === self::ChPain001V09 ? ['CHF', 'EUR'] : ['EUR'];
+        return $this->isSwiss() ? ['CHF', 'EUR'] : ['EUR'];
     }
 }

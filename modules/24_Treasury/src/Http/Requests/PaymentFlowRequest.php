@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Treasury\Http\Requests;
 
+use App\Services\Banking\Iso20022\Pain001CategoryPurpose;
+use App\Services\Banking\Iso20022\Pain001ChargeBearer;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -33,6 +35,8 @@ final class PaymentFlowRequest extends FormRequest
             'execution_date' => ['required', 'date', 'after_or_equal:today'],
             'currency' => ['nullable', 'string', 'size:3'],
             'cuc' => ['nullable', 'string', 'max:8'],
+            'category_purpose' => ['nullable', Rule::enum(Pain001CategoryPurpose::class)],
+            'charge_bearer' => ['nullable', Rule::enum(Pain001ChargeBearer::class)],
             'lines' => ['required', 'array', 'min:1', 'max:1000'],
             'lines.*.recipient_name' => ['required', 'string', 'max:140'],
             'lines.*.recipient_iban' => ['required', 'string', 'max:42'],

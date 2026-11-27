@@ -86,6 +86,8 @@ class BankStatementLine extends Model
         'reconciliation_notes',
         'journal_entry_id',
         'reconciliation_rule_id',
+        'exception_code',
+        'exception_candidate_id',
     ];
 
     /**
@@ -93,6 +95,13 @@ class BankStatementLine extends Model
      */
     protected static function booted(): void
     {
+        static::updating(static function (self $line): void {
+            if ($line->reconciled && $line->isDirty('reconciled')) {
+                $line->exception_code = null;
+                $line->exception_candidate_id = null;
+            }
+        });
+
         static::creating(static function (self $line): void {
             if ($line->currency === null) {
                 $line->currency = BankStatement::withoutGlobalScopes()->whereKey($line->bank_statement_id)->value('currency');

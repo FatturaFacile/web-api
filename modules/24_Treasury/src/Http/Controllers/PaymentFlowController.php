@@ -6,6 +6,8 @@ namespace Modules\Treasury\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Services\Banking\Iso20022\Pain001CategoryPurpose;
+use App\Services\Banking\Iso20022\Pain001ChargeBearer;
 use Illuminate\Http\JsonResponse;
 use Modules\Treasury\Http\Requests\PaymentFlowRequest;
 use Modules\Treasury\Http\Resources\PaymentBatchResource;
@@ -56,7 +58,7 @@ final class PaymentFlowController extends Controller
     public function preview(PaymentFlowRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $generated = $this->flows->generate(PaymentFlow::from($data['flow']), $data['bank_account_id'], $data['execution_date'], $data['lines'], $data['cuc'] ?? null, $data['currency'] ?? null);
+        $generated = $this->flows->generate(PaymentFlow::from($data['flow']), $data['bank_account_id'], $data['execution_date'], $data['lines'], $data['cuc'] ?? null, $data['currency'] ?? null, Pain001CategoryPurpose::tryFrom((string) ($data['category_purpose'] ?? '')), Pain001ChargeBearer::tryFrom((string) ($data['charge_bearer'] ?? '')));
 
         return $this->successResponse($generated->toArray());
     }
@@ -77,7 +79,7 @@ final class PaymentFlowController extends Controller
     public function storeBatch(PaymentFlowRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $batch = $this->flows->createBatch(PaymentFlow::from($data['flow']), $data['bank_account_id'], $data['execution_date'], $data['lines'], $data['cuc'] ?? null, $data['currency'] ?? null, (string) $request->user()->id);
+        $batch = $this->flows->createBatch(PaymentFlow::from($data['flow']), $data['bank_account_id'], $data['execution_date'], $data['lines'], $data['cuc'] ?? null, $data['currency'] ?? null, (string) $request->user()->id, Pain001CategoryPurpose::tryFrom((string) ($data['category_purpose'] ?? '')), Pain001ChargeBearer::tryFrom((string) ($data['charge_bearer'] ?? '')));
 
         return $this->successResponse(new PaymentBatchResource($batch), __('treasury_flows.messages.batch_created'), Response::HTTP_CREATED);
     }

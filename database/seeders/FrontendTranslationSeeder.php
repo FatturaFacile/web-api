@@ -96,6 +96,7 @@ use Database\Seeders\Translations\SwissQrBillSlipFrontendTranslations;
 use Database\Seeders\Translations\SwissVatFrontendTranslations;
 use Database\Seeders\Translations\TenderManagementFrontendTranslations;
 use Database\Seeders\Translations\TreasuryBankingFrontendTranslations;
+use Database\Seeders\Translations\TreasuryIsoReconciliationFrontendTranslations;
 use Database\Seeders\Translations\VanSellingFieldSalesFrontendTranslations;
 use Database\Seeders\Translations\WorkflowApprovalFrontendTranslations;
 use Illuminate\Database\Seeder;
@@ -210,6 +211,7 @@ class FrontendTranslationSeeder extends Seeder
             + ElectronicSignatureNotificationTranslations::all($locale)
             + SrmFrontendTranslations::all($locale)
             + TreasuryBankingFrontendTranslations::all($locale)
+            + TreasuryIsoReconciliationFrontendTranslations::all($locale)
             + LiquidityPlanningFrontendTranslations::all($locale)
             + LiquidityPlanningTranslations::all($locale)
             + CustomerReturnsReverseLogisticsFrontendTranslations::all($locale)

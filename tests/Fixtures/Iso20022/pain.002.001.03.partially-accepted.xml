@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.002.001.03" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <CstmrPmtStsRpt>
+    <GrpHdr>
+      <MsgId>STS-20260315-0001</MsgId>
+      <CreDtTm>2026-03-15T09:12:44</CreDtTm>
+      <InitgPty><Nm>PostFinance AG</Nm></InitgPty>
+    </GrpHdr>
+    <OrgnlGrpInfAndSts>
+      <OrgnlMsgId>MSG-20260314-AB12CD34</OrgnlMsgId>
+      <OrgnlMsgNmId>pain.001.001.03</OrgnlMsgNmId>
+      <OrgnlNbOfTxs>3</OrgnlNbOfTxs>
+      <GrpSts>PART</GrpSts>
+    </OrgnlGrpInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>PAY-20260314-X1Y2Z3</OrgnlPmtInfId>
+      <PmtInfSts>PART</PmtInfSts>
+      <TxInfAndSts>
+        <StsId>1</StsId>
+        <OrgnlInstrId>INSTR-0001</OrgnlInstrId>
+        <OrgnlEndToEndId>E2E-0001</OrgnlEndToEndId>
+        <TxSts>ACCP</TxSts>
+      </TxInfAndSts>
+      <TxInfAndSts>
+        <StsId>2</StsId>
+        <OrgnlInstrId>INSTR-0002</OrgnlInstrId>
+        <OrgnlEndToEndId>E2E-0002</OrgnlEndToEndId>
+        <TxSts>RJCT</TxSts>
+        <StsRsnInf>
+          <Rsn><Cd>AC04</Cd></Rsn>
+          <AddtlInf>Account of the creditor is closed</AddtlInf>
+        </StsRsnInf>
+      </TxInfAndSts>
+      <TxInfAndSts>
+        <StsId>3</StsId>
+        <OrgnlInstrId>INSTR-0003</OrgnlInstrId>
+        <OrgnlEndToEndId>E2E-0003</OrgnlEndToEndId>
+        <TxSts>ACTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+  </CstmrPmtStsRpt>
+</Document>

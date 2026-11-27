@@ -4219,4 +4219,12 @@ return [
     'vat_code_it_id' => 'VAT code Italy',
     'vat_code_ch_id' => 'VAT code Switzerland',
     'tares_code' => 'Tares number',
+    'qr_iid' => 'QR-IID',
+    'besr_id' => 'BESR-ID',
+    'preferred_pain_version' => 'preferred pain.001 version',
+    'reconciliation_tolerance' => 'reconciliation tolerance',
+    'reconciliation_max_fee' => 'maximum bank fee',
+    'category_purpose' => 'category purpose',
+    'charge_bearer' => 'charge bearer',
+    'payment_batch_id' => 'payment batch',
 ];

@@ -24,6 +24,8 @@ final readonly class Pain001Message
         public string $debtorIban,
         public ?string $debtorBic,
         public array $payments,
+        public ?Pain001CategoryPurpose $categoryPurpose = null,
+        public ?Pain001ChargeBearer $chargeBearer = null,
     ) {}
 
     public function controlSum(): string
