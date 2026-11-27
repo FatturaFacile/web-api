@@ -488,6 +488,16 @@ return [
                 'write' => ['customer_satisfaction.write', 'customer_satisfaction.*'],
             ],
         ],
+        // Distribution, multi-warehouse and transfers - DRP (Issue #271): warehouse, purchasing and operations roles plan the network;
+        // every member reads. Consignment settlements and transfers follow the inventory write roles.
+        'distribution' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'warehouse', 'purchasing', 'operations_manager', 'sales_manager', 'technician', 'member'],
+            'grants' => [
+                'read' => ['distribution.read', 'distribution.write', 'distribution.*'],
+                'write' => ['distribution.write', 'distribution.*'],
+            ],
+        ],
         // Franchise network governance (Mod 244): the franchise director (owner, administrator, franchise_director) governs the network,
         // the area manager audits the stores assigned to them, the franchisee owner and manager use the portal of their own store.
         // FranchiseNetworkPolicy reserves every action to its role.

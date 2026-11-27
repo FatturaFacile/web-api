@@ -33,6 +33,7 @@ use Modules\ElectronicSignature\Jobs\ProcessSignatureLifecycleJob;
 use Modules\Facility\Jobs\GenerateFacilityInspectionsJob;
 use Modules\Facility\Jobs\ReleaseNoShowBookingsJob;
 use Modules\FiscalRetail\Jobs\RetryCorrispettiviTransmissionsJob;
+use Modules\Distribution\Jobs\RunDistributionPlanningJob;
 use Modules\FranchiseNetwork\Jobs\CalculateRoyaltiesJob;
 use Modules\FranchiseNetwork\Jobs\MaintainFranchiseNetworkJob;
 use Modules\FranchiseNetwork\Jobs\SnapshotBenchmarksJob;
@@ -271,6 +272,9 @@ Schedule::command('gdo-trade-terms:accrue')->monthlyOn(1, '04:30')->withoutOverl
 $completenessTenantJob('franchise-network:maintenance', static fn (Tenant $tenant): object => new MaintainFranchiseNetworkJob($tenant->id))->dailyAt('03:10');
 $completenessTenantJob('franchise-network:royalties', static fn (Tenant $tenant): object => new CalculateRoyaltiesJob($tenant->id))->monthlyOn(2, '04:00');
 $completenessTenantJob('franchise-network:benchmark', static fn (Tenant $tenant): object => new SnapshotBenchmarksJob($tenant->id))->monthlyOn(3, '04:30');
+
+// Distribution planning (Issue #271): nightly weekly DRP over eight weeks with the replenishment and balancing proposals.
+$completenessTenantJob('distribution:drp-run', static fn (Tenant $tenant): object => new RunDistributionPlanningJob($tenant->id))->dailyAt('02:30');
 
 // Passenger transport (Mod 176): follows the flights of the airport transfers and moves the pickup to the real arrival.
 Schedule::command('passenger-transport:track-flights')->everyTenMinutes()->withoutOverlapping()->onOneServer();
