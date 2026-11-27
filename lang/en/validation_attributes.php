@@ -4351,4 +4351,11 @@ return [
     'calculation_mode' => 'calculation mode',
     'instrument_type' => 'instrument',
     'contract' => 'contract',
+    'slow_query_threshold_ms' => 'slow query threshold',
+    'n_plus_one_threshold' => 'N+1 threshold',
+    'explain_enabled' => 'query plan capture',
+    'alert_endpoint_p95_ms' => 'endpoint p95 alert threshold',
+    'alert_tenant_share_pct' => 'tenant share alert threshold',
+    'alert_connector_latency_ms' => 'connector latency alert threshold',
+    'maintenance' => 'maintenance',
 ];

@@ -1,0 +1,72 @@
+groups:
+  - name: fatturafacile-predictive
+    rules:
+      - alert: FatturaFacileEndpointLatencyRising
+        expr: histogram_quantile(0.95, sum by (le, route) (rate(fatturafacile_http_request_duration_seconds_bucket[10m]))) > 1.5
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "p95 of {{ $labels.route }} above 1.5 s"
+          description: "Open the Performance Profiler (Super-Admin) to see the slow queries and the suggested indexes of this endpoint."
+
+      - alert: FatturaFacileLatencyWillBreachSLO
+        expr: predict_linear(histogram_quantile(0.95, sum by (le) (rate(fatturafacile_http_request_duration_seconds_bucket[30m])))[2h:5m], 3600) > 2
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "Global p95 latency is trending above 2 s within the hour"
+
+      - alert: FatturaFacileNoisyNeighbor
+        expr: |
+          (
+            sum by (tenant_id) (rate(fatturafacile_tenant_resource_consumption_total{resource="db_seconds",tenant_id!~"none|other"}[15m]))
+            / scalar(sum(rate(fatturafacile_tenant_resource_consumption_total{resource="db_seconds"}[15m])))
+          ) > 0.4
+          and scalar(sum(rate(fatturafacile_tenant_resource_consumption_total{resource="api_calls"}[15m]))) > 1
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} uses more than 40% of the database time"
+
+      - alert: FatturaFacileDatabaseConnectionsExhausting
+        expr: predict_linear(sum(fatturafacile_pg_connections)[1h:5m], 1800) > fatturafacile_pg_max_connections
+        for: 10m
+        labels: { severity: critical }
+        annotations:
+          summary: "PostgreSQL connections will reach max_connections within 30 minutes"
+
+      - alert: FatturaFacileQueueBacklogGrowing
+        expr: predict_linear(fatturafacile_queue_depth[30m], 1800) > 1000 and fatturafacile_queue_depth > 100
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Queue {{ $labels.queue }} backlog is growing"
+
+      - alert: FatturaFacileFailedJobs
+        expr: sum by (job) (increase(fatturafacile_queue_jobs_total{status="failed"}[15m])) > 5
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.job }} failed more than 5 times in 15 minutes"
+
+      - alert: FatturaFacileConnectorOutage
+        expr: fatturafacile_connector_status == 0
+        for: 10m
+        labels: { severity: critical }
+        annotations:
+          summary: "Institutional connector {{ $labels.connector }} is down"
+
+      - alert: FatturaFacileConnectorDegraded
+        expr: fatturafacile_connector_status == 1
+        for: 20m
+        labels: { severity: warning }
+        annotations:
+          summary: "Institutional connector {{ $labels.connector }} is degraded"
+
+      - alert: FatturaFacileFiscalTransmissionFailures
+        expr: |
+          sum by (channel) (increase(fatturafacile_fiscal_transmission_total{status="failure"}[1h]))
+          / sum by (channel) (increase(fatturafacile_fiscal_transmission_total[1h])) > 0.2
+        for: 15m
+        labels: { severity: critical }
+        annotations:
+          summary: "More than 20% of the {{ $labels.channel }} transmissions failed in the last hour"

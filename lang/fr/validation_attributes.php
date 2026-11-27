@@ -4351,4 +4351,11 @@ return [
     'calculation_mode' => 'mode de calcul',
     'instrument_type' => 'instrument',
     'contract' => 'contrat',
+    'slow_query_threshold_ms' => 'seuil des requêtes lentes',
+    'n_plus_one_threshold' => 'seuil N+1',
+    'explain_enabled' => 'capture du plan d\'exécution',
+    'alert_endpoint_p95_ms' => 'seuil d\'alerte p95 des points de terminaison',
+    'alert_tenant_share_pct' => 'seuil d\'alerte de la part par société',
+    'alert_connector_latency_ms' => 'seuil d\'alerte de la latence des connecteurs',
+    'maintenance' => 'maintenance',
 ];

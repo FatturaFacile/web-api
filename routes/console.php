@@ -94,6 +94,9 @@ if (config('backup.schedule.check_hourly', true)) {
     Schedule::command('tenants:backup-check')->hourly()->withoutOverlapping()->onOneServer();
 }
 Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
+// Observability (Mod 202): synthetic probes of the CH/IT institutional services, and the retention of the diagnostics tables.
+Schedule::command('observability:probe-connectors')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('observability:prune')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
 // Movements of the open banking consents (PSD2 / SIX bLink) imported as bank statements (idempotent).
 Schedule::command('treasury:open-banking-sync')->dailyAt('06:15')->withoutOverlapping()->onOneServer();
 

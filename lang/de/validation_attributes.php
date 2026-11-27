@@ -4351,4 +4351,11 @@ return [
     'calculation_mode' => 'Berechnungsart',
     'instrument_type' => 'Instrument',
     'contract' => 'Vertrag',
+    'slow_query_threshold_ms' => 'Schwelle für langsame Abfragen',
+    'n_plus_one_threshold' => 'N+1-Schwelle',
+    'explain_enabled' => 'Erfassung des Ausführungsplans',
+    'alert_endpoint_p95_ms' => 'Alarmschwelle p95 der Endpunkte',
+    'alert_tenant_share_pct' => 'Alarmschwelle für den Anteil pro Mandant',
+    'alert_connector_latency_ms' => 'Alarmschwelle für die Latenz der Konnektoren',
+    'maintenance' => 'Wartung',
 ];

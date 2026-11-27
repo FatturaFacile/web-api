@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 30s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # The application: GET /metrics, guarded by OBSERVABILITY_METRICS_TOKEN (mount the token as a file, never inline it here).
+  # Behind the HTTPS-only edge, scrape the public https URL, or list the path in SECURITY_HTTP_ALLOWED_PATHS (`up,metrics`) to scrape
+  # the container directly over the private network together with OBSERVABILITY_METRICS_ALLOWED_IPS.
+  - job_name: fatturafacile-api
+    metrics_path: /metrics
+    scheme: https
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/secrets/metrics-token
+    static_configs:
+      - targets: ["api.fatturafacile.example:443"]
+        labels:
+          service: fatturafacile-api
+
+  - job_name: otel-collector
+    static_configs:
+      - targets: ["otel-collector:8888"]

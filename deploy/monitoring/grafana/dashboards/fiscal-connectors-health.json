@@ -1,0 +1,89 @@
+{
+  "uid": "ff-fiscal-connectors",
+  "title": "FatturaFacile — CH/IT Fiscal Connectors Health",
+  "tags": ["fatturafacile", "fiscal", "connectors", "sdi", "ech"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "id": 1, "type": "state-timeline", "title": "Connector status (SDI, STS, Swissdec ELM, ZEFIX, UID, VIES, SNB, ECB, eBill)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{ "type": "value", "options": { "0": { "text": "outage", "color": "red" }, "1": { "text": "degraded", "color": "orange" }, "2": { "text": "operational", "color": "green" }, "3": { "text": "maintenance", "color": "blue" } } }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "expr": "fatturafacile_connector_status", "legendFormat": "{{connector}}" }]
+    },
+    {
+      "id": 2, "type": "timeseries", "title": "Probe latency",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "fatturafacile_connector_latency_seconds", "legendFormat": "{{connector}}" }]
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "Availability (share of successful probes, 1 h window)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "avg_over_time(fatturafacile_connector_up[1h])", "legendFormat": "{{connector}}" }]
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Fiscal transmission success rate by channel (SDI, PEPPOL, RT, EBILL, ELM)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "sum by (channel) (increase(fatturafacile_fiscal_transmission_total{status=\"success\"}[1h])) / sum by (channel) (increase(fatturafacile_fiscal_transmission_total[1h]))", "legendFormat": "{{channel}}" }]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Fiscal transmissions per hour by channel and outcome",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "sum by (channel, status) (increase(fatturafacile_fiscal_transmission_total[1h]))", "legendFormat": "{{channel}} {{status}}" }]
+    },
+    {
+      "id": 6, "type": "stat", "title": "Failed transmissions (last 24 h)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 25 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 10 }] } }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "sum(increase(fatturafacile_fiscal_transmission_total{status=\"failure\"}[24h])) or vector(0)" }]
+    },
+    {
+      "id": 7, "type": "stat", "title": "Connectors not operational",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 25 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "count(fatturafacile_connector_status != 2) or vector(0)" }]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "Swiss QR-bill PDF generation p50 / p95",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 25 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(fatturafacile_pdf_qrbill_generation_duration_seconds_bucket[15m])))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(fatturafacile_pdf_qrbill_generation_duration_seconds_bucket[15m])))", "legendFormat": "p95" }
+      ]
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "MRP run duration p50 / p95",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 25 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(fatturafacile_mrp_execution_duration_seconds_bucket[1h])))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(fatturafacile_mrp_execution_duration_seconds_bucket[1h])))", "legendFormat": "p95" }
+      ]
+    }
+  ]
+}

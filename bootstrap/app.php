@@ -36,6 +36,7 @@ use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Routing\Middleware\ThrottleRequestsWithRedis;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Modules\DataResidency\Presentation\Http\Middleware\EnforceDataResidencyMiddleware;
+use Modules\Observability\Http\Middleware\ObservabilityMiddleware;
 use Modules\Platform\Http\Middleware\EnforceIdempotency;
 use Modules\Platform\Http\Middleware\HandleConditionalRequests;
 use Modules\Platform\Identity\Http\Middleware\AppendMaskedFieldsMeta;
@@ -62,6 +63,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->remove(TrustProxies::class);
         $middleware->api(replace: [EnsureFrontendRequestsAreStateful::class => EnsureHttpsFrontendRequestsAreStateful::class]);
 
+        // Distributed tracing (W3C traceparent), HTTP metrics and the SQL profiler. Prepended before the two below, so it runs right after
+        // the HTTPS enforcement and its terminate() sees the finished response.
+        $middleware->prepend(ObservabilityMiddleware::class);
         $middleware->prepend(NormalizeTenantInput::class);
         $middleware->prepend(EnforceHttps::class);
 

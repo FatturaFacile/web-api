@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\SwissEbill\Application\Services;
 
+use Modules\Observability\Metrics\DomainMetrics;
 use Modules\SwissEbill\Application\Dto\GatewaySubmission;
 use Modules\SwissEbill\Domain\Enums\EbillChannelType;
 use Modules\SwissEbill\Domain\Enums\EbillEventSource;
@@ -61,6 +62,8 @@ final class EbillDeliveryService
                 (string) $transmission->xml_sha256,
             ));
         } catch (EbillGatewayException $e) {
+            DomainMetrics::fiscalTransmission('EBILL', 'failure');
+
             if ($e->isTransient()) {
                 $this->scheduleRetry($transmission, $e);
 
@@ -71,11 +74,13 @@ final class EbillDeliveryService
 
             return;
         } catch (EbillException $e) {
+            DomainMetrics::fiscalTransmission('EBILL', 'failure');
             $this->fail($transmission, $e->errorCode(), $e->getMessage());
 
             return;
         }
 
+        DomainMetrics::fiscalTransmission('EBILL', 'success');
         $this->lifecycle->transition(
             $transmission,
             EbillTransmissionStatus::Transmitted,

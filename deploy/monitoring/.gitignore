@@ -1,0 +1,2 @@
+# Credentials of the monitoring stack (the Prometheus scrape token, the Grafana admin password): provided on the host, never committed.
+**/secrets/

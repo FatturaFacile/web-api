@@ -1,0 +1,83 @@
+{
+  "uid": "ff-multi-tenant",
+  "title": "FatturaFacile — Multi-Tenant Performance & Quotas",
+  "tags": ["fatturafacile", "tenants", "noisy-neighbor"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      { "name": "share_threshold", "label": "Noisy neighbour share", "type": "custom", "query": "0.25,0.4,0.5,0.6", "current": { "text": "0.4", "value": "0.4" }, "options": [] }
+    ]
+  },
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Tenants above the noisy-neighbour share (DB time, 15 min)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "count((sum by (tenant_id) (rate(fatturafacile_tenant_resource_consumption_total{resource=\"db_seconds\",tenant_id!~\"none|other\"}[15m])) / scalar(sum(rate(fatturafacile_tenant_resource_consumption_total{resource=\"db_seconds\"}[15m])))) > $share_threshold) or vector(0)" }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Active tenants (API calls, 15 min)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "count(sum by (tenant_id) (increase(fatturafacile_tenant_resource_consumption_total{resource=\"api_calls\",tenant_id!~\"none|other\"}[15m])) > 0) or vector(0)" }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Overflow tenants folded into tenant_id=\"other\" (calls/s)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "sum(rate(fatturafacile_tenant_resource_consumption_total{resource=\"api_calls\",tenant_id=\"other\"}[5m])) or vector(0)" }]
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Top 10 tenants by requests per second",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "topk(10, sum by (tenant_id) (rate(fatturafacile_tenant_resource_consumption_total{resource=\"api_calls\"}[5m])))", "legendFormat": "{{tenant_id}}" }]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Top 10 tenants by database time (seconds per second)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "topk(10, sum by (tenant_id) (rate(fatturafacile_tenant_resource_consumption_total{resource=\"db_seconds\"}[5m])))", "legendFormat": "{{tenant_id}}" }]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Share of the database time per tenant (noisy neighbour detection)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "topk(10, sum by (tenant_id) (rate(fatturafacile_tenant_resource_consumption_total{resource=\"db_seconds\"}[15m])) / scalar(sum(rate(fatturafacile_tenant_resource_consumption_total{resource=\"db_seconds\"}[15m]))))", "legendFormat": "{{tenant_id}}" }]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Top 10 tenants by queue jobs per second",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "topk(10, sum by (tenant_id) (rate(fatturafacile_tenant_resource_consumption_total{resource=\"queue_jobs\"}[5m])))", "legendFormat": "{{tenant_id}}" }]
+    },
+    {
+      "id": 8, "type": "table", "title": "Tenant ranking (last hour)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 23 },
+      "options": { "showHeader": true },
+      "fieldConfig": { "defaults": {}, "overrides": [{ "matcher": { "id": "byName", "options": "DB seconds" }, "properties": [{ "id": "unit", "value": "s" }] }] },
+      "transformations": [
+        { "id": "joinByField", "options": { "byField": "tenant_id", "mode": "outer" } },
+        { "id": "organize", "options": { "excludeByName": { "Time 1": true, "Time 2": true, "Time 3": true }, "renameByName": { "Value #A": "API calls", "Value #B": "DB seconds", "Value #C": "Queue jobs" } } }
+      ],
+      "targets": [
+        { "refId": "A", "instant": true, "format": "table", "expr": "sum by (tenant_id) (increase(fatturafacile_tenant_resource_consumption_total{resource=\"api_calls\"}[1h]))" },
+        { "refId": "B", "instant": true, "format": "table", "expr": "sum by (tenant_id) (increase(fatturafacile_tenant_resource_consumption_total{resource=\"db_seconds\"}[1h]))" },
+        { "refId": "C", "instant": true, "format": "table", "expr": "sum by (tenant_id) (increase(fatturafacile_tenant_resource_consumption_total{resource=\"queue_jobs\"}[1h]))" }
+      ]
+    }
+  ]
+}

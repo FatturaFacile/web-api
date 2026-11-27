@@ -72,6 +72,7 @@ use Database\Seeders\Translations\MesOperatorBoardFrontendTranslations;
 use Database\Seeders\Translations\MobileFeatureTranslations;
 use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
+use Database\Seeders\Translations\ObservabilityFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PassengerTransportFrontendTranslations;
 use Database\Seeders\Translations\PayablesFrontendTranslations;
@@ -233,7 +234,8 @@ class FrontendTranslationSeeder extends Seeder
             + WorkflowApprovalFrontendTranslations::all($locale)
             + BudgetingSpendControlFrontendTranslations::all($locale)
             + PlmFrontendTranslations::all($locale)
-            + TenderManagementFrontendTranslations::all($locale);
+            + TenderManagementFrontendTranslations::all($locale)
+            + ObservabilityFrontendTranslations::all($locale);
     }
 
     /**

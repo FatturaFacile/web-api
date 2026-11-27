@@ -65,6 +65,7 @@ const SCHEDULE_CLEANUPS = [
     'sdi:expire-pa-deadlines' => 'status change only',
     'document-trust:verify-preservation' => 'verification only, disposal is manual',
     'Enterprise\EventBus\Jobs\MaintainOutboxLifecycleJob' => 'outbox archive copies (open question)',
+    'observability:prune' => 'diagnostics only (slow queries, endpoint samples, connector probes): technical data, no business or statutory record',
 ];
 
 const SCHEDULE_NON_CLEANUPS = [
@@ -83,6 +84,7 @@ const SCHEDULE_NON_CLEANUPS = [
     'practice:expire-fee-proposals', 'communication:due-campaigns', 'subscriptions:indexation',
     'exports:run-scheduled', 'business-intelligence:run-snapshots', 'marketplace:check-health', 'supplier-portal:alert-expiring-documents',
     'crm:process-automation', 'ebill:poll-pending-statuses', 'esm:loaners:scan-overdue', 'billing:process-recurring', 'audit:archive-worm', 'mfg:mes-shift-instances', 'projects:evm-snapshots',
+    'observability:probe-connectors',
 ];
 
 beforeEach(function (): void {

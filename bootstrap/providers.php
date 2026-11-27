@@ -46,6 +46,7 @@ use Modules\DigitalPreservation\Providers\DigitalPreservationServiceProvider;
 use Modules\Distribution\Providers\DistributionServiceProvider;
 use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
+use Modules\DownPayments\Providers\DownPaymentsServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
 use Modules\ElectronicSignature\Providers\ElectronicSignatureServiceProvider;
 use Modules\Events\Providers\EventsServiceProvider;
@@ -81,6 +82,7 @@ use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\MarketingAutomation\Providers\MarketingAutomationServiceProvider;
 use Modules\Marketplace\Providers\MarketplaceServiceProvider;
 use Modules\MrpPlanning\Providers\MrpPlanningServiceProvider;
+use Modules\Observability\Providers\ObservabilityServiceProvider;
 use Modules\OcrExtraction\Providers\OcrExtractionServiceProvider;
 use Modules\PassengerTransport\Providers\PassengerTransportServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
@@ -103,7 +105,6 @@ use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
 use Modules\StatutoryFinancials\Providers\StatutoryFinancialsServiceProvider;
-use Modules\DownPayments\Providers\DownPaymentsServiceProvider;
 use Modules\Subcontracting\Providers\SubcontractingServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
@@ -241,6 +242,7 @@ return [
     FiduciaryPortalServiceProvider::class,
     SwissEbillServiceProvider::class,
     ForeignVatRefundServiceProvider::class,
+    ObservabilityServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,

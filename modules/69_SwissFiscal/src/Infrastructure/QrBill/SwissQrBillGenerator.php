@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\SwissFiscal\Infrastructure\QrBill;
 
+use Modules\Observability\Metrics\DomainMetrics;
+use Modules\Observability\Metrics\MetricCatalog;
 use Modules\SwissFiscal\Domain\Contracts\FiscalDocumentGeneratorInterface;
 use Modules\SwissFiscal\Domain\Enums\QrReferenceType;
 use Modules\SwissFiscal\Domain\Services\QrBillPayloadBuilder;
@@ -35,6 +37,14 @@ final class SwissQrBillGenerator implements FiscalDocumentGeneratorInterface
     }
 
     public function generate(string $tenantId, array $context): FiscalDocument
+    {
+        return DomainMetrics::time(MetricCatalog::QR_BILL_DURATION, fn (): FiscalDocument => $this->render($context));
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    private function render(array $context): FiscalDocument
     {
         $bill = $this->billFrom($context);
         $payload = $this->payloads->build($bill);

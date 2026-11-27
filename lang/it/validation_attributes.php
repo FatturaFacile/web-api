@@ -4351,4 +4351,11 @@ return [
     'calculation_mode' => 'modalità di calcolo',
     'instrument_type' => 'strumento',
     'contract' => 'contratto',
+    'slow_query_threshold_ms' => 'soglia delle query lente',
+    'n_plus_one_threshold' => 'soglia N+1',
+    'explain_enabled' => 'acquisizione del piano di esecuzione',
+    'alert_endpoint_p95_ms' => 'soglia di allarme p95 degli endpoint',
+    'alert_tenant_share_pct' => 'soglia di allarme della quota per azienda',
+    'alert_connector_latency_ms' => 'soglia di allarme della latenza dei connettori',
+    'maintenance' => 'manutenzione',
 ];
