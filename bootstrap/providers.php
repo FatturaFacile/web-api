@@ -41,6 +41,7 @@ use Modules\CrisisMonitoring\Providers\CrisisMonitoringServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\CustomerSatisfaction\Providers\CustomerSatisfactionServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
+use Modules\DairyCheeseManufacturing\Providers\DairyCheeseManufacturingServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
 use Modules\DataMigration\Providers\DataMigrationServiceProvider;
 use Modules\DataResidency\Providers\DataResidencyServiceProvider;
@@ -233,6 +234,7 @@ return [
     MarketingAutomationServiceProvider::class,
     AgentCommissionsServiceProvider::class,
     WithholdingRecipientsServiceProvider::class,
+    DairyCheeseManufacturingServiceProvider::class,
     DebtCollectionServiceProvider::class,
     ExpenseManagementServiceProvider::class,
     TenderManagementServiceProvider::class,

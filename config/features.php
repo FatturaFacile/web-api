@@ -56,6 +56,7 @@ return [
         'agent_commissions' => env('FEATURE_MODULE_AGENT_COMMISSIONS'),
         'withholding_recipients' => env('FEATURE_MODULE_WITHHOLDING_RECIPIENTS'),
         'adventure_parks' => env('FEATURE_MODULE_ADVENTURE_PARKS'),
+        'dairy_cheese' => env('FEATURE_MODULE_DAIRY_CHEESE'),
         'debt_collection' => env('FEATURE_MODULE_DEBT_COLLECTION'),
         'expense_management' => env('FEATURE_MODULE_EXPENSE_MANAGEMENT'),
         'tender_management' => env('FEATURE_MODULE_TENDER_MANAGEMENT'),

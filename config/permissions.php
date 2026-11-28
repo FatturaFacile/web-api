@@ -134,6 +134,17 @@ return [
                 'write' => ['adventure_parks.write', 'adventure_parks.*'],
             ],
         ],
+        // Dairy, cooperative creamery and alpine pasture vertical (Mod 298): production, warehouse and quality staff keep milk collection,
+        // laboratory, vat batches and the aging cellar; DairyCheesePolicy reserves settlements and pricing grids to finance and the
+        // DBMilch.ch / SIAN declarations and recalls to owners, administrators and quality managers.
+        'dairy_cheese' => [
+            'read' => ['owner', 'admin', 'accountant', 'accountant_readonly', 'production', 'warehouse', 'quality', 'technician', 'member'],
+            'write' => ['owner', 'admin', 'production', 'warehouse', 'quality', 'technician'],
+            'grants' => [
+                'read' => ['dairy_cheese.read', 'dairy_cheese.write', 'dairy_cheese.settle', 'dairy_cheese.regulatory', 'dairy_cheese.*'],
+                'write' => ['dairy_cheese.write', 'dairy_cheese.settle', 'dairy_cheese.regulatory', 'dairy_cheese.*'],
+            ],
+        ],
         // Dunning and debt collection: read for finance and sales managers, write for owners, administrators and
         // accountants; the legal steps (Betreibung dossier, messa in mora, releasing an exclusion) can also be granted to
         // another member on its own with debt_collection.escalate (DebtCollectionPolicy).
