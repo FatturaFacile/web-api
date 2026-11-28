@@ -25,7 +25,7 @@ function dcSentMessaInMora(object $test): array
     {
         public function send(Tenant $tenant, Email $email): void {}
     };
-    $test->app->instance(PecMailer::class, $mailer);
+    app()->instance(PecMailer::class, $mailer);
     $test->tenant->update(['pec_email' => 'recupero@pec.example.it', 'sdi_pec_smtp_host' => 'smtp.pec.example.it', 'sdi_pec_username' => 'recupero@pec.example.it']);
 
     $customer = dcCustomer($test, 'Rossi Srl', 'IT');
