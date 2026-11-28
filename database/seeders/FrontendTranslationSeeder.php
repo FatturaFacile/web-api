@@ -29,6 +29,7 @@ use Database\Seeders\Translations\CurrencyFxFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\CustomerReturnsReverseLogisticsFrontendTranslations;
 use Database\Seeders\Translations\CustomerSatisfactionFrontendTranslations;
+use Database\Seeders\Translations\DairyCheeseFrontendTranslations;
 use Database\Seeders\Translations\DataMigrationFrontendTranslations;
 use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\DebtCollectionFrontendTranslations;
@@ -78,7 +79,6 @@ use Database\Seeders\Translations\MobileFeatureTranslations;
 use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
 use Database\Seeders\Translations\ObservabilityFrontendTranslations;
-use Database\Seeders\Translations\TimeTravelFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PassengerTransportFrontendTranslations;
 use Database\Seeders\Translations\PayablesFrontendTranslations;
@@ -107,6 +107,7 @@ use Database\Seeders\Translations\SupplierRebatesFrontendTranslations;
 use Database\Seeders\Translations\SwissQrBillSlipFrontendTranslations;
 use Database\Seeders\Translations\SwissVatFrontendTranslations;
 use Database\Seeders\Translations\TenderManagementFrontendTranslations;
+use Database\Seeders\Translations\TimeTravelFrontendTranslations;
 use Database\Seeders\Translations\TreasuryBankingFrontendTranslations;
 use Database\Seeders\Translations\TreasuryIsoReconciliationFrontendTranslations;
 use Database\Seeders\Translations\VanSellingFieldSalesFrontendTranslations;
@@ -209,6 +210,7 @@ class FrontendTranslationSeeder extends Seeder
             + AcademyFrontendTranslations::all($locale)
             + AgentCommissionsFrontendTranslations::all($locale)
             + WithholdingRecipientsFrontendTranslations::all($locale)
+            + DairyCheeseFrontendTranslations::all($locale)
             + DebtCollectionFrontendTranslations::all($locale)
             + ExpenseManagementFrontendTranslations::all($locale)
             + IntercompanyFrontendTranslations::all($locale)
