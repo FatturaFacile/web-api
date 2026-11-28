@@ -35,6 +35,7 @@ use Modules\CorporateConventions\Providers\CorporateConventionsServiceProvider;
 use Modules\CorporateGroup\Providers\CorporateGroupServiceProvider;
 use Modules\CpqConfigurator\Providers\CpqConfiguratorServiceProvider;
 use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
+use Modules\CrisisMonitoring\Providers\CrisisMonitoringServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\CustomerSatisfaction\Providers\CustomerSatisfactionServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
@@ -247,6 +248,7 @@ return [
     ForeignVatRefundServiceProvider::class,
     ObservabilityServiceProvider::class,
     GreenCareServiceProvider::class,
+    CrisisMonitoringServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,
