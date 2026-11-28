@@ -29,7 +29,7 @@ function dcFakePec(object $test): object
         }
     };
 
-    $test->app->instance(PecMailer::class, $mailer);
+    app()->instance(PecMailer::class, $mailer);
     $test->tenant->update(['pec_email' => 'recupero@pec.example.ch', 'sdi_pec_smtp_host' => 'smtp.pec.example.ch', 'sdi_pec_username' => 'recupero@pec.example.ch']);
 
     return $mailer;
