@@ -59816,6 +59816,415 @@ CREATE INDEX "fiscal_cu_year_ix" on "fiscal_cu_autonomous_records"(
   "tenant_id",
   "tax_year"
 );
+CREATE TABLE "adv_park_configs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "buffer_minutes" integer not null default '15',
+  "teacher_free_ratio" integer not null default '15',
+  "teacher_free_per_disabled" integer not null default '1',
+  "picnic_capacity" integer not null default '60',
+  "waiver_version_id" varchar not null default 'v1',
+  "wristband_palette" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_pc_tenant_ix" on "adv_park_configs"(
+  "tenant_id"
+);
+CREATE TABLE "adv_slot_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "start_time" varchar not null,
+  "end_time" varchar not null,
+  "wristband_color" varchar not null,
+  "weekdays" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_st_active_ix" on "adv_slot_templates"(
+  "tenant_id",
+  "is_active"
+);
+CREATE TABLE "adv_ppe_assets"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "serial_code" varchar not null,
+  "category" varchar not null,
+  "size" varchar not null default 'UNIVERSAL',
+  "min_height_cm" integer,
+  "max_height_cm" integer,
+  "min_weight_kg" integer,
+  "max_weight_kg" integer,
+  "brand" varchar,
+  "model" varchar,
+  "batch_number" varchar,
+  "purchase_date" date,
+  "first_use_date" date,
+  "manufacturer_max_lifespan_date" date not null,
+  "rental_cycle_count" integer not null default '0',
+  "cumulative_usage_hours" numeric not null default '0',
+  "last_inspection_date" date,
+  "next_inspection_due_date" date,
+  "status" varchar not null default 'AVAILABLE',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "adv_ppe_serial_uq" on "adv_ppe_assets"(
+  "tenant_id",
+  "serial_code"
+);
+CREATE INDEX "adv_ppe_stock_ix" on "adv_ppe_assets"(
+  "tenant_id",
+  "category",
+  "size",
+  "status"
+);
+CREATE TABLE "adv_ppe_inspection_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ppe_asset_id" varchar not null,
+  "inspection_type" varchar not null,
+  "outcome" varchar not null,
+  "inspected_on" date not null,
+  "inspector_name" varchar,
+  "inspector_license_number" varchar,
+  "signature" text,
+  "notes" text,
+  "checklist" text,
+  "next_due_date" date,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ppe_asset_id") references "adv_ppe_assets"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_pil_asset_ix" on "adv_ppe_inspection_logs"(
+  "tenant_id",
+  "ppe_asset_id",
+  "inspected_on"
+);
+CREATE TABLE "adv_daily_course_checks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "check_date" date not null,
+  "checked_by_name" varchar not null,
+  "items" text not null,
+  "outcome" varchar not null,
+  "signature" text,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_dcc_date_ix" on "adv_daily_course_checks"(
+  "tenant_id",
+  "check_date"
+);
+CREATE TABLE "adv_tickets"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "slot_template_id" varchar,
+  "booking_code" varchar not null,
+  "public_token" varchar not null,
+  "slot_date" date not null,
+  "start_time" varchar not null,
+  "end_time" varchar not null,
+  "wristband_color" varchar not null,
+  "contact_name" varchar not null,
+  "contact_email" varchar,
+  "contact_phone" varchar,
+  "headcount" integer not null,
+  "payment_status" varchar not null default 'PENDING',
+  "status" varchar not null default 'BOOKED',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("slot_template_id") references "adv_slot_templates"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "adv_tk_code_uq" on "adv_tickets"(
+  "tenant_id",
+  "booking_code"
+);
+CREATE UNIQUE INDEX "adv_tk_token_uq" on "adv_tickets"(
+  "public_token"
+);
+CREATE INDEX "adv_tk_day_ix" on "adv_tickets"(
+  "tenant_id",
+  "slot_date",
+  "status"
+);
+CREATE TABLE "adv_ticket_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ticket_id" varchar not null,
+  "size" varchar not null,
+  "quantity" integer not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ticket_id") references "adv_tickets"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_tl_ticket_ix" on "adv_ticket_lines"(
+  "tenant_id",
+  "ticket_id"
+);
+CREATE TABLE "adv_ticket_participants"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ticket_id" varchar not null,
+  "full_name" varchar not null,
+  "is_minor" tinyint(1) not null default '0',
+  "is_signer" tinyint(1) not null default '0',
+  "birth_date" date,
+  "height_cm" numeric,
+  "weight_kg" numeric,
+  "size" varchar,
+  "fiscal_code" varchar,
+  "phone" varchar,
+  "email" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ticket_id") references "adv_tickets"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_tp_ticket_ix" on "adv_ticket_participants"(
+  "tenant_id",
+  "ticket_id"
+);
+CREATE TABLE "adv_ticket_ppe_assignments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ticket_id" varchar not null,
+  "participant_id" varchar not null,
+  "ppe_asset_id" varchar not null,
+  "assigned_at" datetime not null,
+  "returned_at" datetime,
+  "usage_hours" numeric,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ticket_id") references "adv_tickets"("id") on delete cascade,
+  foreign key("participant_id") references "adv_ticket_participants"("id") on delete cascade,
+  foreign key("ppe_asset_id") references "adv_ppe_assets"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "adv_ta_ticket_ix" on "adv_ticket_ppe_assignments"(
+  "tenant_id",
+  "ticket_id"
+);
+CREATE INDEX "adv_ta_asset_ix" on "adv_ticket_ppe_assignments"(
+  "tenant_id",
+  "ppe_asset_id",
+  "returned_at"
+);
+CREATE TABLE "adv_safety_waivers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ticket_id" varchar not null,
+  "signer_full_name" varchar not null,
+  "signer_fiscal_code" varchar,
+  "signer_phone" varchar,
+  "signer_email" varchar,
+  "signer_birth_date" date,
+  "signer_height_cm" numeric,
+  "signer_weight_kg" numeric,
+  "signature_data" text not null,
+  "ip_address" varchar,
+  "user_agent" varchar,
+  "locale" varchar not null default 'it',
+  "waiver_version_id" varchar not null,
+  "accepted_rules" tinyint(1) not null default '0',
+  "signed_at" datetime not null,
+  "briefing_completed_at" datetime,
+  "briefing_instructor_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ticket_id") references "adv_tickets"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "adv_sw_ticket_uq" on "adv_safety_waivers"(
+  "tenant_id",
+  "ticket_id"
+);
+CREATE TABLE "adv_waiver_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "version_id" varchar not null,
+  "locale" varchar not null,
+  "title" varchar not null,
+  "paragraphs" text not null,
+  "rules" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "adv_wt_version_uq" on "adv_waiver_templates"(
+  "tenant_id",
+  "version_id",
+  "locale"
+);
+CREATE TABLE "adv_educational_workshops"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "duration_minutes" integer not null,
+  "max_participants" integer not null,
+  "price_per_student" numeric not null default '0',
+  "name_translations" text,
+  "description_translations" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "adv_ew_code_uq" on "adv_educational_workshops"(
+  "tenant_id",
+  "code"
+);
+CREATE TABLE "adv_school_bookings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_contact_id" varchar,
+  "institute_name" varchar not null,
+  "mechanographic_code" varchar,
+  "ipa_office_code" varchar not null,
+  "cig_code" varchar,
+  "cup_code" varchar,
+  "split_payment" tinyint(1) not null default '1',
+  "visit_date" date not null,
+  "start_time" varchar not null,
+  "end_time" varchar not null,
+  "picnic_reserved" tinyint(1) not null default '0',
+  "paying_students" integer not null,
+  "disabled_students" integer not null default '0',
+  "accompanying_teachers" integer not null default '0',
+  "free_teachers" integer not null default '0',
+  "charged_teachers" integer not null default '0',
+  "picnic_seats" integer not null default '0',
+  "total_amount" numeric not null default '0',
+  "vat_rate" numeric not null default '10',
+  "status" varchar not null default 'DRAFT',
+  "fattura_invoice_id" varchar,
+  "fattura_number" varchar,
+  "invoiced_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_contact_id") references "contacts"("id") on delete set null,
+  foreign key("fattura_invoice_id") references "invoices"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "adv_sb_status_ix" on "adv_school_bookings"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "adv_sb_date_ix" on "adv_school_bookings"(
+  "tenant_id",
+  "visit_date"
+);
+CREATE TABLE "adv_school_booking_workshops"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "school_booking_id" varchar not null,
+  "workshop_id" varchar not null,
+  "quantity_students" integer not null,
+  "unit_price" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("school_booking_id") references "adv_school_bookings"("id") on delete cascade,
+  foreign key("workshop_id") references "adv_educational_workshops"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "adv_sbw_booking_ix" on "adv_school_booking_workshops"(
+  "tenant_id",
+  "school_booking_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -60319,3 +60728,4 @@ INSERT INTO migrations VALUES(499,'2028_01_15_000100_create_esterometro_mod027_t
 INSERT INTO migrations VALUES(500,'2028_01_16_000100_create_crisis_monitoring_mod357_tables',43);
 INSERT INTO migrations VALUES(501,'2028_01_16_000100_create_time_travel_mod354_tables',44);
 INSERT INTO migrations VALUES(502,'2028_01_16_000100_create_withholding_recipients_mod356_tables',44);
+INSERT INTO migrations VALUES(503,'2028_01_17_000100_create_adventure_parks_mod299_tables',44);

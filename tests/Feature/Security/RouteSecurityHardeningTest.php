@@ -112,6 +112,8 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/childcare-family',
         // Reception tablets: authenticated by the per-kiosk hashed secret, which selects the tenant, see Visitors\VisitorManagementTest.
         'api/v1/visitor-kiosk',
+        // Liability waiver of the adventure parks: authenticated by the unguessable token of the booking link (the token selects the tenant), throttled by IP, see AdventureParks\PublicWaiverTest.
+        'api/v1/adventure-parks/public',
         // SDI provider webhook: authenticated by the X-Webhook-Secret header (hash_equals, rejected with 401 when unset), see SdiNotificationRequest::authorize().
         'api/v1/sdi/webhook',
         // Stored export download: authenticated by the signature of the URL (signed, expiring), see the `signed` middleware of the DataExport module.

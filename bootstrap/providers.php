@@ -12,6 +12,7 @@ use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Academy\Providers\AcademyServiceProvider;
 use Modules\AccountsPayable\Providers\AccountsPayableServiceProvider;
+use Modules\AdventureParks\Providers\AdventureParksServiceProvider;
 use Modules\AgentCommissions\Providers\AgentCommissionsServiceProvider;
 use Modules\AiCognitive\Providers\AiCognitiveServiceProvider;
 use Modules\AnalyticalAccounting\Providers\AnalyticalAccountingServiceProvider;
@@ -225,6 +226,7 @@ return [
     ResourcePlanningServiceProvider::class,
     ItalianVatServiceProvider::class,
     AccountsPayableServiceProvider::class,
+    AdventureParksServiceProvider::class,
     LiquidityPlanningServiceProvider::class,
     SwissVatServiceProvider::class,
     LeaveManagementServiceProvider::class,

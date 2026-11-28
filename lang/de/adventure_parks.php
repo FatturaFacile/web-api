@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'messages' => [
+        'saved' => 'Daten gespeichert.',
+        'deleted' => 'Eintrag gelöscht.',
+        'ticket_booked' => 'Zeitfenster gebucht.',
+        'ppe_assigned' => 'Ausrüstung ausgegeben.',
+        'course_started' => 'Die Gruppe ist auf dem Parcours.',
+        'ticket_no_show' => 'Buchung als nicht erschienen markiert.',
+        'ppe_returned' => 'Ausrüstung zurückgegeben.',
+        'briefing_done' => 'Sicherheitseinweisung erfasst.',
+        'waiver_signed' => 'Haftungsverzicht unterschrieben.',
+        'inspection_recorded' => 'Prüfung erfasst.',
+        'daily_check_recorded' => 'Tägliche Eröffnungskontrolle erfasst.',
+        'school_confirmed' => 'Schulbuchung bestätigt.',
+        'school_completed' => 'Schulbuchung abgeschlossen.',
+        'school_invoiced' => 'Elektronische Rechnung erstellt.',
+    ],
+    'errors' => [
+        'refused' => 'Der Vorgang wurde abgelehnt.',
+        'slot_sold_out' => 'In diesem Zeitfenster sind nicht genug Gurte der Grösse :size übrig: :remaining verfügbar, :requested angefragt.',
+        'slot_closed' => 'Das Zeitfenster ist an diesem Tag nicht geöffnet.',
+        'slot_invalid' => 'Ein Zeitfenster muss nach seinem Beginn enden.',
+        'slot_has_tickets' => 'Das Zeitfenster hat offene Buchungen und kann nicht gelöscht werden: deaktivieren Sie es.',
+        'ppe_blocked' => 'Die PSA :serial_code kann nicht ausgegeben werden (:reason).',
+        'ppe_not_found' => 'Keine PSA mit diesem Barcode ist registriert oder auf dem Ticket ausgegeben.',
+        'ppe_size_mismatch' => 'Die Grösse der PSA (:ppe_size) passt nicht zum Teilnehmer (:participant_size).',
+        'ppe_already_assigned' => 'Der Teilnehmer hat bereits eine Ausrüstung dieser Kategorie.',
+        'ppe_in_use' => 'Die PSA ist bei einem Besucher im Einsatz und kann nicht gelöscht werden.',
+        'waiver_missing' => 'Vor der Ausgabe der Ausrüstung ist ein unterschriebener Haftungsverzicht für alle Teilnehmer nötig.',
+        'waiver_already_signed' => 'Der Haftungsverzicht dieser Buchung ist bereits unterschrieben.',
+        'headcount_mismatch' => 'Der Haftungsverzicht deckt :given Personen ab, die Buchung hat aber :expected.',
+        'invalid_transition' => 'Der Status kann nicht von :from zu :to wechseln.',
+        'participant_not_found' => 'Der Teilnehmer gehört nicht zu diesem Ticket.',
+        'ticket_not_found' => 'Keine Buchung passt zu diesem Code.',
+        'picnic_capacity_exceeded' => 'Der Picknickplatz ist an diesem Tag voll: :taken von :capacity Plätzen belegt, :requested angefragt.',
+        'already_invoiced' => 'Die Buchung wurde bereits fakturiert.',
+        'booking_not_confirmed' => 'Bestätigen Sie die Buchung, bevor Sie sie fakturieren.',
+        'booking_locked' => 'Nur eine Buchung im Entwurf kann gelöscht werden.',
+        'workshop_not_found' => 'Der Workshop ist nicht verfügbar.',
+        'workshop_code_taken' => 'Ein Workshop mit diesem Code existiert bereits.',
+        'workshop_global' => 'Ein Standard-Workshop kann nicht gelöscht werden: Ändern Sie ihn für eine eigene Kopie und deaktivieren Sie diese.',
+        'workshop_in_use' => 'Der Workshop wird von einer Schulbuchung verwendet.',
+    ],
+    'invoice' => [
+        'free_teachers' => 'Begleitlehrpersonen (kostenlos)',
+        'wording' => 'Besuch des Lernbauernhofs von :institute am :date, :students Schüler.',
+    ],
+];

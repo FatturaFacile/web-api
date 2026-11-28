@@ -9,6 +9,7 @@ use Database\Seeders\Translations\AccountsPayableFrontendTranslations;
 use Database\Seeders\Translations\AccrualsDeferralsFrontendTranslations;
 use Database\Seeders\Translations\AdvancedAuthEnterpriseFrontendTranslations;
 use Database\Seeders\Translations\AdvancedAuthMfaFrontendTranslations;
+use Database\Seeders\Translations\AdventureParksFrontendTranslations;
 use Database\Seeders\Translations\AgentCommissionsFrontendTranslations;
 use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
@@ -209,6 +210,7 @@ class FrontendTranslationSeeder extends Seeder
             + AcademyFrontendTranslations::all($locale)
             + AgentCommissionsFrontendTranslations::all($locale)
             + WithholdingRecipientsFrontendTranslations::all($locale)
+            + AdventureParksFrontendTranslations::all($locale)
             + DebtCollectionFrontendTranslations::all($locale)
             + ExpenseManagementFrontendTranslations::all($locale)
             + IntercompanyFrontendTranslations::all($locale)
