@@ -4,10 +4,11 @@
 [![Laravel Framework](https://img.shields.io/badge/Laravel-13.x-FF2D20?logo=laravel)](https://laravel.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791?logo=postgresql)](https://postgresql.org)
 [![Architecture](https://img.shields.io/badge/Architecture-Modular%20DDD%20%2F%20Multi--Tenant-blue)]()
+[![CI](https://github.com/FatturaFacile/web-api/actions/workflows/erp-ci.yml/badge.svg)](https://github.com/FatturaFacile/web-api/actions/workflows/erp-ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Release](https://img.shields.io/badge/Release-Community%20Edition%201.0-brightgreen)]()
 
-**FatturaFacile Enterprise ERP** is a modern, modular, open-source enterprise resource planning backend engine built on **Laravel 13** and **PHP 8.5**. It delivers robust, multi-tenant business operations for growing organizations, featuring native multi-tenancy, immutable cryptographic audit logging, a visual workflow approval state machine, and deep European fiscal compliance (Italian SDI electronic invoicing and Swiss QR-Bill banking).
+**FatturaFacile Enterprise ERP** is a modern, modular, open-source enterprise resource planning backend engine built on **Laravel 13** and **PHP 8.6**. It delivers robust, multi-tenant business operations for growing organizations, featuring native multi-tenancy, immutable cryptographic audit logging, a visual workflow approval state machine, and deep European fiscal compliance (Italian SDI electronic invoicing and Swiss QR-Bill banking).
 
 ---
 
@@ -150,7 +151,7 @@ graph TD
 │   ├── Actions/                # Reusable single-action domain operations
 │   ├── Console/Commands/       # Artisan commands (erp:bootstrap, docs:export, etc.)
 │   ├── DTOs/                   # Data Transfer Objects
-│   ├── Enums/                  # Native PHP 8.6 typed enums
+│   ├── Enums/                  # Native PHP typed enums
 │   ├── Events/ & Listeners/    # Application events and event handlers
 │   ├── Http/                   # Controllers, FormRequests, Middleware, Resources
 │   ├── Jobs/                   # Asynchronous background jobs
@@ -172,7 +173,7 @@ graph TD
 │   ├── 21_Workflow/            # State machine approval engine & transitions
 │   ├── 22_GeneralLedger/       # Double-entry accounting, journals, charts of accounts
 │   ├── 24_Treasury/            # Bank accounts, CAMT/CBI imports, reconciliation
-│   └── ...                     # Additional industry and operational modules
+│   └── ...                     # About 100 module folders in total (industry and operational modules)
 ├── packages/                   # Enterprise platform infrastructure packages
 │   ├── ai-gateway/             # Unified AI integration client
 │   ├── audit-ledger/           # Cryptographic immutable audit trail
@@ -181,6 +182,10 @@ graph TD
 │   ├── feature-flags/          # Feature toggle engine
 │   ├── multi-tenant/           # Tenant context, scoping, and middleware
 │   └── openapi/                # OpenAPI schema decorators and specs
+├── services/mes/               # .NET manufacturing execution (MES) service, with its own README
+├── deploy/                     # Compose files and configuration for dev, local and monitoring
+├── docs/                       # API documentation (docs/api/openapi.json), architecture notes, deployment checklist
+├── scripts/                    # Developer and maintenance scripts
 ├── routes/                     # HTTP and console route definitions
 │   ├── api.php                 # Primary /api/v1 RESTful API endpoints
 │   ├── console.php             # Scheduled task definitions and artisan cron
@@ -189,7 +194,7 @@ graph TD
 │   └── web.php                 # Health probes (/up) and documentation routes
 ├── database/                   # Database migrations, seeders, and factories
 │   ├── factories/              # Model factories for testing
-│   ├── migrations/             # 330+ relational database schema migrations
+│   ├── migrations/             # 480+ relational database schema migrations
 │   └── seeders/                # System catalogs, translations, and demo seeders
 ├── config/                     # Application configuration files
 ├── lang/                       # Localization dictionaries (de, en, fr, it)
@@ -339,8 +344,11 @@ php artisan test --compact --filter="order_to_cash_lifecycle"
 # Run architectural boundary tests:
 ./vendor/bin/pest tests/Architecture --no-coverage
 
-# Run tests on an ephemeral PostgreSQL in-memory container:
-composer test:pg
+# Faster subsets (parallel, no coverage):
+composer test:unit      # Unit suite
+composer test:arch      # Architecture suite
+composer test:fast      # Unit and Architecture
+composer test:changed   # only tests touched by your changes
 
 # Run tests within Laravel Sail:
 composer test:sail
@@ -350,13 +358,16 @@ composer test:sail
 
 ```bash
 # Format code using Laravel Pint (modified files only):
-vendor/bin/pint --dirty --format agent
+composer lint:dirty        # or: vendor/bin/pint --dirty
 
-# Check code formatting in CI:
-vendor/bin/pint --test
+# Check code formatting, as in CI:
+composer lint            # vendor/bin/pint --test
 
-# Run Larastan / PHPStan (Level 5 static analysis):
-vendor/bin/phpstan analyse
+# Run Larastan / PHPStan (level 5 static analysis):
+composer analyse         # vendor/bin/phpstan analyse
+
+# Format check, static analysis and the architecture suite together:
+composer quality
 ```
 
 ### API Documentation & Artifacts
@@ -380,14 +391,16 @@ Once running, interactive documentation is available at:
 
 Running `php artisan erp:bootstrap` automatically provisions the demo tenant (*Demo Manufacturing & Services Group S.p.A.*) with realistic business data and pre-configured role personas:
 
-| Persona | Role Key | Email | Password | Primary Workspace |
-|---|---|---|---|---|
-| **Super Admin** | `admin` | `admin@fatturafacile.local` | `Password123!` | System Configuration & Multi-Tenant Control |
-| **CEO** | `ceo` | `ceo@demo-group.com` | `Password123!` | Executive KPIs & Revenue Health Dashboard |
-| **CFO** | `cfo` | `cfo@demo-group.com` | `Password123!` | General Ledger, Cash Flow & Accounting |
-| **Supply Chain Manager** | `supply_chain_manager` | `supplychain@demo-group.com` | `Password123!` | Procurement, Purchase Orders & Stock |
-| **Operations Manager** | `operations_manager` | `operations@demo-group.com` | `Password123!` | Maintenance, Service Tickets & Work Orders |
-| **Lead Auditor** | `auditor` | `auditor@demo-group.com` | `Password123!` | Compliance, Audit Trail & Forensic Hash Logs |
+| Persona | Role Key | Email | Primary Workspace |
+|---|---|---|---|
+| **Super Admin** | `admin` | `admin@fatturafacile.local` | System Configuration & Multi-Tenant Control |
+| **CEO** | `ceo` | `ceo@demo-group.com` | Executive KPIs & Revenue Health Dashboard |
+| **CFO** | `cfo` | `cfo@demo-group.com` | General Ledger, Cash Flow & Accounting |
+| **Supply Chain Manager** | `supply_chain_manager` | `supplychain@demo-group.com` | Procurement, Purchase Orders & Stock |
+| **Operations Manager** | `operations_manager` | `operations@demo-group.com` | Maintenance, Service Tickets & Work Orders |
+| **Lead Auditor** | `auditor` | `auditor@demo-group.com` | Compliance, Audit Trail & Forensic Hash Logs |
+
+These accounts are for local development only. Their password is set by `database/seeders/UserSeeder.php`; never use the demo seeders or these accounts on a public server.
 
 To grant platform administrator access to an existing user:
 
@@ -398,6 +411,8 @@ php artisan auth:grant-platform-admin admin@demo-group.com
 ---
 
 ## 9. Core REST Endpoints Reference
+
+The table is a small sample; the complete list of endpoints is in `docs/api/openapi.json` and in the Swagger and Scramble UIs.
 
 All requests to protected endpoints require `Authorization: Bearer <token>` and `X-Tenant-Id: <tenant-uuid>` headers.
 
@@ -427,29 +442,49 @@ All requests to protected endpoints require `Authorization: Bearer <token>` and 
 
 ---
 
-## 10. Availability & TLS Certificate Monitoring (Uptime Kuma + UptimeRobot)
+## 10. Availability Monitoring
 
-FatturaFacile uses a **hybrid two-tier availability monitoring architecture** (`deploy/monitoring/`):
-
-1. **Uptime Kuma on the VPS (`deploy/monitoring/docker-compose.monitoring.yml`)**:
-   - Self-hosted instance (`louislam/uptime-kuma:1`) bound to `127.0.0.1:3001` behind the reverse proxy.
-   - Executes 60-second probes against:
-     - Public website (`https://www.fatturafacile.eu`)
-     - Production & staging web apps (`https://app.fatturafacile.eu`, `https://dev.fatturafacile.eu`)
-     - API liveness (`/up`) and readiness (`/api/v1/health/ready`) endpoints (`https://api.fatturafacile.eu/up`, `https://dev-api.fatturafacile.eu/up`)
-     - Interactive OpenAPI documentation (`https://dev-api.fatturafacile.eu/api/documentation`)
-   - Enforces **TLS certificate expiration alerts** at 21, 14, and 7 days before expiry, dispatching instant notifications via **Telegram Bot** and **SMTP Email**.
-   - Importable monitor specification: `deploy/monitoring/uptime-monitors.json`.
-   - Start command on the VPS:
-     ```bash
-     docker compose -f deploy/monitoring/docker-compose.monitoring.yml up -d
-     ```
-2. **UptimeRobot Remote External Probes**:
-   - External 5-minute HTTPS monitors check `https://www.fatturafacile.eu`, `https://app.fatturafacile.eu`, `https://api.fatturafacile.eu/up`, and `https://dev-api.fatturafacile.eu/up` from outside the VPS network so that full host or network outages are alerted even if the VPS itself goes offline.
+Liveness (`/up`) and readiness (`/api/v1/health/ready`) endpoints are used by uptime probes. The configuration of the monitoring stack (an Uptime Kuma instance plus external probes, with TLS expiry alerts) is in `deploy/monitoring/`; see the files there for the setup. Public service status is shown at [status.fatturafacile.eu](https://status.fatturafacile.eu).
 
 ---
 
-## 11. License
+## 11. Configuration
+
+All settings come from environment variables, read in `config/*.php`. `.env.example` lists every variable with comments; copy it to `.env`. The ones you will most often touch (names only):
+
+- **Application:** `APP_NAME`, `APP_ENV`, `APP_KEY`, `APP_DEBUG`, `APP_URL`, `FRONTEND_URL`
+- **Database:** `DB_CONNECTION`, `DB_FOREIGN_KEYS` (and the usual `DB_*` connection variables for PostgreSQL)
+- **Runtime:** `QUEUE_CONNECTION`, `CACHE_STORE`, `SESSION_DRIVER`, `BROADCAST_CONNECTION`, `FILESYSTEM_DISK`, `REDIS_HOST`
+- **Authentication:** `SANCTUM_STATEFUL_DOMAINS` (must include the origin of the web client, for example `localhost:4200`)
+- **Mail:** `MAIL_MAILER` and the `MAIL_*` variables
+- **E-invoicing:** `SDI_DEFAULT_CHANNEL`
+
+## 12. CI/CD & Branching
+
+- `dev` is the default and integration branch. Open pull requests against `dev`. Production is released from `main` with a tag `vX.Y.Z`. `main` only receives pull requests from `dev` (the `main-source` workflow enforces it).
+- `Enterprise ERP CI Pipeline` (`erp-ci.yml`): `composer validate`, `composer audit`, Pint, PHPStan and the test suites, on pull requests to `main` and `dev` and on pushes to `main`.
+- `Backend Quality & Merge Gates` (`ci-quality.yml`): Pint, PHPStan, architecture tests and the backend tests, plus a weekly run.
+- `Deploy dev` (`deploy-dev.yml`): runs the CI and deploys the development environment on every push to `dev`. `Regenerate API docs` (`docs-api.yml`) refreshes `docs/api/` on pushes to `dev`.
+- `Enterprise ERP Production Release` (`erp-release.yml`): on `vX.Y.Z` tags builds the release artifacts and publishes a GitHub release. `Build, Publish and Deploy` (`deploy.yml`) builds the container image and deploys production after a successful CI run on `main`.
+- `MES (.NET) CI` (`mes-ci.yml`) builds and tests `services/mes`. `Qodana` runs static analysis. `Weekly DAST` (OWASP ZAP baseline) and `Weekly Load Test` (k6) run on a schedule.
+
+## 13. Related Repositories & Documentation
+
+| Repository | Relation |
+| :--- | :--- |
+| [`web-frontend`](https://github.com/FatturaFacile/web-frontend) | Main web client (Angular); its `api:*` scripts read `docs/api/openapi.json` from this repository |
+| [`web-frontend-inglorious`](https://github.com/FatturaFacile/web-frontend-inglorious) | Experimental lighter web client |
+| [`mobile`](https://github.com/FatturaFacile/mobile) | Flutter client (`/mobile` endpoints) |
+| [`desktop`](https://github.com/FatturaFacile/desktop) | Offline Windows client with optional sync |
+| [`database`](https://github.com/FatturaFacile/database) | Reference documentation of the relational schema |
+| [`openapi-sdk`](https://github.com/FatturaFacile/openapi-sdk), [`mcp-server`](https://github.com/FatturaFacile/mcp-server), [`integrations`](https://github.com/FatturaFacile/integrations) | SDKs, MCP server and connectors built around the API |
+| [`FatturaFacile`](https://github.com/FatturaFacile/FatturaFacile) | Organization overview and repository map |
+
+Documentation in this repository: [ARCHITECTURE.md](ARCHITECTURE.md), [API_SPECIFICATION.md](API_SPECIFICATION.md), [CODING_STANDARDS.md](CODING_STANDARDS.md), [CHANGELOG.md](CHANGELOG.md), [docs/](docs/) and [docs/deployment/PRODUCTION_CHECKLIST.md](docs/deployment/PRODUCTION_CHECKLIST.md). Project wiki: [FatturaFacile/FatturaFacile wiki](https://github.com/FatturaFacile/FatturaFacile/wiki).
+
+---
+
+## 14. License
 
 This project is open-source software licensed under the **[MIT License](LICENSE)**.
 
