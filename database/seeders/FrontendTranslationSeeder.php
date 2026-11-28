@@ -257,7 +257,9 @@ class FrontendTranslationSeeder extends Seeder
             + TenderManagementFrontendTranslations::all($locale)
             + EsterometroFrontendTranslations::all($locale)
             + ObservabilityFrontendTranslations::all($locale)
-            + TimeTravelFrontendTranslations::all($locale);
+            + TimeTravelFrontendTranslations::all($locale)
+            + LocalizationFrontendTranslations::all($locale)
+            + LocalizationStatutoryTranslations::all($locale);
     }
 
     /**
