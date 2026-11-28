@@ -110,6 +110,7 @@ use Database\Seeders\Translations\TenderManagementFrontendTranslations;
 use Database\Seeders\Translations\TreasuryBankingFrontendTranslations;
 use Database\Seeders\Translations\TreasuryIsoReconciliationFrontendTranslations;
 use Database\Seeders\Translations\VanSellingFieldSalesFrontendTranslations;
+use Database\Seeders\Translations\BeekeepingFrontendTranslations;
 use Database\Seeders\Translations\WithholdingRecipientsFrontendTranslations;
 use Database\Seeders\Translations\WorkflowApprovalFrontendTranslations;
 use Illuminate\Database\Seeder;
@@ -209,6 +210,7 @@ class FrontendTranslationSeeder extends Seeder
             + AcademyFrontendTranslations::all($locale)
             + AgentCommissionsFrontendTranslations::all($locale)
             + WithholdingRecipientsFrontendTranslations::all($locale)
+            + BeekeepingFrontendTranslations::all($locale)
             + DebtCollectionFrontendTranslations::all($locale)
             + ExpenseManagementFrontendTranslations::all($locale)
             + IntercompanyFrontendTranslations::all($locale)

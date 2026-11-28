@@ -55,6 +55,7 @@ return [
         'marketing_automation' => env('FEATURE_MODULE_MARKETING_AUTOMATION'),
         'agent_commissions' => env('FEATURE_MODULE_AGENT_COMMISSIONS'),
         'withholding_recipients' => env('FEATURE_MODULE_WITHHOLDING_RECIPIENTS'),
+        'beekeeping' => env('FEATURE_MODULE_BEEKEEPING'),
         'debt_collection' => env('FEATURE_MODULE_DEBT_COLLECTION'),
         'expense_management' => env('FEATURE_MODULE_EXPENSE_MANAGEMENT'),
         'tender_management' => env('FEATURE_MODULE_TENDER_MANAGEMENT'),
