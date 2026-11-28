@@ -27,7 +27,7 @@ final class SaveSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'public_slug' => ['nullable', 'string', 'min:4', 'max:80', 'regex:/^[a-z0-9][a-z0-9-]*$/', Rule::unique('ski_school_settings', 'public_slug')->ignore($this->tenantId(), 'tenant_id')],
+            'public_slug' => ['sometimes', 'string', 'min:4', 'max:80', 'regex:/^[a-z0-9][a-z0-9-]*$/', Rule::unique('ski_school_settings', 'public_slug')->ignore($this->tenantId(), 'tenant_id')],
             'booking_enabled' => ['nullable', 'boolean'],
             'jurisdiction' => ['nullable', Rule::in(['IT', 'CH'])],
             'default_retention_mode' => ['nullable', Rule::in(RetentionMode::values())],
