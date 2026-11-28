@@ -61311,6 +61311,300 @@ CREATE UNIQUE INDEX "bee_tax_profiles_tenant_id_country_unique" on "bee_tax_prof
   "tenant_id",
   "country"
 );
+CREATE TABLE "mill_deliveries"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "campaign_year" integer not null,
+  "lot_code" varchar not null,
+  "delivered_at" datetime not null,
+  "processing_mode" varchar not null,
+  "commodity" varchar not null,
+  "grain_type" varchar,
+  "farmer_contact_id" varchar,
+  "cultivar" varchar,
+  "origin_municipality" varchar,
+  "cadastral_reference" varchar,
+  "sian_origin_code" varchar,
+  "certification" varchar not null default 'EVO',
+  "gross_weight_kg" numeric,
+  "tare_kg" numeric not null default '0',
+  "crate_count" integer not null default '0',
+  "crate_unit_tare_kg" numeric not null default '0',
+  "net_weight_kg" numeric,
+  "weighbridge_ticket" varchar,
+  "scale_payload" text,
+  "scale_read_at" datetime,
+  "scheduled_at" datetime,
+  "estimated_duration_minutes" integer,
+  "hopper_line" varchar,
+  "status" varchar not null default 'BOOKED',
+  "sms_reminder_sent_at" datetime,
+  "sms_recipient_phone" varchar,
+  "sms_status" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("farmer_contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mdl_lot_uq" on "mill_deliveries"(
+  "tenant_id",
+  "lot_code"
+);
+CREATE INDEX "mdl_campaign_idx" on "mill_deliveries"(
+  "tenant_id",
+  "campaign_year",
+  "status"
+);
+CREATE INDEX "mdl_slot_idx" on "mill_deliveries"(
+  "tenant_id",
+  "scheduled_at",
+  "hopper_line"
+);
+CREATE INDEX "mdl_farmer_idx" on "mill_deliveries"(
+  "tenant_id",
+  "farmer_contact_id"
+);
+CREATE TABLE "mill_tanks"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "code" varchar not null,
+  "description" varchar,
+  "material" varchar not null default 'INOX_AISI_304',
+  "capacity_kg" numeric not null,
+  "capacity_l" numeric not null,
+  "stock_kg" numeric not null default '0',
+  "stock_l" numeric not null default '0',
+  "category" varchar,
+  "origin_designation" varchar,
+  "lot_composition" text,
+  "temperature_c" numeric,
+  "is_active" tinyint(1) not null default '1',
+  "grid_row" integer not null default '1',
+  "grid_col" integer not null default '1',
+  "zone_label" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mtk_code_uq" on "mill_tanks"("tenant_id", "code");
+CREATE INDEX "mtk_category_idx" on "mill_tanks"(
+  "tenant_id",
+  "is_active",
+  "category"
+);
+CREATE TABLE "mill_milling_cycles"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "delivery_id" varchar not null,
+  "line_code" varchar,
+  "status" varchar not null default 'IN_PROGRESS',
+  "started_at" datetime not null,
+  "ended_at" datetime,
+  "malaxation_temperature_c" numeric,
+  "water_added_l" numeric not null default '0',
+  "input_net_kg" numeric not null,
+  "output_kg" numeric not null default '0',
+  "output_liters" numeric not null default '0',
+  "density_kg_per_l" numeric not null default '0.916',
+  "yield_percent" numeric not null default '0',
+  "cold_extraction" tinyint(1) not null default '0',
+  "acidity_pct" numeric,
+  "peroxides" numeric,
+  "polyphenols_mg_kg" numeric,
+  "panel_notes" text,
+  "quality_class" varchar,
+  "quality_warnings" text,
+  "sansa_kg" numeric not null default '0',
+  "nocciolino_kg" numeric not null default '0',
+  "vegetation_water_l" numeric not null default '0',
+  "bran_kg" numeric not null default '0',
+  "pickup_kg" numeric not null default '0',
+  "molenda_kg" numeric not null default '0',
+  "mill_stock_kg" numeric not null default '0',
+  "target_tank_id" varchar,
+  "completed_at" datetime,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("delivery_id") references "mill_deliveries"("id") on delete restrict,
+  foreign key("target_tank_id") references "mill_tanks"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mmc_delivery_uq" on "mill_milling_cycles"(
+  "tenant_id",
+  "delivery_id"
+);
+CREATE INDEX "mmc_status_idx" on "mill_milling_cycles"(
+  "tenant_id",
+  "status",
+  "line_code"
+);
+CREATE INDEX "mmc_started_idx" on "mill_milling_cycles"(
+  "tenant_id",
+  "started_at"
+);
+CREATE TABLE "mill_sian_movements"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "progressive" integer not null,
+  "operation_date" date not null,
+  "transmission_deadline" date not null,
+  "causal" varchar not null,
+  "from_tank_id" varchar,
+  "to_tank_id" varchar,
+  "counterparty_contact_id" varchar,
+  "counterparty_name" varchar,
+  "counterparty_cuaa" varchar,
+  "quantity_kg" numeric not null,
+  "quantity_l" numeric not null,
+  "category" varchar,
+  "origin_designation" varchar,
+  "lot_code" varchar,
+  "bottle_format" varchar,
+  "bottle_count" integer,
+  "package_lot" varchar,
+  "best_before" date,
+  "status" varchar not null default 'DRAFT',
+  "sian_protocol" varchar,
+  "payload_snapshot" text,
+  "transmitted_at" datetime,
+  "source_type" varchar,
+  "source_id" varchar,
+  "error_message" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("from_tank_id") references "mill_tanks"("id") on delete set null,
+  foreign key("to_tank_id") references "mill_tanks"("id") on delete set null,
+  foreign key("counterparty_contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "msm_progressive_uq" on "mill_sian_movements"(
+  "tenant_id",
+  "progressive"
+);
+CREATE INDEX "msm_deadline_idx" on "mill_sian_movements"(
+  "tenant_id",
+  "status",
+  "transmission_deadline"
+);
+CREATE INDEX "msm_date_idx" on "mill_sian_movements"(
+  "tenant_id",
+  "operation_date"
+);
+CREATE INDEX "msm_source_idx" on "mill_sian_movements"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE TABLE "mill_settlements"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "delivery_id" varchar not null,
+  "cycle_id" varchar not null,
+  "tariff_mode" varchar not null,
+  "tariff_value" numeric not null default '0',
+  "service_net" numeric not null default '0',
+  "service_vat_rate" numeric not null default '0',
+  "service_vat" numeric not null default '0',
+  "service_total" numeric not null default '0',
+  "settlement_mode" varchar not null,
+  "molenda_percent" numeric,
+  "retained_kg" numeric not null default '0',
+  "oil_price_per_kg" numeric not null default '0',
+  "retained_value_net" numeric not null default '0',
+  "purchase_vat_rate" numeric not null default '0',
+  "purchase_vat" numeric not null default '0',
+  "purchase_total" numeric not null default '0',
+  "cash_balance" numeric not null default '0',
+  "compensation_amount" numeric not null default '0',
+  "tank_id" varchar,
+  "service_invoice_id" varchar,
+  "purchase_doc_id" varchar,
+  "sian_movement_id" varchar,
+  "status" varchar not null default 'SETTLED',
+  "settled_at" datetime,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("delivery_id") references "mill_deliveries"("id") on delete restrict,
+  foreign key("cycle_id") references "mill_milling_cycles"("id") on delete restrict,
+  foreign key("tank_id") references "mill_tanks"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "mst_cycle_uq" on "mill_settlements"(
+  "tenant_id",
+  "cycle_id"
+);
+CREATE INDEX "mst_delivery_idx" on "mill_settlements"(
+  "tenant_id",
+  "delivery_id"
+);
+CREATE INDEX "mst_settled_idx" on "mill_settlements"(
+  "tenant_id",
+  "settled_at"
+);
+CREATE INDEX "mill_settlements_service_invoice_id_index" on "mill_settlements"(
+  "service_invoice_id"
+);
+CREATE INDEX "mill_settlements_purchase_doc_id_index" on "mill_settlements"(
+  "purchase_doc_id"
+);
+CREATE TABLE "mill_byproduct_movements"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "byproduct_type" varchar not null,
+  "movement_date" date not null,
+  "quantity" numeric not null,
+  "unit" varchar not null,
+  "delivery_id" varchar,
+  "cycle_id" varchar,
+  "counterparty_contact_id" varchar,
+  "counterparty_name" varchar,
+  "destination_type" varchar,
+  "transport_document" varchar,
+  "cadastral_parcel" varchar,
+  "parcel_area_ha" numeric,
+  "m3_per_ha" numeric,
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("delivery_id") references "mill_deliveries"("id") on delete set null,
+  foreign key("cycle_id") references "mill_milling_cycles"("id") on delete set null,
+  foreign key("counterparty_contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "mbp_type_idx" on "mill_byproduct_movements"(
+  "tenant_id",
+  "byproduct_type",
+  "movement_date"
+);
+CREATE INDEX "mbp_parcel_idx" on "mill_byproduct_movements"(
+  "tenant_id",
+  "cadastral_parcel"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -61818,3 +62112,4 @@ INSERT INTO migrations VALUES(503,'2028_01_17_000100_create_adventure_parks_mod2
 INSERT INTO migrations VALUES(504,'2028_01_16_000100_create_bonded_warehouses_mod353_tables',45);
 INSERT INTO migrations VALUES(505,'2028_01_17_000100_create_dairy_cheese_mod298_tables',45);
 INSERT INTO migrations VALUES(506,'2028_01_17_000100_create_beekeeping_mod296_tables',46);
+INSERT INTO migrations VALUES(507,'2028_01_17_000100_create_olive_mill_mod297_tables',47);

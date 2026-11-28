@@ -90,6 +90,7 @@ use Modules\Marketplace\Providers\MarketplaceServiceProvider;
 use Modules\MrpPlanning\Providers\MrpPlanningServiceProvider;
 use Modules\Observability\Providers\ObservabilityServiceProvider;
 use Modules\OcrExtraction\Providers\OcrExtractionServiceProvider;
+use Modules\OliveMillAndGrainMill\Providers\OliveMillServiceProvider;
 use Modules\PassengerTransport\Providers\PassengerTransportServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
 use Modules\Planning\Providers\PlanningServiceProvider;
@@ -261,6 +262,7 @@ return [
     GreenCareServiceProvider::class,
     CrisisMonitoringServiceProvider::class,
     BondedWarehousesServiceProvider::class,
+    OliveMillServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,

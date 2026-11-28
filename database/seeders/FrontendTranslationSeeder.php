@@ -81,6 +81,7 @@ use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
 use Database\Seeders\Translations\ObservabilityFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
+use Database\Seeders\Translations\OliveMillFrontendTranslations;
 use Database\Seeders\Translations\PassengerTransportFrontendTranslations;
 use Database\Seeders\Translations\PayablesFrontendTranslations;
 use Database\Seeders\Translations\PlmFrontendTranslations;
@@ -225,6 +226,7 @@ class FrontendTranslationSeeder extends Seeder
             + CustomerSatisfactionFrontendTranslations::all($locale)
             + EbillFrontendTranslations::all($locale)
             + BondedWarehousesFrontendTranslations::all($locale)
+            + OliveMillFrontendTranslations::all($locale)
             + ForeignVatRefundFrontendTranslations::all($locale)
             + GreenCareFrontendTranslations::all($locale)
             + SubcontractingFrontendTranslations::all($locale)
