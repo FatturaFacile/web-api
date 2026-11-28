@@ -61605,6 +61605,449 @@ CREATE INDEX "mbp_parcel_idx" on "mill_byproduct_movements"(
   "tenant_id",
   "cadastral_parcel"
 );
+CREATE TABLE "ski_school_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "public_slug" varchar not null,
+  "booking_enabled" tinyint(1) not null default '0',
+  "jurisdiction" varchar not null default 'IT',
+  "default_retention_mode" varchar not null default 'PERCENT',
+  "default_retention_value" numeric not null default '10',
+  "meeting_point" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "sks_tenant_uq" on "ski_school_settings"("tenant_id");
+CREATE UNIQUE INDEX "ski_school_settings_public_slug_unique" on "ski_school_settings"(
+  "public_slug"
+);
+CREATE TABLE "ski_instructors"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contact_id" varchar,
+  "first_name" varchar not null,
+  "last_name" varchar not null,
+  "email" varchar,
+  "phone" varchar,
+  "license_type" varchar not null,
+  "license_number" varchar,
+  "license_valid_until" date,
+  "hourly_rate" numeric not null default '0',
+  "retention_mode" varchar not null default 'PERCENT',
+  "retention_value" numeric not null default '0',
+  "collaboration_regime" varchar not null default 'FREELANCE',
+  "withholding_percent" numeric not null default '0',
+  "max_weekly_hours" numeric,
+  "is_active" tinyint(1) not null default '1',
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "ski_ins_active_idx" on "ski_instructors"(
+  "tenant_id",
+  "is_active"
+);
+CREATE INDEX "ski_ins_name_idx" on "ski_instructors"(
+  "tenant_id",
+  "last_name",
+  "first_name"
+);
+CREATE TABLE "ski_instructor_languages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "instructor_id" varchar not null,
+  "language_code" varchar not null,
+  "proficiency" varchar not null default 'FLUENT',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("instructor_id") references "ski_instructors"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ski_insl_lang_idx" on "ski_instructor_languages"(
+  "tenant_id",
+  "language_code"
+);
+CREATE INDEX "ski_insl_ins_idx" on "ski_instructor_languages"(
+  "instructor_id"
+);
+CREATE TABLE "ski_instructor_disciplines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "instructor_id" varchar not null,
+  "discipline" varchar not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("instructor_id") references "ski_instructors"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ski_insd_disc_idx" on "ski_instructor_disciplines"(
+  "tenant_id",
+  "discipline"
+);
+CREATE INDEX "ski_insd_ins_idx" on "ski_instructor_disciplines"(
+  "instructor_id"
+);
+CREATE TABLE "ski_instructor_availabilities"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "instructor_id" varchar not null,
+  "slot_date" date not null,
+  "start_time" varchar not null,
+  "end_time" varchar not null,
+  "kind" varchar not null default 'BLACKOUT',
+  "note" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("instructor_id") references "ski_instructors"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "ski_insa_day_idx" on "ski_instructor_availabilities"(
+  "tenant_id",
+  "instructor_id",
+  "slot_date"
+);
+CREATE TABLE "group_course_levels"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "system" varchar not null,
+  "code" varchar not null,
+  "sort_order" integer not null default '0',
+  "color" varchar not null default '#1e88e5',
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "gcl_code_uq" on "group_course_levels"(
+  "tenant_id",
+  "system",
+  "code"
+);
+CREATE INDEX "gcl_sort_idx" on "group_course_levels"("system", "sort_order");
+CREATE TABLE "group_course_classes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "discipline" varchar not null,
+  "level_id" varchar not null,
+  "instructor_id" varchar,
+  "language_code" varchar not null,
+  "week_start" date not null,
+  "end_date" date not null,
+  "daily_start_time" varchar not null,
+  "duration_minutes" integer not null default '120',
+  "capacity" integer not null default '8',
+  "min_participants" integer not null default '3',
+  "meeting_point" varchar,
+  "price_net" numeric not null default '0',
+  "vat_regime" varchar not null default 'IT_EXEMPT_ART10_N20',
+  "status" varchar not null default 'PLANNED',
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("level_id") references "group_course_levels"("id") on delete restrict,
+  foreign key("instructor_id") references "ski_instructors"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "gcc_code_uq" on "group_course_classes"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "gcc_week_idx" on "group_course_classes"(
+  "tenant_id",
+  "week_start",
+  "status"
+);
+CREATE INDEX "gcc_ins_idx" on "group_course_classes"(
+  "tenant_id",
+  "instructor_id",
+  "week_start"
+);
+CREATE TABLE "group_course_enrollments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "class_id" varchar not null,
+  "initial_class_id" varchar,
+  "contact_id" varchar,
+  "student_name" varchar not null,
+  "birth_date" date,
+  "guardian_name" varchar,
+  "guardian_email" varchar,
+  "emergency_contact_name" varchar,
+  "emergency_contact_phone" varchar,
+  "bib_number" integer,
+  "price_net" numeric not null default '0',
+  "status" varchar not null default 'ENROLLED',
+  "source" varchar not null default 'BACK_OFFICE',
+  "booking_reference" varchar,
+  "invoice_id" varchar,
+  "addons_invoice_id" varchar,
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("class_id") references "group_course_classes"("id") on delete restrict,
+  foreign key("initial_class_id") references "group_course_classes"("id") on delete set null,
+  foreign key("contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "gce_class_idx" on "group_course_enrollments"(
+  "tenant_id",
+  "class_id",
+  "status"
+);
+CREATE UNIQUE INDEX "gce_ref_uq" on "group_course_enrollments"(
+  "tenant_id",
+  "booking_reference"
+);
+CREATE INDEX "group_course_enrollments_invoice_id_index" on "group_course_enrollments"(
+  "invoice_id"
+);
+CREATE INDEX "group_course_enrollments_addons_invoice_id_index" on "group_course_enrollments"(
+  "addons_invoice_id"
+);
+CREATE TABLE "group_course_attendances"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "enrollment_id" varchar not null,
+  "class_id" varchar not null,
+  "attendance_date" date not null,
+  "present" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("enrollment_id") references "group_course_enrollments"("id") on delete cascade,
+  foreign key("class_id") references "group_course_classes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "gca_day_uq" on "group_course_attendances"(
+  "enrollment_id",
+  "attendance_date"
+);
+CREATE INDEX "gca_class_idx" on "group_course_attendances"(
+  "tenant_id",
+  "class_id",
+  "attendance_date"
+);
+CREATE TABLE "group_course_transfers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "enrollment_id" varchar not null,
+  "from_class_id" varchar not null,
+  "to_class_id" varchar not null,
+  "reason" varchar,
+  "transferred_by" varchar,
+  "transferred_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("enrollment_id") references "group_course_enrollments"("id") on delete cascade,
+  foreign key("from_class_id") references "group_course_classes"("id") on delete cascade,
+  foreign key("to_class_id") references "group_course_classes"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "gct_enr_idx" on "group_course_transfers"(
+  "tenant_id",
+  "enrollment_id"
+);
+CREATE TABLE "ski_lessons"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "reference" varchar not null,
+  "instructor_id" varchar,
+  "requested_instructor_id" varchar,
+  "is_nominated" tinyint(1) not null default '0',
+  "assignment_method" varchar not null default 'PENDING',
+  "discipline" varchar not null,
+  "language_code" varchar not null,
+  "level_id" varchar,
+  "lesson_date" date not null,
+  "start_time" varchar not null,
+  "end_time" varchar not null,
+  "slot_minutes" integer not null,
+  "slot_count" integer not null default '1',
+  "duration_minutes" integer not null,
+  "participants" integer not null default '1',
+  "customer_contact_id" varchar,
+  "customer_name" varchar not null,
+  "customer_email" varchar,
+  "customer_phone" varchar,
+  "meeting_point" varchar,
+  "price_net" numeric not null default '0',
+  "vat_regime" varchar not null default 'IT_EXEMPT_ART10_N20',
+  "status" varchar not null default 'REQUESTED',
+  "source" varchar not null default 'BACK_OFFICE',
+  "invoice_id" varchar,
+  "addons_invoice_id" varchar,
+  "completed_at" datetime,
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("instructor_id") references "ski_instructors"("id") on delete set null,
+  foreign key("requested_instructor_id") references "ski_instructors"("id") on delete set null,
+  foreign key("level_id") references "group_course_levels"("id") on delete set null,
+  foreign key("customer_contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "skl_ref_uq" on "ski_lessons"("tenant_id", "reference");
+CREATE INDEX "skl_day_idx" on "ski_lessons"(
+  "tenant_id",
+  "lesson_date",
+  "start_time"
+);
+CREATE INDEX "skl_ins_idx" on "ski_lessons"(
+  "tenant_id",
+  "instructor_id",
+  "lesson_date"
+);
+CREATE INDEX "skl_status_idx" on "ski_lessons"(
+  "tenant_id",
+  "status",
+  "lesson_date"
+);
+CREATE INDEX "ski_lessons_invoice_id_index" on "ski_lessons"("invoice_id");
+CREATE INDEX "ski_lessons_addons_invoice_id_index" on "ski_lessons"(
+  "addons_invoice_id"
+);
+CREATE TABLE "ski_lesson_package_items"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lesson_id" varchar,
+  "enrollment_id" varchar,
+  "item_type" varchar not null,
+  "description" varchar,
+  "quantity" numeric not null default '1',
+  "days" integer not null default '1',
+  "unit_price_net" numeric not null default '0',
+  "vat_rate" numeric not null default '0',
+  "product_id" varchar,
+  "status" varchar not null default 'RESERVED',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("lesson_id") references "ski_lessons"("id") on delete cascade,
+  foreign key("enrollment_id") references "group_course_enrollments"("id") on delete cascade,
+  foreign key("product_id") references "products"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "sklp_lesson_idx" on "ski_lesson_package_items"(
+  "tenant_id",
+  "lesson_id"
+);
+CREATE INDEX "sklp_enr_idx" on "ski_lesson_package_items"(
+  "tenant_id",
+  "enrollment_id"
+);
+CREATE TABLE "instructor_payout_statements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "instructor_id" varchar not null,
+  "period_month" varchar not null,
+  "reference" varchar not null,
+  "hours_total" numeric not null default '0',
+  "private_hours" numeric not null default '0',
+  "group_hours" numeric not null default '0',
+  "gross_total" numeric not null default '0',
+  "retention_total" numeric not null default '0',
+  "withholding_percent" numeric not null default '0',
+  "withholding_amount" numeric not null default '0',
+  "net_payable" numeric not null default '0',
+  "regime" varchar not null,
+  "status" varchar not null default 'DRAFT',
+  "issued_at" datetime,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("instructor_id") references "ski_instructors"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ips_period_uq" on "instructor_payout_statements"(
+  "tenant_id",
+  "instructor_id",
+  "period_month"
+);
+CREATE UNIQUE INDEX "ips_ref_uq" on "instructor_payout_statements"(
+  "tenant_id",
+  "reference"
+);
+CREATE INDEX "ips_month_idx" on "instructor_payout_statements"(
+  "tenant_id",
+  "period_month",
+  "status"
+);
+CREATE TABLE "instructor_commissions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "instructor_id" varchar not null,
+  "source_type" varchar not null,
+  "source_id" varchar not null,
+  "work_date" date not null,
+  "hours" numeric not null,
+  "gross_fee" numeric not null,
+  "retention_mode" varchar not null,
+  "retention_value" numeric not null default '0',
+  "retention_amount" numeric not null default '0',
+  "net_fee" numeric not null,
+  "payout_statement_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("instructor_id") references "ski_instructors"("id") on delete restrict,
+  foreign key("payout_statement_id") references "instructor_payout_statements"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "ic_source_uq" on "instructor_commissions"(
+  "tenant_id",
+  "source_type",
+  "source_id",
+  "instructor_id"
+);
+CREATE INDEX "ic_period_idx" on "instructor_commissions"(
+  "tenant_id",
+  "instructor_id",
+  "work_date"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -62113,3 +62556,4 @@ INSERT INTO migrations VALUES(504,'2028_01_16_000100_create_bonded_warehouses_mo
 INSERT INTO migrations VALUES(505,'2028_01_17_000100_create_dairy_cheese_mod298_tables',45);
 INSERT INTO migrations VALUES(506,'2028_01_17_000100_create_beekeeping_mod296_tables',46);
 INSERT INTO migrations VALUES(507,'2028_01_17_000100_create_olive_mill_mod297_tables',47);
+INSERT INTO migrations VALUES(508,'2028_01_18_000100_create_ski_school_mod286_tables',48);

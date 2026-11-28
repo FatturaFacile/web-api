@@ -70,6 +70,7 @@ return [
         'foreign_vat_refund' => env('FEATURE_MODULE_FOREIGN_VAT_REFUND'),
         'bonded_warehouses' => env('FEATURE_MODULE_BONDED_WAREHOUSES'),
         'olive_mill' => env('FEATURE_MODULE_OLIVE_MILL'),
+        'ski_school' => env('FEATURE_MODULE_SKI_SCHOOL'),
         'green_care' => env('FEATURE_MODULE_GREEN_CARE'),
         'subcontracting' => env('FEATURE_MODULE_SUBCONTRACTING'),
         'down_payments' => env('FEATURE_MODULE_DOWN_PAYMENTS'),

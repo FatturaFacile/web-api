@@ -182,6 +182,7 @@ class DatabaseSeeder extends Seeder
             EsterometroClassificationRuleSeeder::class,
             CrisisMonitoringReferenceSeeder::class,
             AdventureParksDataSeeder::class,
+            SkiSchoolReferenceSeeder::class,
         ]);
     }
 }

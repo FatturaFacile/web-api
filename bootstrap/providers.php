@@ -22,6 +22,7 @@ use Modules\ArtisanalGelato\Providers\ArtisanalGelatoServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
+use Modules\Beekeeping\Providers\BeekeepingServiceProvider;
 use Modules\BondedWarehouses\Providers\BondedWarehousesServiceProvider;
 use Modules\Budgeting\Providers\BudgetingServiceProvider;
 use Modules\BusinessIntelligence\Providers\BusinessIntelligenceServiceProvider;
@@ -111,6 +112,7 @@ use Modules\SalesBoundedContext\Providers\SalesBoundedContextServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\ShiftPlanning\Providers\ShiftPlanningServiceProvider;
+use Modules\SkiOutdoorSchool\Providers\SkiOutdoorSchoolServiceProvider;
 use Modules\StatutoryFinancials\Providers\StatutoryFinancialsServiceProvider;
 use Modules\Subcontracting\Providers\SubcontractingServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
@@ -128,7 +130,6 @@ use Modules\Treasury\Currency\Providers\CurrencyServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\VanSalesAndFieldForce\Providers\VanSalesAndFieldForceServiceProvider;
 use Modules\Visitors\Providers\VisitorsServiceProvider;
-use Modules\Beekeeping\Providers\BeekeepingServiceProvider;
 use Modules\WithholdingRecipients\Providers\WithholdingRecipientsServiceProvider;
 use Modules\Wms\Providers\WmsServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
@@ -263,6 +264,7 @@ return [
     CrisisMonitoringServiceProvider::class,
     BondedWarehousesServiceProvider::class,
     OliveMillServiceProvider::class,
+    SkiOutdoorSchoolServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,
