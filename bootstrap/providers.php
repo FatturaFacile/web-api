@@ -35,6 +35,7 @@ use Modules\CorporateConventions\Providers\CorporateConventionsServiceProvider;
 use Modules\CorporateGroup\Providers\CorporateGroupServiceProvider;
 use Modules\CpqConfigurator\Providers\CpqConfiguratorServiceProvider;
 use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
+use Modules\CrisisMonitoring\Providers\CrisisMonitoringServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\CustomerSatisfaction\Providers\CustomerSatisfactionServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
@@ -116,6 +117,7 @@ use Modules\SwissFiscal\Providers\SwissFiscalServiceProvider;
 use Modules\SwissVat\Providers\SwissVatServiceProvider;
 use Modules\TalentLearning\Providers\TalentLearningServiceProvider;
 use Modules\TenderManagement\Providers\TenderManagementServiceProvider;
+use Modules\TimeTravel\Providers\TimeTravelServiceProvider;
 use Modules\Transportation\Providers\TransportationServiceProvider;
 use Modules\TravelExpense\Providers\TravelExpenseServiceProvider;
 use Modules\Treasury\Currency\Providers\CurrencyServiceProvider;
@@ -248,7 +250,9 @@ return [
     SwissEbillServiceProvider::class,
     ForeignVatRefundServiceProvider::class,
     ObservabilityServiceProvider::class,
+    TimeTravelServiceProvider::class,
     GreenCareServiceProvider::class,
+    CrisisMonitoringServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,

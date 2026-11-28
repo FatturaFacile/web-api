@@ -112,6 +112,8 @@ Schedule::command('general-ledger:run-scheduled')->dailyAt('02:30')->withoutOver
 Schedule::command('forecasting:train-payment-models')->dailyAt('03:00')->withoutOverlapping()->onOneServer();
 Schedule::command('forecasting:refresh-liquidity')->dailyAt('03:20')->withoutOverlapping()->onOneServer();
 Schedule::command('liquidity:evaluate-alerts')->dailyAt('06:30')->withoutOverlapping()->onOneServer();
+// Corporate crisis monitoring (Mod 357): the daily rolling DSCR / CCII / Art. 725 CO snapshot, after the liquidity alerts.
+Schedule::command('crisis-monitoring:compute')->dailyAt('06:45')->withoutOverlapping()->onOneServer();
 Schedule::command('forecasting:generate-sku-demand')->dailyAt('03:40')->withoutOverlapping()->onOneServer();
 // Analytics: daily KPI snapshots (the day that just ended) first, then the scheduled report exports.
 Schedule::command('analytics:refresh-kpi-snapshots')->dailyAt('01:10')->withoutOverlapping()->onOneServer();

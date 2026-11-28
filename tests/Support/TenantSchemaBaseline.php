@@ -22,6 +22,9 @@ final class TenantSchemaBaseline
      */
     public const GLOBAL_TABLES = [
         'abac_rules',
+        'fin_cndcec_ateco_thresholds',
+        'fin_cnc_practical_test_tiers',
+        'fin_public_creditor_thresholds',
         'sfs_account_mappings',
         'sfs_line_definitions',
         'sfs_ratio_definitions',

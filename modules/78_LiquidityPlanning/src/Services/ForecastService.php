@@ -12,6 +12,7 @@ use Modules\LiquidityPlanning\Models\LiquidityAlert;
 use Modules\LiquidityPlanning\Models\LiquiditySettings;
 use Modules\LiquidityPlanning\Sources\FlowSource;
 use Modules\LiquidityPlanning\Sources\SourceContext;
+use Modules\LiquidityPlanning\Support\Flow;
 use Modules\LiquidityPlanning\Support\Levers;
 use Modules\LiquidityPlanning\Support\ProjectionBuilder;
 use Modules\LiquidityPlanning\Support\ScenarioApplier;
@@ -113,6 +114,36 @@ final readonly class ForecastService
             'scenarioHorizons' => $scenarioHorizons,
             'scenarioIndicators' => $scenarioIndicators,
             'position' => $position,
+        ];
+    }
+
+    /**
+     * The raw flows of the tenant over a custom horizon (Mod 357 reads twelve months), with the opening cash and the ledger
+     * position, without projection or indicators.
+     *
+     * @return array{start: CarbonImmutable, currency: string, settings: LiquiditySettings, opening: array{total: string, accounts: list<array<string, mixed>>}, flows: list<Flow>, position: array{net_equity: string, financial_debt: string, ebitda: string}}
+     */
+    public function collect(Tenant $tenant, int $horizonDays, ?CarbonImmutable $asOf = null): array
+    {
+        $start = ($asOf ?? CarbonImmutable::today())->startOfDay();
+        $settings = LiquiditySettings::current((string) $tenant->country);
+        $currency = strtoupper(TenantAccountingCurrency::of((string) $tenant->id));
+        $context = new SourceContext((string) $tenant->id, $currency, $start, $start->addDays($horizonDays), $settings);
+        $flows = [];
+
+        foreach ($this->sources as $source) {
+            foreach ($source->flows($context) as $flow) {
+                $flows[] = $flow;
+            }
+        }
+
+        return [
+            'start' => $start,
+            'currency' => $currency,
+            'settings' => $settings,
+            'opening' => $this->openingCash($currency),
+            'flows' => $flows,
+            'position' => $this->indicators->position((string) $tenant->id, $start),
         ];
     }
 

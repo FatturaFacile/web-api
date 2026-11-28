@@ -59250,6 +59250,351 @@ CREATE INDEX "sisl_tenant_si_idx" on "self_invoice_sdi_logs"(
   "self_invoice_id",
   "created_at"
 );
+CREATE TABLE "fin_cndcec_ateco_thresholds"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ateco_section" varchar not null,
+  "sector_label_key" varchar not null,
+  "cndcec_group" varchar not null,
+  "financial_charges_revenue_max" numeric not null,
+  "equity_total_debt_min" numeric not null,
+  "liquidity_ratio_min" numeric not null,
+  "cash_flow_assets_min" numeric not null,
+  "tax_social_debt_assets_max" numeric not null,
+  "source_note" varchar,
+  "valid_from" date,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "fin_cat_section_idx" on "fin_cndcec_ateco_thresholds"(
+  "tenant_id",
+  "ateco_section",
+  "is_active"
+);
+CREATE TABLE "fin_public_creditor_thresholds"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "creditor_code" varchar not null,
+  "legal_form" varchar,
+  "label_key" varchar not null,
+  "description_key" varchar not null,
+  "overdue_days" integer,
+  "absolute_threshold" numeric,
+  "absolute_threshold_no_employees" numeric,
+  "absolute_always_threshold" numeric,
+  "percent_threshold" numeric,
+  "percent_basis" varchar,
+  "combine" varchar not null default 'and',
+  "warning_ratio" numeric not null default '0.7',
+  "legal_reference" varchar,
+  "valid_from" date,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "fin_pct_creditor_idx" on "fin_public_creditor_thresholds"(
+  "tenant_id",
+  "creditor_code",
+  "is_active"
+);
+CREATE TABLE "fin_cnc_practical_test_tiers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "label_key" varchar not null,
+  "ratio_up_to" numeric,
+  "status" varchar not null,
+  "sort_order" integer not null,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "fin_cnc_tier_idx" on "fin_cnc_practical_test_tiers"(
+  "tenant_id",
+  "sort_order"
+);
+CREATE TABLE "fin_crisis_profiles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "jurisdiction" varchar not null default 'IT',
+  "ateco_code" varchar,
+  "ateco_section" varchar,
+  "legal_form" varchar not null default 'corporation',
+  "employees_count" integer not null default '0',
+  "share_capital" numeric,
+  "statutory_reserves" numeric,
+  "legal_minimum_capital" numeric,
+  "prior_year_revenue" numeric,
+  "prior_year_inps_contributions" numeric,
+  "available_credit_lines" numeric,
+  "variable_debt_amount" numeric,
+  "total_assets_override" numeric,
+  "current_assets_override" numeric,
+  "current_liabilities_override" numeric,
+  "total_debt_override" numeric,
+  "net_equity_override" numeric,
+  "revenue_override" numeric,
+  "financial_expenses_override" numeric,
+  "cash_flow_override" numeric,
+  "tax_social_debt_override" numeric,
+  "payroll_overdue_30d_amount" numeric,
+  "supplier_overdue_90d_amount" numeric,
+  "inps_overdue_90d_amount" numeric,
+  "inail_overdue_90d_amount" numeric,
+  "vat_lipe_unpaid_amount" numeric,
+  "ader_entrusted_amount" numeric,
+  "assets_going_concern" numeric,
+  "assets_liquidation" numeric,
+  "total_liabilities_override" numeric,
+  "going_concern_probable" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fin_crisis_profiles_tenant_id_unique" on "fin_crisis_profiles"(
+  "tenant_id"
+);
+CREATE TABLE "fin_dscr_monthly_projections"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "snapshot_date" date not null,
+  "month" date not null,
+  "currency" varchar not null,
+  "operating_inflows" numeric not null default '0',
+  "operating_outflows" numeric not null default '0',
+  "debt_service" numeric not null default '0',
+  "tax_social" numeric not null default '0',
+  "capex" numeric not null default '0',
+  "free_cash_flow" numeric not null default '0',
+  "closing_cash" numeric not null default '0',
+  "cumulative_cash_with_credit" numeric not null default '0',
+  "dscr_treasury" numeric,
+  "dscr_operating" numeric,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fin_dscr_proj_unique" on "fin_dscr_monthly_projections"(
+  "tenant_id",
+  "snapshot_date",
+  "month"
+);
+CREATE TABLE "fin_ccii_crisis_assessments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "assessment_date" date not null,
+  "trigger" varchar not null default 'scheduled',
+  "overall_status" varchar not null,
+  "dscr_6m_treasury" numeric,
+  "dscr_12m_treasury" numeric,
+  "dscr_6m_operating" numeric,
+  "dscr_12m_operating" numeric,
+  "indicators" text not null,
+  "public_creditors" text not null,
+  "cnc_test" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fin_ccii_assess_unique" on "fin_ccii_crisis_assessments"(
+  "tenant_id",
+  "assessment_date"
+);
+CREATE TABLE "fin_swiss_co725_assessments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "assessment_date" date not null,
+  "trigger" varchar not null default 'scheduled',
+  "overall_status" varchar not null,
+  "art725_status" varchar not null,
+  "art725a_status" varchar not null,
+  "art725b_status" varchar not null,
+  "min_cumulative_cash" numeric,
+  "first_negative_month" date,
+  "net_assets" numeric,
+  "capital_coverage_ratio" numeric,
+  "net_going_concern" numeric,
+  "net_liquidation" numeric,
+  "required_subordination" numeric not null default '0',
+  "court_notification_required" tinyint(1) not null default '0',
+  "details" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fin_co725_assess_unique" on "fin_swiss_co725_assessments"(
+  "tenant_id",
+  "assessment_date"
+);
+CREATE TABLE "fin_subordinated_loans_rangruecktritt"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "creditor_name" varchar not null,
+  "creditor_type" varchar not null default 'shareholder',
+  "principal" numeric not null,
+  "interest_rate" numeric not null default '0',
+  "interest_treatment" varchar not null default 'deferred',
+  "agreement_date" date not null,
+  "effective_from" date not null,
+  "deferral_end_date" date,
+  "scope" varchar not null default 'principal_and_interest',
+  "status" varchar not null default 'draft',
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "fin_sub_loans_status_idx" on "fin_subordinated_loans_rangruecktritt"(
+  "tenant_id",
+  "status"
+);
+CREATE TABLE "es_bitemporal_event_streams"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "stream_id" varchar not null,
+  "aggregate_type" varchar not null,
+  "aggregate_id" varchar not null,
+  "sequence_number" integer not null,
+  "event_type" varchar not null,
+  "valid_at" datetime not null,
+  "recorded_at" datetime not null,
+  "payload" text not null,
+  "metadata" text,
+  "actor_user_id" varchar,
+  "previous_event_hash" varchar not null,
+  "cryptographic_chain_hash" varchar not null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "es_events_stream_seq_uq" on "es_bitemporal_event_streams"(
+  "tenant_id",
+  "stream_id",
+  "sequence_number"
+);
+CREATE INDEX "es_events_bitemporal_idx" on "es_bitemporal_event_streams"(
+  "tenant_id",
+  "aggregate_type",
+  "valid_at",
+  "recorded_at"
+);
+CREATE INDEX "es_events_aggregate_idx" on "es_bitemporal_event_streams"(
+  "tenant_id",
+  "aggregate_type",
+  "aggregate_id"
+);
+CREATE INDEX "es_events_recorded_idx" on "es_bitemporal_event_streams"(
+  "tenant_id",
+  "recorded_at"
+);
+CREATE TABLE "es_materialized_checkpoints"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "aggregate_type" varchar not null,
+  "valid_at" datetime not null,
+  "recorded_at" datetime not null,
+  "state_payload" text not null,
+  "merkle_root" varchar not null,
+  "event_count" integer not null,
+  "last_sequence_number" integer not null,
+  "created_at" datetime,
+  primary key("id")
+);
+
+CREATE INDEX "es_checkpoints_coord_idx" on "es_materialized_checkpoints"(
+  "tenant_id",
+  "aggregate_type",
+  "valid_at",
+  "recorded_at"
+);
+CREATE TABLE "es_merkle_audit_anchors"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "period_type" varchar not null,
+  "period_start" date not null,
+  "period_end" date not null,
+  "merkle_root" varchar not null,
+  "event_count" integer not null,
+  "sealed_at" datetime not null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "es_anchors_period_uq" on "es_merkle_audit_anchors"(
+  "tenant_id",
+  "period_type",
+  "period_start"
+);
+CREATE TABLE "es_whatif_simulation_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "simulation_name" varchar not null,
+  "target_valid_at" datetime not null,
+  "target_known_at" datetime not null,
+  "valuation_method" varchar not null,
+  "baseline_summary" text not null,
+  "simulated_summary" text not null,
+  "delta_summary" text not null,
+  "items" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  primary key("id")
+);
+
+CREATE INDEX "es_whatif_tenant_created_idx" on "es_whatif_simulation_runs"(
+  "tenant_id",
+  "created_at"
+);
 CREATE TABLE "fiscal_recipient_profiles"(
   "id" varchar not null,
   "tenant_id" varchar,
@@ -59971,4 +60316,6 @@ INSERT INTO migrations VALUES(496,'2028_01_13_000100_create_down_payments_mod203
 INSERT INTO migrations VALUES(497,'2028_01_14_000100_create_green_care_mod126_tables',43);
 INSERT INTO migrations VALUES(498,'2028_01_14_000100_create_observability_mod202_tables',43);
 INSERT INTO migrations VALUES(499,'2028_01_15_000100_create_esterometro_mod027_tables',43);
-INSERT INTO migrations VALUES(500,'2028_01_16_000100_create_withholding_recipients_mod356_tables',43);
+INSERT INTO migrations VALUES(500,'2028_01_16_000100_create_crisis_monitoring_mod357_tables',43);
+INSERT INTO migrations VALUES(501,'2028_01_16_000100_create_time_travel_mod354_tables',44);
+INSERT INTO migrations VALUES(502,'2028_01_16_000100_create_withholding_recipients_mod356_tables',44);

@@ -34,6 +34,9 @@ return [
         'professionals' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'project_manager', 'member']],
         'manufacturing' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'production', 'technician', 'member']],
         'treasury' => ['read' => $financeReaders, 'write' => $finance],
+        // Bi-temporal time travel and audit engine (Mod 354): finance and auditors read the books at any (valid, known) coordinate and the
+        // integrity certificate; finance runs the what-if replays and materializes the checkpoints.
+        'time_travel' => ['read' => $financeReaders, 'write' => $finance],
         // Multi-currency engine (Mod 003): every member reads the rates and the active currencies (documents need them); finance
         // enters manual and contract rates, triggers the synchronisation and changes the currency settings.
         'currencies' => [
@@ -259,6 +262,8 @@ return [
         'accounts_payable' => ['read' => $financeReaders, 'write' => $finance, 'grants' => ['read' => ['accounts_payable.*'], 'write' => ['accounts_payable.*']]],
         // Liquidity planning (Mod 017): rolling cash forecast, DSCR / capital / PFN crisis indicators, what-if scenarios and alerts.
         'liquidity_planning' => ['read' => $financeReaders, 'write' => $finance, 'grants' => ['read' => ['liquidity_planning.*'], 'write' => ['liquidity_planning.*']]],
+        // Corporate crisis monitoring (Mod 357): rolling DSCR, CCII / Art. 2086 c.c. early warning, Art. 725 CO guardrails, Rangrücktritt registry, stress test.
+        'crisis_monitoring' => ['read' => $financeReaders, 'write' => $finance, 'grants' => ['read' => ['crisis_monitoring.*'], 'write' => ['crisis_monitoring.*']]],
         'accounts_payable_approval' => ['read' => $financeReaders, 'write' => $managers],
         // Swiss VAT compliance (Mod 024): Effective & Saldosteuersatz returns, Bezugsteuer, input tax adjustments, and SuisseTax XML.
         'swiss_vat' => ['read' => $financeReaders, 'write' => $finance, 'grants' => ['read' => ['swiss_vat.*'], 'write' => ['swiss_vat.*']]],
