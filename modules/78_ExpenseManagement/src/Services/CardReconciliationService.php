@@ -43,7 +43,7 @@ final class CardReconciliationService
                 'amount' => Decimal::normalize($row['amount']),
                 'currency' => strtoupper((string) ($row['currency'] ?? $account->currency)),
                 'status' => ReconciliationStatus::Unmatched,
-            ]);
+            ])->refresh();
         }
 
         return $imported;
