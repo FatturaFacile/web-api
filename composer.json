@@ -119,6 +119,7 @@
             "Modules\\TimeTravel\\": "modules/89_TimeTravel/src/",
             "Modules\\GreenCare\\": "modules/88_GreenCare/src/",
             "Modules\\CrisisMonitoring\\": "modules/89_CrisisMonitoring/src/",
+            "Modules\\BondedWarehouses\\": "modules/89_BondedWarehouses/src/",
             "Modules\\SwissVat\\": "modules/75_SwissVat/src/",
             "Modules\\LeaveManagement\\": "modules/76_LeaveManagement/src/",
             "Modules\\MarketingAutomation\\": "modules/77_MarketingAutomation/src/",

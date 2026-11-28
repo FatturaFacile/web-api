@@ -526,6 +526,16 @@ return [
                 'write' => ['foreign_vat_refund.write', 'foreign_vat_refund.*'],
             ],
         ],
+        // Bonded warehouses, IVA warehouses (Art. 50-bis) and AEO (Mod 353): MRN bonded stock ledger, CGU guarantee, TD22 / TD23 self-invoices and the
+        // AEO audit log. The customs manager ("customs") and the fiscal manager (finance roles) write; warehouse and operations managers read.
+        'bonded_warehouses' => [
+            'read' => [...$financeReaders, 'customs', 'warehouse', 'operations_manager'],
+            'write' => [...$finance, 'customs'],
+            'grants' => [
+                'read' => ['bonded_warehouses.read', 'bonded_warehouses.write', 'bonded_warehouses.*'],
+                'write' => ['bonded_warehouses.write', 'bonded_warehouses.*'],
+            ],
+        ],
         // Green care (Mod 126): sites, seasonal contracts, crews, routes, phytosanitary diary and green waste. Crews close their own stops and
         // write the diary; finance and operations manage contracts and billing.
         'green_care' => [

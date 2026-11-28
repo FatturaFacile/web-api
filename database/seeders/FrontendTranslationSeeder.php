@@ -17,6 +17,7 @@ use Database\Seeders\Translations\ArtisanalGelatoFrontendTranslations;
 use Database\Seeders\Translations\AuditLedgerFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
 use Database\Seeders\Translations\BomManagementFrontendTranslations;
+use Database\Seeders\Translations\BondedWarehousesFrontendTranslations;
 use Database\Seeders\Translations\BudgetingSpendControlFrontendTranslations;
 use Database\Seeders\Translations\CopilotFrontendTranslations;
 use Database\Seeders\Translations\CorporateConventionsFrontendTranslations;
@@ -215,6 +216,7 @@ class FrontendTranslationSeeder extends Seeder
             + PassengerTransportFrontendTranslations::all($locale)
             + CustomerSatisfactionFrontendTranslations::all($locale)
             + EbillFrontendTranslations::all($locale)
+            + BondedWarehousesFrontendTranslations::all($locale)
             + ForeignVatRefundFrontendTranslations::all($locale)
             + GreenCareFrontendTranslations::all($locale)
             + SubcontractingFrontendTranslations::all($locale)
