@@ -124,6 +124,16 @@ return [
                 'write' => ['withholding_recipients.write', 'withholding_recipients.settle', 'withholding_recipients.*'],
             ],
         ],
+        // Adventure parks, climbing centres and educational farms (Mod 299): the dressing desk (operators) books, equips and takes back
+        // the PPE; AdventureParksPolicy reserves the configuration and the PPE register to managers and the school invoice to finance.
+        'adventure_parks' => [
+            'read' => ['owner', 'admin', 'accountant', 'accountant_readonly', 'manager', 'operator'],
+            'write' => ['owner', 'admin', 'accountant', 'manager', 'operator'],
+            'grants' => [
+                'read' => ['adventure_parks.read', 'adventure_parks.write', 'adventure_parks.*'],
+                'write' => ['adventure_parks.write', 'adventure_parks.*'],
+            ],
+        ],
         // Dunning and debt collection: read for finance and sales managers, write for owners, administrators and
         // accountants; the legal steps (Betreibung dossier, messa in mora, releasing an exclusion) can also be granted to
         // another member on its own with debt_collection.escalate (DebtCollectionPolicy).

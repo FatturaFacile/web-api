@@ -180,6 +180,7 @@ class DatabaseSeeder extends Seeder
             FiduciaryPortalLocalizationSeeder::class,
             EsterometroClassificationRuleSeeder::class,
             CrisisMonitoringReferenceSeeder::class,
+            AdventureParksDataSeeder::class,
         ]);
     }
 }

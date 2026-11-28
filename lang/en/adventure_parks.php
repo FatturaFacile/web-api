@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'messages' => [
+        'saved' => 'Data saved.',
+        'deleted' => 'Item deleted.',
+        'ticket_booked' => 'Slot booked.',
+        'ppe_assigned' => 'Equipment handed out.',
+        'course_started' => 'The group is on the course.',
+        'ticket_no_show' => 'Booking marked as no-show.',
+        'ppe_returned' => 'Equipment returned.',
+        'briefing_done' => 'Safety briefing recorded.',
+        'waiver_signed' => 'Waiver signed.',
+        'inspection_recorded' => 'Inspection recorded.',
+        'daily_check_recorded' => 'Daily opening check recorded.',
+        'school_confirmed' => 'School booking confirmed.',
+        'school_completed' => 'School booking completed.',
+        'school_invoiced' => 'Electronic invoice generated.',
+    ],
+    'errors' => [
+        'refused' => 'The operation was refused.',
+        'slot_sold_out' => 'Not enough size :size harnesses left in this slot: :remaining available, :requested requested.',
+        'slot_closed' => 'The slot is not open on that day.',
+        'slot_invalid' => 'A slot must end after it starts.',
+        'slot_has_tickets' => 'The slot has open bookings and cannot be deleted: deactivate it instead.',
+        'ppe_blocked' => 'The PPE :serial_code cannot be handed out (:reason).',
+        'ppe_not_found' => 'No PPE with this barcode is registered or out on the ticket.',
+        'ppe_size_mismatch' => 'The size of the PPE (:ppe_size) does not fit the participant (:participant_size).',
+        'ppe_already_assigned' => 'The participant already holds equipment of this category.',
+        'ppe_in_use' => 'The PPE is out with a visitor and cannot be deleted.',
+        'waiver_missing' => 'A signed waiver covering every participant is required before the equipment is handed out.',
+        'waiver_already_signed' => 'The waiver of this booking is already signed.',
+        'headcount_mismatch' => 'The waiver covers :given people but the booking has :expected.',
+        'invalid_transition' => 'The status cannot change from :from to :to.',
+        'participant_not_found' => 'The participant is not on this ticket.',
+        'ticket_not_found' => 'No booking matches this code.',
+        'picnic_capacity_exceeded' => 'The picnic area is full on that day: :taken of :capacity seats taken, :requested requested.',
+        'already_invoiced' => 'The booking has already been invoiced.',
+        'booking_not_confirmed' => 'Confirm the booking before invoicing it.',
+        'booking_locked' => 'Only a draft booking can be deleted.',
+        'workshop_not_found' => 'The workshop is not available.',
+        'workshop_code_taken' => 'A workshop with this code already exists.',
+        'workshop_global' => 'A standard workshop cannot be deleted: change it to get your own copy and deactivate that.',
+        'workshop_in_use' => 'The workshop is used by a school booking.',
+    ],
+    'invoice' => [
+        'free_teachers' => 'Accompanying teachers (free of charge)',
+        'wording' => 'Educational farm visit of :institute on :date, :students students.',
+    ],
+];
