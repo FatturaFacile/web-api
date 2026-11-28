@@ -74,7 +74,7 @@ final class ScaleService
                 }
             }
 
-            return $model->load('tiers');
+            return $model->refresh()->load('tiers');
         });
     }
 
