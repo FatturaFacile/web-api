@@ -64,7 +64,7 @@ final class ParContractService
                 }
             }
 
-            return $contract->load('lines');
+            return $contract->refresh()->load('lines');
         });
     }
 
