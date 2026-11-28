@@ -22,6 +22,8 @@ use Database\Seeders\Translations\CopilotFrontendTranslations;
 use Database\Seeders\Translations\CorporateConventionsFrontendTranslations;
 use Database\Seeders\Translations\CpqConfiguratorFrontendTranslations;
 use Database\Seeders\Translations\CpqQuotesFrontendTranslations;
+use Database\Seeders\Translations\CrisisMonitoringFrontendTranslations;
+use Database\Seeders\Translations\CrisisMonitoringTranslations;
 use Database\Seeders\Translations\CurrencyFxFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\CustomerReturnsReverseLogisticsFrontendTranslations;
@@ -228,6 +230,8 @@ class FrontendTranslationSeeder extends Seeder
             + TreasuryIsoReconciliationFrontendTranslations::all($locale)
             + LiquidityPlanningFrontendTranslations::all($locale)
             + LiquidityPlanningTranslations::all($locale)
+            + CrisisMonitoringFrontendTranslations::all($locale)
+            + CrisisMonitoringTranslations::all($locale)
             + CustomerReturnsReverseLogisticsFrontendTranslations::all($locale)
             + DistributionFrontendTranslations::all($locale)
             + VanSellingFieldSalesFrontendTranslations::all($locale)
