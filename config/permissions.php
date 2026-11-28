@@ -110,6 +110,17 @@ return [
                 'write' => ['agent_commissions.write', 'agent_commissions.settle', 'agent_commissions.*'],
             ],
         ],
+        // Withholding taxes on commissions, royalties, occasional work and amateur sports (Mod 356): finance and HR read and maintain the
+        // registry and the declarations; WithholdingRecipientsPolicy reserves posting, F24 / UniEmens and the annual CU to owners,
+        // administrators and accountants.
+        'withholding_recipients' => [
+            'read' => ['owner', 'admin', 'accountant', 'accountant_readonly', 'hr_manager', 'hr'],
+            'write' => ['owner', 'admin', 'accountant', 'hr_manager', 'hr'],
+            'grants' => [
+                'read' => ['withholding_recipients.read', 'withholding_recipients.write', 'withholding_recipients.settle', 'withholding_recipients.*'],
+                'write' => ['withholding_recipients.write', 'withholding_recipients.settle', 'withholding_recipients.*'],
+            ],
+        ],
         // Dunning and debt collection: read for finance and sales managers, write for owners, administrators and
         // accountants; the legal steps (Betreibung dossier, messa in mora, releasing an exclusion) can also be granted to
         // another member on its own with debt_collection.escalate (DebtCollectionPolicy).

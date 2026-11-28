@@ -122,6 +122,7 @@ use Modules\Treasury\Currency\Providers\CurrencyServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\VanSalesAndFieldForce\Providers\VanSalesAndFieldForceServiceProvider;
 use Modules\Visitors\Providers\VisitorsServiceProvider;
+use Modules\WithholdingRecipients\Providers\WithholdingRecipientsServiceProvider;
 use Modules\Wms\Providers\WmsServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
 use Modules\Workshop\Providers\WorkshopServiceProvider;
@@ -226,6 +227,7 @@ return [
     LeaveManagementServiceProvider::class,
     MarketingAutomationServiceProvider::class,
     AgentCommissionsServiceProvider::class,
+    WithholdingRecipientsServiceProvider::class,
     DebtCollectionServiceProvider::class,
     ExpenseManagementServiceProvider::class,
     TenderManagementServiceProvider::class,

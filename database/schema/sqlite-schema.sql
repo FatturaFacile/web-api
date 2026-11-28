@@ -58617,6 +58617,860 @@ CREATE INDEX "final_settlement_deduction_lines_final_invoice_id_index" on "final
 CREATE INDEX "final_settlement_deduction_lines_referenced_link_id_index" on "final_settlement_deduction_lines"(
   "referenced_link_id"
 );
+CREATE TABLE "green_space_sites"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_id" varchar not null,
+  "condominium_administrator_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "jurisdiction" varchar not null default 'IT',
+  "address" varchar,
+  "latitude" numeric,
+  "longitude" numeric,
+  "geo_polygon_coordinates" text,
+  "lawn_area_sqm" numeric not null default '0',
+  "hedge_length_meters" numeric not null default '0',
+  "tree_count" integer not null default '0',
+  "irrigation_system_specs" text,
+  "access_gate_code" text,
+  "access_notes" text,
+  "botanical_inventory" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_id") references "contacts"("id") on delete restrict,
+  foreign key("condominium_administrator_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "green_space_sites_tenant_id_code_unique" on "green_space_sites"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "green_space_sites_tenant_id_customer_id_index" on "green_space_sites"(
+  "tenant_id",
+  "customer_id"
+);
+CREATE TABLE "seasonal_maintenance_contracts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contract_number" varchar not null,
+  "site_id" varchar not null,
+  "customer_id" varchar not null,
+  "condominium_administrator_id" varchar,
+  "season_start_date" date not null,
+  "season_end_date" date not null,
+  "jurisdiction" varchar not null default 'IT',
+  "billing_mode" varchar not null default 'fixed_installments',
+  "included_passages_count" integer not null default '0',
+  "completed_passages_count" integer not null default '0',
+  "extra_passage_unit_price" numeric not null default '0',
+  "fixed_fee_amount" numeric not null default '0',
+  "installment_frequency" varchar not null default 'monthly',
+  "installments_billed" integer not null default '0',
+  "time_and_material_hourly_rate" numeric not null default '0',
+  "snow_removal_standby_fee" numeric,
+  "snow_trigger_threshold_cm" numeric,
+  "snow_standby_billed" tinyint(1) not null default '0',
+  "vat_rate" numeric not null default '22',
+  "included_services" text,
+  "auto_bill_extra_passages" tinyint(1) not null default '1',
+  "apply_condominium_withholding" tinyint(1) not null default '0',
+  "is_condominium" tinyint(1) not null default '0',
+  "condominium_fiscal_code" varchar,
+  "status" varchar not null default 'draft',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("site_id") references "green_space_sites"("id") on delete restrict,
+  foreign key("customer_id") references "contacts"("id") on delete restrict,
+  foreign key("condominium_administrator_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "seasonal_maintenance_contracts_tenant_id_contract_number_unique" on "seasonal_maintenance_contracts"(
+  "tenant_id",
+  "contract_number"
+);
+CREATE INDEX "seasonal_maintenance_contracts_tenant_id_status_index" on "seasonal_maintenance_contracts"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "seasonal_maintenance_contracts_tenant_id_site_id_index" on "seasonal_maintenance_contracts"(
+  "tenant_id",
+  "site_id"
+);
+CREATE TABLE "crew_teams"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "default_vehicle_plate" varchar,
+  "default_trailer_plate" varchar,
+  "equipment" text,
+  "daily_capacity_minutes" integer not null default '480',
+  "depot_latitude" numeric,
+  "depot_longitude" numeric,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "crew_teams_tenant_id_code_unique" on "crew_teams"(
+  "tenant_id",
+  "code"
+);
+CREATE TABLE "crew_team_members"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "crew_team_id" varchar not null,
+  "user_id" varchar,
+  "name" varchar not null,
+  "role" varchar,
+  "hourly_rate" numeric not null default '0',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("crew_team_id") references "crew_teams"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "crew_team_members_tenant_id_crew_team_id_index" on "crew_team_members"(
+  "tenant_id",
+  "crew_team_id"
+);
+CREATE TABLE "operator_phytosanitary_licenses"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "crew_team_member_id" varchar not null,
+  "license_type" varchar not null,
+  "jurisdiction" varchar not null,
+  "license_number" varchar not null,
+  "issuing_authority" varchar,
+  "issue_date" date not null,
+  "expiry_date" date not null,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("crew_team_member_id") references "crew_team_members"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "operator_phytosanitary_licenses_tenant_id_crew_team_member_id_index" on "operator_phytosanitary_licenses"(
+  "tenant_id",
+  "crew_team_member_id"
+);
+CREATE TABLE "crew_route_schedules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "schedule_date" date not null,
+  "crew_team_id" varchar not null,
+  "assigned_vehicle_plate" varchar,
+  "assigned_trailer_plate" varchar,
+  "equipment_list" text,
+  "weather_alert_status" varchar not null default 'clear',
+  "weather_forecast_summary" text,
+  "route_optimization_metadata" text,
+  "status" varchar not null default 'planned',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("crew_team_id") references "crew_teams"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "crew_route_schedules_tenant_id_schedule_date_index" on "crew_route_schedules"(
+  "tenant_id",
+  "schedule_date"
+);
+CREATE INDEX "crew_route_schedules_tenant_id_crew_team_id_schedule_date_index" on "crew_route_schedules"(
+  "tenant_id",
+  "crew_team_id",
+  "schedule_date"
+);
+CREATE TABLE "crew_route_stops"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "route_schedule_id" varchar not null,
+  "site_id" varchar not null,
+  "contract_id" varchar,
+  "stop_order" integer not null default '1',
+  "planned_activities" text,
+  "estimated_duration_minutes" integer not null default '60',
+  "actual_checkin_at" datetime,
+  "actual_checkout_at" datetime,
+  "checkin_gps" text,
+  "checkout_gps" text,
+  "crew_hours_logged" text,
+  "machinery_hours_logged" text,
+  "materials_and_plants_used" text,
+  "before_photos" text,
+  "after_photos" text,
+  "counts_toward_contract_passage" tinyint(1) not null default '1',
+  "is_extra_passage" tinyint(1) not null default '0',
+  "passage_number" integer,
+  "extra_passage_amount" numeric not null default '0',
+  "billing_status" varchar not null default 'not_billed',
+  "invoice_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("route_schedule_id") references "crew_route_schedules"("id") on delete cascade,
+  foreign key("site_id") references "green_space_sites"("id") on delete restrict,
+  foreign key("contract_id") references "seasonal_maintenance_contracts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "crew_route_stops_tenant_id_route_schedule_id_index" on "crew_route_stops"(
+  "tenant_id",
+  "route_schedule_id"
+);
+CREATE INDEX "crew_route_stops_tenant_id_contract_id_billing_status_index" on "crew_route_stops"(
+  "tenant_id",
+  "contract_id",
+  "billing_status"
+);
+CREATE TABLE "phytosanitary_treatment_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "site_id" varchar not null,
+  "route_stop_id" varchar,
+  "treatment_date" date not null,
+  "jurisdiction" varchar not null default 'IT',
+  "target_pest_or_weed" varchar not null,
+  "treated_crop_or_surface" varchar not null,
+  "treated_area_sqm" numeric not null default '0',
+  "commercial_product_name" varchar not null,
+  "registration_number" varchar not null,
+  "active_ingredient" varchar not null,
+  "dosage_used" numeric not null,
+  "dosage_unit" varchar not null,
+  "water_volume_liters" numeric,
+  "warehouse_product_id" varchar,
+  "warehouse_id" varchar,
+  "quantity_deducted" numeric not null default '0',
+  "operator_id" varchar not null,
+  "operator_license_id" varchar not null,
+  "re_entry_interval_hours" integer not null default '0',
+  "weather_conditions_at_application" text,
+  "notes" text,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("site_id") references "green_space_sites"("id") on delete restrict,
+  foreign key("route_stop_id") references "crew_route_stops"("id") on delete set null,
+  foreign key("operator_id") references "crew_team_members"("id") on delete restrict,
+  foreign key("operator_license_id") references "operator_phytosanitary_licenses"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "phytosanitary_treatment_logs_tenant_id_treatment_date_index" on "phytosanitary_treatment_logs"(
+  "tenant_id",
+  "treatment_date"
+);
+CREATE INDEX "phytosanitary_treatment_logs_tenant_id_site_id_index" on "phytosanitary_treatment_logs"(
+  "tenant_id",
+  "site_id"
+);
+CREATE INDEX "phytosanitary_treatment_logs_tenant_id_operator_id_index" on "phytosanitary_treatment_logs"(
+  "tenant_id",
+  "operator_id"
+);
+CREATE TABLE "green_waste_slips"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "slip_number" varchar not null,
+  "site_id" varchar,
+  "route_schedule_id" varchar,
+  "route_stop_id" varchar,
+  "disposal_date" date not null,
+  "waste_code" varchar not null,
+  "waste_description" varchar,
+  "green_waste_weight_kg" numeric not null,
+  "compost_facility_id" varchar,
+  "transporter_vehicle_plate" varchar,
+  "document_reference" varchar,
+  "disposal_cost" numeric not null default '0',
+  "is_billable_to_customer" tinyint(1) not null default '0',
+  "invoice_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("site_id") references "green_space_sites"("id") on delete set null,
+  foreign key("route_schedule_id") references "crew_route_schedules"("id") on delete set null,
+  foreign key("route_stop_id") references "crew_route_stops"("id") on delete set null,
+  foreign key("compost_facility_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "green_waste_slips_tenant_id_slip_number_unique" on "green_waste_slips"(
+  "tenant_id",
+  "slip_number"
+);
+CREATE INDEX "green_waste_slips_tenant_id_disposal_date_index" on "green_waste_slips"(
+  "tenant_id",
+  "disposal_date"
+);
+CREATE TABLE "observability_slow_queries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "kind" varchar not null default 'slow',
+  "fingerprint" varchar not null,
+  "sql_text" text not null,
+  "duration_ms" numeric not null,
+  "execution_count" integer not null default '1',
+  "connection_name" varchar,
+  "trace_id" varchar,
+  "origin_type" varchar,
+  "origin" varchar,
+  "plan_status" varchar not null default 'skipped',
+  "plan" text,
+  "suggested_indexes" text,
+  "captured_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  primary key("id")
+);
+
+CREATE INDEX "obs_slow_tenant_captured_idx" on "observability_slow_queries"(
+  "tenant_id",
+  "captured_at"
+);
+CREATE INDEX "obs_slow_captured_fp_idx" on "observability_slow_queries"(
+  "captured_at",
+  "fingerprint"
+);
+CREATE TABLE "observability_endpoint_samples"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "method" varchar not null,
+  "route" varchar not null,
+  "status_code" integer not null,
+  "duration_ms" numeric not null,
+  "db_query_count" integer not null default '0',
+  "db_time_ms" numeric not null default '0',
+  "trace_id" varchar,
+  "captured_at" datetime not null,
+  primary key("id")
+);
+
+CREATE INDEX "obs_endpoint_tenant_captured_idx" on "observability_endpoint_samples"(
+  "tenant_id",
+  "captured_at"
+);
+CREATE INDEX "obs_endpoint_captured_route_idx" on "observability_endpoint_samples"(
+  "captured_at",
+  "route"
+);
+CREATE TABLE "observability_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "key" varchar not null,
+  "value" text not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "obs_settings_key_unique" on "observability_settings"(
+  "key"
+);
+CREATE INDEX "obs_settings_tenant_key_idx" on "observability_settings"(
+  "tenant_id",
+  "key"
+);
+CREATE TABLE "observability_connector_checks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "connector_key" varchar not null,
+  "ok" tinyint(1) not null,
+  "http_status" integer,
+  "latency_ms" integer,
+  "tls_days_remaining" integer,
+  "tls_valid" tinyint(1),
+  "error" varchar,
+  "checked_at" datetime not null,
+  primary key("id")
+);
+
+CREATE INDEX "obs_checks_tenant_checked_idx" on "observability_connector_checks"(
+  "tenant_id",
+  "checked_at"
+);
+CREATE INDEX "obs_checks_key_checked_idx" on "observability_connector_checks"(
+  "connector_key",
+  "checked_at"
+);
+CREATE TABLE "observability_connector_statuses"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "connector_key" varchar not null,
+  "status" varchar not null default 'operational',
+  "maintenance" tinyint(1) not null default '0',
+  "maintenance_message" varchar,
+  "uptime_24h" numeric not null default '100',
+  "uptime_7d" numeric not null default '100',
+  "avg_latency_ms" integer,
+  "last_latency_ms" integer,
+  "last_checked_at" datetime,
+  "last_error" varchar,
+  "tls_days_remaining" integer,
+  "status_changed_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "obs_status_key_unique" on "observability_connector_statuses"(
+  "connector_key"
+);
+CREATE INDEX "obs_status_tenant_key_idx" on "observability_connector_statuses"(
+  "tenant_id",
+  "connector_key"
+);
+CREATE TABLE "self_invoice_settings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "auto_generate_mode" varchar not null default 'auto_draft',
+  "auto_post_vat_registers" tinyint(1) not null default '1',
+  "auto_post_journal" tinyint(1) not null default '1',
+  "sales_vat_section_code" varchar not null default 'VEN-AUT',
+  "purchase_vat_section_code" varchar not null default 'ACQ-RC',
+  "numbering_prefix" varchar not null default 'AF-',
+  "numbering_padding" integer not null default '5',
+  "default_recipient_code" varchar not null default '0000000',
+  "use_tenant_sdi_code" tinyint(1) not null default '1',
+  "signature_format" varchar not null default 'none',
+  "clearing_account_id" varchar,
+  "non_deductible_account_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "self_invoice_settings_tenant_id_unique" on "self_invoice_settings"(
+  "tenant_id"
+);
+CREATE TABLE "self_invoice_classification_rules"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "document_type" varchar not null,
+  "supplier_region" varchar not null default 'ANY',
+  "supplier_country_code" varchar,
+  "transaction_nature" varchar not null default 'ANY',
+  "source_vat_nature_prefix" varchar,
+  "default_vat_rate" numeric not null default '22',
+  "default_vat_nature" varchar,
+  "default_deductibility_percent" numeric not null default '100',
+  "soggetto_emittente" varchar not null default 'CC',
+  "priority" integer not null default '100',
+  "legal_reference" varchar,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sicr_lookup_idx" on "self_invoice_classification_rules"(
+  "tenant_id",
+  "is_active",
+  "priority"
+);
+CREATE INDEX "sicr_type_region_idx" on "self_invoice_classification_rules"(
+  "document_type",
+  "supplier_region"
+);
+CREATE TABLE "self_invoices"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "passive_invoice_id" varchar,
+  "linked_fpa_document_id" varchar,
+  "supplier_id" varchar,
+  "document_type" varchar not null,
+  "suggested_document_type" varchar,
+  "is_type_overridden" tinyint(1) not null default '0',
+  "override_reason" varchar,
+  "compliance_warnings" text,
+  "status" varchar not null default 'DRAFT',
+  "sdi_status" varchar not null default 'DRAFT',
+  "document_number" varchar not null,
+  "fiscal_year" integer not null,
+  "sequential_number" integer not null,
+  "sectional_code" varchar not null default 'VEN-AUT',
+  "integration_date" date not null,
+  "operation_date" date,
+  "receipt_date" date,
+  "transmission_deadline_date" date not null,
+  "regularization_trigger" varchar,
+  "supplier_country_code" varchar not null,
+  "supplier_region" varchar not null,
+  "supplier_name" varchar not null,
+  "supplier_vat_number" varchar,
+  "supplier_fiscal_code" varchar,
+  "supplier_address" text,
+  "original_invoice_number" varchar,
+  "original_invoice_date" date,
+  "original_sdi_identifier" varchar,
+  "original_currency" varchar not null default 'EUR',
+  "original_net_amount" numeric not null default '0',
+  "original_vat_amount" numeric not null default '0',
+  "original_gross_amount" numeric not null default '0',
+  "exchange_rate" numeric not null default '1',
+  "exchange_rate_date" date,
+  "exchange_rate_source" varchar not null default 'EUR',
+  "currency" varchar not null default 'EUR',
+  "taxable_amount_eur" numeric not null default '0',
+  "vat_amount_eur" numeric not null default '0',
+  "deductible_vat_eur" numeric not null default '0',
+  "non_deductible_vat_eur" numeric not null default '0',
+  "gross_amount_eur" numeric not null default '0',
+  "soggetto_emittente" varchar not null default 'CC',
+  "recipient_code" varchar not null default '0000000',
+  "sdi_identificativo" varchar,
+  "sdi_filename" varchar,
+  "sdi_progressive" varchar,
+  "xml_content" text,
+  "xml_sha256" varchar,
+  "signed_storage_path" varchar,
+  "sent_at" datetime,
+  "delivered_at" datetime,
+  "rejected_at" datetime,
+  "rejection_code" varchar,
+  "rejection_description" text,
+  "sales_vat_entry_id" varchar,
+  "purchase_vat_entry_id" varchar,
+  "journal_entry_id" varchar,
+  "is_vat_reconciled" tinyint(1) not null default '0',
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("passive_invoice_id") references "passive_invoices"("id") on delete set null,
+  foreign key("linked_fpa_document_id") references "fpa_documents"("id") on delete set null,
+  foreign key("supplier_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "si_tenant_docnum_unique" on "self_invoices"(
+  "tenant_id",
+  "document_number"
+);
+CREATE INDEX "si_tenant_status_idx" on "self_invoices"("tenant_id", "status");
+CREATE INDEX "si_tenant_doctype_idx" on "self_invoices"(
+  "tenant_id",
+  "document_type"
+);
+CREATE INDEX "si_tenant_deadline_idx" on "self_invoices"(
+  "tenant_id",
+  "transmission_deadline_date"
+);
+CREATE INDEX "si_tenant_passive_idx" on "self_invoices"(
+  "tenant_id",
+  "passive_invoice_id"
+);
+CREATE TABLE "self_invoice_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "self_invoice_id" varchar not null,
+  "passive_invoice_line_id" varchar,
+  "line_number" integer not null default '1',
+  "description" varchar not null,
+  "transaction_nature" varchar not null default 'SERVICES',
+  "quantity" numeric not null default '1',
+  "unit_price_original" numeric not null default '0',
+  "unit_price_eur" numeric not null default '0',
+  "taxable_amount_original" numeric not null default '0',
+  "taxable_amount_eur" numeric not null default '0',
+  "source_vat_nature" varchar,
+  "vat_rate" numeric not null default '22',
+  "vat_nature" varchar,
+  "vat_amount_eur" numeric not null default '0',
+  "deductibility_percent" numeric not null default '100',
+  "deductible_vat_eur" numeric not null default '0',
+  "non_deductible_vat_eur" numeric not null default '0',
+  "cost_account_id" varchar,
+  "normative_reference" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("self_invoice_id") references "self_invoices"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sil_tenant_si_idx" on "self_invoice_lines"(
+  "tenant_id",
+  "self_invoice_id"
+);
+CREATE TABLE "self_invoice_sdi_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "self_invoice_id" varchar not null,
+  "event_type" varchar not null,
+  "from_status" varchar,
+  "to_status" varchar,
+  "sdi_identificativo" varchar,
+  "sdi_filename" varchar,
+  "error_code" varchar,
+  "error_description" text,
+  "raw_payload" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("self_invoice_id") references "self_invoices"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "sisl_tenant_si_idx" on "self_invoice_sdi_logs"(
+  "tenant_id",
+  "self_invoice_id",
+  "created_at"
+);
+CREATE TABLE "fiscal_recipient_profiles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contact_id" varchar,
+  "display_name" varchar not null,
+  "regime" varchar not null,
+  "jurisdiction" varchar not null,
+  "tax_code" varchar,
+  "vat_number" varchar,
+  "avs_number" varchar,
+  "birth_date" date,
+  "country_of_residence" varchar,
+  "canton" varchar,
+  "enasarco_mandate" varchar,
+  "firr_enabled" tinyint(1) not null default '0',
+  "is_cultural_sector" tinyint(1) not null default '0',
+  "activity_type" varchar,
+  "cu_causal" varchar,
+  "third_party_ytd_income" numeric not null default '0',
+  "third_party_income_year" integer,
+  "third_party_declared_on" date,
+  "is_active" tinyint(1) not null default '1',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "fiscal_rp_regime_ix" on "fiscal_recipient_profiles"(
+  "tenant_id",
+  "regime"
+);
+CREATE INDEX "fiscal_rp_jurisdiction_ix" on "fiscal_recipient_profiles"(
+  "tenant_id",
+  "jurisdiction"
+);
+CREATE INDEX "fiscal_rp_tax_code_ix" on "fiscal_recipient_profiles"(
+  "tenant_id",
+  "tax_code"
+);
+CREATE TABLE "fiscal_agent_reduced_withholding_certs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "recipient_profile_id" varchar not null,
+  "fiscal_year" integer not null,
+  "received_on" date not null,
+  "valid_from" date not null,
+  "valid_to" date not null,
+  "pec_message_id" varchar,
+  "pec_archive_reference" varchar,
+  "document_path" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("recipient_profile_id") references "fiscal_recipient_profiles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "fiscal_arwc_profile_year_ix" on "fiscal_agent_reduced_withholding_certs"(
+  "tenant_id",
+  "recipient_profile_id",
+  "fiscal_year"
+);
+CREATE INDEX "fiscal_arwc_valid_to_ix" on "fiscal_agent_reduced_withholding_certs"(
+  "tenant_id",
+  "valid_to"
+);
+CREATE TABLE "fiscal_occasional_inl_notifications"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "recipient_profile_id" varchar not null,
+  "status" varchar not null default 'draft',
+  "work_start_date" date not null,
+  "work_end_date" date not null,
+  "activity_description" text not null,
+  "work_place" varchar,
+  "estimated_compensation" numeric not null default '0',
+  "sent_at" datetime,
+  "protocol_reference" varchar,
+  "payload" text,
+  "xml" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("recipient_profile_id") references "fiscal_recipient_profiles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "fiscal_inl_profile_status_ix" on "fiscal_occasional_inl_notifications"(
+  "tenant_id",
+  "recipient_profile_id",
+  "status"
+);
+CREATE TABLE "fiscal_recipient_settlements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "recipient_profile_id" varchar not null,
+  "inl_notification_id" varchar,
+  "regime" varchar not null,
+  "jurisdiction" varchar not null,
+  "currency" varchar not null,
+  "document_number" varchar,
+  "service_date" date not null,
+  "payment_date" date not null,
+  "tax_year" integer not null,
+  "accrual_month" varchar not null,
+  "status" varchar not null default 'posted',
+  "gross_amount" numeric not null,
+  "flat_rate_deduction" numeric not null default '0',
+  "taxable_base" numeric not null default '0',
+  "withholding_rate" numeric not null default '0',
+  "irpef_withholding" numeric not null default '0',
+  "inps_base" numeric not null default '0',
+  "inps_total" numeric not null default '0',
+  "inps_worker" numeric not null default '0',
+  "inps_company" numeric not null default '0',
+  "stamp_duty" numeric not null default '0',
+  "enasarco_base" numeric not null default '0',
+  "enasarco_agent" numeric not null default '0',
+  "enasarco_company" numeric not null default '0',
+  "firr_accrual" numeric not null default '0',
+  "avs_base" numeric not null default '0',
+  "avs_employee" numeric not null default '0',
+  "avs_employer" numeric not null default '0',
+  "acquisition_expenses" numeric not null default '0',
+  "source_tax" numeric not null default '0',
+  "non_taxable_amount" numeric not null default '0',
+  "non_taxable_code" varchar,
+  "cu_causal" varchar,
+  "net_payable" numeric not null,
+  "company_cost" numeric not null,
+  "f24_due_date" date,
+  "f24_lines" text,
+  "uniemens_required" tinyint(1) not null default '0',
+  "payment_reference" varchar,
+  "breakdown" text,
+  "warnings" text,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("recipient_profile_id") references "fiscal_recipient_profiles"("id") on delete cascade,
+  foreign key("inl_notification_id") references "fiscal_occasional_inl_notifications"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "fiscal_rs_profile_year_ix" on "fiscal_recipient_settlements"(
+  "tenant_id",
+  "recipient_profile_id",
+  "tax_year"
+);
+CREATE INDEX "fiscal_rs_month_ix" on "fiscal_recipient_settlements"(
+  "tenant_id",
+  "accrual_month"
+);
+CREATE INDEX "fiscal_rs_payment_ix" on "fiscal_recipient_settlements"(
+  "tenant_id",
+  "payment_date"
+);
+CREATE TABLE "fiscal_cu_autonomous_records"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "recipient_profile_id" varchar not null,
+  "tax_year" integer not null,
+  "return_type" varchar not null,
+  "causal" varchar,
+  "currency" varchar not null,
+  "gross_total" numeric not null default '0',
+  "non_taxable_total" numeric not null default '0',
+  "non_taxable_code" varchar,
+  "taxable_total" numeric not null default '0',
+  "withholding_total" numeric not null default '0',
+  "inps_worker_total" numeric not null default '0',
+  "inps_company_total" numeric not null default '0',
+  "enasarco_total" numeric not null default '0',
+  "avs_total" numeric not null default '0',
+  "source_tax_total" numeric not null default '0',
+  "settlement_count" integer not null default '0',
+  "status" varchar not null default 'generated',
+  "generated_at" datetime not null,
+  "payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("recipient_profile_id") references "fiscal_recipient_profiles"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "fiscal_cu_profile_year_uq" on "fiscal_cu_autonomous_records"(
+  "tenant_id",
+  "recipient_profile_id",
+  "tax_year",
+  "return_type"
+);
+CREATE INDEX "fiscal_cu_year_ix" on "fiscal_cu_autonomous_records"(
+  "tenant_id",
+  "tax_year"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -59114,3 +59968,7 @@ INSERT INTO migrations VALUES(493,'2028_01_12_000100_create_subcontracting_mod06
 INSERT INTO migrations VALUES(494,'2028_01_12_000100_create_swiss_ebill_tables',40);
 INSERT INTO migrations VALUES(495,'2028_01_13_000100_create_foreign_vat_refund_mod227_tables',41);
 INSERT INTO migrations VALUES(496,'2028_01_13_000100_create_down_payments_mod203_tables',42);
+INSERT INTO migrations VALUES(497,'2028_01_14_000100_create_green_care_mod126_tables',43);
+INSERT INTO migrations VALUES(498,'2028_01_14_000100_create_observability_mod202_tables',43);
+INSERT INTO migrations VALUES(499,'2028_01_15_000100_create_esterometro_mod027_tables',43);
+INSERT INTO migrations VALUES(500,'2028_01_16_000100_create_withholding_recipients_mod356_tables',43);
