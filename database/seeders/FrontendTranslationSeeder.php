@@ -75,6 +75,7 @@ use Database\Seeders\Translations\MobileFeatureTranslations;
 use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
 use Database\Seeders\Translations\ObservabilityFrontendTranslations;
+use Database\Seeders\Translations\TimeTravelFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
 use Database\Seeders\Translations\PassengerTransportFrontendTranslations;
 use Database\Seeders\Translations\PayablesFrontendTranslations;
@@ -239,7 +240,8 @@ class FrontendTranslationSeeder extends Seeder
             + PlmFrontendTranslations::all($locale)
             + TenderManagementFrontendTranslations::all($locale)
             + EsterometroFrontendTranslations::all($locale)
-            + ObservabilityFrontendTranslations::all($locale);
+            + ObservabilityFrontendTranslations::all($locale)
+            + TimeTravelFrontendTranslations::all($locale);
     }
 
     /**
