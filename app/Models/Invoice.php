@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Modules\Invoicing\Models\DeclarationOfIntent;
+use Modules\Platform\Localization\Infrastructure\Eloquent\FreezesDocumentLocale;
 
 /**
  * @property Carbon $date
@@ -27,10 +28,12 @@ use Modules\Invoicing\Models\DeclarationOfIntent;
  * @property string|null $ebill_status
  * @property string|null $ebill_transmission_id
  * @property Carbon|null $ebill_last_event_at
+ * @property string|null $locale
  */
 class Invoice extends Model implements AuditableEntityInterface
 {
     use BelongsToTenant, HasFactory, HasFiscalAmounts, HasUuids, ProtectsIssuedInvoice, SoftDeletes;
+    use FreezesDocumentLocale;
     use HasImmutableAuditTrail;
 
     protected bool $auditTrackReads = true;

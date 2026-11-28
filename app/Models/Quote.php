@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Modules\Platform\Localization\Infrastructure\Eloquent\FreezesDocumentLocale;
 
 /**
  * @property Carbon $date
@@ -20,7 +21,7 @@ use Illuminate\Support\Carbon;
  */
 class Quote extends Model
 {
-    use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+    use BelongsToTenant, FreezesDocumentLocale, HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
         'contact_id',

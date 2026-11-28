@@ -129,6 +129,13 @@ class DocumentPdfService
      */
     private function documentLanguage(Model $document): string
     {
+        // The print language frozen on the document (de-CH prints with the German dictionary) wins over the contact's
+        $frozen = $document->getAttribute('locale');
+
+        if (is_string($frozen) && $frozen !== '') {
+            return explode('-', $frozen)[0];
+        }
+
         $contact = $document instanceof WorkOrder ? $document->client : $document->getAttribute('contact');
 
         return $contact?->document_language ?: App::getLocale();

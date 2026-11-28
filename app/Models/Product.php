@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\CustomsOriginType;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasTranslations;
 use App\Support\MadeInLabel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -20,7 +21,25 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Product extends Model
 {
-    use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasTranslations, HasUuids, SoftDeletes;
+
+    /**
+     * @return HasMany<ProductTranslation, $this>
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(ProductTranslation::class, 'product_id');
+    }
+
+    protected function getTranslationModelClass(): string
+    {
+        return ProductTranslation::class;
+    }
+
+    protected function getTranslationForeignKey(): string
+    {
+        return 'product_id';
+    }
 
     /**
      * Key of `attributes` that marks end-of-series products.

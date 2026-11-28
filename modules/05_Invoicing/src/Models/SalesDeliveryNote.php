@@ -15,6 +15,7 @@ use Modules\Inventory\Models\Warehouse;
 use Modules\Logistics\Concerns\HasAuditUsers;
 use Modules\Logistics\Enums\TransportReason;
 use Modules\Logistics\Models\DeliveryNoteInvoiceLink;
+use Modules\Platform\Localization\Infrastructure\Eloquent\FreezesDocumentLocale;
 
 /**
  * Canonical Delivery Note (DDT) model. The legacy {@see DeliveryNote} maps to the same
@@ -27,6 +28,7 @@ use Modules\Logistics\Models\DeliveryNoteInvoiceLink;
  */
 class SalesDeliveryNote extends BaseEnterpriseModel
 {
+    use FreezesDocumentLocale;
     use HasAuditUsers;
 
     protected $table = 'delivery_notes';

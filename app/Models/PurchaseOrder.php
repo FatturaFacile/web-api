@@ -11,10 +11,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Platform\Localization\Infrastructure\Eloquent\FreezesDocumentLocale;
 
 class PurchaseOrder extends Model
 {
-    use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+    use BelongsToTenant, FreezesDocumentLocale, HasFactory, HasUuids, SoftDeletes;
+
+    /**
+     * The supplier is the contact whose document language the order is printed in.
+     */
+    public function documentContactId(): ?string
+    {
+        $supplierId = $this->getAttribute('supplier_id');
+
+        return is_string($supplierId) && $supplierId !== '' ? $supplierId : null;
+    }
 
     protected $fillable = [
         'tenant_id',

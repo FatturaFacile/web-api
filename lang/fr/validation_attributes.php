@@ -4772,4 +4772,10 @@ return [
     'compensation_overrides' => 'pourcentages de compensation',
     'product_kind' => 'type de produit',
     'sale_channel' => 'canal de vente',
+    'active_locales' => 'langues actives',
+    'default_locale' => 'langue par défaut',
+    'number_format' => 'format des nombres',
+    'locales' => 'langues',
+    'filter' => 'filtre',
+    'missing' => 'manquantes',
 ];

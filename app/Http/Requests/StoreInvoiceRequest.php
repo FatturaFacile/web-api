@@ -56,6 +56,8 @@ class StoreInvoiceRequest extends FormRequest
             'sdi_vehicle.mileage' => ['nullable', 'string', 'max:15'],
             'sdi_extra' => ['nullable', 'array'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            // Print language frozen on the document; defaults to the document language of the contact
+            'locale' => ['nullable', 'string', 'in:it-CH,de-CH,fr-CH,it-IT,en'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['nullable', 'uuid', Rule::exists('products', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'items.*.description' => ['required', 'string', 'max:1000'],

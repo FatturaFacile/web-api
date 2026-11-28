@@ -4772,4 +4772,10 @@ return [
     'compensation_overrides' => 'Kompensationssätze',
     'product_kind' => 'Produktart',
     'sale_channel' => 'Verkaufskanal',
+    'active_locales' => 'aktive Sprachen',
+    'default_locale' => 'Standardsprache',
+    'number_format' => 'Zahlenformat',
+    'locales' => 'Sprachen',
+    'filter' => 'Filter',
+    'missing' => 'fehlend',
 ];
