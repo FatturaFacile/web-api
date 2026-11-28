@@ -588,6 +588,16 @@ return [
                 'write' => ['olive_mill.write', 'olive_mill.*'],
             ],
         ],
+        // Ski and snowboard schools, alpine guides and outdoor centres (Mod 286): instructor roster, planning board, group courses, packages and payouts.
+        // Finance and operations managers write (the school secretariat plans and bills); sales and HR read.
+        'ski_school' => [
+            'read' => [...$financeReaders, 'operations_manager', 'sales', 'hr'],
+            'write' => [...$finance, 'operations_manager'],
+            'grants' => [
+                'read' => ['ski_school.read', 'ski_school.write', 'ski_school.*'],
+                'write' => ['ski_school.write', 'ski_school.*'],
+            ],
+        ],
         // Green care (Mod 126): sites, seasonal contracts, crews, routes, phytosanitary diary and green waste. Crews close their own stops and
         // write the diary; finance and operations manage contracts and billing.
         'green_care' => [
