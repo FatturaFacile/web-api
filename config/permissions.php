@@ -547,6 +547,16 @@ return [
                 'write' => ['bonded_warehouses.write', 'bonded_warehouses.*'],
             ],
         ],
+        // Olive oil mills and grain mills (Mod 297): crop deliveries, weighbridge, milling cycles, molenda settlements, tanks and the SIAN oil register.
+        // Finance, warehouse and operations managers write (the mill floor works on the deliveries and the tanks); purchasing and sales read.
+        'olive_mill' => [
+            'read' => [...$financeReaders, 'warehouse', 'operations_manager', 'purchasing', 'sales'],
+            'write' => [...$finance, 'warehouse', 'operations_manager'],
+            'grants' => [
+                'read' => ['olive_mill.read', 'olive_mill.write', 'olive_mill.*'],
+                'write' => ['olive_mill.write', 'olive_mill.*'],
+            ],
+        ],
         // Green care (Mod 126): sites, seasonal contracts, crews, routes, phytosanitary diary and green waste. Crews close their own stops and
         // write the diary; finance and operations manage contracts and billing.
         'green_care' => [

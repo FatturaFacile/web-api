@@ -78,8 +78,8 @@ use Database\Seeders\Translations\MobileFeatureTranslations;
 use Database\Seeders\Translations\MobileFrontendTranslations;
 use Database\Seeders\Translations\MrpPlanningFrontendTranslations;
 use Database\Seeders\Translations\ObservabilityFrontendTranslations;
-use Database\Seeders\Translations\TimeTravelFrontendTranslations;
 use Database\Seeders\Translations\OcrInboxFrontendTranslations;
+use Database\Seeders\Translations\OliveMillFrontendTranslations;
 use Database\Seeders\Translations\PassengerTransportFrontendTranslations;
 use Database\Seeders\Translations\PayablesFrontendTranslations;
 use Database\Seeders\Translations\PlmFrontendTranslations;
@@ -107,6 +107,7 @@ use Database\Seeders\Translations\SupplierRebatesFrontendTranslations;
 use Database\Seeders\Translations\SwissQrBillSlipFrontendTranslations;
 use Database\Seeders\Translations\SwissVatFrontendTranslations;
 use Database\Seeders\Translations\TenderManagementFrontendTranslations;
+use Database\Seeders\Translations\TimeTravelFrontendTranslations;
 use Database\Seeders\Translations\TreasuryBankingFrontendTranslations;
 use Database\Seeders\Translations\TreasuryIsoReconciliationFrontendTranslations;
 use Database\Seeders\Translations\VanSellingFieldSalesFrontendTranslations;
@@ -219,6 +220,7 @@ class FrontendTranslationSeeder extends Seeder
             + CustomerSatisfactionFrontendTranslations::all($locale)
             + EbillFrontendTranslations::all($locale)
             + BondedWarehousesFrontendTranslations::all($locale)
+            + OliveMillFrontendTranslations::all($locale)
             + ForeignVatRefundFrontendTranslations::all($locale)
             + GreenCareFrontendTranslations::all($locale)
             + SubcontractingFrontendTranslations::all($locale)

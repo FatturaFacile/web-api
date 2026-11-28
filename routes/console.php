@@ -114,6 +114,8 @@ Schedule::command('forecasting:refresh-liquidity')->dailyAt('03:20')->withoutOve
 Schedule::command('liquidity:evaluate-alerts')->dailyAt('06:30')->withoutOverlapping()->onOneServer();
 // Corporate crisis monitoring (Mod 357): the daily rolling DSCR / CCII / Art. 725 CO snapshot, after the liquidity alerts.
 Schedule::command('crisis-monitoring:compute')->dailyAt('06:45')->withoutOverlapping()->onOneServer();
+// Olive oil mills (Mod 297): the hopper SMS reminder of the slots that start within the lead time.
+Schedule::command('olive-mill:send-reminders')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('forecasting:generate-sku-demand')->dailyAt('03:40')->withoutOverlapping()->onOneServer();
 // Analytics: daily KPI snapshots (the day that just ended) first, then the scheduled report exports.
 Schedule::command('analytics:refresh-kpi-snapshots')->dailyAt('01:10')->withoutOverlapping()->onOneServer();
