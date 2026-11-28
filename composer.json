@@ -98,6 +98,7 @@
             "Modules\\WithholdingRecipients\\": "modules/89_WithholdingRecipients/src/",
             "Modules\\AdventureParks\\": "modules/90_AdventureParks/src/",
             "Modules\\DairyCheeseManufacturing\\": "modules/90_DairyCheeseManufacturing/src/",
+            "Modules\\Beekeeping\\": "modules/90_Beekeeping/src/",
             "Modules\\DebtCollection\\": "modules/78_DebtCollection/src/",
             "Modules\\LiquidityPlanning\\": "modules/78_LiquidityPlanning/src/",
             "Modules\\ExpenseManagement\\": "modules/78_ExpenseManagement/src/",

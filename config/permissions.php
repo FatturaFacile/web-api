@@ -116,6 +116,16 @@ return [
         // Withholding taxes on commissions, royalties, occasional work and amateur sports (Mod 356): finance and HR read and maintain the
         // registry and the declarations; WithholdingRecipientsPolicy reserves posting, F24 / UniEmens and the annual CU to owners,
         // administrators and accountants.
+        // Beekeeping and honey production (Mod 296): owners, administrators, accountants and members (field staff) maintain the apiaries, hives,
+        // inspections, the veterinary register and the honey lots; BeekeepingPolicy reserves the agricultural tax profile to owners, administrators and accountants.
+        'beekeeping' => [
+            'read' => ['owner', 'admin', 'accountant', 'accountant_readonly', 'member'],
+            'write' => ['owner', 'admin', 'accountant', 'member'],
+            'grants' => [
+                'read' => ['beekeeping.read', 'beekeeping.write', 'beekeeping.tax', 'beekeeping.*'],
+                'write' => ['beekeeping.write', 'beekeeping.tax', 'beekeeping.*'],
+            ],
+        ],
         'withholding_recipients' => [
             'read' => ['owner', 'admin', 'accountant', 'accountant_readonly', 'hr_manager', 'hr'],
             'write' => ['owner', 'admin', 'accountant', 'hr_manager', 'hr'],

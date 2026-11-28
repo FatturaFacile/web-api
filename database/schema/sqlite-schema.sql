@@ -60957,6 +60957,360 @@ CREATE INDEX "dairy_rr_source_ix" on "dairy_recall_reports"(
   "source_type",
   "source_id"
 );
+CREATE TABLE "bee_apiaries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "country" varchar not null,
+  "municipality" varchar,
+  "province_canton" varchar,
+  "registry_code" varchar,
+  "apiary_type" varchar not null default 'stationary',
+  "latitude" numeric,
+  "longitude" numeric,
+  "altitude_m" integer,
+  "foraging_radius_m" integer not null default '3000',
+  "flora_notes" text,
+  "blooming_calendar" text,
+  "weather_notes" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_apiaries_tenant_id_code_unique" on "bee_apiaries"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "bee_apiaries_tenant_id_is_active_index" on "bee_apiaries"(
+  "tenant_id",
+  "is_active"
+);
+CREATE TABLE "bee_hives"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "apiary_id" varchar not null,
+  "code" varchar not null,
+  "qr_token" varchar not null,
+  "hive_type" varchar not null,
+  "origin" varchar not null default 'split',
+  "status" varchar not null default 'active',
+  "is_nucleus" tinyint(1) not null default '0',
+  "queen_year" integer,
+  "queen_marking_color" varchar,
+  "queen_clipped" tinyint(1) not null default '0',
+  "queen_genetic_line" varchar,
+  "queen_breeder" varchar,
+  "queen_pedigree_ref" varchar,
+  "queen_status" varchar not null default 'present_laying',
+  "brood_frames" integer not null default '0',
+  "store_frames" integer not null default '0',
+  "supers_count" integer not null default '0',
+  "strength_score" integer not null default '3',
+  "temperament" varchar,
+  "installed_on" date,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("apiary_id") references "bee_apiaries"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_hives_tenant_id_code_unique" on "bee_hives"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "bee_hives_tenant_id_apiary_id_status_index" on "bee_hives"(
+  "tenant_id",
+  "apiary_id",
+  "status"
+);
+CREATE UNIQUE INDEX "bee_hives_qr_token_unique" on "bee_hives"("qr_token");
+CREATE TABLE "bee_inspections"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "hive_id" varchar not null,
+  "apiary_id" varchar not null,
+  "inspected_at" datetime not null,
+  "operator_id" varchar,
+  "weather" varchar,
+  "temperature_c" numeric,
+  "queen_seen" tinyint(1) not null default '0',
+  "eggs_present" tinyint(1) not null default '0',
+  "larvae_present" tinyint(1) not null default '0',
+  "capped_brood_present" tinyint(1) not null default '0',
+  "brood_frames" integer not null default '0',
+  "store_frames" integer not null default '0',
+  "supers_added" integer not null default '0',
+  "supers_removed" integer not null default '0',
+  "swarm_cells_found" integer not null default '0',
+  "swarm_cells_destroyed" integer not null default '0',
+  "feeding_type" varchar,
+  "feeding_kg" numeric,
+  "strength_score" integer,
+  "observations" text,
+  "alerts" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("hive_id") references "bee_hives"("id") on delete cascade,
+  foreign key("apiary_id") references "bee_apiaries"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "bee_inspections_tenant_id_hive_id_inspected_at_index" on "bee_inspections"(
+  "tenant_id",
+  "hive_id",
+  "inspected_at"
+);
+CREATE TABLE "bee_varroa_treatments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "apiary_id" varchar not null,
+  "whole_apiary" tinyint(1) not null default '1',
+  "hive_ids" text,
+  "treatment_date" date not null,
+  "treatment_end_date" date,
+  "product" varchar not null,
+  "active_substance" varchar not null,
+  "commercial_name" varchar,
+  "drug_batch" varchar,
+  "prescription_ref" varchar,
+  "veterinarian" varchar,
+  "dosage" varchar,
+  "application_method" varchar,
+  "withdrawal_days" integer not null default '0',
+  "withdrawal_end_date" date not null,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("apiary_id") references "bee_apiaries"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "bee_varroa_treatments_tenant_id_apiary_id_withdrawal_end_date_index" on "bee_varroa_treatments"(
+  "tenant_id",
+  "apiary_id",
+  "withdrawal_end_date"
+);
+CREATE TABLE "bee_varroa_counts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "hive_id" varchar not null,
+  "treatment_id" varchar,
+  "counted_on" date not null,
+  "count_type" varchar not null default 'natural',
+  "mites_per_day" numeric not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("hive_id") references "bee_hives"("id") on delete cascade,
+  foreign key("treatment_id") references "bee_varroa_treatments"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "bee_varroa_counts_tenant_id_hive_id_counted_on_index" on "bee_varroa_counts"(
+  "tenant_id",
+  "hive_id",
+  "counted_on"
+);
+CREATE TABLE "bee_nomadism_movements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "document_number" varchar not null,
+  "kind" varchar not null default 'nomadism',
+  "origin_apiary_id" varchar not null,
+  "destination_apiary_id" varchar,
+  "destination_label" varchar,
+  "destination_registry_code" varchar,
+  "counterpart" varchar,
+  "target_flora" varchar,
+  "subject" varchar not null default 'hives',
+  "quantity" integer not null,
+  "vehicle_plate" varchar,
+  "departure_date" date not null,
+  "arrival_date" date,
+  "return_date" date,
+  "status" varchar not null default 'planned',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("origin_apiary_id") references "bee_apiaries"("id") on delete cascade,
+  foreign key("destination_apiary_id") references "bee_apiaries"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_nomadism_movements_tenant_id_document_number_unique" on "bee_nomadism_movements"(
+  "tenant_id",
+  "document_number"
+);
+CREATE TABLE "bee_census_declarations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "census_year" integer not null,
+  "country" varchar not null,
+  "status" varchar not null default 'draft',
+  "window_start" date not null,
+  "window_end" date not null,
+  "total_hives" integer not null default '0',
+  "total_nuclei" integer not null default '0',
+  "snapshot" text not null,
+  "generated_at" datetime not null,
+  "submitted_at" datetime,
+  "submission_reference" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_census_declarations_tenant_id_census_year_country_unique" on "bee_census_declarations"(
+  "tenant_id",
+  "census_year",
+  "country"
+);
+CREATE TABLE "bee_extraction_batches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lot_code" varchar not null,
+  "extracted_on" date not null,
+  "botanical_origin" varchar not null,
+  "extracted_kg" numeric not null,
+  "hives_harvested" integer not null default '0',
+  "tank_code" varchar,
+  "decanted_on" date,
+  "moisture_pct" numeric,
+  "hmf_mg_kg" numeric,
+  "organoleptic_notes" text,
+  "process_notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_extraction_batches_tenant_id_lot_code_unique" on "bee_extraction_batches"(
+  "tenant_id",
+  "lot_code"
+);
+CREATE TABLE "bee_super_intakes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "apiary_id" varchar not null,
+  "extraction_batch_id" varchar,
+  "harvested_on" date not null,
+  "botanical_origin" varchar not null,
+  "supers_count" integer not null,
+  "gross_weight_kg" numeric not null,
+  "net_weight_kg" numeric not null,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("apiary_id") references "bee_apiaries"("id") on delete cascade,
+  foreign key("extraction_batch_id") references "bee_extraction_batches"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "bee_super_intakes_tenant_id_apiary_id_harvested_on_index" on "bee_super_intakes"(
+  "tenant_id",
+  "apiary_id",
+  "harvested_on"
+);
+CREATE TABLE "bee_jarring_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "extraction_batch_id" varchar not null,
+  "jar_lot_code" varchar not null,
+  "jarred_on" date not null,
+  "jar_format_g" integer not null,
+  "jars_count" integer not null,
+  "net_kg" numeric not null,
+  "best_before" date not null,
+  "origin_country" varchar not null,
+  "warehouse_id" varchar,
+  "jar_product_id" varchar,
+  "cap_product_id" varchar,
+  "label_product_id" varchar,
+  "stock_movements" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("extraction_batch_id") references "bee_extraction_batches"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_jarring_runs_tenant_id_jar_lot_code_unique" on "bee_jarring_runs"(
+  "tenant_id",
+  "jar_lot_code"
+);
+CREATE TABLE "bee_tax_profiles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "country" varchar not null,
+  "regime" varchar not null,
+  "compensation_overrides" text,
+  "annual_turnover" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_tax_profiles_tenant_id_country_unique" on "bee_tax_profiles"(
+  "tenant_id",
+  "country"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -61463,3 +61817,4 @@ INSERT INTO migrations VALUES(502,'2028_01_16_000100_create_withholding_recipien
 INSERT INTO migrations VALUES(503,'2028_01_17_000100_create_adventure_parks_mod299_tables',44);
 INSERT INTO migrations VALUES(504,'2028_01_16_000100_create_bonded_warehouses_mod353_tables',45);
 INSERT INTO migrations VALUES(505,'2028_01_17_000100_create_dairy_cheese_mod298_tables',45);
+INSERT INTO migrations VALUES(506,'2028_01_17_000100_create_beekeeping_mod296_tables',46);
