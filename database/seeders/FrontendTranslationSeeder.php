@@ -17,6 +17,7 @@ use Database\Seeders\Translations\AnalyticalAccountingFrontendTranslations;
 use Database\Seeders\Translations\ArtisanalGelatoFrontendTranslations;
 use Database\Seeders\Translations\AuditLedgerFrontendTranslations;
 use Database\Seeders\Translations\AuditTrailFrontendTranslations;
+use Database\Seeders\Translations\BeekeepingFrontendTranslations;
 use Database\Seeders\Translations\BomManagementFrontendTranslations;
 use Database\Seeders\Translations\BondedWarehousesFrontendTranslations;
 use Database\Seeders\Translations\BudgetingSpendControlFrontendTranslations;
@@ -71,6 +72,8 @@ use Database\Seeders\Translations\LeadFrontendTranslations;
 use Database\Seeders\Translations\LeaveManagementFrontendTranslations;
 use Database\Seeders\Translations\LiquidityPlanningFrontendTranslations;
 use Database\Seeders\Translations\LiquidityPlanningTranslations;
+use Database\Seeders\Translations\LocalizationFrontendTranslations;
+use Database\Seeders\Translations\LocalizationStatutoryTranslations;
 use Database\Seeders\Translations\MainFrontendTranslations;
 use Database\Seeders\Translations\ManufacturingCommandCenterFrontendTranslations;
 use Database\Seeders\Translations\ManufacturingProductionFrontendTranslations;
@@ -113,13 +116,13 @@ use Database\Seeders\Translations\TimeTravelFrontendTranslations;
 use Database\Seeders\Translations\TreasuryBankingFrontendTranslations;
 use Database\Seeders\Translations\TreasuryIsoReconciliationFrontendTranslations;
 use Database\Seeders\Translations\VanSellingFieldSalesFrontendTranslations;
-use Database\Seeders\Translations\BeekeepingFrontendTranslations;
 use Database\Seeders\Translations\WithholdingRecipientsFrontendTranslations;
 use Database\Seeders\Translations\WorkflowApprovalFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Modules\Platform\Localization\Infrastructure\Cache\DictionaryCache;
 
 /**
  * Global UI strings (it, en, de, fr) of the Angular frontend that TranslationSeeder does not hold.
@@ -257,7 +260,9 @@ class FrontendTranslationSeeder extends Seeder
             + TenderManagementFrontendTranslations::all($locale)
             + EsterometroFrontendTranslations::all($locale)
             + ObservabilityFrontendTranslations::all($locale)
-            + TimeTravelFrontendTranslations::all($locale);
+            + TimeTravelFrontendTranslations::all($locale)
+            + LocalizationFrontendTranslations::all($locale)
+            + LocalizationStatutoryTranslations::all($locale);
     }
 
     /**
@@ -273,6 +278,7 @@ class FrontendTranslationSeeder extends Seeder
 
         DB::transaction(function () use ($locales): void {
             $now = now();
+            $locked = array_fill_keys(LocalizationStatutoryTranslations::keys(), true);
 
             foreach ($locales as $locale => $translations) {
                 foreach (array_chunk(array_keys($translations), 1000) as $keys) {
@@ -289,8 +295,10 @@ class FrontendTranslationSeeder extends Seeder
                     $rows[] = [
                         'tenant_id' => null,
                         'locale' => $locale,
+                        'group' => explode('.', (string) $key, 2)[0],
                         'key' => $key,
                         'value' => $value,
+                        'is_locked' => isset($locked[$key]),
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
@@ -305,5 +313,8 @@ class FrontendTranslationSeeder extends Seeder
         foreach (array_keys($locales) as $locale) {
             Cache::forget("translations_global_{$locale}");
         }
+
+        // The versioned dictionaries of the i18n API (all tenants) are rebuilt from the freshly seeded texts
+        app(DictionaryCache::class)->flushSystem();
     }
 }

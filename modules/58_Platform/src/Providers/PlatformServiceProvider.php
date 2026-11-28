@@ -17,6 +17,7 @@ use Modules\Platform\Console\PruneIdempotencyKeysCommand;
 use Modules\Platform\Listeners\BroadcastUnreadNotifications;
 use Modules\Platform\Listeners\LogNotificationDelivery;
 use Modules\Platform\Listeners\NotifyBusinessEvents;
+use Modules\Platform\Localization\Providers\LocalizationServiceProvider;
 use Modules\Platform\Services\NotificationDigestService;
 use Modules\SDI\Events\SdiInvoiceRejected;
 use Modules\Workflow\Events\ApprovalTokenGeneratedEvent;
@@ -27,6 +28,11 @@ use Modules\Workflow\Events\ApprovalTokenGeneratedEvent;
  */
 final class PlatformServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->app->register(LocalizationServiceProvider::class);
+    }
+
     public function boot(): void
     {
         $this->app->booted(function (): void {

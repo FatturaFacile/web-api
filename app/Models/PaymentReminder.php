@@ -9,10 +9,38 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
+use Modules\Platform\Localization\Infrastructure\Eloquent\FreezesDocumentLocale;
 
 class PaymentReminder extends Model
 {
-    use BelongsToTenant, HasFactory, HasUuids;
+    use BelongsToTenant, FreezesDocumentLocale, HasFactory, HasUuids;
+
+    /**
+     * A reminder can be re-worded until it is sent: queued is its draft state.
+     *
+     * @return list<string>
+     */
+    public function documentDraftStatuses(): array
+    {
+        return ['queued', 'draft'];
+    }
+
+    /**
+     * A reminder is written to the customer of the invoice it chases.
+     */
+    public function documentContactId(): ?string
+    {
+        $invoiceId = $this->getAttribute('invoice_id');
+
+        if (! is_string($invoiceId) || $invoiceId === '') {
+            return null;
+        }
+
+        $contactId = DB::table('invoices')->where('id', $invoiceId)->value('contact_id');
+
+        return is_string($contactId) ? $contactId : null;
+    }
 
     protected $fillable = [
         'tenant_id',

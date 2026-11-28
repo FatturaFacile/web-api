@@ -25,6 +25,8 @@ class UpdateInvoiceRequest extends FormRequest
     {
         return [
             'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            // Only a draft can change its print language: an issued invoice answers 422
+            'locale' => ['sometimes', 'string', 'in:it-CH,de-CH,fr-CH,it-IT,en'],
             'due_date' => ['sometimes', 'nullable', 'date'],
         ];
     }

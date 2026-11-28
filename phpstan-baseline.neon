@@ -1159,12 +1159,6 @@ parameters:
 			path: app/Mail/PaymentReminderMail.php
 
 		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ApprovalStatusTranslation, \$this\(App\\Models\\ApprovalStatus\)\>\) of method App\\Models\\ApprovalStatus\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\ApprovalStatus\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/ApprovalStatus.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\BankStatementLine\:\:\$currency\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1177,58 +1171,16 @@ parameters:
 			path: app/Models/BankStatementLine.php
 
 		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ContactCategoryTranslation, \$this\(App\\Models\\ContactCategory\)\>\) of method App\\Models\\ContactCategory\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\ContactCategory\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/ContactCategory.php
-
-		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ContactTypeTranslation, \$this\(App\\Models\\ContactType\)\>\) of method App\\Models\\ContactType\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\ContactType\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/ContactType.php
-
-		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\CountryTranslation, \$this\(App\\Models\\Country\)\>\) of method App\\Models\\Country\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\Country\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/Country.php
-
-		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\CurrencyTranslation, \$this\(App\\Models\\Currency\)\>\) of method App\\Models\\Currency\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\Currency\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/Currency.php
-
-		-
 			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\DeliveryNoteItem, \$this\(App\\Models\\DeliveryNote\)\>\) of method App\\Models\\DeliveryNote\:\:items\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Modules\\Invoicing\\Models\\SalesDeliveryNoteItem, \$this\(Modules\\Invoicing\\Models\\SalesDeliveryNote\)\>\) of method Modules\\Invoicing\\Models\\SalesDeliveryNote\:\:items\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: app/Models/DeliveryNote.php
 
 		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\DocumentStatusTranslation, \$this\(App\\Models\\DocumentStatus\)\>\) of method App\\Models\\DocumentStatus\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\DocumentStatus\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/DocumentStatus.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>\(Expression\)" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Models/DocumentTemplate.php
-
-		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ExpenseCategoryTranslation, \$this\(App\\Models\\ExpenseCategory\)\>\) of method App\\Models\\ExpenseCategory\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\ExpenseCategory\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/ExpenseCategory.php
-
-		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\InventoryMovementTypeTranslation, \$this\(App\\Models\\InventoryMovementType\)\>\) of method App\\Models\\InventoryMovementType\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\InventoryMovementType\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/InventoryMovementType.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:assertRecordMutable\(\)\.$#'
@@ -1243,46 +1195,16 @@ parameters:
 			path: app/Models/InvoiceItem.php
 
 		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\NotificationTypeTranslation, \$this\(App\\Models\\NotificationType\)\>\) of method App\\Models\\NotificationType\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\NotificationType\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/NotificationType.php
-
-		-
 			message: '#^Method App\\Models\\PassiveInvoice\:\:supplierName\(\) should return Illuminate\\Database\\Eloquent\\Casts\\Attribute\<string\|null, never\> but returns Illuminate\\Database\\Eloquent\\Casts\\Attribute\<non\-falsy\-string\|null, never\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Models/PassiveInvoice.php
 
 		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PaymentMethodTranslation, \$this\(App\\Models\\PaymentMethod\)\>\) of method App\\Models\\PaymentMethod\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\PaymentMethod\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/PaymentMethod.php
-
-		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\PaymentTermTranslation, \$this\(App\\Models\\PaymentTerm\)\>\) of method App\\Models\\PaymentTerm\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\PaymentTerm\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/PaymentTerm.php
-
-		-
 			message: '#^Cannot call method isPast\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
 			path: app/Models/PortalAccessToken.php
-
-		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ProjectStatusTranslation, \$this\(App\\Models\\ProjectStatus\)\>\) of method App\\Models\\ProjectStatus\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\ProjectStatus\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/ProjectStatus.php
-
-		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\RegionTranslation, \$this\(App\\Models\\Region\)\>\) of method App\\Models\\Region\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\Region\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/Region.php
 
 		-
 			message: '#^Class App\\Models\\Project not found\.$#'
@@ -1313,12 +1235,6 @@ parameters:
 			identifier: generics.notSubtype
 			count: 1
 			path: app/Models/ServiceReport.php
-
-		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\TaskStatusTranslation, \$this\(App\\Models\\TaskStatus\)\>\) of method App\\Models\\TaskStatus\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\TaskStatus\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/TaskStatus.php
 
 		-
 			message: '#^Method App\\Models\\Tenant\:\:users\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User, \$this\(App\\Models\\Tenant\), Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User, \$this\(App\\Models\\Tenant\), App\\Models\\Pivots\\AuditedPivot, ''pivot''\>\.$#'
@@ -1363,22 +1279,10 @@ parameters:
 			path: app/Models/User.php
 
 		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\VatCodeTranslation, \$this\(App\\Models\\VatCode\)\>\) of method App\\Models\\VatCode\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\VatCode\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/VatCode.php
-
-		-
 			message: '#^Anonymous function never returns null so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
 			path: app/Models/WorkOrder.php
-
-		-
-			message: '#^Return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\WorkflowStateTranslation, \$this\(App\\Models\\WorkflowState\)\>\) of method App\\Models\\WorkflowState\:\:translations\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\WorkflowState\)\>\) of method App\\Models\\Concerns\\HasTranslations\:\:translations\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: app/Models/WorkflowState.php
 
 		-
 			message: '#^Argument of an invalid type Illuminate\\Routing\\RouteCollectionInterface supplied for foreach, only iterables are supported\.$#'

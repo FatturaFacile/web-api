@@ -86,6 +86,8 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/report-downloads',
         'api/v1/system/bootstrap-support',
         'api/v1/translations',
+        // i18n dictionary (Mod 002): public like the translations above, the tenant counts only for a signed-in member, see Localization\DictionaryEndpointTest.
+        'api/v1/i18n/dictionary',
         // MES Core integration (issue #184): a service caller authenticated by an HMAC signature bound to the tenants of its key (VerifyMesSignature), see Manufacturing\MesSignatureTest.
         'api/v1/manufacturing/mes-sync',
         'api/v1/manufacturing/mes-feedback',

@@ -8746,6 +8746,7 @@ CREATE TABLE "delivery_notes"(
   "sender_name" varchar,
   "sender_address" varchar,
   "final_recipient_name" varchar,
+  "locale" varchar,
   foreign key("contact_id") references "contacts"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   foreign key("sales_order_id") references "sales_orders"("id") on delete set null on update no action,
@@ -16507,6 +16508,7 @@ CREATE TABLE "invoices"(
   "ebill_status" varchar,
   "ebill_transmission_id" varchar,
   "ebill_last_event_at" datetime,
+  "locale" varchar,
   foreign key("payment_term_id") references "payment_terms"("id") on delete set null on update no action,
   foreign key("quote_id") references "quotes"("id") on delete set null on update no action,
   foreign key("delivery_note_id") references "delivery_notes"("id") on delete set null on update no action,
@@ -19405,6 +19407,7 @@ CREATE TABLE "payment_reminders"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "locale" varchar,
   foreign key("invoice_id") references "invoices"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -23217,6 +23220,7 @@ CREATE TABLE "purchase_orders"(
   "last_reminder_at" datetime,
   "cup_code" varchar,
   "cig_code" varchar,
+  "locale" varchar,
   foreign key("purchase_requisition_id") references "purchase_requisitions"("id") on delete set null on update no action,
   foreign key("supplier_contract_id") references "supplier_contracts"("id") on delete set null on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
@@ -23792,6 +23796,7 @@ CREATE TABLE "quotes"(
   "is_current_revision" tinyint(1) not null default '1',
   "revision_notes" text,
   "allow_optional_selection" tinyint(1) not null default '0',
+  "locale" varchar,
   foreign key("contact_id") references "contacts"("id") on delete cascade on update no action,
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action,
   primary key("id")
@@ -28509,6 +28514,8 @@ CREATE TABLE "translations"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "is_locked" tinyint(1) not null default '0',
+  "is_deprecated" tinyint(1) not null default '0',
   foreign key("tenant_id") references "tenants"("id") on delete cascade on update no action
 );
 CREATE UNIQUE INDEX "translations_tenant_id_locale_key_unique" on "translations"(
@@ -61605,6 +61612,173 @@ CREATE INDEX "mbp_parcel_idx" on "mill_byproduct_movements"(
   "tenant_id",
   "cadastral_parcel"
 );
+CREATE INDEX "translations_locale_group_index" on "translations"(
+  "locale",
+  "group"
+);
+CREATE UNIQUE INDEX "translations_tenant_locale_group_key_unique" on "translations"(
+  "tenant_id",
+  "locale",
+  "group",
+  "key"
+);
+CREATE TABLE "shipping_reasons"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "description" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "shipping_reasons_tenant_code_unique" on "shipping_reasons"(
+  "tenant_id",
+  "code"
+);
+CREATE TABLE "standard_texts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "title" varchar not null,
+  "body" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "standard_texts_tenant_code_unique" on "standard_texts"(
+  "tenant_id",
+  "code"
+);
+CREATE TABLE "product_translations"(
+  "id" integer primary key autoincrement not null,
+  "product_id" varchar not null,
+  "locale" varchar not null,
+  "name" varchar,
+  "description" text,
+  "tenant_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("product_id") references "products"("id") on delete cascade,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade
+);
+CREATE UNIQUE INDEX "product_translations_product_id_locale_unique" on "product_translations"(
+  "product_id",
+  "locale"
+);
+CREATE INDEX "product_translations_locale_index" on "product_translations"(
+  "locale"
+);
+CREATE TABLE "product_category_translations"(
+  "id" integer primary key autoincrement not null,
+  "product_category_id" varchar not null,
+  "locale" varchar not null,
+  "name" varchar,
+  "description" text,
+  "tenant_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("product_category_id") references "product_categories"("id") on delete cascade,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade
+);
+CREATE UNIQUE INDEX "product_category_translations_product_category_id_locale_unique" on "product_category_translations"(
+  "product_category_id",
+  "locale"
+);
+CREATE INDEX "product_category_translations_locale_index" on "product_category_translations"(
+  "locale"
+);
+CREATE TABLE "unit_of_measure_translations"(
+  "id" integer primary key autoincrement not null,
+  "unit_of_measure_id" varchar not null,
+  "locale" varchar not null,
+  "name" varchar,
+  "symbol" varchar,
+  "tenant_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("unit_of_measure_id") references "units_of_measure"("id") on delete cascade,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade
+);
+CREATE UNIQUE INDEX "unit_of_measure_translations_unit_of_measure_id_locale_unique" on "unit_of_measure_translations"(
+  "unit_of_measure_id",
+  "locale"
+);
+CREATE INDEX "unit_of_measure_translations_locale_index" on "unit_of_measure_translations"(
+  "locale"
+);
+CREATE TABLE "shipping_reason_translations"(
+  "id" integer primary key autoincrement not null,
+  "shipping_reason_id" varchar not null,
+  "locale" varchar not null,
+  "name" varchar,
+  "description" text,
+  "tenant_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("shipping_reason_id") references "shipping_reasons"("id") on delete cascade,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade
+);
+CREATE UNIQUE INDEX "shipping_reason_translations_shipping_reason_id_locale_unique" on "shipping_reason_translations"(
+  "shipping_reason_id",
+  "locale"
+);
+CREATE INDEX "shipping_reason_translations_locale_index" on "shipping_reason_translations"(
+  "locale"
+);
+CREATE TABLE "standard_text_translations"(
+  "id" integer primary key autoincrement not null,
+  "standard_text_id" varchar not null,
+  "locale" varchar not null,
+  "title" varchar,
+  "body" text,
+  "tenant_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("standard_text_id") references "standard_texts"("id") on delete cascade,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade
+);
+CREATE UNIQUE INDEX "standard_text_translations_standard_text_id_locale_unique" on "standard_text_translations"(
+  "standard_text_id",
+  "locale"
+);
+CREATE INDEX "standard_text_translations_locale_index" on "standard_text_translations"(
+  "locale"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -62113,3 +62287,4 @@ INSERT INTO migrations VALUES(504,'2028_01_16_000100_create_bonded_warehouses_mo
 INSERT INTO migrations VALUES(505,'2028_01_17_000100_create_dairy_cheese_mod298_tables',45);
 INSERT INTO migrations VALUES(506,'2028_01_17_000100_create_beekeeping_mod296_tables',46);
 INSERT INTO migrations VALUES(507,'2028_01_17_000100_create_olive_mill_mod297_tables',47);
+INSERT INTO migrations VALUES(508,'2028_01_18_000100_create_localization_engine_tables',48);

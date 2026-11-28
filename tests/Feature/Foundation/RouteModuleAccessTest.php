@@ -71,6 +71,13 @@ function writeRoutesWithoutModule(): array
         'POST api/v1/documents/{type}/{id}/email' => 'write role of the module of the document',
         // Routes that check access themselves.
         'POST api/v1/broadcasting/auth' => 'channel authorisation callbacks',
+        // Localization engine (Mod 002): the translation policy limits writes to owners and administrators (TranslationPolicy, FormRequest::authorize), reads to the members.
+        'PUT api/v1/profile/locale' => 'own interface language',
+        'PUT api/v1/settings/localization' => 'TranslationPolicy, owners and administrators',
+        'PUT api/v1/settings/translations/{group}/{key}' => 'TranslationPolicy, owners and administrators',
+        'POST api/v1/settings/translations/import' => 'TranslationPolicy, owners and administrators',
+        'PUT api/v1/{resource}/{id}/translations' => 'TranslationPolicy, owners and administrators',
+        'PUT api/v1/documents/{type}/{id}/locale' => 'RecordAccess: write role of the module of the document',
         'POST api/v1/catalog/customs-taric-codes' => 'customs.manage gate of the controller',
         'PUT api/v1/catalog/customs-taric-codes/{id}' => 'customs.manage gate of the controller',
         'PATCH api/v1/catalog/customs-taric-codes/{id}' => 'customs.manage gate of the controller',

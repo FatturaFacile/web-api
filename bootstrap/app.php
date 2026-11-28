@@ -76,6 +76,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // hash: it is not encrypted (see SsoBrowserBinding).
         $middleware->encryptCookies(except: [SsoBrowserBinding::COOKIE]);
 
+        // A single space is a valid thousands separator of the number format (localization settings): trimming would erase it.
+        $middleware->trimStrings(except: ['number_format.thousands_separator']);
+
         $middleware->statefulApi();
         $middleware->throttleApi();
 
