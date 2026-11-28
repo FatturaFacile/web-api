@@ -41,7 +41,7 @@ final class GarmentService
                 'epc_uid_rfid_hex' => $epc,
                 'current_lifecycle_state' => LifecycleState::CleanInStock->value,
                 'created_by' => $userId,
-            ]);
+            ])->refresh();
 
             $this->lifecycle->record($garment, GarmentEventType::Registered, Carbon::now(), null, LifecycleState::CleanInStock, ['userId' => $userId]);
 
