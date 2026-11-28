@@ -25618,6 +25618,7 @@ CREATE TABLE "stock_lots"(
   "created_by" varchar,
   "updated_by" varchar,
   "deleted_by" varchar,
+  "customs_status" varchar,
   foreign key("stock_item_id") references "stock_items"("id") on delete cascade on update no action,
   primary key("id")
 );
@@ -59816,6 +59817,741 @@ CREATE INDEX "fiscal_cu_year_ix" on "fiscal_cu_autonomous_records"(
   "tenant_id",
   "tax_year"
 );
+CREATE TABLE "customs_warehouse_authorizations"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "warehouse_id" varchar not null,
+  "authorization_code" varchar not null,
+  "customs_office_code" varchar not null,
+  "regime_type" varchar not null,
+  "warehouse_subtype" varchar not null,
+  "cgu_guarantee_reference" varchar,
+  "cgu_max_ceiling_amount" numeric not null default '0',
+  "cgu_utilized_amount" numeric not null default '0',
+  "currency" varchar not null default 'EUR',
+  "aeo_certificate_number" varchar,
+  "aeo_status" varchar not null default 'None',
+  "aeo_next_audit_date" date,
+  "valid_from" date not null,
+  "valid_to" date,
+  "is_active" tinyint(1) not null default '1',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("warehouse_id") references "warehouses"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cwa_code_uq" on "customs_warehouse_authorizations"(
+  "tenant_id",
+  "authorization_code"
+);
+CREATE INDEX "cwa_regime_idx" on "customs_warehouse_authorizations"(
+  "tenant_id",
+  "regime_type",
+  "is_active"
+);
+CREATE INDEX "cwa_warehouse_idx" on "customs_warehouse_authorizations"(
+  "tenant_id",
+  "warehouse_id"
+);
+CREATE TABLE "customs_bonded_mrn_lots"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "authorization_id" varchar not null,
+  "mrn_number" varchar not null,
+  "mrn_item_number" integer not null default '1',
+  "declaration_type" varchar not null,
+  "entry_date" date not null,
+  "product_id" varchar not null,
+  "wms_lot_id" varchar,
+  "taric_hs_code" varchar not null,
+  "country_of_origin" varchar not null,
+  "preferential_origin" tinyint(1) not null default '0',
+  "preferential_agreement_code" varchar,
+  "initial_quantity" numeric not null,
+  "remaining_quantity" numeric not null,
+  "unit_of_measure" varchar not null default 'EA',
+  "initial_net_weight_kg" numeric not null default '0',
+  "remaining_net_weight_kg" numeric not null default '0',
+  "initial_gross_weight_kg" numeric not null default '0',
+  "remaining_gross_weight_kg" numeric not null default '0',
+  "customs_statistical_value" numeric not null default '0',
+  "duty_rate_percent" numeric not null default '0',
+  "vat_rate_percent" numeric not null default '0',
+  "suspended_duty_amount" numeric not null default '0',
+  "suspended_vat_amount" numeric not null default '0',
+  "cgu_engaged_amount" numeric not null default '0',
+  "customs_status" varchar not null default 'NonUnion_Suspended',
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("authorization_id") references "customs_warehouse_authorizations"("id") on delete restrict,
+  foreign key("product_id") references "products"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "cbml_mrn_item_uq" on "customs_bonded_mrn_lots"(
+  "tenant_id",
+  "mrn_number",
+  "mrn_item_number"
+);
+CREATE INDEX "cbml_fifo_idx" on "customs_bonded_mrn_lots"(
+  "tenant_id",
+  "authorization_id",
+  "product_id",
+  "entry_date"
+);
+CREATE INDEX "cbml_status_idx" on "customs_bonded_mrn_lots"(
+  "tenant_id",
+  "customs_status"
+);
+CREATE INDEX "cbml_taric_idx" on "customs_bonded_mrn_lots"(
+  "tenant_id",
+  "taric_hs_code"
+);
+CREATE INDEX "customs_bonded_mrn_lots_wms_lot_id_index" on "customs_bonded_mrn_lots"(
+  "wms_lot_id"
+);
+CREATE TABLE "customs_discharge_movements"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "authorization_id" varchar not null,
+  "mrn_lot_id" varchar not null,
+  "discharge_type" varchar not null,
+  "discharge_mrn_number" varchar,
+  "discharge_date" date not null,
+  "allocation_method" varchar not null,
+  "discharged_quantity" numeric not null,
+  "discharged_net_weight_kg" numeric not null default '0',
+  "released_customs_value" numeric not null default '0',
+  "paid_duty_amount" numeric not null default '0',
+  "paid_vat_amount" numeric not null default '0',
+  "extinguished_duty_amount" numeric not null default '0',
+  "extinguished_vat_amount" numeric not null default '0',
+  "cgu_released_amount" numeric not null default '0',
+  "usual_handling_code" varchar,
+  "usual_handling_notes" text,
+  "customs_prospectus_document_id" varchar,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("authorization_id") references "customs_warehouse_authorizations"("id") on delete restrict,
+  foreign key("mrn_lot_id") references "customs_bonded_mrn_lots"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "cdm_lot_idx" on "customs_discharge_movements"(
+  "tenant_id",
+  "mrn_lot_id",
+  "discharge_date"
+);
+CREATE INDEX "cdm_type_idx" on "customs_discharge_movements"(
+  "tenant_id",
+  "authorization_id",
+  "discharge_type"
+);
+CREATE INDEX "customs_discharge_movements_customs_prospectus_document_id_index" on "customs_discharge_movements"(
+  "customs_prospectus_document_id"
+);
+CREATE TABLE "customs_cgu_guarantee_ledger"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "authorization_id" varchar not null,
+  "reference_type" varchar not null,
+  "reference_id" varchar,
+  "movement_direction" varchar not null,
+  "duty_amount" numeric not null default '0',
+  "vat_amount" numeric not null default '0',
+  "total_cgu_delta" numeric not null,
+  "running_utilized_balance" numeric not null,
+  "remaining_plafond" numeric not null,
+  "recorded_at" datetime not null,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("authorization_id") references "customs_warehouse_authorizations"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "ccgl_auth_idx" on "customs_cgu_guarantee_ledger"(
+  "tenant_id",
+  "authorization_id",
+  "recorded_at"
+);
+CREATE INDEX "ccgl_ref_idx" on "customs_cgu_guarantee_ledger"(
+  "reference_type",
+  "reference_id"
+);
+CREATE TABLE "vat_depot_50bis_registers"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "authorization_id" varchar not null,
+  "register_progressive_number" integer not null,
+  "movement_type" varchar not null,
+  "movement_date" date not null,
+  "product_id" varchar not null,
+  "lot_reference" varchar,
+  "quantity" numeric not null,
+  "base_goods_value" numeric not null default '0',
+  "storage_and_processing_services_value" numeric not null default '0',
+  "total_taxable_extraction_base" numeric not null default '0',
+  "vat_rate_percent" numeric not null default '0',
+  "vat_amount" numeric not null default '0',
+  "self_invoice_id" varchar,
+  "sdi_document_type" varchar not null default 'None',
+  "f24_payment_reference" varchar,
+  "f24_payment_date" date,
+  "notes" text,
+  "created_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("authorization_id") references "customs_warehouse_authorizations"("id") on delete restrict,
+  foreign key("product_id") references "products"("id") on delete restrict,
+  foreign key("self_invoice_id") references "invoices"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "vd50_progressive_uq" on "vat_depot_50bis_registers"(
+  "tenant_id",
+  "authorization_id",
+  "register_progressive_number"
+);
+CREATE INDEX "vd50_date_idx" on "vat_depot_50bis_registers"(
+  "tenant_id",
+  "authorization_id",
+  "movement_date"
+);
+CREATE INDEX "vd50_stock_idx" on "vat_depot_50bis_registers"(
+  "tenant_id",
+  "product_id",
+  "lot_reference"
+);
+CREATE TABLE "aeo_compliance_audits"(
+  "id" varchar not null,
+  "tenant_id" varchar not null,
+  "authorization_id" varchar not null,
+  "audit_type" varchar not null,
+  "audit_date" date not null,
+  "mrn_lot_id" varchar,
+  "product_id" varchar,
+  "wms_physical_quantity" numeric not null default '0',
+  "customs_ledger_quantity" numeric not null default '0',
+  "discrepancy_quantity" numeric not null default '0',
+  "discrepancy_status" varchar not null default 'Matched',
+  "partner_or_carrier_name" varchar,
+  "partner_aeo_status" varchar,
+  "security_seal_verified" tinyint(1) not null default '0',
+  "findings" text,
+  "corrective_action" text,
+  "auditor_user_id" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("authorization_id") references "customs_warehouse_authorizations"("id") on delete restrict,
+  foreign key("mrn_lot_id") references "customs_bonded_mrn_lots"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "aca_auth_idx" on "aeo_compliance_audits"(
+  "tenant_id",
+  "authorization_id",
+  "audit_date"
+);
+CREATE INDEX "aca_status_idx" on "aeo_compliance_audits"(
+  "tenant_id",
+  "audit_type",
+  "discrepancy_status"
+);
+CREATE INDEX "aeo_compliance_audits_product_id_index" on "aeo_compliance_audits"(
+  "product_id"
+);
+CREATE INDEX "stock_lots_customs_status_index" on "stock_lots"(
+  "customs_status"
+);
+CREATE TABLE "dairy_breeders"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contact_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "jurisdiction" varchar not null,
+  "farm_code" varchar,
+  "tvd_number" varchar,
+  "bdm_number" varchar,
+  "asl_code" varchar,
+  "cuaa" varchar,
+  "municipality" varchar,
+  "canton_or_province" varchar,
+  "is_active" tinyint(1) not null default '1',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_br_code_ix" on "dairy_breeders"("tenant_id", "code");
+CREATE INDEX "dairy_br_jur_ix" on "dairy_breeders"(
+  "tenant_id",
+  "jurisdiction"
+);
+CREATE TABLE "dairy_milk_tanks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "capacity_liters" numeric not null default '0',
+  "status" varchar not null default 'active',
+  "last_cleaned_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_tk_code_ix" on "dairy_milk_tanks"("tenant_id", "code");
+CREATE TABLE "dairy_milk_pricing_grids"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "jurisdiction" varchar not null,
+  "cheese_type" varchar,
+  "base_price_per_kg" numeric not null default '0',
+  "cheese_milk_supplement_per_kg" numeric not null default '0',
+  "dop_premium_per_kg" numeric not null default '0',
+  "valid_from" date not null,
+  "valid_to" date,
+  "is_active" tinyint(1) not null default '1',
+  "tiers" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_pg_jur_ix" on "dairy_milk_pricing_grids"(
+  "tenant_id",
+  "jurisdiction"
+);
+CREATE TABLE "dairy_weight_loss_curves"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "cheese_type" varchar not null,
+  "name" varchar not null,
+  "points" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_wlc_type_ix" on "dairy_weight_loss_curves"(
+  "tenant_id",
+  "cheese_type"
+);
+CREATE TABLE "dairy_monthly_settlements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "breeder_id" varchar not null,
+  "period" varchar not null,
+  "grid_id" varchar not null,
+  "status" varchar not null default 'draft',
+  "total_kg" numeric not null default '0',
+  "total_liters" numeric not null default '0',
+  "avg_fat_pct" numeric not null default '0',
+  "avg_protein_pct" numeric not null default '0',
+  "base_amount" numeric not null default '0',
+  "quality_adjustment" numeric not null default '0',
+  "supplement_amount" numeric not null default '0',
+  "penalty_amount" numeric not null default '0',
+  "gross_amount" numeric not null default '0',
+  "vat_amount" numeric not null default '0',
+  "net_amount" numeric not null default '0',
+  "currency" varchar not null default 'EUR',
+  "document_id" varchar,
+  "lines" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("breeder_id") references "dairy_breeders"("id") on delete cascade,
+  foreign key("grid_id") references "dairy_milk_pricing_grids"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_ms_period_ix" on "dairy_monthly_settlements"(
+  "tenant_id",
+  "period"
+);
+CREATE INDEX "dairy_ms_breeder_period_ix" on "dairy_monthly_settlements"(
+  "tenant_id",
+  "breeder_id",
+  "period"
+);
+CREATE TABLE "dairy_milk_deliveries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "breeder_id" varchar not null,
+  "tank_id" varchar not null,
+  "route_code" varchar,
+  "tanker_plate" varchar,
+  "collection_date" date not null,
+  "session" varchar not null,
+  "liters" numeric not null,
+  "density" numeric not null default '1.032',
+  "kg" numeric not null,
+  "remaining_liters" numeric not null default '0',
+  "remaining_kg" numeric not null default '0',
+  "temperature_c" numeric,
+  "status" varchar not null default 'registered',
+  "monthly_settlement_id" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("breeder_id") references "dairy_breeders"("id") on delete cascade,
+  foreign key("tank_id") references "dairy_milk_tanks"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_dl_date_ix" on "dairy_milk_deliveries"(
+  "tenant_id",
+  "collection_date"
+);
+CREATE INDEX "dairy_dl_tank_ix" on "dairy_milk_deliveries"(
+  "tenant_id",
+  "tank_id",
+  "collection_date"
+);
+CREATE INDEX "dairy_dl_breeder_ix" on "dairy_milk_deliveries"(
+  "tenant_id",
+  "breeder_id",
+  "collection_date"
+);
+CREATE TABLE "dairy_milk_quality_tests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "breeder_id" varchar not null,
+  "delivery_id" varchar,
+  "sample_date" date not null,
+  "period_start" date,
+  "period_end" date,
+  "fat_pct" numeric,
+  "protein_pct" numeric,
+  "casein_pct" numeric,
+  "urea_mg_l" numeric,
+  "tbc_cfu_ml" integer,
+  "scc_cells_ml" integer,
+  "freezing_point_c" numeric,
+  "inhibitors" varchar not null default 'not_tested',
+  "laboratory" varchar,
+  "source_format" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("breeder_id") references "dairy_breeders"("id") on delete cascade,
+  foreign key("delivery_id") references "dairy_milk_deliveries"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_qt_breeder_ix" on "dairy_milk_quality_tests"(
+  "tenant_id",
+  "breeder_id",
+  "sample_date"
+);
+CREATE TABLE "dairy_cheese_vat_batches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "cheese_type" varchar not null,
+  "status" varchar not null default 'open',
+  "production_date" date not null,
+  "vat_number" varchar,
+  "milk_kg" numeric not null default '0',
+  "starter_culture" varchar,
+  "starter_amount" numeric,
+  "rennet_type" varchar,
+  "rennet_ml" numeric,
+  "ph_log" text,
+  "curd_yield_kg" numeric,
+  "fresh_yield_24h_kg" numeric,
+  "fresh_yield_24h_pct" numeric,
+  "final_aged_yield_kg" numeric,
+  "final_aged_yield_pct" numeric,
+  "plaque_prefix" varchar,
+  "plaque_from" integer,
+  "plaque_to" integer,
+  "wheels_count" integer not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_vb_code_ix" on "dairy_cheese_vat_batches"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "dairy_vb_date_ix" on "dairy_cheese_vat_batches"(
+  "tenant_id",
+  "production_date"
+);
+CREATE TABLE "dairy_vat_batch_tank_usages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "vat_batch_id" varchar not null,
+  "tank_id" varchar not null,
+  "liters" numeric not null,
+  "kg" numeric not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("vat_batch_id") references "dairy_cheese_vat_batches"("id") on delete cascade,
+  foreign key("tank_id") references "dairy_milk_tanks"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_vu_batch_ix" on "dairy_vat_batch_tank_usages"(
+  "tenant_id",
+  "vat_batch_id"
+);
+CREATE TABLE "dairy_vat_batch_milk_draws"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "vat_batch_id" varchar not null,
+  "tank_id" varchar not null,
+  "delivery_id" varchar not null,
+  "breeder_id" varchar not null,
+  "liters" numeric not null,
+  "kg" numeric not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("vat_batch_id") references "dairy_cheese_vat_batches"("id") on delete cascade,
+  foreign key("tank_id") references "dairy_milk_tanks"("id") on delete restrict,
+  foreign key("delivery_id") references "dairy_milk_deliveries"("id") on delete restrict,
+  foreign key("breeder_id") references "dairy_breeders"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_vd_batch_ix" on "dairy_vat_batch_milk_draws"(
+  "tenant_id",
+  "vat_batch_id"
+);
+CREATE INDEX "dairy_vd_delivery_ix" on "dairy_vat_batch_milk_draws"(
+  "tenant_id",
+  "delivery_id"
+);
+CREATE INDEX "dairy_vd_breeder_ix" on "dairy_vat_batch_milk_draws"(
+  "tenant_id",
+  "breeder_id"
+);
+CREATE TABLE "dairy_aging_racks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "room" varchar not null,
+  "rack" varchar not null,
+  "shelf" varchar not null,
+  "level" integer not null default '1',
+  "capacity_wheels" integer not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_rk_room_ix" on "dairy_aging_racks"(
+  "tenant_id",
+  "room",
+  "rack"
+);
+CREATE TABLE "dairy_cheese_aging_wheels"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "serial" varchar not null,
+  "vat_batch_id" varchar not null,
+  "rack_id" varchar,
+  "position" integer,
+  "status" varchar not null default 'brine',
+  "grade" varchar not null default 'ungraded',
+  "branded" tinyint(1) not null default '0',
+  "branded_at" datetime,
+  "initial_weight_kg" numeric not null,
+  "measured_weight_kg" numeric,
+  "last_weighed_at" datetime,
+  "sold_at" datetime,
+  "sold_weight_kg" numeric,
+  "sale_variance_kg" numeric,
+  "customer_id" varchar,
+  "customer_name" varchar,
+  "invoice_ref" varchar,
+  "grading_notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("vat_batch_id") references "dairy_cheese_vat_batches"("id") on delete cascade,
+  foreign key("rack_id") references "dairy_aging_racks"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_wh_serial_ix" on "dairy_cheese_aging_wheels"(
+  "tenant_id",
+  "serial"
+);
+CREATE INDEX "dairy_wh_status_ix" on "dairy_cheese_aging_wheels"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "dairy_wh_batch_ix" on "dairy_cheese_aging_wheels"(
+  "tenant_id",
+  "vat_batch_id"
+);
+CREATE INDEX "dairy_wh_rack_ix" on "dairy_cheese_aging_wheels"(
+  "tenant_id",
+  "rack_id"
+);
+CREATE TABLE "dairy_aging_care_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "care_type" varchar not null,
+  "status" varchar not null default 'scheduled',
+  "scope" varchar not null,
+  "target_id" varchar not null,
+  "scheduled_for" date not null,
+  "executed_at" datetime,
+  "wheels_affected" integer not null default '0',
+  "performed_by" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_cl_status_ix" on "dairy_aging_care_logs"(
+  "tenant_id",
+  "status",
+  "scheduled_for"
+);
+CREATE INDEX "dairy_cl_target_ix" on "dairy_aging_care_logs"(
+  "tenant_id",
+  "scope",
+  "target_id"
+);
+CREATE TABLE "dairy_regulatory_submissions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "authority" varchar not null,
+  "period" varchar not null,
+  "status" varchar not null default 'generated',
+  "format" varchar not null,
+  "record_count" integer not null default '0',
+  "checksum" varchar,
+  "generated_at" datetime not null,
+  "submitted_at" datetime,
+  "file_name" varchar,
+  "validation_errors" text,
+  "payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_rs_period_ix" on "dairy_regulatory_submissions"(
+  "tenant_id",
+  "authority",
+  "period"
+);
+CREATE TABLE "dairy_recall_reports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source_type" varchar not null,
+  "source_id" varchar not null,
+  "reason" text not null,
+  "applied" tinyint(1) not null default '0',
+  "generated_at" datetime not null,
+  "payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_rr_source_ix" on "dairy_recall_reports"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
 INSERT INTO migrations VALUES(2,'0001_01_01_000001_create_cache_table',1);
@@ -60319,3 +61055,5 @@ INSERT INTO migrations VALUES(499,'2028_01_15_000100_create_esterometro_mod027_t
 INSERT INTO migrations VALUES(500,'2028_01_16_000100_create_crisis_monitoring_mod357_tables',43);
 INSERT INTO migrations VALUES(501,'2028_01_16_000100_create_time_travel_mod354_tables',44);
 INSERT INTO migrations VALUES(502,'2028_01_16_000100_create_withholding_recipients_mod356_tables',44);
+INSERT INTO migrations VALUES(503,'2028_01_16_000100_create_bonded_warehouses_mod353_tables',45);
+INSERT INTO migrations VALUES(504,'2028_01_17_000100_create_dairy_cheese_mod298_tables',45);

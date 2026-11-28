@@ -168,6 +168,7 @@ class DatabaseSeeder extends Seeder
             PlmReferenceAndDemoSeeder::class,
             NewerModulesReferenceSeeder::class,
             GelatoReferenceSeeder::class,
+            DairyCheeseReferenceSeeder::class,
             EnterpriseDemoMasterSeeder::class,
             AcademyLearningContentSeeder::class,
             AcademyContextualHelpSeeder::class,
