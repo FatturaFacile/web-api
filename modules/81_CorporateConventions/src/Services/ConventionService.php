@@ -48,7 +48,7 @@ final class ConventionService
             $convention->save();
             $this->syncRules($convention, $rules, $tenantId, $userId);
 
-            return $convention->load('discountRules');
+            return $convention->refresh()->load('discountRules');
         });
     }
 
