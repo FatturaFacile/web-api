@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'messages' => [
+        'saved' => 'Dati salvati.',
+        'deleted' => 'Elemento eliminato.',
+        'ticket_booked' => 'Turno prenotato.',
+        'ppe_assigned' => 'Attrezzatura consegnata.',
+        'course_started' => 'Il gruppo è sul percorso.',
+        'ticket_no_show' => 'Prenotazione segnata come assente.',
+        'ppe_returned' => 'Attrezzatura restituita.',
+        'briefing_done' => 'Briefing di sicurezza registrato.',
+        'waiver_signed' => 'Manleva firmata.',
+        'inspection_recorded' => 'Ispezione registrata.',
+        'daily_check_recorded' => 'Controllo giornaliero di apertura registrato.',
+        'school_confirmed' => 'Prenotazione scolastica confermata.',
+        'school_completed' => 'Prenotazione scolastica completata.',
+        'school_invoiced' => 'Fattura elettronica generata.',
+    ],
+    'errors' => [
+        'refused' => 'Operazione rifiutata.',
+        'slot_sold_out' => 'Imbracature taglia :size esaurite in questo turno: :remaining disponibili, :requested richieste.',
+        'slot_closed' => 'Il turno non è aperto in quel giorno.',
+        'slot_invalid' => 'Un turno deve finire dopo il suo inizio.',
+        'slot_has_tickets' => 'Il turno ha prenotazioni aperte e non può essere eliminato: disattivalo.',
+        'ppe_blocked' => 'Il DPI :serial_code non può essere consegnato (:reason).',
+        'ppe_not_found' => 'Nessun DPI con questo codice a barre è registrato o in uso sul biglietto.',
+        'ppe_size_mismatch' => 'La taglia del DPI (:ppe_size) non è adatta al partecipante (:participant_size).',
+        'ppe_already_assigned' => 'Il partecipante ha già un dispositivo di questa categoria.',
+        'ppe_in_use' => 'Il DPI è in uso presso un visitatore e non può essere eliminato.',
+        'waiver_missing' => 'Prima di consegnare l\'attrezzatura serve una manleva firmata che copra tutti i partecipanti.',
+        'waiver_already_signed' => 'La manleva di questa prenotazione è già firmata.',
+        'headcount_mismatch' => 'La manleva copre :given persone ma la prenotazione ne ha :expected.',
+        'invalid_transition' => 'Lo stato non può passare da :from a :to.',
+        'participant_not_found' => 'Il partecipante non è su questo biglietto.',
+        'ticket_not_found' => 'Nessuna prenotazione corrisponde a questo codice.',
+        'picnic_capacity_exceeded' => 'L\'area picnic è piena in quel giorno: :taken posti su :capacity occupati, :requested richiesti.',
+        'already_invoiced' => 'La prenotazione è già stata fatturata.',
+        'booking_not_confirmed' => 'Conferma la prenotazione prima di fatturarla.',
+        'booking_locked' => 'Solo una prenotazione in bozza può essere eliminata.',
+        'workshop_not_found' => 'Il laboratorio non è disponibile.',
+        'workshop_code_taken' => 'Esiste già un laboratorio con questo codice.',
+        'workshop_global' => 'Un laboratorio standard non può essere eliminato: modificalo per avere la tua copia e disattiva quella.',
+        'workshop_in_use' => 'Il laboratorio è usato da una prenotazione scolastica.',
+    ],
+    'invoice' => [
+        'free_teachers' => 'Docenti accompagnatori (gratuiti)',
+        'wording' => 'Visita alla fattoria didattica di :institute del :date, :students studenti.',
+    ],
+];

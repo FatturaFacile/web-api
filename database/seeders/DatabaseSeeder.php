@@ -168,6 +168,7 @@ class DatabaseSeeder extends Seeder
             PlmReferenceAndDemoSeeder::class,
             NewerModulesReferenceSeeder::class,
             GelatoReferenceSeeder::class,
+            DairyCheeseReferenceSeeder::class,
             EnterpriseDemoMasterSeeder::class,
             AcademyLearningContentSeeder::class,
             AcademyContextualHelpSeeder::class,
@@ -180,6 +181,7 @@ class DatabaseSeeder extends Seeder
             FiduciaryPortalLocalizationSeeder::class,
             EsterometroClassificationRuleSeeder::class,
             CrisisMonitoringReferenceSeeder::class,
+            AdventureParksDataSeeder::class,
         ]);
     }
 }

@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'messages' => [
+        'saved' => 'Données enregistrées.',
+        'deleted' => 'Élément supprimé.',
+        'ticket_booked' => 'Créneau réservé.',
+        'ppe_assigned' => 'Équipement remis.',
+        'course_started' => 'Le groupe est sur le parcours.',
+        'ticket_no_show' => 'Réservation marquée comme absente.',
+        'ppe_returned' => 'Équipement rendu.',
+        'briefing_done' => 'Briefing de sécurité enregistré.',
+        'waiver_signed' => 'Décharge signée.',
+        'inspection_recorded' => 'Inspection enregistrée.',
+        'daily_check_recorded' => 'Contrôle quotidien d\'ouverture enregistré.',
+        'school_confirmed' => 'Réservation scolaire confirmée.',
+        'school_completed' => 'Réservation scolaire terminée.',
+        'school_invoiced' => 'Facture électronique générée.',
+    ],
+    'errors' => [
+        'refused' => 'L\'opération a été refusée.',
+        'slot_sold_out' => 'Plus assez de harnais de taille :size dans ce créneau : :remaining disponibles, :requested demandés.',
+        'slot_closed' => 'Le créneau n\'est pas ouvert ce jour-là.',
+        'slot_invalid' => 'Un créneau doit se terminer après son début.',
+        'slot_has_tickets' => 'Le créneau a des réservations ouvertes et ne peut pas être supprimé : désactivez-le.',
+        'ppe_blocked' => 'L\'EPI :serial_code ne peut pas être remis (:reason).',
+        'ppe_not_found' => 'Aucun EPI avec ce code-barres n\'est enregistré ou remis sur le billet.',
+        'ppe_size_mismatch' => 'La taille de l\'EPI (:ppe_size) ne convient pas au participant (:participant_size).',
+        'ppe_already_assigned' => 'Le participant détient déjà un équipement de cette catégorie.',
+        'ppe_in_use' => 'L\'EPI est chez un visiteur et ne peut pas être supprimé.',
+        'waiver_missing' => 'Une décharge signée couvrant tous les participants est requise avant de remettre l\'équipement.',
+        'waiver_already_signed' => 'La décharge de cette réservation est déjà signée.',
+        'headcount_mismatch' => 'La décharge couvre :given personnes mais la réservation en compte :expected.',
+        'invalid_transition' => 'Le statut ne peut pas passer de :from à :to.',
+        'participant_not_found' => 'Le participant n\'est pas sur ce billet.',
+        'ticket_not_found' => 'Aucune réservation ne correspond à ce code.',
+        'picnic_capacity_exceeded' => 'L\'aire de pique-nique est pleine ce jour-là : :taken places sur :capacity occupées, :requested demandées.',
+        'already_invoiced' => 'La réservation a déjà été facturée.',
+        'booking_not_confirmed' => 'Confirmez la réservation avant de la facturer.',
+        'booking_locked' => 'Seule une réservation en brouillon peut être supprimée.',
+        'workshop_not_found' => 'L\'atelier n\'est pas disponible.',
+        'workshop_code_taken' => 'Un atelier avec ce code existe déjà.',
+        'workshop_global' => 'Un atelier standard ne peut pas être supprimé : modifiez-le pour obtenir votre propre copie et désactivez-la.',
+        'workshop_in_use' => 'L\'atelier est utilisé par une réservation scolaire.',
+    ],
+    'invoice' => [
+        'free_teachers' => 'Enseignants accompagnateurs (gratuits)',
+        'wording' => 'Visite de la ferme pédagogique de :institute le :date, :students élèves.',
+    ],
+];

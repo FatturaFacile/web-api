@@ -12,6 +12,7 @@ use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Academy\Providers\AcademyServiceProvider;
 use Modules\AccountsPayable\Providers\AccountsPayableServiceProvider;
+use Modules\AdventureParks\Providers\AdventureParksServiceProvider;
 use Modules\AgentCommissions\Providers\AgentCommissionsServiceProvider;
 use Modules\AiCognitive\Providers\AiCognitiveServiceProvider;
 use Modules\AnalyticalAccounting\Providers\AnalyticalAccountingServiceProvider;
@@ -40,6 +41,7 @@ use Modules\CrisisMonitoring\Providers\CrisisMonitoringServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\CustomerSatisfaction\Providers\CustomerSatisfactionServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
+use Modules\DairyCheeseManufacturing\Providers\DairyCheeseManufacturingServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
 use Modules\DataMigration\Providers\DataMigrationServiceProvider;
 use Modules\DataResidency\Providers\DataResidencyServiceProvider;
@@ -126,6 +128,7 @@ use Modules\Treasury\Currency\Providers\CurrencyServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\VanSalesAndFieldForce\Providers\VanSalesAndFieldForceServiceProvider;
 use Modules\Visitors\Providers\VisitorsServiceProvider;
+use Modules\Beekeeping\Providers\BeekeepingServiceProvider;
 use Modules\WithholdingRecipients\Providers\WithholdingRecipientsServiceProvider;
 use Modules\Wms\Providers\WmsServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
@@ -226,12 +229,15 @@ return [
     ResourcePlanningServiceProvider::class,
     ItalianVatServiceProvider::class,
     AccountsPayableServiceProvider::class,
+    AdventureParksServiceProvider::class,
     LiquidityPlanningServiceProvider::class,
     SwissVatServiceProvider::class,
     LeaveManagementServiceProvider::class,
     MarketingAutomationServiceProvider::class,
     AgentCommissionsServiceProvider::class,
     WithholdingRecipientsServiceProvider::class,
+    DairyCheeseManufacturingServiceProvider::class,
+    BeekeepingServiceProvider::class,
     DebtCollectionServiceProvider::class,
     ExpenseManagementServiceProvider::class,
     TenderManagementServiceProvider::class,

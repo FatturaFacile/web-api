@@ -9,6 +9,7 @@ use Database\Seeders\Translations\AccountsPayableFrontendTranslations;
 use Database\Seeders\Translations\AccrualsDeferralsFrontendTranslations;
 use Database\Seeders\Translations\AdvancedAuthEnterpriseFrontendTranslations;
 use Database\Seeders\Translations\AdvancedAuthMfaFrontendTranslations;
+use Database\Seeders\Translations\AdventureParksFrontendTranslations;
 use Database\Seeders\Translations\AgentCommissionsFrontendTranslations;
 use Database\Seeders\Translations\AiCognitiveFrontendTranslations;
 use Database\Seeders\Translations\AiForecastingFrontendTranslations;
@@ -29,6 +30,7 @@ use Database\Seeders\Translations\CurrencyFxFrontendTranslations;
 use Database\Seeders\Translations\Customer360FrontendTranslations;
 use Database\Seeders\Translations\CustomerReturnsReverseLogisticsFrontendTranslations;
 use Database\Seeders\Translations\CustomerSatisfactionFrontendTranslations;
+use Database\Seeders\Translations\DairyCheeseFrontendTranslations;
 use Database\Seeders\Translations\DataMigrationFrontendTranslations;
 use Database\Seeders\Translations\DataSovereigntyFrontendTranslations;
 use Database\Seeders\Translations\DebtCollectionFrontendTranslations;
@@ -111,6 +113,7 @@ use Database\Seeders\Translations\TimeTravelFrontendTranslations;
 use Database\Seeders\Translations\TreasuryBankingFrontendTranslations;
 use Database\Seeders\Translations\TreasuryIsoReconciliationFrontendTranslations;
 use Database\Seeders\Translations\VanSellingFieldSalesFrontendTranslations;
+use Database\Seeders\Translations\BeekeepingFrontendTranslations;
 use Database\Seeders\Translations\WithholdingRecipientsFrontendTranslations;
 use Database\Seeders\Translations\WorkflowApprovalFrontendTranslations;
 use Illuminate\Database\Seeder;
@@ -210,6 +213,9 @@ class FrontendTranslationSeeder extends Seeder
             + AcademyFrontendTranslations::all($locale)
             + AgentCommissionsFrontendTranslations::all($locale)
             + WithholdingRecipientsFrontendTranslations::all($locale)
+            + AdventureParksFrontendTranslations::all($locale)
+            + DairyCheeseFrontendTranslations::all($locale)
+            + BeekeepingFrontendTranslations::all($locale)
             + DebtCollectionFrontendTranslations::all($locale)
             + ExpenseManagementFrontendTranslations::all($locale)
             + IntercompanyFrontendTranslations::all($locale)

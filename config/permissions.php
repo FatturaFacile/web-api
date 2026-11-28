@@ -116,12 +116,43 @@ return [
         // Withholding taxes on commissions, royalties, occasional work and amateur sports (Mod 356): finance and HR read and maintain the
         // registry and the declarations; WithholdingRecipientsPolicy reserves posting, F24 / UniEmens and the annual CU to owners,
         // administrators and accountants.
+        // Beekeeping and honey production (Mod 296): owners, administrators, accountants and members (field staff) maintain the apiaries, hives,
+        // inspections, the veterinary register and the honey lots; BeekeepingPolicy reserves the agricultural tax profile to owners, administrators and accountants.
+        'beekeeping' => [
+            'read' => ['owner', 'admin', 'accountant', 'accountant_readonly', 'member'],
+            'write' => ['owner', 'admin', 'accountant', 'member'],
+            'grants' => [
+                'read' => ['beekeeping.read', 'beekeeping.write', 'beekeeping.tax', 'beekeeping.*'],
+                'write' => ['beekeeping.write', 'beekeeping.tax', 'beekeeping.*'],
+            ],
+        ],
         'withholding_recipients' => [
             'read' => ['owner', 'admin', 'accountant', 'accountant_readonly', 'hr_manager', 'hr'],
             'write' => ['owner', 'admin', 'accountant', 'hr_manager', 'hr'],
             'grants' => [
                 'read' => ['withholding_recipients.read', 'withholding_recipients.write', 'withholding_recipients.settle', 'withholding_recipients.*'],
                 'write' => ['withholding_recipients.write', 'withholding_recipients.settle', 'withholding_recipients.*'],
+            ],
+        ],
+        // Adventure parks, climbing centres and educational farms (Mod 299): the dressing desk (operators) books, equips and takes back
+        // the PPE; AdventureParksPolicy reserves the configuration and the PPE register to managers and the school invoice to finance.
+        'adventure_parks' => [
+            'read' => ['owner', 'admin', 'accountant', 'accountant_readonly', 'manager', 'operator'],
+            'write' => ['owner', 'admin', 'accountant', 'manager', 'operator'],
+            'grants' => [
+                'read' => ['adventure_parks.read', 'adventure_parks.write', 'adventure_parks.*'],
+                'write' => ['adventure_parks.write', 'adventure_parks.*'],
+            ],
+        ],
+        // Dairy, cooperative creamery and alpine pasture vertical (Mod 298): production, warehouse and quality staff keep milk collection,
+        // laboratory, vat batches and the aging cellar; DairyCheesePolicy reserves settlements and pricing grids to finance and the
+        // DBMilch.ch / SIAN declarations and recalls to owners, administrators and quality managers.
+        'dairy_cheese' => [
+            'read' => ['owner', 'admin', 'accountant', 'accountant_readonly', 'production', 'warehouse', 'quality', 'technician', 'member'],
+            'write' => ['owner', 'admin', 'production', 'warehouse', 'quality', 'technician'],
+            'grants' => [
+                'read' => ['dairy_cheese.read', 'dairy_cheese.write', 'dairy_cheese.settle', 'dairy_cheese.regulatory', 'dairy_cheese.*'],
+                'write' => ['dairy_cheese.write', 'dairy_cheese.settle', 'dairy_cheese.regulatory', 'dairy_cheese.*'],
             ],
         ],
         // Dunning and debt collection: read for finance and sales managers, write for owners, administrators and

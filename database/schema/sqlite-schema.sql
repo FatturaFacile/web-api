@@ -59817,6 +59817,411 @@ CREATE INDEX "fiscal_cu_year_ix" on "fiscal_cu_autonomous_records"(
   "tenant_id",
   "tax_year"
 );
+CREATE TABLE "adv_park_configs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "buffer_minutes" integer not null default '15',
+  "teacher_free_ratio" integer not null default '15',
+  "teacher_free_per_disabled" integer not null default '1',
+  "picnic_capacity" integer not null default '60',
+  "waiver_version_id" varchar not null default 'v1',
+  "wristband_palette" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_pc_tenant_ix" on "adv_park_configs"("tenant_id");
+CREATE TABLE "adv_slot_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "start_time" varchar not null,
+  "end_time" varchar not null,
+  "wristband_color" varchar not null,
+  "weekdays" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_st_active_ix" on "adv_slot_templates"(
+  "tenant_id",
+  "is_active"
+);
+CREATE TABLE "adv_ppe_assets"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "serial_code" varchar not null,
+  "category" varchar not null,
+  "size" varchar not null default 'UNIVERSAL',
+  "min_height_cm" integer,
+  "max_height_cm" integer,
+  "min_weight_kg" integer,
+  "max_weight_kg" integer,
+  "brand" varchar,
+  "model" varchar,
+  "batch_number" varchar,
+  "purchase_date" date,
+  "first_use_date" date,
+  "manufacturer_max_lifespan_date" date not null,
+  "rental_cycle_count" integer not null default '0',
+  "cumulative_usage_hours" numeric not null default '0',
+  "last_inspection_date" date,
+  "next_inspection_due_date" date,
+  "status" varchar not null default 'AVAILABLE',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "adv_ppe_serial_uq" on "adv_ppe_assets"(
+  "tenant_id",
+  "serial_code"
+);
+CREATE INDEX "adv_ppe_stock_ix" on "adv_ppe_assets"(
+  "tenant_id",
+  "category",
+  "size",
+  "status"
+);
+CREATE TABLE "adv_ppe_inspection_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ppe_asset_id" varchar not null,
+  "inspection_type" varchar not null,
+  "outcome" varchar not null,
+  "inspected_on" date not null,
+  "inspector_name" varchar,
+  "inspector_license_number" varchar,
+  "signature" text,
+  "notes" text,
+  "checklist" text,
+  "next_due_date" date,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ppe_asset_id") references "adv_ppe_assets"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_pil_asset_ix" on "adv_ppe_inspection_logs"(
+  "tenant_id",
+  "ppe_asset_id",
+  "inspected_on"
+);
+CREATE TABLE "adv_daily_course_checks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "check_date" date not null,
+  "checked_by_name" varchar not null,
+  "items" text not null,
+  "outcome" varchar not null,
+  "signature" text,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_dcc_date_ix" on "adv_daily_course_checks"(
+  "tenant_id",
+  "check_date"
+);
+CREATE TABLE "adv_tickets"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "slot_template_id" varchar,
+  "booking_code" varchar not null,
+  "public_token" varchar not null,
+  "slot_date" date not null,
+  "start_time" varchar not null,
+  "end_time" varchar not null,
+  "wristband_color" varchar not null,
+  "contact_name" varchar not null,
+  "contact_email" varchar,
+  "contact_phone" varchar,
+  "headcount" integer not null,
+  "payment_status" varchar not null default 'PENDING',
+  "status" varchar not null default 'BOOKED',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("slot_template_id") references "adv_slot_templates"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "adv_tk_code_uq" on "adv_tickets"(
+  "tenant_id",
+  "booking_code"
+);
+CREATE UNIQUE INDEX "adv_tk_token_uq" on "adv_tickets"("public_token");
+CREATE INDEX "adv_tk_day_ix" on "adv_tickets"(
+  "tenant_id",
+  "slot_date",
+  "status"
+);
+CREATE TABLE "adv_ticket_lines"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ticket_id" varchar not null,
+  "size" varchar not null,
+  "quantity" integer not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ticket_id") references "adv_tickets"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_tl_ticket_ix" on "adv_ticket_lines"(
+  "tenant_id",
+  "ticket_id"
+);
+CREATE TABLE "adv_ticket_participants"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ticket_id" varchar not null,
+  "full_name" varchar not null,
+  "is_minor" tinyint(1) not null default '0',
+  "is_signer" tinyint(1) not null default '0',
+  "birth_date" date,
+  "height_cm" numeric,
+  "weight_kg" numeric,
+  "size" varchar,
+  "fiscal_code" varchar,
+  "phone" varchar,
+  "email" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ticket_id") references "adv_tickets"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "adv_tp_ticket_ix" on "adv_ticket_participants"(
+  "tenant_id",
+  "ticket_id"
+);
+CREATE TABLE "adv_ticket_ppe_assignments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ticket_id" varchar not null,
+  "participant_id" varchar not null,
+  "ppe_asset_id" varchar not null,
+  "assigned_at" datetime not null,
+  "returned_at" datetime,
+  "usage_hours" numeric,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ticket_id") references "adv_tickets"("id") on delete cascade,
+  foreign key("participant_id") references "adv_ticket_participants"("id") on delete cascade,
+  foreign key("ppe_asset_id") references "adv_ppe_assets"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "adv_ta_ticket_ix" on "adv_ticket_ppe_assignments"(
+  "tenant_id",
+  "ticket_id"
+);
+CREATE INDEX "adv_ta_asset_ix" on "adv_ticket_ppe_assignments"(
+  "tenant_id",
+  "ppe_asset_id",
+  "returned_at"
+);
+CREATE TABLE "adv_safety_waivers"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "ticket_id" varchar not null,
+  "signer_full_name" varchar not null,
+  "signer_fiscal_code" varchar,
+  "signer_phone" varchar,
+  "signer_email" varchar,
+  "signer_birth_date" date,
+  "signer_height_cm" numeric,
+  "signer_weight_kg" numeric,
+  "signature_data" text not null,
+  "ip_address" varchar,
+  "user_agent" varchar,
+  "locale" varchar not null default 'it',
+  "waiver_version_id" varchar not null,
+  "accepted_rules" tinyint(1) not null default '0',
+  "signed_at" datetime not null,
+  "briefing_completed_at" datetime,
+  "briefing_instructor_id" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("ticket_id") references "adv_tickets"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "adv_sw_ticket_uq" on "adv_safety_waivers"(
+  "tenant_id",
+  "ticket_id"
+);
+CREATE TABLE "adv_waiver_templates"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "version_id" varchar not null,
+  "locale" varchar not null,
+  "title" varchar not null,
+  "paragraphs" text not null,
+  "rules" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "adv_wt_version_uq" on "adv_waiver_templates"(
+  "tenant_id",
+  "version_id",
+  "locale"
+);
+CREATE TABLE "adv_educational_workshops"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "duration_minutes" integer not null,
+  "max_participants" integer not null,
+  "price_per_student" numeric not null default '0',
+  "name_translations" text,
+  "description_translations" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "adv_ew_code_uq" on "adv_educational_workshops"(
+  "tenant_id",
+  "code"
+);
+CREATE TABLE "adv_school_bookings"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "customer_contact_id" varchar,
+  "institute_name" varchar not null,
+  "mechanographic_code" varchar,
+  "ipa_office_code" varchar not null,
+  "cig_code" varchar,
+  "cup_code" varchar,
+  "split_payment" tinyint(1) not null default '1',
+  "visit_date" date not null,
+  "start_time" varchar not null,
+  "end_time" varchar not null,
+  "picnic_reserved" tinyint(1) not null default '0',
+  "paying_students" integer not null,
+  "disabled_students" integer not null default '0',
+  "accompanying_teachers" integer not null default '0',
+  "free_teachers" integer not null default '0',
+  "charged_teachers" integer not null default '0',
+  "picnic_seats" integer not null default '0',
+  "total_amount" numeric not null default '0',
+  "vat_rate" numeric not null default '10',
+  "status" varchar not null default 'DRAFT',
+  "fattura_invoice_id" varchar,
+  "fattura_number" varchar,
+  "invoiced_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("customer_contact_id") references "contacts"("id") on delete set null,
+  foreign key("fattura_invoice_id") references "invoices"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "adv_sb_status_ix" on "adv_school_bookings"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "adv_sb_date_ix" on "adv_school_bookings"(
+  "tenant_id",
+  "visit_date"
+);
+CREATE TABLE "adv_school_booking_workshops"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "school_booking_id" varchar not null,
+  "workshop_id" varchar not null,
+  "quantity_students" integer not null,
+  "unit_price" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("school_booking_id") references "adv_school_bookings"("id") on delete cascade,
+  foreign key("workshop_id") references "adv_educational_workshops"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "adv_sbw_booking_ix" on "adv_school_booking_workshops"(
+  "tenant_id",
+  "school_booking_id"
+);
 CREATE TABLE "customs_warehouse_authorizations"(
   "id" varchar not null,
   "tenant_id" varchar not null,
@@ -60076,6 +60481,835 @@ CREATE INDEX "aeo_compliance_audits_product_id_index" on "aeo_compliance_audits"
 );
 CREATE INDEX "stock_lots_customs_status_index" on "stock_lots"(
   "customs_status"
+);
+CREATE TABLE "dairy_breeders"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "contact_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "jurisdiction" varchar not null,
+  "farm_code" varchar,
+  "tvd_number" varchar,
+  "bdm_number" varchar,
+  "asl_code" varchar,
+  "cuaa" varchar,
+  "municipality" varchar,
+  "canton_or_province" varchar,
+  "is_active" tinyint(1) not null default '1',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("contact_id") references "contacts"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_br_code_ix" on "dairy_breeders"("tenant_id", "code");
+CREATE INDEX "dairy_br_jur_ix" on "dairy_breeders"(
+  "tenant_id",
+  "jurisdiction"
+);
+CREATE TABLE "dairy_milk_tanks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "capacity_liters" numeric not null default '0',
+  "status" varchar not null default 'active',
+  "last_cleaned_at" datetime,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_tk_code_ix" on "dairy_milk_tanks"("tenant_id", "code");
+CREATE TABLE "dairy_milk_pricing_grids"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "name" varchar not null,
+  "jurisdiction" varchar not null,
+  "cheese_type" varchar,
+  "base_price_per_kg" numeric not null default '0',
+  "cheese_milk_supplement_per_kg" numeric not null default '0',
+  "dop_premium_per_kg" numeric not null default '0',
+  "valid_from" date not null,
+  "valid_to" date,
+  "is_active" tinyint(1) not null default '1',
+  "tiers" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_pg_jur_ix" on "dairy_milk_pricing_grids"(
+  "tenant_id",
+  "jurisdiction"
+);
+CREATE TABLE "dairy_weight_loss_curves"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "cheese_type" varchar not null,
+  "name" varchar not null,
+  "points" text not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_wlc_type_ix" on "dairy_weight_loss_curves"(
+  "tenant_id",
+  "cheese_type"
+);
+CREATE TABLE "dairy_monthly_settlements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "breeder_id" varchar not null,
+  "period" varchar not null,
+  "grid_id" varchar not null,
+  "status" varchar not null default 'draft',
+  "total_kg" numeric not null default '0',
+  "total_liters" numeric not null default '0',
+  "avg_fat_pct" numeric not null default '0',
+  "avg_protein_pct" numeric not null default '0',
+  "base_amount" numeric not null default '0',
+  "quality_adjustment" numeric not null default '0',
+  "supplement_amount" numeric not null default '0',
+  "penalty_amount" numeric not null default '0',
+  "gross_amount" numeric not null default '0',
+  "vat_amount" numeric not null default '0',
+  "net_amount" numeric not null default '0',
+  "currency" varchar not null default 'EUR',
+  "document_id" varchar,
+  "lines" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("breeder_id") references "dairy_breeders"("id") on delete cascade,
+  foreign key("grid_id") references "dairy_milk_pricing_grids"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_ms_period_ix" on "dairy_monthly_settlements"(
+  "tenant_id",
+  "period"
+);
+CREATE INDEX "dairy_ms_breeder_period_ix" on "dairy_monthly_settlements"(
+  "tenant_id",
+  "breeder_id",
+  "period"
+);
+CREATE TABLE "dairy_milk_deliveries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "breeder_id" varchar not null,
+  "tank_id" varchar not null,
+  "route_code" varchar,
+  "tanker_plate" varchar,
+  "collection_date" date not null,
+  "session" varchar not null,
+  "liters" numeric not null,
+  "density" numeric not null default '1.032',
+  "kg" numeric not null,
+  "remaining_liters" numeric not null default '0',
+  "remaining_kg" numeric not null default '0',
+  "temperature_c" numeric,
+  "status" varchar not null default 'registered',
+  "monthly_settlement_id" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("breeder_id") references "dairy_breeders"("id") on delete cascade,
+  foreign key("tank_id") references "dairy_milk_tanks"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_dl_date_ix" on "dairy_milk_deliveries"(
+  "tenant_id",
+  "collection_date"
+);
+CREATE INDEX "dairy_dl_tank_ix" on "dairy_milk_deliveries"(
+  "tenant_id",
+  "tank_id",
+  "collection_date"
+);
+CREATE INDEX "dairy_dl_breeder_ix" on "dairy_milk_deliveries"(
+  "tenant_id",
+  "breeder_id",
+  "collection_date"
+);
+CREATE TABLE "dairy_milk_quality_tests"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "breeder_id" varchar not null,
+  "delivery_id" varchar,
+  "sample_date" date not null,
+  "period_start" date,
+  "period_end" date,
+  "fat_pct" numeric,
+  "protein_pct" numeric,
+  "casein_pct" numeric,
+  "urea_mg_l" numeric,
+  "tbc_cfu_ml" integer,
+  "scc_cells_ml" integer,
+  "freezing_point_c" numeric,
+  "inhibitors" varchar not null default 'not_tested',
+  "laboratory" varchar,
+  "source_format" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("breeder_id") references "dairy_breeders"("id") on delete cascade,
+  foreign key("delivery_id") references "dairy_milk_deliveries"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_qt_breeder_ix" on "dairy_milk_quality_tests"(
+  "tenant_id",
+  "breeder_id",
+  "sample_date"
+);
+CREATE TABLE "dairy_cheese_vat_batches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "cheese_type" varchar not null,
+  "status" varchar not null default 'open',
+  "production_date" date not null,
+  "vat_number" varchar,
+  "milk_kg" numeric not null default '0',
+  "starter_culture" varchar,
+  "starter_amount" numeric,
+  "rennet_type" varchar,
+  "rennet_ml" numeric,
+  "ph_log" text,
+  "curd_yield_kg" numeric,
+  "fresh_yield_24h_kg" numeric,
+  "fresh_yield_24h_pct" numeric,
+  "final_aged_yield_kg" numeric,
+  "final_aged_yield_pct" numeric,
+  "plaque_prefix" varchar,
+  "plaque_from" integer,
+  "plaque_to" integer,
+  "wheels_count" integer not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_vb_code_ix" on "dairy_cheese_vat_batches"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "dairy_vb_date_ix" on "dairy_cheese_vat_batches"(
+  "tenant_id",
+  "production_date"
+);
+CREATE TABLE "dairy_vat_batch_tank_usages"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "vat_batch_id" varchar not null,
+  "tank_id" varchar not null,
+  "liters" numeric not null,
+  "kg" numeric not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("vat_batch_id") references "dairy_cheese_vat_batches"("id") on delete cascade,
+  foreign key("tank_id") references "dairy_milk_tanks"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_vu_batch_ix" on "dairy_vat_batch_tank_usages"(
+  "tenant_id",
+  "vat_batch_id"
+);
+CREATE TABLE "dairy_vat_batch_milk_draws"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "vat_batch_id" varchar not null,
+  "tank_id" varchar not null,
+  "delivery_id" varchar not null,
+  "breeder_id" varchar not null,
+  "liters" numeric not null,
+  "kg" numeric not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("vat_batch_id") references "dairy_cheese_vat_batches"("id") on delete cascade,
+  foreign key("tank_id") references "dairy_milk_tanks"("id") on delete restrict,
+  foreign key("delivery_id") references "dairy_milk_deliveries"("id") on delete restrict,
+  foreign key("breeder_id") references "dairy_breeders"("id") on delete restrict,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_vd_batch_ix" on "dairy_vat_batch_milk_draws"(
+  "tenant_id",
+  "vat_batch_id"
+);
+CREATE INDEX "dairy_vd_delivery_ix" on "dairy_vat_batch_milk_draws"(
+  "tenant_id",
+  "delivery_id"
+);
+CREATE INDEX "dairy_vd_breeder_ix" on "dairy_vat_batch_milk_draws"(
+  "tenant_id",
+  "breeder_id"
+);
+CREATE TABLE "dairy_aging_racks"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "room" varchar not null,
+  "rack" varchar not null,
+  "shelf" varchar not null,
+  "level" integer not null default '1',
+  "capacity_wheels" integer not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_rk_room_ix" on "dairy_aging_racks"(
+  "tenant_id",
+  "room",
+  "rack"
+);
+CREATE TABLE "dairy_cheese_aging_wheels"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "serial" varchar not null,
+  "vat_batch_id" varchar not null,
+  "rack_id" varchar,
+  "position" integer,
+  "status" varchar not null default 'brine',
+  "grade" varchar not null default 'ungraded',
+  "branded" tinyint(1) not null default '0',
+  "branded_at" datetime,
+  "initial_weight_kg" numeric not null,
+  "measured_weight_kg" numeric,
+  "last_weighed_at" datetime,
+  "sold_at" datetime,
+  "sold_weight_kg" numeric,
+  "sale_variance_kg" numeric,
+  "customer_id" varchar,
+  "customer_name" varchar,
+  "invoice_ref" varchar,
+  "grading_notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("vat_batch_id") references "dairy_cheese_vat_batches"("id") on delete cascade,
+  foreign key("rack_id") references "dairy_aging_racks"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_wh_serial_ix" on "dairy_cheese_aging_wheels"(
+  "tenant_id",
+  "serial"
+);
+CREATE INDEX "dairy_wh_status_ix" on "dairy_cheese_aging_wheels"(
+  "tenant_id",
+  "status"
+);
+CREATE INDEX "dairy_wh_batch_ix" on "dairy_cheese_aging_wheels"(
+  "tenant_id",
+  "vat_batch_id"
+);
+CREATE INDEX "dairy_wh_rack_ix" on "dairy_cheese_aging_wheels"(
+  "tenant_id",
+  "rack_id"
+);
+CREATE TABLE "dairy_aging_care_logs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "care_type" varchar not null,
+  "status" varchar not null default 'scheduled',
+  "scope" varchar not null,
+  "target_id" varchar not null,
+  "scheduled_for" date not null,
+  "executed_at" datetime,
+  "wheels_affected" integer not null default '0',
+  "performed_by" varchar,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_cl_status_ix" on "dairy_aging_care_logs"(
+  "tenant_id",
+  "status",
+  "scheduled_for"
+);
+CREATE INDEX "dairy_cl_target_ix" on "dairy_aging_care_logs"(
+  "tenant_id",
+  "scope",
+  "target_id"
+);
+CREATE TABLE "dairy_regulatory_submissions"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "authority" varchar not null,
+  "period" varchar not null,
+  "status" varchar not null default 'generated',
+  "format" varchar not null,
+  "record_count" integer not null default '0',
+  "checksum" varchar,
+  "generated_at" datetime not null,
+  "submitted_at" datetime,
+  "file_name" varchar,
+  "validation_errors" text,
+  "payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_rs_period_ix" on "dairy_regulatory_submissions"(
+  "tenant_id",
+  "authority",
+  "period"
+);
+CREATE TABLE "dairy_recall_reports"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "source_type" varchar not null,
+  "source_id" varchar not null,
+  "reason" text not null,
+  "applied" tinyint(1) not null default '0',
+  "generated_at" datetime not null,
+  "payload" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "dairy_rr_source_ix" on "dairy_recall_reports"(
+  "tenant_id",
+  "source_type",
+  "source_id"
+);
+CREATE TABLE "bee_apiaries"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "code" varchar not null,
+  "name" varchar not null,
+  "country" varchar not null,
+  "municipality" varchar,
+  "province_canton" varchar,
+  "registry_code" varchar,
+  "apiary_type" varchar not null default 'stationary',
+  "latitude" numeric,
+  "longitude" numeric,
+  "altitude_m" integer,
+  "foraging_radius_m" integer not null default '3000',
+  "flora_notes" text,
+  "blooming_calendar" text,
+  "weather_notes" text,
+  "is_active" tinyint(1) not null default '1',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_apiaries_tenant_id_code_unique" on "bee_apiaries"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "bee_apiaries_tenant_id_is_active_index" on "bee_apiaries"(
+  "tenant_id",
+  "is_active"
+);
+CREATE TABLE "bee_hives"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "apiary_id" varchar not null,
+  "code" varchar not null,
+  "qr_token" varchar not null,
+  "hive_type" varchar not null,
+  "origin" varchar not null default 'split',
+  "status" varchar not null default 'active',
+  "is_nucleus" tinyint(1) not null default '0',
+  "queen_year" integer,
+  "queen_marking_color" varchar,
+  "queen_clipped" tinyint(1) not null default '0',
+  "queen_genetic_line" varchar,
+  "queen_breeder" varchar,
+  "queen_pedigree_ref" varchar,
+  "queen_status" varchar not null default 'present_laying',
+  "brood_frames" integer not null default '0',
+  "store_frames" integer not null default '0',
+  "supers_count" integer not null default '0',
+  "strength_score" integer not null default '3',
+  "temperament" varchar,
+  "installed_on" date,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("apiary_id") references "bee_apiaries"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_hives_tenant_id_code_unique" on "bee_hives"(
+  "tenant_id",
+  "code"
+);
+CREATE INDEX "bee_hives_tenant_id_apiary_id_status_index" on "bee_hives"(
+  "tenant_id",
+  "apiary_id",
+  "status"
+);
+CREATE UNIQUE INDEX "bee_hives_qr_token_unique" on "bee_hives"("qr_token");
+CREATE TABLE "bee_inspections"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "hive_id" varchar not null,
+  "apiary_id" varchar not null,
+  "inspected_at" datetime not null,
+  "operator_id" varchar,
+  "weather" varchar,
+  "temperature_c" numeric,
+  "queen_seen" tinyint(1) not null default '0',
+  "eggs_present" tinyint(1) not null default '0',
+  "larvae_present" tinyint(1) not null default '0',
+  "capped_brood_present" tinyint(1) not null default '0',
+  "brood_frames" integer not null default '0',
+  "store_frames" integer not null default '0',
+  "supers_added" integer not null default '0',
+  "supers_removed" integer not null default '0',
+  "swarm_cells_found" integer not null default '0',
+  "swarm_cells_destroyed" integer not null default '0',
+  "feeding_type" varchar,
+  "feeding_kg" numeric,
+  "strength_score" integer,
+  "observations" text,
+  "alerts" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("hive_id") references "bee_hives"("id") on delete cascade,
+  foreign key("apiary_id") references "bee_apiaries"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "bee_inspections_tenant_id_hive_id_inspected_at_index" on "bee_inspections"(
+  "tenant_id",
+  "hive_id",
+  "inspected_at"
+);
+CREATE TABLE "bee_varroa_treatments"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "apiary_id" varchar not null,
+  "whole_apiary" tinyint(1) not null default '1',
+  "hive_ids" text,
+  "treatment_date" date not null,
+  "treatment_end_date" date,
+  "product" varchar not null,
+  "active_substance" varchar not null,
+  "commercial_name" varchar,
+  "drug_batch" varchar,
+  "prescription_ref" varchar,
+  "veterinarian" varchar,
+  "dosage" varchar,
+  "application_method" varchar,
+  "withdrawal_days" integer not null default '0',
+  "withdrawal_end_date" date not null,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("apiary_id") references "bee_apiaries"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE INDEX "bee_varroa_treatments_tenant_id_apiary_id_withdrawal_end_date_index" on "bee_varroa_treatments"(
+  "tenant_id",
+  "apiary_id",
+  "withdrawal_end_date"
+);
+CREATE TABLE "bee_varroa_counts"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "hive_id" varchar not null,
+  "treatment_id" varchar,
+  "counted_on" date not null,
+  "count_type" varchar not null default 'natural',
+  "mites_per_day" numeric not null,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("hive_id") references "bee_hives"("id") on delete cascade,
+  foreign key("treatment_id") references "bee_varroa_treatments"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "bee_varroa_counts_tenant_id_hive_id_counted_on_index" on "bee_varroa_counts"(
+  "tenant_id",
+  "hive_id",
+  "counted_on"
+);
+CREATE TABLE "bee_nomadism_movements"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "document_number" varchar not null,
+  "kind" varchar not null default 'nomadism',
+  "origin_apiary_id" varchar not null,
+  "destination_apiary_id" varchar,
+  "destination_label" varchar,
+  "destination_registry_code" varchar,
+  "counterpart" varchar,
+  "target_flora" varchar,
+  "subject" varchar not null default 'hives',
+  "quantity" integer not null,
+  "vehicle_plate" varchar,
+  "departure_date" date not null,
+  "arrival_date" date,
+  "return_date" date,
+  "status" varchar not null default 'planned',
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("origin_apiary_id") references "bee_apiaries"("id") on delete cascade,
+  foreign key("destination_apiary_id") references "bee_apiaries"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_nomadism_movements_tenant_id_document_number_unique" on "bee_nomadism_movements"(
+  "tenant_id",
+  "document_number"
+);
+CREATE TABLE "bee_census_declarations"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "census_year" integer not null,
+  "country" varchar not null,
+  "status" varchar not null default 'draft',
+  "window_start" date not null,
+  "window_end" date not null,
+  "total_hives" integer not null default '0',
+  "total_nuclei" integer not null default '0',
+  "snapshot" text not null,
+  "generated_at" datetime not null,
+  "submitted_at" datetime,
+  "submission_reference" varchar,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_census_declarations_tenant_id_census_year_country_unique" on "bee_census_declarations"(
+  "tenant_id",
+  "census_year",
+  "country"
+);
+CREATE TABLE "bee_extraction_batches"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "lot_code" varchar not null,
+  "extracted_on" date not null,
+  "botanical_origin" varchar not null,
+  "extracted_kg" numeric not null,
+  "hives_harvested" integer not null default '0',
+  "tank_code" varchar,
+  "decanted_on" date,
+  "moisture_pct" numeric,
+  "hmf_mg_kg" numeric,
+  "organoleptic_notes" text,
+  "process_notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_extraction_batches_tenant_id_lot_code_unique" on "bee_extraction_batches"(
+  "tenant_id",
+  "lot_code"
+);
+CREATE TABLE "bee_super_intakes"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "apiary_id" varchar not null,
+  "extraction_batch_id" varchar,
+  "harvested_on" date not null,
+  "botanical_origin" varchar not null,
+  "supers_count" integer not null,
+  "gross_weight_kg" numeric not null,
+  "net_weight_kg" numeric not null,
+  "notes" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("apiary_id") references "bee_apiaries"("id") on delete cascade,
+  foreign key("extraction_batch_id") references "bee_extraction_batches"("id") on delete set null,
+  primary key("id")
+);
+
+CREATE INDEX "bee_super_intakes_tenant_id_apiary_id_harvested_on_index" on "bee_super_intakes"(
+  "tenant_id",
+  "apiary_id",
+  "harvested_on"
+);
+CREATE TABLE "bee_jarring_runs"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "extraction_batch_id" varchar not null,
+  "jar_lot_code" varchar not null,
+  "jarred_on" date not null,
+  "jar_format_g" integer not null,
+  "jars_count" integer not null,
+  "net_kg" numeric not null,
+  "best_before" date not null,
+  "origin_country" varchar not null,
+  "warehouse_id" varchar,
+  "jar_product_id" varchar,
+  "cap_product_id" varchar,
+  "label_product_id" varchar,
+  "stock_movements" text,
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  foreign key("extraction_batch_id") references "bee_extraction_batches"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_jarring_runs_tenant_id_jar_lot_code_unique" on "bee_jarring_runs"(
+  "tenant_id",
+  "jar_lot_code"
+);
+CREATE TABLE "bee_tax_profiles"(
+  "id" varchar not null,
+  "tenant_id" varchar,
+  "country" varchar not null,
+  "regime" varchar not null,
+  "compensation_overrides" text,
+  "annual_turnover" numeric not null default '0',
+  "created_by" varchar,
+  "updated_by" varchar,
+  "deleted_by" varchar,
+  "created_at" datetime,
+  "updated_at" datetime,
+  "deleted_at" datetime,
+  foreign key("tenant_id") references "tenants"("id") on delete cascade,
+  primary key("id")
+);
+
+CREATE UNIQUE INDEX "bee_tax_profiles_tenant_id_country_unique" on "bee_tax_profiles"(
+  "tenant_id",
+  "country"
 );
 CREATE TABLE "mill_deliveries"(
   "id" varchar not null,
@@ -60874,5 +62108,8 @@ INSERT INTO migrations VALUES(499,'2028_01_15_000100_create_esterometro_mod027_t
 INSERT INTO migrations VALUES(500,'2028_01_16_000100_create_crisis_monitoring_mod357_tables',43);
 INSERT INTO migrations VALUES(501,'2028_01_16_000100_create_time_travel_mod354_tables',44);
 INSERT INTO migrations VALUES(502,'2028_01_16_000100_create_withholding_recipients_mod356_tables',44);
-INSERT INTO migrations VALUES(503,'2028_01_16_000100_create_bonded_warehouses_mod353_tables',45);
-INSERT INTO migrations VALUES(504,'2028_01_17_000100_create_olive_mill_mod297_tables',45);
+INSERT INTO migrations VALUES(503,'2028_01_17_000100_create_adventure_parks_mod299_tables',44);
+INSERT INTO migrations VALUES(504,'2028_01_16_000100_create_bonded_warehouses_mod353_tables',45);
+INSERT INTO migrations VALUES(505,'2028_01_17_000100_create_dairy_cheese_mod298_tables',45);
+INSERT INTO migrations VALUES(506,'2028_01_17_000100_create_beekeeping_mod296_tables',46);
+INSERT INTO migrations VALUES(507,'2028_01_17_000100_create_olive_mill_mod297_tables',47);

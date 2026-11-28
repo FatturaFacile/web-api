@@ -1,0 +1,315 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders\Translations;
+
+use InvalidArgumentException;
+
+/**
+ * UI strings of the adventure parks and educational farms module (Mod 299): operations dashboard with the live slot capacity
+ * matrix (harnesses per size), dressing desk / barcode kiosk, public waiver wizard (the legal text of the waiver itself is served
+ * by the API), PPE registry (UNI EN 15567 / EN 365: lifecycle, inspections, daily course check, alerts) and the school trips of the
+ * educational farm for the public administration (IPA code, CIG, CUP, split payment, FatturaPA), plus the codes the API reports.
+ * Each entry is [it, en, de, fr]; the Italian text serves it-CH and it-IT, the German text de-CH and the French text fr-CH.
+ * Legal and regulatory acronyms (PPE stays DPI in Italian, EPI in French, PSA in German; CIG, CUP, IPA, FatturaPA, EN 15567, EN 365) are kept.
+ */
+final class AdventureParksFrontendTranslations
+{
+    /**
+     * @return array<string, array{0: string, 1: string, 2: string, 3: string}>
+     */
+    public static function definitions(): array
+    {
+        return [
+            'NAV.ADVENTURE_PARKS' => ['Parco avventura e fattoria didattica', 'Adventure park and educational farm', 'Abenteuerpark und Lehrbauernhof', 'Parc aventure et ferme pédagogique'],
+            'NAV.ADVENTURE_PARKS_DASHBOARD' => ['Cruscotto operativo e slot', 'Operations and slots', 'Betrieb und Zeitfenster', 'Exploitation et créneaux'],
+            'NAV.ADVENTURE_PARKS_DRESSING_DESK' => ['Banco vestizione', 'Dressing desk', 'Ausrüstungsstation', 'Poste d’équipement'],
+            'NAV.ADVENTURE_PARKS_PPE' => ['Registro DPI', 'PPE register', 'PSA-Register', 'Registre des EPI'],
+            'NAV.ADVENTURE_PARKS_SCHOOL_TRIPS' => ['Gite scolastiche', 'School trips', 'Schulausflüge', 'Sorties scolaires'],
+            'PAGE_TITLE.ADVENTURE_PARKS_DASHBOARD' => ['Parco avventura: slot, disponibilità imbraghi e conformità', 'Adventure park: slots, harness availability and compliance', 'Abenteuerpark: Zeitfenster, Gurtverfügbarkeit und Konformität', 'Parc aventure : créneaux, disponibilité des harnais et conformité'],
+            'PAGE_TITLE.ADVENTURE_PARKS_DRESSING_DESK' => ['Banco vestizione e consegna DPI', 'Dressing desk and PPE handout', 'Ausrüstungsstation und PSA-Ausgabe', 'Poste d’équipement et remise des EPI'],
+            'PAGE_TITLE.ADVENTURE_PARKS_PPE' => ['Registro DPI secondo EN 15567 ed EN 365', 'PPE register under EN 15567 and EN 365', 'PSA-Register nach EN 15567 und EN 365', 'Registre des EPI selon EN 15567 et EN 365'],
+            'PAGE_TITLE.ADVENTURE_PARKS_SCHOOL_TRIPS' => ['Fattoria didattica e gite scolastiche', 'Educational farm and school trips', 'Lehrbauernhof und Schulausflüge', 'Ferme pédagogique et sorties scolaires'],
+            'PAGE_TITLE.ADVENTURE_PARKS_WAIVER' => ['Pre check-in e liberatoria', 'Pre check-in and waiver', 'Vor-Check-in und Haftungsverzicht', 'Pré-enregistrement et décharge'],
+
+            // --- Enumerations ---
+            'adventureParks.category.HARNESS' => ['Imbracatura', 'Harness', 'Klettergurt', 'Harnais'],
+            'adventureParks.category.LANYARD_LONGE' => ['Longe', 'Lanyard', 'Verbindungsmittel', 'Longe'],
+            'adventureParks.category.CARABINER' => ['Moschettone', 'Carabiner', 'Karabiner', 'Mousqueton'],
+            'adventureParks.category.PULLEY' => ['Carrucola', 'Pulley', 'Seilrolle', 'Poulie'],
+            'adventureParks.category.ENERGY_ABSORBER' => ['Assorbitore di energia', 'Energy absorber', 'Falldämpfer', 'Absorbeur d’énergie'],
+            'adventureParks.category.HELMET' => ['Casco', 'Helmet', 'Helm', 'Casque'],
+            'adventureParks.category.COURSE_CABLE' => ['Cavo del percorso', 'Course cable', 'Parcoursseil', 'Câble du parcours'],
+            'adventureParks.size.BABY' => ['Baby', 'Baby', 'Baby', 'Bébé'],
+            'adventureParks.size.JUNIOR' => ['Junior', 'Junior', 'Junior', 'Junior'],
+            'adventureParks.size.ADULT' => ['Adulto', 'Adult', 'Erwachsene', 'Adulte'],
+            'adventureParks.size.XL' => ['XL', 'XL', 'XL', 'XL'],
+            'adventureParks.size.UNIVERSAL' => ['Universale', 'Universal', 'Universal', 'Universel'],
+            'adventureParks.ppeStatus.AVAILABLE' => ['Disponibile', 'Available', 'Verfügbar', 'Disponible'],
+            'adventureParks.ppeStatus.IN_USE' => ['In uso', 'In use', 'In Gebrauch', 'En cours d’utilisation'],
+            'adventureParks.ppeStatus.MAINTENANCE_REQUIRED' => ['Manutenzione richiesta', 'Maintenance required', 'Wartung erforderlich', 'Maintenance requise'],
+            'adventureParks.ppeStatus.EXPIRED_BLOCKED' => ['Scaduto e bloccato', 'Expired and blocked', 'Abgelaufen und gesperrt', 'Périmé et bloqué'],
+            'adventureParks.ppeStatus.DECOMMISSIONED' => ['Dismesso', 'Decommissioned', 'Ausgemustert', 'Mis hors service'],
+            'adventureParks.blockReason.LIFESPAN_EXPIRED' => ['Vita utile del produttore scaduta', 'Manufacturer lifespan expired', 'Herstellerlebensdauer abgelaufen', 'Durée de vie du fabricant dépassée'],
+            'adventureParks.blockReason.INSPECTION_OVERDUE' => ['Ispezione annuale EN 365 scaduta', 'Annual EN 365 inspection overdue', 'Jährliche EN-365-Prüfung überfällig', 'Inspection annuelle EN 365 en retard'],
+            'adventureParks.blockReason.STATUS' => ['Stato non idoneo alla consegna', 'Status not fit for handout', 'Status nicht für die Ausgabe geeignet', 'Statut inapte à la remise'],
+            'adventureParks.inspectionType.DAILY_VISUAL' => ['Controllo visivo giornaliero', 'Daily visual check', 'Tägliche Sichtkontrolle', 'Contrôle visuel quotidien'],
+            'adventureParks.inspectionType.ANNUAL_EN365' => ['Ispezione annuale EN 365', 'Annual EN 365 inspection', 'Jährliche EN-365-Prüfung', 'Inspection annuelle EN 365'],
+            'adventureParks.inspectionType.INCIDENT' => ['Ispezione dopo incidente', 'Post-incident inspection', 'Prüfung nach Vorfall', 'Inspection après incident'],
+            'adventureParks.inspectionOutcome.PASS' => ['Conforme', 'Pass', 'Bestanden', 'Conforme'],
+            'adventureParks.inspectionOutcome.FAIL' => ['Non conforme', 'Fail', 'Nicht bestanden', 'Non conforme'],
+            'adventureParks.ticketStatus.BOOKED' => ['Prenotato', 'Booked', 'Gebucht', 'Réservé'],
+            'adventureParks.ticketStatus.WAIVER_SIGNED' => ['Liberatoria firmata', 'Waiver signed', 'Verzicht unterzeichnet', 'Décharge signée'],
+            'adventureParks.ticketStatus.EQUIPPED' => ['Equipaggiato', 'Equipped', 'Ausgerüstet', 'Équipé'],
+            'adventureParks.ticketStatus.ON_COURSE' => ['Sul percorso', 'On the course', 'Auf dem Parcours', 'Sur le parcours'],
+            'adventureParks.ticketStatus.RETURNED' => ['Attrezzatura restituita', 'Equipment returned', 'Ausrüstung zurückgegeben', 'Équipement rendu'],
+            'adventureParks.ticketStatus.NO_SHOW' => ['Non presentato', 'No show', 'Nicht erschienen', 'Absent'],
+            'adventureParks.schoolStatus.DRAFT' => ['Bozza', 'Draft', 'Entwurf', 'Brouillon'],
+            'adventureParks.schoolStatus.CONFIRMED' => ['Confermata', 'Confirmed', 'Bestätigt', 'Confirmée'],
+            'adventureParks.schoolStatus.COMPLETED' => ['Svolta', 'Completed', 'Durchgeführt', 'Effectuée'],
+            'adventureParks.schoolStatus.INVOICED' => ['Fatturata', 'Invoiced', 'Fakturiert', 'Facturée'],
+            'adventureParks.wristband.RED' => ['Rosso', 'Red', 'Rot', 'Rouge'],
+            'adventureParks.wristband.BLUE' => ['Blu', 'Blue', 'Blau', 'Bleu'],
+            'adventureParks.wristband.GREEN' => ['Verde', 'Green', 'Grün', 'Vert'],
+            'adventureParks.wristband.YELLOW' => ['Giallo', 'Yellow', 'Gelb', 'Jaune'],
+            'adventureParks.wristband.ORANGE' => ['Arancione', 'Orange', 'Orange', 'Orange'],
+            'adventureParks.wristband.PURPLE' => ['Viola', 'Purple', 'Violett', 'Violet'],
+            'adventureParks.wristband.PINK' => ['Rosa', 'Pink', 'Rosa', 'Rose'],
+            'adventureParks.wristband.WHITE' => ['Bianco', 'White', 'Weiss', 'Blanc'],
+            'adventureParks.alert.LIFESPAN_EXPIRING' => ['Vita utile in scadenza', 'Lifespan expiring', 'Lebensdauer läuft ab', 'Durée de vie bientôt échue'],
+            'adventureParks.alert.LIFESPAN_EXPIRED' => ['Vita utile scaduta', 'Lifespan expired', 'Lebensdauer abgelaufen', 'Durée de vie échue'],
+            'adventureParks.alert.INSPECTION_DUE_SOON' => ['Ispezione in scadenza', 'Inspection due soon', 'Prüfung bald fällig', 'Inspection bientôt due'],
+            'adventureParks.alert.INSPECTION_OVERDUE' => ['Ispezione scaduta', 'Inspection overdue', 'Prüfung überfällig', 'Inspection en retard'],
+            'adventureParks.alert.DAILY_CHECK_MISSING' => ['Controllo giornaliero di apertura non ancora eseguito', 'Daily opening check not done yet', 'Tägliche Eröffnungskontrolle noch nicht durchgeführt', 'Contrôle quotidien d’ouverture pas encore effectué'],
+
+            // --- Codes the API reports ---
+            'adventureParks.error.ppe_blocked' => ['Il DPI è bloccato e non può essere consegnato.', 'The PPE is blocked and cannot be handed out.', 'Die PSA ist gesperrt und darf nicht ausgegeben werden.', 'L’EPI est bloqué et ne peut pas être remis.'],
+            'adventureParks.error.ppe_not_found' => ['Nessun DPI registrato con questo codice a barre.', 'No PPE is registered with this barcode.', 'Keine PSA mit diesem Barcode registriert.', 'Aucun EPI enregistré avec ce code-barres.'],
+            'adventureParks.error.ppe_size_mismatch' => ['La taglia del DPI non è adatta al partecipante.', 'The size of the PPE does not fit the participant.', 'Die Grösse der PSA passt nicht zum Teilnehmer.', 'La taille de l’EPI ne convient pas au participant.'],
+            'adventureParks.error.ppe_already_assigned' => ['Il partecipante ha già un DPI di questa categoria.', 'The participant already holds equipment of this category.', 'Der Teilnehmer hat bereits Ausrüstung dieser Kategorie.', 'Le participant détient déjà un équipement de cette catégorie.'],
+            'adventureParks.error.ppe_in_use' => ['Il DPI è in uso da un visitatore e non può essere eliminato.', 'The PPE is out with a visitor and cannot be deleted.', 'Die PSA ist bei einem Besucher und kann nicht gelöscht werden.', 'L’EPI est chez un visiteur et ne peut pas être supprimé.'],
+            'adventureParks.error.participant_not_found' => ['Il partecipante non è su questo biglietto.', 'The participant is not on this ticket.', 'Der Teilnehmer gehört nicht zu diesem Ticket.', 'Le participant ne figure pas sur ce billet.'],
+            'adventureParks.error.waiver_missing' => ['Manca la liberatoria firmata per tutti i partecipanti.', 'The signed waiver is missing for some participants.', 'Der unterzeichnete Haftungsverzicht fehlt für einzelne Teilnehmer.', 'La décharge signée manque pour certains participants.'],
+            'adventureParks.error.waiver_already_signed' => ['La liberatoria di questa prenotazione è già firmata.', 'The waiver of this booking is already signed.', 'Der Haftungsverzicht dieser Buchung ist bereits unterzeichnet.', 'La décharge de cette réservation est déjà signée.'],
+            'adventureParks.error.headcount_mismatch' => ['Il numero di persone non corrisponde al biglietto: firmatario più minori devono coincidere.', 'The head count does not match the ticket: the signer plus the minors must add up.', 'Die Personenzahl stimmt nicht mit dem Ticket überein: Unterzeichner und Minderjährige müssen zusammenpassen.', 'Le nombre de personnes ne correspond pas au billet : signataire et mineurs doivent s’additionner.'],
+            'adventureParks.error.invalid_transition' => ['Questo passaggio di stato non è consentito.', 'This status change is not allowed.', 'Dieser Statuswechsel ist nicht erlaubt.', 'Ce changement de statut n’est pas autorisé.'],
+            'adventureParks.error.slot_sold_out' => ['Imbracature esaurite per questa taglia nello slot scelto.', 'No harnesses of this size left in the chosen slot.', 'Keine Gurte dieser Grösse mehr im gewählten Zeitfenster.', 'Plus de harnais de cette taille dans le créneau choisi.'],
+            'adventureParks.error.slot_closed' => ['Lo slot non è aperto in quel giorno.', 'The slot is not open on that day.', 'Das Zeitfenster ist an diesem Tag nicht geöffnet.', 'Le créneau n’est pas ouvert ce jour-là.'],
+            'adventureParks.error.slot_invalid' => ['Lo slot deve terminare dopo l’inizio.', 'A slot must end after it starts.', 'Ein Zeitfenster muss nach dem Beginn enden.', 'Un créneau doit se terminer après son début.'],
+            'adventureParks.error.slot_has_tickets' => ['Lo slot ha prenotazioni aperte: disattivalo invece di eliminarlo.', 'The slot has open bookings: deactivate it instead of deleting it.', 'Das Zeitfenster hat offene Buchungen: deaktivieren statt löschen.', 'Le créneau a des réservations ouvertes : désactivez-le au lieu de le supprimer.'],
+            'adventureParks.error.picnic_capacity_exceeded' => ['L’area picnic è piena in quel giorno.', 'The picnic area is full on that day.', 'Der Picknickplatz ist an diesem Tag voll.', 'L’aire de pique-nique est complète ce jour-là.'],
+            'adventureParks.error.already_invoiced' => ['La prenotazione è già stata fatturata.', 'The booking has already been invoiced.', 'Die Buchung wurde bereits fakturiert.', 'La réservation a déjà été facturée.'],
+            'adventureParks.error.booking_not_confirmed' => ['Conferma la prenotazione prima di fatturarla.', 'Confirm the booking before invoicing it.', 'Bestätigen Sie die Buchung vor der Fakturierung.', 'Confirmez la réservation avant de la facturer.'],
+            'adventureParks.error.booking_locked' => ['Solo una prenotazione in bozza può essere eliminata.', 'Only a draft booking can be deleted.', 'Nur eine Buchung im Entwurf kann gelöscht werden.', 'Seule une réservation en brouillon peut être supprimée.'],
+            'adventureParks.error.workshop_not_found' => ['Il laboratorio non è disponibile.', 'The workshop is not available.', 'Der Workshop ist nicht verfügbar.', 'L’atelier n’est pas disponible.'],
+            'adventureParks.error.workshop_code_taken' => ['Esiste già un laboratorio con questo codice.', 'A workshop with this code already exists.', 'Ein Workshop mit diesem Code existiert bereits.', 'Un atelier avec ce code existe déjà.'],
+            'adventureParks.error.workshop_global' => ['Un laboratorio standard non si elimina: disattivalo.', 'A standard workshop cannot be deleted: deactivate it.', 'Ein Standard-Workshop kann nicht gelöscht werden: deaktivieren Sie ihn.', 'Un atelier standard ne peut pas être supprimé : désactivez-le.'],
+            'adventureParks.error.workshop_in_use' => ['Il laboratorio è usato da una prenotazione scolastica.', 'The workshop is used by a school booking.', 'Der Workshop wird von einer Schulbuchung verwendet.', 'L’atelier est utilisé par une réservation scolaire.'],
+            'adventureParks.error.ticket_not_found' => ['Biglietto o link non valido.', 'Ticket or link not valid.', 'Ticket oder Link ungültig.', 'Billet ou lien non valide.'],
+            'adventureParks.error.validation' => ['Controlla i dati inseriti.', 'Check the data entered.', 'Prüfen Sie die eingegebenen Daten.', 'Vérifiez les données saisies.'],
+            'adventureParks.error.generic' => ['Operazione non riuscita. Riprova.', 'The operation failed. Please try again.', 'Der Vorgang ist fehlgeschlagen. Bitte erneut versuchen.', 'L’opération a échoué. Veuillez réessayer.'],
+
+            // --- Checklists of the daily course check and the annual PPE inspection ---
+            'adventure_parks.daily_check.cables_tension' => ['Tensione dei cavi', 'Cable tension', 'Seilspannung', 'Tension des câbles'],
+            'adventure_parks.daily_check.anchor_points' => ['Punti di ancoraggio', 'Anchor points', 'Ankerpunkte', 'Points d’ancrage'],
+            'adventure_parks.daily_check.platforms_decking' => ['Piattaforme e pedane', 'Platforms and decking', 'Plattformen und Bohlen', 'Plateformes et platelage'],
+            'adventure_parks.daily_check.safety_nets' => ['Reti di sicurezza', 'Safety nets', 'Sicherheitsnetze', 'Filets de sécurité'],
+            'adventure_parks.daily_check.belay_lines' => ['Linee di vita', 'Belay lines', 'Sicherungsleinen', 'Lignes de vie'],
+            'adventure_parks.daily_check.signage' => ['Segnaletica', 'Signage', 'Beschilderung', 'Signalisation'],
+            'adventure_parks.daily_check.first_aid_kit' => ['Kit di primo soccorso', 'First aid kit', 'Erste-Hilfe-Set', 'Trousse de premiers secours'],
+            'adventure_parks.daily_check.rescue_equipment' => ['Attrezzatura di soccorso', 'Rescue equipment', 'Rettungsausrüstung', 'Matériel de secours'],
+            'adventure_parks.daily_check.weather_conditions' => ['Condizioni meteo', 'Weather conditions', 'Wetterbedingungen', 'Conditions météorologiques'],
+            'adventure_parks.daily_check.communication_radios' => ['Radio di comunicazione', 'Communication radios', 'Funkgeräte', 'Radios de communication'],
+            'adventure_parks.annual_check.webbing_wear' => ['Usura dei nastri', 'Webbing wear', 'Verschleiss der Gurtbänder', 'Usure des sangles'],
+            'adventure_parks.annual_check.stitching_integrity' => ['Integrità delle cuciture', 'Stitching integrity', 'Unversehrtheit der Nähte', 'Intégrité des coutures'],
+            'adventure_parks.annual_check.buckles_function' => ['Funzionamento delle fibbie', 'Buckle function', 'Funktion der Schnallen', 'Fonctionnement des boucles'],
+            'adventure_parks.annual_check.labels_legible' => ['Etichette leggibili', 'Legible labels', 'Lesbare Etiketten', 'Étiquettes lisibles'],
+            'adventure_parks.annual_check.hardware_corrosion' => ['Corrosione dei componenti metallici', 'Hardware corrosion', 'Korrosion der Metallteile', 'Corrosion des pièces métalliques'],
+            'adventure_parks.annual_check.lanyard_condition' => ['Stato della longe', 'Lanyard condition', 'Zustand des Verbindungsmittels', 'État de la longe'],
+            'adventure_parks.annual_check.energy_absorber_intact' => ['Assorbitore di energia integro', 'Energy absorber intact', 'Falldämpfer intakt', 'Absorbeur d’énergie intact'],
+            'adventure_parks.annual_check.load_test' => ['Prova di carico', 'Load test', 'Belastungstest', 'Essai de charge'],
+            'adventure_parks.workshop.BREAD_GRAIN.name' => ['Dal grano al pane', 'From grain to bread', 'Vom Korn zum Brot', 'Du grain au pain'],
+            'adventure_parks.workshop.BEES.name' => ['Il mondo delle api', 'The world of bees', 'Die Welt der Bienen', 'Le monde des abeilles'],
+            'adventure_parks.workshop.GARDEN.name' => ['Orto didattico', 'Educational garden', 'Lehrgarten', 'Potager pédagogique'],
+            'adventure_parks.workshop.JUNIOR_ADVENTURE.name' => ['Percorso avventura junior', 'Junior adventure course', 'Junior-Abenteuerparcours', 'Parcours aventure junior'],
+
+            // --- Actions and fields ---
+            'adventureParks.action.all' => ['Tutti', 'All', 'Alle', 'Tous'],
+            'adventureParks.action.back' => ['Indietro', 'Back', 'Zurück', 'Retour'],
+            'adventureParks.action.next' => ['Avanti', 'Next', 'Weiter', 'Suivant'],
+            'adventureParks.action.cancel' => ['Annulla', 'Cancel', 'Abbrechen', 'Annuler'],
+            'adventureParks.action.save' => ['Salva', 'Save', 'Speichern', 'Enregistrer'],
+            'adventureParks.action.search' => ['Cerca', 'Search', 'Suchen', 'Rechercher'],
+            'adventureParks.action.refresh' => ['Aggiorna', 'Refresh', 'Aktualisieren', 'Actualiser'],
+            'adventureParks.action.confirm' => ['Conferma', 'Confirm', 'Bestätigen', 'Confirmer'],
+            'adventureParks.action.complete' => ['Segna come svolta', 'Mark as completed', 'Als durchgeführt markieren', 'Marquer comme effectuée'],
+            'adventureParks.action.openDailyCheck' => ['Apri il controllo giornaliero', 'Open the daily check', 'Tageskontrolle öffnen', 'Ouvrir le contrôle quotidien'],
+            'adventureParks.field.date' => ['Data', 'Date', 'Datum', 'Date'],
+            'adventureParks.field.serialCode' => ['Codice seriale', 'Serial code', 'Seriencode', 'Code de série'],
+            'adventureParks.field.category' => ['Categoria', 'Category', 'Kategorie', 'Catégorie'],
+            'adventureParks.field.size' => ['Taglia', 'Size', 'Grösse', 'Taille'],
+            'adventureParks.field.status' => ['Stato', 'Status', 'Status', 'Statut'],
+            'adventureParks.field.fullName' => ['Nome e cognome', 'Full name', 'Vor- und Nachname', 'Nom et prénom'],
+            'adventureParks.field.fiscalCode' => ['Codice fiscale', 'Fiscal code', 'Steuernummer', 'Code fiscal'],
+            'adventureParks.field.phone' => ['Telefono', 'Phone', 'Telefon', 'Téléphone'],
+            'adventureParks.field.email' => ['E-mail', 'Email', 'E-Mail', 'E-mail'],
+            'adventureParks.field.birthDate' => ['Data di nascita', 'Date of birth', 'Geburtsdatum', 'Date de naissance'],
+            'adventureParks.field.heightCm' => ['Altezza (cm)', 'Height (cm)', 'Grösse (cm)', 'Taille (cm)'],
+            'adventureParks.field.weightKg' => ['Peso (kg)', 'Weight (kg)', 'Gewicht (kg)', 'Poids (kg)'],
+            'adventureParks.field.prefix' => ['Prefisso dei codici', 'Code prefix', 'Code-Präfix', 'Préfixe des codes'],
+            'adventureParks.field.count' => ['Quantità', 'Quantity', 'Anzahl', 'Quantité'],
+            'adventureParks.field.brand' => ['Marca', 'Brand', 'Marke', 'Marque'],
+            'adventureParks.field.model' => ['Modello', 'Model', 'Modell', 'Modèle'],
+            'adventureParks.field.batchNumber' => ['Numero di lotto', 'Batch number', 'Chargennummer', 'Numéro de lot'],
+            'adventureParks.field.purchaseDate' => ['Data di acquisto', 'Purchase date', 'Kaufdatum', 'Date d’achat'],
+            'adventureParks.field.firstUseDate' => ['Data di primo utilizzo', 'First use date', 'Datum der Erstverwendung', 'Date de première utilisation'],
+            'adventureParks.field.maxLifespanDate' => ['Fine vita utile del produttore', 'End of manufacturer lifespan', 'Ende der Herstellerlebensdauer', 'Fin de la durée de vie du fabricant'],
+            'adventureParks.field.nextInspectionDue' => ['Prossima ispezione entro', 'Next inspection due', 'Nächste Prüfung fällig', 'Prochaine inspection due'],
+            'adventureParks.field.cycles' => ['Cicli', 'Cycles', 'Zyklen', 'Cycles'],
+            'adventureParks.field.inspectionType' => ['Tipo di ispezione', 'Inspection type', 'Prüfart', 'Type d’inspection'],
+            'adventureParks.field.outcome' => ['Esito', 'Outcome', 'Ergebnis', 'Résultat'],
+            'adventureParks.field.inspector' => ['Ispettore', 'Inspector', 'Prüfer', 'Inspecteur'],
+            'adventureParks.field.licenseNumber' => ['N. di abilitazione dell’ispettore', 'Inspector licence number', 'Lizenznummer des Prüfers', 'N° de licence de l’inspecteur'],
+            'adventureParks.field.notes' => ['Note', 'Notes', 'Notizen', 'Notes'],
+            'adventureParks.field.checkedBy' => ['Controllato da', 'Checked by', 'Geprüft von', 'Contrôlé par'],
+            'adventureParks.field.alertType' => ['Avviso', 'Alert', 'Hinweis', 'Alerte'],
+            'adventureParks.field.dueDate' => ['Scadenza', 'Due date', 'Fälligkeit', 'Échéance'],
+            'adventureParks.field.institute' => ['Istituto scolastico', 'School', 'Schule', 'Établissement scolaire'],
+            'adventureParks.field.mechanographicCode' => ['Codice meccanografico', 'School registry code', 'Schulregistercode', 'Code d’établissement'],
+            'adventureParks.field.ipaOfficeCode' => ['Codice Univoco Ufficio (IPA)', 'IPA office code (Codice Univoco)', 'IPA-Amtscode (Codice Univoco)', 'Code unique du bureau (IPA)'],
+            'adventureParks.field.cig' => ['CIG', 'CIG', 'CIG', 'CIG'],
+            'adventureParks.field.cup' => ['CUP', 'CUP', 'CUP', 'CUP'],
+            'adventureParks.field.splitPayment' => ['Scissione dei pagamenti (split payment)', 'Split payment', 'Split Payment', 'Split payment'],
+            'adventureParks.field.visitDate' => ['Data della visita', 'Visit date', 'Besuchsdatum', 'Date de la visite'],
+            'adventureParks.field.startTime' => ['Ora di inizio', 'Start time', 'Beginn', 'Heure de début'],
+            'adventureParks.field.endTime' => ['Ora di fine', 'End time', 'Ende', 'Heure de fin'],
+            'adventureParks.field.workshops' => ['Laboratori', 'Workshops', 'Workshops', 'Ateliers'],
+            'adventureParks.field.payingStudents' => ['Studenti paganti', 'Paying students', 'Zahlende Schüler', 'Élèves payants'],
+            'adventureParks.field.disabledStudents' => ['Studenti con disabilità', 'Students with disabilities', 'Schüler mit Behinderung', 'Élèves en situation de handicap'],
+            'adventureParks.field.accompanyingTeachers' => ['Docenti accompagnatori', 'Accompanying teachers', 'Begleitlehrer', 'Enseignants accompagnateurs'],
+            'adventureParks.field.picnic' => ['Prenota l’area picnic', 'Reserve the picnic area', 'Picknickplatz reservieren', 'Réserver l’aire de pique-nique'],
+
+            // --- Dashboard and capacity matrix ---
+            'adventureParks.summary.ticketsToday' => ['Biglietti del giorno', 'Tickets of the day', 'Tickets des Tages', 'Billets du jour'],
+            'adventureParks.summary.onCourse' => ['Visitatori sul percorso', 'Visitors on the course', 'Besucher auf dem Parcours', 'Visiteurs sur le parcours'],
+            'adventureParks.summary.expiredBlocked' => ['DPI scaduti o bloccati', 'Expired or blocked PPE', 'Abgelaufene oder gesperrte PSA', 'EPI périmés ou bloqués'],
+            'adventureParks.summary.inspectionOverdue' => ['Ispezioni scadute', 'Overdue inspections', 'Überfällige Prüfungen', 'Inspections en retard'],
+            'adventureParks.summary.expiringSoon' => ['In scadenza a breve', 'Expiring soon', 'Bald ablaufend', 'Bientôt échus'],
+            'adventureParks.dailyCheck.done' => ['Controllo giornaliero di apertura eseguito', 'Daily opening check done', 'Tägliche Eröffnungskontrolle durchgeführt', 'Contrôle quotidien d’ouverture effectué'],
+            'adventureParks.matrix.title' => ['Disponibilità imbracature per slot e taglia', 'Harness availability per slot and size', 'Gurtverfügbarkeit pro Zeitfenster und Grösse', 'Disponibilité des harnais par créneau et taille'],
+            'adventureParks.matrix.caption' => ['Imbracature libere su totale per ogni slot e taglia', 'Free harnesses over total for every slot and size', 'Freie Gurte von insgesamt pro Zeitfenster und Grösse', 'Harnais libres sur le total pour chaque créneau et taille'],
+            'adventureParks.matrix.slot' => ['Slot', 'Slot', 'Zeitfenster', 'Créneau'],
+            'adventureParks.matrix.wristband' => ['Braccialetto', 'Wristband', 'Armband', 'Bracelet'],
+            'adventureParks.matrix.activeVisitors' => ['Visitatori attivi', 'Active visitors', 'Aktive Besucher', 'Visiteurs actifs'],
+            'adventureParks.matrix.closed' => ['chiuso', 'closed', 'geschlossen', 'fermé'],
+            'adventureParks.matrix.soldOut' => ['esaurito', 'sold out', 'ausverkauft', 'complet'],
+            'adventureParks.matrix.empty' => ['Nessuno slot configurato per questo giorno.', 'No slot configured for this day.', 'Kein Zeitfenster für diesen Tag konfiguriert.', 'Aucun créneau configuré pour ce jour.'],
+            'adventureParks.alerts.title' => ['Avvisi di conformità DPI', 'PPE compliance alerts', 'PSA-Konformitätshinweise', 'Alertes de conformité des EPI'],
+            'adventureParks.alerts.empty' => ['Nessun avviso di conformità.', 'No compliance alert.', 'Keine Konformitätshinweise.', 'Aucune alerte de conformité.'],
+
+            // --- Dressing desk ---
+            'adventureParks.desk.mode' => ['Modalità del banco', 'Desk mode', 'Modus der Station', 'Mode du poste'],
+            'adventureParks.desk.modeDress' => ['Vestizione', 'Dressing', 'Ausrüsten', 'Équipement'],
+            'adventureParks.desk.modeReturn' => ['Restituzione', 'Return', 'Rückgabe', 'Retour'],
+            'adventureParks.desk.scanTicket' => ['Scansiona il QR o il codice del biglietto', 'Scan the ticket QR or code', 'Ticket-QR oder -Code scannen', 'Scannez le QR ou le code du billet'],
+            'adventureParks.desk.scanPpe' => ['Scansiona il codice a barre del DPI', 'Scan the PPE barcode', 'PSA-Barcode scannen', 'Scannez le code-barres de l’EPI'],
+            'adventureParks.desk.scanReturn' => ['Scansiona il biglietto o un DPI da restituire', 'Scan the ticket or a PPE to return', 'Ticket oder zurückzugebende PSA scannen', 'Scannez le billet ou un EPI à rendre'],
+            'adventureParks.desk.waiverSigned' => ['Liberatoria firmata', 'Waiver signed', 'Verzicht unterzeichnet', 'Décharge signée'],
+            'adventureParks.desk.waiverMissing' => ['Liberatoria mancante', 'Waiver missing', 'Verzicht fehlt', 'Décharge manquante'],
+            'adventureParks.desk.waiverMissingHint' => ['Il visitatore deve completare il pre check-in prima della consegna dei DPI.', 'The visitor must complete the pre check-in before the PPE is handed out.', 'Der Besucher muss den Vor-Check-in abschliessen, bevor PSA ausgegeben wird.', 'Le visiteur doit terminer le pré-enregistrement avant la remise des EPI.'],
+            'adventureParks.desk.minor' => ['Minore', 'Minor', 'Minderjährig', 'Mineur'],
+            'adventureParks.desk.noEquipment' => ['Nessun DPI assegnato', 'No PPE assigned', 'Keine PSA zugewiesen', 'Aucun EPI attribué'],
+            'adventureParks.desk.assigned' => ['DPI assegnato', 'PPE assigned', 'PSA zugewiesen', 'EPI attribué'],
+            'adventureParks.desk.startCourse' => ['Avvia il percorso', 'Start the course', 'Parcours starten', 'Démarrer le parcours'],
+            'adventureParks.desk.courseStarted' => ['Percorso avviato', 'Course started', 'Parcours gestartet', 'Parcours démarré'],
+            'adventureParks.desk.returnAll' => ['Restituisci tutta l’attrezzatura', 'Return all equipment', 'Gesamte Ausrüstung zurücknehmen', 'Rendre tout l’équipement'],
+            'adventureParks.desk.returned' => ['Attrezzatura restituita', 'Equipment returned', 'Ausrüstung zurückgenommen', 'Équipement rendu'],
+            'adventureParks.desk.noShow' => ['Non presentato', 'No show', 'Nicht erschienen', 'Absent'],
+            'adventureParks.desk.nextVisitor' => ['Prossimo visitatore', 'Next visitor', 'Nächster Besucher', 'Visiteur suivant'],
+            'adventureParks.blocked.title' => ['DPI BLOCCATO', 'PPE BLOCKED', 'PSA GESPERRT', 'EPI BLOQUÉ'],
+            'adventureParks.blocked.message' => ['Questo DPI non può essere consegnato al visitatore.', 'This PPE must not be handed to the visitor.', 'Diese PSA darf nicht an den Besucher ausgegeben werden.', 'Cet EPI ne doit pas être remis au visiteur.'],
+            'adventureParks.blocked.reason' => ['Motivo del blocco', 'Reason for the block', 'Sperrgrund', 'Motif du blocage'],
+            'adventureParks.blocked.hint' => ['Ritira il DPI dal banco e prendine un altro della stessa taglia.', 'Take the PPE off the desk and pick another one of the same size.', 'Nehmen Sie die PSA aus dem Umlauf und wählen Sie eine andere derselben Grösse.', 'Retirez l’EPI du poste et prenez-en un autre de la même taille.'],
+            'adventureParks.blocked.ok' => ['Ho capito', 'Understood', 'Verstanden', 'Compris'],
+
+            // --- Public waiver wizard ---
+            'adventureParks.waiver.language' => ['Lingua', 'Language', 'Sprache', 'Langue'],
+            'adventureParks.waiver.invalidLink' => ['Il link non è valido o è scaduto.', 'The link is not valid or has expired.', 'Der Link ist ungültig oder abgelaufen.', 'Le lien n’est pas valide ou a expiré.'],
+            'adventureParks.waiver.step.participants' => ['Partecipanti', 'Participants', 'Teilnehmer', 'Participants'],
+            'adventureParks.waiver.step.rules' => ['Regole di sicurezza', 'Safety rules', 'Sicherheitsregeln', 'Règles de sécurité'],
+            'adventureParks.waiver.step.signature' => ['Firma', 'Signature', 'Unterschrift', 'Signature'],
+            'adventureParks.waiver.step.confirmation' => ['Conferma', 'Confirmation', 'Bestätigung', 'Confirmation'],
+            'adventureParks.waiver.intro' => ['Prenotazione {code} del {date} alle {time}, {headcount} persone. Inserisci i dati di chi firma e dei minori.', 'Booking {code} on {date} at {time}, {headcount} people. Enter the details of the signer and of the minors.', 'Buchung {code} am {date} um {time}, {headcount} Personen. Geben Sie die Daten des Unterzeichners und der Minderjährigen ein.', 'Réservation {code} le {date} à {time}, {headcount} personnes. Saisissez les données du signataire et des mineurs.'],
+            'adventureParks.waiver.signer' => ['Chi firma', 'Signer', 'Unterzeichner', 'Signataire'],
+            'adventureParks.waiver.minor' => ['Minore {n}', 'Minor {n}', 'Minderjährige Person {n}', 'Mineur {n}'],
+            'adventureParks.waiver.sizePending' => ['Inserisci altezza e peso', 'Enter height and weight', 'Grösse und Gewicht eingeben', 'Saisissez la taille et le poids'],
+            'adventureParks.waiver.rulesTitle' => ['Regole di sicurezza', 'Safety rules', 'Sicherheitsregeln', 'Règles de sécurité'],
+            'adventureParks.waiver.accept' => ['Ho letto e accetto le regole di sicurezza', 'I have read and accept the safety rules', 'Ich habe die Sicherheitsregeln gelesen und akzeptiere sie', 'J’ai lu et j’accepte les règles de sécurité'],
+            'adventureParks.waiver.signHint' => ['Firma con il dito o con il mouse nello spazio qui sotto.', 'Sign with your finger or the mouse in the box below.', 'Unterschreiben Sie mit dem Finger oder der Maus im Feld unten.', 'Signez avec le doigt ou la souris dans la zone ci-dessous.'],
+            'adventureParks.waiver.sign' => ['Firma e conferma', 'Sign and confirm', 'Unterschreiben und bestätigen', 'Signer et confirmer'],
+            'adventureParks.waiver.signedTitle' => ['Liberatoria firmata', 'Waiver signed', 'Verzicht unterzeichnet', 'Décharge signée'],
+            'adventureParks.waiver.signedHint' => ['Mostra questo codice QR al banco vestizione.', 'Show this QR code at the dressing desk.', 'Zeigen Sie diesen QR-Code an der Ausrüstungsstation.', 'Présentez ce code QR au poste d’équipement.'],
+
+            // --- PPE registry ---
+            'adventureParks.ppe.tabRegistry' => ['Registro', 'Register', 'Register', 'Registre'],
+            'adventureParks.ppe.tabDailyCheck' => ['Controllo giornaliero', 'Daily check', 'Tageskontrolle', 'Contrôle quotidien'],
+            'adventureParks.ppe.tabAlerts' => ['Avvisi', 'Alerts', 'Hinweise', 'Alertes'],
+            'adventureParks.ppe.empty' => ['Nessun DPI trovato.', 'No PPE found.', 'Keine PSA gefunden.', 'Aucun EPI trouvé.'],
+            'adventureParks.ppe.lifespan' => ['Vita utile', 'Lifespan', 'Lebensdauer', 'Durée de vie'],
+            'adventureParks.ppe.remainingDays' => ['{days} giorni rimanenti', '{days} days left', 'Noch {days} Tage', '{days} jours restants'],
+            'adventureParks.batch.open' => ['Nuovo lotto di DPI', 'New PPE batch', 'Neue PSA-Charge', 'Nouveau lot d’EPI'],
+            'adventureParks.batch.title' => ['Crea un lotto di DPI', 'Create a PPE batch', 'PSA-Charge anlegen', 'Créer un lot d’EPI'],
+            'adventureParks.batch.submit' => ['Crea lotto', 'Create batch', 'Charge anlegen', 'Créer le lot'],
+            'adventureParks.inspection.open' => ['Ispezioni', 'Inspections', 'Prüfungen', 'Inspections'],
+            'adventureParks.inspection.title' => ['Ispezioni di {serial}', 'Inspections of {serial}', 'Prüfungen von {serial}', 'Inspections de {serial}'],
+            'adventureParks.inspection.record' => ['Registra ispezione', 'Record inspection', 'Prüfung erfassen', 'Enregistrer une inspection'],
+            'adventureParks.inspection.empty' => ['Nessuna ispezione registrata.', 'No inspection recorded.', 'Keine Prüfung erfasst.', 'Aucune inspection enregistrée.'],
+            'adventureParks.inspection.checklist' => ['Lista di controllo', 'Checklist', 'Checkliste', 'Liste de contrôle'],
+            'adventureParks.inspection.licenseRequired' => ['Obbligatorio per l’ispezione annuale EN 365.', 'Required for the annual EN 365 inspection.', 'Pflicht für die jährliche EN-365-Prüfung.', 'Obligatoire pour l’inspection annuelle EN 365.'],
+            'adventureParks.dailyCheck.hint' => ['Conferma ogni punto prima dell’apertura. Un solo punto non conforme registra il giorno come non conforme.', 'Confirm each item before opening. A single failed item records the day as failed.', 'Bestätigen Sie jeden Punkt vor der Öffnung. Ein einziger Mangel verbucht den Tag als nicht bestanden.', 'Confirmez chaque point avant l’ouverture. Un seul point non conforme enregistre la journée comme non conforme.'],
+            'adventureParks.dailyCheck.ok' => ['OK', 'OK', 'OK', 'OK'],
+            'adventureParks.dailyCheck.ko' => ['Non conforme', 'Failed', 'Mangelhaft', 'Non conforme'],
+            'adventureParks.dailyCheck.submit' => ['Firma e registra il controllo', 'Sign and record the check', 'Kontrolle unterschreiben und erfassen', 'Signer et enregistrer le contrôle'],
+            'adventureParks.dailyCheck.recorded' => ['Controllo registrato da {name}', 'Check recorded by {name}', 'Kontrolle erfasst von {name}', 'Contrôle enregistré par {name}'],
+
+            // --- School trips ---
+            'adventureParks.school.newBooking' => ['Nuova prenotazione scolastica', 'New school booking', 'Neue Schulbuchung', 'Nouvelle réservation scolaire'],
+            'adventureParks.school.empty' => ['Nessuna prenotazione scolastica.', 'No school booking.', 'Keine Schulbuchung.', 'Aucune réservation scolaire.'],
+            'adventureParks.school.students' => ['Studenti', 'Students', 'Schüler', 'Élèves'],
+            'adventureParks.school.teachers' => ['Docenti', 'Teachers', 'Lehrer', 'Enseignants'],
+            'adventureParks.school.freeCharged' => ['{free} gratis, {charged} a pagamento', '{free} free, {charged} charged', '{free} gratis, {charged} kostenpflichtig', '{free} gratuits, {charged} payants'],
+            'adventureParks.school.picnicSeats' => ['Posti picnic', 'Picnic seats', 'Picknickplätze', 'Places de pique-nique'],
+            'adventureParks.school.total' => ['Totale', 'Total', 'Total', 'Total'],
+            'adventureParks.school.calculator' => ['Calcolatore docenti e importo', 'Teachers and amount calculator', 'Rechner für Lehrer und Betrag', 'Calculateur enseignants et montant'],
+            'adventureParks.school.calculatorHint' => ['Inserisci almeno uno studente pagante per vedere il calcolo.', 'Enter at least one paying student to see the calculation.', 'Geben Sie mindestens einen zahlenden Schüler ein, um die Berechnung zu sehen.', 'Saisissez au moins un élève payant pour voir le calcul.'],
+            'adventureParks.school.freeTeachers' => ['Docenti gratuiti', 'Free teachers', 'Gratis-Lehrer', 'Enseignants gratuits'],
+            'adventureParks.school.chargedTeachers' => ['Docenti a pagamento', 'Charged teachers', 'Kostenpflichtige Lehrer', 'Enseignants payants'],
+            'adventureParks.school.generateFatturaPa' => ['Genera FatturaPA', 'Generate FatturaPA', 'FatturaPA erstellen', 'Générer la FatturaPA'],
+            'adventureParks.school.invoiceGenerated' => ['FatturaPA generata', 'FatturaPA generated', 'FatturaPA erstellt', 'FatturaPA générée'],
+            'adventureParks.school.invoiceDetail' => ['Fattura {number} per {institute}.', 'Invoice {number} for {institute}.', 'Rechnung {number} für {institute}.', 'Facture {number} pour {institute}.'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function all(string $locale): array
+    {
+        $index = match ($locale) {
+            'it' => 0,
+            'en' => 1,
+            'de' => 2,
+            'fr' => 3,
+            default => throw new InvalidArgumentException("Unsupported locale [{$locale}]."),
+        };
+
+        $resolved = [];
+
+        foreach (self::definitions() as $key => $tuple) {
+            $resolved[$key] = $tuple[$index];
+        }
+
+        return $resolved;
+    }
+}
