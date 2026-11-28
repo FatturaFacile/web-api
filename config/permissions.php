@@ -34,6 +34,9 @@ return [
         'professionals' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'project_manager', 'member']],
         'manufacturing' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'production', 'technician', 'member']],
         'treasury' => ['read' => $financeReaders, 'write' => $finance],
+        // Bi-temporal time travel and audit engine (Mod 354): finance and auditors read the books at any (valid, known) coordinate and the
+        // integrity certificate; finance runs the what-if replays and materializes the checkpoints.
+        'time_travel' => ['read' => $financeReaders, 'write' => $finance],
         // Multi-currency engine (Mod 003): every member reads the rates and the active currencies (documents need them); finance
         // enters manual and contract rates, triggers the synchronisation and changes the currency settings.
         'currencies' => [

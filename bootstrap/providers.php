@@ -116,6 +116,7 @@ use Modules\SwissFiscal\Providers\SwissFiscalServiceProvider;
 use Modules\SwissVat\Providers\SwissVatServiceProvider;
 use Modules\TalentLearning\Providers\TalentLearningServiceProvider;
 use Modules\TenderManagement\Providers\TenderManagementServiceProvider;
+use Modules\TimeTravel\Providers\TimeTravelServiceProvider;
 use Modules\Transportation\Providers\TransportationServiceProvider;
 use Modules\TravelExpense\Providers\TravelExpenseServiceProvider;
 use Modules\Treasury\Currency\Providers\CurrencyServiceProvider;
@@ -246,6 +247,7 @@ return [
     SwissEbillServiceProvider::class,
     ForeignVatRefundServiceProvider::class,
     ObservabilityServiceProvider::class,
+    TimeTravelServiceProvider::class,
     GreenCareServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
