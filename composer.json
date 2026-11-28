@@ -117,6 +117,7 @@
             "Modules\\ForeignVatRefund\\": "modules/87_ForeignVatRefund/src/",
             "Modules\\Observability\\": "modules/88_Observability/src/",
             "Modules\\GreenCare\\": "modules/88_GreenCare/src/",
+            "Modules\\BondedWarehouses\\": "modules/89_BondedWarehouses/src/",
             "Modules\\SwissVat\\": "modules/75_SwissVat/src/",
             "Modules\\LeaveManagement\\": "modules/76_LeaveManagement/src/",
             "Modules\\MarketingAutomation\\": "modules/77_MarketingAutomation/src/",

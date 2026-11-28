@@ -21,6 +21,7 @@ use Modules\ArtisanalGelato\Providers\ArtisanalGelatoServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
+use Modules\BondedWarehouses\Providers\BondedWarehousesServiceProvider;
 use Modules\Budgeting\Providers\BudgetingServiceProvider;
 use Modules\BusinessIntelligence\Providers\BusinessIntelligenceServiceProvider;
 use Modules\Childcare\Providers\ChildcareServiceProvider;
@@ -247,6 +248,7 @@ return [
     ForeignVatRefundServiceProvider::class,
     ObservabilityServiceProvider::class,
     GreenCareServiceProvider::class,
+    BondedWarehousesServiceProvider::class,
     ElectronicSignatureServiceProvider::class,
     IntercompanyServiceProvider::class,
     DataResidencyServiceProvider::class,
